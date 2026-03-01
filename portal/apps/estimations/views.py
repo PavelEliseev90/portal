@@ -478,15 +478,15 @@ def estimation_rlk(request, rlk_id):
 
     object                          = DocRLK.objects.get(id=rlk_id)
     
-    object_interactiv_data, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
-    if object_interactiv_data.estimation == None:
+    interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
+    if interactiv_rlk.estimation == None:
         return HttpResponseRedirect(request.path_info + 'start/')
     else:
-        reg_interactiv_ocenka = object_interactiv_data.estimation
+        reg_interactiv_ocenka = interactiv_rlk.estimation
 
     list_statuses = [1, 2, 7, 9]
-    if not object_interactiv_data.status.id in list_statuses:
-        return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
+    # if not interactiv_rlk.status.id in list_statuses:
+    #     return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
     if request.method == 'POST':
         
@@ -545,28 +545,29 @@ def estimation_rlk(request, rlk_id):
             
             organization_id = request.POST.get('organization_id', '')
             if organization_id != '':
-                reg_interactiv_ocenka_document.organization = RefOrganization.objects.get(pk = organization_id)
+                interactiv_rlk.organization = RefOrganization.objects.get(pk = organization_id)
 
             filial_id = request.POST.get('filial_id', '')
             if filial_id != '':
-                reg_interactiv_ocenka_document.filial = RefFilial.objects.get(pk = filial_id)
+                interactiv_rlk.filial = RefFilial.objects.get(pk = filial_id)
 
             unit_id = request.POST.get('unit_id', '')
             if unit_id != '':
-                reg_interactiv_ocenka_document.unit = RefUnit.objects.get(pk = unit_id)
+                interactiv_rlk.unit = RefUnit.objects.get(pk = unit_id)
 
             store_id = request.POST.get('store_id', '')
             if store_id != '':
-                reg_interactiv_ocenka_document.store = RefStore.objects.get(pk = store_id)
+                interactiv_rlk.store = RefStore.objects.get(pk = store_id)
 
             type_reception_id = request.POST.get('type_reception_id', '')
             if type_reception_id != '':
-                reg_interactiv_ocenka_document.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
+                interactiv_rlk.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
 
-            type_drive           = request.POST.get('type_drive', '')
-            if type_drive != '' and type_drive != reg_interactiv_ocenka.type_drive:
-                reg_interactiv_ocenka.type_drive    = type_drive
-                reg_interactiv_ocenka.save()
+            # type_drive           = request.POST.get('type_drive', '')
+            # if type_drive != '' and type_drive != reg_interactiv_ocenka.type_drive:
+            #     reg_interactiv_ocenka.type_drive    = type_drive
+            #     reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
 
             reg_interactiv_ocenka_document.customer_family      = request.POST.get('customer_family', '')
             reg_interactiv_ocenka_document.customer_name        = request.POST.get('customer_name', '')
@@ -1234,13 +1235,13 @@ def estimation_rlk(request, rlk_id):
 
         if 's_soglas' in request.POST:
             
-            if reg_interactiv_ocenka.page_soglasovanie == None:
+            if interactiv_rlk.page_soglasovanie == None:
                 reg_interactiv_ocenka_page_soglasovanie = RegInteractivOcenkaSoglasovanie()
                 reg_interactiv_ocenka_page_soglasovanie.save()
-                reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_page_soglasovanie
-                reg_interactiv_ocenka.save()
+                interactiv_rlk.page_soglasovanie = reg_interactiv_ocenka_page_soglasovanie
+                interactiv_rlk.save()
             else:
-                reg_interactiv_ocenka_page_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+                reg_interactiv_ocenka_page_soglasovanie = interactiv_rlk.page_soglasovanie
 
             if reg_interactiv_ocenka_page_soglasovanie.start_estimation == None:
                 reg_interactiv_ocenka_page_soglasovanie.start_estimation     = datetime.now()
@@ -1251,7 +1252,7 @@ def estimation_rlk(request, rlk_id):
             for user_add in users_add_list:
                 if len(user_add) > 0:
                     uusr = User.objects.get(id = user_add)
-                    reg_interactiv_ocenka.access_user.add(uusr)     
+                    interactiv_rlk.access_user.add(uusr)     
 
             price_reception = int(request.POST.get('price_reception', '0'))
             if price_reception > 0:
@@ -1282,16 +1283,18 @@ def estimation_rlk(request, rlk_id):
 
             #send_channel_message(request.user, id_rlk = reg_interactiv_ocenka.rlk.id, message = 'Оценка отправлена на согласование.')
             new_message             = RegInteractivOcenkaEmailPush()
+            new_message.rlk         = interactiv_rlk.rlk
             new_message.estimation  = reg_interactiv_ocenka
             new_message.user        = request.user
             new_message.email       = request.user.email
             new_message.comment     = 'Интерактивная оценка отправлена на согласование.'
             new_message.save()
 
-            for uss_base in reg_interactiv_ocenka.access_user.all():
-                sends_count = sends_user_info(reg_interactiv_ocenka, uss_base)
+            for uss_base in interactiv_rlk.access_user.all():
+                sends_count = sends_user_info(interactiv_rlk, uss_base)
                 if sends_count == 0:
                     new_message             = RegInteractivOcenkaEmailPush()
+                    new_message.rlk         = interactiv_rlk.rlk
                     new_message.estimation  = reg_interactiv_ocenka
                     new_message.user        = uss_base
                     new_message.email       = uss_base.email
@@ -1302,6 +1305,7 @@ def estimation_rlk(request, rlk_id):
             send_count = RegInteractivOcenkaEmailPush.objects.filter(user = None).filter(email = 'eco_all@kors-group.com').filter(estimation = reg_interactiv_ocenka).count()
             if send_count == 0:
                 new_message = RegInteractivOcenkaEmailPush()
+                new_message.rlk         = interactiv_rlk.rlk
                 new_message.estimation  = reg_interactiv_ocenka
                 new_message.user        = None
                 new_message.email       = 'eco_all@kors-group.com'
@@ -1343,32 +1347,32 @@ def estimation_rlk(request, rlk_id):
             users_add           = request.POST.get('users', '')
             users_add_list      = users_add.split(';')
             
-            reg_interactiv_ocenka.access_user.clear()
+            object_interactiv_data.access_user.clear()
             for user_add in users_add_list:
                 if len(user_add) > 0:
                     uusr = User.objects.get(id = user_add)
-                    reg_interactiv_ocenka.access_user.add(uusr) 
-            reg_interactiv_ocenka.save()
+                    object_interactiv_data.access_user.add(uusr) 
+            object_interactiv_data.save()
 
             organization_id = request.POST.get('organization_id', '')
             if organization_id != '':
-                reg_interactiv_ocenka_remote.organization = RefOrganization.objects.get(pk = organization_id)
+                object_interactiv_data.organization = RefOrganization.objects.get(pk = organization_id)
 
             filial_id = request.POST.get('filial_id', '')
             if filial_id != '':
-                reg_interactiv_ocenka_remote.filial = RefFilial.objects.get(pk = filial_id)
+                object_interactiv_data.filial = RefFilial.objects.get(pk = filial_id)
 
             unit_id = request.POST.get('unit_id', '')
             if unit_id != '':
-                reg_interactiv_ocenka_remote.unit = RefUnit.objects.get(pk = unit_id)
+                object_interactiv_data.unit = RefUnit.objects.get(pk = unit_id)
 
             store_id = request.POST.get('store_id', '')
             if store_id != '':
-                reg_interactiv_ocenka_remote.store = RefStore.objects.get(pk = store_id)
+                object_interactiv_data.store = RefStore.objects.get(pk = store_id)
 
             type_reception_id = request.POST.get('type_reception_id', '')
             if type_reception_id != '':
-                reg_interactiv_ocenka_remote.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
+                object_interactiv_data.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
 
             run = int(request.POST.get('run', '0'))
             reg_interactiv_ocenka_remote.run = run
@@ -1394,11 +1398,12 @@ def estimation_rlk(request, rlk_id):
                 reg_interactiv_ocenka_remote.comment   = comment
 
             type_drive           = request.POST.get('type_drive', '')
-            if type_drive != '' and type_drive != reg_interactiv_ocenka.type_drive:
-                reg_interactiv_ocenka.type_drive    = type_drive
-                reg_interactiv_ocenka.save()
-            
+            if type_drive != '' and type_drive != object_interactiv_data.type_drive:
+                object_interactiv_data.type_drive    = type_drive
+                object_interactiv_data.save()
+            object_interactiv_data.save()
             reg_interactiv_ocenka_remote.save()
+
             type_point  = ''
             text        = ''
             x = 0
@@ -1446,9 +1451,16 @@ def estimation_rlk(request, rlk_id):
     if reg_interactiv_ocenka.staff == None or reg_interactiv_ocenka.staff.domain_login == '':
         count = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True).count()
         if count > 0:
-            staff = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True)[0]
+            staff = RefStaff.objects.filter(domain_login = user.username)[0]
             reg_interactiv_ocenka.staff = staff
             reg_interactiv_ocenka.save()
+    
+    if interactiv_rlk.staff_rlk == None or interactiv_rlk.staff_rlk.domain_login == '':
+        count = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True).count()
+        if count > 0:
+            staff = RefStaff.objects.filter(domain_login = user.username)[0]
+            interactiv_rlk.staff_rlk = staff
+            interactiv_rlk.save()
     
     if reg_interactiv_ocenka.start_estimation == None:
         add_swap(object)
@@ -1607,6 +1619,7 @@ def estimation_rlk(request, rlk_id):
         }
         params = {
             'tabindex'                      : page,
+            'interactiv_rlk'                : interactiv_rlk,
             'selected'                      : selected,
             'chat'                          : chat,
             'estimation'                    : reg_interactiv_ocenka,
@@ -1651,7 +1664,7 @@ def estimation_start(request, rlk_id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
     object                          = DocRLK.objects.get(id=rlk_id)
-    object_interactiv_data, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
+    interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     estimation_active               = None
     
     if request.method == 'GET':
@@ -1660,17 +1673,17 @@ def estimation_start(request, rlk_id):
             estimation_active_all   = RegInteractivOcenkaRLK.objects.filter(rlk__id = int(active)).first()
             reg_interactiv_ocenka   = estimation_active_all.estimation 
 
-    if object_interactiv_data.estimation == None:
+    if interactiv_rlk.estimation == None:
         if estimation_active == None:
-            reg_interactiv_ocenka = RegInteractivOcenka.objects.get_or_create(rlk = object)
-            object_interactiv_data.estimation = reg_interactiv_ocenka
-            object_interactiv_data.save()            
+            reg_interactiv_ocenka, created = RegInteractivOcenka.objects.get_or_create(rlk = object)
+            interactiv_rlk.estimation = reg_interactiv_ocenka
+            interactiv_rlk.save()            
         else:
-            object_interactiv_data.estimation = estimation_active
-            object_interactiv_data.save()
+            interactiv_rlk.estimation = estimation_active
+            interactiv_rlk.save()
             return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
     else:
-        reg_interactiv_ocenka = object_interactiv_data.estimation
+        reg_interactiv_ocenka = interactiv_rlk.estimation
 
     # Обработка POST запроса - сохранение данных
     if request.method == 'POST':
@@ -2300,8 +2313,8 @@ def get_mark_tyres(name):
     return None
 
 
-def sends_user_info(reg_interactiv_ocenka, uss_base):
-    return RegInteractivOcenkaEmailPush.objects.filter(estimation = reg_interactiv_ocenka).filter(user = uss_base).count()
+def sends_user_info(interactiv_data, uss_base):
+    return RegInteractivOcenkaEmailPush.objects.filter(estimation = interactiv_data.estimation).filter(rlk = interactiv_data.rlk).filter(user = uss_base).count()
           
 
 def send_channel_message(user, id_rlk = 0, message = ''):

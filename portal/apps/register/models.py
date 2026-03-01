@@ -3590,11 +3590,33 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
     
     def save(self, *args, **kwargs):
         
-        if self.estimation != None:
-            if self.estimation.vin == '' and self.estimation.number_body == '':
-                self.status = RefStatusEstimation.objects.get(pk = 1)
-        else:
+        # if self.estimation != None:
+        #     if self.estimation.vin == '' and self.estimation.number_body == '':
+        #         self.status = RefStatusEstimation.objects.get(pk = 1)
+        # else:
+        #     self.status = RefStatusEstimation.objects.get(pk = 1)
+        if self.estimation == None:
             self.status = RefStatusEstimation.objects.get(pk = 1)
+        elif self.estimation.vin == '' and self.estimation.number_body == '':
+            self.status = RefStatusEstimation.objects.get(pk = 1)
+        elif self.estimation != None and self.estimation.returned:
+            self.status = RefStatusEstimation.objects.get(pk = 7)
+        elif self.estimation != None and self.estimation.page_remote != None and self.estimation.page_remote.end_estimation == None:
+            self.status = RefStatusEstimation.objects.get(pk = 9) 
+        elif self.estimation != None and self.estimation.end_estimation != None and self.page_soglasovanie != None:
+            count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
+            if count_success > 0:
+                self.status = RefStatusEstimation.objects.get(pk = 8)                    
+            elif self.page_soglasovanie.price_before_kd == 0:
+                self.status = RefStatusEstimation.objects.get(pk = 3)
+            elif self.page_soglasovanie.price_before_kd > 0 and not self.page_soglasovanie.no_diagnostica and self.page_soglasovanie.comment_diagnostica == '':
+                self.status = RefStatusEstimation.objects.get(pk = 5)
+            elif self.page_soglasovanie.price_after_kd == 0 and (self.page_soglasovanie.no_diagnostica or self.page_soglasovanie.comment_diagnostica != ''):
+                self.status = RefStatusEstimation.objects.get(pk = 6)
+            elif self.page_soglasovanie.price_after_kd > 0:
+                self.status = RefStatusEstimation.objects.get(pk = 4)   
+        else:
+            self.status = RefStatusEstimation.objects.get(pk = 2)
 
         super().save(*args, **kwargs)
     
@@ -3702,12 +3724,13 @@ class RegRegInteractivOcenkaFiles(models.Model):
 
 
 class RegInteractivOcenkaEmailPush(models.Model):
-    date            = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
-    estimation      = models.ForeignKey(RegInteractivOcenka, null=True, on_delete=models.SET_NULL, verbose_name="Интерактивная оценка")
-    user            = models.ForeignKey(User, related_name="user", on_delete=models.SET_NULL, null=True, verbose_name="Пользователь")
-    email           = models.CharField("Email", max_length=2048, default='', null=True, blank=True)
-    comment         = models.CharField("Текст", max_length=2048, default='', null=True, blank=True) 
-    send            = models.BooleanField("Отправлено", default = False, null=True, blank=True)
+    date                = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
+    rlk                 = models.ForeignKey(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
+    estimation          = models.ForeignKey(RegInteractivOcenka, null=True, on_delete=models.SET_NULL, verbose_name="Интерактивная оценка")
+    user                = models.ForeignKey(User, related_name="user", on_delete=models.SET_NULL, null=True, verbose_name="Пользователь")
+    email               = models.CharField("Email", max_length=2048, default='', null=True, blank=True)
+    comment             = models.CharField("Текст", max_length=2048, default='', null=True, blank=True) 
+    send                = models.BooleanField("Отправлено", default = False, null=True, blank=True)
     agreement_start     = models.BooleanField("Согласование", default = False, null=True, blank=True)
     agreement_before_kd = models.BooleanField("Согласована до кд", default = False, null=True, blank=True)
     agreement_success   = models.BooleanField("Соглаование выполнено", default = False, null=True, blank=True)

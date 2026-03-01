@@ -813,8 +813,8 @@
   
     .kors-hero {
       margin-top: 1rem;
-      margin-bottom: 1.75rem;
-      padding: 2rem 2.25rem;
+      margin-bottom: 0.75rem;
+      padding: 1rem 1.25rem;
       background: radial-gradient(circle at top right, rgba(255, 213, 0, 0.22), transparent 45%),
                   linear-gradient(135deg, #011734, #012a58 65%, #023b86);
       border-radius: 1.75rem;
@@ -1308,7 +1308,7 @@
                         <tr>
                           <td class="align-middle"></td>
                           <td class="text-nowrap text-center align-middle"></td>
-                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381 </b></td>
+                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381 </b></td>
                         </tr>    
                     </tbody>
                 </table>
@@ -1366,7 +1366,7 @@
                         <tr>
                           <td class="align-middle"></td>
                           <td class="text-nowrap text-center align-middle"></td>
-                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381 </b></td>
+                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381 </b></td>
                         </tr>    
                     </tbody>
                 </table>
@@ -1423,7 +1423,7 @@
                         <tr>
                           <td class="align-middle"></td>
                           <td class="text-nowrap text-center align-middle"></td>
-                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381 </b></td>
+                          <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381 </b></td>
                         </tr>    
                     </tbody>
                 </table>
@@ -1664,72 +1664,73 @@
     <div class="portal-page lo-v3-page">
       
       <section class="kors-hero  {% if params.rlk_estimations|length > 1 %} kors-hero-dop {% endif %}">
-
-        {% if params.estimation.status.id == 7 or params.estimation.status.id == 2 %}
-          <div class="kors-brand-pill bg-danger bg-gradient">
-              <a href="/estimations/{{params.estimation.rlk.id}}/" class="text-white">
-                <span class="icon-mbri-edit" aria-hidden="true"></span>
-                Редактировать оценку
-              </a>                
-          </div>
-        {% endif %}
+        {% for estimation_rlk in params.rlk_estimations %}
+          {% if estimation_rlk.rlk == params.rlk %}
+            <div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8">
+              <span class="icon-mbri-globe" aria-hidden="true"></span>
+              
+              {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} 
+            </div>
+          {% else %}
+            <div class="kors-brand-pill bg-secondary bg-opacity-75 bg-gradient">
+              <a href="/eco/{{estimation_rlk.rlk.id}}/?page={{params.page}}" class="text-white fs-8">
+                <span class="icon-mbri-globe" aria-hidden="true"></span>
+                
+                {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} 
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
 
         <div class="kors-hero__grid row gy-4 align-items-center">
           <div class="col-12 col-xxl-5">            
           
-            {% for estimation_rlk in params.rlk_estimations %}
-              {% if estimation_rlk.rlk == params.rlk %}
-                <div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8">
-                  <span class="icon-mbri-globe" aria-hidden="true"></span>
-                  
-                  {% if estimation_rlk.rlk.unit_dc != None %}
-                    {{estimation_rlk.rlk.unit_dc.name}}
-                  {% elif estimation_rlk.rlk.unit != None %}
-                    {{estimation_rlk.rlk.unit.name}}
-                  {% else %}
-                    {{estimation_rlk.rlk.estimation.page_documents.unit.name}}
-                  {% endif %} · РЛК {{estimation_rlk.rlk.nomer}} 
-                </div>
-              {% else %}
-                <div class="kors-brand-pill bg-secondary bg-opacity-75 bg-gradient">
-                  <a href="/eco/{{estimation_rlk.rlk.id}}/?page={{params.page}}" class="text-white fs-8">
-                    <span class="icon-mbri-globe" aria-hidden="true"></span>
-                    
-                    {% if estimation_rlk.rlk.unit_dc != None %}
-                      {{estimation_rlk.rlk.unit_dc.name}}
-                    {% elif estimation_rlk.rlk.unit != None %}
-                      {{estimation_rlk.rlk.unit.name}}
-                    {% else %}
-                      {{estimation_rlk.rlk.estimation.page_documents.unit.name}}
-                    {% endif %} · РЛК {{estimation_rlk.rlk.nomer}} 
-                  </a>
-                </div>
-              {% endif %}
-            {% endfor %}
-
             <h1 class="kors-hero__title">
               {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} 
             </h1>
+
             <p class="kors-hero__subtitle">
               {{params.estimation.vin}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км. / {{params.estimation.modification.typeBody.name}} / {{params.estimation.page_documents.plate_number}}
+              <div class="row g-1">
+                <div class="col-auto">
+                  {% if params.estimation.iznos %} 
+                    <div class="kors-brand-pill bg-danger bg-gradient fs-8">
+                      <span class="icon-cd" aria-hidden="true"></span>
+                      Износ - Повышеный
+                    </div>
+                  {% else %}
+                    <div class="kors-brand-pill bg-success bg-gradient bg-opacity-50 fs-8">
+                      <span class="icon-cd fs-8" aria-hidden="true"></span>
+                      Износ -  Рабочий ({{params.estimation.k_i}})
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="col-auto fs-8">
+                  <div class="kors-brand-pill fs-8" data-bs-target="#example_body" data-bs-toggle="modal">
+                    <span class="icon-mbri-globe fs-8" aria-hidden="true"></span>
+                    Схема кузова
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <div class="kors-brand-pill" data-bs-target="#example_salon" data-bs-toggle="modal">
+                    <span class="icon-mbri-globe" aria-hidden="true"></span>
+                    Схема салона
+                  </div>
+                </div>
+              </div>
               
-              {% if params.estimation.iznos %} 
-                <div class="kors-brand-pill bg-danger bg-gradient">
-                  <span class="icon-cd" aria-hidden="true"></span>
-                  Износ -  Повышеный ({{params.estimation.k_i}})
-                </div>
-              {% else %}
-                <div class="kors-brand-pill bg-success bg-gradient">
-                  <span class="icon-cd" aria-hidden="true"></span>
-                  Износ -  Рабочий ({{params.estimation.k_i}})
-                </div>
-              {% endif %}
-            </p>
-            
-            <p class="kors-hero__subtitle">
-              <span class="icon-mbri-user" aria-hidden="true"></span> {{params.rlk.staff}}
-            </p>
 
+            </p>
+            <div class="row">
+              <div class="col-auto">
+                <p class="kors-hero__subtitle">
+                  <span class="icon-mbri-user" aria-hidden="true"></span> {{params.interactiv_rlk.staff_rlk.name}} 
+                  
+                </p>
+              </div>
+              
+            </div>
+            
           </div>
 
           <div class="col-12 col-xxl-7">
@@ -1737,8 +1738,9 @@
             <div class="kors-metrics-grid">
               <div class="kors-metric-card">
                 <span class="kors-metric-card__label">Статус</span>
-                <span class="kors-metric-card__value">{{params.estimation.status}}</span>
-                <span class="kors-metric-card__sub">Обновлено {{params.rlk.dataTime|date:"d.m.Y"}}</span>
+                <span class="kors-metric-card__value">{{params.interactiv_rlk.status}}</span>
+                <span class="kors-metric-card__sub">Обновлено {{params.interactiv_rlk.rlk.dataTime|date:"d.m.Y"}}</span>
+                
               </div>
       
               <div class="kors-metric-card">
@@ -1768,20 +1770,20 @@
               -->
                 
                   
-                  {% if params.estimation.page_soglasovanie.price_after_kd > 0  %} 
+                  {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0  %} 
                   <div class="kors-metric-card bg-success bg-gradient bg-opacity-50">
                     <span class="kors-metric-card__label">Выкуп</span>
                       <span class="kors-metric-card__value">
-                        {{params.estimation.page_soglasovanie.price_after_kd|floatformat:'0g'}} &#8381; 
+                        {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:'0g'}} &#8381; 
                       </span>
                       <span class="kors-metric-card__sub">согласовано</span>
                     </span>
                   </div>
-                  {% elif params.estimation.page_soglasovanie.price_before_kd > 0 %}
+                  {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
                     <div class="kors-metric-card bg-warning bg-gradient bg-opacity-50">
                       <span class="kors-metric-card__label">Выкуп</span>
                         <span class="kors-metric-card__value">
-                          {{params.estimation.page_soglasovanie.price_before_kd|floatformat:'0g'}} &#8381; 
+                          {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:'0g'}} &#8381; 
                         </span>
                         <span class="kors-metric-card__sub">до диагностики</span>                          
                       </span>
@@ -1814,42 +1816,29 @@
               
               <div class="kors-metric-card">
                 <span class="kors-metric-card__label">Подготовка</span><span class="icon-mbri-info" data-bs-target="#example_podgotovka_custom_glav" data-bs-toggle="modal"></span>
-                <span class="kors-metric-card__value">{{params.estimation.page_soglasovanie.amount_podgotovka|floatformat:'0g'}} &#8381;</span>            
+                <span class="kors-metric-card__value">{{params.interactiv_rlk.page_soglasovanie.amount_podgotovka|floatformat:'0g'}} &#8381;</span>            
               </div>
               
               <div class="kors-metric-card">
                 <span class="kors-metric-card__label">Слесарный</span><span class="icon-mbri-info" data-bs-target="#example_service_custom_glav" data-bs-toggle="modal"></span>
-                <span class="kors-metric-card__value">{{params.estimation.page_soglasovanie.amount_ss|floatformat:'0g'}} &#8381;</span>            
+                <span class="kors-metric-card__value">{{params.interactiv_rlk.page_soglasovanie.amount_ss|floatformat:'0g'}} &#8381;</span>            
               </div>
 
               <div class="kors-metric-card">
                 <span class="kors-metric-card__label">Кузовной</span><span class="icon-mbri-info" data-bs-target="#example_mcu_custom_glav" data-bs-toggle="modal"></span>
-                <span class="kors-metric-card__value">{{params.estimation.page_soglasovanie.amount_mcu|floatformat:'0g'}} &#8381;</span>            
+                <span class="kors-metric-card__value">{{params.interactiv_rlk.page_soglasovanie.amount_mcu|floatformat:'0g'}} &#8381;</span>            
               </div>
 
               <div class="kors-metric-card">
                 <span class="kors-metric-card__label">Затраты итого</span>
-                <span class="kors-metric-card__value">{{params.estimation.page_soglasovanie.amount_recovery|floatformat:'0g'}} &#8381;</span>            
+                <span class="kors-metric-card__value">{{params.interactiv_rlk.page_soglasovanie.amount_recovery|floatformat:'0g'}} &#8381;</span>            
               </div>
             
             </div>
           </div>
 
           <div class="row g-1">
-
-            <div class="col-auto">
-              <div class="kors-brand-pill" data-bs-target="#example_body" data-bs-toggle="modal">
-                <span class="icon-mbri-globe" aria-hidden="true"></span>
-                Состояние кузова
-              </div>
-            </div>
-            <div class="col-auto">
-              <div class="kors-brand-pill" data-bs-target="#example_salon" data-bs-toggle="modal">
-                <span class="icon-mbri-globe" aria-hidden="true"></span>
-                Состояние салона
-              </div>
-            </div>
-
+            
             {% if params.estimation.check_run == False %}
               <div class="col-auto">   
                 <div class="kors-brand-pill bg-danger text-nowrap">
@@ -5949,18 +5938,18 @@
                         
                               <div class="col-sm">
                                 <div class="form-floating">
-                                  <input class="form-control form-control-sm" type="text" id="price_reception" name="price_reception" value="{{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381;" readonly>
+                                  <input class="form-control form-control-sm" type="text" id="price_reception" name="price_reception" value="{{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381;" readonly>
                                   <label for="floatingInput">Цена приема</label>
                                 </div>
                                 <br>
                                 <div class="form-floating">
-                                  <input class="form-control form-control-sm" type="text" id="price_reception" name="price_reception" value="{{params.estimation.page_soglasovanie.price_recovery|floatformat:"2g"}} &#8381;" readonly>
+                                  <input class="form-control form-control-sm" type="text" id="price_reception" name="price_reception" value="{{params.interactiv_rlk.page_soglasovanie.price_recovery|floatformat:"2g"}} &#8381;" readonly>
                                   <label for="floatingInput">Затраты</label>
                                 </div>
                                 <br>
                 
                                 <div class="form-floating">
-                                  <input class="form-control form-control-sm" type="text" id="price_sale" name="price_sale" value="{{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381;" readonly>
+                                  <input class="form-control form-control-sm" type="text" id="price_sale" name="price_sale" value="{{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381;" readonly>
                                   <label for="floatingInput">Цена продажи</label>
                                 </div>
                                 <br>
@@ -5970,14 +5959,14 @@
                                   <br>
         
                                   <div class="form-floating">
-                                    <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.estimation.page_soglasovanie.car_sale_info}}" readonly>
+                                    <input class="form-control form-control-sm" type="text" id="car_sale_info" name="car_sale_info" value="{{params.interactiv_rlk.page_soglasovanie.car_sale_info}}" readonly>
                                     <label for="floatingInput">Приобретаемый АМ</label>
                                   </div>
                                 
                                   <br>
                   
                                   <div class="form-floating">
-                                    <input class="form-control form-control-sm" type="text" id="car_sale_price" name="car_sale_price" value="{{params.estimation.page_soglasovanie.car_sale_price}}" readonly>
+                                    <input class="form-control form-control-sm" type="text" id="car_sale_price" name="car_sale_price" value="{{params.interactiv_rlk.page_soglasovanie.car_sale_price}}" readonly>
                                     <label for="floatingInput">Цена приобретаемого АМ &#8381;</label>
                                   </div>
         
@@ -5986,7 +5975,7 @@
                               <div class="col-sm">
                                 <div class="form-group">
                                   <label for="exampleFormControlTextarea1">Комментарий оценщика</label>
-                                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="12" readonly>{{params.estimation.page_soglasovanie.comment}}</textarea>
+                                  <textarea class="form-control" id="exampleFormControlTextarea1" rows="12" readonly>{{params.interactiv_rlk.page_soglasovanie.comment}}</textarea>
                                 </div>
                               </div>
                 
@@ -6055,7 +6044,7 @@
                           </h6>
                           
                         
-                          {% for access_user in params.estimation.access_user.all %}
+                          {% for access_user in params.interactiv_rlk.access_user.all %}
                             <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
                               {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
                             </button>
@@ -6389,7 +6378,7 @@
                                                 <tr>
                                                   <td class="align-middle"></td>
                                                   <td class="text-nowrap text-center align-middle"></td>
-                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381 </b></td>
+                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381 </b></td>
                                                 </tr>    
                                             </tbody>
                                         </table>
@@ -6447,7 +6436,7 @@
                                                 <tr>
                                                   <td class="align-middle"></td>
                                                   <td class="text-nowrap text-center align-middle"></td>
-                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381 </b></td>
+                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381 </b></td>
                                                 </tr>    
                                             </tbody>
                                         </table>
@@ -6504,7 +6493,7 @@
                                                 <tr>
                                                   <td class="align-middle"></td>
                                                   <td class="text-nowrap text-center align-middle"></td>
-                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.estimation.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381 </b></td>
+                                                  <td class="text-nowrap text-end align-middle" style="border-top: 0.5rem;"> <b>{{params.interactiv_rlk.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381 </b></td>
                                                 </tr>    
                                             </tbody>
                                         </table>
@@ -6546,7 +6535,7 @@
                                     </div>
                                   </div>
                                   
-                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_podgotovka|length}} шт. <div class="vr"></div> {{params.estimation.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
+                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_podgotovka|length}} шт. <div class="vr"></div> {{params.interactiv_rlk.page_soglasovanie.amount_podgotovka|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                                   <div class="row" data-bs-target="#example_podgotovka_custom" data-bs-toggle="modal">
                                     <div class="col text-end"><label class="text-end"> Подробнее</label></div>
                                   </div>
@@ -6563,7 +6552,7 @@
                                   </div>
                                   
                                  
-                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_ss|length}} шт. <div class="vr"></div> {{params.estimation.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
+                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_ss|length}} шт. <div class="vr"></div> {{params.interactiv_rlk.page_soglasovanie.amount_ss|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                                   <div class="row" data-bs-target="#example_service_custom" data-bs-toggle="modal">
                                     <div class="col text-end"><label class="text-end"> Подробнее</label></div>
                                   </div>
@@ -6579,7 +6568,7 @@
                                     </div>
                                   </div>
                                   
-                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_mcu|length}} шт. <div class="vr"></div> {{params.estimation.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
+                                  <label class="fw-bold fs-6 text-danger"> {{params.list_work_mcu|length}} шт. <div class="vr"></div> {{params.interactiv_rlk.page_soglasovanie.amount_mcu|floatformat:"2g"}} &#8381</label> <label class="text-success"> </label>
                                   <div class="row" data-bs-target="#example_mcu_custom" data-bs-toggle="modal">
                                     <div class="col text-end"><label class="text-end "> Подробнее</label></div>
                                   </div>
@@ -6587,17 +6576,17 @@
                               </div>
                             </div>
                           </div>
-                          <label class="fw-bold text-danger fs-4"> {{params.estimation.page_soglasovanie.amount_recovery|floatformat:"2g"}} &#8381 </label> <label class="text-success"> </label>
+                          <label class="fw-bold text-danger fs-4"> {{params.interactiv_rlk.page_soglasovanie.amount_recovery|floatformat:"2g"}} &#8381 </label> <label class="text-success"> </label>
                           <hr style="margin: 0.2rem;">
                           
                           До диагностики
                           <br>
-                          <label class="fw-bold fs-4"> {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381 </label>
+                          <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381 </label>
                           <br>
                           <hr style="margin: 0.2rem;">
                           После диагностики
                           <br>
-                          <label class="fw-bold fs-4"> {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381 </label>
+                          <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381 </label>
                           <br>
                           Продажа
                           <br>
@@ -6614,7 +6603,7 @@
                         
                           БЦП
                           <br>
-                          <label class="fw-bold fs-4"> {{params.estimation.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381 </label>
+                          <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381 </label>
                           <br>
                           <hr>
                           <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#estimation_info_customer"> <span class="icon-mbri-users"></span> Данные для клиента</button>
@@ -6990,7 +6979,7 @@
                                 </div>
                                                           
                                 <div class="form-floating">
-                                  <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.estimation.page_soglasovanie.comment_diagnostica}}</textarea>
+                                  <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.interactiv_rlk.page_soglasovanie.comment_diagnostica}}</textarea>
                                   <label for="floatingInput">Диагностика</label>                              
                                 </div>
                                   
@@ -7001,14 +6990,14 @@
                                   <div class="col-auto">
                                     <div class="card bg-success bg-opacity-50">
                                       <div class="card-body">
-                                        {% if params.estimation.page_soglasovanie.price_after_kd > 0 %}
+                                        {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
                                           
                                           <label class="fw-bold fs-4"> Согласованная цена приема  </label><br>
-                                          <label class="fw-bold fs-1"> {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381 </label>
+                                          <label class="fw-bold fs-1"> {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381 </label>
                                         
                                         {% else %}
                                           <label class="fw-bold fs-4"> Согласованная цена до диагностики </label><br>
-                                          <label class="fw-bold fs-1"> {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381 </label>
+                                          <label class="fw-bold fs-1"> {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381 </label>
                                         
                                         {% endif %}
                                       </div>
@@ -7040,7 +7029,7 @@
                     
 
                   </div>
-                  {% if params.estimation.page_soglasovanie.price_before_kd > 0 %}
+                  {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
                       
                   <form method="post" enctype="multipart/form-data" >
     
@@ -7960,13 +7949,13 @@
                             {% endif %}
     
                            
-                                {% if params.estimation.page_soglasovanie.price_before_kd > 0 %}
+                                {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
                                   
-                                    {% if not params.estimation.page_soglasovanie.no_diagnostica %}
+                                    {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}
                                     
                                         
                                           <div class="form-floating">
-                                            <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.estimation.page_soglasovanie.comment_diagnostica}}</textarea>
+                                            <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.interactiv_rlk.page_soglasovanie.comment_diagnostica}}</textarea>
                                             <label for="floatingInput">Диагностика (без дополнительной информации по стоимости согласования)</label>                                          
                                           </div>
               
@@ -8017,7 +8006,7 @@
                                     <br>
 
                                     <div class="form-floating">
-                                      <textarea class="form-control" id="comment_no_endoscop" name="comment_no_endoscop" rows="1">{{params.estimation.page_soglasovanie.comment_no_endoscop}}</textarea>
+                                      <textarea class="form-control" id="comment_no_endoscop" name="comment_no_endoscop" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_endoscop}}</textarea>
                                       <label for="floatingInput">В случае отстутствия фото с эндоскопа указать причину</label>                                          
                                     </div>
 
@@ -8044,7 +8033,7 @@
                                     <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_scaner" name="file_scaner" type="file" multiple>
                                     <br>
                                     <div class="form-floating">
-                                      <textarea class="form-control" id="comment_no_scaner" name="comment_no_scaner" rows="1">{{params.estimation.page_soglasovanie.comment_no_scaner}}</textarea>
+                                      <textarea class="form-control" id="comment_no_scaner" name="comment_no_scaner" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_scaner}}</textarea>
                                       <label for="floatingInput">В случае отстутствия фото со сканера указать причину</label>                                          
                                     </div>
                                     <br>
@@ -8064,12 +8053,12 @@
                                           <div class="col-sm">
                                             <input hidden name="save__no__diagnostic" id="save__no__diagnostic" value="save__no__diagnostic" type="text">
                                             <div class="form-floating">
-                                              <input class="form-control form-control-sm" type="text" id="no_diagnostica_comment" name="no_diagnostica_comment" value="{{params.estimation.page_soglasovanie.no_diagnostica_comment}}"  {% if params.estimation.page_soglasovanie.no_diagnostica_comment != '' %}  {% endif %}>
+                                              <input class="form-control form-control-sm" type="text" id="no_diagnostica_comment" name="no_diagnostica_comment" value="{{params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment}}"  {% if params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment != '' %}  {% endif %}>
                                               <label for="floatingInput">Комментарий причины согласования без диагностики</label>
                                             </div>
                                           </div>
         
-                                          {% if not params.estimation.page_soglasovanie.no_diagnostica %}  
+                                          {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}  
                                             <div class="col-sm-auto">
                                               <button class="btn btn-danger" type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>                           
                                             </div>
@@ -8325,7 +8314,7 @@
                         <div class="col-sm">
                           <h6><span class="icon-mbri-users"></span> Участники</h6>
 
-                          {% for access_user in params.estimation.access_user.all %}
+                          {% for access_user in params.interactiv_rlk.access_user.all %}
                             
                             <button type="button" style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
                               {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
@@ -9823,7 +9812,7 @@
                           {% endif %}
                           <hr style="margin: 0.2rem;">
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                             <label for="floatingInput">БЦП &#8381</label>
                           </div>
                           {% if params.price_kors.estimation_price > 0 or params.price_kors.estimation_price_do_kd > 0 %}
@@ -10757,7 +10746,7 @@
                           {% endif %}
                           <hr style="margin: 0.2rem;">
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                             <label for="floatingInput">БЦП &#8381</label>
                           </div>
                           {% if params.price.estimation_price > 0 or params.price.estimation_price_do_kd > 0 %}
@@ -11093,7 +11082,7 @@
                           
                           <hr style="margin: 0.2rem;">
                           <div class="form-floating">
-                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                            <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                             <label for="floatingInput">БЦП &#8381</label>
                           </div>
                           {% if params.price_custom.estimation_price > 0 or params.price_custom.estimation_price_do_kd > 0 %}
@@ -11172,12 +11161,12 @@
                           
                           <h2 class="card-title pricing-card-title">
                             
-                            {% if params.estimation.page_soglasovanie.price_after_kd > 0 %}
-                              {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
-                            {% elif params.estimation.page_soglasovanie.price_before_kd > 0 %}
-                              {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                            {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
+                              {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                            {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
+                              {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                             {% else %}
-                              {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                              {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                             {% endif %}
 
                           </h2>
@@ -11195,7 +11184,7 @@
                             </div>
                             
                             <div class="col-sm text-end">
-                              {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                              {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                             </div>
 
                           </div>
@@ -11209,7 +11198,7 @@
                             </div>
                             
                             <div class="col-sm text-end">
-                              {{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
+                              {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
                             </div>
 
                           </div>
@@ -11231,7 +11220,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -11245,7 +11234,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -11258,7 +11247,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -13191,7 +13180,7 @@
                               {% endif %}
                               <hr style="margin: 0.2rem;">
                               <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                                 <label for="floatingInput">БЦП &#8381</label>
                               </div>
                               {% if params.price_kors.estimation_price > 0 or params.price_kors.estimation_price_do_kd > 0 %}
@@ -14125,7 +14114,7 @@
                               {% endif %}
                               <hr style="margin: 0.2rem;">
                               <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                                 <label for="floatingInput">БЦП &#8381</label>
                               </div>
                               {% if params.price.estimation_price > 0 or params.price.estimation_price_do_kd > 0 %}
@@ -14461,7 +14450,7 @@
                               
                               <hr style="margin: 0.2rem;">
                               <div class="form-floating">
-                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                                <input class="form-control form-control-sm" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                                 <label for="floatingInput">БЦП &#8381</label>
                               </div>
                               {% if params.price_custom.estimation_price > 0 or params.price_custom.estimation_price_do_kd > 0 %}
@@ -14734,12 +14723,12 @@
                             
                             <h2 class="card-title pricing-card-title">
                               
-                              {% if params.estimation.page_soglasovanie.price_after_kd > 0 %}
-                                {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
-                              {% elif params.estimation.page_soglasovanie.price_before_kd > 0 %}
-                                {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                              {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
+                                {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                              {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
+                                {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                               {% else %}
-                                {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                               {% endif %}
 
                             </h2>
@@ -14757,7 +14746,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -14771,7 +14760,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -14793,7 +14782,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -14807,7 +14796,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -14820,7 +14809,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -17999,12 +17988,12 @@
                             
                             <h2 class="card-title pricing-card-title">
                               
-                              {% if params.estimation.page_soglasovanie.price_after_kd > 0 %}
-                                {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
-                              {% elif params.estimation.page_soglasovanie.price_before_kd > 0 %}
-                                {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                              {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
+                                {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                              {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
+                                {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                               {% else %}
-                                {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                               {% endif %}
 
                             </h2>
@@ -18022,7 +18011,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -18036,7 +18025,7 @@
                               </div>
                               
                               <div class="col-sm text-end">
-                                {{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
+                                {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
                               </div>
 
                             </div>
@@ -18056,7 +18045,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -18070,7 +18059,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -18083,7 +18072,7 @@
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.estimation.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
                                 </div>
       
                               </div>
@@ -19801,19 +19790,19 @@
                         <div class="">
                           <div class="row g-1">
                             <div class="col">
-                              <label class="fs-6"> Оценщик прием:</label><br><label class="fw-bold fs-5"> {{params.estimation.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381 </label>
+                              <label class="fs-6"> Оценщик прием:</label><br><label class="fw-bold fs-5"> {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381 </label>
                             </div>
                             <div class="col">
-                              <label class="fs-6"> Оценщик затраты:</label><br><label class="fw-bold fs-5"> {{params.estimation.page_soglasovanie.price_recovery|floatformat:"2g"}} &#8381 </label>
+                              <label class="fs-6"> Оценщик затраты:</label><br><label class="fw-bold fs-5"> {{params.interactiv_rlk.page_soglasovanie.price_recovery|floatformat:"2g"}} &#8381 </label>
                             </div>
                             <div class="col">
-                              <label class="fs-6"> Оценщик продажа:</label><br><label class="fw-bold fs-5"> {{params.estimation.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381  </label>
+                              <label class="fs-6"> Оценщик продажа:</label><br><label class="fw-bold fs-5"> {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381  </label>
                             </div>
                           </div>
 
                           <div class="form-group">
                             <label for="exampleFormControlTextarea1">Комментарий оценщика</label>
-                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="8" readonly>{{params.estimation.page_soglasovanie.comment}}</textarea>
+                            <textarea class="form-control" id="exampleFormControlTextarea1" rows="8" readonly>{{params.interactiv_rlk.page_soglasovanie.comment}}</textarea>
                           </div>
 
                           <hr>
@@ -20139,7 +20128,7 @@
                             {% endif %}
                             <hr style="margin: 0.2rem;">                    
                             <div class="form-floating">
-                              <input class="form-control form-control-sm" type="number" id="price_bcp" name="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}">
+                              <input class="form-control form-control-sm" type="number" id="price_bcp" name="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}">
                               <label for="floatingInput">БЦП &#8381;</label>
                             </div>
                             <hr style="margin: 0.2rem;">
@@ -21115,7 +21104,7 @@
                                           
                                           <hr>
                                           
-                                          <input class="form-control " type="number" id="estimation_price_do_kd" name="estimation_price_do_kd" value="{{params.estimation.page_soglasovanie.price_before_kd}}">
+                                          <input class="form-control " type="number" id="estimation_price_do_kd" name="estimation_price_do_kd" value="{{params.interactiv_rlk.page_soglasovanie.price_before_kd}}">
                                           
                                         </div>
                                       </div>
@@ -21124,10 +21113,10 @@
                                 
                                 <div class="form-group">
                                   <label for="price_correction_comment">Комментарий оценки до кд</label>
-                                  <textarea class="form-control" id="price_before_kd_comment" name="price_before_kd_comment" rows="4">{{params.estimation.page_soglasovanie.price_before_kd_comment}}</textarea>
+                                  <textarea class="form-control" id="price_before_kd_comment" name="price_before_kd_comment" rows="4">{{params.interactiv_rlk.page_soglasovanie.price_before_kd_comment}}</textarea>
                                 </div>
 
-                                {% if params.estimation.page_soglasovanie.price_before_kd > 0 and params.estimation.page_test_drive != None and params.estimation.page_test_drive != 10  %}
+                                {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 and params.estimation.page_test_drive != None and params.estimation.page_test_drive != 10  %}
                                 
                                   <hr style="margin: 0.2rem;">
                                   <br>
@@ -21162,7 +21151,7 @@
                                             
                                             <hr>
                                             
-                                            <input class="form-control" type="number" id="estimation_price_after_kd" name="estimation_price_after_kd" value="{{params.estimation.page_soglasovanie.price_after_kd}}">
+                                            <input class="form-control" type="number" id="estimation_price_after_kd" name="estimation_price_after_kd" value="{{params.interactiv_rlk.page_soglasovanie.price_after_kd}}">
                                             
                                           </div>
                                         </div>
@@ -21171,7 +21160,7 @@
                                   
                                   <div class="form-group">
                                     <label for="price_after_kd_comment">Комментарий</label>
-                                    <textarea class="form-control" id="price_after_kd_comment" name="price_after_kd_comment" rows="4">{{params.estimation.page_soglasovanie.price_after_kd_comment}}</textarea>
+                                    <textarea class="form-control" id="price_after_kd_comment" name="price_after_kd_comment" rows="4">{{params.interactiv_rlk.page_soglasovanie.price_after_kd_comment}}</textarea>
                                   </div>
 
                                   <hr style="margin: 0.2rem;">
@@ -21234,12 +21223,12 @@
                                               </div>
                                             </div>
                                            
-                                            {% if params.estimation.page_soglasovanie.price_auto_bcp_2 != None or params.estimation.page_soglasovanie.price_auto_bcp_2 > 0 %}
-                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_auto_bcp_2|formatted_float}}" readonly >
+                                            {% if params.interactiv_rlk.page_soglasovanie.price_auto_bcp_2 != None or params.interactiv_rlk.page_soglasovanie.price_auto_bcp_2 > 0 %}
+                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_auto_bcp_2|formatted_float}}" readonly >
                                             
                                               <label class="fs-7 text-danger">Будет установлено автоматически, изменять значение не нужно не в 1С не на портале</label>
                                             {% else %}
-                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.estimation.page_soglasovanie.price_bcp}}" >
+                                              <input class="form-control" type="number" name="price_bcp" id="price_bcp" value="{{params.interactiv_rlk.page_soglasovanie.price_bcp}}" >
                                             {% endif %}
                                           </div>
                                         </div>

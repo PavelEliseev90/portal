@@ -2065,44 +2065,80 @@ def send_push_estimation():
             if push_user.message_websoket:
                 js = json.loads(push_user.comment)
                 send_message_socket(message=js)
-    
-            emails      = re.sub(' ', '', push_user.email)
-            to_emails   = emails.split(';')
-            plaintext   = get_template('email_eco.txt')
-            htmly       = get_template('email_eco.html')
-            
-            ref = 'https://ah.kors-group.com/eco/' + str(push_user.estimation.rlk.id)
-            
-            estimation = push_user.estimation 
-            car = '' + estimation.modification.model.mark.name + ' ' + estimation.modification.model.name + ' ' + estimation.modification.name + ' ' + str(estimation.year)
-            
-            if estimation.staff != None:
-                staff = estimation.staff.name
+
+            if push_user.rlk != None:
+                emails      = re.sub(' ', '', push_user.email)
+                to_emails   = emails.split(';')
+                plaintext   = get_template('email_eco.txt')
+                htmly       = get_template('email_eco.html')
+                
+                ref = 'https://ah.kors-group.com/eco/' + str(push_user.rlk.id)
+                
+                estimation = push_user.estimation 
+                car = '' + estimation.modification.model.mark.name + ' ' + estimation.modification.model.name + ' ' + estimation.modification.name + ' ' + str(estimation.year)
+                
+                if estimation.staff != None:
+                    staff = estimation.staff.name
+                else:
+                    staff = ''
+
+                d = ({
+                        'vin'       : push_user.estimation.vin, 
+                        'ref'       : ref, 
+                        'comment'   : push_user.comment, 
+                        'car'       : car,
+                        'staff'     : staff
+                    })
+
+                subject, from_email, to = 'Интерактивная оценка - ' + push_user.estimation.vin + ' ' + car, settings.EMAIL_HOST_USER_INFO, to_emails
+                
+                text_content = plaintext.render(d)
+                html_content = htmly.render(d)
+                
+                msg = EmailMultiAlternatives(subject, text_content, settings.EMAIL_HOST_USER_INFO, to_emails)
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+
+                push_user.send = True
+                push_user.save()
             else:
-                staff = ''
+                emails      = re.sub(' ', '', push_user.email)
+                to_emails   = emails.split(';')
+                plaintext   = get_template('email_eco.txt')
+                htmly       = get_template('email_eco.html')
+                
+                ref = 'https://ah.kors-group.com/eco/' + str(push_user.estimation.rlk.id)
+                
+                estimation = push_user.estimation 
+                car = '' + estimation.modification.model.mark.name + ' ' + estimation.modification.model.name + ' ' + estimation.modification.name + ' ' + str(estimation.year)
+                
+                if estimation.staff != None:
+                    staff = estimation.staff.name
+                else:
+                    staff = ''
 
-            d = ({
-                    'vin'       : push_user.estimation.vin, 
-                    'ref'       : ref, 
-                    'comment'   : push_user.comment, 
-                    'car'       : car,
-                    'staff'     : staff
-                })
+                d = ({
+                        'vin'       : push_user.estimation.vin, 
+                        'ref'       : ref, 
+                        'comment'   : push_user.comment, 
+                        'car'       : car,
+                        'staff'     : staff
+                    })
 
-            subject, from_email, to = 'Интерактивная оценка - ' + push_user.estimation.vin + ' ' + car, settings.EMAIL_HOST_USER_INFO, to_emails
-            
-            text_content = plaintext.render(d)
-            html_content = htmly.render(d)
-            
-            msg = EmailMultiAlternatives(subject, text_content, settings.EMAIL_HOST_USER_INFO, to_emails)
-            msg.attach_alternative(html_content, "text/html")
-            msg.send()
+                subject, from_email, to = 'Интерактивная оценка - ' + push_user.estimation.vin + ' ' + car, settings.EMAIL_HOST_USER_INFO, to_emails
+                
+                text_content = plaintext.render(d)
+                html_content = htmly.render(d)
+                
+                msg = EmailMultiAlternatives(subject, text_content, settings.EMAIL_HOST_USER_INFO, to_emails)
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
 
-            push_user.send = True
-            push_user.save()
+                push_user.send = True
+                push_user.save()
 
-        except:
-            s=1
+        except Exception as e:
+            stt =  str(e)
     
 
 ####
