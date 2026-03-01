@@ -9554,7 +9554,7 @@ def sb_lo(request):
     
 
 def test(request):
-    
+    send_push_estimation()
     # from task_manager.views import refresh_auctohub_guide
     # refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()
