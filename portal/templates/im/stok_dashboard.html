@@ -1,0 +1,169 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %}
+
+{% block title %} - сток интернет магазин {% endblock %}
+
+{% block title_navbar %} - сток интернет магазин {% endblock %}
+
+{% block content %}
+<style>
+  .stok-dashboard-page {
+    background: #f4f7fb !important;
+    min-height: 100vh;
+    padding: 1.5rem 0;
+  }
+  .stok-dashboard-header {
+    background: #fff !important;
+    border-radius: 1.2rem !important;
+    border: 1px solid rgba(0, 42, 90, 0.08) !important;
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07) !important;
+    padding: 1.5rem 1.75rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+  .stok-dashboard-title {
+    font-size: 1.6rem !important;
+    font-weight: 600 !important;
+    color: #002a5a !important;
+    margin: 0 0 1rem 0 !important;
+  }
+  .metric-card {
+    background: #fff !important;
+    border-radius: 1.2rem !important;
+    border: 1px solid rgba(0, 42, 90, 0.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 23, 61, 0.06) !important;
+    padding: 1.25rem !important;
+    text-align: center !important;
+    transition: all 0.3s ease !important;
+    height: 100% !important;
+  }
+  .metric-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12) !important;
+    transform: translateY(-2px) !important;
+  }
+  .metric-label {
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #8ea1ba !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .metric-value {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: #002a5a !important;
+  }
+  .metric-value.text-warning { color: #f59e0b !important; }
+  .metric-value.text-danger { color: #ef4444 !important; }
+  .metric-value.text-secondary { color: #6b7280 !important; }
+  .metric-value.text-info { color: #0ea5e9 !important; }
+  .metric-value.text-success { color: #22c55e !important; }
+  .action-btn {
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s !important;
+    border: none !important;
+  }
+  .action-btn:hover { transform: translateY(-2px); }
+  .btn-sync {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: #fff !important;
+  }
+  .btn-sync:hover { color: #fff !important; }
+  .btn-sync:disabled { opacity: 0.6; cursor: not-allowed !important; transform: none !important; }
+</style>
+<div class="stok-dashboard-page">
+  <div class="container-fluid">
+    <div class="stok-dashboard-header">
+      <h1 class="stok-dashboard-title">Сток интернет магазин</h1>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a href="{% url 'website:stok_im_list' %}" class="btn btn-primary action-btn" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+          <span class="icon-mbri-shopping-bag"></span> Список всех товаров
+        </a>
+        <a href="{% url 'website:stok_im_sync_log' %}" class="btn btn-outline-secondary action-btn">
+          <span class="icon-mbri-file"></span> Журнал синхронизации
+        </a>
+        <form method="post" action="{% url 'website:stok_im_sync_run' %}" class="d-inline" id="syncForm">
+          {% csrf_token %}
+          <button type="submit" class="btn action-btn btn-sync" id="syncBtn">
+            <span class="icon-mbri-down-load" id="syncIcon"></span>
+            <span id="syncText">Запустить синхронизацию</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if params.has_db_data %}
+    <div class="row g-3">
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-label">Всего товаров</div>
+          <div class="metric-value">{{ params.dashboard.total }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'website:stok_im_list' %}?no_foto=on" class="text-decoration-none">
+          <div class="metric-card">
+            <div class="metric-label">Без фото</div>
+            <div class="metric-value text-warning">{{ params.dashboard.no_photo }}</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'website:stok_im_list' %}?not_uploaded=on" class="text-decoration-none">
+          <div class="metric-card">
+            <div class="metric-label">Не выгружено</div>
+            <div class="metric-value text-secondary">{{ params.dashboard.not_uploaded }}</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'website:stok_im_list' %}?no_price=on" class="text-decoration-none">
+          <div class="metric-card">
+            <div class="metric-label">Без цены</div>
+            <div class="metric-value text-danger">{{ params.dashboard.no_price }}</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{% url 'website:stok_im_list' %}?no_category=on" class="text-decoration-none">
+          <div class="metric-card">
+            <div class="metric-label">Без категории</div>
+            <div class="metric-value text-info">{{ params.dashboard.no_category }}</div>
+          </div>
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="portal-panel p-5 text-center">
+      <p class="text-muted mb-3">Данных пока нет. Запустите синхронизацию для загрузки товаров из 1C.</p>
+      <form method="post" action="{% url 'website:stok_im_sync_run' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn action-btn btn-sync">
+          <span class="icon-mbri-down-load"></span> Запустить синхронизацию
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if params.has_db_data %}
+<script>
+  document.getElementById('syncForm')?.addEventListener('submit', function() {
+    var btn = document.getElementById('syncBtn');
+    var text = document.getElementById('syncText');
+    if (btn && text) {
+      btn.disabled = true;
+      text.textContent = 'Синхронизация...';
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
