@@ -336,10 +336,21 @@
           </div>
           
           <div class="photo-gallery">
-            <!-- Здесь будут фотографии товара -->
+            {% if params.photos %}
+              {% for photo in params.photos %}
+                {% if photo.file %}
+                <div class="photo-item">
+                  <img src="{{ photo.file.url }}" alt="Фото товара" loading="lazy">
+                </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            {% if not params.photos or not params.photos|length %}
             <div class="photo-item">
               <span class="text-muted">Нет фотографий</span>
+              <div class="small mt-2 text-muted">Запустите «Синхронизация фото» на дашборде для загрузки фото из 1С</div>
             </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -429,7 +440,7 @@
           </div>
           
           <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
-            <form id="uploadFormMCU" action="" method="POST" enctype="multipart/form-data"> 
+            <form id="uploadFormMCU" action="{% url 'website:stok_im_product' %}?kod={{ params.answer.НоменклатураКод }}" method="POST" enctype="multipart/form-data"> 
               {% csrf_token %}
               
               <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>

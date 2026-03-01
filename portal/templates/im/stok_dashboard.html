@@ -59,6 +59,10 @@
   .metric-value.text-secondary { color: #6b7280 !important; }
   .metric-value.text-info { color: #0ea5e9 !important; }
   .metric-value.text-success { color: #22c55e !important; }
+  .metric-detail {
+    font-size: 0.85rem !important;
+    line-height: 1.3 !important;
+  }
   .action-btn {
     border-radius: 0.75rem !important;
     padding: 0.75rem 1.25rem !important;
@@ -96,6 +100,13 @@
             <span id="syncText">Запустить синхронизацию</span>
           </button>
         </form>
+        <form method="post" action="{% url 'website:stok_im_sync_photos' %}" class="d-inline" id="syncPhotosForm">
+          {% csrf_token %}
+          <button type="submit" class="btn action-btn btn-sync-photos" id="syncPhotosBtn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; color: #fff !important;">
+            <span class="icon-mbri-picture"></span>
+            <span id="syncPhotosText">Синхронизация фото</span>
+          </button>
+        </form>
       </div>
     </div>
 
@@ -104,14 +115,22 @@
       <div class="col-6 col-md-4 col-lg-2">
         <div class="metric-card">
           <div class="metric-label">Всего товаров</div>
-          <div class="metric-value">{{ params.dashboard.total }}</div>
+          <div class="metric-value">{{ params.dashboard.total.count }}</div>
+          <div class="metric-detail small text-muted mt-1">
+            {{ params.dashboard.total.percent }}%
+          </div>
+          <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.total.quantity_sum }}</div>
+          <div class="metric-detail small fw-semibold">{{ params.dashboard.total.sum_value|floatformat:0 }} ₽</div>
         </div>
       </div>
       <div class="col-6 col-md-4 col-lg-2">
         <a href="{% url 'website:stok_im_list' %}?no_foto=on" class="text-decoration-none">
           <div class="metric-card">
             <div class="metric-label">Без фото</div>
-            <div class="metric-value text-warning">{{ params.dashboard.no_photo }}</div>
+            <div class="metric-value text-warning">{{ params.dashboard.no_photo.count }}</div>
+            <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_photo.percent }}%</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_photo.quantity_sum }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_photo.sum_value|floatformat:0 }} ₽</div>
           </div>
         </a>
       </div>
@@ -119,7 +138,10 @@
         <a href="{% url 'website:stok_im_list' %}?not_uploaded=on" class="text-decoration-none">
           <div class="metric-card">
             <div class="metric-label">Не выгружено</div>
-            <div class="metric-value text-secondary">{{ params.dashboard.not_uploaded }}</div>
+            <div class="metric-value text-secondary">{{ params.dashboard.not_uploaded.count }}</div>
+            <div class="metric-detail small text-muted mt-1">{{ params.dashboard.not_uploaded.percent }}%</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.not_uploaded.quantity_sum }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.not_uploaded.sum_value|floatformat:0 }} ₽</div>
           </div>
         </a>
       </div>
@@ -127,7 +149,10 @@
         <a href="{% url 'website:stok_im_list' %}?no_price=on" class="text-decoration-none">
           <div class="metric-card">
             <div class="metric-label">Без цены</div>
-            <div class="metric-value text-danger">{{ params.dashboard.no_price }}</div>
+            <div class="metric-value text-danger">{{ params.dashboard.no_price.count }}</div>
+            <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_price.percent }}%</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_price.quantity_sum }}</div>
+            <div class="metric-detail small fw-semibold">—</div>
           </div>
         </a>
       </div>
@@ -135,7 +160,10 @@
         <a href="{% url 'website:stok_im_list' %}?no_category=on" class="text-decoration-none">
           <div class="metric-card">
             <div class="metric-label">Без категории</div>
-            <div class="metric-value text-info">{{ params.dashboard.no_category }}</div>
+            <div class="metric-value text-info">{{ params.dashboard.no_category.count }}</div>
+            <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_category.percent }}%</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_category.quantity_sum }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_category.sum_value|floatformat:0 }} ₽</div>
           </div>
         </a>
       </div>
@@ -162,6 +190,14 @@
     if (btn && text) {
       btn.disabled = true;
       text.textContent = 'Синхронизация...';
+    }
+  });
+  document.getElementById('syncPhotosForm')?.addEventListener('submit', function() {
+    var btn = document.getElementById('syncPhotosBtn');
+    var text = document.getElementById('syncPhotosText');
+    if (btn && text) {
+      btn.disabled = true;
+      text.textContent = 'Синхронизация фото...';
     }
   });
 </script>
