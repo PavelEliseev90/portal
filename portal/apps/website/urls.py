@@ -13,9 +13,11 @@ urlpatterns = [
    path('logout/',            views.logout),
    
    path('est/<slug:slug>/',      views.customer_est, name='slug'),
-   path('stok_im/',              views.stok_im, name='stok_im'),
+   path('stok_im/',              views.stok_im_dashboard, name='stok_im'),
+   path('stok_im/list/',         views.stok_im, name='stok_im_list'),
    path('stok_im/sync_log/',     views.stok_im_sync_log, name='stok_im_sync_log'),
-   path('stok_im/product/',      views.product),
+   path('stok_im/sync_run/',     views.stok_im_sync_run, name='stok_im_sync_run'),
+   path('stok_im/product/',      views.product, name='stok_im_product'),
 
    path('auction/',                          views.auction_list),
    path('auction/<slug:slug_auction>/',      views.auction_doc, name='slug'),

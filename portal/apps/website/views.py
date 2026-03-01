@@ -4894,6 +4894,8 @@ def _stok_im_from_db(request):
         qs = qs.filter(Q(price_value__isnull=True) | Q(price_value=0))
     if filtr.get('not_uploaded') == 'on':
         qs = qs.filter(Q(avito_id='') | Q(status_text__icontains='Выгружено'))
+    if filtr.get('no_category') == 'on':
+        qs = qs.filter(Q(category_avito='') | Q(category_avito__isnull=True))
 
     products = list(qs.order_by('nomenclature')[:5000])
     answer = [p.to_dict() for p in products]
@@ -4904,6 +4906,9 @@ def _stok_im_from_db(request):
     not_uploaded = ImProduct.objects.filter(
         Q(avito_id='') | Q(status_text__icontains='Выгружено')
     ).count()
+    no_category = ImProduct.objects.filter(
+        Q(category_avito='') | Q(category_avito__isnull=True)
+    ).count()
 
     dashboard = {
         'total': total,
@@ -4911,16 +4916,63 @@ def _stok_im_from_db(request):
         'with_photo': total - no_photo,
         'no_price': no_price,
         'not_uploaded': not_uploaded,
+        'no_category': no_category,
         'active': total - not_uploaded,
     }
     return answer, dashboard
+
+
+def stok_im_dashboard(request):
+    """Главная страница стока интернет-магазина — дашборд с метриками."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    from website.models import ImProduct
+    has_db_data = ImProduct.objects.exists()
+    dashboard = None
+    if has_db_data:
+        total = ImProduct.objects.count()
+        no_photo = ImProduct.objects.filter(photo_count=0).count()
+        no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0)).count()
+        not_uploaded = ImProduct.objects.filter(
+            Q(avito_id='') | Q(status_text__icontains='Выгружено')
+        ).count()
+        no_category = ImProduct.objects.filter(
+            Q(category_avito='') | Q(category_avito__isnull=True)
+        ).count()
+        dashboard = {
+            'total': total,
+            'no_photo': no_photo,
+            'no_price': no_price,
+            'not_uploaded': not_uploaded,
+            'no_category': no_category,
+        }
+    params = {
+        'type': 'stok_im',
+        'has_db_data': has_db_data,
+        'dashboard': dashboard,
+    }
+    return render(request, 'im/stok_dashboard.html', {'params': params})
+
+
+def stok_im_sync_run(request):
+    """Запуск синхронизации стока из 1C."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    if request.method != 'POST':
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
+    from django.core.management import call_command
+    try:
+        call_command('sync_im_stok', verbosity=0)
+    except Exception:
+        pass
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
 
 
 def stok_im(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
     filtr = request.GET
-    filter_keys = ('name', 'articul', 'cell', 'no_foto', 'no_price', 'not_uploaded', 'use_api')
+    filter_keys = ('name', 'articul', 'cell', 'no_foto', 'no_price', 'not_uploaded', 'no_category', 'use_api')
     filtr_count = sum(1 for k in filter_keys if filtr.get(k))
 
     use_api = filtr.get('use_api') == '1'
@@ -4940,12 +4992,16 @@ def stok_im(request):
                 not_uploaded = ImProduct.objects.filter(
                     Q(avito_id='') | Q(status_text__icontains='Выгружено')
                 ).count()
+                no_category = ImProduct.objects.filter(
+                    Q(category_avito='') | Q(category_avito__isnull=True)
+                ).count()
                 dashboard = {
                     'total': total,
                     'no_photo': no_photo,
                     'with_photo': total - no_photo,
                     'no_price': no_price,
                     'not_uploaded': not_uploaded,
+                    'no_category': no_category,
                     'active': total - not_uploaded,
                 }
         except Exception:
