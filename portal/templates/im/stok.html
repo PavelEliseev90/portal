@@ -246,15 +246,15 @@
     
     <!-- Заголовок с фильтром -->
     <div class="stok-header">
-      <h2 class="stok-header-title">Сток интернет магазин</h2>
+      <h2 class="stok-header-title">Список товаров</h2>
       <div class="stok-header-info">
+        <a href="{% url 'website:stok_im' %}" class="btn btn-outline-secondary btn-sm" style="border-radius: 0.75rem;">
+          <span class="icon-mbri-left"></span> На дашборд
+        </a>
         <div class="stok-count">
           <span class="icon-mbri-shopping-bag"></span>
-          <span>Всего товаров: <strong>{{params.answer|length}}</strong></span>
+          <span>Всего: <strong>{{params.answer|length}}</strong></span>
         </div>
-        {% if params.dashboard %}
-        <a href="{% url 'website:stok_im_sync_log' %}" class="btn btn-outline-secondary btn-sm" style="border-radius: 0.75rem;">Журнал синхронизации</a>
-        {% endif %}
         <button type="button" class="btn btn-primary filter-btn-fixed" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
           <span class="icon-mbri-setting2"></span> Параметры
           {% if params.filtr_count > 0 %}
@@ -263,36 +263,6 @@
         </button>
       </div>
     </div>
-
-    {% if params.dashboard %}
-    <!-- Дашборд -->
-    <div class="row g-2 mb-3">
-      <div class="col-6 col-md-4 col-lg-2">
-        <div class="portal-panel p-3 text-center" style="border-radius: 1rem;">
-          <div class="text-muted small text-uppercase">Без фото</div>
-          <div class="fs-4 fw-bold text-warning">{{params.dashboard.no_photo}}</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-lg-2">
-        <div class="portal-panel p-3 text-center" style="border-radius: 1rem;">
-          <div class="text-muted small text-uppercase">Без цены</div>
-          <div class="fs-4 fw-bold text-danger">{{params.dashboard.no_price}}</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-lg-2">
-        <div class="portal-panel p-3 text-center" style="border-radius: 1rem;">
-          <div class="text-muted small text-uppercase">Не выгружено</div>
-          <div class="fs-4 fw-bold text-secondary">{{params.dashboard.not_uploaded}}</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-lg-2">
-        <div class="portal-panel p-3 text-center" style="border-radius: 1rem;">
-          <div class="text-muted small text-uppercase">Объявление активно</div>
-          <div class="fs-4 fw-bold text-success">{{params.dashboard.active}}</div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
 
     <!-- Модальное окно фильтра -->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -343,6 +313,13 @@
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" role="switch" id="not_uploaded" name="not_uploaded" {% if params.filtr.not_uploaded == 'on' %} checked {% endif %} style="width: 3rem; height: 1.5rem; cursor: pointer;">
                   <label class="form-check-label" for="not_uploaded" style="font-size: 0.95rem; color: #002a5a; font-weight: 500; margin-left: 0.5rem; cursor: pointer;">Не выгружено</label>
+                </div>
+              </div>
+
+              <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" id="no_category" name="no_category" {% if params.filtr.no_category == 'on' %} checked {% endif %} style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                  <label class="form-check-label" for="no_category" style="font-size: 0.95rem; color: #002a5a; font-weight: 500; margin-left: 0.5rem; cursor: pointer;">Без категории</label>
                 </div>
               </div>
 
@@ -425,7 +402,7 @@
                       {{product.Статус|default:"—"}}
                     </div>
                     <div class="product-actions">
-                      <a href="product/?kod={{product.НоменклатураКод}}" class="btn-open-card">
+                      <a href="{% url 'website:stok_im_product' %}?kod={{product.НоменклатураКод}}" class="btn-open-card">
                         <span class="icon-mbri-file"></span> Открыть карточку
                       </a>
                       <button type="button" class="btn-add-photo" data-bs-toggle="modal" data-bs-target="#photoModal{{product.НоменклатураКод}}">
@@ -449,7 +426,7 @@
                   </div>
                   
                   <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
-                    <form id="uploadFormMCU{{product.НоменклатураКод}}" action="product/?kod={{product.НоменклатураКод}}" method="POST" enctype="multipart/form-data"> 
+                    <form id="uploadFormMCU{{product.НоменклатураКод}}" action="{% url 'website:stok_im_product' %}?kod={{product.НоменклатураКод}}" method="POST" enctype="multipart/form-data"> 
                       {% csrf_token %}
                       
                       <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>
