@@ -4859,27 +4859,111 @@ def get_send_info(record):
 
 
 ### im
+def _stok_im_from_api(request):
+    """Загрузка стока из API 1C."""
+    url = request.build_absolute_uri()
+    url_search = ('?' + url.split('?')[1]) if '?' in url else ''
+    answer = requests.get(server_im + 'stok/' + url_search, timeout=time_out_im)
+    data = json.loads(answer.text)
+    return data if isinstance(data, list) else data.get('items', data.get('answer', data.get('objects', [])))
+
+
+def _stok_im_from_db(request):
+    """Загрузка стока из БД с фильтрами и дашбордом."""
+    from website.models import ImProduct
+
+    qs = ImProduct.objects.all()
+    filtr = request.GET
+
+    name = filtr.get('name', '').strip()
+    if name:
+        qs = qs.filter(
+            Q(nomenclature__icontains=name) |
+            Q(title__icontains=name) |
+            Q(article__icontains=name)
+        )
+    articul = filtr.get('articul', '').strip()
+    if articul:
+        qs = qs.filter(article__icontains=articul)
+    cell = filtr.get('cell', '').strip()
+    if cell:
+        qs = qs.filter(storage_cell__icontains=cell)
+    if filtr.get('no_foto') == 'on':
+        qs = qs.filter(photo_count=0)
+    if filtr.get('no_price') == 'on':
+        qs = qs.filter(Q(price_value__isnull=True) | Q(price_value=0))
+    if filtr.get('not_uploaded') == 'on':
+        qs = qs.filter(Q(avito_id='') | Q(status_text__icontains='Выгружено'))
+
+    products = list(qs.order_by('nomenclature')[:5000])
+    answer = [p.to_dict() for p in products]
+
+    total = ImProduct.objects.count()
+    no_photo = ImProduct.objects.filter(photo_count=0).count()
+    no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0)).count()
+    not_uploaded = ImProduct.objects.filter(
+        Q(avito_id='') | Q(status_text__icontains='Выгружено')
+    ).count()
+
+    dashboard = {
+        'total': total,
+        'no_photo': no_photo,
+        'with_photo': total - no_photo,
+        'no_price': no_price,
+        'not_uploaded': not_uploaded,
+        'active': total - not_uploaded,
+    }
+    return answer, dashboard
+
+
 def stok_im(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
+    filtr = request.GET
+    filter_keys = ('name', 'articul', 'cell', 'no_foto', 'no_price', 'not_uploaded', 'use_api')
+    filtr_count = sum(1 for k in filter_keys if filtr.get(k))
+
+    use_api = filtr.get('use_api') == '1'
+    from website.models import ImProduct
+    has_db_data = ImProduct.objects.exists()
+
+    if use_api or not has_db_data:
+        try:
+            answer = _stok_im_from_api(request)
+            if not isinstance(answer, list):
+                answer = []
+            dashboard = None
+            if has_db_data:
+                total = ImProduct.objects.count()
+                no_photo = ImProduct.objects.filter(photo_count=0).count()
+                no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0)).count()
+                not_uploaded = ImProduct.objects.filter(
+                    Q(avito_id='') | Q(status_text__icontains='Выгружено')
+                ).count()
+                dashboard = {
+                    'total': total,
+                    'no_photo': no_photo,
+                    'with_photo': total - no_photo,
+                    'no_price': no_price,
+                    'not_uploaded': not_uploaded,
+                    'active': total - not_uploaded,
+                }
+        except Exception:
+            answer = []
+            dashboard = None
     else:
-        url         = request.build_absolute_uri()
-       
-        url_search  = ''
-        if url.find('?') > -1:
-            url_search = "?" + url.split('?')[1]
-        answer      = requests.get(server_im + 'stok/' + url_search, timeout = time_out_im)
-        json_text   = json.loads(answer.text)
-        
-        filtr = request.GET
-        
-        params = {
-            'type'          : 'stok_im',
-            'filtr'         : filtr,
-            'filtr_count'   : len(filtr),
-            'answer'        : json_text
-        }
-        return render(request, 'im/stok.html', {'params':params})
+        answer, dashboard = _stok_im_from_db(request)
+
+    params = {
+        'type': 'stok_im',
+        'filtr': filtr,
+        'filtr_count': filtr_count,
+        'answer': answer,
+        'dashboard': dashboard,
+        'use_api': use_api,
+        'has_db_data': has_db_data,
+    }
+    return render(request, 'im/stok.html', {'params': params})
 
 def product(request):
     if not request.user.is_authenticated:
@@ -4989,6 +5073,19 @@ def product(request):
             'answer'        : json_text
         }
         return render(request, 'im/product.html', {'params': params})
+
+
+def stok_im_sync_log(request):
+    """Журнал синхронизации стока интернет-магазина."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    from website.models import ImSyncLog
+    logs = ImSyncLog.objects.all()[:100]
+    params = {
+        'type': 'stok_im_sync_log',
+        'logs': logs,
+    }
+    return render(request, 'im/stok_sync_log.html', {'params': params})
 
 
 ###

@@ -13,7 +13,8 @@ urlpatterns = [
    path('logout/',            views.logout),
    
    path('est/<slug:slug>/',      views.customer_est, name='slug'),
-   path('stok_im/',              views.stok_im),
+   path('stok_im/',              views.stok_im, name='stok_im'),
+   path('stok_im/sync_log/',     views.stok_im_sync_log, name='stok_im_sync_log'),
    path('stok_im/product/',      views.product),
 
    path('auction/',                          views.auction_list),
