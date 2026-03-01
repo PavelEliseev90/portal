@@ -960,17 +960,66 @@
 
         </div>
     
-          <!-- Кнопки -->
-          <div class="d-flex gap-2 mt-4">
-            
-            <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
-              <span class="icon-mbri-right"></span> Начать оценку
-            </button>
-
+          
+  
+        <!-- Модификация -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="modification_full" name="modification_id" required disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="modification_full">Модификация <span class="text-danger">*</span></label>
+            </div>
           </div>
+        </div>
+  
+        <!-- Комплектация -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="search-select-wrapper select2-wrapper">
+              <select class="search-select kors-form-control" id="complectation" name="complectation_id" disabled>
+                <option selected></option>
+              </select>
+              <label class="fs-6" for="complectation">Комплектация</label>
+              <small class="form-text text-muted" id="complectation_hint" style="display: none;">
+                Комплектация обязательна для выбора
+              </small>
+            </div>
+            <!-- Опции комплектации (плитка групп, по клику — модальное окно) -->
+            
+          </div>
+        </div>
+  
+        <!-- Пробег -->
+        <div class="row g-3 mb-2">
+          <div class="col-md-12">
+            <div class="form-floating">
+              <input type="number" 
+                     class="form-control" 
+                     id="run" 
+                     name="run" 
+                     placeholder="Пробег" 
+                     min="0"
+                     value="{% if params.estimation.page_salon %}{{ params.estimation.page_salon.run }}{% endif %}">
+              <label for="run">Пробег <span class="text-danger">*</span></label>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Кнопки -->
+        <div class="d-flex gap-2 mt-4">
+          
+          <button type="reset" class="btn btn-secondary bg-gradient w-50" onclick="resetForm()">
+            <span class="icon-mbri-refresh"></span> Сбросить
+          </button>
 
-        </div> 
-      
+          <button type="submit" class="btn btn-dark bg-gradient w-100" id="submitBtn">
+            <span class="icon-mbri-right"></span> Начать оценку
+          </button>
+
+        </div>
+        </div> <!-- Конец скрываемой части формы -->
       </div>
 
     </div>

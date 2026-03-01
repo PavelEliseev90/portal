@@ -1,0 +1,62 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %}
+
+{% block title %} - журнал синхронизации стока {% endblock %}
+
+{% block title_navbar %} - журнал синхронизации стока {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Журнал синхронизации стока интернет-магазина</h2>
+    <a href="{% url 'website:stok_im' %}" class="btn btn-outline-primary">
+      <span class="icon-mbri-left"></span> Назад к стоку
+    </a>
+  </div>
+
+  <div class="portal-panel">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Тип</th>
+            <th>Статус</th>
+            <th>Всего</th>
+            <th>Успешно</th>
+            <th>Ошибок</th>
+            <th>Код</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in params.logs %}
+          <tr>
+            <td>{{ log.started_at|date:"d.m.Y H:i" }}</td>
+            <td>{{ log.get_sync_type_display }}</td>
+            <td>
+              <span class="badge {% if log.status == 'success' %}bg-success{% elif log.status == 'partial' %}bg-warning{% else %}bg-danger{% endif %}">
+                {{ log.get_status_display }}
+              </span>
+            </td>
+            <td>{{ log.items_total }}</td>
+            <td>{{ log.items_ok }}</td>
+            <td>{{ log.items_failed }}</td>
+            <td>{{ log.response_code|default:"—" }}</td>
+          </tr>
+          {% if log.error_message %}
+          <tr>
+            <td colspan="7" class="text-muted small">{{ log.error_message|truncatechars:200 }}</td>
+          </tr>
+          {% endif %}
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">Записей нет. Запустите <code>python manage.py sync_im_stok</code></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
