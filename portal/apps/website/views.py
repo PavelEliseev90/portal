@@ -4870,9 +4870,9 @@ def _stok_im_from_api(request):
 
 def _stok_im_from_db(request):
     """Загрузка стока из БД с фильтрами и дашбордом."""
-    from website.models import ImProduct
+    from website.models import ImProduct, ImProductPhoto
 
-    qs = ImProduct.objects.all()
+    qs = ImProduct.objects.prefetch_related('photos').all()
     filtr = request.GET
 
     name = filtr.get('name', '').strip()
@@ -4898,7 +4898,12 @@ def _stok_im_from_db(request):
         qs = qs.filter(Q(category_avito='') | Q(category_avito__isnull=True))
 
     products = list(qs.order_by('nomenclature')[:5000])
-    answer = [p.to_dict() for p in products]
+    answer = []
+    for p in products:
+        d = p.to_dict()
+        first_photo = next((ph for ph in p.photos.all() if ph.file), None)
+        d['first_photo_url'] = first_photo.file.url if first_photo else None
+        answer.append(d)
 
     total = ImProduct.objects.count()
     no_photo = ImProduct.objects.filter(photo_count=0).count()
@@ -4922,6 +4927,26 @@ def _stok_im_from_db(request):
     return answer, dashboard
 
 
+def _stok_im_metric_stats(qs, total):
+    """Подсчёт метрик для подмножества товаров: count, percent, sum_value, quantity_sum."""
+    from django.db.models import Sum
+    from django.db.models.functions import Coalesce
+    count = qs.count()
+    percent = round(100 * count / total, 1) if total else 0
+    agg = qs.aggregate(
+        sum_value=Sum(
+            ExpressionWrapper(
+                Coalesce(F('price_value'), 0) * F('quantity_balance'),
+                output_field=models.DecimalField()
+            )
+        ),
+        quantity_sum=Sum('quantity_balance'),
+    )
+    sum_value = agg['sum_value'] or 0
+    quantity_sum = agg['quantity_sum'] or 0
+    return {'count': count, 'percent': percent, 'sum_value': sum_value, 'quantity_sum': quantity_sum}
+
+
 def stok_im_dashboard(request):
     """Главная страница стока интернет-магазина — дашборд с метриками."""
     if not request.user.is_authenticated:
@@ -4931,16 +4956,35 @@ def stok_im_dashboard(request):
     dashboard = None
     if has_db_data:
         total = ImProduct.objects.count()
-        no_photo = ImProduct.objects.filter(photo_count=0).count()
-        no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0)).count()
-        not_uploaded = ImProduct.objects.filter(
+        all_agg = ImProduct.objects.aggregate(
+            total_sum=Sum(
+                ExpressionWrapper(
+                    Coalesce(F('price_value'), 0) * F('quantity_balance'),
+                    output_field=models.DecimalField()
+                )
+            ),
+            total_quantity=Sum('quantity_balance'),
+        )
+        total_sum = all_agg['total_sum'] or 0
+        total_quantity = all_agg['total_quantity'] or 0
+        total_percent = 100.0
+
+        qs_no_photo = ImProduct.objects.filter(photo_count=0)
+        qs_no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0))
+        qs_not_uploaded = ImProduct.objects.filter(
             Q(avito_id='') | Q(status_text__icontains='Выгружено')
-        ).count()
-        no_category = ImProduct.objects.filter(
+        )
+        qs_no_category = ImProduct.objects.filter(
             Q(category_avito='') | Q(category_avito__isnull=True)
-        ).count()
+        )
+
+        no_photo = _stok_im_metric_stats(qs_no_photo, total)
+        no_price = _stok_im_metric_stats(qs_no_price, total)
+        not_uploaded = _stok_im_metric_stats(qs_not_uploaded, total)
+        no_category = _stok_im_metric_stats(qs_no_category, total)
+
         dashboard = {
-            'total': total,
+            'total': {'count': total, 'percent': total_percent, 'sum_value': total_sum, 'quantity_sum': total_quantity},
             'no_photo': no_photo,
             'no_price': no_price,
             'not_uploaded': not_uploaded,
@@ -4968,47 +5012,36 @@ def stok_im_sync_run(request):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
 
 
+def stok_im_sync_photos(request):
+    """Запуск синхронизации фото товаров из 1C."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    if request.method != 'POST':
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
+    from django.core.management import call_command
+    try:
+        call_command('sync_im_photos', verbosity=0)
+    except Exception:
+        pass
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
+
+
 def stok_im(request):
+    """Список товаров — всегда из БД после синхронизации с 1С."""
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
     filtr = request.GET
-    filter_keys = ('name', 'articul', 'cell', 'no_foto', 'no_price', 'not_uploaded', 'no_category', 'use_api')
+    filter_keys = ('name', 'articul', 'cell', 'no_foto', 'no_price', 'not_uploaded', 'no_category')
     filtr_count = sum(1 for k in filter_keys if filtr.get(k))
 
-    use_api = filtr.get('use_api') == '1'
     from website.models import ImProduct
     has_db_data = ImProduct.objects.exists()
 
-    if use_api or not has_db_data:
-        try:
-            answer = _stok_im_from_api(request)
-            if not isinstance(answer, list):
-                answer = []
-            dashboard = None
-            if has_db_data:
-                total = ImProduct.objects.count()
-                no_photo = ImProduct.objects.filter(photo_count=0).count()
-                no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0)).count()
-                not_uploaded = ImProduct.objects.filter(
-                    Q(avito_id='') | Q(status_text__icontains='Выгружено')
-                ).count()
-                no_category = ImProduct.objects.filter(
-                    Q(category_avito='') | Q(category_avito__isnull=True)
-                ).count()
-                dashboard = {
-                    'total': total,
-                    'no_photo': no_photo,
-                    'with_photo': total - no_photo,
-                    'no_price': no_price,
-                    'not_uploaded': not_uploaded,
-                    'no_category': no_category,
-                    'active': total - not_uploaded,
-                }
-        except Exception:
-            answer = []
-            dashboard = None
-    else:
+    if has_db_data:
         answer, dashboard = _stok_im_from_db(request)
+    else:
+        answer = []
+        dashboard = None
 
     params = {
         'type': 'stok_im',
@@ -5016,23 +5049,29 @@ def stok_im(request):
         'filtr_count': filtr_count,
         'answer': answer,
         'dashboard': dashboard,
-        'use_api': use_api,
         'has_db_data': has_db_data,
     }
     return render(request, 'im/stok.html', {'params': params})
 
 def product(request):
+    """Карточка товара — всегда из БД (ImProduct + ImProductPhoto). POST — загрузка фото в 1С."""
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
-    else:
-        
-        url         = request.build_absolute_uri()
-       
-        url_search  = ''
-        if url.find('?') > -1:
-            url_search = "?" + url.split('?')[1]
-        
-        if request.method == "POST":
+
+    kod = request.GET.get('kod', '').strip()
+    if not kod:
+        return HttpResponseRedirect('/stok_im/list/')
+
+    from website.models import ImProduct, ImProductPhoto
+
+    product_obj = ImProduct.objects.filter(nomenclature_code=kod).first()
+    if not product_obj:
+        return HttpResponseRedirect('/stok_im/list/')
+
+    url = request.build_absolute_uri()
+    url_search = ('?' + url.split('?')[1]) if '?' in url else ('?kod=' + kod)
+
+    if request.method == "POST":
             file_objects = request.FILES.getlist('files')
             for file_object in file_objects:
                 # Проверка типа файла (только изображения)
@@ -5106,29 +5145,23 @@ def product(request):
                 # Если processed_file это BytesIO (оптимизированный файл), он уже готов к отправке
                 # Если это оригинальный file_object, используем его напрямую
                 response = requests.post(server_im + 'product/' + url_search,
-                                            params={'file_name': file_name}, 
-                                        files = {"files": (file_name, processed_file)}, verify=False)
+                                            params={'file_name': file_name},
+                                        files={"files": (file_name, processed_file)}, verify=False)
                 if response.status_code == 200:
                     return HttpResponseRedirect(request.build_absolute_uri())
 
-        answer      = requests.get(server_im + 'product/' + url_search, timeout = time_out_im)
-        json_text   = json.loads(answer.text)
-        
-        filtr = request.GET
-        '''
-        if len(json_text['МассивФото']) == 0:
-            json_text['МассивФото'] = list()
-        else:
-            json_text['МассивФото'] = json_text['МассивФото'].split(';')
-            del json_text['МассивФото'][len(json_text['МассивФото'])-1]
-        '''
-        params = {
-            'type'          : 'stok_im',
-            'filtr'         : filtr,
-            'filtr_count'   : len(filtr),
-            'answer'        : json_text
-        }
-        return render(request, 'im/product.html', {'params': params})
+    photos = list(
+        ImProductPhoto.objects.filter(product=product_obj).order_by('sort_order', 'id')
+    )
+    filtr = request.GET
+    params = {
+        'type': 'stok_im',
+        'filtr': filtr,
+        'filtr_count': len(filtr),
+        'answer': product_obj.to_dict(),
+        'photos': photos,
+    }
+    return render(request, 'im/product.html', {'params': params})
 
 
 def stok_im_sync_log(request):

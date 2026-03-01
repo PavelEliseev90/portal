@@ -44,6 +44,13 @@ class ImProduct(models.Model):
 
     def to_dict(self):
         """Преобразование в словарь для шаблона (совместимость с API)."""
+        dop_polya = []
+        if self.raw_json and isinstance(self.raw_json, dict):
+            dop_polya = self.raw_json.get('ДополнительныеПоля', [])
+            if not isinstance(dop_polya, list):
+                dop_polya = []
+        date_begin_str = self.date_begin.strftime('%d.%m.%Y %H:%M') if self.date_begin else ''
+        date_end_str = self.date_end.strftime('%d.%m.%Y %H:%M') if self.date_end else ''
         return {
             'Номенклатура': self.nomenclature or '',
             'Объявление': self.title or '',
@@ -65,7 +72,33 @@ class ImProduct(models.Model):
             'Просмотров': self.views_count,
             'Контактов': self.contacts_count,
             'Избранное': self.favorites_count,
+            'ДополнительныеПоля': dop_polya,
+            'DateBegin': date_begin_str,
+            'DateEnd': date_end_str,
         }
+
+
+class ImProductPhoto(models.Model):
+    """Локальное фото товара, синхронизированное из 1С."""
+    product = models.ForeignKey(
+        ImProduct,
+        on_delete=models.CASCADE,
+        related_name='photos',
+        verbose_name='Товар',
+    )
+    source_url = models.URLField('URL в 1С', max_length=2000, db_index=True)
+    file = models.ImageField('Файл', upload_to='im_product_photos/%Y/%m/', blank=True, null=True)
+    sort_order = models.PositiveIntegerField('Порядок', default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фото товара IM'
+        verbose_name_plural = 'Фото товаров IM'
+        unique_together = [('product', 'source_url')]
+        ordering = ['product', 'sort_order', 'id']
+
+    def __str__(self):
+        return f'{self.product.nomenclature_code} — {self.source_url[:50]}'
 
 
 class ImSyncLog(models.Model):
@@ -74,6 +107,7 @@ class ImSyncLog(models.Model):
         ('full_stok', 'Полная выгрузка стока'),
         ('product_update', 'Обновление товара'),
         ('photo_upload', 'Загрузка фото'),
+        ('photo_sync', 'Синхронизация фото из 1С'),
     ]
     STATUSES = [
         ('success', 'Успешно'),
