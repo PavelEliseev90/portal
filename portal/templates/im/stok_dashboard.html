@@ -113,15 +113,17 @@
     {% if params.has_db_data %}
     <div class="row g-3">
       <div class="col-6 col-md-4 col-lg-2">
-        <div class="metric-card">
-          <div class="metric-label">Всего товаров</div>
-          <div class="metric-value">{{ params.dashboard.total.count }}</div>
-          <div class="metric-detail small text-muted mt-1">
-            {{ params.dashboard.total.percent }}%
+        <a href="{% url 'website:stok_im_list' %}" class="text-decoration-none">
+          <div class="metric-card">
+            <div class="metric-label">Всего товаров</div>
+            <div class="metric-value">{{ params.dashboard.total.count|floatformat:"0g" }}</div>
+            <div class="metric-detail small text-muted mt-1">
+              {{ params.dashboard.total.percent }}%
+            </div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.total.quantity_sum|floatformat:"2g" }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.total.sum_value|floatformat:"2g" }} ₽</div>
           </div>
-          <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.total.quantity_sum }}</div>
-          <div class="metric-detail small fw-semibold">{{ params.dashboard.total.sum_value|floatformat:0 }} ₽</div>
-        </div>
+        </a>
       </div>
       <div class="col-6 col-md-4 col-lg-2">
         <a href="{% url 'website:stok_im_list' %}?no_foto=on" class="text-decoration-none">
@@ -129,8 +131,8 @@
             <div class="metric-label">Без фото</div>
             <div class="metric-value text-warning">{{ params.dashboard.no_photo.count }}</div>
             <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_photo.percent }}%</div>
-            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_photo.quantity_sum }}</div>
-            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_photo.sum_value|floatformat:0 }} ₽</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_photo.quantity_sum|floatformat:"2g" }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_photo.sum_value|floatformat:"2g" }} ₽</div>
           </div>
         </a>
       </div>
@@ -140,8 +142,8 @@
             <div class="metric-label">Не выгружено</div>
             <div class="metric-value text-secondary">{{ params.dashboard.not_uploaded.count }}</div>
             <div class="metric-detail small text-muted mt-1">{{ params.dashboard.not_uploaded.percent }}%</div>
-            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.not_uploaded.quantity_sum }}</div>
-            <div class="metric-detail small fw-semibold">{{ params.dashboard.not_uploaded.sum_value|floatformat:0 }} ₽</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.not_uploaded.quantity_sum|floatformat:"2g" }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.not_uploaded.sum_value|floatformat:"2g" }} ₽</div>
           </div>
         </a>
       </div>
@@ -151,7 +153,7 @@
             <div class="metric-label">Без цены</div>
             <div class="metric-value text-danger">{{ params.dashboard.no_price.count }}</div>
             <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_price.percent }}%</div>
-            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_price.quantity_sum }}</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_price.quantity_sum|floatformat:"2g" }}</div>
             <div class="metric-detail small fw-semibold">—</div>
           </div>
         </a>
@@ -162,8 +164,8 @@
             <div class="metric-label">Без категории</div>
             <div class="metric-value text-info">{{ params.dashboard.no_category.count }}</div>
             <div class="metric-detail small text-muted mt-1">{{ params.dashboard.no_category.percent }}%</div>
-            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_category.quantity_sum }}</div>
-            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_category.sum_value|floatformat:0 }} ₽</div>
+            <div class="metric-detail small text-muted">Остаток: {{ params.dashboard.no_category.quantity_sum|floatformat:"2g" }}</div>
+            <div class="metric-detail small fw-semibold">{{ params.dashboard.no_category.sum_value|floatformat:"2g" }} ₽</div>
           </div>
         </a>
       </div>
