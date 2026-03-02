@@ -2781,3 +2781,19 @@ class AuctionStructureFiles(models.Model):
         db_table = 'auctionStructureFiles'
         verbose_name = "Фото автомобиля для аукциона"
         verbose_name_plural = "Фотографии автомобиля для аукциона"
+
+
+# Настройки новых автомобилей
+class RefRulesCars(models.Model):
+    brand           = models.ForeignKey(AutoruMark, null=True, on_delete=models.CASCADE, verbose_name='Марка / бренд')
+    stage           = models.ForeignKey(RefStagePrice, null=True, on_delete=models.CASCADE, verbose_name='Этап УС')
+    km_index        = models.FloatField("Индекс КМ", default=0.0, blank=True)
+    km_percent      = models.FloatField("Правило КМ", default=0.0, blank=True)
+
+    def __str__(self):
+        return "{} / {} ({} - {})".format(self.brand.name, self.stage.name, self.km_index, self.km_percent) 
+
+    class Meta:
+        db_table = 'RefRulesCars'
+        verbose_name = "Настройка правил новых ам"
+        verbose_name_plural = "Настройки правил новых ам"
