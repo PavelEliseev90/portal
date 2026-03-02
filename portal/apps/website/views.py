@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType, RefRulesCars
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -8653,6 +8653,107 @@ def settings_autopricing_korsavto_table(request):
     }
     
     return render(request, "kors/settings_autopricing_korsavto_table.html", {'params': params})
+
+
+@login_required
+def settings_new_cars_pricing(request):
+    """Страница настроек ценообразования новых автомобилей (лендинг с ссылкой на правила КМ)."""
+    params = {'type': 'settings_new_cars_pricing'}
+    return render(request, 'kors/settings_new_cars_pricing.html', {'params': params})
+
+
+@login_required
+def settings_rules_cars(request):
+    """Настройки правил новых АМ: минимальный КМ и индексы (RefRulesCars). Фильтр по бренду и этапу, группировка по бренду, добавление/редактирование через модалки."""
+    brands_all = AutoruMark.objects.all().order_by('name')
+    stages_all = RefStagePrice.objects.all().order_by('name')
+
+    brand_ids = request.GET.getlist('brand_ids')
+    stage_ids = request.GET.getlist('stage_ids')
+    try:
+        brand_ids = [int(x) for x in brand_ids if x]
+    except ValueError:
+        brand_ids = []
+    try:
+        stage_ids = [int(x) for x in stage_ids if x]
+    except ValueError:
+        stage_ids = []
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'delete':
+            pk = request.POST.get('id')
+            if pk:
+                try:
+                    RefRulesCars.objects.filter(pk=int(pk)).delete()
+                except (ValueError, RefRulesCars.DoesNotExist):
+                    pass
+            qs = request.META.get('QUERY_STRING', '')
+            if not qs and request.POST.getlist('brand_ids'):
+                from urllib.parse import urlencode
+                parts = [('brand_ids', x) for x in request.POST.getlist('brand_ids')] + [('stage_ids', x) for x in request.POST.getlist('stage_ids')]
+                qs = urlencode(parts)
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + ('?' + qs if qs else ''))
+
+        if action in ('add', 'edit'):
+            pk = request.POST.get('id') if action == 'edit' else None
+            brand_id = request.POST.get('brand')
+            stage_id = request.POST.get('stage')
+            try:
+                km_index = float(request.POST.get('km_index', '0').replace(',', '.') or 0)
+            except (ValueError, TypeError):
+                km_index = 0.0
+            try:
+                km_percent = float(request.POST.get('km_percent', '0').replace(',', '.') or 0)
+            except (ValueError, TypeError):
+                km_percent = 0.0
+            brand_obj = AutoruMark.objects.filter(pk=brand_id).first() if brand_id else None
+            stage_obj = RefStagePrice.objects.filter(pk=stage_id).first() if stage_id else None
+            if brand_obj and stage_obj:
+                if pk:
+                    rule = RefRulesCars.objects.filter(pk=pk).first()
+                    if rule:
+                        rule.brand = brand_obj
+                        rule.stage = stage_obj
+                        rule.km_index = km_index
+                        rule.km_percent = km_percent
+                        rule.save()
+                else:
+                    RefRulesCars.objects.create(
+                        brand=brand_obj, stage=stage_obj, km_index=km_index, km_percent=km_percent
+                    )
+            qs = request.META.get('QUERY_STRING', '')
+            if not qs and request.POST.getlist('brand_ids'):
+                from urllib.parse import urlencode
+                parts = [('brand_ids', x) for x in request.POST.getlist('brand_ids')] + [('stage_ids', x) for x in request.POST.getlist('stage_ids')]
+                qs = urlencode(parts)
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + ('?' + qs if qs else ''))
+
+    qs = RefRulesCars.objects.select_related('brand', 'stage').all()
+    if brand_ids:
+        qs = qs.filter(brand_id__in=brand_ids)
+    if stage_ids:
+        qs = qs.filter(stage_id__in=stage_ids)
+    rules = list(qs.order_by('brand__name', 'stage__name'))
+
+    from collections import OrderedDict
+    by_brand = OrderedDict()
+    for r in rules:
+        bname = r.brand.name if r.brand else '—'
+        if bname not in by_brand:
+            by_brand[bname] = []
+        by_brand[bname].append(r)
+
+    params = {
+        'type': 'settings_rules_cars',
+        'brands_all': brands_all,
+        'stages_all': stages_all,
+        'rules': rules,
+        'by_brand': by_brand,
+        'brand_ids': brand_ids,
+        'stage_ids': stage_ids,
+    }
+    return render(request, 'kors/settings_rules_cars.html', {'params': params})
 
 
 @login_required

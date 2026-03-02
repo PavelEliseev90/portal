@@ -1,0 +1,25 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Настройки ценообразования новых автомобилей {% endblock %}
+{% block title_navbar %} - Настройки новых автомобилей {% endblock %}
+
+{% block content %}
+<section class="settings-page">
+  <div class="settings-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <h2>Ценообразование новых автомобилей</h2>
+      <p>Управление правилами минимального КМ и индексами по брендам и этапам УС.</p>
+    </div>
+    <a href="/settings/" class="btn btn-outline-secondary" style="border-radius: 0.75rem;">← Назад к настройкам</a>
+  </div>
+
+  <div class="settings-panel" style="max-width: 600px;">
+    <h3>Правила КМ и индексы</h3>
+    <p>Настройка минимального километража и правил КМ по маркам и этапам установки цены.</p>
+    <a href="{% url 'website:settings_rules_cars' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
+      Открыть настройки правил (КМ и индексы)
+    </a>
+  </div>
+</section>
+{% endblock %}
