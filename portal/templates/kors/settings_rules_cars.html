@@ -1,0 +1,275 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Настройки правил новых АМ (КМ и индексы) {% endblock %}
+{% block title_navbar %} - Правила новых АМ {% endblock %}
+
+{% block content %}
+<style>
+  .rules-cars-page { background: #f4f7fb; min-height: 100vh; padding: 1.5rem 0; }
+  .rules-cars-header { background: #fff; border-radius: 1.2rem; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .rules-cars-filter { background: #fff; border-radius: 1.2rem; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .filter-search-wrap { position: relative; margin-bottom: 0.75rem; }
+  .filter-search-wrap label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.35rem; display: block; }
+  .filter-dropdown { max-height: 200px; overflow-y: auto; position: absolute; left: 0; right: 0; z-index: 1000; background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,23,61,0.12); display: none; }
+  .filter-dropdown.show { display: block; }
+  .filter-dropdown .list-group-item { cursor: pointer; margin: 0; }
+  .filter-dropdown .form-check-input { cursor: pointer; }
+  .rules-table-wrap { background: #fff; border-radius: 1.2rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .rules-table { margin: 0; }
+  .rules-table th { background: #f8f9fc; font-weight: 600; color: #002a5a; font-size: 0.85rem; padding: 0.75rem 1rem; border-bottom: 1px solid rgba(0,42,90,0.08); }
+  .rules-table td { padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0,42,90,0.06); }
+  .rules-table tr:last-child td { border-bottom: none; }
+  .rules-table .brand-group-header { background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; font-weight: 600; }
+  .rules-table .brand-group-header td { padding: 0.6rem 1rem; border: none; }
+  .btn-rule { padding: 0.35rem 0.65rem; font-size: 0.85rem; border-radius: 0.5rem; }
+</style>
+
+<div class="rules-cars-page">
+  <div class="container-fluid">
+    <div class="rules-cars-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="mb-1" style="font-size: 1.5rem; font-weight: 700; color: #002a5a;">Правила новых автомобилей (КМ и индексы)</h2>
+        <p class="mb-0 text-muted small">Управление минимальным КМ и правилами КМ по бренду и этапу УС</p>
+      </div>
+      <a href="{% url 'website:settings_new_cars_pricing' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem;">← Настройки новых АМ</a>
+    </div>
+
+    <form method="get" id="filterForm" class="rules-cars-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5 col-lg-3">
+          <div class="filter-search-wrap">
+            <label>Бренд</label>
+            <input type="text" class="form-control form-control-sm" id="brandSearch" placeholder="Поиск по брендам..." autocomplete="off" style="border-radius: 0.75rem;">
+            <div class="filter-dropdown list-group" id="brandDropdown">
+              {% for b in params.brands_all %}
+              <label class="list-group-item list-group-item-action d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" name="brand_ids" value="{{ b.pk }}" {% if b.pk in params.brand_ids %}checked{% endif %}>
+                {{ b.name }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedBrands" class="small text-muted"></div>
+        </div>
+        <div class="col-12 col-md-5 col-lg-3">
+          <div class="filter-search-wrap">
+            <label>Этап УС</label>
+            <input type="text" class="form-control form-control-sm" id="stageSearch" placeholder="Поиск по этапам..." autocomplete="off" style="border-radius: 0.75rem;">
+            <div class="filter-dropdown list-group" id="stageDropdown">
+              {% for s in params.stages_all %}
+              <label class="list-group-item list-group-item-action d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" name="stage_ids" value="{{ s.pk }}" {% if s.pk in params.stage_ids %}checked{% endif %}>
+                {{ s.name }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div id="selectedStages" class="small text-muted"></div>
+        </div>
+        <div class="col-12 col-md-2">
+          <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 0.75rem;">Применить</button>
+          <a href="{% url 'website:settings_rules_cars' %}" class="btn btn-outline-secondary btn-sm ms-1" style="border-radius: 0.75rem;">Сбросить</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="text-muted small">Группировка по бренду</span>
+      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdd" style="border-radius: 0.75rem;">+ Добавить</button>
+    </div>
+
+    <div class="rules-table-wrap">
+      <table class="rules-table table">
+        <thead>
+          <tr>
+            <th>Бренд</th>
+            <th>Этап УС</th>
+            <th>Индекс КМ</th>
+            <th>Правило КМ</th>
+            <th width="140"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for brand_name, items in params.by_brand.items %}
+          <tr class="brand-group-header">
+            <td colspan="5">{{ brand_name }}</td>
+          </tr>
+          {% for r in items %}
+          <tr>
+            <td></td>
+            <td>{{ r.stage.name|default:"—" }}</td>
+            <td>{{ r.km_index|floatformat:2 }}</td>
+            <td>{{ r.km_percent|floatformat:2 }}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary btn-rule" data-bs-toggle="modal" data-bs-target="#modalEdit" data-id="{{ r.pk }}" data-brand="{{ r.brand_id }}" data-stage="{{ r.stage_id }}" data-km-index="{{ r.km_index }}" data-km-percent="{{ r.km_percent }}">Изменить</button>
+              <form method="post" class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ r.pk }}">
+                {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+                {% for sid in params.stage_ids %}<input type="hidden" name="stage_ids" value="{{ sid }}">{% endfor %}
+                <button type="submit" class="btn btn-sm btn-outline-danger btn-rule">Удалить</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">Нет записей. Добавьте правило или измените фильтры.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Добавить -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title">Добавить правило</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+        {% for sid in params.stage_ids %}<input type="hidden" name="stage_ids" value="{{ sid }}">{% endfor %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Бренд</label>
+            <select name="brand" class="form-select" required style="border-radius: 0.75rem;">
+              <option value="">— Выберите —</option>
+              {% for b in params.brands_all %}
+              <option value="{{ b.pk }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Этап УС</label>
+            <select name="stage" class="form-select" required style="border-radius: 0.75rem;">
+              <option value="">— Выберите —</option>
+              {% for s in params.stages_all %}
+              <option value="{{ s.pk }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Индекс КМ</label>
+                <input type="number" name="km_index" class="form-control" step="0.01" value="0" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Правило КМ</label>
+                <input type="number" name="km_percent" class="form-control" step="0.01" value="0" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Редактировать -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title">Редактировать правило</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formEdit">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="id" id="editId">
+        {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+        {% for sid in params.stage_ids %}<input type="hidden" name="stage_ids" value="{{ sid }}">{% endfor %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Бренд</label>
+            <select name="brand" id="editBrand" class="form-select" required style="border-radius: 0.75rem;">
+              {% for b in params.brands_all %}
+              <option value="{{ b.pk }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Этап УС</label>
+            <select name="stage" id="editStage" class="form-select" required style="border-radius: 0.75rem;">
+              {% for s in params.stages_all %}
+              <option value="{{ s.pk }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Индекс КМ</label>
+                <input type="number" name="km_index" id="editKmIndex" class="form-control" step="0.01" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Правило КМ</label>
+                <input type="number" name="km_percent" id="editKmPercent" class="form-control" step="0.01" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function initFilterSearch(inputId, dropdownId, searchPlaceholder) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+    var items = dropdown.querySelectorAll('label.list-group-item');
+    input.addEventListener('focus', function() { dropdown.classList.add('show'); filterItems(); });
+    input.addEventListener('input', filterItems);
+    function filterItems() {
+      var q = (input.value || '').toLowerCase().trim();
+      items.forEach(function(label) {
+        var text = (label.textContent || '').toLowerCase();
+        label.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
+    });
+  }
+  initFilterSearch('brandSearch', 'brandDropdown', 'Поиск по брендам...');
+  initFilterSearch('stageSearch', 'stageDropdown', 'Поиск по этапам...');
+
+  var modalEdit = document.getElementById('modalEdit');
+  if (modalEdit) {
+    modalEdit.addEventListener('show.bs.modal', function(e) {
+      var btn = e.relatedTarget;
+      if (!btn) return;
+      document.getElementById('editId').value = btn.dataset.id || '';
+      document.getElementById('editBrand').value = btn.dataset.brand || '';
+      document.getElementById('editStage').value = btn.dataset.stage || '';
+      document.getElementById('editKmIndex').value = btn.dataset.kmIndex || '0';
+      document.getElementById('editKmPercent').value = btn.dataset.kmPercent || '0';
+    });
+  }
+
+})();
+</script>
+{% endblock %}
