@@ -2046,7 +2046,7 @@ class RefCarsOrganization(models.Model):
     evaluation              = models.ForeignKey(RefTypeEvaluationCarsOrganization, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Вариант управления ценообразованием')
     
     modification_avito      = models.ForeignKey(RefAvito, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Авито модификация')
-    complectation_avito     = models.ForeignKey(RefAvitoComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Авито комплектация')
+    complectation_avito     = models.ForeignKey(RefнAvitoComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Авито комплектация')
 
     modification_autoru     = models.ForeignKey(AutoruModification, null=True, on_delete=models.SET_NULL, verbose_name='Модификация')
     complectation_autoru    = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Комплектация')
@@ -2064,7 +2064,7 @@ class RefCarsOrganization(models.Model):
     description_podgotovka  = models.CharField("Комментарий для отдела подготовки", max_length=5120, default='')
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=5120, default='')
     run                     = models.IntegerField("Пробег", null=True, default=0, blank=True)
-    min_km                  = models.IntegerField("Минимальный КМ (для новых АМ)", null=True, blank=True, verbose_name='Мин. КМ')
+    min_km                  = models.IntegerField("Минимальный КМ (для новых АМ)", null=True, blank=True)
     
     quantity                = models.IntegerField("Остаток", blank=True, default=0)
     bcp                     = models.IntegerField("БЦП", blank=True, default=0)
