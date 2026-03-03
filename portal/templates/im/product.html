@@ -448,8 +448,19 @@
               <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>
               
               <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
-                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.5rem;">Выберите файлы</div>
-                <input type="file" class="form-control" name="files" id="files" multiple="multiple" accept="image/*,video/*" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15); padding: 0.75rem 1rem;">
+                <div class="form-label" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.75rem;">Добавить фото</div>
+                <div class="d-flex flex-wrap gap-2">
+                  <input type="file" class="d-none" name="files" id="filesCamera" accept="image/*" capture="environment" data-for="camera">
+                  <input type="file" class="d-none" name="files" id="filesGallery" multiple="multiple" accept="image/*,video/*" data-for="gallery">
+                  <button type="button" class="btn btn-outline-primary flex-grow-1 flex-sm-grow-0" onclick="document.getElementById('filesCamera').click();" style="border-radius: 0.95rem; padding: 0.75rem 1.25rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="icon-mbri-camera"></span> Сделать фото
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary flex-grow-1 flex-sm-grow-0" onclick="document.getElementById('filesGallery').click();" style="border-radius: 0.95rem; padding: 0.75rem 1.25rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="icon-mbri-folder"></span> Выбрать из галереи
+                  </button>
+                </div>
+                <div id="photoSourceHint" class="small text-muted mt-2" style="font-size: 0.8rem;">Выберите способ: камера откроется по кнопке «Сделать фото», галерея — по «Выбрать из галереи».</div>
+                <div id="chosenFilesList" class="mt-2 small text-secondary"></div>
               </div>
               
               <div class="kors-filter" style="background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08); margin-bottom: 1.5rem;">
@@ -472,4 +483,17 @@
 
   </div>
 </div>
+<script>
+(function() {
+  var cam = document.getElementById('filesCamera');
+  var gal = document.getElementById('filesGallery');
+  var out = document.getElementById('chosenFilesList');
+  function updateChosen() {
+    var n = (cam && cam.files.length) + (gal && gal.files.length);
+    if (out) out.textContent = n > 0 ? 'Выбрано файлов: ' + n : '';
+  }
+  if (cam) cam.addEventListener('change', updateChosen);
+  if (gal) gal.addEventListener('change', updateChosen);
+})();
+</script>
 {% endblock %}

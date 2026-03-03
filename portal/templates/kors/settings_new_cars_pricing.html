@@ -14,28 +14,39 @@
     <a href="/settings/" class="btn btn-outline-secondary" style="border-radius: 0.75rem;">← Назад к настройкам</a>
   </div>
 
-  <div class="settings-panel" style="max-width: 600px;">
-    <h3>Правила КМ и индексы</h3>
-    <p>Настройка минимального километража и правил КМ по маркам и этапам установки цены.</p>
-    <a href="{% url 'website:settings_rules_cars' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
-      Открыть настройки правил (КМ и индексы)
-    </a>
+  <div class="row g-1">
+    <div class="col-12 col-md-4">
+      <div class="settings-panel" style="max-width: 600px;">
+        <h3>Правила КМ и индексы</h3>
+        <p>Настройка минимального километража и правил КМ по маркам и этапам установки цены.</p>
+        <a href="{% url 'website:settings_rules_cars' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
+          Открыть настройки правил (КМ и индексы)
+        </a>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="settings-panel" style="max-width: 600px;">
+        <h3>Допустимый дисконт от % КМ</h3>
+        <p>Дата от/до в разрезе марки, модели, модификации, комплектации.</p>
+        <a href="{% url 'website:settings_allowable_discount_km' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
+          Открыть настройки допустимого дисконта КМ
+        </a>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="settings-panel" style="max-width: 600px;">
+        <h3>Минимальный КМ по автомобилям</h3>
+        <p>Установки минимального км по конкретному автомобилю.</p>
+        <a href="{% url 'website:settings_min_km_cars' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
+          Открыть спискок автомобилей
+        </a>
+      </div>
+    </div>
   </div>
+  
 
-  <div class="settings-panel" style="max-width: 600px;">
-    <h3>Допустимый дисконт от % КМ (опер. бизнес)</h3>
-    <p>Дата от/до в разрезе марки, модели, модификации, комплектации.</p>
-    <a href="{% url 'website:settings_allowable_discount_km' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
-      Открыть настройки допустимого дисконта КМ
-    </a>
-  </div>
+  
 
-  <div class="settings-panel" style="max-width: 600px;">
-    <h3>Минимальный КМ по автомобилям</h3>
-    <p>Установка минимального км по конкретному автомобилю (RefCarsOrganization).</p>
-    <a href="{% url 'website:settings_min_km_cars' %}" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.75rem; padding: 0.75rem 1.5rem;">
-      Открыть настройки мин. КМ по автомобилям
-    </a>
-  </div>
+  
 </section>
 {% endblock %}
