@@ -2046,7 +2046,7 @@ class RefCarsOrganization(models.Model):
     evaluation              = models.ForeignKey(RefTypeEvaluationCarsOrganization, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Вариант управления ценообразованием')
     
     modification_avito      = models.ForeignKey(RefAvito, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Авито модификация')
-    complectation_avito     = models.ForeignKey(RefнAvitoComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Авито комплектация')
+    complectation_avito     = models.ForeignKey(RefAvitoComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Авито комплектация')
 
     modification_autoru     = models.ForeignKey(AutoruModification, null=True, on_delete=models.SET_NULL, verbose_name='Модификация')
     complectation_autoru    = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Комплектация')
