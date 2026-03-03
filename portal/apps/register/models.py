@@ -3607,7 +3607,7 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
             self.status = RefStatusEstimation.objects.get(pk = 9) 
         elif self.estimation != None and self.estimation.end_estimation != None and self.page_soglasovanie != None:
             count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
-            count_success_answer = RegInteractivOcenkaRLK.objects.filter(rlk = self.rlk).filter(status__id = 8).count()
+            count_success_answer = RegInteractivOcenkaRLK.objects.exclude(rlk = self.rlk).filter(estimation = self.estimation).filter(status__id = 8).count()
             if count_success_answer > 0:
                 self.status = RefStatusEstimation.objects.get(pk = 10)                    
             elif count_success > 0:
@@ -3624,7 +3624,7 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
             self.status = RefStatusEstimation.objects.get(pk = 2)
 
         try:
-            if self.rlk != None and self.extimation != None:
+            if self.rlk != None and self.estimation != None:
                 add_swap(self)
         except:
             s=1

@@ -1331,7 +1331,9 @@ def estimation_rlk(request, rlk_id):
                 reg_interactiv_ocenka.save()
                 chat    = Chat.objects.get_or_create(name = object.pk, slug = 'rlk_' + str(object.pk))[0]    
                 send_web_socket_message(group = 'rlk_' + str(rlk_id), chat=chat, user= user, text='Оценка отправлена на согласование', estimation_id= reg_interactiv_ocenka.id)
-            
+                
+                interactiv_rlk.save()
+
                 return HttpResponseRedirect('/rlks_trade_in/' + rlk_id) 
 
         if 's_remote' in request.POST:

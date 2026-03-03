@@ -2269,7 +2269,7 @@ def get_chats_list_online_info(request, id):
         rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
         rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
         rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-        vin                         = Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1])).annotate(
+        vin                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]))).annotate(
         mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
         model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
         modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(
@@ -2355,7 +2355,7 @@ def get_chats_list_online(request):
         rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
         rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
         rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-        vin                         = Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1])).annotate(
+        vin                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]))).annotate(
         mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
         model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
         modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(

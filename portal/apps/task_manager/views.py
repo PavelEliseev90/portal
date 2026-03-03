@@ -30,7 +30,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 import time
 from register.models import RegEstimationPodgotovka, RegEstimationMCU, RegEstimationSS, RegInteractivOcenka, RegSwapKors
-from register.serializers import RegInteractivOcenkaSerializer, RegInteractivOcenkaSoglasovanieSerializer, RegInteractivOcenkaRLK
+from register.serializers import RegInteractivOcenkaSerializer, RegInteractivOcenkaSoglasovanieSerializer, RegInteractivOcenkaRLK, RegInteractivOcenkaRLKSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer, RefUnitSerializer
@@ -1434,8 +1434,35 @@ def refresh_avtoteka_vin():
     header = {
         'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
     }
-
+    
     date_start = DT.datetime.now().replace(hour=1) - DT.timedelta(days=14)
+    object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(number_body = '')
+    for object_estimation in object_estimations:
+        token = get_token_avtoteka()
+        header['Authorization'] = f"Bearer {token}"
+
+        if len(object_estimation.vin) != 17:
+            number_body     = object_estimation.number_body
+            status  = ''
+            
+            if number_body != None and len(number_body) != 17:
+                
+                id = {
+                    "vin": number_body
+                }
+                task_id = 0
+                url = 'https://pro.autoteka.ru/autoteka/v1/previews' 
+                header['Authorization'] = f"Bearer {token}"
+                response = requests.post(url, headers=header, json=id)
+    
+                if response.status_code == 200:
+                
+                    data_prev   = json.loads(response.text)
+                    task_id     = data_prev['result']['preview']['previewId']
+                    object_estimation.avtoteka_preview = str(task_id)
+                    object_estimation.save(update_fields=['avtoteka_preview']) 
+    
+    #VIN
     object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
     if len(object_estimations) > 0:
         
@@ -1466,7 +1493,7 @@ def refresh_avtoteka_vin():
                         object_estimation.avtoteka_preview = str(task_id)
                         object_estimation.save(update_fields=['avtoteka_preview'])                                                    
 
-    object_estimations_prev = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation')
+    object_estimations_prev = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation')
     if len(object_estimations_prev) > 0:
         
         if token == '':
@@ -1495,7 +1522,7 @@ def refresh_avtoteka_vin():
                             object_estimation.avtoteka_task = str(reportId)
                             object_estimation.save(update_fields=['avtoteka_task'])
 
-    object_estimations_report = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation')
+    object_estimations_report = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).order_by('start_estimation')
     if len(object_estimations_report) > 0:
         
         if token == '':
@@ -1560,7 +1587,8 @@ def refresh_avtoteka_vin():
                             except:
                                 s = 1
                             object_estimation.save()                 
-          
+
+
 def get_token_avtoteka():
     
     url = avtoteka_url + 'token'
@@ -2161,6 +2189,7 @@ def estimation_send_1c(rlk_id, id):
         'Rlk'           : DocRLKSerializer(rlk, many=False).data,
         'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
         'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
+        'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
     }
     response = requests.post(url_hs_kors_auto, json=js_data)
     return response.status_code
@@ -2171,11 +2200,16 @@ def swap_estimation():
     infos = RegSwapKors.objects.filter(status_code = 60).order_by('rlk','date')
     
     for info in infos:
-        if info.estimation != None:
+        if info.estimation != None and info.rlk != None:
+            interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id = info.rlk.id).filter(estimation__id = info.estimation.id).first()
+            estimation  = interactiv_rlk.estimation
+            rlk         = interactiv_rlk.rlk
             js_data = {
-                'Type' : 'estimation',
-
-                'Estimation': RegInteractivOcenkaSerializer(info.estimation, many=False).data
+                'Type'          : 'estimation',
+                'Rlk'           : DocRLKSerializer(rlk, many=False).data,
+                'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
+                'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
+                'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
             }
             response = requests.post(url_hs_kors_auto, json=js_data)
             #if response.status_code == 200:

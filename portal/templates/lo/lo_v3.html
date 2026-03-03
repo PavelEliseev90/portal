@@ -1693,7 +1693,7 @@
             </h1>
 
             <p class="kors-hero__subtitle">
-              {{params.estimation.vin}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км. / {{params.estimation.modification.typeBody.name}} / {{params.estimation.page_documents.plate_number}}
+              {% if params.estimation.vin == '' %} {{params.estimation.number_body}} {% else %} {{params.estimation.vin}} {% endif %} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км. / {{params.estimation.modification.typeBody.name}} / {{params.estimation.page_documents.plate_number}}
               <div class="row g-1">
                 <div class="col-auto">
                   {% if params.estimation.iznos %} 
@@ -6124,7 +6124,7 @@
                                       if (search_staff_access_value == ''){
                                         document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + 'Заполните строку поиска.';
                                       } else {
-                                        $.get( "/eco/js/get_users_list_online/{{params.estimation.rlk.pk}}/?search=" + search_staff_access_value , function( data, status ) { 
+                                        $.get( "/eco/js/get_users_list_online/{{params.interactiv_rlk.rlk.pk}}/?search=" + search_staff_access_value , function( data, status ) { 
                                           let i = data.length;
                                             var puth = '{{request.get_full_path}}';
                                             for (s = 0; s < i; s++) { 
