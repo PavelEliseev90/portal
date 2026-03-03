@@ -1,0 +1,161 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Минимальный КМ по автомобилям {% endblock %}
+{% block title_navbar %} - Мин. КМ по автомобилям {% endblock %}
+
+{% block content %}
+<style>
+  .min-km-page { background: #f4f7fb; min-height: 100vh; padding: 1.5rem 0; }
+  .min-km-header { background: #fff; border-radius: 1.2rem; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .min-km-filter { background: #fff; border-radius: 1.2rem; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .filter-search-wrap { position: relative; margin-bottom: 0.75rem; }
+  .filter-search-wrap label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.35rem; display: block; }
+  .filter-dropdown { max-height: 200px; overflow-y: auto; position: absolute; left: 0; right: 0; z-index: 1000; background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,23,61,0.12); display: none; }
+  .filter-dropdown.show { display: block; }
+  .filter-dropdown .list-group-item { cursor: pointer; margin: 0; }
+  .filter-dropdown .form-check-input { cursor: pointer; }
+  .min-km-table-wrap { background: #fff; border-radius: 1.2rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .min-km-table { margin: 0; }
+  .min-km-table th { background: #f8f9fc; font-weight: 600; color: #002a5a; font-size: 0.85rem; padding: 0.75rem 1rem; border-bottom: 1px solid rgba(0,42,90,0.08); }
+  .min-km-table td { padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0,42,90,0.06); }
+  .min-km-table tr:last-child td { border-bottom: none; }
+  .btn-rule { padding: 0.35rem 0.65rem; font-size: 0.85rem; border-radius: 0.5rem; }
+</style>
+
+<div class="min-km-page">
+  <div class="container-fluid">
+    <div class="min-km-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="mb-1" style="font-size: 1.5rem; font-weight: 700; color: #002a5a;">Минимальный КМ по автомобилям</h2>
+        <p class="mb-0 text-muted small">Установка минимального км по конкретному автомобилю (новые АМ)</p>
+      </div>
+      <a href="{% url 'website:settings_new_cars_pricing' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem;">← Настройки новых АМ</a>
+    </div>
+
+    <form method="get" id="filterForm" class="min-km-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5 col-lg-4">
+          <div class="filter-search-wrap">
+            <label>Подразделение</label>
+            <input type="text" class="form-control form-control-sm" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off" style="border-radius: 0.75rem;">
+            <div class="filter-dropdown list-group" id="unitDropdown">
+              {% for u in params.units_all %}
+              <label class="list-group-item list-group-item-action d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ u.pk }}" {% if u.pk in params.unit_ids %}checked{% endif %}>
+                {{ u.name }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-2">
+          <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 0.75rem;">Применить</button>
+          <a href="{% url 'website:settings_min_km_cars' %}" class="btn btn-outline-secondary btn-sm ms-1" style="border-radius: 0.75rem;">Сбросить</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="min-km-table-wrap">
+      <table class="min-km-table table">
+        <thead>
+          <tr>
+            <th>Подразделение</th>
+            <th>ВИН</th>
+            <th>Марка / Модель</th>
+            <th>Мин. КМ</th>
+            <th width="120"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in params.cars %}
+          <tr>
+            <td>{{ c.unit.name|default:"—" }}</td>
+            <td>{{ c.vin|default:"—" }}</td>
+            <td>{{ c.mark }} {{ c.model }}</td>
+            <td>{{ c.min_km|default:"—" }}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary btn-rule" data-bs-toggle="modal" data-bs-target="#modalEditMinKm"
+                data-id="{{ c.pk }}"
+                data-min-km="{{ c.min_km|default:'' }}"
+                data-vin="{{ c.vin }}"
+                data-car-name="{{ c.mark }} {{ c.model }}">Изменить</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-4">Нет автомобилей (новые АМ) по выбранным фильтрам или список пуст.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if params.cars %}
+    <p class="text-muted small mt-2">Показано не более 500 записей. Используйте фильтр по подразделению.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Модальное окно: Редактировать мин. КМ -->
+<div class="modal fade" id="modalEditMinKm" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title">Минимальный КМ</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formEditMinKm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit_min_km">
+        <input type="hidden" name="id" id="editMinKmId">
+        {% for uid in params.unit_ids %}<input type="hidden" name="unit_ids" value="{{ uid }}">{% endfor %}
+        <div class="modal-body">
+          <p class="small text-muted mb-2"><span id="editMinKmCarName"></span> <span id="editMinKmVin" class="text-muted"></span></p>
+          <div class="mb-3">
+            <label class="form-label">Минимальный КМ</label>
+            <input type="number" name="min_km" id="editMinKmValue" class="form-control" min="0" step="1" placeholder="Пусто — не задан" style="border-radius: 0.75rem;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function initFilterSearch(inputId, dropdownId) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+    var items = dropdown.querySelectorAll('label.list-group-item');
+    input.addEventListener('focus', function() { dropdown.classList.add('show'); filterItems(); });
+    input.addEventListener('input', filterItems);
+    function filterItems() {
+      var q = (input.value || '').toLowerCase().trim();
+      items.forEach(function(label) {
+        var text = (label.textContent || '').toLowerCase();
+        label.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
+    });
+  }
+  initFilterSearch('unitSearch', 'unitDropdown');
+
+  var modalEdit = document.getElementById('modalEditMinKm');
+  if (modalEdit) {
+    modalEdit.addEventListener('show.bs.modal', function(e) {
+      var btn = e.relatedTarget;
+      if (!btn) return;
+      document.getElementById('editMinKmId').value = btn.dataset.id || '';
+      document.getElementById('editMinKmValue').value = btn.dataset.minKm !== undefined && btn.dataset.minKm !== '' ? btn.dataset.minKm : '';
+      document.getElementById('editMinKmCarName').textContent = btn.dataset.carName || '—';
+      document.getElementById('editMinKmVin').textContent = btn.dataset.vin ? '(ВИН: ' + btn.dataset.vin + ')' : '';
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Допустимый дисконт от % КМ (опер. бизнес) {% endblock %}
+{% block title_navbar %} - Допустимый дисконт КМ {% endblock %}
+
+{% block content %}
+<style>
+  .rules-cars-page { background: #f4f7fb; min-height: 100vh; padding: 1.5rem 0; }
+  .rules-cars-header { background: #fff; border-radius: 1.2rem; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .rules-cars-filter { background: #fff; border-radius: 1.2rem; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .filter-search-wrap { position: relative; margin-bottom: 0.75rem; }
+  .filter-search-wrap label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #8ea1ba; font-weight: 600; margin-bottom: 0.35rem; display: block; }
+  .filter-dropdown { max-height: 200px; overflow-y: auto; position: absolute; left: 0; right: 0; z-index: 1000; background: #fff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,23,61,0.12); display: none; }
+  .filter-dropdown.show { display: block; }
+  .filter-dropdown .list-group-item { cursor: pointer; margin: 0; }
+  .filter-dropdown .form-check-input { cursor: pointer; }
+  .rules-table-wrap { background: #fff; border-radius: 1.2rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,23,61,0.08); border: 1px solid rgba(0,42,90,0.08); }
+  .rules-table { margin: 0; }
+  .rules-table th { background: #f8f9fc; font-weight: 600; color: #002a5a; font-size: 0.85rem; padding: 0.75rem 1rem; border-bottom: 1px solid rgba(0,42,90,0.08); }
+  .rules-table td { padding: 0.75rem 1rem; vertical-align: middle; border-bottom: 1px solid rgba(0,42,90,0.06); }
+  .rules-table tr:last-child td { border-bottom: none; }
+  .rules-table .brand-group-header { background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; font-weight: 600; }
+  .rules-table .brand-group-header td { padding: 0.6rem 1rem; border: none; }
+  .btn-rule { padding: 0.35rem 0.65rem; font-size: 0.85rem; border-radius: 0.5rem; }
+</style>
+
+<div class="rules-cars-page">
+  <div class="container-fluid">
+    <div class="rules-cars-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="mb-1" style="font-size: 1.5rem; font-weight: 700; color: #002a5a;">Допустимый дисконт от % КМ (опер. бизнес)</h2>
+        <p class="mb-0 text-muted small">Дата от/до в разрезе марки, модели, модификации, комплектации</p>
+      </div>
+      <a href="{% url 'website:settings_new_cars_pricing' %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem;">← Настройки новых АМ</a>
+    </div>
+
+    <form method="get" id="filterForm" class="rules-cars-filter">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5 col-lg-4">
+          <div class="filter-search-wrap">
+            <label>Марка</label>
+            <input type="text" class="form-control form-control-sm" id="brandSearch" placeholder="Поиск по маркам..." autocomplete="off" style="border-radius: 0.75rem;">
+            <div class="filter-dropdown list-group" id="brandDropdown">
+              {% for b in params.brands_all %}
+              <label class="list-group-item list-group-item-action d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" name="brand_ids" value="{{ b.pk }}" {% if b.pk in params.brand_ids %}checked{% endif %}>
+                {{ b.name }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-2">
+          <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 0.75rem;">Применить</button>
+          <a href="{% url 'website:settings_allowable_discount_km' %}" class="btn btn-outline-secondary btn-sm ms-1" style="border-radius: 0.75rem;">Сбросить</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="text-muted small">Группировка по марке</span>
+      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdd" style="border-radius: 0.75rem;">+ Добавить</button>
+    </div>
+
+    <div class="rules-table-wrap">
+      <table class="rules-table table">
+        <thead>
+          <tr>
+            <th>Дата от</th>
+            <th>Дата до</th>
+            <th>Марка</th>
+            <th>Модель</th>
+            <th>Модификация</th>
+            <th>Комплектация</th>
+            <th>Дисконт %</th>
+            <th width="140"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for brand_name, items in params.by_brand.items %}
+          <tr class="brand-group-header">
+            <td colspan="8">{{ brand_name }}</td>
+          </tr>
+          {% for r in items %}
+          <tr>
+            <td>{{ r.date_from|date:"d.m.Y"|default:"—" }}</td>
+            <td>{{ r.date_to|date:"d.m.Y"|default:"—" }}</td>
+            <td></td>
+            <td>{{ r.model.name|default:"—" }}</td>
+            <td>{{ r.modification.name|default:"—" }}</td>
+            <td>{{ r.complectation.name|default:"—" }}</td>
+            <td>{{ r.discount_percent|floatformat:2 }}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary btn-rule" data-bs-toggle="modal" data-bs-target="#modalEdit"
+                data-id="{{ r.pk }}"
+                data-date-from="{{ r.date_from|date:'Y-m-d'|default:'' }}"
+                data-date-to="{{ r.date_to|date:'Y-m-d'|default:'' }}"
+                data-brand="{{ r.brand_id }}"
+                data-model="{{ r.model_id|default:'' }}"
+                data-modification="{{ r.modification_id|default:'' }}"
+                data-complectation="{{ r.complectation_id|default:'' }}"
+                data-discount-percent="{{ r.discount_percent }}">Изменить</button>
+              <form method="post" class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ r.pk }}">
+                {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+                <button type="submit" class="btn btn-sm btn-outline-danger btn-rule">Удалить</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-4">Нет записей. Добавьте правило или измените фильтры.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Добавить -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title">Добавить допустимый дисконт</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formAdd">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Дата от</label>
+                <input type="date" name="date_from" class="form-control add-date-from" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Дата до</label>
+                <input type="date" name="date_to" class="form-control add-date-to" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Марка</label>
+            <select name="brand" id="addBrand" class="form-select" required style="border-radius: 0.75rem;">
+              <option value="">— Выберите —</option>
+              {% for b in params.brands_all %}
+              <option value="{{ b.pk }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Модель</label>
+            <select name="model" id="addModel" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for m in params.models_all %}
+              <option value="{{ m.pk }}" data-mark-id="{{ m.mark_id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Модификация</label>
+            <select name="modification" id="addModification" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for m in params.modifications_all %}
+              <option value="{{ m.pk }}" data-model-id="{{ m.model_id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Комплектация</label>
+            <select name="complectation" id="addComplectation" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for c in params.complectations_all %}
+              <option value="{{ c.pk }}" data-modification-id="{{ c.modification_id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Допустимый дисконт от % КМ</label>
+            <input type="number" name="discount_percent" class="form-control" step="0.01" value="0" style="border-radius: 0.75rem;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно: Редактировать -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius: 1rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title">Редактировать допустимый дисконт</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="formEdit">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="id" id="editId">
+        {% for bid in params.brand_ids %}<input type="hidden" name="brand_ids" value="{{ bid }}">{% endfor %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Дата от</label>
+                <input type="date" name="date_from" id="editDateFrom" class="form-control" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mb-3">
+                <label class="form-label">Дата до</label>
+                <input type="date" name="date_to" id="editDateTo" class="form-control" style="border-radius: 0.75rem;">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Марка</label>
+            <select name="brand" id="editBrand" class="form-select" required style="border-radius: 0.75rem;">
+              {% for b in params.brands_all %}
+              <option value="{{ b.pk }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Модель</label>
+            <select name="model" id="editModel" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for m in params.models_all %}
+              <option value="{{ m.pk }}" data-mark-id="{{ m.mark_id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Модификация</label>
+            <select name="modification" id="editModification" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for m in params.modifications_all %}
+              <option value="{{ m.pk }}" data-model-id="{{ m.model_id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Комплектация</label>
+            <select name="complectation" id="editComplectation" class="form-select" style="border-radius: 0.75rem;">
+              <option value="">— Любая —</option>
+              {% for c in params.complectations_all %}
+              <option value="{{ c.pk }}" data-modification-id="{{ c.modification_id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Допустимый дисконт от % КМ</label>
+            <input type="number" name="discount_percent" id="editDiscountPercent" class="form-control" step="0.01" style="border-radius: 0.75rem;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function initFilterSearch(inputId, dropdownId) {
+    var input = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+    var items = dropdown.querySelectorAll('label.list-group-item');
+    input.addEventListener('focus', function() { dropdown.classList.add('show'); filterItems(); });
+    input.addEventListener('input', filterItems);
+    function filterItems() {
+      var q = (input.value || '').toLowerCase().trim();
+      items.forEach(function(label) {
+        var text = (label.textContent || '').toLowerCase();
+        label.style.display = q === '' || text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    document.addEventListener('click', function(e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
+    });
+  }
+  initFilterSearch('brandSearch', 'brandDropdown');
+
+  function cascadeSelect(brandSelId, modelSelId, modSelId, compSelId) {
+    var brandSel = document.getElementById(brandSelId);
+    var modelSel = document.getElementById(modelSelId);
+    var modSel = document.getElementById(modSelId);
+    var compSel = document.getElementById(compSelId);
+    if (!brandSel || !modelSel) return;
+    function filterOptions(sel, attr, parentVal) {
+      var opts = sel.querySelectorAll('option');
+      opts.forEach(function(opt) {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        var dataVal = opt.getAttribute('data-' + attr);
+        opt.style.display = (!parentVal || dataVal === String(parentVal)) ? '' : 'none';
+      });
+    }
+    function updateModel() {
+      var brandVal = brandSel.value;
+      filterOptions(modelSel, 'mark-id', brandVal);
+      modelSel.value = '';
+      updateMod();
+    }
+    function updateMod() {
+      var modelVal = modelSel.value;
+      filterOptions(modSel, 'model-id', modelVal);
+      modSel.value = '';
+      updateComp();
+    }
+    function updateComp() {
+      var modVal = modSel.value;
+      filterOptions(compSel, 'modification-id', modVal);
+      compSel.value = '';
+    }
+    brandSel.addEventListener('change', updateModel);
+    modelSel.addEventListener('change', updateMod);
+    modSel.addEventListener('change', updateComp);
+    updateModel();
+  }
+  cascadeSelect('addBrand', 'addModel', 'addModification', 'addComplectation');
+  cascadeSelect('editBrand', 'editModel', 'editModification', 'editComplectation');
+
+  var modalEdit = document.getElementById('modalEdit');
+  if (modalEdit) {
+    modalEdit.addEventListener('show.bs.modal', function(e) {
+      var btn = e.relatedTarget;
+      if (!btn) return;
+      document.getElementById('editId').value = btn.dataset.id || '';
+      document.getElementById('editDateFrom').value = btn.dataset.dateFrom || '';
+      document.getElementById('editDateTo').value = btn.dataset.dateTo || '';
+      document.getElementById('editBrand').value = btn.dataset.brand || '';
+      document.getElementById('editModel').value = btn.dataset.model || '';
+      document.getElementById('editModification').value = btn.dataset.modification || '';
+      document.getElementById('editComplectation').value = btn.dataset.complectation || '';
+      document.getElementById('editDiscountPercent').value = btn.dataset.discountPercent || '0';
+    });
+  }
+})();
+</script>
+{% endblock %}
