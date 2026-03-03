@@ -2064,6 +2064,7 @@ class RefCarsOrganization(models.Model):
     description_podgotovka  = models.CharField("Комментарий для отдела подготовки", max_length=5120, default='')
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=5120, default='')
     run                     = models.IntegerField("Пробег", null=True, default=0, blank=True)
+    min_km                  = models.IntegerField("Минимальный КМ (для новых АМ)", null=True, blank=True, verbose_name='Мин. КМ')
     
     quantity                = models.IntegerField("Остаток", blank=True, default=0)
     bcp                     = models.IntegerField("БЦП", blank=True, default=0)
@@ -2797,3 +2798,31 @@ class RefRulesCars(models.Model):
         db_table = 'RefRulesCars'
         verbose_name = "Настройка правил новых ам"
         verbose_name_plural = "Настройки правил новых ам"
+
+
+# Допустимый дисконт от % КМ для операционного бизнеса (дата от/до, марка, модель, модификация, комплектация)
+class RefAllowableDiscountKm(models.Model):
+    date_from = models.DateField("Дата от", null=True, blank=True)
+    date_to = models.DateField("Дата до", null=True, blank=True)
+    brand = models.ForeignKey(AutoruMark, null=True, on_delete=models.CASCADE, verbose_name='Марка')
+    model = models.ForeignKey(AutoruModel, null=True, blank=True, on_delete=models.CASCADE, verbose_name='Модель')
+    modification = models.ForeignKey(AutoruModification, null=True, blank=True, on_delete=models.CASCADE, verbose_name='Модификация')
+    complectation = models.ForeignKey(AutoruComplectation, null=True, blank=True, on_delete=models.CASCADE, verbose_name='Комплектация')
+    discount_percent = models.FloatField("Допустимый дисконт от % КМ", default=0.0, blank=True)
+
+    def __str__(self):
+        parts = []
+        if self.brand:
+            parts.append(self.brand.name)
+        if self.model:
+            parts.append(self.model.name)
+        if self.modification:
+            parts.append(self.modification.name)
+        if self.complectation:
+            parts.append(self.complectation.name)
+        return "{} ({} - {}): {}%".format(" / ".join(parts) or "—", self.date_from or "—", self.date_to or "—", self.discount_percent)
+
+    class Meta:
+        db_table = 'RefAllowableDiscountKm'
+        verbose_name = "Допустимый дисконт от % КМ (опер. бизнес)"
+        verbose_name_plural = "Допустимые дисконты от % КМ (опер. бизнес)"

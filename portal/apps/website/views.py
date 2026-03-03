@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType, RefRulesCars
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType, RefRulesCars, RefAllowableDiscountKm
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -8754,6 +8754,148 @@ def settings_rules_cars(request):
         'stage_ids': stage_ids,
     }
     return render(request, 'kors/settings_rules_cars.html', {'params': params})
+
+
+@login_required
+def settings_allowable_discount_km(request):
+    """Допустимый дисконт от % КМ для операционного бизнеса: дата от/до, марка, модель, модификация, комплектация."""
+    brands_all = AutoruMark.objects.all().order_by('name')
+    models_all = AutoruModel.objects.select_related('mark').all().order_by('mark__name', 'name')
+    modifications_all = AutoruModification.objects.select_related('model').all().order_by('model__name', 'name')
+    complectations_all = AutoruComplectation.objects.select_related('modification').all().order_by('modification__name', 'name')
+
+    brand_ids = request.GET.getlist('brand_ids')
+    try:
+        brand_ids = [int(x) for x in brand_ids if x]
+    except ValueError:
+        brand_ids = []
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'delete':
+            pk = request.POST.get('id')
+            if pk:
+                try:
+                    RefAllowableDiscountKm.objects.filter(pk=int(pk)).delete()
+                except (ValueError, RefAllowableDiscountKm.DoesNotExist):
+                    pass
+            qs = request.META.get('QUERY_STRING', '')
+            if not qs and request.POST.getlist('brand_ids'):
+                from urllib.parse import urlencode
+                parts = [('brand_ids', x) for x in request.POST.getlist('brand_ids')]
+                qs = urlencode(parts)
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + ('?' + qs if qs else ''))
+
+        if action in ('add', 'edit'):
+            pk = request.POST.get('id') if action == 'edit' else None
+            date_from = request.POST.get('date_from') or None
+            date_to = request.POST.get('date_to') or None
+            brand_id = request.POST.get('brand')
+            model_id = request.POST.get('model') or None
+            modification_id = request.POST.get('modification') or None
+            complectation_id = request.POST.get('complectation') or None
+            try:
+                discount_percent = float((request.POST.get('discount_percent') or '0').replace(',', '.') or 0)
+            except (ValueError, TypeError):
+                discount_percent = 0.0
+            brand_obj = AutoruMark.objects.filter(pk=brand_id).first() if brand_id else None
+            model_obj = AutoruModel.objects.filter(pk=model_id).first() if model_id else None
+            modification_obj = AutoruModification.objects.filter(pk=modification_id).first() if modification_id else None
+            complectation_obj = AutoruComplectation.objects.filter(pk=complectation_id).first() if complectation_id else None
+            if brand_obj:
+                if pk:
+                    rec = RefAllowableDiscountKm.objects.filter(pk=pk).first()
+                    if rec:
+                        rec.date_from = date_from
+                        rec.date_to = date_to
+                        rec.brand = brand_obj
+                        rec.model = model_obj
+                        rec.modification = modification_obj
+                        rec.complectation = complectation_obj
+                        rec.discount_percent = discount_percent
+                        rec.save()
+                else:
+                    RefAllowableDiscountKm.objects.create(
+                        date_from=date_from, date_to=date_to,
+                        brand=brand_obj, model=model_obj, modification=modification_obj, complectation=complectation_obj,
+                        discount_percent=discount_percent
+                    )
+            qs = request.META.get('QUERY_STRING', '')
+            if not qs and request.POST.getlist('brand_ids'):
+                from urllib.parse import urlencode
+                parts = [('brand_ids', x) for x in request.POST.getlist('brand_ids')]
+                qs = urlencode(parts)
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + ('?' + qs if qs else ''))
+
+    qs = RefAllowableDiscountKm.objects.select_related('brand', 'model', 'modification', 'complectation').all()
+    if brand_ids:
+        qs = qs.filter(brand_id__in=brand_ids)
+    rules = list(qs.order_by('brand__name', 'model__name', 'modification__name', 'complectation__name'))
+
+    from collections import OrderedDict
+    by_brand = OrderedDict()
+    for r in rules:
+        bname = r.brand.name if r.brand else '—'
+        if bname not in by_brand:
+            by_brand[bname] = []
+        by_brand[bname].append(r)
+
+    params = {
+        'type': 'settings_allowable_discount_km',
+        'brands_all': brands_all,
+        'models_all': models_all,
+        'modifications_all': modifications_all,
+        'complectations_all': complectations_all,
+        'rules': rules,
+        'by_brand': by_brand,
+        'brand_ids': brand_ids,
+    }
+    return render(request, 'kors/settings_allowable_discount_km.html', {'params': params})
+
+
+@login_required
+def settings_min_km_cars(request):
+    """Минимальный КМ по автомобилям RefCarsOrganization: список и редактирование."""
+    units_all = RefUnit.objects.all().order_by('name')
+    unit_ids = request.GET.getlist('unit_ids')
+    try:
+        unit_ids = [int(x) for x in unit_ids if x]
+    except ValueError:
+        unit_ids = []
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'edit_min_km':
+            pk = request.POST.get('id')
+            min_km_val = request.POST.get('min_km')
+            if pk:
+                try:
+                    min_km_int = int(min_km_val) if min_km_val not in (None, '') else None
+                except (ValueError, TypeError):
+                    min_km_int = None
+                car = RefCarsOrganization.objects.filter(pk=pk).first()
+                if car is not None:
+                    car.min_km = min_km_int
+                    car.save()
+            qs = request.META.get('QUERY_STRING', '')
+            if not qs and request.POST.getlist('unit_ids'):
+                from urllib.parse import urlencode
+                parts = [('unit_ids', x) for x in request.POST.getlist('unit_ids')]
+                qs = urlencode(parts)
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + ('?' + qs if qs else ''))
+
+    qs = RefCarsOrganization.objects.select_related('unit', 'organization', 'store').filter(is_new=True).order_by('unit__name', 'mark', 'model', 'vin')
+    if unit_ids:
+        qs = qs.filter(unit_id__in=unit_ids)
+    cars = list(qs[:500])  # ограничение для производительности
+
+    params = {
+        'type': 'settings_min_km_cars',
+        'units_all': units_all,
+        'cars': cars,
+        'unit_ids': unit_ids,
+    }
+    return render(request, 'kors/settings_min_km_cars.html', {'params': params})
 
 
 @login_required
