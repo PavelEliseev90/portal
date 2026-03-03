@@ -52,6 +52,10 @@ urlpatterns = [
    path('settings/settings_new_cars_pricing/', views.settings_new_cars_pricing, name='settings_new_cars_pricing'),
    path('settings/settings_rules_cars/', views.settings_rules_cars, name='settings_rules_cars'),
    path('settings/settings_allowable_discount_km/', views.settings_allowable_discount_km, name='settings_allowable_discount_km'),
+   path('settings/api/allowable_discount/marks/', views.api_allowable_discount_marks, name='api_allowable_discount_marks'),
+   path('settings/api/allowable_discount/models/', views.api_allowable_discount_models, name='api_allowable_discount_models'),
+   path('settings/api/allowable_discount/modifications/', views.api_allowable_discount_modifications, name='api_allowable_discount_modifications'),
+   path('settings/api/allowable_discount/complectations/', views.api_allowable_discount_complectations, name='api_allowable_discount_complectations'),
    path('settings/settings_min_km_cars/', views.settings_min_km_cars, name='settings_min_km_cars'),
 
    path('traffic-desk/',   views.admin_traffic_desk, name='admin_traffic_desk'),

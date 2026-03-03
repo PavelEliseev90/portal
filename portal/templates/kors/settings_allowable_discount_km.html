@@ -92,14 +92,18 @@
             <td>{{ r.complectation.name|default:"—" }}</td>
             <td>{{ r.discount_percent|floatformat:2 }}</td>
             <td>
-              <button type="button" class="btn btn-sm btn-outline-primary btn-rule" data-bs-toggle="modal" data-bs-target="#modalEdit"
+              <button type="button" class="btn btn-sm btn-outline-primary btn-rule btn-edit-allowable" data-bs-toggle="modal" data-bs-target="#modalEdit"
                 data-id="{{ r.pk }}"
                 data-date-from="{{ r.date_from|date:'Y-m-d'|default:'' }}"
                 data-date-to="{{ r.date_to|date:'Y-m-d'|default:'' }}"
                 data-brand="{{ r.brand_id }}"
+                data-brand-name="{{ r.brand.name|default:'' }}"
                 data-model="{{ r.model_id|default:'' }}"
+                data-model-name="{{ r.model.name|default:'' }}"
                 data-modification="{{ r.modification_id|default:'' }}"
+                data-modification-name="{{ r.modification.name|default:'' }}"
                 data-complectation="{{ r.complectation_id|default:'' }}"
+                data-complectation-name="{{ r.complectation.name|default:'' }}"
                 data-discount-percent="{{ r.discount_percent }}">Изменить</button>
               <form method="post" class="d-inline" onsubmit="return confirm('Удалить запись?');">
                 {% csrf_token %}
@@ -120,7 +124,7 @@
   </div>
 </div>
 
-<!-- Модальное окно: Добавить -->
+<!-- Модальное окно: Добавить (марка/модель/модификация/комплектация загружаются по AJAX при открытии и выборе) -->
 <div class="modal fade" id="modalAdd" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content" style="border-radius: 1rem;">
@@ -137,51 +141,47 @@
             <div class="col-6">
               <div class="mb-3">
                 <label class="form-label">Дата от</label>
-                <input type="date" name="date_from" class="form-control add-date-from" style="border-radius: 0.75rem;">
+                <input type="date" name="date_from" class="form-control" style="border-radius: 0.75rem;">
               </div>
             </div>
             <div class="col-6">
               <div class="mb-3">
                 <label class="form-label">Дата до</label>
-                <input type="date" name="date_to" class="form-control add-date-to" style="border-radius: 0.75rem;">
+                <input type="date" name="date_to" class="form-control" style="border-radius: 0.75rem;">
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Марка</label>
-            <select name="brand" id="addBrand" class="form-select" required style="border-radius: 0.75rem;">
-              <option value="">— Выберите —</option>
-              {% for b in params.brands_all %}
-              <option value="{{ b.pk }}">{{ b.name }}</option>
-              {% endfor %}
-            </select>
+            <label class="form-label">Марка <span class="text-danger">*</span></label>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="brand" id="addBrand" class="form-select search-select-allowable" required style="border-radius: 0.75rem;">
+                <option value="">— Выберите —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Модель</label>
-            <select name="model" id="addModel" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for m in params.models_all %}
-              <option value="{{ m.pk }}" data-mark-id="{{ m.mark_id }}">{{ m.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="model" id="addModel" class="form-select search-select-allowable" disabled style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Модификация</label>
-            <select name="modification" id="addModification" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for m in params.modifications_all %}
-              <option value="{{ m.pk }}" data-model-id="{{ m.model_id }}">{{ m.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="modification" id="addModification" class="form-select search-select-allowable" disabled style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Комплектация</label>
-            <select name="complectation" id="addComplectation" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for c in params.complectations_all %}
-              <option value="{{ c.pk }}" data-modification-id="{{ c.modification_id }}">{{ c.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="complectation" id="addComplectation" class="form-select search-select-allowable" disabled style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Допустимый дисконт от % КМ</label>
@@ -226,39 +226,36 @@
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Марка</label>
-            <select name="brand" id="editBrand" class="form-select" required style="border-radius: 0.75rem;">
-              {% for b in params.brands_all %}
-              <option value="{{ b.pk }}">{{ b.name }}</option>
-              {% endfor %}
-            </select>
+            <label class="form-label">Марка <span class="text-danger">*</span></label>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="brand" id="editBrand" class="form-select search-select-allowable" required style="border-radius: 0.75rem;">
+                <option value="">— Выберите —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Модель</label>
-            <select name="model" id="editModel" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for m in params.models_all %}
-              <option value="{{ m.pk }}" data-mark-id="{{ m.mark_id }}">{{ m.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="model" id="editModel" class="form-select search-select-allowable" style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Модификация</label>
-            <select name="modification" id="editModification" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for m in params.modifications_all %}
-              <option value="{{ m.pk }}" data-model-id="{{ m.model_id }}">{{ m.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="modification" id="editModification" class="form-select search-select-allowable" style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Комплектация</label>
-            <select name="complectation" id="editComplectation" class="form-select" style="border-radius: 0.75rem;">
-              <option value="">— Любая —</option>
-              {% for c in params.complectations_all %}
-              <option value="{{ c.pk }}" data-modification-id="{{ c.modification_id }}">{{ c.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="search-select-wrapper select2-wrapper">
+              <select name="complectation" id="editComplectation" class="form-select search-select-allowable" style="border-radius: 0.75rem;">
+                <option value="">— Любая —</option>
+              </select>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Допустимый дисконт от % КМ</label>
@@ -276,6 +273,12 @@
 
 <script>
 (function() {
+  var MARKS_URL = '{% url "website:api_allowable_discount_marks" %}';
+  var MODELS_URL = '{% url "website:api_allowable_discount_models" %}';
+  var MODIFICATIONS_URL = '{% url "website:api_allowable_discount_modifications" %}';
+  var COMPLECTATIONS_URL = '{% url "website:api_allowable_discount_complectations" %}';
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
   function initFilterSearch(inputId, dropdownId) {
     var input = document.getElementById(inputId);
     var dropdown = document.getElementById(dropdownId);
@@ -296,58 +299,202 @@
   }
   initFilterSearch('brandSearch', 'brandDropdown');
 
-  function cascadeSelect(brandSelId, modelSelId, modSelId, compSelId) {
-    var brandSel = document.getElementById(brandSelId);
-    var modelSel = document.getElementById(modelSelId);
-    var modSel = document.getElementById(modSelId);
-    var compSel = document.getElementById(compSelId);
-    if (!brandSel || !modelSel) return;
-    function filterOptions(sel, attr, parentVal) {
-      var opts = sel.querySelectorAll('option');
-      opts.forEach(function(opt) {
-        if (opt.value === '') { opt.style.display = ''; return; }
-        var dataVal = opt.getAttribute('data-' + attr);
-        opt.style.display = (!parentVal || dataVal === String(parentVal)) ? '' : 'none';
-      });
+  function destroySelect2($el) {
+    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+      $el.select2('destroy');
     }
-    function updateModel() {
-      var brandVal = brandSel.value;
-      filterOptions(modelSel, 'mark-id', brandVal);
-      modelSel.value = '';
-      updateMod();
-    }
-    function updateMod() {
-      var modelVal = modelSel.value;
-      filterOptions(modSel, 'model-id', modelVal);
-      modSel.value = '';
-      updateComp();
-    }
-    function updateComp() {
-      var modVal = modSel.value;
-      filterOptions(compSel, 'modification-id', modVal);
-      compSel.value = '';
-    }
-    brandSel.addEventListener('change', updateModel);
-    modelSel.addEventListener('change', updateMod);
-    modSel.addEventListener('change', updateComp);
-    updateModel();
   }
-  cascadeSelect('addBrand', 'addModel', 'addModification', 'addComplectation');
-  cascadeSelect('editBrand', 'editModel', 'editModification', 'editComplectation');
 
+  function resetCascade($model, $mod, $comp) {
+    destroySelect2($model); destroySelect2($mod); destroySelect2($comp);
+    $model.html('<option value="">— Любая —</option>').prop('disabled', true);
+    $mod.html('<option value="">— Любая —</option>').prop('disabled', true);
+    $comp.html('<option value="">— Любая —</option>').prop('disabled', true);
+  }
+
+  function initSelect2Marks($sel) {
+    destroySelect2($sel);
+    $sel.select2({
+      placeholder: 'Поиск марки...',
+      allowClear: true,
+      width: '100%',
+      ajax: {
+        url: MARKS_URL,
+        dataType: 'json',
+        delay: 250,
+        data: function(params) { return { q: params.term || '' }; },
+        processResults: function(data) { return { results: data.results || [] }; },
+        headers: { 'X-CSRFToken': csrfToken }
+      },
+      minimumInputLength: 0
+    });
+  }
+
+  function initSelect2Models($sel, markId, onOpen) {
+    destroySelect2($sel);
+    $sel.prop('disabled', !markId);
+    if (!markId) return;
+    $sel.select2({
+      placeholder: 'Поиск модели...',
+      allowClear: true,
+      width: '100%',
+      ajax: {
+        url: MODELS_URL,
+        dataType: 'json',
+        delay: 250,
+        data: function(params) { return { q: params.term || '', mark_id: markId }; },
+        processResults: function(data) { return { results: data.results || [] }; },
+        headers: { 'X-CSRFToken': csrfToken }
+      },
+      minimumInputLength: 0
+    });
+    if (onOpen) $sel.select2('open');
+  }
+
+  function initSelect2Modifications($sel, modelId, onOpen) {
+    destroySelect2($sel);
+    $sel.prop('disabled', !modelId);
+    if (!modelId) return;
+    $sel.select2({
+      placeholder: 'Поиск модификации...',
+      allowClear: true,
+      width: '100%',
+      ajax: {
+        url: MODIFICATIONS_URL,
+        dataType: 'json',
+        delay: 250,
+        data: function(params) { return { q: params.term || '', model_id: modelId }; },
+        processResults: function(data) { return { results: data.results || [] }; },
+        headers: { 'X-CSRFToken': csrfToken }
+      },
+      minimumInputLength: 0
+    });
+    if (onOpen) $sel.select2('open');
+  }
+
+  function initSelect2Complectations($sel, modificationId, onOpen) {
+    destroySelect2($sel);
+    $sel.prop('disabled', !modificationId);
+    if (!modificationId) return;
+    $sel.select2({
+      placeholder: 'Поиск комплектации...',
+      allowClear: true,
+      width: '100%',
+      ajax: {
+        url: COMPLECTATIONS_URL,
+        dataType: 'json',
+        delay: 250,
+        data: function(params) { return { q: params.term || '', modification_id: modificationId }; },
+        processResults: function(data) { return { results: data.results || [] }; },
+        headers: { 'X-CSRFToken': csrfToken }
+      },
+      minimumInputLength: 0
+    });
+    if (onOpen) $sel.select2('open');
+  }
+
+  // Modal Add: инициализация при открытии
+  var modalAdd = document.getElementById('modalAdd');
+  if (modalAdd) {
+    modalAdd.addEventListener('show.bs.modal', function() {
+      var $brand = $('#addBrand'), $model = $('#addModel'), $mod = $('#addModification'), $comp = $('#addComplectation');
+      $brand.html('<option value="">— Выберите —</option>');
+      resetCascade($model, $mod, $comp);
+      initSelect2Marks($brand);
+      $brand.off('change.allowable').on('change.allowable', function() {
+        var mid = $(this).val();
+        resetCascade($model, $mod, $comp);
+        initSelect2Models($model, mid);
+      });
+      $model.off('change.allowable').on('change.allowable', function() {
+        var modId = $(this).val();
+        destroySelect2($mod); destroySelect2($comp);
+        $mod.html('<option value="">— Любая —</option>').prop('disabled', !modId);
+        $comp.html('<option value="">— Любая —</option>').prop('disabled', true);
+        $model.prop('disabled', false);
+        if (modId) initSelect2Modifications($mod, modId);
+      });
+      $mod.off('change.allowable').on('change.allowable', function() {
+        var cid = $(this).val();
+        destroySelect2($comp);
+        $comp.html('<option value="">— Любая —</option>').prop('disabled', !cid);
+        $mod.prop('disabled', false);
+        if (cid) initSelect2Complectations($comp, cid);
+      });
+    });
+    modalAdd.addEventListener('hidden.bs.modal', function() {
+      destroySelect2($('#addBrand')); destroySelect2($('#addModel'));
+      destroySelect2($('#addModification')); destroySelect2($('#addComplectation'));
+    });
+  }
+
+  // Modal Edit: при открытии подставляем значения и инициализируем Select2
   var modalEdit = document.getElementById('modalEdit');
   if (modalEdit) {
     modalEdit.addEventListener('show.bs.modal', function(e) {
       var btn = e.relatedTarget;
-      if (!btn) return;
-      document.getElementById('editId').value = btn.dataset.id || '';
-      document.getElementById('editDateFrom').value = btn.dataset.dateFrom || '';
-      document.getElementById('editDateTo').value = btn.dataset.dateTo || '';
-      document.getElementById('editBrand').value = btn.dataset.brand || '';
-      document.getElementById('editModel').value = btn.dataset.model || '';
-      document.getElementById('editModification').value = btn.dataset.modification || '';
-      document.getElementById('editComplectation').value = btn.dataset.complectation || '';
-      document.getElementById('editDiscountPercent').value = btn.dataset.discountPercent || '0';
+      if (!btn || !btn.classList || !btn.classList.contains('btn-edit-allowable')) return;
+      var d = btn.dataset;
+      $('#editId').val(d.id || '');
+      $('#editDateFrom').val(d.dateFrom || '');
+      $('#editDateTo').val(d.dateTo || '');
+      $('#editDiscountPercent').val(d.discountPercent || '0');
+
+      var $brand = $('#editBrand'), $model = $('#editModel'), $mod = $('#editModification'), $comp = $('#editComplectation');
+      $brand.html('<option value="">— Выберите —</option>');
+      if (d.brand && d.brandName) {
+        $brand.append('<option value="' + d.brand + '" selected>' + (d.brandName || '').replace(/</g, '&lt;') + '</option>');
+      }
+      $model.html('<option value="">— Любая —</option>');
+      if (d.model && d.modelName) {
+        $model.append('<option value="' + d.model + '" selected>' + (d.modelName || '').replace(/</g, '&lt;') + '</option>');
+      }
+      $mod.html('<option value="">— Любая —</option>');
+      if (d.modification && d.modificationName) {
+        $mod.append('<option value="' + d.modification + '" selected>' + (d.modificationName || '').replace(/</g, '&lt;') + '</option>');
+      }
+      $comp.html('<option value="">— Любая —</option>');
+      if (d.complectation && d.complectationName) {
+        $comp.append('<option value="' + d.complectation + '" selected>' + (d.complectationName || '').replace(/</g, '&lt;') + '</option>');
+      }
+
+      destroySelect2($brand); destroySelect2($model); destroySelect2($mod); destroySelect2($comp);
+      initSelect2Marks($brand);
+      $brand.prop('disabled', false);
+      $model.prop('disabled', !d.brand);
+      $mod.prop('disabled', !d.model);
+      $comp.prop('disabled', !d.modification);
+      if (d.brand) initSelect2Models($model, d.brand);
+      if (d.model) initSelect2Modifications($mod, d.model);
+      if (d.modification) initSelect2Complectations($comp, d.modification);
+
+      $brand.off('change.allowableEdit').on('change.allowableEdit', function() {
+        var mid = $(this).val();
+        destroySelect2($model); destroySelect2($mod); destroySelect2($comp);
+        $model.html('<option value="">— Любая —</option>').prop('disabled', !mid);
+        $mod.html('<option value="">— Любая —</option>').prop('disabled', true);
+        $comp.html('<option value="">— Любая —</option>').prop('disabled', true);
+        if (mid) initSelect2Models($model, mid);
+      });
+      $model.off('change.allowableEdit').on('change.allowableEdit', function() {
+        var modId = $(this).val();
+        destroySelect2($mod); destroySelect2($comp);
+        $mod.prop('disabled', !modId);
+        $mod.html('<option value="">— Любая —</option>');
+        $comp.html('<option value="">— Любая —</option>').prop('disabled', true);
+        if (modId) initSelect2Modifications($mod, modId);
+      });
+      $mod.off('change.allowableEdit').on('change.allowableEdit', function() {
+        var cid = $(this).val();
+        destroySelect2($comp);
+        $comp.prop('disabled', !cid);
+        $comp.html('<option value="">— Любая —</option>');
+        if (cid) initSelect2Complectations($comp, cid);
+      });
+    });
+    modalEdit.addEventListener('hidden.bs.modal', function() {
+      destroySelect2($('#editBrand')); destroySelect2($('#editModel'));
+      destroySelect2($('#editModification')); destroySelect2($('#editComplectation'));
     });
   }
 })();
