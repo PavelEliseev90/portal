@@ -4897,9 +4897,17 @@ def _stok_im_from_db(request):
     if filtr.get('no_category') == 'on':
         qs = qs.filter(Q(category_avito='') | Q(category_avito__isnull=True))
 
-    products = list(qs.order_by('nomenclature')[:5000])
+    qs = qs.order_by('nomenclature')
+    paginator = Paginator(qs, 50)
+    page_num = filtr.get('page', 1)
+    try:
+        page_num = int(page_num)
+    except (ValueError, TypeError):
+        page_num = 1
+    page_obj = paginator.get_page(page_num)
+
     answer = []
-    for p in products:
+    for p in page_obj.object_list:
         d = p.to_dict()
         first_photo = next((ph for ph in p.photos.all() if ph.file), None)
         d['first_photo_url'] = first_photo.file.url if first_photo else None
@@ -4924,7 +4932,7 @@ def _stok_im_from_db(request):
         'no_category': no_category,
         'active': total - not_uploaded,
     }
-    return answer, dashboard
+    return answer, dashboard, page_obj
 
 
 def _stok_im_metric_stats(qs, total):
@@ -5038,10 +5046,37 @@ def stok_im(request):
     has_db_data = ImProduct.objects.exists()
 
     if has_db_data:
-        answer, dashboard = _stok_im_from_db(request)
+        answer, dashboard, page_obj = _stok_im_from_db(request)
     else:
         answer = []
         dashboard = None
+        page_obj = None
+
+    query_without_page = None
+    page_range_display = []
+    if page_obj and page_obj.paginator.num_pages > 1:
+        q = request.GET.copy()
+        if 'page' in q:
+            del q['page']
+        query_without_page = q.urlencode()
+        num = page_obj.number
+        total = page_obj.paginator.num_pages
+        # Показываем: 1, 2, ..., n-2, n-1, n, n+1, n+2, ..., last-1, last
+        seen = set()
+        for p in [1, 2, num - 2, num - 1, num, num + 1, num + 2, total - 1, total]:
+            if 1 <= p <= total and p not in seen:
+                seen.add(p)
+                page_range_display.append(('page', p))
+        page_range_display.sort(key=lambda x: x[1])
+        # Вставляем ellipsis между разрывами
+        result = []
+        prev = 0
+        for _, p in page_range_display:
+            if prev and p - prev > 1:
+                result.append(('ellipsis', None))
+            result.append(('page', p))
+            prev = p
+        page_range_display = result
 
     params = {
         'type': 'stok_im',
@@ -5050,6 +5085,9 @@ def stok_im(request):
         'answer': answer,
         'dashboard': dashboard,
         'has_db_data': has_db_data,
+        'page_obj': page_obj,
+        'query_without_page': query_without_page,
+        'page_range_display': page_range_display,
     }
     return render(request, 'im/stok.html', {'params': params})
 
@@ -8757,12 +8795,83 @@ def settings_rules_cars(request):
 
 
 @login_required
+def api_allowable_discount_marks(request):
+    """API: марки с поиском (q). Загружается при открытии модалки добавления."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    q = (request.GET.get('q') or '').strip()
+    qs = AutoruMark.objects.all().order_by('name')
+    if q:
+        qs = qs.filter(name__icontains=q)[:50]
+    else:
+        qs = qs[:100]
+    return JsonResponse({'results': [{'id': m.id, 'text': m.name} for m in qs]})
+
+
+@login_required
+def api_allowable_discount_models(request):
+    """API: модели по mark_id с поиском (q)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    mark_id = request.GET.get('mark_id', '')
+    q = (request.GET.get('q') or '').strip()
+    if not mark_id:
+        return JsonResponse({'results': []})
+    try:
+        qs = AutoruModel.objects.filter(mark_id=int(mark_id)).order_by('name')
+        if q:
+            qs = qs.filter(name__icontains=q)[:50]
+        else:
+            qs = qs[:100]
+        return JsonResponse({'results': [{'id': m.id, 'text': m.name} for m in qs]})
+    except (ValueError, TypeError):
+        return JsonResponse({'results': []})
+
+
+@login_required
+def api_allowable_discount_modifications(request):
+    """API: модификации по model_id с поиском (q)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    model_id = request.GET.get('model_id', '')
+    q = (request.GET.get('q') or '').strip()
+    if not model_id:
+        return JsonResponse({'results': []})
+    try:
+        qs = AutoruModification.objects.filter(model_id=int(model_id)).order_by('name')
+        if q:
+            qs = qs.filter(name__icontains=q)[:50]
+        else:
+            qs = qs[:100]
+        return JsonResponse({'results': [{'id': m.id, 'text': m.name} for m in qs]})
+    except (ValueError, TypeError):
+        return JsonResponse({'results': []})
+
+
+@login_required
+def api_allowable_discount_complectations(request):
+    """API: комплектации по modification_id с поиском (q)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    modification_id = request.GET.get('modification_id', '')
+    q = (request.GET.get('q') or '').strip()
+    if not modification_id:
+        return JsonResponse({'results': []})
+    try:
+        qs = AutoruComplectation.objects.filter(modification_id=int(modification_id)).order_by('name')
+        if q:
+            qs = qs.filter(name__icontains=q)[:50]
+        else:
+            qs = qs[:100]
+        return JsonResponse({'results': [{'id': c.id, 'text': c.name} for c in qs]})
+    except (ValueError, TypeError):
+        return JsonResponse({'results': []})
+
+
+@login_required
 def settings_allowable_discount_km(request):
     """Допустимый дисконт от % КМ для операционного бизнеса: дата от/до, марка, модель, модификация, комплектация."""
     brands_all = AutoruMark.objects.all().order_by('name')
-    models_all = AutoruModel.objects.select_related('mark').all().order_by('mark__name', 'name')
-    modifications_all = AutoruModification.objects.select_related('model').all().order_by('model__name', 'name')
-    complectations_all = AutoruComplectation.objects.select_related('modification').all().order_by('modification__name', 'name')
 
     brand_ids = request.GET.getlist('brand_ids')
     try:
@@ -8843,9 +8952,6 @@ def settings_allowable_discount_km(request):
     params = {
         'type': 'settings_allowable_discount_km',
         'brands_all': brands_all,
-        'models_all': models_all,
-        'modifications_all': modifications_all,
-        'complectations_all': complectations_all,
         'rules': rules,
         'by_brand': by_brand,
         'brand_ids': brand_ids,

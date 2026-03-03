@@ -253,7 +253,7 @@
         </a>
         <div class="stok-count">
           <span class="icon-mbri-shopping-bag"></span>
-          <span>Всего: <strong>{{params.answer|length}}</strong></span>
+          <span>Всего: <strong>{% if params.page_obj %}{{ params.page_obj.paginator.count }}{% else %}{{ params.answer|length }}{% endif %}</strong>{% if params.page_obj and params.page_obj.paginator.num_pages > 1 %} (стр. {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}){% endif %}</span>
         </div>
         <button type="button" class="btn btn-primary filter-btn-fixed" data-bs-toggle="modal" data-bs-target="#exampleModal" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; box-shadow: 0 4px 15px rgba(0, 42, 90, 0.2); border-radius: 0.75rem; padding: 0.5rem 1.25rem;">
           <span class="icon-mbri-setting2"></span> Параметры
@@ -453,6 +453,34 @@
             </div>
           </div>
         {% endfor %}
+
+        {% if params.page_obj and params.page_obj.paginator.num_pages > 1 %}
+        <div class="col-12 mt-4">
+          <nav aria-label="Пагинация" class="d-flex justify-content-center">
+            <ul class="pagination flex-wrap" style="gap: 0.25rem;">
+              {% if params.page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}" style="border-radius: 0.75rem;">« Назад</a>
+              </li>
+              {% endif %}
+              {% for item in params.page_range_display %}
+                {% if item.0 == 'ellipsis' %}
+                <li class="page-item disabled"><span class="page-link" style="border-radius: 0.75rem;">…</span></li>
+                {% elif item.1 == params.page_obj.number %}
+                <li class="page-item active"><span class="page-link" style="border-radius: 0.75rem;">{{ item.1 }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ item.1 }}" style="border-radius: 0.75rem;">{{ item.1 }}</a></li>
+                {% endif %}
+              {% endfor %}
+              {% if params.page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}" style="border-radius: 0.75rem;">Вперёд »</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
       {% elif params.has_db_data %}
         <div class="col-12">
           <div class="portal-panel text-center" style="padding: 3rem 1.5rem;">
