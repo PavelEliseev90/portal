@@ -5218,6 +5218,23 @@ def product(request):
     return render(request, 'im/product.html', {'params': params})
 
 
+def product_photo_delete(request, photo_id):
+    """Удаление фото товара (только из портала, не из 1С)."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    if request.method != 'POST':
+        return HttpResponseRedirect('/stok_im/list/')
+    from website.models import ImProductPhoto
+    photo = ImProductPhoto.objects.filter(id=photo_id).select_related('product').first()
+    if not photo:
+        return HttpResponseRedirect('/stok_im/list/')
+    kod = photo.product.nomenclature_code
+    photo.delete()
+    return HttpResponseRedirect(
+        request.build_absolute_uri(reverse('website:stok_im_product') + '?kod=' + kod)
+    )
+
+
 def stok_im_sync_log(request):
     """Журнал синхронизации стока интернет-магазина."""
     if not request.user.is_authenticated:

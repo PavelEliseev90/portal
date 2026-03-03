@@ -427,6 +427,197 @@ def refresh_cars(request):
 
     return JsonResponse(info, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def refresh_new_cars(request):
+
+    list_cars = list()
+
+    data = json.loads(request.body)
+
+    unit_json   = data['Unit']
+    unit        = get_unit(unit_json)
+    
+    one_car = False
+    if 'One' in data:
+        one_car = data['One'] 
+
+    count_add   = 0
+    count_del   = 0
+    count_stock = 0
+
+    list_del = list()
+
+    list_load_photo = list()
+    cars_json       = data['Cars']
+    
+    list_cars_id = list()
+
+    for car in cars_json:
+
+        vin             = car.get('Vin', '').upper()
+        lo_link_number  = car.get('Lo_link_number', '').upper()
+        lo_uin          = car.get('Lo_uin', '').upper()
+
+        car_object, created = RefCarsOrganization.objects.filter(Q(vin = vin) 
+                                                                 and Q(lo_link_number = lo_link_number) 
+                                                                 and Q(lo_uin = lo_uin),).get_or_create(vin = vin,
+                lo_link_number = lo_link_number,
+                lo_uin = lo_uin
+            )
+        
+        if created:
+            count_add = count_add + 1
+        else:
+            try:
+                list_del.remove(car_object.pk)
+            except:
+                s = 1
+        list_cars_id.append(car_object.pk)
+
+        car_object.date_refresh     = datetime.now()    
+        car_object.organization     = get_organization(car['Organization'])    
+        car_object.unit             = unit
+        car_object.store            = get_store(car['Store'])
+        car_object.is_new           = car['Is_new']
+        car_object.vin              = car.get('Vin', '').upper()
+        car_object.vin2             = car['Vin2']
+        car_object.name             = car['Name']
+        car_object.year             = car['Year']
+        car_object.mark             = car['Mark']
+        car_object.model            = car['Model']
+        car_object.modification     = car['Modification']
+        car_object.color            = car['Color']
+        car_object.run              = car['Run']
+        car_object.plate_number     = car['Plate_number']
+        car_object.cost_price       = car['Cost_price']
+        car_object.outlay           = car['Outlay']
+        car_object.days_in_stok     = car['Days_in_stok']
+        car_object.price            = car['Price']
+        car_object.quantity         = car['Quantity']
+        car_object.lo_link              = car['Lo_link']
+        car_object.lo_link_date         = car['Lo_link_date']
+        car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
+        car_object.lo_uin               = car.get('Lo_uin', '').upper()
+        car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
+        car_object.stage_price          = get_stage_price(car['Stage_price'])
+        car_object.group_price          = get_group_price(car['Group_price'])
+        car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
+        car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
+        car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
+        car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
+        car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
+        
+        car_object.owners               = car['Owners']
+        car_object.keys                 = car['Keys']
+        car_object.task                 = car['Task']  
+        car_object.reserve              = car['Reserve']             
+
+        car_object.days_next_stage      = car['Days_next_stage']
+        car_object.link_avtoteka_web    = car['Link_avtoteka_web']
+        car_object.link_avtoteka_pdf    = car['Link_avtoteka_pdf']
+        car_object.bcp                  = car['BCP']
+        
+        id_avito = car['ID_avitoru']
+        try:
+            if id_avito > 0:
+                car_object.modification_avito = RefAvito.objects.get(avito_id = id_avito)
+        except:
+            s=1
+            
+        id_avtoru = car['ID_autoru']
+        try:
+            if id_avtoru > 0:
+                car_object.modification_autoru = AutoruModification.objects.get(idSite = id_avtoru)
+        except:
+            s=1
+
+        car_object.engine_power         = car['Engine_power']
+        car_object.engine_volume        = car['Engine_volume']
+
+        car_object.description_podgotovka   = car['Description_podgotovka']
+        car_object.description_op           = car['Description_op']
+
+        car_object.save()
+
+        if 'Prices_list' in car:
+            #RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
+            for car_price in car['Prices_list']:
+                if RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) and Q(date = car_price['Date'])).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) 
+                                                                    and Q(date = car_price['Date']) 
+                                                                                            ).get_or_create(car = car_object,
+                                                                                                                    date = car_price['Date']
+                                                                                                                )
+                    if created:
+                        data_info.price = car_price['Price']
+                        data_info.save()  
+
+        if 'Prices_calculation_list' in car:
+            #RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
+            for car_price in car['Prices_calculation_list']:
+                evaluation = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
+                if RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
+                                                                 and Q(date = car_price['Date']) 
+                                                                 and Q(evaluation = evaluation),).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
+                                                                    and Q(date = car_price['Date']) 
+                                                                    and Q(evaluation = evaluation),).get_or_create(car = car_object,
+                                                                                                                    date = car_price['Date'],
+                                                                                                                    evaluation = evaluation
+                                                                                                                )
+                    if created:
+                        data_info.price         = car_price['Price']
+                        data_info.rule          = car_price['Rule']
+                        data_info.save()     
+
+        info_car = {
+            'Car_object'        : car_object,
+            'Lo_uin'            : car['Lo_uin'],
+            'Photos'            : car['Photos']
+        }
+        list_load_photo.append(info_car)
+    
+    if one_car == False:
+        cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0).exclude(pk__in = list_cars_id)    
+        for car in cars_update:
+            car.quantity = 0
+            car.save()
+            list_del.append(car.pk)
+        
+    count_del   = len(list_del)
+    count_stock = len(cars_json)
+
+    refresh_log = RefreshCarsLog()
+    refresh_log.unit = unit
+    refresh_log.count_add   = count_add
+    refresh_log.count_del   = count_del
+    refresh_log.count_stock = count_stock
+    refresh_log.save()
+
+    for car in list_load_photo:
+        
+        car_object = car['Car_object']
+        load_photos(car_object, car['Photos'])
+
+        image           = car_object.qr.open()
+        image_content   = image.read()
+        image_base64    = base64.b64encode(image_content)
+        car_link        = 'https://ah.kors-group.com/cars/' + str(car_object.slug) + '/'
+        
+        car_info = {
+            'Lo_Uin'    : car['Lo_uin'],
+            'QR_Base64' : str(image_base64.decode()),
+            'Lo_link'   : car_link
+        }
+        
+        list_cars.append(car_info)
+
+    info = {
+        'list_cars' : list_cars
+    }
+
+    return JsonResponse(info, status=status.HTTP_200_OK)
+
 
 def load_photos(car, photos):
     
