@@ -120,45 +120,45 @@ def check_estimations(reg_interactiv_ocenka):
         error_documents = True
     else:
         page_documents = reg_interactiv_ocenka.page_documents
-        if page_documents.type_reception == None: 
-            error_documents = True
-            field = tr_check('Тип приема', 'Ошибка', False)
-            list_documents.append(field)
-        else:
-            field = tr_check('Тип приема', 'ОК', True)
-            list_documents.append(field)
+        # if page_documents.type_reception == None: 
+        #     error_documents = True
+        #     field = tr_check('Тип приема', 'Ошибка', False)
+        #     list_documents.append(field)
+        # else:
+        #     field = tr_check('Тип приема', 'ОК', True)
+        #     list_documents.append(field)
         
-        if page_documents.organization == None: 
-            error_documents = True
-            field = tr_check('Организация', 'Ошибка', False)
-            list_documents.append(field)
-        else:
-            field = tr_check('Организация', 'ОК', True)
-            list_documents.append(field)
+        # if page_documents.organization == None: 
+        #     error_documents = True
+        #     field = tr_check('Организация', 'Ошибка', False)
+        #     list_documents.append(field)
+        # else:
+        #     field = tr_check('Организация', 'ОК', True)
+        #     list_documents.append(field)
 
-        if page_documents.filial == None: 
-            error_documents = True
-            field = tr_check('Филиал', 'Ошибка', False)
-            list_documents.append(field)
-        else:
-            field = tr_check('Филиал', 'ОК', True)
-            list_documents.append(field)
+        # if page_documents.filial == None: 
+        #     error_documents = True
+        #     field = tr_check('Филиал', 'Ошибка', False)
+        #     list_documents.append(field)
+        # else:
+        #     field = tr_check('Филиал', 'ОК', True)
+        #     list_documents.append(field)
 
-        if page_documents.unit == None: 
-            error_documents = True
-            field = tr_check('Подразделение', 'Ошибка', False)
-            list_documents.append(field)
-        else:
-            field = tr_check('Подразделение', 'ОК', True)
-            list_documents.append(field)
+        # if page_documents.unit == None: 
+        #     error_documents = True
+        #     field = tr_check('Подразделение', 'Ошибка', False)
+        #     list_documents.append(field)
+        # else:
+        #     field = tr_check('Подразделение', 'ОК', True)
+        #     list_documents.append(field)
 
-        if page_documents.store == None: 
-            error_documents = True
-            field = tr_check('Стоянка', 'Ошибка', False)
-            list_documents.append(field)
-        else:
-            field = tr_check('Стоянка', 'ОК', True)
-            list_documents.append(field)
+        # if page_documents.store == None: 
+        #     error_documents = True
+        #     field = tr_check('Стоянка', 'Ошибка', False)
+        #     list_documents.append(field)
+        # else:
+        #     field = tr_check('Стоянка', 'ОК', True)
+        #     list_documents.append(field)
 
         if page_documents.customer_family == None or page_documents.customer_family == '': 
             error_documents = True
@@ -1312,6 +1312,8 @@ def estimation_rlk(request, rlk_id):
                 new_message.comment     = 'Интерактивная оценка отправлена на согласование, ознакомтесь.'
                 new_message.save()
             
+            interactiv_rlk.save()
+
             if "page" in request.POST:
                 reg_interactiv_ocenka_page_soglasovanie.save()
                 return HttpResponseRedirect(request.path_info + '?page='+ request.POST.get('page'))
@@ -1347,32 +1349,31 @@ def estimation_rlk(request, rlk_id):
             users_add           = request.POST.get('users', '')
             users_add_list      = users_add.split(';')
             
-            object_interactiv_data.access_user.clear()
+            interactiv_rlk.access_user.clear()
             for user_add in users_add_list:
                 if len(user_add) > 0:
                     uusr = User.objects.get(id = user_add)
-                    object_interactiv_data.access_user.add(uusr) 
-            object_interactiv_data.save()
-
+                    interactiv_rlk.access_user.add(uusr) 
+            
             organization_id = request.POST.get('organization_id', '')
             if organization_id != '':
-                object_interactiv_data.organization = RefOrganization.objects.get(pk = organization_id)
+                interactiv_rlk.organization = RefOrganization.objects.get(pk = organization_id)
 
             filial_id = request.POST.get('filial_id', '')
             if filial_id != '':
-                object_interactiv_data.filial = RefFilial.objects.get(pk = filial_id)
+                interactiv_rlk.filial = RefFilial.objects.get(pk = filial_id)
 
             unit_id = request.POST.get('unit_id', '')
             if unit_id != '':
-                object_interactiv_data.unit = RefUnit.objects.get(pk = unit_id)
+                interactiv_rlk.unit = RefUnit.objects.get(pk = unit_id)
 
             store_id = request.POST.get('store_id', '')
             if store_id != '':
-                object_interactiv_data.store = RefStore.objects.get(pk = store_id)
+                interactiv_rlk.store = RefStore.objects.get(pk = store_id)
 
             type_reception_id = request.POST.get('type_reception_id', '')
             if type_reception_id != '':
-                object_interactiv_data.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
+                interactiv_rlk.type_reception = RefTypeReceptionCarsOrganization.objects.get(pk = type_reception_id)
 
             run = int(request.POST.get('run', '0'))
             reg_interactiv_ocenka_remote.run = run
@@ -1397,11 +1398,11 @@ def estimation_rlk(request, rlk_id):
             if comment != '':
                 reg_interactiv_ocenka_remote.comment   = comment
 
-            type_drive           = request.POST.get('type_drive', '')
-            if type_drive != '' and type_drive != object_interactiv_data.type_drive:
-                object_interactiv_data.type_drive    = type_drive
-                object_interactiv_data.save()
-            object_interactiv_data.save()
+            # type_drive           = request.POST.get('type_drive', '')
+            # if type_drive != '' and type_drive != reg_interactiv_ocenka_remote.type_drive:
+            #     reg_interactiv_ocenka_remote.type_drive    = type_drive
+            #     reg_interactiv_ocenka_remote.save()
+            interactiv_rlk.save()
             reg_interactiv_ocenka_remote.save()
 
             type_point  = ''
@@ -1420,7 +1421,8 @@ def estimation_rlk(request, rlk_id):
                 new_estimation_files.file           = file_object
                 new_estimation_files.user           = request.user
                 new_estimation_files.save()
-            
+            interactiv_rlk.save()
+
             if 'save' in request.POST:
                 return HttpResponseRedirect(request.path_info + '?page=11') 
             
@@ -1672,6 +1674,8 @@ def estimation_start(request, rlk_id):
         if active != '':
             estimation_active_all   = RegInteractivOcenkaRLK.objects.filter(rlk__id = int(active)).first()
             reg_interactiv_ocenka   = estimation_active_all.estimation 
+            interactiv_rlk.estimation = reg_interactiv_ocenka
+            interactiv_rlk.save()
 
     if interactiv_rlk.estimation == None:
         if estimation_active == None:
@@ -1687,88 +1691,98 @@ def estimation_start(request, rlk_id):
 
     # Обработка POST запроса - сохранение данных
     if request.method == 'POST':
-        # VIN и номер кузова
-        vin = request.POST.get('vin', '').strip()
-        body_number = request.POST.get('body_number', '').strip()
         
-        if vin:
-            reg_interactiv_ocenka.vin = vin
-            refresh_analitick(reg_interactiv_ocenka)
+        if request.POST.get('type_estimation') != None:
+            reg_interactiv_ocenka.type_estimation = int(request.POST.get('type_estimation'))
+            reg_interactiv_ocenka.save()
+            return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/start/')
         else:
-            reg_interactiv_ocenka.vin = ''
-        
-        if body_number:
-            reg_interactiv_ocenka.number_body = body_number
-        
-        # Модификация (может быть из двух полей)
-        modification_id = request.POST.get('modification_id', '')
-        if not modification_id:
-            modification_id = request.POST.get('modification_full', '')
-        if modification_id:
-            try:
-                modification = AutoruModification.objects.get(pk=modification_id)
-                reg_interactiv_ocenka.modification = modification
-                # Автоматически устанавливаем год из модификации, если не указан
-                if not reg_interactiv_ocenka.year and modification.ProductionStartYear:
-                    reg_interactiv_ocenka.year = modification.ProductionStartYear
-            except:
-                pass
-        
-        # Комплектация
-        complectation_id = request.POST.get('complectation_id', '')
-        if complectation_id:
-            try:
-                complectation = AutoruComplectation.objects.get(pk=complectation_id)
-                reg_interactiv_ocenka.complectation = complectation
-            except:
-                pass
-        
-        # Год выпуска
-        year = request.POST.get('year', '')
-        if year:
-            try:
-                reg_interactiv_ocenka.year = int(year)
-            except:
-                pass
-        
-        # Тип привода
-        type_drive = request.POST.get('type_drive', '')
-        if type_drive:
-            reg_interactiv_ocenka.type_drive = type_drive
-        
-        # Пробег (сохраняем в page_salon, если он существует)
-        run = request.POST.get('run', '')
-        if run:
-            try:
-                if reg_interactiv_ocenka.type_estimation == 3:
-                    if reg_interactiv_ocenka.page_remote == None:
-                        reg_interactiv_ocenka_remote = RegInteractivOcenkaRemote()
+            # VIN и номер кузова
+            vin = request.POST.get('vin', '').strip()
+            body_number = request.POST.get('body_number', '').strip()
+            
+            if vin:
+                reg_interactiv_ocenka.vin = vin
+                refresh_analitick(reg_interactiv_ocenka)
+            else:
+                reg_interactiv_ocenka.vin = ''
+            
+            if body_number:
+                reg_interactiv_ocenka.number_body = body_number
+            
+            # Модификация (может быть из двух полей)
+            modification_id = request.POST.get('modification_id', '')
+            if not modification_id:
+                modification_id = request.POST.get('modification_full', '')
+            if modification_id:
+                try:
+                    modification = AutoruModification.objects.get(pk=modification_id)
+                    reg_interactiv_ocenka.modification = modification
+                    # Автоматически устанавливаем год из модификации, если не указан
+                    if not reg_interactiv_ocenka.year and modification.ProductionStartYear:
+                        reg_interactiv_ocenka.year = modification.ProductionStartYear
+                except:
+                    pass
+            
+            # Комплектация
+            complectation_id = request.POST.get('complectation_id', '')
+            if complectation_id:
+                try:
+                    complectation = AutoruComplectation.objects.get(pk=complectation_id)
+                    reg_interactiv_ocenka.complectation = complectation
+                except:
+                    pass
+            
+            # Год выпуска
+            year = request.POST.get('year', '')
+            if year:
+                try:
+                    reg_interactiv_ocenka.year = int(year)
+                except:
+                    pass
+            
+            # Тип привода
+            type_drive = request.POST.get('type_drive', '')
+            if type_drive:
+                reg_interactiv_ocenka.type_drive = type_drive
+            
+            # Пробег (сохраняем в page_salon, если он существует)
+            run = request.POST.get('run', '')
+            if run:
+                try:
+                    if reg_interactiv_ocenka.type_estimation == 3:
+                        if reg_interactiv_ocenka.page_remote == None:
+                            reg_interactiv_ocenka_remote = RegInteractivOcenkaRemote()
+                            reg_interactiv_ocenka_remote.save()
+                            reg_interactiv_ocenka.page_remote = reg_interactiv_ocenka_remote
+                            reg_interactiv_ocenka.save()
+                        else:
+                            reg_interactiv_ocenka_remote = reg_interactiv_ocenka.page_remote
+                        
+                        reg_interactiv_ocenka_remote.run = int(run)
                         reg_interactiv_ocenka_remote.save()
-                        reg_interactiv_ocenka.page_remote = reg_interactiv_ocenka_remote
-                        reg_interactiv_ocenka.save()
                     else:
-                        reg_interactiv_ocenka_remote = reg_interactiv_ocenka.page_remote
-                    
-                    reg_interactiv_ocenka_remote.run = int(run)
-                    reg_interactiv_ocenka_remote.save()
-                else:
-                    if reg_interactiv_ocenka.page_salon == None:
-                        reg_interactiv_ocenka_salon = RegInteractivOcenkaSalon()
+                        if reg_interactiv_ocenka.page_salon == None:
+                            reg_interactiv_ocenka_salon = RegInteractivOcenkaSalon()
+                            reg_interactiv_ocenka_salon.save()
+                            reg_interactiv_ocenka.page_salon = reg_interactiv_ocenka_salon
+                            reg_interactiv_ocenka.save()
+                        else:
+                            reg_interactiv_ocenka_salon = reg_interactiv_ocenka.page_salon
+                        
+                        reg_interactiv_ocenka_salon.run = int(run)
                         reg_interactiv_ocenka_salon.save()
-                        reg_interactiv_ocenka.page_salon = reg_interactiv_ocenka_salon
-                        reg_interactiv_ocenka.save()
-                    else:
-                        reg_interactiv_ocenka_salon = reg_interactiv_ocenka.page_salon
-                    
-                    reg_interactiv_ocenka_salon.run = int(run)
-                    reg_interactiv_ocenka_salon.save()
-            except:
-                pass
-        
-        reg_interactiv_ocenka.save()
+                except:
+                    pass
+            
+            reg_interactiv_ocenka.save()
         
         # Перенаправление на следующую страницу
         return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
+    
+    if request.method == 'GET':
+        if not reg_interactiv_ocenka.modification == None:
+            return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
     
     # Получаем все марки
     marks = AutoruMark.objects.all().order_by('name')

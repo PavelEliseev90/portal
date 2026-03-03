@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('online', '0003_records_online_doc'),
-        ('refs', '__latest__'),
+        ('refs', '0124_refcarsorganizationfiles_date'),
     ]
 
     operations = [

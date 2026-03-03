@@ -1669,19 +1669,22 @@
             <div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8">
               <span class="icon-mbri-globe" aria-hidden="true"></span>
               
-              {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} 
+              {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}}  <a href="/estimations/{{estimation_rlk.rlk.id}}/" class="btn btn-danger" ><span class="icon-mbri-play"></span> Редактировать </a>
             </div>
           {% else %}
             <div class="kors-brand-pill bg-secondary bg-opacity-75 bg-gradient">
               <a href="/eco/{{estimation_rlk.rlk.id}}/?page={{params.page}}" class="text-white fs-8">
                 <span class="icon-mbri-globe" aria-hidden="true"></span>
                 
-                {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} 
+                {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} <br>  
+                
               </a>
             </div>
           {% endif %}
         {% endfor %}
 
+        
+                        
         <div class="kors-hero__grid row gy-4 align-items-center">
           <div class="col-12 col-xxl-5">            
           
@@ -6181,7 +6184,7 @@
                             <table class="table table-sm table-striped table-hover">
                               <tbody>
               
-                                {% for task in params.estimation.tasks %}
+                                {% for task in params.interactiv_rlk.estimation.tasks %}
                                 
                                   <tr class="align-middle" data-bs-toggle="modal" data-bs-target="#exampleModalTask{{forloop.counter}}">
                                     <td class="align-middle"><span class="icon-mbri-play"></span></td>

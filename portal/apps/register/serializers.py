@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from register.models import RegInteractivOcenka
+from register.models import RegInteractivOcenka, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaRLK
 from datetime import datetime
 
 
@@ -21,3 +21,21 @@ class RegInteractivOcenkaSerializer(serializers.ModelSerializer):
         fields.append('bcp')
         fields.append('zna')
         depth = 4
+
+
+class RegInteractivOcenkaRLKSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        
+        model = RegInteractivOcenkaRLK
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
+
+
+class RegInteractivOcenkaSoglasovanieSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        
+        model = RegInteractivOcenkaSoglasovanie
+        fields = [field.name for field in model._meta.fields]
+        depth = 1

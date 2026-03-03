@@ -5289,24 +5289,24 @@ def rlks_trade_in(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
-    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
     docs        = docs.annotate(
-        unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+        unit_name               = Subquery(subquery.values('unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation        = Subquery(subquery.values('staff')[:1])).annotate(
-        remote_price            = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        mark                    = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model                   = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification            = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka      = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id   = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year                        = Subquery(subquery.values('year')[:1])).annotate(
-        vin                         = Subquery(subquery.values('vin')[:1])).annotate(
+        start_estimation        = Subquery(subquery.values('estimation__start_estimation')[:1])).annotate(
+        end_estimation          = Subquery(subquery.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation        = Subquery(subquery.values('staff_rlk')[:1])).annotate(
+        remote_price            = Subquery(subquery.values('estimation__page_remote__price_sale')[:1])).annotate(
+        mark                    = Subquery(subquery.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model                   = Subquery(subquery.values('estimation__modification__model__name')[:1])).annotate(
+        modification            = Subquery(subquery.values('estimation__modification__name')[:1])).annotate(
+        type_estimation_ocenka      = Subquery(subquery.values('type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id   = Subquery(subquery.values('type_reception__id')[:1])).annotate(
+        year                        = Subquery(subquery.values('estimation__year')[:1])).annotate(
+        vin                         = Subquery(subquery.values('estimation__vin')[:1])).annotate(
         lo_pk                       = Subquery(subquery.values('id')[:1])).annotate(
         lo_date_time                = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
         lo_nomer                    = Subquery(subquery_lo.values('nomer')[:1])).annotate(
@@ -5478,28 +5478,28 @@ def rlks_trade_in_export(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
-    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
     docs        = docs.annotate(
-        unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+        unit_name               = Subquery(subquery.values('unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-        remote_price        = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year    = Subquery(subquery.values('year')[:1])).annotate(
-        vin     = Subquery(subquery.values('vin')[:1])).annotate(
+        start_estimation    = Subquery(subquery.values('estimation__start_estimation')[:1])).annotate(
+        end_estimation      = Subquery(subquery.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation    = Subquery(subquery.values('staff_rlk')[:1])).annotate(
+        remote_price        = Subquery(subquery.values('estimation__page_remote__price_sale')[:1])).annotate(
+        mark                = Subquery(subquery.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model = Subquery(subquery.values('estimation__modification__model__name')[:1])).annotate(
+        modification = Subquery(subquery.values('estimation__modification__name')[:1])).annotate(
+        type_estimation_ocenka = Subquery(subquery.values('type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id = Subquery(subquery.values('type_reception__id')[:1])).annotate(
+        year    = Subquery(subquery.values('estimation__year')[:1])).annotate(
+        vin     = Subquery(subquery.values('estimation__vin')[:1])).annotate(
         lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
-        lo_date_time   = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
-        lo_nomer   = Subquery(subquery_lo.values('nomer')[:1])).annotate(
-        lo_active   = Subquery(subquery_lo.values('active')[:1]))
+        lo_date_time    = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+        lo_nomer        = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+        lo_active       = Subquery(subquery_lo.values('active')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
@@ -9841,7 +9841,7 @@ def sb_lo(request):
     
 
 def test(request):
-    send_push_estimation()
+    #send_push_estimation()
     # from task_manager.views import refresh_auctohub_guide
     # refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()

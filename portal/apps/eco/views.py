@@ -55,9 +55,10 @@ def close_task(reg_interactiv_ocenka, user):
     reg_interactiv_ocenka.returned = False
 
 
-def add_swap(estimation):
+def add_swap(rlk, estimation):
     try:        
         swap                = RegSwapKors()
+        swap.rlk            = rlk 
         swap.estimation     = estimation
         swap.save()        
     except:
@@ -2187,7 +2188,8 @@ def text_to_dict(text_json):
 def get_chats_list_online_info(request, id):
     
     chats                   = Chat.objects.filter(slug = id)
-    subqyery_reg_interactiv = RegInteractivOcenka.objects.filter(rlk = OuterRef(name = 'rlk_id'))
+    subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk = OuterRef(name = 'rlk_id'))
+    #subqyery_reg_interactiv = RegInteractivOcenka.objects.filter(rlk = OuterRef(name = 'rlk_id'))
     subqyery_message_rlk    = DocRLK.objects.filter(id = OuterRef(name = 'rlk_id'))
     subqyery_message_info   = ChatMessage.objects.filter(chat_id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
     subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
@@ -2195,39 +2197,88 @@ def get_chats_list_online_info(request, id):
     chats = chats.order_by('-max_date')
     chats = chats.exclude(max_date = None)
     
-        
+    # Количество РЛК, в которых используется та же оценка (по RegInteractivOcenkaRLK.estimation)
+    subq_estimation_id = RegInteractivOcenkaRLK.objects.filter(
+        rlk_id=OuterRef('rlk_id')
+    ).values('estimation_id')[:1]
+    # Сначала аннотируем чат estimation_id, затем считаем по нему — так корреляция в подзапросе одна
+    chats = chats.annotate(_estimation_id=Subquery(subq_estimation_id))
+    subq_rlk_count = RegInteractivOcenkaRLK.objects.filter(
+        estimation_id=OuterRef('_estimation_id')
+    ).values('estimation_id').annotate(cnt=Count('id')).values('cnt')[:1]
     chats = chats.annotate(
-        type_estimation_ocenka = Subquery(subqyery_reg_interactiv.values('page_documents__type_reception__name')[:1])).annotate(
-        car_year                = Subquery(subqyery_reg_interactiv.values('year')[:1])).annotate( 
-        car_prev_img            = Subquery(subqyery_reg_interactiv.values('prev_img')[:1])).annotate( 
-        car_run                 = Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1])).annotate(    
-        unit_name               = Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1])).annotate(
-        unit_name_dc            = Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1])).annotate(
-        status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
-        status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
-        start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
-        end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
-        staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
-        staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
+        estimation_rlk_count=Coalesce(
+            Subquery(subq_rlk_count),
+            Value(0),
+            output_field=IntegerField()
+        )
+    )
+        
+    # chats = chats.annotate(
+    #     type_estimation_ocenka = Subquery(subqyery_reg_interactiv.values('page_documents__type_reception__name')[:1])).annotate(
+    #     car_year                = Subquery(subqyery_reg_interactiv.values('year')[:1])).annotate( 
+    #     car_prev_img            = Subquery(subqyery_reg_interactiv.values('prev_img')[:1])).annotate( 
+    #     car_run                 = Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1])).annotate(    
+    #     unit_name               = Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1])).annotate(
+    #     unit_name_dc            = Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1])).annotate(
+    #     status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
+    #     status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
+    #     start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
+    #     end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
+    #     staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
+    #     staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
+    #     soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
+    #     car_price_before_kd = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+    #     car_price_after_kd  = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
+    #     car_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
+    #     car_price_sale      = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1])).annotate(                       
+    #     car_price_bcp       = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
+    #     rlk_date = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
+    #     rlk_number = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
+    #     rlk_unit = Subquery(subqyery_message_rlk.values('unit__name')[:1])).annotate(
+    #     rlk_unit_dc = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
+    #     vin = Subquery(subqyery_reg_interactiv.values('vin')[:1])).annotate(
+    #     mark = Subquery(subqyery_reg_interactiv.values('modification__model__mark__name')[:1])).annotate(
+    #     model = Subquery(subqyery_reg_interactiv.values('modification__model__name')[:1])).annotate(
+    #     modification = Subquery(subqyery_reg_interactiv.values('modification__name')[:1])).annotate(
+    #     staff_name = Subquery(subqyery_message_rlk.values('staff__name')[:1])).annotate(
+    #     content = Subquery(subqyery_message_info.values('content')[:1])).annotate(
+    #     user_name = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
+    #     user_content = Subquery(subqyery_message_info.values('user')[:1])).annotate(
+    #     eco         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1]))
+    chats = chats.annotate(
+        type_estimation_ocenka          = Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1])).annotate(
+        car_year                        = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
+        car_prev_img                    = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
+        car_run                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]))).annotate(    
+        unit_name                       = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
+        unit_name_dc                    = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('unit__id')[:1]))).annotate(
+        status_estimation               = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
+        status_estimation_id            = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
+        start_estimation                = Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1])).annotate(
+        end_estimation                  = Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation_name           = Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1])).annotate(
+        staff_estimation                = Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1])).annotate(            
         soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
-        car_price_after_kd  = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
-        car_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_sale      = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1])).annotate(                       
-        car_price_bcp       = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
-        rlk_date = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
-        rlk_number = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
-        rlk_unit = Subquery(subqyery_message_rlk.values('unit__name')[:1])).annotate(
-        rlk_unit_dc = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-        vin = Subquery(subqyery_reg_interactiv.values('vin')[:1])).annotate(
-        mark = Subquery(subqyery_reg_interactiv.values('modification__model__mark__name')[:1])).annotate(
-        model = Subquery(subqyery_reg_interactiv.values('modification__model__name')[:1])).annotate(
-        modification = Subquery(subqyery_reg_interactiv.values('modification__name')[:1])).annotate(
-        staff_name = Subquery(subqyery_message_rlk.values('staff__name')[:1])).annotate(
-        content = Subquery(subqyery_message_info.values('content')[:1])).annotate(
-        user_name = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
-        user_content = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-        eco         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1]))
+        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+        car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
+        car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]))).annotate(                       
+        car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]))).annotate(                       
+        car_price_bcp               = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
+        rlk_date                    = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
+        rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
+        rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
+        rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
+        vin                         = Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1])).annotate(
+        mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
+        modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(
+        staff_name                  = Coalesce(Subquery(subqyery_message_rlk.values('staff__name')[:1]), Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]))).annotate(
+        content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
+        user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
+        user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
+        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
+        auction                     = Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]))
     
     chats = chats.filter(status_estimation_id__gte = 2)
     chats = chats.annotate(rlk = Subquery(subqyery_message_rlk.values('pk')[:1]))[:1] 
@@ -2239,7 +2290,7 @@ def get_users_list_online(request, id):
     search = request.GET.get('search', '')
     users = list()
     if id != '' and search != '':
-        estimation = RegInteractivOcenka.objects.get(rlk__id = id)
+        estimation = RegInteractivOcenkaRLK.objects.get(rlk__id = id)
         users = User.objects.exclude(pk__in = estimation.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True)
         if search != '':
             users = users.filter(Q(profiles__eco_name__icontains = search) | Q(email__icontains = search))    
@@ -2560,7 +2611,7 @@ def doc(request, id):
     if estimation == None:
         return HttpResponseRedirect('/estimations/' + str(id) + '/')
     
-    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
+    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
         
@@ -2700,19 +2751,19 @@ def doc(request, id):
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
                 if refresh == 'autohub':
-                    get_info_max(estimation.id)
+                    get_info_max(interactiv_rlk, estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'kors':
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'all':
-                    get_info_max(estimation.id)
+                    get_info_max(interactiv_rlk, estimation.id)
                     kors_estimation_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'data1c':
                     from task_manager.views import estimation_send_1c
                     try:
-                        estimation_send_1c(estimation.id)
+                        estimation_send_1c(interactiv_rlk.rlk.id, interactiv_rlk.estimation.id)
                     except:
                         s= 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
@@ -2748,10 +2799,10 @@ def doc(request, id):
                         if agreements > 0:
                             agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
-            price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
-            price           = estimations_price_calculation(estimation, type_calculation='avito')
-            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
-            price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
+            price_kors      = None #estimations_price_calculation(interactiv_rlk, estimation, type_calculation='kors')
+            price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito')
+            price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
+            price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
             
             if page == 20:
                 
@@ -2807,10 +2858,10 @@ def doc(request, id):
 
             expenses        = list_expenses(estimation)
 
-            price_kors      = None #estimations_price_calculation(estimation, type_calculation='kors')
-            price           = estimations_price_calculation(estimation, type_calculation='avito')
-            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
-            price_custom    = estimations_price_calculation(estimation, type_calculation='custom')
+            price_kors      = None #estimations_price_calculation(interactiv_rlk, estimation, type_calculation='kors')
+            price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito')
+            price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
+            price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
             body            = body_estimation(estimation=estimation)
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
@@ -2865,18 +2916,19 @@ def doc(request, id):
             
             if 'del_u' in request.GET:
                 uusr = User.objects.get(id = request.GET.get('del_u'))
-                estimation.access_user.remove(uusr)
-                estimation.save()
+                interactiv_rlk.access_user.remove(uusr)
+                interactiv_rlk.save()
                 return HttpResponseRedirect(request.path_info + '?page=9')
             
             if 'add_u' in request.GET:
                 
                 uusr = User.objects.get(id = request.GET.get('add_u'))
-                estimation.access_user.add(uusr)
-                estimation.save()
+                interactiv_rlk.access_user.add(uusr)
+                interactiv_rlk.save()
                 
                 new_message = RegInteractivOcenkaEmailPush()
-                new_message.estimation  = estimation
+                new_message.estimation  = interactiv_rlk.estimation
+                new_message.rlk         = interactiv_rlk.rlk
                 new_message.user        = uusr
                 new_message.email       = uusr.email
                 new_message.comment     = 'Вы добавлены в участники интерактивной оценки.'
@@ -2887,12 +2939,12 @@ def doc(request, id):
             #users = User.objects.exclude(pk__in = estimation.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email')
             start_eco_1 = request.GET.get('start_eco_1','')
             if start_eco_1 != '':
-                estimation.staff_eco_1 = request.user
-                estimation.save()
+                interactiv_rlk.staff_eco_1_rlk = request.user
+                interactiv_rlk.save()
             start_eco_2 = request.GET.get('start_eco_2','')
             if start_eco_2 != '':
-                estimation.staff_eco_2 = request.user
-                estimation.save()   
+                interactiv_rlk.staff_eco_2_rlk = request.user
+                interactiv_rlk.save()   
 
         list_work_podgotovka    = RegEstimationPodgotovka.objects.filter(estimation = estimation)
         list_work_ss            = RegEstimationSS.objects.filter(estimation = estimation)
@@ -2967,7 +3019,7 @@ def doc(request, id):
     
     elif request.method == "POST":
         
-        reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
+        reg_interactiv_ocenka = interactiv_rlk.estimation
         
         if 'cancel_auction' in request.POST:
             comment_cancel_auction = request.POST.get('auction_cancel', '')
@@ -2977,6 +3029,7 @@ def doc(request, id):
                 reg_interactiv_ocenka.auction_auto_no_user = False
             reg_interactiv_ocenka.auction_auto_comment = comment_cancel_auction
             reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
             if comment_cancel_auction != '':
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион не подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
             else:
@@ -2984,7 +3037,7 @@ def doc(request, id):
             
             return HttpResponseRedirect(request.build_absolute_uri())
 
-        add_swap(reg_interactiv_ocenka)
+        add_swap(interactiv_rlk.rlk, reg_interactiv_ocenka)
 
         if 'custom_zna' in request.POST:
             zna = int(request.POST.get('custom_zna', 0)) 
@@ -2998,16 +3051,18 @@ def doc(request, id):
             
             new_task = RegInteractivOcenkaTask()
             new_task.comment_task   = request.POST.get('save_new_task_text')
-            new_task.estimation     = reg_interactiv_ocenka
+            new_task.estimation     = interactiv_rlk.estimation
             new_task.staff_open     = request.user
             new_task.save()
 
             reg_interactiv_ocenka.end_estimation = DT.datetime(1,1,1)
             reg_interactiv_ocenka.returned = True
             reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
 
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Новая задача - ' + new_task.comment_task, estimation_id= reg_interactiv_ocenka.id)
             reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
             return HttpResponseRedirect(request.build_absolute_uri())            
         
         if 'save_test_drive' in request.POST:
@@ -3017,6 +3072,7 @@ def doc(request, id):
                 reg_interactiv_ocenka_test_drive.save()
                 reg_interactiv_ocenka.page_test_drive = reg_interactiv_ocenka_test_drive
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
             else:
                 reg_interactiv_ocenka_test_drive = reg_interactiv_ocenka.page_test_drive
 
@@ -3149,13 +3205,14 @@ def doc(request, id):
                             pass  # Игнорируем ошибки при обработке
             
             comment_diagnostica = request.POST.get('comment_diagnostica', '')
-            if reg_interactiv_ocenka.page_soglasovanie == None:
+            if interactiv_rlk.page_soglasovanie == None:
                 reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
                 reg_interactiv_ocenka_soglasovanie.save()
-                reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
-                reg_interactiv_ocenka.save()
+                interactiv_rlk.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
+                interactiv_rlk.save()
+                
             else:
-                reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+                reg_interactiv_ocenka_soglasovanie = interactiv_rlk.page_soglasovanie
             if comment_diagnostica != reg_interactiv_ocenka_soglasovanie.comment_diagnostica:
                 reg_interactiv_ocenka_soglasovanie.comment_diagnostica = comment_diagnostica
                 reg_interactiv_ocenka_soglasovanie.save()
@@ -3227,6 +3284,7 @@ def doc(request, id):
 
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
             if send_diagnostic:
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Пройдена диагностика - ' + comment_diagnostica, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -3250,6 +3308,7 @@ def doc(request, id):
                     new_estimation_files.save()
 
                 #reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Закрыта задача ' + str(task.comment_task) + " - " + task.comment_success, estimation_id= reg_interactiv_ocenka.id)
 
             return HttpResponseRedirect(request.build_absolute_uri())   
@@ -3260,12 +3319,15 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.save()
                 reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
             else:
                 reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
             reg_interactiv_ocenka_soglasovanie.price_before_kd = int(request.POST.get('price_before_kd', '0'))
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
-            reg_interactiv_ocenka.save() 
+            reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
+            
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
         
@@ -3276,6 +3338,7 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.save()
                 reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
             else:
                 reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
             reg_interactiv_ocenka_soglasovanie.price_after_kd   = int(request.POST.get('price_after_kd', '0'))
@@ -3287,18 +3350,20 @@ def doc(request, id):
                     reg_interactiv_ocenka.auction = True
                     reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
                     reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
-                    reg_interactiv_ocenka.save()  
+                    reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()  
                     text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                 else:
                     reg_interactiv_ocenka.auction = False
                     reg_interactiv_ocenka.auction_comment = ''
                     reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()
                     text = "Продажа: Розница."                  
             except:
                 s=1
 
             '''   
-            price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
+            price_kors      = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='kors')
             if price_kors != None:
                 if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                     reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_kors['estimation_price']
@@ -3308,7 +3373,7 @@ def doc(request, id):
                     reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_kors['zna']
                     reg_interactiv_ocenka_soglasovanie.save()
             ''' 
-            price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+            price_autohub   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub')
             if price_autohub != None:
                 #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                 reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
@@ -3319,7 +3384,7 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
                 reg_interactiv_ocenka_soglasovanie.save()
             else:
-                price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                price_avito   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='avito')
                 if price_avito != None:
                     #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                     reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
@@ -3333,6 +3398,7 @@ def doc(request, id):
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.date_s_diag = DT.datetime.now()
             reg_interactiv_ocenka.save()
+            interactiv_rlk.save()
             
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())
@@ -3343,7 +3409,7 @@ def doc(request, id):
             if type_post == 'price_remote':
                 price_remote    = float(request.POST.get('price_remote', '0'))
                 page_remote     = reg_interactiv_ocenka.page_remote
-                price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                price_autohub   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub')
                 if price_autohub != None:            
                     page_remote.price_auto          = price_autohub['estimation_price']
                     page_remote.price_auto_bcp      = price_autohub['cna_expenses']
@@ -3358,17 +3424,18 @@ def doc(request, id):
                 
                 reg_interactiv_ocenka.date_s_remote = DT.datetime.now()
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
 
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до осмотра автомобиля - ' + '{:0,.2f}'.format(price_remote).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
                 return HttpResponseRedirect(request.build_absolute_uri()) 
             
             elif type_post == 'save_auto_price':
                 
-                reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+                reg_interactiv_ocenka_soglasovanie = interactiv_rlk.page_soglasovanie
 
-                price_info = estimations_price_calculation(estimation= reg_interactiv_ocenka, type_calculation = 'custom')
+                price_info = estimations_price_calculation(interactiv_rlk = interactiv_rlk, estimation= reg_interactiv_ocenka, type_calculation = 'custom')
                 #Сохраняем данные по планированию восстановительного ремонта
-                save_recovery_estimations(reg_interactiv_ocenka)
+                save_recovery_estimations(interactiv_rlk = interactiv_rlk, reg_interactiv_ocenka = reg_interactiv_ocenka)
 
                 estimation_price_do_kd  = float(request.POST.get('estimation_price_do_kd', '0')) 
                 price_before_kd_comment = request.POST.get('price_before_kd_comment', '')
@@ -3382,10 +3449,10 @@ def doc(request, id):
                     reg_interactiv_ocenka_soglasovanie.price_bcp                   = float(request.POST.get('price_bcp', '0')) 
 
                     type_price                  = request.POST.get('type_price', '')
-                
-                reg_interactiv_ocenka_soglasovanie.amount_podgotovka    = price_info['amount_podgotovka']
-                reg_interactiv_ocenka_soglasovanie.amount_ss            = price_info['amount_ss']
-                reg_interactiv_ocenka_soglasovanie.amount_mcu           = price_info['amount_mcu']
+                if price_info != None:
+                    reg_interactiv_ocenka_soglasovanie.amount_podgotovka    = price_info['amount_podgotovka']
+                    reg_interactiv_ocenka_soglasovanie.amount_ss            = price_info['amount_ss']
+                    reg_interactiv_ocenka_soglasovanie.amount_mcu           = price_info['amount_mcu']
                 reg_interactiv_ocenka_soglasovanie.save()
                 
                 try:
@@ -3394,23 +3461,26 @@ def doc(request, id):
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
                         reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
-                        reg_interactiv_ocenka.save()  
+                        reg_interactiv_ocenka.save()
+                        interactiv_rlk.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
                         reg_interactiv_ocenka.auction = False
                         reg_interactiv_ocenka.auction_comment = ''
                         reg_interactiv_ocenka.save()
+                        interactiv_rlk.save()
                         text = "Продажа: Розница."                  
                 except:
                     s=1
                 
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
                     close_task(reg_interactiv_ocenka, request.user)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
-                    price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
+                    price_kors      = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='kors')
                     if price_kors != None:
                         if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                             reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_kors['estimation_price']
@@ -3421,7 +3491,7 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.save()
                     else:
                     '''
-                    price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                    price_autohub   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub')
                     if price_autohub != None:
                         #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                         reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
@@ -3432,7 +3502,7 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
                         reg_interactiv_ocenka_soglasovanie.save()
                     else:
-                        price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                        price_avito   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='avito')
                         if price_avito != None:
                             #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                             reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
@@ -3443,14 +3513,16 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.price_zna_3          = price_avito['zna']
                             reg_interactiv_ocenka_soglasovanie.save()
 
-                    reg_interactiv_ocenka.staff_eco_2 = request.user
-                    reg_interactiv_ocenka.date_s_diag = DT.datetime.now() 
+                    interactiv_rlk.staff_eco_2_rlk = request.user
+                    interactiv_rlk.date_s_diag = DT.datetime.now() 
                     reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
                 elif reg_interactiv_ocenka_soglasovanie.price_before_kd > 0:
-                    reg_interactiv_ocenka.staff_eco_1 = request.user
-                    reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
+                    interactiv_rlk.staff_eco_1_rlk = request.user
+                    interactiv_rlk.date_s_do_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
   
             else:
@@ -3463,6 +3535,7 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.save()
                         reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
                         reg_interactiv_ocenka.save()
+                        interactiv_rlk.save()
                     else:
                         reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
             
@@ -3476,8 +3549,8 @@ def doc(request, id):
                 custom_estimation_price_do_kd       = float(request.POST.get('custom_estimation_price_do_kd', '0'))
                 custom_estimation_price             = float(request.POST.get('custom_estimation_price', '0'))
 
-                price_info = estimations_price_calculation(estimation= reg_interactiv_ocenka, type_calculation = 'custom')
-                save_recovery_estimations(reg_interactiv_ocenka)
+                price_info = estimations_price_calculation(interactiv_rlk = interactiv_rlk, estimation= reg_interactiv_ocenka, type_calculation = 'custom')
+                save_recovery_estimations(interactiv_rlk = interactiv_rlk, reg_interactiv_ocenka = reg_interactiv_ocenka)
                 
                 if custom_estimation_price_do_kd > 0:
                     reg_interactiv_ocenka_soglasovanie.price_before_kd = custom_estimation_price_do_kd
@@ -3502,22 +3575,25 @@ def doc(request, id):
                         reg_interactiv_ocenka.auction = True
                         reg_interactiv_ocenka.auction_comment = request.POST.get('auction_comment', '')
                         reg_interactiv_ocenka.auction_data = request.POST.get('auction_type', '')
-                        reg_interactiv_ocenka.save()  
+                        reg_interactiv_ocenka.save()
+                        interactiv_rlk.save()  
                         text = "Продажа: Аукцион. Комментарий: " + reg_interactiv_ocenka.auction_comment
                     else:
                         reg_interactiv_ocenka.auction = False
                         reg_interactiv_ocenka.auction_comment = ''
                         reg_interactiv_ocenka.save()
+                        interactiv_rlk.save()
                         text = "Продажа: Розница."                  
                 except:
                     s=1
                 reg_interactiv_ocenka.save()
+                interactiv_rlk.save()
                 
                 if reg_interactiv_ocenka_soglasovanie.price_after_kd > 0:
                     close_task(reg_interactiv_ocenka, request.user)
                     RegEstimationsCalculationDetail.objects.filter(estimations = reg_interactiv_ocenka).delete()
                     '''
-                    price_kors      = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='kors')
+                    price_kors      = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='kors')
                     if price_kors != None:
                         if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                             reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_kors['estimation_price']
@@ -3527,7 +3603,7 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.save()
                     else:
                     '''
-                    price_autohub   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='autohub')
+                    price_autohub   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub')
                     if price_autohub != None:
                         #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                         reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
@@ -3537,7 +3613,7 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
                         reg_interactiv_ocenka_soglasovanie.save()
                     else:
-                        price_avito   = estimations_price_calculation(reg_interactiv_ocenka, type_calculation='avito')
+                        price_avito   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='avito')
                         if price_avito != None:
                             #if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                             reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
@@ -3547,14 +3623,16 @@ def doc(request, id):
                             reg_interactiv_ocenka_soglasovanie.finance_price        = price_avito['finance_price']
                             reg_interactiv_ocenka_soglasovanie.save()
 
-                    reg_interactiv_ocenka.staff_eco_2 = request.user
-                    reg_interactiv_ocenka.date_s_diag = DT.datetime.now()
+                    interactiv_rlk.staff_eco_2_rlk = request.user
+                    interactiv_rlk.date_s_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
                 elif reg_interactiv_ocenka_soglasovanie.price_before_kd > 0:
-                    reg_interactiv_ocenka.staff_eco_1 = request.user
-                    reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
+                    interactiv_rlk.staff_eco_1_rlk = request.user
+                    interactiv_rlk.date_s_do_diag = DT.datetime.now()
                     reg_interactiv_ocenka.save()
+                    interactiv_rlk.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
             
             #send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + str(reg_interactiv_ocenka_soglasovanie.price_after_kd) + " " + text, estimation_id= reg_interactiv_ocenka.id)
@@ -3567,8 +3645,8 @@ def doc(request, id):
     else:
         return render(request, 'lo/lo.html', {'params': params}) 
 
-def save_recovery_estimations(reg_interactiv_ocenka):
-    price_info = estimations_price_calculation(estimation = reg_interactiv_ocenka, type_calculation = 'custom')
+def save_recovery_estimations(interactiv_rlk, reg_interactiv_ocenka):
+    price_info = estimations_price_calculation(interactiv_rlk = interactiv_rlk, estimation = reg_interactiv_ocenka, type_calculation = 'custom')
     if price_info != None:
         RegEstimationPodgotovka.objects.filter(estimation = reg_interactiv_ocenka).delete()
         RegEstimationSS.objects.filter(estimation = reg_interactiv_ocenka).delete()
@@ -4032,13 +4110,13 @@ def estimation_lo_history(estimation, count = False):
     return list()
 
 
-def estimations_price_calculation(estimation, type_calculation, remote = False):
+def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, remote = False):
 
 
     estimation_settings     = RegEstimationsSettings.objects.all().last()
-    if estimation.page_soglasovanie != None:
-        if estimation.page_soglasovanie.settings != None:
-            estimation_settings = estimation.page_soglasovanie.settings 
+    if interactiv_rlk.page_soglasovanie != None:
+        if interactiv_rlk.page_soglasovanie.settings != None:
+            estimation_settings = interactiv_rlk.page_soglasovanie.settings 
 
     modification            = estimation.modification
     
@@ -4093,11 +4171,12 @@ def estimations_price_calculation(estimation, type_calculation, remote = False):
         return None
     
     zg  = "Неопределена"
-    if estimation.page_documents == None or estimation.page_documents.unit == None:
-        dc              = estimation.page_remote.unit
-    else:
-        dc              = estimation.page_documents.unit
-    
+    # if interactiv_rlk.unit == None:
+    #     dc              = estimation.page_remote.unit
+    # else:
+    #     dc              = estimation.unit
+    dc = interactiv_rlk.unit
+
     fin_all         = estimation_settings.all_percent_financity
     day_sale_all    = estimation_settings.all_days_stok_financity
     

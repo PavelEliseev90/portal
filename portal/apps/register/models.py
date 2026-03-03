@@ -91,17 +91,19 @@ def get_qrcode(name):
     return qr_code_image_data
 
 
-def add_swap(estimation):
+def add_swap(interactiv_rlk):
     try:
         
-        if estimation.end_estimation != None:
+        if interactiv_rlk.estimation.end_estimation != None:
             swap = RegSwapKors()
-            swap.estimation = estimation
+            swap.rlk        = interactiv_rlk.rlk
+            swap.estimation = interactiv_rlk.estimation
             swap.save()
         else:
-            if estimation.page_soglasovanie != None:
+            if interactiv_rlk.page_soglasovanie != None:
                 swap = RegSwapKors()
-                swap.estimation = estimation
+                swap.rlk        = interactiv_rlk.rlk
+                swap.estimation = interactiv_rlk.estimation
                 swap.save()
 
     except:
@@ -3605,7 +3607,10 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
             self.status = RefStatusEstimation.objects.get(pk = 9) 
         elif self.estimation != None and self.estimation.end_estimation != None and self.page_soglasovanie != None:
             count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
-            if count_success > 0:
+            count_success_answer = RegInteractivOcenkaRLK.objects.filter(rlk = self.rlk).filter(status__id = 8).count()
+            if count_success_answer > 0:
+                self.status = RefStatusEstimation.objects.get(pk = 10)                    
+            elif count_success > 0:
                 self.status = RefStatusEstimation.objects.get(pk = 8)                    
             elif self.page_soglasovanie.price_before_kd == 0:
                 self.status = RefStatusEstimation.objects.get(pk = 3)
@@ -3618,6 +3623,11 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         else:
             self.status = RefStatusEstimation.objects.get(pk = 2)
 
+        try:
+            if self.rlk != None and self.extimation != None:
+                add_swap(self)
+        except:
+            s=1
         super().save(*args, **kwargs)
     
 

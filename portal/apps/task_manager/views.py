@@ -16,7 +16,7 @@ from telephony.views import refresh_history_task
 from requests.auth import HTTPBasicAuth
 import time
 from avtosalon.models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations,  AvtohubModifications, Avtohub, AvtohubSite, AvtohubSiteInfo, Autoteka_signal, Autoteka_signal_region, Autoteka_signal_last_id 
-from register.models import SettingsMatrixAuction, RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
+from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, RegEstimationsSettings, RegInteractivOcenkaKorsStore, RegInteractivOcenkaKorsStoreSale, RegRegInteractivOcenkaFiles, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaEmailPush, RegInteractivOcenka
 from openpyxl import Workbook, load_workbook
 import re
 from django.core.mail import EmailMultiAlternatives
@@ -30,7 +30,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 import time
 from register.models import RegEstimationPodgotovka, RegEstimationMCU, RegEstimationSS, RegInteractivOcenka, RegSwapKors
-from register.serializers import RegInteractivOcenkaSerializer
+from register.serializers import RegInteractivOcenkaSerializer, RegInteractivOcenkaSoglasovanieSerializer, RegInteractivOcenkaRLK
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer, RefUnitSerializer
@@ -577,18 +577,20 @@ def start_get_info_max():
     object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 10, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk')
     for object_estimation_autohub in object_estimations_report_autohub:
         try:
-            get_info_max_remote(object_estimation_autohub['pk'])
+            interctiv_rlk = RegInteractivOcenkaRLK.objects.filter(estimation__pk = object_estimation_autohub['pk']).first()
+            get_info_max_remote(interctiv_rlk, object_estimation_autohub['pk'])
         except:
             s = 1    
 
     object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 10, 1)).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk')
     for object_estimation_autohub in object_estimations_report_autohub:
         try:
-            get_info_max(object_estimation_autohub['pk'])
+            interctiv_rlk = RegInteractivOcenkaRLK.objects.filter(estimation__pk = object_estimation_autohub['pk']).first()
+            get_info_max(interctiv_rlk, object_estimation_autohub['pk'])
         except:
             s = 1    
 
-def get_info_max_remote(estimation_id):
+def get_info_max_remote(interctiv_rlk, estimation_id):
     
     estimation  = RegInteractivOcenka.objects.get(pk = estimation_id)
     
@@ -680,8 +682,8 @@ def get_info_max_remote(estimation_id):
 
         vehicle = {
             'year'      : estimation.year,
-            'mileage'   : estimation.page_remote.run,
-            'rubPrice'  : estimation.page_remote.price_sale
+            'mileage'   : interctiv_rlk.estimation.page_remote.run,
+            'rubPrice'  : interctiv_rlk.estimation.page_remote.price_sale
         }
         
         data_info = {
@@ -709,7 +711,7 @@ def get_info_max_remote(estimation_id):
     except:
         s = 1
 
-def get_info_max(estimation_id):
+def get_info_max(interactiv_rlk, estimation_id):
     
     estimation  = RegInteractivOcenka.objects.get(pk = estimation_id)
     
@@ -802,7 +804,7 @@ def get_info_max(estimation_id):
         vehicle = {
             'year'      : estimation.year,
             'mileage'   : estimation.page_salon.run,
-            'rubPrice'  : estimation.page_soglasovanie.price_sale
+            'rubPrice'  : interactiv_rlk.page_soglasovanie.price_sale
         }
         
         data_info = {
@@ -2149,12 +2151,16 @@ def send_push_estimation():
 def start_swap_estimation():
     swap_estimation()
 
-def estimation_send_1c(id):
+def estimation_send_1c(rlk_id, id):
     
-    estimation = RegInteractivOcenka.objects.get(id = id)
+    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id = rlk_id).filter(estimation__id = id).first()
+    estimation  = interactiv_rlk.estimation
+    rlk         = interactiv_rlk.rlk
     js_data = {
-        'Type' : 'estimation',
-        'Estimation': RegInteractivOcenkaSerializer(estimation, many=False).data
+        'Type'          : 'estimation',
+        'Rlk'           : DocRLKSerializer(rlk, many=False).data,
+        'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
+        'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
     }
     response = requests.post(url_hs_kors_auto, json=js_data)
     return response.status_code
@@ -2168,6 +2174,7 @@ def swap_estimation():
         if info.estimation != None:
             js_data = {
                 'Type' : 'estimation',
+
                 'Estimation': RegInteractivOcenkaSerializer(info.estimation, many=False).data
             }
             response = requests.post(url_hs_kors_auto, json=js_data)
