@@ -19,6 +19,7 @@ urlpatterns = [
    path('stok_im/sync_run/',     views.stok_im_sync_run, name='stok_im_sync_run'),
    path('stok_im/sync_photos/', views.stok_im_sync_photos, name='stok_im_sync_photos'),
    path('stok_im/product/',      views.product, name='stok_im_product'),
+   path('stok_im/product/photo/<int:photo_id>/delete/', views.product_photo_delete, name='stok_im_product_photo_delete'),
 
    path('auction/',                          views.auction_list),
    path('auction/<slug:slug_auction>/',      views.auction_doc, name='slug'),
