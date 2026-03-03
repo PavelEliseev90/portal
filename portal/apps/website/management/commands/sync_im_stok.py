@@ -38,17 +38,17 @@ def product_from_json(item):
     price_val = parse_price(price_str)
 
     return {
-        'nomenclature_code': code_nom[:100],
-        'code': str(item.get('Код', ''))[:100],
-        'nomenclature': str(item.get('Номенклатура', ''))[:500],
-        'title': str(item.get('Объявление', item.get('Наименование', item.get('Номенклатура', ''))))[:500],
+        'nomenclature_code': code_nom[:100].strip(),
+        'code': str(item.get('Код', ''))[:100].strip(),
+        'nomenclature': str(item.get('Номенклатура', ''))[:500].strip(),
+        'title': str(item.get('Объявление', item.get('Наименование', item.get('Номенклатура', ''))))[:500].strip(),
         'profile': str(item.get('Профиль', ''))[:100],
         'category': str(item.get('Категория', ''))[:200],
         'category_avito': str(item.get('КатегорияАвито', ''))[:200],
         'manufacturer': str(item.get('Производитель', ''))[:200],
         'article': str(item.get('Артикул', ''))[:100],
-        'storage_cell': str(item.get('ЯчейкаХранения', ''))[:100],
-        'address': str(item.get('Address', ''))[:500],
+        'storage_cell': str(item.get('ЯчейкаХранения', ''))[:100].strip(),
+        'address': str(item.get('Address', ''))[:500].strip(),
         'price_display': str(price_str)[:50] if price_str else '',
         'price_value': price_val,
         'quantity_balance': parse_int(item.get('КоличествоОстаток')),

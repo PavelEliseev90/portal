@@ -798,19 +798,18 @@ class DocLO(models.Model):
     def save(self, *args, **kwargs):
         
         try:
-            if self.active:
-                if self.rlk != None:
-                    from register.models import RegInteractivOcenka
-                    ocenka = RegInteractivOcenka.objects.filter(rlk = self.rlk)
-                    if ocenka.count() == 1:
-                        #if ocenka[0].status.id != 8: 
-                        ocenka[0].save()
+            from register.models import RegInteractivOcenkaRLK
+            if self.rlk != None:
+                ocenka = RegInteractivOcenkaRLK.objects.filter(rlk = self.rlk)
+                if ocenka.count() == 1:
+                    ocenka[0].save()                    
         except:
             s = 1
         
         super().save(*args, **kwargs)
 
         try:
+            
             from analytics.models import TradeInFunnel
             
             lo_number = self.nomer or ""

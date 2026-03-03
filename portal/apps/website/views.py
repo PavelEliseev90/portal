@@ -4887,7 +4887,10 @@ def _stok_im_from_db(request):
         qs = qs.filter(article__icontains=articul)
     cell = filtr.get('cell', '').strip()
     if cell:
-        qs = qs.filter(storage_cell__icontains=cell)
+        if cell[0] == '.':
+            qs = qs.filter(storage_cell__istartswith =cell.replace('.', ''))
+        else:
+            qs = qs.filter(storage_cell__icontains=cell)
     if filtr.get('no_foto') == 'on':
         qs = qs.filter(photo_count=0)
     if filtr.get('no_price') == 'on':
@@ -5110,84 +5113,97 @@ def product(request):
     url_search = ('?' + url.split('?')[1]) if '?' in url else ('?kod=' + kod)
 
     if request.method == "POST":
-            file_objects = request.FILES.getlist('files')
-            for file_object in file_objects:
-                # Проверка типа файла (только изображения)
-                if not file_object.content_type or not file_object.content_type.startswith('image/'):
-                    continue
+        file_objects = request.FILES.getlist('files')
+        for file_object in file_objects:
+            # Проверка типа файла (только изображения)
+            if not file_object.content_type or not file_object.content_type.startswith('image/'):
+                continue
+            
+            # Читаем файл в память для обработки
+            file_object.seek(0)
+            file_content = file_object.read()
+            
+            # Максимальное разрешение для оптимизации
+            MAX_RESOLUTION = (1920, 1080)
+            
+            processed_file = None
+            file_name = file_object.name
+            
+            # Оптимизируем все файлы
+            try:
+                from PIL import Image
+                import io
                 
-                # Читаем файл в память для обработки
-                file_object.seek(0)
-                file_content = file_object.read()
+                # Открываем изображение из памяти
+                img = Image.open(io.BytesIO(file_content))
                 
-                # Максимальное разрешение для оптимизации
-                MAX_RESOLUTION = (1920, 1080)
+                # Проверяем размер изображения
+                if img.size[0] > MAX_RESOLUTION[0] or img.size[1] > MAX_RESOLUTION[1]:
+                    # Изменяем размер, сохраняя пропорции
+                    img.thumbnail(MAX_RESOLUTION, Image.Resampling.LANCZOS)
                 
-                processed_file = None
-                file_name = file_object.name
-                
-                # Оптимизируем все файлы
-                try:
-                    from PIL import Image
-                    import io
-                    
-                    # Открываем изображение из памяти
-                    img = Image.open(io.BytesIO(file_content))
-                    
-                    # Проверяем размер изображения
-                    if img.size[0] > MAX_RESOLUTION[0] or img.size[1] > MAX_RESOLUTION[1]:
-                        # Изменяем размер, сохраняя пропорции
-                        img.thumbnail(MAX_RESOLUTION, Image.Resampling.LANCZOS)
-                    
-                    # Конвертируем в RGB если нужно (для JPEG)
-                    if img.mode in ('RGBA', 'LA', 'P'):
-                        # Создаем белый фон
-                        background = Image.new('RGB', img.size, (255, 255, 255))
-                        if img.mode == 'P':
-                            img = img.convert('RGBA')
-                        # Вставляем изображение на фон с учетом альфа-канала
-                        if img.mode == 'RGBA' and len(img.split()) >= 4:
-                            background.paste(img, mask=img.split()[3])
-                        else:
-                            background.paste(img)
-                        img = background
-                    elif img.mode not in ('RGB', 'L'):
-                        img = img.convert('RGB')
-                    
-                    # Сохраняем оптимизированное изображение в память
-                    optimized_io = io.BytesIO()
-                    
-                    # Определяем формат по расширению или используем JPEG
-                    file_ext = os.path.splitext(file_name)[1].lower()
-                    if file_ext in ['.jpg', '.jpeg', '.png']:
-                        # Сохраняем как JPEG с качеством 85%
-                        img.save(optimized_io, format='JPEG', quality=85, optimize=True)
-                        optimized_io.seek(0)
-                        processed_file = optimized_io
-                        # Обновляем имя файла на .jpg если было .png
-                        if file_ext == '.png':
-                            file_name = os.path.splitext(file_name)[0] + '.jpg'
+                # Конвертируем в RGB если нужно (для JPEG)
+                if img.mode in ('RGBA', 'LA', 'P'):
+                    # Создаем белый фон
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    # Вставляем изображение на фон с учетом альфа-канала
+                    if img.mode == 'RGBA' and len(img.split()) >= 4:
+                        background.paste(img, mask=img.split()[3])
                     else:
-                        # Для других форматов сохраняем как JPEG с оптимизацией
-                        img.save(optimized_io, format='JPEG', quality=85, optimize=True)
-                        optimized_io.seek(0)
-                        processed_file = optimized_io
-                        file_name = os.path.splitext(file_name)[0] + '.jpg'
-                        
-                except Exception as e:
-                    # Если не удалось обработать, используем оригинальный файл
-                    file_object.seek(0)
-                    processed_file = file_object
+                        background.paste(img)
+                    img = background
+                elif img.mode not in ('RGB', 'L'):
+                    img = img.convert('RGB')
                 
-                # Отправляем обработанный файл на сервер
-                # Если processed_file это BytesIO (оптимизированный файл), он уже готов к отправке
-                # Если это оригинальный file_object, используем его напрямую
-                response = requests.post(server_im + 'product/' + url_search,
-                                            params={'file_name': file_name},
-                                        files={"files": (file_name, processed_file)}, verify=False)
-                if response.status_code == 200:
-                    return HttpResponseRedirect(request.build_absolute_uri())
-
+                # Сохраняем оптимизированное изображение в память
+                optimized_io = io.BytesIO()
+                
+                # Определяем формат по расширению или используем JPEG
+                file_ext = os.path.splitext(file_name)[1].lower()
+                if file_ext in ['.jpg', '.jpeg', '.png']:
+                    # Сохраняем как JPEG с качеством 85%
+                    img.save(optimized_io, format='JPEG', quality=85, optimize=True)
+                    optimized_io.seek(0)
+                    processed_file = optimized_io
+                    # Обновляем имя файла на .jpg если было .png
+                    if file_ext == '.png':
+                        file_name = os.path.splitext(file_name)[0] + '.jpg'
+                else:
+                    # Для других форматов сохраняем как JPEG с оптимизацией
+                    img.save(optimized_io, format='JPEG', quality=85, optimize=True)
+                    optimized_io.seek(0)
+                    processed_file = optimized_io
+                    file_name = os.path.splitext(file_name)[0] + '.jpg'
+                    
+            except Exception as e:
+                # Если не удалось обработать, используем оригинальный файл
+                file_object.seek(0)
+                processed_file = file_object
+            
+            # Отправляем обработанный файл на сервер
+            # Если processed_file это BytesIO (оптимизированный файл), он уже готов к отправке
+            # Если это оригинальный file_object, используем его напрямую
+            response = requests.post(server_im + 'product/' + url_search,
+                                        params={'file_name': file_name},
+                                    files={"files": (file_name, processed_file)}, verify=False)
+            if response.status_code == 200:
+                import uuid
+                from django.core.files.base import ContentFile
+                processed_file.seek(0)
+                source_url = f"upload://{product_obj.nomenclature_code}/{uuid.uuid4().hex}"
+                max_order = ImProductPhoto.objects.filter(product=product_obj).aggregate(
+                    max_order=models.Max('sort_order')
+                )['max_order'] or 0
+                photo = ImProductPhoto(
+                    product=product_obj,
+                    source_url=source_url,
+                    sort_order=max_order + 1,
+                )
+                photo.file.save(file_name, ContentFile(processed_file.read()), save=True)
+        return HttpResponseRedirect(request.build_absolute_uri())        
+            
     photos = list(
         ImProductPhoto.objects.filter(product=product_obj).order_by('sort_order', 'id')
     )
@@ -5327,24 +5343,24 @@ def rlks_trade_in(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
-    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
     docs        = docs.annotate(
-        unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+        unit_name               = Subquery(subquery.values('unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation        = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        end_estimation          = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation        = Subquery(subquery.values('staff')[:1])).annotate(
-        remote_price            = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        mark                    = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model                   = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification            = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka      = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id   = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year                        = Subquery(subquery.values('year')[:1])).annotate(
-        vin                         = Subquery(subquery.values('vin')[:1])).annotate(
+        start_estimation        = Subquery(subquery.values('estimation__start_estimation')[:1])).annotate(
+        end_estimation          = Subquery(subquery.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation        = Subquery(subquery.values('staff_rlk')[:1])).annotate(
+        remote_price            = Subquery(subquery.values('estimation__page_remote__price_sale')[:1])).annotate(
+        mark                    = Subquery(subquery.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model                   = Subquery(subquery.values('estimation__modification__model__name')[:1])).annotate(
+        modification            = Subquery(subquery.values('estimation__modification__name')[:1])).annotate(
+        type_estimation_ocenka      = Subquery(subquery.values('type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id   = Subquery(subquery.values('type_reception__id')[:1])).annotate(
+        year                        = Subquery(subquery.values('estimation__year')[:1])).annotate(
+        vin                         = Subquery(subquery.values('estimation__vin')[:1])).annotate(
         lo_pk                       = Subquery(subquery.values('id')[:1])).annotate(
         lo_date_time                = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
         lo_nomer                    = Subquery(subquery_lo.values('nomer')[:1])).annotate(
@@ -5516,28 +5532,28 @@ def rlks_trade_in_export(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
-    subquery        = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='id'))
+    subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
     docs        = docs.annotate(
-        unit_name               = Subquery(subquery.values('page_documents__unit__name')[:1])).annotate(
+        unit_name               = Subquery(subquery.values('unit__name')[:1])).annotate(
         status_estimation       = Subquery(subquery.values('status__name')[:1])).annotate(
         status_estimation_id    = Subquery(subquery.values('status__id')[:1])).annotate(
-        start_estimation    = Subquery(subquery.values('start_estimation')[:1])).annotate(
-        end_estimation      = Subquery(subquery.values('end_estimation')[:1])).annotate(
-        staff_estimation    = Subquery(subquery.values('staff')[:1])).annotate(
-        remote_price        = Subquery(subquery.values('page_remote__price_sale')[:1])).annotate(
-        mark                = Subquery(subquery.values('modification__model__mark__name')[:1])).annotate(
-        model = Subquery(subquery.values('modification__model__name')[:1])).annotate(
-        modification = Subquery(subquery.values('modification__name')[:1])).annotate(
-        type_estimation_ocenka = Subquery(subquery.values('page_documents__type_reception__name')[:1])).annotate(
-        type_estimation_ocenka_id = Subquery(subquery.values('page_documents__type_reception__id')[:1])).annotate(
-        year    = Subquery(subquery.values('year')[:1])).annotate(
-        vin     = Subquery(subquery.values('vin')[:1])).annotate(
+        start_estimation    = Subquery(subquery.values('estimation__start_estimation')[:1])).annotate(
+        end_estimation      = Subquery(subquery.values('estimation__end_estimation')[:1])).annotate(
+        staff_estimation    = Subquery(subquery.values('staff_rlk')[:1])).annotate(
+        remote_price        = Subquery(subquery.values('estimation__page_remote__price_sale')[:1])).annotate(
+        mark                = Subquery(subquery.values('estimation__modification__model__mark__name')[:1])).annotate(
+        model = Subquery(subquery.values('estimation__modification__model__name')[:1])).annotate(
+        modification = Subquery(subquery.values('estimation__modification__name')[:1])).annotate(
+        type_estimation_ocenka = Subquery(subquery.values('type_reception__name')[:1])).annotate(
+        type_estimation_ocenka_id = Subquery(subquery.values('type_reception__id')[:1])).annotate(
+        year    = Subquery(subquery.values('estimation__year')[:1])).annotate(
+        vin     = Subquery(subquery.values('estimation__vin')[:1])).annotate(
         lo_pk   = Subquery(subquery.values('id')[:1])).annotate(
-        lo_date_time   = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
-        lo_nomer   = Subquery(subquery_lo.values('nomer')[:1])).annotate(
-        lo_active   = Subquery(subquery_lo.values('active')[:1]))
+        lo_date_time    = Subquery(subquery_lo.values('dataTime')[:1])).annotate(
+        lo_nomer        = Subquery(subquery_lo.values('nomer')[:1])).annotate(
+        lo_active       = Subquery(subquery_lo.values('active')[:1]))
 
     filtr_number_doc    = request.GET.get('number_doc', '')
     filtr_vin           = request.GET.get('vin', '')
@@ -10089,7 +10105,7 @@ def sb_lo(request):
     
 
 def test(request):
-    send_push_estimation()
+    #send_push_estimation()
     # from task_manager.views import refresh_auctohub_guide
     # refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()
@@ -10183,53 +10199,53 @@ def test(request):
 
     #AutoruComplectation.objects.all().delete()
     
-    from register.models import RegInteractivOcenkaRLK
-    date_start = DT.datetime.now().replace(day=24, hour = 1, month=2, year=2026)
-    count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
-    s = 0
-    estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
-    for estimation_id in estimations_id:
-        try:
-            estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
-            reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
+    # from register.models import RegInteractivOcenkaRLK
+    # date_start = DT.datetime.now().replace(day=24, hour = 1, month=2, year=2026)
+    # count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()
+    # s = 0
+    # estimations_id = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).order_by('-id').values('id')
+    # for estimation_id in estimations_id:
+    #     try:
+    #         estimation  = RegInteractivOcenka.objects.get(id = estimation_id['id'])
+    #         reg_interactiv, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = estimation.rlk, estimation = estimation)
 
-            if estimation.page_documents != None:
-                reg_interactiv.type_reception   = estimation.page_documents.type_reception
-                reg_interactiv.organization     = estimation.page_documents.organization
-                reg_interactiv.filial           = estimation.page_documents.filial
-                reg_interactiv.unit             = estimation.page_documents.unit
-                reg_interactiv.store            = estimation.page_documents.store
+    #         if estimation.page_documents != None:
+    #             reg_interactiv.type_reception   = estimation.page_documents.type_reception
+    #             reg_interactiv.organization     = estimation.page_documents.organization
+    #             reg_interactiv.filial           = estimation.page_documents.filial
+    #             reg_interactiv.unit             = estimation.page_documents.unit
+    #             reg_interactiv.store            = estimation.page_documents.store
 
-            reg_interactiv.staff_rlk            = estimation.staff
-            reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
-            reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
+    #         reg_interactiv.staff_rlk            = estimation.staff
+    #         reg_interactiv.staff_eco_1_rlk      = estimation.staff_eco_1
+    #         reg_interactiv.staff_eco_2_rlk      = estimation.staff_eco_2
             
-            reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
+    #         reg_interactiv.page_soglasovanie   = estimation.page_soglasovanie
             
-            reg_interactiv.status              = estimation.status
-            for uss in estimation.access_user.all():
-                reg_interactiv.access_user.add(uss)
+    #         reg_interactiv.status              = estimation.status
+    #         for uss in estimation.access_user.all():
+    #             reg_interactiv.access_user.add(uss)
             
-            reg_interactiv.save()
+    #         reg_interactiv.save()
             
-            # if reg_interactiv.page_soglasovanie != None:
-            #     if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0 or reg_interactiv.page_soglasovanie.discount_torg == 0:
-            #         price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
-            #         if price_autohub != None:
-            #             reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
-            #             reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
-            #             reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
-            #             reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
-            #             reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
-            #             reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
-            #             reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
-            #             reg_interactiv_ocenka_soglasovanie.save()
+    #         # if reg_interactiv.page_soglasovanie != None:
+    #         #     if reg_interactiv.page_soglasovanie.price_auto_2 == 0 and estimation.hub_avg > 0 or reg_interactiv.page_soglasovanie.discount_torg == 0:
+    #         #         price_autohub = estimations_price_calculation(reg_interactiv.estimation, type_calculation='autohub')
+    #         #         if price_autohub != None:
+    #         #             reg_interactiv_ocenka_soglasovanie = reg_interactiv.page_soglasovanie
+    #         #             reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
+    #         #             reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
+    #         #             reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub['zachita_ot_ubitka']
+    #         #             reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub['finance_price']
+    #         #             reg_interactiv_ocenka_soglasovanie.discount_torg        = price_autohub['discount_torg']
+    #         #             reg_interactiv_ocenka_soglasovanie.price_zna_2          = price_autohub['zna']
+    #         #             reg_interactiv_ocenka_soglasovanie.save()
 
-            estimation.save()
-            s = s + 1 
-            print(' ' + str(s) + ' ' + str(count))
-        except:
-            ss = 1
+    #         estimation.save()
+    #         s = s + 1 
+    #         print(' ' + str(s) + ' ' + str(count))
+    #     except:
+    #         ss = 1
 
     
 
@@ -10311,13 +10327,13 @@ def test(request):
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
     
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
 
-    #refresh_avtoteka_vin()
+    refresh_avtoteka_vin()
 
     #refresh_wash()
     #refresh_price()

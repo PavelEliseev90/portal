@@ -4986,7 +4986,7 @@
                         <select class="search-select" id="organization_id" name="organization_id" placeholder="-" required>
                           <option selected></option>
                           {% for organization in params.selected.organizations %}
-                            <option value="{{organization.slug}}" {% if params.estimation.page_remote.organization.id == organization.slug %} selected {% endif %}> {{organization.name}} </option>
+                            <option value="{{organization.slug}}" {% if params.interactiv_rlk.organization.id == organization.slug %} selected {% endif %}> {{organization.name}} </option>
                           {% endfor %}
                         </select>
                     
@@ -5001,7 +5001,7 @@
                         <select class="search-select" id="filial_id" name="filial_id" placeholder="-" required>
                           <option selected></option>
                           {% for filial in params.selected.filials %}
-                            <option value="{{filial.slug}}" {% if params.estimation.page_remote.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} </option>
+                            <option value="{{filial.slug}}" {% if params.interactiv_rlk.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} </option>
                           {% endfor %}
                         </select>
                     
@@ -5017,7 +5017,7 @@
                         <select class="search-select" id="unit_id" name="unit_id" placeholder="-" required>
                           <option selected></option>
                           {% for unit in params.selected.units %}
-                            <option value="{{unit.slug}}" {% if params.estimation.page_remote.unit.id == unit.slug %} selected {% endif %}> {{unit.name}} </option>
+                            <option value="{{unit.slug}}" {% if params.interactiv_rlk.unit.id == unit.slug %} selected {% endif %}> {{unit.name}} </option>
                           {% endfor %}
                         </select>
                     
@@ -5034,7 +5034,7 @@
                         <select class="search-select" id="store_id" name="store_id" placeholder="-" required>
                           <option selected></option>
                           {% for store in params.selected.stores %}
-                            <option value="{{store.slug}}" {% if params.estimation.page_remote.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
+                            <option value="{{store.slug}}" {% if params.interactiv_rlk.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
                           {% endfor %}
                         </select>
                     
@@ -5049,7 +5049,7 @@
                         <select class="search-select" id="type_reception_id" name="type_reception_id" placeholder="-" required>
                           <option selected></option>
                           {% for type_reception in params.selected.type_receptions %}
-                            <option value="{{type_reception.slug}}" {% if params.estimation.page_remote.type_reception.id == type_reception.slug %} selected {% endif %}> {{type_reception.name}} </option>
+                            <option value="{{type_reception.slug}}" {% if params.interactiv_rlk.type_reception.id == type_reception.slug %} selected {% endif %}> {{type_reception.name}} </option>
                           {% endfor %}
                         </select>
                     
