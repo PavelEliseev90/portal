@@ -51,6 +51,8 @@ urlpatterns = [
    path('settings/settings_autopricing_korsavto/<int:unit_id>/', views.settings_autopricing_korsavto_unit, name='settings_autopricing_korsavto_unit'),
    path('settings/settings_new_cars_pricing/', views.settings_new_cars_pricing, name='settings_new_cars_pricing'),
    path('settings/settings_rules_cars/', views.settings_rules_cars, name='settings_rules_cars'),
+   path('settings/settings_allowable_discount_km/', views.settings_allowable_discount_km, name='settings_allowable_discount_km'),
+   path('settings/settings_min_km_cars/', views.settings_min_km_cars, name='settings_min_km_cars'),
 
    path('traffic-desk/',   views.admin_traffic_desk, name='admin_traffic_desk'),
 
