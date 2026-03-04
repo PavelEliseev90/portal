@@ -1056,6 +1056,7 @@ def price(request, slug):
         'unit_sales_count': 0,
         'complectation_sales_count': 0,
         'cumulative_detail': [],
+        'sales_by_day': [],
     }
 
     if car.complectation_autoru_id:
@@ -1070,6 +1071,7 @@ def price(request, slug):
         ).count()
 
     from powerbi.models import Cumulative
+    from django.db.models.functions import TruncDate
 
     q_cumulative = Cumulative.objects.filter(
         DataProdazhi__gte=last_month_start,
@@ -1081,9 +1083,18 @@ def price(request, slug):
         analytics['cumulative_detail'] = list(
             q_unit.order_by('-DataProdazhi')[:100].values(
                 'DataProdazhi', 'Marka', 'Model', 'Modifikatsiya', 'VIN',
-                'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs',
+                'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs', 'TipProdazhi',
             )
         )
+        # Продажи по дням для графика
+        sales_by_day_qs = q_unit.annotate(
+            day=TruncDate('DataProdazhi')
+        ).values('day').annotate(count=Count('id')).order_by('day')
+        analytics['sales_by_day'] = [
+            {'date': d['day'].strftime('%d.%m') if d['day'] else '', 'count': d['count']}
+            for d in sales_by_day_qs
+        ]
+        analytics['sales_by_day_json'] = json.dumps(analytics['sales_by_day'])
 
     if car.modification_autoru_id and car.modification_autoru.model_id:
         mark_name = car.modification_autoru.model.mark.name

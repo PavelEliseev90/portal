@@ -210,13 +210,13 @@
 					</div>
 					<div class="col-12 col-sm-6 col-md">
 						<div class="metric-card">
-							<div class="metric-card-label">В этом ДЦ (комплектация, остаток &gt; 0)</div>
+							<div class="metric-card-label">ДЦ</div>
 							<div class="metric-card-value">{{ params.analytics.count_in_unit }}</div>
 						</div>
 					</div>
 					<div class="col-12 col-sm-6 col-md">
 						<div class="metric-card">
-							<div class="metric-card-label">По всем ДЦ (комплектация, остаток &gt; 0)</div>
+							<div class="metric-card-label">ГК </div>
 							<div class="metric-card-value">{{ params.analytics.count_all_dc }}</div>
 						</div>
 					</div>
@@ -233,6 +233,47 @@
 						</div>
 					</div>
 				</div>
+				{% if params.analytics.sales_by_day %}
+				<div class="row g-2 mb-3">
+					<div class="col-12">
+						<h6 class="mb-2">Продажи подразделения по дням (последний месяц)</h6>
+						<canvas id="salesByDayChart" height="120" style="max-width: 100%;"></canvas>
+						<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+						<script>
+						(function() {
+							var data = {{ params.analytics.sales_by_day_json|safe }};
+							if (!Array.isArray(data)) data = [];
+							var labels = data.map(function(d) { return d.date; });
+							var counts = data.map(function(d) { return d.count; });
+							var ctx = document.getElementById('salesByDayChart');
+							if (ctx && typeof Chart !== 'undefined') {
+								new Chart(ctx, {
+									type: 'bar',
+									data: {
+										labels: labels,
+										datasets: [{
+											label: 'Продаж',
+											data: counts,
+											backgroundColor: 'rgba(0, 42, 90, 0.6)',
+											borderColor: 'rgba(0, 42, 90, 1)',
+											borderWidth: 1
+										}]
+									},
+									options: {
+										responsive: true,
+										plugins: { legend: { display: false } },
+										scales: {
+											y: { beginAtZero: true, ticks: { stepSize: 1 } },
+											x: { maxRotation: 45, minRotation: 45 }
+										}
+									}
+								});
+							}
+						})();
+						</script>
+					</div>
+				</div>
+				{% endif %}
 				{% if params.analytics.cumulative_detail %}
 				<div class="row g-2 mb-3">
 					<div class="col-12">
@@ -245,6 +286,7 @@
 										<th>Марка</th>
 										<th>Модель</th>
 										<th>Модификация</th>
+										<th>Тип продажи</th>
 										<th>VIN</th>
 										<th>Выручка</th>
 										<th>Подразделение</th>
@@ -257,6 +299,7 @@
 										<td>{{ row.Marka|default:"—" }}</td>
 										<td>{{ row.Model|default:"—" }}</td>
 										<td>{{ row.Modifikatsiya|default:"—" }}</td>
+										<td>{{ row.TipProdazhi|default:"—" }}</td>
 										<td>{{ row.VIN|default:"—" }}</td>
 										<td>{{ row.VyruchkaZaAvto|default:"—" }}</td>
 										<td>{{ row.PodrazdelenieDTs|default:"—" }}</td>
