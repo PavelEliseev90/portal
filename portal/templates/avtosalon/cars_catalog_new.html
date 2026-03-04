@@ -60,13 +60,26 @@
 				{% for car in params.paginator.object_list %}
 					<div class="col-12 col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-3">
 						<div class="car-card" onclick="window.location.href='/cars/{{car.slug}}'; return false">
-							<img src="{{car.get_photo}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="car-card-image">
+							
+							<div class="position-relative">
+								<img src="{{car.get_photo}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="car-card-image">
+								{% if car.is_new %}
+									<div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8 position-absolute top-0 end-0 m-2 rounded px-2 py-1">
+										<span class="icon-mbri-globe" aria-hidden="true">Новый</span>
+									</div>
+								{% else %}
+									<div class="kors-brand-pill bg-warning bg-opacity-75 bg-gradient text-white fs-8 position-absolute top-0 end-0 m-2 rounded px-2 py-1">
+										<span class="icon-mbri-cd" aria-hidden="true">С пробегом</span>
+									</div>
+								{% endif %}
+							</div>
+							
 							<div class="car-card-body">
 								<div class="car-card-header">
 									<img src="{{car.logo}}" alt="{{car.modification_autoru.model.mark.name}}" class="car-card-logo">
 									<div class="car-card-location">
 										<span class="icon-mbri-pin"></span>
-										{{car.unit.name}}
+										{{car.unit.name}} 
 									</div>
 								</div>
 

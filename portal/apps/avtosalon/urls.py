@@ -33,6 +33,7 @@ urlpatterns = [
    
    path('<slug>/specifications/',            views.specifications, name='slug'),
    path('<slug>/price_edit/',                views.price_edit, name='slug'),
+   path('<slug>/price/',                     views.price, name='slug'),
    path('<slug>/photos_edit/',               views.photos_edit, name='photos_edit'),
    path('<slug>/costs_edit/',                views.costs_edit, name='costs_edit'),
    path('<slug>/info_js/',                   views.info_js, name='slug'),

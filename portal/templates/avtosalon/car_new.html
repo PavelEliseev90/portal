@@ -614,6 +614,15 @@
 					{% if request.user.profiles.korsavto_settings %}
 					
 						<div class="row g-2">
+							{% if params.object.is_new %}
+							<div class="col-12 col-sm-auto text-center" >
+								<a href="price/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
+										<span class="icon-mbri-key fs-4"></span>  Управление<br>ценообразованием
+									</div>
+								</a>
+							</div>
+							{% else %}
 							<div class="col-12 col-sm-auto text-center" >
 								<a href="price_edit/" class="text-dark">
 									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
@@ -621,6 +630,7 @@
 									</div>
 								</a>
 							</div>
+							{% endif %}
 							<div class="col-12 col-sm-auto text-center" >
 								<a href="photos_edit/" class="text-dark">
 									<div class="card mb-1 rounded-3 shadow-sm bg-info bg-opacity-10" style="padding: 0.5rem; height: 100%;">

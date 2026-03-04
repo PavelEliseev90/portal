@@ -4888,7 +4888,7 @@ def _stok_im_from_db(request):
     cell = filtr.get('cell', '').strip()
     if cell:
         if cell[0] == '.':
-            qs = qs.filter(storage_cell__istartswith =cell.replace('.', ''))
+            qs = qs.filter(storage_cell__istartswith =cell.replace('.', '')) | qs.filter(storage_cell = cell.replace('.', '').replace('/', '')) 
         else:
             qs = qs.filter(storage_cell__icontains=cell)
     if filtr.get('no_foto') == 'on':
@@ -10125,7 +10125,7 @@ def test(request):
     
     #from register.models import RegSwapKors
     #RegSwapKors.objects.all().delete()
-    
+
     #send_push_estimation()
     # from task_manager.views import refresh_auctohub_guide
     # refresh_auctohub_guide()
