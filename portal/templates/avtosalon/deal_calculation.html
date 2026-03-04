@@ -203,6 +203,7 @@
         <!-- Блок 1: Выбор нового автомобиля -->
         <div class="deal-section">
           <h3 class="deal-section-title">1. Новый автомобиль</h3>
+          {% if params.selected_car == None %}
           <div class="mb-3">
             <label class="deal-section-subtitle">Выберите автомобиль из диспозиции:</label>
             <input type="text" class="form-control mb-2" id="carSearch" placeholder="Поиск по названию, VIN, марке, модели..." autocomplete="off" onkeyup="filterCars()">
@@ -241,7 +242,7 @@
               {% endfor %}
             </div>
           </div>
-          
+          {% endif %}
           {% if params.selected_car %}
             <div class="car-card selected">
               <div class="d-flex justify-content-between align-items-start">
@@ -250,6 +251,9 @@
                   <p style="margin: 0; color: #6c7a92; font-size: 0.9rem;">
                     {% if params.selected_car.modification_autoru %}
                       {{ params.selected_car.modification_autoru.model.mark.name }} {{ params.selected_car.modification_autoru.model.name }}
+                    {% endif %}
+                    {% if params.selected_car.complectation_autoru %}
+                      • {{ params.selected_car.complectation_autoru.name }} 
                     {% endif %}
                     {% if params.selected_car.year %} • {{ params.selected_car.year }} г.{% endif %}
                     {% if params.selected_car.run %} • Пробег: {{ params.selected_car.run|floatformat:"0g" }} км{% endif %}

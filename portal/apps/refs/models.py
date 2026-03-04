@@ -2536,8 +2536,12 @@ class RefCarsOrganization(models.Model):
                     self.lo = lo
 
         if not self.slug:
-            name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
-            self.slug = slugify(name_slug.lower())
+            if self.is_new == False:
+                name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
+                self.slug = slugify(name_slug.lower())
+            else:
+                name_slug = str(self.lo_uin[0:5]) + self.lo_uin[15:18]
+                self.slug = slugify(name_slug.lower())
         
         try:
             text_search = ''

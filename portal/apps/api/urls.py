@@ -96,6 +96,7 @@ urlpatterns = [
    
    # Загрузка автомобилей организации
    path('v1/',                                  schema_view_v1),
+   path('v1/refresh_new_cars/',                 views_avtosalon.refresh_new_cars),
    path('v1/refresh_cars/',                     views_avtosalon.refresh_cars),
    path('v1/post_image_autoru_mark/',           views_avtosalon.post_image_autoru_mark),
    path('v1/post_image_avito_mark/',            views_avtosalon.post_image_avito_mark),

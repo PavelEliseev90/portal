@@ -26,7 +26,7 @@ from rest_framework import status
 import qrcode
 import io
 import base64
-
+from chats.models import Chat, ChatMessage
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
@@ -232,7 +232,7 @@ def cars(request):
     catalog         = get_catalog() 
 
     # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для связанных объектов
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).select_related(
+    cars = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).select_related(        
         'modification_autoru',
         'modification_autoru__model',
         'modification_autoru__model__mark',
@@ -1014,6 +1014,58 @@ def price_edit(request, slug):
     }
     
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
+
+
+def price(request, slug):
+    
+    car     = RefCarsOrganization.objects.filter(slug = slug)[0]
+    
+    chat, created    = Chat.objects.get_or_create(name = car.slug, slug = 'car_' + str(car.slug))
+
+    finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2) 
+    marketing   = 0  
+    avtohubs_list = Avtohub.objects.filter(vin = car.vin).filter(date__range = [car.lo_link_date, car.date_refresh]).order_by('-date') 
+    avtohubs      = list()
+    for avtohub in avtohubs_list:
+        percent = 0 
+
+        marketing = round(max(marketing, avtohub.totalAdvertisingCost), 2)
+        
+        if avtohub.numberOfCompetitors > 0:
+            percent = avtohub.vRatingPosition / avtohub.numberOfCompetitors
+        
+        data_avtohub = {
+            'date'                  : avtohub.date,
+            'avgMarketPrice'        : avtohub.avgMarketPrice,
+            'averageDaysInSale'     : avtohub.averageDaysInSale,
+            'vRatingPosition'       : avtohub.vRatingPosition,
+            'numberOfCompetitors'   : avtohub.numberOfCompetitors,
+            'percent'               : percent 
+        }
+        avtohubs.append(data_avtohub)
+
+    
+    selected = {
+        'stores'        : RefStore.objects.all().order_by('name'),
+        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
+        'stageprices'   : RefStagePrice.objects.all().order_by('name'),
+        'groupprices'   : RefGroupPrice.objects.all().order_by('name'),
+        'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'),
+    }
+
+    params = {
+        'object'            : car,
+        'chat'              : chat,
+        'messages'          : chat.get_last_messages(),
+        'selected'          : selected,
+        'avtohubs'          : avtohubs,
+        'finance'           : finance,
+        'marketing'         : marketing,
+        'user'              : request.user,
+        
+    }
+    
+    return render(request, "avtosalon/car_new_price.html", {'params': params})
 
 
 @login_required

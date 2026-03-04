@@ -554,7 +554,7 @@
                 <div class="product-info-label">ID</div>
                 <div class="product-info-value">
                   <span class="icon-mbri-minus"></span>
-                  <span>{{params.answer.AvitoId|default:"—"}}</span>
+                  <span>{{params.answer.AvitoId|default:"—"}}</span> {% if params.answer.AvitoId != '' %}  <a class="btn btn-primary bg-gradient" href="https://www.avito.ru/items/{{params.answer.AvitoId}}">Открыть на авито</a> {% endif %}
                 </div>
               </div>
             </div>

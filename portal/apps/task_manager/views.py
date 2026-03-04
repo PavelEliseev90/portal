@@ -727,7 +727,7 @@ def get_info_max(interactiv_rlk, estimation_id):
         year_start  = estimation.year - 1   
         year_end    = estimation.year + 1
     else:
-        year_start  = estimation.year   
+        year_start  = estimation.year - 1   
         year_end    = estimation.year 
 
     try:
@@ -1251,7 +1251,7 @@ def refresh_estimation_cars_organization_run():
     token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
     headers         = { 'Authorization' : 'Basic %s' % token }
 
-    cars                    = RefCarsOrganization.objects.exclude(quantity = 0).exclude(modification_autoru = None).order_by('-date_create')
+    cars                    = RefCarsOrganization.objects.exclude(quantity = 0).exclude(run = 0).exclude(modification_autoru = None).order_by('-date_create')
     date_start              = DT.datetime.now().replace(hour = 0, minute=0, second=1) 
     subqyery_cars           = Subquery(RegEstimationRefCarsOrganizations.objects.filter(car__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
     cars                    = cars.annotate(max_date = subqyery_cars)
