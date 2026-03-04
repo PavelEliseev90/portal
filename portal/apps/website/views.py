@@ -10122,6 +10122,10 @@ def sb_lo(request):
     
 
 def test(request):
+    
+    #from register.models import RegSwapKors
+    #RegSwapKors.objects.all().delete()
+    
     #send_push_estimation()
     # from task_manager.views import refresh_auctohub_guide
     # refresh_auctohub_guide()

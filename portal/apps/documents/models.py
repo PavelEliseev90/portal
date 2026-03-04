@@ -802,7 +802,10 @@ class DocLO(models.Model):
             if self.rlk != None:
                 ocenka = RegInteractivOcenkaRLK.objects.filter(rlk = self.rlk)
                 if ocenka.count() == 1:
-                    ocenka[0].save()                    
+                    if self.active and ocenka[0].status.id != 8: 
+                        ocenka[0].save()                    
+                    elif self.active == False and ocenka[0].status.id == 8: 
+                        ocenka[0].save()                    
         except:
             s = 1
         
