@@ -1113,6 +1113,88 @@ def price(request, slug):
         'ratings': RefRatingCarsOrganization.objects.all().order_by('name'),
     }
 
+    # Заказ-наряды с типом ремонта «допоборудование» (RefTypeRepair.dop=True)
+    from documents.models import DocZN
+    zn_list = []
+    if car.vin:
+        zn_list = list(
+            DocZN.objects.filter(cars__vin=car.vin, typeRemont__dop=True)
+            .select_related('typeRemont', 'readyStatus', 'unit')
+            .order_by('-dataTime')[:200]
+        )
+
+    # Аналитика по ГК (все подразделения организации)
+    analytics_gk = {
+        'unit_sales_count': 0,
+        'complectation_sales_count': 0,
+        'sales_by_day': [],
+        'sales_by_day_json': '[]',
+        'cumulative_detail': [],
+    }
+    if car.organization_id:
+        unit_names = list(
+            RefCarsOrganization.objects.filter(organization_id=car.organization_id)
+            .exclude(unit__isnull=True)
+            .values_list('unit__name', flat=True)
+            .distinct()
+        )
+        unit_names = [n for n in unit_names if n]
+        if unit_names:
+            q_gk = q_cumulative.filter(PodrazdelenieDTs__in=unit_names)
+            analytics_gk['unit_sales_count'] = q_gk.count()
+            if car.modification_autoru_id and car.modification_autoru.model_id:
+                mark_name = car.modification_autoru.model.mark.name
+                model_name = car.modification_autoru.model.name
+                if mark_name and model_name:
+                    analytics_gk['complectation_sales_count'] = q_gk.filter(
+                        Marka__icontains=mark_name,
+                        Model__icontains=model_name,
+                    ).count()
+            sales_by_day_gk = q_gk.annotate(day=TruncDate('DataProdazhi')).values('day').annotate(count=Count('id')).order_by('day')
+            analytics_gk['sales_by_day'] = [
+                {'date': d['day'].strftime('%d.%m') if d['day'] else '', 'count': d['count']}
+                for d in sales_by_day_gk
+            ]
+            analytics_gk['sales_by_day_json'] = json.dumps(analytics_gk['sales_by_day'])
+            analytics_gk['cumulative_detail'] = list(
+                q_gk.order_by('-DataProdazhi')[:100].values(
+                    'DataProdazhi', 'Marka', 'Model', 'Modifikatsiya', 'VIN',
+                    'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs', 'TipProdazhi',
+                )
+            )
+
+    current_tab = request.GET.get('tab', 'avto')
+    list_price = list(RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')[:50])
+
+    # Склад: остатки по модели (текущее подразделение или все подразделения)
+    warehouse_current = []
+    warehouse_all = []
+    warehouse_scope = request.GET.get('warehouse', 'current')
+    if car.modification_autoru_id and car.modification_autoru.model_id:
+        model_id = car.modification_autoru.model_id
+        warehouse_current = list(
+            RefCarsOrganization.objects.filter(
+                unit_id=car.unit_id,
+                modification_autoru__model_id=model_id,
+                quantity__gt=0,
+            )
+            .select_related('unit', 'modification_autoru', 'complectation_autoru')
+            .order_by('name')[:500]
+        )
+        warehouse_all = list(
+            RefCarsOrganization.objects.filter(
+                modification_autoru__model_id=model_id,
+                quantity__gt=0,
+            )
+            .select_related('unit', 'modification_autoru', 'complectation_autoru')
+            .order_by('unit__name', 'name')[:500]
+        )
+
+    # Объекты для шаблона (страница price не загружает полные данные оценки/сделок)
+    from types import SimpleNamespace
+    estimation_empty = SimpleNamespace(tasks=[])
+    interactiv_rlk_empty = SimpleNamespace(estimation=estimation_empty)
+
     params = {
         'object': car,
         'chat': chat,
@@ -1123,8 +1205,30 @@ def price(request, slug):
         'marketing': marketing,
         'user': request.user,
         'analytics': analytics,
+        'analytics_gk': analytics_gk,
         'last_month_start': last_month_start,
         'last_month_end': last_month_end,
+        'zn_list': zn_list,
+        'current_tab': current_tab,
+        'list_price': list_price,
+        'warehouse_current': warehouse_current,
+        'warehouse_all': warehouse_all,
+        'warehouse_scope': warehouse_scope,
+        'car_tasks': list(
+            RegCarsOrganizationTask.objects.filter(car=car)
+            .select_related('staff_created', 'staff_assignee')
+            .prefetch_related('comments')
+            .order_by('-date_created')[:100]
+        ),
+        'interactiv': None,
+        'agreement': None,
+        'shipment': None,
+        'interactiv_rlk': interactiv_rlk_empty,
+        'estimation': estimation_empty,
+        'calculations': [],
+        'calc_express': [],
+        'calc_autohub': [],
+        'calc_1C': [],
     }
 
     return render(request, "avtosalon/car_new_price.html", {'params': params})

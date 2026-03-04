@@ -31,6 +31,29 @@
 		</div>
 	{% endif %}
 
+	<ul class="nav nav-tabs mb-3" role="tablist">
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'avto' %}active{% endif %}" href="?tab=avto">Автомобиль</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'zn' %}active{% endif %}" href="?tab=zn">Заказ-наряды (доп.)</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'analytics_unit' %}active{% endif %}" href="?tab=analytics_unit">Аналитика по подразделению</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'analytics_gk' %}active{% endif %}" href="?tab=analytics_gk">Аналитика по ГК</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'sklad' %}active{% endif %}" href="?tab=sklad">Склад</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.current_tab == 'tasks' %}active{% endif %}" href="?tab=tasks">Задачи</a>
+		</li>
+	</ul>
+
+	<div class="tab-content">
+		<div class="tab-pane {% if params.current_tab == 'avto' %}active{% endif %}" id="tab-avto" role="tabpanel">
 	<div class="row g-3">
 		
 		<div class="col-sm-12 col-md-3 col-lg-3">
@@ -770,6 +793,215 @@
 			</div>
 		</div>
 
+	</div>
+		</div>
+
+		<div class="tab-pane {% if params.current_tab == 'zn' %}active{% endif %}" id="tab-zn" role="tabpanel">
+			<div class="portal-panel">
+				<h6 class="mb-3">Заказ-наряды (допоборудование, RefTypeRepair.dop = True)</h6>
+				{% if params.zn_list %}
+				<div class="table-responsive">
+					<table class="table table-sm table-striped table-hover">
+						<thead>
+							<tr>
+								<th>Номер</th>
+								<th>Дата</th>
+								<th>Вид ремонта</th>
+								<th>Статус</th>
+								<th>Подразделение</th>
+								<th>Сумма</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for zn in params.zn_list %}
+							<tr>
+								<td>{{ zn.nomer|default:"—" }}</td>
+								<td>{{ zn.dataTime|date:"d.m.Y H:i"|default:"—" }}</td>
+								<td>{{ zn.typeRemont.name|default:"—" }}</td>
+								<td>{{ zn.readyStatus|default:"—" }}</td>
+								<td>{{ zn.unit.name|default:"—" }}</td>
+								<td>{{ zn.amount|floatformat:"2g"|default:"—" }}</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% else %}
+				<p class="text-muted">Нет заказ-нарядов с типом «допоборудование» по этому автомобилю.</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="tab-pane {% if params.current_tab == 'analytics_unit' %}active{% endif %}" id="tab-analytics_unit" role="tabpanel">
+			<div class="portal-panel">
+				<h6 class="mb-3">Аналитика по подразделению (последний месяц)</h6>
+				{% if params.analytics %}
+				<div class="row g-2 mb-3">
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">В этом ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_in_unit }}</div></div></div>
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">По всем ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_all_dc }}</div></div></div>
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи подразделения за последний месяц</div><div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div></div></div>
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи модели за последний месяц</div><div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div></div></div>
+				</div>
+				{% if params.analytics.sales_by_day %}
+				<div class="row g-2 mb-3"><div class="col-12"><h6 class="mb-2">Продажи по дням</h6><canvas id="salesByDayChartUnit" height="120" style="max-width: 100%;"></canvas></div></div>
+				<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+				<script>(function(){var data={{ params.analytics.sales_by_day_json|safe }};var labels=(data||[]).map(function(d){return d.date;});var counts=(data||[]).map(function(d){return d.count;});var ctx=document.getElementById('salesByDayChartUnit');if(ctx&&typeof Chart!=='undefined')new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Продаж',data:counts,backgroundColor:'rgba(0,42,90,0.6)',borderColor:'rgba(0,42,90,1)',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{maxRotation:45,minRotation:45}}}});})();</script>
+				{% endif %}
+				{% if params.analytics.cumulative_detail %}
+				<div class="table-responsive mb-2"><table class="table table-sm table-striped table-hover"><thead><tr><th>Дата</th><th>Марка</th><th>Модель</th><th>Модификация</th><th>Тип продажи</th><th>VIN</th><th>Выручка</th><th>Подразделение</th></tr></thead><tbody>{% for row in params.analytics.cumulative_detail %}<tr><td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td><td>{{ row.Marka|default:"—" }}</td><td>{{ row.Model|default:"—" }}</td><td>{{ row.Modifikatsiya|default:"—" }}</td><td>{{ row.TipProdazhi|default:"—" }}</td><td>{{ row.VIN|default:"—" }}</td><td>{{ row.VyruchkaZaAvto|default:"—" }}</td><td>{{ row.PodrazdelenieDTs|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>
+				<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm" target="_blank">Открыть полный список в Power BI</a>
+				{% endif %}
+				{% else %}<p class="text-muted">Нет данных.</p>{% endif %}
+			</div>
+		</div>
+
+		<div class="tab-pane {% if params.current_tab == 'analytics_gk' %}active{% endif %}" id="tab-analytics_gk" role="tabpanel">
+			<div class="portal-panel">
+				<h6 class="mb-3">Аналитика по ГК (все подразделения организации, последний месяц)</h6>
+				{% if params.analytics_gk %}
+				<div class="row g-2 mb-3">
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи ГК за последний месяц</div><div class="metric-card-value">{{ params.analytics_gk.unit_sales_count }}</div></div></div>
+					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи модели (ГК) за последний месяц</div><div class="metric-card-value">{{ params.analytics_gk.complectation_sales_count }}</div></div></div>
+				</div>
+				{% if params.analytics_gk.sales_by_day %}
+				<div class="row g-2 mb-3"><div class="col-12"><h6 class="mb-2">Продажи по дням (ГК)</h6><canvas id="salesByDayChartGk" height="120" style="max-width: 100%;"></canvas></div></div>
+				<script>(function(){var data={{ params.analytics_gk.sales_by_day_json|safe }};var labels=(data||[]).map(function(d){return d.date;});var counts=(data||[]).map(function(d){return d.count;});var ctx=document.getElementById('salesByDayChartGk');if(ctx&&typeof Chart!=='undefined')new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Продаж',data:counts,backgroundColor:'rgba(0,42,90,0.6)',borderColor:'rgba(0,42,90,1)',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{maxRotation:45,minRotation:45}}}});})();</script>
+				{% endif %}
+				{% if params.analytics_gk.cumulative_detail %}
+				<div class="table-responsive mb-2"><table class="table table-sm table-striped table-hover"><thead><tr><th>Дата</th><th>Марка</th><th>Модель</th><th>Модификация</th><th>Тип продажи</th><th>VIN</th><th>Выручка</th><th>Подразделение</th></tr></thead><tbody>{% for row in params.analytics_gk.cumulative_detail %}<tr><td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td><td>{{ row.Marka|default:"—" }}</td><td>{{ row.Model|default:"—" }}</td><td>{{ row.Modifikatsiya|default:"—" }}</td><td>{{ row.TipProdazhi|default:"—" }}</td><td>{{ row.VIN|default:"—" }}</td><td>{{ row.VyruchkaZaAvto|default:"—" }}</td><td>{{ row.PodrazdelenieDTs|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>
+				<a href="{% url 'powerbi:cumulative_list' %}?data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm" target="_blank">Открыть полный список в Power BI</a>
+				{% endif %}
+				{% else %}<p class="text-muted">Нет данных по ГК.</p>{% endif %}
+			</div>
+		</div>
+
+		<div class="tab-pane {% if params.current_tab == 'sklad' %}active{% endif %}" id="tab-sklad" role="tabpanel">
+			<div class="portal-panel">
+				<h6 class="mb-3">Остатки по модели {{ params.object.modification_autoru.model.mark.name|default:"" }} {{ params.object.modification_autoru.model.name|default:"" }}</h6>
+				<div class="mb-3">
+					<a class="btn btn-sm {% if params.warehouse_scope == 'current' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?tab=sklad&warehouse=current">Текущее подразделение</a>
+					<a class="btn btn-sm {% if params.warehouse_scope == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?tab=sklad&warehouse=all">Все подразделения</a>
+				</div>
+				{% if params.warehouse_scope == 'all' %}
+					{% if params.warehouse_all %}
+					<div class="table-responsive">
+						<table class="table table-sm table-striped table-hover">
+							<thead>
+								<tr>
+									<th>Подразделение</th>
+									<th>Наименование</th>
+									<th>Комплектация</th>
+									<th>VIN</th>
+									<th>Остаток</th>
+									<th>Цена</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for item in params.warehouse_all %}
+								<tr>
+									<td>{{ item.unit.name|default:"—" }}</td>
+									<td>{{ item.name|default:"—" }}</td>
+									<td>{{ item.complectation_autoru|default:"—" }}</td>
+									<td>{{ item.vin|default:"—" }}</td>
+									<td>{{ item.quantity|default:0 }}</td>
+									<td>{{ item.price|floatformat:"2g"|default:"—" }} ₽</td>
+									<td><a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn btn-outline-secondary btn-sm">Карточка</a></td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					{% else %}
+					<p class="text-muted">Нет остатков по этой модели.</p>
+					{% endif %}
+				{% else %}
+					{% if params.warehouse_current %}
+					<div class="table-responsive">
+						<table class="table table-sm table-striped table-hover">
+							<thead>
+								<tr>
+									<th>Наименование</th>
+									<th>Комплектация</th>
+									<th>VIN</th>
+									<th>Остаток</th>
+									<th>Цена</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for item in params.warehouse_current %}
+								<tr>
+									<td>{{ item.name|default:"—" }}</td>
+									<td>{{ item.complectation_autoru|default:"—" }}</td>
+									<td>{{ item.vin|default:"—" }}</td>
+									<td>{{ item.quantity|default:0 }}</td>
+									<td>{{ item.price|floatformat:"2g"|default:"—" }} ₽</td>
+									<td><a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn btn-outline-secondary btn-sm">Карточка</a></td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					{% else %}
+					<p class="text-muted">В текущем подразделении нет остатков по этой модели.</p>
+					{% endif %}
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="tab-pane {% if params.current_tab == 'tasks' %}active{% endif %}" id="tab-tasks" role="tabpanel">
+			<div class="portal-panel">
+				<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+					<h6 class="mb-0">Задачи по автомобилю (RegCarsOrganizationTask)</h6>
+					<a href="{% url 'avtosalon:car_task_create' params.object.id %}" class="btn btn-primary btn-sm">
+						<span class="icon-mbri-plus"></span> Создать задачу
+					</a>
+				</div>
+				{% if params.car_tasks %}
+				<div class="table-responsive">
+					<table class="table table-sm table-striped table-hover">
+						<thead>
+							<tr>
+								<th>Задача</th>
+								<th>Статус</th>
+								<th>Создал</th>
+								<th>Исполнитель</th>
+								<th>Дата создания</th>
+								<th>Комментарии</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for task in params.car_tasks %}
+							<tr>
+								<td>
+									<div class="fw-semibold">{{ task.title|default:"Без названия" }}</div>
+									{% if task.description %}<small class="text-muted">{{ task.description|truncatewords:12 }}</small>{% endif %}
+								</td>
+								<td>
+									{% if task.status == 'new' %}<span class="badge bg-secondary">Новый</span>
+									{% elif task.status == 'in_progress' %}<span class="badge bg-info">В работе</span>
+									{% elif task.status == 'completed' %}<span class="badge bg-success">Выполнена</span>
+									{% else %}<span class="badge bg-light text-dark">{{ task.status }}</span>{% endif %}
+								</td>
+								<td>{{ task.staff_created.username|default:"—" }}</td>
+								<td>{{ task.staff_assignee.username|default:"Не назначен" }}</td>
+								<td>{{ task.date_created|date:"d.m.Y H:i" }}</td>
+								<td>{{ task.comments_count }}</td>
+								<td>
+									<a href="{% url 'avtosalon:car_task_detail' task.id %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+								</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% else %}
+				<p class="text-muted mb-0">Нет задач по этому автомобилю. Нажмите «Создать задачу», чтобы добавить.</p>
+				{% endif %}
+			</div>
+		</div>
 	</div>
 </div>
 {% endblock %}
