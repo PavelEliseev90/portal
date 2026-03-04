@@ -1017,54 +1017,105 @@ def price_edit(request, slug):
 
 
 def price(request, slug):
-    
-    car     = RefCarsOrganization.objects.filter(slug = slug)[0]
-    
-    chat, created    = Chat.objects.get_or_create(name = car.slug, slug = 'car_' + str(car.slug))
+    car = RefCarsOrganization.objects.filter(slug=slug).select_related(
+        'unit', 'complectation_autoru', 'modification_autoru',
+        'modification_autoru__model', 'modification_autoru__model__mark',
+    ).first()
+    if not car:
+        raise Http404
 
-    finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2) 
-    marketing   = 0  
-    avtohubs_list = Avtohub.objects.filter(vin = car.vin).filter(date__range = [car.lo_link_date, car.date_refresh]).order_by('-date') 
-    avtohubs      = list()
+    chat, created = Chat.objects.get_or_create(name=car.slug, slug='car_' + str(car.slug))
+
+    finance = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
+    marketing = 0
+    avtohubs_list = Avtohub.objects.filter(vin=car.vin).filter(date__range=[car.lo_link_date, car.date_refresh]).order_by('-date')
+    avtohubs = []
     for avtohub in avtohubs_list:
-        percent = 0 
-
+        percent = 0
         marketing = round(max(marketing, avtohub.totalAdvertisingCost), 2)
-        
         if avtohub.numberOfCompetitors > 0:
             percent = avtohub.vRatingPosition / avtohub.numberOfCompetitors
-        
-        data_avtohub = {
-            'date'                  : avtohub.date,
-            'avgMarketPrice'        : avtohub.avgMarketPrice,
-            'averageDaysInSale'     : avtohub.averageDaysInSale,
-            'vRatingPosition'       : avtohub.vRatingPosition,
-            'numberOfCompetitors'   : avtohub.numberOfCompetitors,
-            'percent'               : percent 
-        }
-        avtohubs.append(data_avtohub)
+        avtohubs.append({
+            'date': avtohub.date,
+            'avgMarketPrice': avtohub.avgMarketPrice,
+            'averageDaysInSale': avtohub.averageDaysInSale,
+            'vRatingPosition': avtohub.vRatingPosition,
+            'numberOfCompetitors': avtohub.numberOfCompetitors,
+            'percent': percent,
+        })
 
-    
+    # Аналитика: остатки и продажи за последний месяц
+    now = timezone.now()
+    first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_end = first_day_this_month - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    analytics = {
+        'count_in_unit': 0,
+        'count_all_dc': 0,
+        'unit_sales_count': 0,
+        'complectation_sales_count': 0,
+        'cumulative_detail': [],
+    }
+
+    if car.complectation_autoru_id:
+        analytics['count_in_unit'] = RefCarsOrganization.objects.filter(
+            unit_id=car.unit_id,
+            complectation_autoru_id=car.complectation_autoru_id,
+            quantity__gt=0,
+        ).count()
+        analytics['count_all_dc'] = RefCarsOrganization.objects.filter(
+            complectation_autoru_id=car.complectation_autoru_id,
+            quantity__gt=0,
+        ).count()
+
+    from powerbi.models import Cumulative
+
+    q_cumulative = Cumulative.objects.filter(
+        DataProdazhi__gte=last_month_start,
+        DataProdazhi__lte=last_month_end,
+    )
+    if car.unit and car.unit.name:
+        q_unit = q_cumulative.filter(PodrazdelenieDTs__icontains=car.unit.name)
+        analytics['unit_sales_count'] = q_unit.count()
+        analytics['cumulative_detail'] = list(
+            q_unit.order_by('-DataProdazhi')[:100].values(
+                'DataProdazhi', 'Marka', 'Model', 'Modifikatsiya', 'VIN',
+                'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs',
+            )
+        )
+
+    if car.modification_autoru_id and car.modification_autoru.model_id:
+        mark_name = car.modification_autoru.model.mark.name
+        model_name = car.modification_autoru.model.name
+        if mark_name and model_name:
+            analytics['complectation_sales_count'] = q_cumulative.filter(
+                Marka__icontains=mark_name,
+                Model__icontains=model_name,
+            ).count()
+
     selected = {
-        'stores'        : RefStore.objects.all().order_by('name'),
-        'evaluations'   : RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
-        'stageprices'   : RefStagePrice.objects.all().order_by('name'),
-        'groupprices'   : RefGroupPrice.objects.all().order_by('name'),
-        'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'),
+        'stores': RefStore.objects.all().order_by('name'),
+        'evaluations': RefTypeEvaluationCarsOrganization.objects.all().order_by('name'),
+        'stageprices': RefStagePrice.objects.all().order_by('name'),
+        'groupprices': RefGroupPrice.objects.all().order_by('name'),
+        'ratings': RefRatingCarsOrganization.objects.all().order_by('name'),
     }
 
     params = {
-        'object'            : car,
-        'chat'              : chat,
-        'messages'          : chat.get_last_messages(),
-        'selected'          : selected,
-        'avtohubs'          : avtohubs,
-        'finance'           : finance,
-        'marketing'         : marketing,
-        'user'              : request.user,
-        
+        'object': car,
+        'chat': chat,
+        'messages': chat.get_last_messages(),
+        'selected': selected,
+        'avtohubs': avtohubs,
+        'finance': finance,
+        'marketing': marketing,
+        'user': request.user,
+        'analytics': analytics,
+        'last_month_start': last_month_start,
+        'last_month_end': last_month_end,
     }
-    
+
     return render(request, "avtosalon/car_new_price.html", {'params': params})
 
 

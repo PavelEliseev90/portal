@@ -203,6 +203,74 @@
 					</div>
 				</div>
 
+				{% if params.analytics %}
+				<div class="row g-2 mb-3">
+					<div class="col-12">
+						<h6 class="mb-2"><span class="icon-mbri-info"></span> Аналитика</h6>
+					</div>
+					<div class="col-12 col-sm-6 col-md">
+						<div class="metric-card">
+							<div class="metric-card-label">В этом ДЦ (комплектация, остаток &gt; 0)</div>
+							<div class="metric-card-value">{{ params.analytics.count_in_unit }}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-6 col-md">
+						<div class="metric-card">
+							<div class="metric-card-label">По всем ДЦ (комплектация, остаток &gt; 0)</div>
+							<div class="metric-card-value">{{ params.analytics.count_all_dc }}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-6 col-md">
+						<div class="metric-card">
+							<div class="metric-card-label">Продажи подразделения за последний месяц</div>
+							<div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-6 col-md">
+						<div class="metric-card">
+							<div class="metric-card-label">Продажи модели за последний месяц</div>
+							<div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div>
+						</div>
+					</div>
+				</div>
+				{% if params.analytics.cumulative_detail %}
+				<div class="row g-2 mb-3">
+					<div class="col-12">
+						<h6 class="mb-2">Детализация продаж подразделения за последний месяц (Power BI Cumulative)</h6>
+						<div class="table-responsive">
+							<table class="table table-sm table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Дата продажи</th>
+										<th>Марка</th>
+										<th>Модель</th>
+										<th>Модификация</th>
+										<th>VIN</th>
+										<th>Выручка</th>
+										<th>Подразделение</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for row in params.analytics.cumulative_detail %}
+									<tr>
+										<td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td>
+										<td>{{ row.Marka|default:"—" }}</td>
+										<td>{{ row.Model|default:"—" }}</td>
+										<td>{{ row.Modifikatsiya|default:"—" }}</td>
+										<td>{{ row.VIN|default:"—" }}</td>
+										<td>{{ row.VyruchkaZaAvto|default:"—" }}</td>
+										<td>{{ row.PodrazdelenieDTs|default:"—" }}</td>
+									</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm mt-2" target="_blank">Открыть полный список в Power BI</a>
+					</div>
+				</div>
+				{% endif %}
+				{% endif %}
+
 				<div class="portal-panel">
 					<div class="">
 					  <h6><span class="icon-mbri-cust-feedback"></span> Задачи по автомобилю 
