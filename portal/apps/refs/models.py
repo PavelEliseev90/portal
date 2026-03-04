@@ -927,6 +927,7 @@ class RefTypeRepair(models.Model):
     сhecklist       = models.BooleanField("Учавствует в чек листах", default=False)
     opros           = models.BooleanField("Учавствует в опросах клиента", default=False)
     warranty        = models.BooleanField("Гарантия", default=False)
+    dop             = models.BooleanField("Допоборудование", default=False)
 
     def __str__(self):
         return "{}".format(self.name)
