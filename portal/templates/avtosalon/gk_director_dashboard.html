@@ -9,14 +9,113 @@
 
 <div class="portal-page">
     <div class="container-fluid py-3">
-        <h2 class="mb-4">Директор группы компаний</h2>
+        <h2 class="mb-2">Директор группы компаний</h2>
         <p class="text-muted mb-4">Управление складом и анализ работы дилерских центров. Все автомобили в наличии с количеством незакрытых задач.</p>
 
-        <div class="portal-panel mb-4">
+        <!-- Фильтры -->
+        <div class="portal-panel mb-3">
+            <a class="d-inline-flex align-items-center gap-1 small text-secondary text-decoration-none mb-2" data-bs-toggle="collapse" href="#filtersCollapse" aria-expanded="false">
+                <span class="icon-mbri-down"></span> Фильтры
+            </a>
+            <div class="collapse" id="filtersCollapse">
+                <form method="get" id="directorFiltersForm">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Состояние</label>
+                            <select name="status_condition" class="form-select form-select-sm">
+                                <option value="all" {% if params.filtr.status_condition == 'all' %}selected{% endif %}>Все</option>
+                                <option value="new" {% if params.filtr.status_condition == 'new' %}selected{% endif %}>Новые</option>
+                                <option value="used" {% if params.filtr.status_condition == 'used' %}selected{% endif %}>С пробегом</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Подразделение</label>
+                            <select name="unit[]" class="form-select form-select-sm" multiple size="3">
+                                {% for u in params.selected.units %}
+                                <option value="{{ u.id }}" {% if u.id in params.unit_ids_list %}selected{% endif %}>{{ u.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Марка</label>
+                            <select name="mark[]" class="form-select form-select-sm" multiple size="3">
+                                {% for m in params.selected.marks %}
+                                <option value="{{ m.id }}" {% if m.id in params.mark_ids_list %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Модель</label>
+                            <select name="model[]" class="form-select form-select-sm" multiple size="3">
+                                {% for m in params.selected.models %}
+                                <option value="{{ m.id }}" {% if m.id in params.model_ids_list %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Задачи</label>
+                            <select name="tasks_filter" class="form-select form-select-sm">
+                                <option value="all" {% if params.filtr.tasks_filter == 'all' %}selected{% endif %}>Все</option>
+                                <option value="with_open" {% if params.filtr.tasks_filter == 'with_open' %}selected{% endif %}>С открытыми задачами</option>
+                                <option value="no_tasks" {% if params.filtr.tasks_filter == 'no_tasks' %}selected{% endif %}>Без задач</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Мин. км</label>
+                            <select name="min_km_filter" class="form-select form-select-sm">
+                                <option value="all" {% if params.filtr.min_km_filter == 'all' %}selected{% endif %}>Все</option>
+                                <option value="with" {% if params.filtr.min_km_filter == 'with' %}selected{% endif %}>С минимальным км</option>
+                                <option value="without" {% if params.filtr.min_km_filter == 'without' %}selected{% endif %}>Без минимального км</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Сообщения в чате</label>
+                            <select name="chat_filter" class="form-select form-select-sm">
+                                <option value="all" {% if params.filtr.chat_filter == 'all' %}selected{% endif %}>Все</option>
+                                <option value="with_messages" {% if params.filtr.chat_filter == 'with_messages' %}selected{% endif %}>С сообщениями</option>
+                                <option value="no_messages" {% if params.filtr.chat_filter == 'no_messages' %}selected{% endif %}>Без сообщений</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Резерв</label>
+                            <select name="reserve_filter" class="form-select form-select-sm">
+                                <option value="all" {% if params.filtr.reserve_filter == 'all' %}selected{% endif %}>Все</option>
+                                <option value="in_reserve" {% if params.filtr.reserve_filter == 'in_reserve' %}selected{% endif %}>В резерве</option>
+                                <option value="no_reserve" {% if params.filtr.reserve_filter == 'no_reserve' %}selected{% endif %}>Без резерва</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Цена от</label>
+                            <input type="number" name="price_start" class="form-control form-control-sm" value="{{ params.filtr.price_start }}" placeholder="₽" step="1">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Цена до</label>
+                            <input type="number" name="price_end" class="form-control form-control-sm" value="{{ params.filtr.price_end }}" placeholder="₽" step="1">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">На странице</label>
+                            <select name="per_page" class="form-select form-select-sm">
+                                {% for n in params.per_page_options %}
+                                <option value="{{ n }}" {% if params.filtr.per_page == n %}selected{% endif %}>{{ n }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-lg-2 d-flex align-items-end gap-1">
+                            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+                            <a href="{% url 'avtosalon:gk_director_dashboard' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="portal-panel mb-3">
+            <p class="text-muted small mb-2">Найдено: {{ params.total_count }}. Страница {{ params.page_obj.number }} из {{ params.paginator.num_pages }}.</p>
             <div class="table-responsive">
                 <table class="table table-sm table-striped table-hover mb-0">
                     <thead>
                         <tr>
+                            <th style="width:80px;">Фото</th>
                             <th>Подразделение</th>
                             <th>Наименование</th>
                             <th>Марка / Модель</th>
@@ -30,8 +129,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for car in params.cars_list %}
+                        {% for car in params.page_obj %}
                         <tr>
+                            <td class="align-middle" style="width:80px;">
+                                {% with photos=car.refcarsorganizationfiles_set.all %}
+                                {% if photos %}
+                                <img src="{% if photos.0.file_mini %}{{ photos.0.file_mini.url }}{% else %}{{ photos.0.file.url }}{% endif %}" alt="" class="rounded" style="width:60px;height:45px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="d-flex align-items-center justify-content-center rounded bg-light text-muted small" style="width:60px;height:45px;display:none;">Нет фото</div>
+                                {% else %}
+                                <div class="d-flex align-items-center justify-content-center rounded bg-light text-muted small" style="width:60px;height:45px;">Нет фото</div>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
                             <td>{{ car.unit.name|default:"—" }}</td>
                             <td>{{ car.name|default:"—" }}</td>
                             <td>
@@ -60,14 +169,36 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="10" class="text-center text-muted py-4">Нет автомобилей в наличии</td>
+                            <td colspan="12" class="text-center text-muted py-4">Нет автомобилей по заданным фильтрам.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            {% if params.cars_list|length >= 2000 %}
-            <p class="text-muted small mt-2">Показаны первые 2000 записей.</p>
+
+            <!-- Пагинация -->
+            {% if params.paginator.num_pages > 1 %}
+            <nav aria-label="Пагинация" class="mt-3">
+                <ul class="pagination pagination-sm flex-wrap justify-content-center mb-0">
+                    {% if params.page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+                    </li>
+                    {% endif %}
+                    {% for num in params.paginator.page_range %}
+                        {% if num == params.page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > params.page_obj.number|add:"-3" and num < params.page_obj.number|add:"3" %}
+                        <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if params.page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
             {% endif %}
         </div>
     </div>
