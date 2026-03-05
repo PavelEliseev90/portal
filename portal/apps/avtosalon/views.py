@@ -2456,6 +2456,12 @@ def gk_director_dashboard(request):
         'per_page': per_page,
     }
 
+    # Query string без page для ссылок пагинации
+    get_copy = request.GET.copy()
+    if 'page' in get_copy:
+        get_copy.pop('page')
+    query_without_page = get_copy.urlencode()
+
     params = {
         'page_obj': page_obj,
         'paginator': paginator,
@@ -2472,6 +2478,7 @@ def gk_director_dashboard(request):
         'mark_ids_list': mark_ids_list,
         'model_ids_list': model_ids_list,
         'per_page_options': per_page_options,
+        'query_without_page': query_without_page,
     }
     return render(request, 'avtosalon/gk_director_dashboard.html', {'params': params})
 

@@ -50,6 +50,8 @@ urlpatterns = [
     #PowerBI
     path('checklists/',    include('checklists.urls')),
 
+    path('changelog/',      include('changelog.urls')),
+
     #Веб - сайт
     path('',            include('website.urls')),
     
