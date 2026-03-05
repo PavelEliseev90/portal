@@ -8,6 +8,12 @@
         <h5 class="offcanvas-title" id="offcanvasRightCarsLabel">Чаты по автомобилям</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
     </div>
+    <div id="div_reconect_cars" class="d-none px-3">
+        <hr>
+        <label class="fs-6 fw-bold">Соединение потеряно...</label>
+        <button class="btn btn-outline-danger btn-sm ms-2" id="btn_reconect_cars"><span class="icon-mbri-close"></span> Переподключиться</button>
+        <hr>
+    </div>
     <div class="offcanvas-body">
         <div class="container" style="padding-bottom: 2rem;">
             <div class="row align-items-center align-self-center message-list" id="message-list-cars" name="message-list-cars"></div>
@@ -15,9 +21,14 @@
     </div>
 </div>
 
+<div id="container_toast_cars" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;"></div>
+<audio id="notif_cars" src="/media_dop/music/vin.mp3"></audio>
+
 <script>
 (function() {
     var chatListCarsUrl = '{{ params.chat_list_cars_url|default:"/cars/js/get_chats_list_cars/" }}';
+    var chatSocketCars = null;
+
     function refresh_data_cars() {
         var el = document.getElementById('message-list-cars');
         if (!el) return;
@@ -50,10 +61,72 @@
             })
             .catch(function() { el.innerHTML = '<p class="text-muted">Не удалось загрузить чаты</p>'; });
     }
+
+    function toast_cars(title, text, link) {
+        var container = document.getElementById('container_toast_cars');
+        if (!container) return;
+        var id = 'toast_cars_' + Date.now();
+        var time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        var html = '<div id="' + id + '" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">';
+        html += '<div class="toast-header"><strong class="me-auto">' + (title || 'Чат') + '</strong>';
+        html += '<small>' + time + '</small><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button></div>';
+        html += '<div class="toast-body">' + (text || '');
+        if (link) html += '<hr class="my-2"><a href="' + link + '" class="text-end link-dark"><span class="icon-mbri-right"></span> Открыть</a>';
+        html += '</div></div>';
+        container.insertAdjacentHTML('beforeend', html);
+        var toastEl = document.getElementById(id);
+        if (toastEl && typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            new bootstrap.Toast(toastEl).show();
+            toastEl.addEventListener('hidden.bs.toast', function() { toastEl.remove(); });
+        }
+    }
+
+    function connect_ws_cars_list() {
+        var wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+        var wsHost = window.location.host;
+        var wsUrl = wsProtocol + '//' + wsHost + '/ws/rlk_list_eco/';
+        try {
+            chatSocketCars = new WebSocket(wsUrl);
+        } catch (e) {
+            console.warn('WebSocket cars list:', e);
+            document.getElementById('div_reconect_cars').classList.remove('d-none');
+            return;
+        }
+        chatSocketCars.onopen = function() {
+            document.getElementById('div_reconect_cars').classList.add('d-none');
+            refresh_data_cars();
+        };
+        chatSocketCars.onmessage = function(e) {
+            var notif = document.getElementById('notif_cars');
+            if (notif) notif.play().catch(function() {});
+            try {
+                var data = JSON.parse(e.data);
+                if (data.message) {
+                    var link = '/cars/' + (data.chat ? data.chat.replace(/^car_/, '') : '') + '/';
+                    toast_cars(data.chat || 'Автомобиль', data.message, link);
+                }
+            } catch (err) {}
+            refresh_data_cars();
+        };
+        chatSocketCars.onclose = function() {
+            document.getElementById('div_reconect_cars').classList.remove('d-none');
+            setTimeout(function() { connect_ws_cars_list(); }, 3000);
+        };
+        chatSocketCars.onerror = function() {};
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        refresh_data_cars();
+        connect_ws_cars_list();
         var btn = document.getElementById('chat_cars_open');
         if (btn) btn.addEventListener('click', function() { refresh_data_cars(); });
+        var btnReconnect = document.getElementById('btn_reconect_cars');
+        if (btnReconnect) {
+            btnReconnect.addEventListener('click', function() {
+                document.getElementById('div_reconect_cars').classList.add('d-none');
+                connect_ws_cars_list();
+                refresh_data_cars();
+            });
+        }
     });
 })();
 </script>
