@@ -734,7 +734,7 @@ def estimation_rlk(request, rlk_id):
             
             if "page_osmotr_salon" in request.POST:
                 reg_interactiv_ocenka_salon.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr_salon/page_osmotr_salon/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr_salon/page_osmotr_salon/'
                 return HttpResponseRedirect(url)
             
             if "page" in request.POST:
@@ -942,27 +942,27 @@ def estimation_rlk(request, rlk_id):
 
             if "page_pered" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr/pered/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/pered/'
                 return HttpResponseRedirect(url)
             
             if "page_vod" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr/vod/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/vod/'
                 return HttpResponseRedirect(url)
             
             if "page_zad" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr/zad/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/zad/'
                 return HttpResponseRedirect(url)
             
             if "page_pass" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr/pass/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/pass/'
                 return HttpResponseRedirect(url)
             
             if "page_up" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(object.pk) + '/osmotr/up/'
+                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/up/'
                 return HttpResponseRedirect(url)
 
             if "page" in request.POST:
@@ -1930,8 +1930,8 @@ def osmotr(request, rlk_id, type):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    object                          = DocRLK.objects.get(id=rlk_id)
-    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
+    #object                          = DocRLK.objects.get(id=rlk_id)
+    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(id = rlk_id)
     return_page                     = request.GET.get('return', '')
     list_info       = list()
     json_data       = list()
@@ -1958,7 +1958,7 @@ def osmotr(request, rlk_id, type):
         if type == 'pered':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrPered_maximum_' + str(object.id) +'.jpg'
+            file_name = 'imageViewOsmotrPered_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file = 'vnesh_car_osmotr_pered'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -1971,7 +1971,7 @@ def osmotr(request, rlk_id, type):
         elif type == 'vod':
             url_base_64     = request.POST.get('url_image')
             url_base        = url_base_64.split(',')[1].encode()
-            file_name       = 'imageViewOsmotrVod_maximum_' + str(object.id) +'.jpg'
+            file_name       = 'imageViewOsmotrVod_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1  = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file       = 'vnesh_car_osmotr_vod'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -1984,7 +1984,7 @@ def osmotr(request, rlk_id, type):
         elif type == 'pass':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrPass_maximum_' + str(object.id) +'.jpg'
+            file_name = 'imageViewOsmotrPass_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file = 'vnesh_car_osmotr_pass'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -1997,7 +1997,7 @@ def osmotr(request, rlk_id, type):
         elif type == 'zad':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrZad_maximum_' + str(object.id) +'.jpg'
+            file_name = 'imageViewOsmotrZad_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file = 'vnesh_car_osmotr_zad'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -2010,7 +2010,7 @@ def osmotr(request, rlk_id, type):
         elif type == 'up':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'imageViewOsmotrUp_maximum_' + str(object.id) +'.jpg'
+            file_name = 'imageViewOsmotrUp_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file = 'vnesh_car_osmotr_up'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -2178,8 +2178,8 @@ def osmotr_salon(request, rlk_id, type):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
-    object                          = DocRLK.objects.get(id=rlk_id)
-    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(rlk = object)
+    #object                          = DocRLK.objects.get(id=rlk_id)
+    reg_interactiv_ocenka, created  = RegInteractivOcenka.objects.get_or_create(id = rlk_id)
     return_page                     = request.GET.get('return', '')
     list_info       = list()
     json_data       = list()

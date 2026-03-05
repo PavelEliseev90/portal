@@ -3646,6 +3646,7 @@ def doc(request, id):
         return render(request, 'lo/lo.html', {'params': params}) 
 
 def save_recovery_estimations(interactiv_rlk, reg_interactiv_ocenka):
+    
     price_info = estimations_price_calculation(interactiv_rlk = interactiv_rlk, estimation = reg_interactiv_ocenka, type_calculation = 'custom')
     if price_info != None:
         RegEstimationPodgotovka.objects.filter(estimation = reg_interactiv_ocenka).delete()
