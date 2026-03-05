@@ -13,8 +13,8 @@ from email import header
 from itertools import product
 import requests
 import tempfile
-from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, FloatField, ExpressionWrapper
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, FloatField, ExpressionWrapper, Exists, Prefetch
+from django.db.models.functions import Coalesce, Concat
 from django.utils import timezone
 from datetime import timedelta
 import os
@@ -2310,31 +2310,168 @@ def deal_calculation(request):
 
 @login_required
 def gk_director_dashboard(request):
-    """Страница директора ГК: все автомобили в наличии, кол-во незакрытых задач, общий чат по автомобилям."""
-    # Автомобили в наличии с подсчётом незакрытых задач (new + in_progress)
+    """Страница директора ГК: все автомобили в наличии, фильтры, пагинация, чат по автомобилям."""
     open_tasks_filter = Q(tasks__status='new') | Q(tasks__status='in_progress')
+    # Подзапрос: чат по машине (slug='car_'+car.slug)
+    chat_sub = Chat.objects.filter(slug=Concat(Value('car_'), OuterRef('slug'))).values('pk')[:1]
+    has_chat_messages = Exists(ChatMessage.objects.filter(chat_id=Subquery(chat_sub)))
+
     cars_qs = (
         RefCarsOrganization.objects.filter(quantity__gt=0)
         .select_related(
             'unit', 'status', 'modification_autoru', 'modification_autoru__model',
             'modification_autoru__model__mark', 'complectation_autoru',
         )
+        .prefetch_related(Prefetch('refcarsorganizationfiles_set', queryset=RefCarsOrganizationFiles.objects.order_by('-main')))
         .annotate(
             open_tasks_count=Coalesce(
                 Count('tasks', filter=open_tasks_filter, distinct=True),
                 Value(0),
                 output_field=IntegerField(),
-            )
+            ),
+            has_chat_messages=has_chat_messages,
         )
         .order_by('unit__name', '-date_create')
     )
-    # Ограничиваем выборку для отображения (можно пагинировать)
-    cars_list = list(cars_qs[:2000])
+
+    # Фильтр: состояние Все / Новые / С пробегом
+    status_condition = request.GET.get('status_condition', 'all')
+    if status_condition == 'new':
+        cars_qs = cars_qs.filter(is_new=True)
+    elif status_condition == 'used':
+        cars_qs = cars_qs.filter(is_new=False)
+
+    # Подразделения (множественный выбор)
+    unit_ids = request.GET.getlist('unit[]')
+    if unit_ids:
+        try:
+            uid_list = [int(x) for x in unit_ids if x]
+            if uid_list:
+                cars_qs = cars_qs.filter(unit_id__in=uid_list)
+        except ValueError:
+            pass
+
+    # Марки и модели (множественный выбор)
+    mark_ids = request.GET.getlist('mark[]')
+    if mark_ids:
+        try:
+            mid_list = [int(x) for x in mark_ids if x]
+            if mid_list:
+                cars_qs = cars_qs.filter(modification_autoru__model__mark_id__in=mid_list)
+        except ValueError:
+            pass
+    model_ids = request.GET.getlist('model[]')
+    if model_ids:
+        try:
+            mod_list = [int(x) for x in model_ids if x]
+            if mod_list:
+                cars_qs = cars_qs.filter(modification_autoru__model_id__in=mod_list)
+        except ValueError:
+            pass
+
+    # Задачи: все / с открытыми / без задач
+    tasks_filter = request.GET.get('tasks_filter', 'all')
+    if tasks_filter == 'with_open':
+        cars_qs = cars_qs.filter(tasks__status__in=['new', 'in_progress']).distinct()
+    elif tasks_filter == 'no_tasks':
+        cars_qs = cars_qs.annotate(total_tasks=Count('tasks', distinct=True)).filter(total_tasks=0)
+
+    # Минимальный КМ: все / с минимальным км / без минимального км
+    min_km_filter = request.GET.get('min_km_filter', 'all')
+    if min_km_filter == 'with':
+        cars_qs = cars_qs.filter(min_km__isnull=False).exclude(min_km=0)
+    elif min_km_filter == 'without':
+        cars_qs = cars_qs.filter(Q(min_km__isnull=True) | Q(min_km=0))
+
+    # Сообщения в чате: все / с сообщениями / без
+    chat_filter = request.GET.get('chat_filter', 'all')
+    if chat_filter == 'with_messages':
+        cars_qs = cars_qs.filter(has_chat_messages=True)
+    elif chat_filter == 'no_messages':
+        cars_qs = cars_qs.filter(has_chat_messages=False)
+
+    # Цена от/до
+    price_start = request.GET.get('price_start', '')
+    if price_start:
+        try:
+            cars_qs = cars_qs.filter(price__gte=int(float(price_start)))
+        except ValueError:
+            pass
+    price_end = request.GET.get('price_end', '')
+    if price_end:
+        try:
+            cars_qs = cars_qs.filter(price__lte=int(float(price_end)))
+        except ValueError:
+            pass
+
+    # Резерв: все / в резерве / без резерва
+    reserve_filter = request.GET.get('reserve_filter', 'all')
+    if reserve_filter == 'in_reserve':
+        cars_qs = cars_qs.filter(reserve__gt=0)
+    elif reserve_filter == 'no_reserve':
+        cars_qs = cars_qs.filter(Q(reserve=0) | Q(reserve__isnull=True))
+
+    # Пагинация: 10, 25, 50, 100 (по умолчанию 25)
+    per_page_options = [10, 25, 50, 100]
+    try:
+        per_page = int(request.GET.get('per_page', 25))
+        if per_page not in per_page_options:
+            per_page = 25
+    except ValueError:
+        per_page = 25
+
+    total_count = cars_qs.count()
+    paginator = Paginator(cars_qs, per_page)
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    # Списки для фильтров (подразделения, марки, модели)
+    units_list = RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name')
+    marks_list = AutoruMark.objects.only('id', 'name').order_by('name')
+    models_list = AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name')
+    if mark_ids:
+        try:
+            mid_list = [int(x) for x in mark_ids if x]
+            if mid_list:
+                models_list = models_list.filter(mark_id__in=mid_list)
+        except ValueError:
+            pass
+
+    # ID для сохранения выбора в форме
+    unit_ids_list = [int(x) for x in unit_ids if x] if unit_ids else []
+    mark_ids_list = [int(x) for x in mark_ids if x] if mark_ids else []
+    model_ids_list = [int(x) for x in model_ids if x] if model_ids else []
+
+    filtr = {
+        'status_condition': status_condition,
+        'tasks_filter': tasks_filter,
+        'min_km_filter': min_km_filter,
+        'chat_filter': chat_filter,
+        'reserve_filter': reserve_filter,
+        'price_start': price_start,
+        'price_end': price_end,
+        'per_page': per_page,
+    }
+
     params = {
-        'cars_list': cars_list,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'total_count': total_count,
         'user': request.user,
-        'chats': [],  # чаты подгружаются по JS из get_chats_list_cars
         'chat_list_cars_url': '/cars/js/get_chats_list_cars/',
+        'selected': {
+            'units': units_list,
+            'marks': marks_list,
+            'models': models_list,
+        },
+        'filtr': filtr,
+        'unit_ids_list': unit_ids_list,
+        'mark_ids_list': mark_ids_list,
+        'model_ids_list': model_ids_list,
+        'per_page_options': per_page_options,
     }
     return render(request, 'avtosalon/gk_director_dashboard.html', {'params': params})
 
