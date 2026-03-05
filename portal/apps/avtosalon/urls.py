@@ -6,6 +6,8 @@ app_name = 'avtosalon'
 
 urlpatterns = [
    
+   path('director/',                         views.gk_director_dashboard, name='gk_director_dashboard'),
+   path('js/get_chats_list_cars/',           views.get_chats_list_cars, name='get_chats_list_cars'),
    path('disposition/',                      views.disposition, name='disposition'),
    path('disposition/get_marks/',            views.disposition_get_marks, name='disposition_get_marks'),
    path('disposition/get_models/',           views.disposition_get_models, name='disposition_get_models'),

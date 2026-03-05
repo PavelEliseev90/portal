@@ -13,7 +13,8 @@ from email import header
 from itertools import product
 import requests
 import tempfile
-from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, IntegerField, FloatField, ExpressionWrapper
+from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, FloatField, ExpressionWrapper
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
 import os
@@ -2303,6 +2304,91 @@ def deal_calculation(request):
     })
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+# ========== Директор ГК: склад и чаты по автомобилям ==========
+
+@login_required
+def gk_director_dashboard(request):
+    """Страница директора ГК: все автомобили в наличии, кол-во незакрытых задач, общий чат по автомобилям."""
+    # Автомобили в наличии с подсчётом незакрытых задач (new + in_progress)
+    open_tasks_filter = Q(tasks__status='new') | Q(tasks__status='in_progress')
+    cars_qs = (
+        RefCarsOrganization.objects.filter(quantity__gt=0)
+        .select_related(
+            'unit', 'status', 'modification_autoru', 'modification_autoru__model',
+            'modification_autoru__model__mark', 'complectation_autoru',
+        )
+        .annotate(
+            open_tasks_count=Coalesce(
+                Count('tasks', filter=open_tasks_filter, distinct=True),
+                Value(0),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by('unit__name', '-date_create')
+    )
+    # Ограничиваем выборку для отображения (можно пагинировать)
+    cars_list = list(cars_qs[:2000])
+    params = {
+        'cars_list': cars_list,
+        'user': request.user,
+        'chats': [],  # чаты подгружаются по JS из get_chats_list_cars
+        'chat_list_cars_url': '/cars/js/get_chats_list_cars/',
+    }
+    return render(request, 'avtosalon/gk_director_dashboard.html', {'params': params})
+
+
+@login_required
+def get_chats_list_cars(request):
+    """API: список чатов по автомобилям (slug содержит 'car'), для обновления блока чатов на странице директора ГК."""
+    from django.db.models import Max
+    # Чаты car_* с последним сообщением и данными авто (по Chat.name = car.slug)
+    subq_msg_date = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk'))
+        .order_by('-date')
+        .values('date')[:1]
+    )
+    subq_msg_content = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk'))
+        .order_by('-date')
+        .values('content')[:1]
+    )
+    # Данные авто: RefCarsOrganization.slug = Chat.name
+    car_unit = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('unit__name')[:1]
+    car_vin = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('vin')[:1]
+    car_mark = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('modification_autoru__model__mark__name')[:1]
+    car_model = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('modification_autoru__model__name')[:1]
+    car_mod = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('modification_autoru__name')[:1]
+    chats = (
+        Chat.objects.filter(slug__startswith='car_')
+        .annotate(max_date=subq_msg_date, content=subq_msg_content)
+        .annotate(
+            rlk_unit=Subquery(car_unit),
+            vin=Subquery(car_vin),
+            mark=Subquery(car_mark),
+            model=Subquery(car_model),
+            modification=Subquery(car_mod),
+        )
+        .exclude(max_date__isnull=True)
+        .order_by('-max_date')[:100]
+    )
+    result = []
+    for c in chats:
+        result.append({
+            'pk': c.pk,
+            'name': '/cars/{}/'.format(c.name or ''),
+            'slug': c.slug or '',
+            'rlk_unit': c.rlk_unit if hasattr(c, 'rlk_unit') else None,
+            'rlk_unit_dc': None,
+            'vin': c.vin or '',
+            'mark': c.mark or '',
+            'model': c.model or '',
+            'modification': c.modification or '',
+            'content': (c.content or '')[:200] if c.content else '',
+            'max_date': c.max_date.strftime('%Y-%m-%dT%H:%M:%S') if c.max_date else '',
+        })
+    return JsonResponse(result, safe=False, status=status.HTTP_200_OK)
 
 
 # ========== Управление задачами по автомобилям ==========

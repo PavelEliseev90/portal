@@ -1,0 +1,75 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Директор ГК: склад и аналитика {% endblock %}
+{% block title_navbar %} — Директор ГК {% endblock %}
+
+{% block content %}
+{% include 'chats/chat_list_cars.html' %}
+
+<div class="portal-page">
+    <div class="container-fluid py-3">
+        <h2 class="mb-4">Директор группы компаний</h2>
+        <p class="text-muted mb-4">Управление складом и анализ работы дилерских центров. Все автомобили в наличии с количеством незакрытых задач.</p>
+
+        <div class="portal-panel mb-4">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Подразделение</th>
+                            <th>Наименование</th>
+                            <th>Марка / Модель</th>
+                            <th>Комплектация</th>
+                            <th>VIN</th>
+                            <th>Остаток</th>
+                            <th>Цена</th>
+                            <th>Дней на складе</th>
+                            <th>Незакрытые задачи</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for car in params.cars_list %}
+                        <tr>
+                            <td>{{ car.unit.name|default:"—" }}</td>
+                            <td>{{ car.name|default:"—" }}</td>
+                            <td>
+                                {% if car.modification_autoru %}
+                                    {{ car.modification_autoru.model.mark.name|default:"" }} {{ car.modification_autoru.model.name|default:"" }}
+                                {% else %}
+                                    {{ car.mark|default:"" }} {{ car.model|default:"" }}
+                                {% endif %}
+                            </td>
+                            <td>{{ car.complectation_autoru|default:car.modification_autoru|default:"—" }}</td>
+                            <td>{{ car.vin|default:"—" }}</td>
+                            <td>{{ car.quantity|default:0 }}</td>
+                            <td>{{ car.price|floatformat:"2g"|default:"—" }} ₽</td>
+                            <td>{{ car.days_in_stok|default:"—" }}</td>
+                            <td>
+                                {% if car.open_tasks_count and car.open_tasks_count > 0 %}
+                                    <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="badge bg-warning text-dark">{{ car.open_tasks_count }}</a>
+                                {% else %}
+                                    <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'avtosalon:slug' car.slug %}?tab=avto" class="btn btn-outline-primary btn-sm">Карточка</a>
+                                <a href="{% url 'avtosalon:slug' car.slug %}price/" class="btn btn-outline-secondary btn-sm">Цена</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">Нет автомобилей в наличии</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if params.cars_list|length >= 2000 %}
+            <p class="text-muted small mt-2">Показаны первые 2000 записей.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
