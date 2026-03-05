@@ -63,6 +63,32 @@ class ChangeLog(models.Model):
     ordering = ('changed', )
     verbose_name = _('Change log')
     verbose_name_plural = _('Change logs')
-  
-  
+
+
+class PageViewLog(models.Model):
+  """Лог открытий страниц: кто, когда, какой путь (с фильтрами и без). Для дашборда и аудита."""
+  user          = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь', related_name='pageview_logs')
+  session_key   = models.CharField(max_length=40, blank=True, db_index=True, verbose_name='Ключ сессии (анонимы)')
+  path          = models.CharField(max_length=500, db_index=True, verbose_name='Путь (без query)')
+  path_full     = models.CharField(max_length=1024, blank=True, verbose_name='Полный путь с параметрами')
+  method        = models.CharField(max_length=10, default='GET')
+  status_code   = models.SmallIntegerField(null=True, blank=True, verbose_name='HTTP код ответа')
+  ip            = models.GenericIPAddressField(null=True, blank=True)
+  device_type   = models.CharField(max_length=20, blank=True, db_index=True, verbose_name='Тип устройства')
+  user_agent    = models.CharField(max_length=512, blank=True, verbose_name='User-Agent')
+  created       = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Дата/время')
+
+  class Meta:
+    db_table = 'pageview_log'
+    ordering = ('-created',)
+    verbose_name = 'Лог просмотра страницы'
+    verbose_name_plural = 'Логи просмотров страниц'
+    indexes = [
+      models.Index(fields=['created']),
+      models.Index(fields=['user', 'created']),
+      models.Index(fields=['path', 'created']),
+    ]
+
+  def __str__(self):
+    return f'{self.created} {self.path}'
 
