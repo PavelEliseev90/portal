@@ -30,7 +30,13 @@ class Profiles(models.Model):
     korsavto_auction        = models.BooleanField("Сотрудник аукциона", default = False)
 
     user_sb                 = models.BooleanField("Сотрудник службы безопасности", default = False)
-    
+
+    # Один вход с одного устройства: разрешённый session_key (обновляется при логине)
+    current_session_key     = models.CharField(
+        "Разрешённый ключ сессии (один вход)",
+        max_length=40, null=True, blank=True, db_index=True
+    )
+
     def image_img(self):
         if self.image:
             return mark_safe('<div style=" width:240px; height:120px;text-align:center;" ><img style="max-width:100%;max-height: 100%;" src="{0}"/></div>'.format(self.image.url))

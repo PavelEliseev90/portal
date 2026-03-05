@@ -95,6 +95,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'profiles.middleware.SingleDeviceSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'changelog.middleware.LoggedInUserMiddleware',
@@ -168,6 +169,13 @@ DATABASES = {
 }
 
 LOGIN_URL = '/login/'
+
+# Кэш для одного входа с одного устройства (можно заменить на Redis для нескольких воркеров)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
