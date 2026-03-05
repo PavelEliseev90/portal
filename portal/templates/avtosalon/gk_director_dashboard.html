@@ -5,6 +5,38 @@
 {% block title_navbar %} — Директор ГК {% endblock %}
 
 {% block content %}
+<style>
+/* Стили фильтров как на диспозиции */
+.director-filter-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  color: #8ea1ba;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.director-list-group {
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);
+}
+.director-list-group .list-group-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.director-list-group .list-group-item:last-child { border-bottom: none; }
+.director-list-group .list-group-item .form-check-input { margin-top: 0.25rem; }
+.director-list-group .list-group-item label { cursor: pointer; margin: 0; width: 100%; display: flex; align-items: center; }
+.director-search-input {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+}
+</style>
 {% include 'chats/chat_list_cars.html' %}
 
 <div class="portal-page">
@@ -20,6 +52,18 @@
             <div class="collapse" id="filtersCollapse">
                 <form method="get" id="directorFiltersForm">
                     <div class="row g-2">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="form-floating">
+                                <input type="text" class="form-control director-search-input" id="vin" name="vin" value="{{ params.filtr.vin|default:'' }}" placeholder="ВИН">
+                                <label for="vin">ВИН</label>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="form-floating">
+                                <input type="text" class="form-control director-search-input" id="search_fields" name="search_fields" value="{{ params.filtr.search_fields|default:'' }}" placeholder="Поиск">
+                                <label for="search_fields">Поиск по всем полям</label>
+                            </div>
+                        </div>
                         <div class="col-12 col-md-6 col-lg-2">
                             <label class="form-label small text-uppercase text-secondary">Состояние</label>
                             <select name="status_condition" class="form-select form-select-sm">
@@ -28,29 +72,47 @@
                                 <option value="used" {% if params.filtr.status_condition == 'used' %}selected{% endif %}>С пробегом</option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small text-uppercase text-secondary">Подразделение</label>
-                            <select name="unit[]" class="form-select form-select-sm" multiple size="3">
-                                {% for u in params.selected.units %}
-                                <option value="{{ u.id }}" {% if u.id in params.unit_ids_list %}selected{% endif %}>{{ u.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label director-filter-label">Подразделение</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control form-control-sm director-search-input" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+                                <div class="list-group position-absolute w-100 mt-1 director-list-group" id="unitDropdown" style="display: none;">
+                                    {% for u in params.selected.units %}
+                                    <label class="list-group-item">
+                                        <input class="form-check-input me-2" type="checkbox" name="unit[]" value="{{ u.id }}" {% if u.id in params.unit_ids_list %}checked{% endif %}> {{ u.name }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="selectedUnits" class="mt-2"></div>
                         </div>
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small text-uppercase text-secondary">Марка</label>
-                            <select name="mark[]" class="form-select form-select-sm" multiple size="3">
-                                {% for m in params.selected.marks %}
-                                <option value="{{ m.id }}" {% if m.id in params.mark_ids_list %}selected{% endif %}>{{ m.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label director-filter-label">Марка</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control form-control-sm director-search-input" id="markSearch" placeholder="Поиск по маркам..." autocomplete="off">
+                                <div class="list-group position-absolute w-100 mt-1 director-list-group" id="markDropdown" style="display: none;">
+                                    {% for m in params.selected.marks %}
+                                    <label class="list-group-item">
+                                        <input class="form-check-input me-2" type="checkbox" name="mark[]" value="{{ m.id }}" {% if m.id in params.mark_ids_list %}checked{% endif %}> {{ m.name }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="selectedMarks" class="mt-2"></div>
                         </div>
-                        <div class="col-12 col-md-6 col-lg-2">
-                            <label class="form-label small text-uppercase text-secondary">Модель</label>
-                            <select name="model[]" class="form-select form-select-sm" multiple size="3">
-                                {% for m in params.selected.models %}
-                                <option value="{{ m.id }}" {% if m.id in params.model_ids_list %}selected{% endif %}>{{ m.name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label director-filter-label">Модель</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control form-control-sm director-search-input" id="modelSearch" placeholder="Поиск по моделям..." autocomplete="off">
+                                <div class="list-group position-absolute w-100 mt-1 director-list-group" id="modelDropdown" style="display: none;">
+                                    {% for m in params.selected.models %}
+                                    <label class="list-group-item">
+                                        <input class="form-check-input me-2" type="checkbox" name="model[]" value="{{ m.id }}" {% if m.id in params.model_ids_list %}checked{% endif %}> {{ m.name }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="selectedModels" class="mt-2"></div>
                         </div>
                         <div class="col-12 col-md-6 col-lg-2">
                             <label class="form-label small text-uppercase text-secondary">Задачи</label>
@@ -133,12 +195,11 @@
                         <tr>
                             <td class="align-middle" style="width:80px;">
                                 {% with photos=car.refcarsorganizationfiles_set.all %}
-                                {% if photos %}
-                                <img src="{% if photos.0.file_mini %}{{ photos.0.file_mini.url }}{% else %}{{ photos.0.file.url }}{% endif %}" alt="" class="rounded" style="width:60px;height:45px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="d-flex align-items-center justify-content-center rounded bg-light text-muted small" style="width:60px;height:45px;display:none;">Нет фото</div>
-                                {% else %}
-                                <div class="d-flex align-items-center justify-content-center rounded bg-light text-muted small" style="width:60px;height:45px;">Нет фото</div>
-                                {% endif %}
+                                    {% if photos %}
+                                        <img src="{% if photos.0.file_mini %}{{ photos.0.file_mini.url }}{% else %}{{ photos.0.file.url }}{% endif %}" alt="" class="rounded" style="width:60px;height:45px;object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    {% else %}
+                                    <div class="d-flex align-items-center justify-content-center rounded bg-light text-muted small" style="width:60px;height:45px;">Нет фото</div>
+                                    {% endif %}
                                 {% endwith %}
                             </td>
                             <td>{{ car.unit.name|default:"—" }}</td>
@@ -203,4 +264,70 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+  function initSearchableSelect(searchId, dropdownId, selectedDivId) {
+    var searchEl = document.getElementById(searchId);
+    var dropdown = document.getElementById(dropdownId);
+    var selectedDiv = document.getElementById(selectedDivId);
+    if (!searchEl || !dropdown || !selectedDiv) return;
+
+    function filterList() {
+      var q = (searchEl.value || '').toLowerCase().trim();
+      var items = dropdown.querySelectorAll('label.list-group-item');
+      items.forEach(function(item) {
+        var text = (item.textContent || '').toLowerCase();
+        item.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+
+    function updateBadges() {
+      var checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (checked.length > 0) {
+        var html = '';
+        [].forEach.call(checked, function(cb) {
+          var label = cb.closest('label');
+          var text = label ? label.textContent.trim().replace(/\s+/g, ' ') : '';
+          var val = cb.value;
+          html += '<span class="badge bg-primary me-1 mb-1" style="font-size:0.85em;">' + text +
+            ' <button type="button" class="btn-close btn-close-white ms-1" style="font-size:0.65em;vertical-align:middle;" data-name="' + cb.name + '" data-value="' + val + '"></button></span>';
+        });
+        selectedDiv.innerHTML = html;
+        selectedDiv.querySelectorAll('.btn-close').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var inp = dropdown.querySelector('input[name="' + this.getAttribute('data-name') + '"][value="' + this.getAttribute('data-value') + '"]');
+            if (inp) inp.checked = false;
+            updateBadges();
+          });
+        });
+      }
+    }
+
+    searchEl.addEventListener('focus', function() {
+      filterList();
+      dropdown.style.display = 'block';
+    });
+    searchEl.addEventListener('input', filterList);
+    searchEl.addEventListener('blur', function() {
+      setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+    });
+    dropdown.addEventListener('mousedown', function(e) { e.preventDefault(); });
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      cb.addEventListener('change', updateBadges);
+    });
+    document.addEventListener('click', function(e) {
+      if (!searchEl.contains(e.target) && !dropdown.contains(e.target)) dropdown.style.display = 'none';
+    });
+    updateBadges();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initSearchableSelect('unitSearch', 'unitDropdown', 'selectedUnits');
+    initSearchableSelect('markSearch', 'markDropdown', 'selectedMarks');
+    initSearchableSelect('modelSearch', 'modelDropdown', 'selectedModels');
+  });
+})();
+</script>
 {% endblock %}

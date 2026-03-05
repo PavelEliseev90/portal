@@ -2341,6 +2341,14 @@ def gk_director_dashboard(request):
     elif status_condition == 'used':
         cars_qs = cars_qs.filter(is_new=False)
 
+    # Поиск по ВИН (основной и дополнительный) и/или номеру кузова (поиск по всем полям)
+    vin = request.GET.get('vin', '').strip()
+    if vin:
+        cars_qs = cars_qs.filter(Q(vin__icontains=vin) | Q(vin2__icontains=vin))
+    search_fields = request.GET.get('search_fields', '').strip()
+    if search_fields:
+        cars_qs = cars_qs.filter(search_fields__icontains=search_fields)
+
     # Подразделения (множественный выбор)
     unit_ids = request.GET.getlist('unit[]')
     if unit_ids:
@@ -2447,6 +2455,8 @@ def gk_director_dashboard(request):
 
     filtr = {
         'status_condition': status_condition,
+        'vin': vin,
+        'search_fields': search_fields,
         'tasks_filter': tasks_filter,
         'min_km_filter': min_km_filter,
         'chat_filter': chat_filter,
