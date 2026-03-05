@@ -103,14 +103,8 @@
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label director-filter-label">Модель</label>
                             <div class="position-relative">
-                                <input type="text" class="form-control form-control-sm director-search-input" id="modelSearch" placeholder="Поиск по моделям..." autocomplete="off">
-                                <div class="list-group position-absolute w-100 mt-1 director-list-group" id="modelDropdown" style="display: none;">
-                                    {% for m in params.selected.models %}
-                                    <label class="list-group-item">
-                                        <input class="form-check-input me-2" type="checkbox" name="model[]" value="{{ m.id }}" {% if m.id in params.model_ids_list %}checked{% endif %}> {{ m.name }}
-                                    </label>
-                                    {% endfor %}
-                                </div>
+                                <input type="text" class="form-control form-control-sm director-search-input" id="modelSearch" placeholder="Сначала выберите марку" autocomplete="off" disabled>
+                                <div class="list-group position-absolute w-100 mt-1 director-list-group" id="modelDropdown" style="display: none;"></div>
                             </div>
                             <div id="selectedModels" class="mt-2"></div>
                         </div>
@@ -267,6 +261,9 @@
 
 <script>
 (function() {
+  var initialSelectedModelIds = [{% for mid in params.model_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  var getModelsUrl = '{% url "avtosalon:disposition_get_models" %}';
+
   function initSearchableSelect(searchId, dropdownId, selectedDivId) {
     var searchEl = document.getElementById(searchId);
     var dropdown = document.getElementById(dropdownId);
@@ -278,7 +275,7 @@
       var items = dropdown.querySelectorAll('label.list-group-item');
       items.forEach(function(item) {
         var text = (item.textContent || '').toLowerCase();
-        item.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+        item.style.display = text.includes(q) ? '' : 'none';
       });
     }
 
@@ -323,10 +320,142 @@
     updateBadges();
   }
 
+  function updateDirectorModelBadges() {
+    var dropdown = document.getElementById('modelDropdown');
+    var selectedDiv = document.getElementById('selectedModels');
+    if (!dropdown || !selectedDiv) return;
+    var checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+    selectedDiv.innerHTML = '';
+    if (checked.length > 0) {
+      var html = '';
+      [].forEach.call(checked, function(cb) {
+        var label = cb.closest('label');
+        var text = label ? label.textContent.trim().replace(/\s+/g, ' ') : '';
+        var val = cb.value;
+        html += '<span class="badge bg-primary me-1 mb-1" style="font-size:0.85em;">' + text +
+          ' <button type="button" class="btn-close btn-close-white ms-1" style="font-size:0.65em;vertical-align:middle;" data-name="model[]" data-value="' + val + '"></button></span>';
+      });
+      selectedDiv.innerHTML = html;
+      selectedDiv.querySelectorAll('.btn-close').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var inp = dropdown.querySelector('input[name="model[]"][value="' + this.getAttribute('data-value') + '"]');
+          if (inp) inp.checked = false;
+          updateDirectorModelBadges();
+        });
+      });
+    }
+  }
+
+  function loadDirectorModels() {
+    var modelSearch = document.getElementById('modelSearch');
+    var modelDropdown = document.getElementById('modelDropdown');
+    var selectedDiv = document.getElementById('selectedModels');
+    if (!modelSearch || !modelDropdown) return;
+
+    var markIds = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(function(cb) { return cb.value; });
+    if (markIds.length === 0) {
+      modelSearch.disabled = true;
+      modelSearch.placeholder = 'Сначала выберите марку';
+      modelSearch.value = '';
+      modelDropdown.innerHTML = '';
+      if (selectedDiv) selectedDiv.innerHTML = '';
+      return;
+    }
+
+    modelSearch.disabled = false;
+    modelSearch.placeholder = 'Поиск по моделям...';
+    var search = (modelSearch.value || '').trim();
+    var url = getModelsUrl + '?' + markIds.map(function(id) { return 'mark_ids[]=' + encodeURIComponent(id); }).join('&') + (search ? '&search=' + encodeURIComponent(search) : '');
+
+    var preserveIds = Array.from(modelDropdown.querySelectorAll('input[name="model[]"]:checked')).map(function(cb) { return parseInt(cb.value, 10); });
+    if (preserveIds.length === 0 && initialSelectedModelIds.length > 0) preserveIds = initialSelectedModelIds;
+
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        modelDropdown.innerHTML = '';
+        if (data.models && data.models.length > 0) {
+          data.models.forEach(function(m) {
+            var label = document.createElement('label');
+            label.className = 'list-group-item';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'form-check-input me-2';
+            cb.name = 'model[]';
+            cb.value = m.id;
+            if (preserveIds.indexOf(m.id) !== -1) cb.checked = true;
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(' ' + m.name + (m.mark_name ? ' (' + m.mark_name + ')' : '')));
+            modelDropdown.appendChild(label);
+            cb.addEventListener('change', updateDirectorModelBadges);
+          });
+          updateDirectorModelBadges();
+        } else {
+          var empty = document.createElement('div');
+          empty.className = 'list-group-item text-muted';
+          empty.textContent = 'Модели не найдены';
+          modelDropdown.appendChild(empty);
+        }
+      })
+      .catch(function() {
+        modelDropdown.innerHTML = '<div class="list-group-item text-muted">Ошибка загрузки</div>';
+      });
+  }
+
+  function onDirectorMarkChange() {
+    loadDirectorModels();
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     initSearchableSelect('unitSearch', 'unitDropdown', 'selectedUnits');
     initSearchableSelect('markSearch', 'markDropdown', 'selectedMarks');
-    initSearchableSelect('modelSearch', 'modelDropdown', 'selectedModels');
+
+    var markDropdown = document.getElementById('markDropdown');
+    var modelSearch = document.getElementById('modelSearch');
+    var modelDropdown = document.getElementById('modelDropdown');
+    if (markDropdown) {
+      markDropdown.querySelectorAll('input[name="mark[]"]').forEach(function(cb) {
+        cb.addEventListener('change', onDirectorMarkChange);
+      });
+    }
+
+    if (modelSearch && modelDropdown) {
+      modelSearch.addEventListener('focus', function() {
+        var markIds = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(function(cb) { return cb.value; });
+        if (markIds.length > 0) {
+          var hasItems = modelDropdown.querySelectorAll('label.list-group-item').length > 0;
+          if (!hasItems || modelDropdown.querySelector('.text-muted')) loadDirectorModels();
+          else {
+            var q = (modelSearch.value || '').toLowerCase().trim();
+            modelDropdown.querySelectorAll('label.list-group-item').forEach(function(item) {
+              var text = (item.textContent || '').toLowerCase();
+              item.style.display = text.includes(q) ? '' : 'none';
+            });
+          }
+        } else {
+          modelDropdown.innerHTML = '<div class="list-group-item text-muted">Сначала выберите марку</div>';
+        }
+        modelDropdown.style.display = 'block';
+      });
+      modelSearch.addEventListener('input', function() {
+        var markIds = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(function(cb) { return cb.value; });
+        if (markIds.length > 0) {
+          clearTimeout(window.directorModelSearchTimeout);
+          window.directorModelSearchTimeout = setTimeout(loadDirectorModels, 300);
+        }
+      });
+      modelSearch.addEventListener('blur', function() {
+        setTimeout(function() { modelDropdown.style.display = 'none'; }, 200);
+      });
+      document.addEventListener('click', function(e) {
+        if (!modelSearch.contains(e.target) && !modelDropdown.contains(e.target)) modelDropdown.style.display = 'none';
+      });
+      modelDropdown.addEventListener('mousedown', function(e) { e.preventDefault(); });
+    }
+
+    if (Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).length > 0) {
+      loadDirectorModels();
+    }
   });
 })();
 </script>
