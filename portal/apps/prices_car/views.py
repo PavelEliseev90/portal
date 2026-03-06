@@ -207,15 +207,59 @@ def stage_km_page(request):
 
 
 @login_required
+def discount_get_models(request):
+    """AJAX: модели по выбранному бренду (PriceCarBrand)."""
+    from django.http import JsonResponse
+    brand_id = request.GET.get('brand_id', '').strip()
+    if not brand_id:
+        return JsonResponse({'models': []})
+    try:
+        brand = PriceCarBrand.objects.prefetch_related('marks', 'models_included').get(pk=int(brand_id))
+        if brand.models_included.exists():
+            models = brand.models_included.select_related('mark').order_by('mark__name', 'name')
+        else:
+            models = AutoruModel.objects.filter(mark__in=brand.marks.all()).select_related('mark').order_by('mark__name', 'name')
+        models = list(models[:500])
+        return JsonResponse({'models': [{'id': m.id, 'name': m.name, 'mark_name': m.mark.name} for m in models]})
+    except (ValueError, PriceCarBrand.DoesNotExist):
+        return JsonResponse({'models': []})
+
+
+@login_required
+def discount_get_modifications(request):
+    """AJAX: модификации по выбранной модели."""
+    from django.http import JsonResponse
+    from refs.models import AutoruModification
+    model_id = request.GET.get('model_id', '').strip()
+    if not model_id:
+        return JsonResponse({'modifications': []})
+    try:
+        mods = AutoruModification.objects.filter(model_id=int(model_id)).select_related('model').order_by('name')[:500]
+        return JsonResponse({'modifications': [{'id': m.id, 'name': m.name, 'model_name': m.model.name} for m in mods]})
+    except (ValueError, TypeError):
+        return JsonResponse({'modifications': []})
+
+
+@login_required
+def discount_get_complectations(request):
+    """AJAX: комплектации по выбранной модификации."""
+    from django.http import JsonResponse
+    from refs.models import AutoruComplectation
+    modification_id = request.GET.get('modification_id', '').strip()
+    if not modification_id:
+        return JsonResponse({'complectations': []})
+    try:
+        comps = AutoruComplectation.objects.filter(modification_id=int(modification_id)).select_related('modification').order_by('name')[:500]
+        return JsonResponse({'complectations': [{'id': c.id, 'name': c.name, 'modification_name': c.modification.name} for c in comps]})
+    except (ValueError, TypeError):
+        return JsonResponse({'complectations': []})
+
+
+@login_required
 def discount_km_page(request):
     """Управление дисконтом Км: процент изменения минимального Км по бренду/модели/модификации/комплектации/году, срок в рамках месяца."""
-    from refs.models import AutoruModification, AutoruComplectation
-
     discount_edit = None
-    brands = PriceCarBrand.objects.order_by('name')
-    models_all = AutoruModel.objects.select_related('mark').order_by('mark__name', 'name')
-    modifications_all = AutoruModification.objects.select_related('model__mark').order_by('model__mark__name', 'model__name', 'name')
-    complectations_all = AutoruComplectation.objects.select_related('modification__model__mark').order_by('modification__model__mark__name', 'modification__name', 'name')
+    brands = PriceCarBrand.objects.only('id', 'name').order_by('name')
     items = PriceCarKmDiscount.objects.select_related(
         'brand', 'model', 'model__mark', 'modification', 'complectation'
     ).order_by('-date_from', 'brand')
@@ -305,9 +349,6 @@ def discount_km_page(request):
     return render(request, 'prices_car/discount_km.html', {
         'params': {
             'brands': brands,
-            'models_all': models_all,
-            'modifications_all': modifications_all,
-            'complectations_all': complectations_all,
             'items': items,
             'discount_edit': discount_edit,
         },

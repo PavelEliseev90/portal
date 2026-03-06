@@ -44,29 +44,20 @@
                     </div>
                     <div class="col-12 col-md-6 col-lg-3">
                         <label class="form-label">Модель</label>
-                        <select name="model" class="form-select">
-                            <option value="">— Любая —</option>
-                            {% for m in params.models_all %}
-                            <option value="{{ m.id }}" {% if params.discount_edit and params.discount_edit.model_id == m.id %}selected{% endif %}>{{ m.mark.name }} — {{ m.name }}</option>
-                            {% endfor %}
+                        <select name="model" id="discountModel" class="form-select" disabled>
+                            <option value="">— Сначала выберите бренд —</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6 col-lg-3">
                         <label class="form-label">Модификация</label>
-                        <select name="modification" class="form-select">
-                            <option value="">— Любая —</option>
-                            {% for mod in params.modifications_all %}
-                            <option value="{{ mod.id }}" {% if params.discount_edit and params.discount_edit.modification_id == mod.id %}selected{% endif %}>{{ mod.model.mark.name }} {{ mod.model.name }} — {{ mod.name }}</option>
-                            {% endfor %}
+                        <select name="modification" id="discountModification" class="form-select" disabled>
+                            <option value="">— Сначала выберите модель —</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6 col-lg-3">
                         <label class="form-label">Комплектация</label>
-                        <select name="complectation" class="form-select">
-                            <option value="">— Любая —</option>
-                            {% for c in params.complectations_all %}
-                            <option value="{{ c.id }}" {% if params.discount_edit and params.discount_edit.complectation_id == c.id %}selected{% endif %}>{{ c.modification.model.mark.name }} {{ c.modification.name }} — {{ c.name }}</option>
-                            {% endfor %}
+                        <select name="complectation" id="discountComplectation" class="form-select" disabled>
+                            <option value="">— Сначала выберите модификацию —</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6 col-lg-2">
@@ -145,4 +136,134 @@
         </div>
     </div>
 </div>
+<script>
+(function() {
+    var brandSelect = document.querySelector('select[name="brand"]');
+    var modelSelect = document.getElementById('discountModel');
+    var modificationSelect = document.getElementById('discountModification');
+    var complectationSelect = document.getElementById('discountComplectation');
+    var getModelsUrl = '{% url "prices_car:discount_get_models" %}';
+    var getModificationsUrl = '{% url "prices_car:discount_get_modifications" %}';
+    var getComplectationsUrl = '{% url "prices_car:discount_get_complectations" %}';
+    var editPreset = {% if params.discount_edit %}{
+        model_id: {{ params.discount_edit.model_id|default:"null" }},
+        modification_id: {{ params.discount_edit.modification_id|default:"null" }},
+        complectation_id: {{ params.discount_edit.complectation_id|default:"null" }}
+    }{% else %}null{% endif %};
+
+    function clearSelect(sel, placeholder) {
+        sel.innerHTML = '<option value="">' + placeholder + '</option>';
+        sel.disabled = true;
+    }
+
+    function loadModels(brandId, thenSelectModelId) {
+        if (!brandId) {
+            clearSelect(modelSelect, '— Сначала выберите бренд —');
+            clearSelect(modificationSelect, '— Сначала выберите модель —');
+            clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+            return Promise.resolve();
+        }
+        modelSelect.disabled = true;
+        modelSelect.innerHTML = '<option value="">Загрузка...</option>';
+        return fetch(getModelsUrl + '?brand_id=' + encodeURIComponent(brandId))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                modelSelect.innerHTML = '<option value="">— Любая —</option>';
+                (data.models || []).forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = (m.mark_name || '') + ' — ' + m.name;
+                    modelSelect.appendChild(opt);
+                });
+                modelSelect.disabled = false;
+                if (thenSelectModelId) {
+                    modelSelect.value = thenSelectModelId || '';
+                    if (thenSelectModelId) loadModifications(thenSelectModelId, editPreset && editPreset.modification_id);
+                } else {
+                    clearSelect(modificationSelect, '— Сначала выберите модель —');
+                    clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+                }
+            })
+            .catch(function() {
+                modelSelect.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+                modelSelect.disabled = false;
+            });
+    }
+
+    function loadModifications(modelId, thenSelectModId) {
+        if (!modelId) {
+            clearSelect(modificationSelect, '— Сначала выберите модель —');
+            clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+            return Promise.resolve();
+        }
+        modificationSelect.disabled = true;
+        modificationSelect.innerHTML = '<option value="">Загрузка...</option>';
+        return fetch(getModificationsUrl + '?model_id=' + encodeURIComponent(modelId))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                modificationSelect.innerHTML = '<option value="">— Любая —</option>';
+                (data.modifications || []).forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = (m.model_name || '') + ' — ' + m.name;
+                    modificationSelect.appendChild(opt);
+                });
+                modificationSelect.disabled = false;
+                if (thenSelectModId) {
+                    modificationSelect.value = thenSelectModId || '';
+                    if (thenSelectModId) loadComplectations(thenSelectModId, editPreset && editPreset.complectation_id);
+                } else {
+                    clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+                }
+            })
+            .catch(function() {
+                modificationSelect.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+                modificationSelect.disabled = false;
+            });
+    }
+
+    function loadComplectations(modificationId, thenSelectCompId) {
+        if (!modificationId) {
+            clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+            return Promise.resolve();
+        }
+        complectationSelect.disabled = true;
+        complectationSelect.innerHTML = '<option value="">Загрузка...</option>';
+        return fetch(getComplectationsUrl + '?modification_id=' + encodeURIComponent(modificationId))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                complectationSelect.innerHTML = '<option value="">— Любая —</option>';
+                (data.complectations || []).forEach(function(c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = (c.modification_name || '') + ' — ' + c.name;
+                    complectationSelect.appendChild(opt);
+                });
+                complectationSelect.disabled = false;
+                if (thenSelectCompId) complectationSelect.value = thenSelectCompId || '';
+            })
+            .catch(function() {
+                complectationSelect.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+                complectationSelect.disabled = false;
+            });
+    }
+
+    brandSelect.addEventListener('change', function() {
+        var brandId = this.value;
+        loadModels(brandId, null);
+    });
+
+    modelSelect.addEventListener('change', function() {
+        loadModifications(this.value, null);
+    });
+
+    modificationSelect.addEventListener('change', function() {
+        loadComplectations(this.value, null);
+    });
+
+    if (editPreset && brandSelect.value) {
+        loadModels(brandSelect.value, editPreset.model_id);
+    }
+})();
+</script>
 {% endblock %}
