@@ -182,7 +182,7 @@ class RegInteractivOcenkaRLKAdmin(admin.ModelAdmin):
     list_display = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'status', 'date_diagnostic')
     raw_id_fields = ('rlk', 'estimation', 'staff_rlk', 'staff_eco_1_rlk', 'staff_eco_2_rlk', 'unit', 'organization', 'filial', 'store', 'type_reception', 'status', 'page_soglasovanie')
     list_filter = ('status', 'date_diagnostic', 'unit', 'organization')
-    search_fields = ('rlk__nomer', 'rlk__vin', 'estimation__vin')
+    search_fields   = ('rlk__nomer',)
     filter_horizontal = ('access_user',)
 
 

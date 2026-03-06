@@ -192,6 +192,7 @@ def custom_bad_request_view(request, exception=None):
 ###
 ##agga
 # Главная страница портала
+
 def get_rlk_eco(user, type):
     
     rlks = RegInteractivOcenka.objects.filter(staff__domain_login = user.username)
@@ -259,6 +260,7 @@ def get_rlk_eco(user, type):
     return list(rlks)
 
 
+@login_required
 def start(request):
 
     if request.user.is_authenticated:
@@ -473,6 +475,8 @@ def loging(request):
                     if user is not None:
                         if user.is_active:
                             dj_login(request, user)
+                            if next == '':
+                                next = request.POST.get('next', '')
                             if len(next) > 0:
                                 return HttpResponseRedirect(next) 
                             return HttpResponseRedirect('/')
@@ -499,6 +503,7 @@ def logout(request):
 	return HttpResponseRedirect('/')
 
 
+@login_required
 def balance_edit(request, id):
     
     if not request.user.profiles.eco_page_price_info:
@@ -530,6 +535,7 @@ def balance_edit(request, id):
 ###
 ##
 # Справочники
+@login_required
 def refs(request):
     params = {
         'type': 'refs'
@@ -537,6 +543,7 @@ def refs(request):
 
     return render(request, "website/refs.html", {'params': params})
 
+@login_required
 def refs_unit_group_list(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -910,7 +917,7 @@ def send_opros_change(doc, canceled_name, op):
     return info
     
 
-
+@login_required
 def sms_opros_op(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1048,6 +1055,8 @@ def sms_opros_op(request):
         }
         return render(request, 'website/sms_opros_op.html', {'params': params})
 
+
+@login_required
 def sms_opros_op_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1182,6 +1191,8 @@ def sms_opros_op_export(request):
         wb.save(response)
         return response
 
+
+@login_required
 def sms_opros_op_doc(request, pk):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1241,6 +1252,8 @@ def sms_opros_op_doc(request, pk):
         }
         return render(request, 'website/sms_opros_op_doc.html', {'params': params})
 
+
+@login_required
 def sms_opros_service(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1382,6 +1395,8 @@ def sms_opros_service(request):
         }
         return render(request, 'website/sms_opros_service.html', {'params': params})
 
+
+@login_required
 def sms_opros_service_export(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1513,6 +1528,8 @@ def sms_opros_service_export(request):
         wb.save(response)
         return response
 
+
+@login_required
 def sms_opros_service_doc(request, pk):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -1590,6 +1607,7 @@ def sms_opros_service_doc(request, pk):
         return render(request, 'website/sms_opros_service_doc.html', {'params': params})
 
 
+@login_required
 def dashboard_sms_opros(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -2212,6 +2230,7 @@ def record_strip(id, start, end, nomer, comment, times):
 ###
 ##
 # Рабочие листы 
+@login_required
 def docs_rlk(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -2334,6 +2353,7 @@ def doc_rlk(request, id):
 ###
 ##
 # Заказ - наряды и расширения зн и сервис
+@login_required
 def docs_zn(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -2659,6 +2679,7 @@ def docs_zn_get_staffs(request):
     return JsonResponse({'staffs': result})
 
 
+@login_required
 def doc_zn(request, id):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -2738,6 +2759,7 @@ def doc_zn(request, id):
         return render(request, 'website/doc_zn.html', {'params': params}) 
 
 
+@login_required
 def docs_zn_report_tizer(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -2957,6 +2979,7 @@ def docs_zn_report_tizer(request):
         return render(request, 'website/docs_zn_report_tizer.html', {'params': params}) 
 
 
+@login_required
 def docs_zn_report_tizer_mcu(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
@@ -3162,6 +3185,7 @@ def docs_zn_report_tizer_mcu(request):
             'docs'          : table_data
         }
         return render(request, 'website/docs_zn_report_tizer_mcu.html', {'params': params}) 
+
 
 
 def doc_recomendation(request, id):
@@ -5725,7 +5749,10 @@ def rlk_trade_in(request, id):
         page_obj = docs[0]
         if page_obj.lo_pk != None:
             estimation  = RegInteractivOcenkaRLK.objects.get(pk=page_obj.lo_pk)
-            chat        = Chat.objects.get_or_create(name = page_obj.pk, slug = 'rlk_' + str(page_obj.pk))[0]
+            chat = Chat.objects.filter(name=id, slug='rlk_' + str(id)).first()
+            if chat is None:
+                chat = Chat.objects.create(name=id, slug='rlk_' + str(id))
+            # chat        = Chat.objects.get_or_create(name = page_obj.pk, slug = 'rlk_' + str(page_obj.pk))[0]
 
     selected = {
         'staffsKK'          : '',
