@@ -82,37 +82,41 @@ def get_estimation_bcp(request):
 @api_view(['GET'])
 def get_info_estimation_vin(request):
     
+    from register.models import RegInteractivOcenkaRLK
+
     vin         = request.GET.get('vin', '')
     list_info   = list()
 
+    
     if vin != '':
         date_start = DT.datetime.now() - DT.timedelta(days=14)
-        infos = RegInteractivOcenka.objects.filter(vin = vin, 
-                                       start_estimation__gte =  date_start)
+        infos = RegInteractivOcenkaRLK.objects.filter(estimation__vin = vin, 
+                                       estimation__start_estimation__gte =  date_start)
         
         exclude_rlk = request.GET.get('exclude_rlk', '')
         if exclude_rlk != '':
             infos = infos.exclude(rlk__id = exclude_rlk)
+            
 
         if infos.count() > 0:
             for info in infos:
                 customer = ''
                 run = 0
-                if info.page_documents != None:
-                    customer = '' + info.page_documents.customer_family + ' ' + info.page_documents.customer_name + ' ' + info.page_documents.customer_patronymic 
-                if info.page_salon != None:
-                    run = info.page_salon.run
+                if info.estimation.page_documents != None:
+                    customer = '' + info.estimation.page_documents.customer_family + ' ' + info.estimation.page_documents.customer_name + ' ' + info.estimation.page_documents.customer_patronymic 
+                if info.estimation.page_salon != None:
+                    run = info.estimation.page_salon.run
                     
                 to_json = {
                     'id'                    : info.id,
                     'rlk_id'                : info.rlk.id if info.rlk else None,
-                    'date'                  : info.start_estimation,
+                    'date'                  : info.estimation.start_estimation,
                     'customer'              : customer,
-                    'vin'                   : info.vin,
+                    'vin'                   : info.estimation.vin,
                     'status'                : info.status.name if info.status else '',
-                    'staff'                 : info.staff.name if info.staff else '',
-                    'mark'                  : info.modification.model.mark.name + ' ' + info.modification.model.name + ' ' + info.modification.name if info.modification and info.modification.model and info.modification.model.mark else '',
-                    'year'                  : info.year,
+                    'staff'                 : info.staff_rlk.name if info.staff_rlk else '',
+                    'mark'                  : info.estimation.modification.model.mark.name + ' ' + info.estimation.modification.model.name + ' ' + info.estimation.modification.name if info.estimation.modification and info.estimation.modification.model and info.estimation.modification.model.mark else '',
+                    'year'                  : info.estimation.year,
                     'run'                   : run
                 }
                 list_info.append(to_json)

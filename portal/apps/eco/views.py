@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from tkinter.tix import Tree
 from collections import defaultdict
 from django.shortcuts import redirect, render
@@ -2592,6 +2593,7 @@ def list_eco(request):
     return render(request, 'lo/lo_list.html', {'params': params})
 
 
+@login_required
 def doc(request, id):
      
     if not request.user.is_authenticated:
@@ -2635,7 +2637,11 @@ def doc(request, id):
     balance_date_start  = balance_date_start.replace(day=1, hour=1)
     balance_date_end    = balance_date
 
-    chat    = Chat.objects.get_or_create(name = rlk.pk, slug = 'rlk_' + str(rlk.pk))[0]
+    chat = Chat.objects.filter(name=rlk.pk, slug='rlk_' + str(rlk.pk)).first()
+    if chat is None:
+        chat = Chat.objects.create(name=rlk.pk, slug='rlk_' + str(rlk.pk))
+    # chat    = Chat.objects.get_or_create(name = rlk.pk, slug = 'rlk_' + str(rlk.pk))[0]
+        
     user    = request.user
     messages = chat.get_last_messages()
     versions = ''

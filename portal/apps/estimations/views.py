@@ -485,8 +485,8 @@ def estimation_rlk(request, rlk_id):
         reg_interactiv_ocenka = interactiv_rlk.estimation
 
     list_statuses = [1, 2, 7, 9]
-    # if not interactiv_rlk.status.id in list_statuses:
-    #     return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
+    if not interactiv_rlk.status.id in list_statuses:
+         return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
     if request.method == 'POST':
         
@@ -734,7 +734,7 @@ def estimation_rlk(request, rlk_id):
             
             if "page_osmotr_salon" in request.POST:
                 reg_interactiv_ocenka_salon.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr_salon/page_osmotr_salon/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr_salon/page_osmotr_salon/'
                 return HttpResponseRedirect(url)
             
             if "page" in request.POST:
@@ -942,27 +942,27 @@ def estimation_rlk(request, rlk_id):
 
             if "page_pered" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/pered/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/pered/'
                 return HttpResponseRedirect(url)
             
             if "page_vod" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/vod/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/vod/'
                 return HttpResponseRedirect(url)
             
             if "page_zad" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/zad/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/zad/'
                 return HttpResponseRedirect(url)
             
             if "page_pass" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/pass/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/pass/'
                 return HttpResponseRedirect(url)
             
             if "page_up" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
-                url = '/estimations/' + str(reg_interactiv_ocenka.pk) + '/osmotr/up/'
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/up/'
                 return HttpResponseRedirect(url)
 
             if "page" in request.POST:
@@ -1552,8 +1552,10 @@ def estimation_rlk(request, rlk_id):
         list_checks     = list()
         list_complectations = list()
 
-        chat            = Chat.objects.get_or_create(name = object.pk, slug = 'rlk_' + str(object.pk))[0]
-    
+        chat = Chat.objects.filter(name=object.pk, slug='rlk_' + str(object.pk)).first()
+        if chat is None:
+            chat = Chat.objects.create(name=object.pk, slug='rlk_' + str(object.pk))
+
         page = int(request.GET.get('page', '0'))
         
         if reg_interactiv_ocenka.page_remote != None and reg_interactiv_ocenka.page_remote.end_estimation == None:
@@ -1925,7 +1927,7 @@ def modifications(request, rlk_id, years, mark_id, model_id):
     return render(request, 'estimation/estimation_catalog_modidication.html', {'params': params})
 
 
-def osmotr(request, rlk_id, type):
+def osmotr(request, rlk_id, type, rl_id):
     
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
@@ -2056,9 +2058,10 @@ def osmotr(request, rlk_id, type):
                 new_estimation_files.save()
 
         if return_page == 'eco':
-            save_recovery_estimations(reg_interactiv_ocenka)
-            return HttpResponseRedirect('/eco/' + rlk_id + '/?page=21')    
-        return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=3')
+            interatictiv = RegInteractivOcenkaRLK.objects.get(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
+            save_recovery_estimations(interatictiv, reg_interactiv_ocenka)
+            return HttpResponseRedirect('/eco/' + rl_id + '/?page=21')    
+        return HttpResponseRedirect('/estimations/' + rl_id + '/?page=3')
     else:
           
         if type == 'pered':
@@ -2173,7 +2176,7 @@ def osmotr(request, rlk_id, type):
     return render(request, 'estimation/estimation_doc_body_osmotr.html', {'params': params})
 
 
-def osmotr_salon(request, rlk_id, type):
+def osmotr_salon(request, rlk_id, type, rl_id):
     
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
@@ -2198,7 +2201,7 @@ def osmotr_salon(request, rlk_id, type):
         if type == 'page_osmotr_salon':
             url_base_64 = request.POST.get('url_image')
             url_base = url_base_64.split(',')[1].encode()
-            file_name = 'osmotr_salon_' + str(object.id) +'.jpg'
+            file_name = 'osmotr_salon_' + str(reg_interactiv_ocenka.id) +'.jpg'
             decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
             type_file = 'osmotr_salon'
             new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
@@ -2241,9 +2244,10 @@ def osmotr_salon(request, rlk_id, type):
                 new_estimation_files.save()
 
         if return_page == 'eco':
-            save_recovery_estimations(reg_interactiv_ocenka)
-            return HttpResponseRedirect('/eco/' + rlk_id + '/?page=21')    
-        return HttpResponseRedirect('/estimations/' + rlk_id + '/?page=2')
+            interatictiv = RegInteractivOcenkaRLK.objects.get(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
+            save_recovery_estimations(interatictiv, reg_interactiv_ocenka)
+            return HttpResponseRedirect('/eco/' + rl_id + '/?page=21')    
+        return HttpResponseRedirect('/estimations/' + rl_id + '/?page=2')
     else:
           
         if type == 'page_osmotr_salon':
