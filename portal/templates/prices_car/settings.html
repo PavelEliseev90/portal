@@ -1,0 +1,101 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Управление Км по брендам {% endblock %}
+{% block title_navbar %} — Управление Км {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+    <div class="container-fluid py-3">
+        <p class="mb-2">
+            <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
+        </p>
+        <h2 class="mb-2">Управление Км по брендам на месяц</h2>
+        <p class="text-muted mb-4">Укажите значение км (кумулятивная маржа и т.п.) по бренду на выбранный месяц. Бренды настраиваются в разделе «Бренды».</p>
+
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="portal-panel mb-4">
+            <h5 class="mb-3">Добавить или изменить</h5>
+            <form method="post" action="{% url 'prices_car:settings' %}" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Бренд</label>
+                    <select name="brand" class="form-select" required>
+                        <option value="">— Выберите бренд —</option>
+                        {% for b in params.brands %}
+                        <option value="{{ b.id }}">{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not params.brands %}<small class="text-muted">Сначала добавьте бренды в разделе <a href="{% url 'prices_car:brands' %}">Бренды</a>.</small>{% endif %}
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Месяц (ГГГГ-ММ)</label>
+                    <input type="month" name="month" class="form-control" required placeholder="2025-02">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Км</label>
+                    <input type="number" name="km" class="form-control" value="0" min="0" step="1">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Индекс Км для РДО</label>
+                    <input type="number" name="km_index_rdo" class="form-control" value="" placeholder="0.00" step="0.01" min="0">
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+            <p class="small text-muted mt-2">Для одной и той же пары «бренд + месяц» повторная отправка обновит значение км.</p>
+        </div>
+
+        <div class="portal-panel">
+            <h5 class="mb-3">Текущие настройки</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Бренд</th>
+                            <th>Месяц</th>
+                            <th>Км</th>
+                            <th>Индекс Км для РДО</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in params.items %}
+                        <tr>
+                            <td>{{ item.brand }}</td>
+                            <td>{{ item.month|date:"Y-m" }}</td>
+                            <td>{{ item.km }}</td>
+                            <td>{% if item.km_index_rdo is not None %}{{ item.km_index_rdo }}{% else %}—{% endif %}</td>
+                            <td>
+                                <form method="post" action="{% url 'prices_car:settings' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ item.pk }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Нет записей. Добавьте первую выше.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

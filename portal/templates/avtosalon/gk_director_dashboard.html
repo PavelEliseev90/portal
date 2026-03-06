@@ -41,6 +41,11 @@
 
 <div class="portal-page">
     <div class="container-fluid py-3">
+        {% if params.from_prices_car %}
+        <p class="mb-2">
+            <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
+        </p>
+        {% endif %}
         <h2 class="mb-2">Директор группы компаний</h2>
         <p class="text-muted mb-4">Управление складом и анализ работы дилерских центров. Все автомобили в наличии с количеством незакрытых задач.</p>
 

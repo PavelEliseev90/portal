@@ -1061,6 +1061,7 @@ class AutoruMark(models.Model):
 	nameEn  = models.CharField("Наименование дополнительное", max_length=200)
 	idSite  = models.IntegerField("ИД", null=True, default=0, blank=True)
 	file    = models.ImageField(upload_to='autoru_images/', max_length=100, verbose_name="Файл", blank=True, null=True)
+	avtosalon = models.BooleanField("Автосалон", default = False, null=True, blank=True)
 
 	def logo(self):
 		try:

@@ -2472,7 +2472,10 @@ def gk_director_dashboard(request):
         get_copy.pop('page')
     query_without_page = get_copy.urlencode()
 
+    # Открыта из раздела «Настройки ценообразования новых»
+    from_prices_car = request.resolver_match.app_name == 'prices_car'
     params = {
+        'from_prices_car': from_prices_car,
         'page_obj': page_obj,
         'paginator': paginator,
         'total_count': total_count,

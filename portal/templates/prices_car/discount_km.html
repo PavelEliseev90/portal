@@ -1,0 +1,148 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Управление дисконтом Км {% endblock %}
+{% block title_navbar %} — Дисконт Км {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+    <div class="container-fluid py-3">
+        <p class="mb-2">
+            <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
+        </p>
+        <h2 class="mb-2">Управление дисконтом Км</h2>
+        <p class="text-muted mb-2">
+            Км — кумулятивная маржа. Здесь задаётся <strong>процент</strong>, на который изменяется минимальный Км для выбранного бренда (и при необходимости — модели, модификации, комплектации, года выпуска). Срок действия снижения обязателен: дата «с» и «по» в рамках <strong>одного месяца</strong>.
+        </p>
+
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="portal-panel mb-4">
+            <h5 class="mb-3">{% if params.discount_edit %}Редактировать запись{% else %}Добавить правило дисконта{% endif %}</h5>
+            <form method="post" action="{% url 'prices_car:discount_km' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{% if params.discount_edit %}edit{% else %}add{% endif %}">
+                {% if params.discount_edit %}<input type="hidden" name="id" value="{{ params.discount_edit.pk }}">{% endif %}
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label">Бренд <span class="text-danger">*</span></label>
+                        <select name="brand" class="form-select" required>
+                            <option value="">— Выберите бренд —</option>
+                            {% for b in params.brands %}
+                            <option value="{{ b.id }}" {% if params.discount_edit and params.discount_edit.brand_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label">Модель</label>
+                        <select name="model" class="form-select">
+                            <option value="">— Любая —</option>
+                            {% for m in params.models_all %}
+                            <option value="{{ m.id }}" {% if params.discount_edit and params.discount_edit.model_id == m.id %}selected{% endif %}>{{ m.mark.name }} — {{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label">Модификация</label>
+                        <select name="modification" class="form-select">
+                            <option value="">— Любая —</option>
+                            {% for mod in params.modifications_all %}
+                            <option value="{{ mod.id }}" {% if params.discount_edit and params.discount_edit.modification_id == mod.id %}selected{% endif %}>{{ mod.model.mark.name }} {{ mod.model.name }} — {{ mod.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label class="form-label">Комплектация</label>
+                        <select name="complectation" class="form-select">
+                            <option value="">— Любая —</option>
+                            {% for c in params.complectations_all %}
+                            <option value="{{ c.id }}" {% if params.discount_edit and params.discount_edit.complectation_id == c.id %}selected{% endif %}>{{ c.modification.model.mark.name }} {{ c.modification.name }} — {{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label class="form-label">Год выпуска</label>
+                        <input type="number" name="year" class="form-control" value="{{ params.discount_edit.year|default:'' }}" placeholder="Не указан" min="1990" max="2030" step="1">
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label class="form-label">Процент изменения мин. Км <span class="text-danger">*</span></label>
+                        <input type="number" name="discount_percent" class="form-control" value="{{ params.discount_edit.discount_percent|default:'0' }}" step="0.01" required>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label class="form-label">Действует с <span class="text-danger">*</span></label>
+                        <input type="date" name="date_from" class="form-control" value="{{ params.discount_edit.date_from|date:'Y-m-d'|default:'' }}" required>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label class="form-label">Действует по <span class="text-danger">*</span></label>
+                        <input type="date" name="date_to" class="form-control" value="{{ params.discount_edit.date_to|date:'Y-m-d'|default:'' }}" required>
+                    </div>
+                    <div class="col-12 d-flex gap-2 align-items-end">
+                        <button type="submit" class="btn btn-primary">{% if params.discount_edit %}Сохранить{% else %}Добавить{% endif %}</button>
+                        {% if params.discount_edit %}
+                        <a href="{% url 'prices_car:discount_km' %}" class="btn btn-outline-secondary">Отмена</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+            <p class="small text-muted mt-2">Срок действия (с и по) должен попадать в один календарный месяц.</p>
+        </div>
+
+        <div class="portal-panel">
+            <h5 class="mb-3">Текущие правила</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Бренд</th>
+                            <th>Модель</th>
+                            <th>Модификация</th>
+                            <th>Комплектация</th>
+                            <th>Год</th>
+                            <th>%</th>
+                            <th>С</th>
+                            <th>По</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in params.items %}
+                        <tr>
+                            <td>{{ item.brand.name }}</td>
+                            <td>{{ item.model.name|default:"—" }}</td>
+                            <td>{{ item.modification.name|default:"—" }}</td>
+                            <td>{{ item.complectation.name|default:"—" }}</td>
+                            <td>{{ item.year|default:"—" }}</td>
+                            <td>{{ item.discount_percent }}</td>
+                            <td>{{ item.date_from|date:"d.m.Y" }}</td>
+                            <td>{{ item.date_to|date:"d.m.Y" }}</td>
+                            <td>
+                                <a href="?edit={{ item.pk }}" class="btn btn-outline-primary btn-sm me-1">Изменить</a>
+                                <form method="post" action="{% url 'prices_car:discount_km' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ item.pk }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">Нет правил. Добавьте первое выше.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

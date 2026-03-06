@@ -1,0 +1,105 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Настройка брендов {% endblock %}
+{% block title_navbar %} — Бренды {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+    <div class="container-fluid py-3">
+        <p class="mb-2">
+            <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
+        </p>
+        <h2 class="mb-2">Настройка брендов</h2>
+        <p class="text-muted mb-4">Укажите марки Автору и при необходимости список моделей, входящих в бренд.</p>
+
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="portal-panel mb-4">
+            <h5 class="mb-3">{% if params.brand_edit %}Редактировать бренд{% else %}Добавить бренд{% endif %}</h5>
+            <form method="post" action="{% url 'prices_car:brands' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{% if params.brand_edit %}edit{% else %}add{% endif %}">
+                {% if params.brand_edit %}<input type="hidden" name="id" value="{{ params.brand_edit.pk }}">{% endif %}
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Название бренда</label>
+                        <input type="text" name="name" class="form-control" value="{{ params.brand_edit.name|default:'' }}" required placeholder="Например: Lada">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Марки Автору (входят в бренд)</label>
+                        <select name="marks" class="form-select" multiple size="6">
+                            {% for m in params.marks_avtosalon %}
+                            <option value="{{ m.id }}" {% if params.brand_edit and m in params.brand_edit.marks.all %}selected{% endif %}>{{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Удерживайте Ctrl/Cmd для выбора нескольких</small>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Модели в бренде (опционально)</label>
+                        <select name="models_included" class="form-select" multiple size="8">
+                            {% for mod in params.models_all %}
+                            <option value="{{ mod.id }}" {% if params.brand_edit and mod in params.brand_edit.models_included.all %}selected{% endif %}>{{ mod.mark.name }} — {{ mod.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Если пусто — учитываются все модели выбранных марок</small>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">{% if params.brand_edit %}Сохранить{% else %}Добавить{% endif %}</button>
+                        {% if params.brand_edit %}
+                        <a href="{% url 'prices_car:brands' %}" class="btn btn-outline-secondary">Отмена</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="portal-panel">
+            <h5 class="mb-3">Список брендов</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Марки</th>
+                            <th>Модели</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in params.brands %}
+                        <tr>
+                            <td>{{ b.name }}</td>
+                            <td>{% for m in b.marks.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+                            <td>{% for m in b.models_included.all %}{{ m.mark.name }} {{ m.name }}{% if not forloop.last %}; {% endif %}{% empty %}все модели марок{% endfor %}</td>
+                            <td>
+                                <a href="?edit={{ b.pk }}" class="btn btn-outline-primary btn-sm me-1">Изменить</a>
+                                <form method="post" action="{% url 'prices_car:brands' %}" class="d-inline" onsubmit="return confirm('Удалить бренд?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ b.pk }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Нет брендов. Добавьте первый выше.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
