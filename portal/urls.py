@@ -92,4 +92,7 @@ urlpatterns = [
     #Классифайды - выгрузка автомобилей
     path('classifieds/',        include('classifieds.urls')),
 
+    # Настройки цен/км по маркам
+    path('prices_car/',         include('prices_car.urls')),
+
 ]

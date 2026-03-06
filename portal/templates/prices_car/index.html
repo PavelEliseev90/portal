@@ -1,0 +1,52 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Управление ценообразованием новых {% endblock %}
+{% block title_navbar %} — Ценообразование новых {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+    <div class="container-fluid py-4">
+        <h2 class="mb-2">Управление ценообразованием новых</h2>
+        <p class="text-muted mb-4">Настройки брендов и значений км по брендам на месяц.</p>
+
+        <div class="row g-4">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="portal-panel h-100">
+                    <h5 class="mb-3">Директор ГК</h5>
+                    <p class="text-muted small mb-3">Склад и аналитика: все автомобили в наличии, фильтры, задачи, мин. Км, чаты.</p>
+                    <a href="{% url 'prices_car:director' %}" class="btn btn-primary">Перейти к директору ГК</a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="portal-panel h-100">
+                    <h5 class="mb-3">Бренды</h5>
+                    <p class="text-muted small mb-3">Настройка брендов: привязка марок Автору и списка моделей, входящих в бренд.</p>
+                    <a href="{% url 'prices_car:brands' %}" class="btn btn-primary">Перейти к настройке брендов</a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="portal-panel h-100">
+                    <h5 class="mb-3">Управление Км</h5>
+                    <p class="text-muted small mb-3">Значения км (кумулятивная маржа и т.п.) по бренду на месяц.</p>
+                    <a href="{% url 'prices_car:settings' %}" class="btn btn-primary">Перейти к управлению Км</a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="portal-panel h-100">
+                    <h5 class="mb-3">Индексы Км по этапам</h5>
+                    <p class="text-muted small mb-3">Индекс Км по этапу установки цены (УС) на месяц.</p>
+                    <a href="{% url 'prices_car:stage_km' %}" class="btn btn-primary">Перейти к индексам Км по этапам</a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="portal-panel h-100">
+                    <h5 class="mb-3">Управление дисконтом Км</h5>
+                    <p class="text-muted small mb-3">Процент изменения минимального Км по бренду, модели, модификации, комплектации, году. Срок действия в рамках одного месяца.</p>
+                    <a href="{% url 'prices_car:discount_km' %}" class="btn btn-primary">Перейти к управлению дисконтом Км</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
