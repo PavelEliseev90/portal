@@ -22,11 +22,34 @@ def director_dashboard(request):
 
 
 @login_required
+def brands_get_models(request):
+    """AJAX: модели по выбранным маркам (для формы брендов)."""
+    from django.http import JsonResponse
+    mark_ids = request.GET.getlist('mark_ids[]') or request.GET.getlist('mark_ids')
+    if not mark_ids:
+        return JsonResponse({'models': []})
+    try:
+        mark_ids_int = [int(mid) for mid in mark_ids if mid]
+        if not mark_ids_int:
+            return JsonResponse({'models': []})
+        models = (
+            AutoruModel.objects.filter(mark_id__in=mark_ids_int)
+            .select_related('mark')
+            .only('id', 'name', 'mark')
+            .order_by('mark__name', 'name')[:500]
+        )
+        return JsonResponse({
+            'models': [{'id': m.id, 'name': m.name, 'mark_name': m.mark.name} for m in models]
+        })
+    except (ValueError, TypeError):
+        return JsonResponse({'models': []})
+
+
+@login_required
 def brands_list(request):
     """Настройки брендов: список, добавление и редактирование."""
     brands = PriceCarBrand.objects.prefetch_related('marks', 'models_included').order_by('name')
-    marks_avtosalon = AutoruMark.objects.filter(avtosalon=True).order_by('name')
-    models_all = AutoruModel.objects.select_related('mark').order_by('mark__name', 'name')
+    marks_avtosalon = AutoruMark.objects.filter(avtosalon=True).only('id', 'name').order_by('name')
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -68,7 +91,6 @@ def brands_list(request):
         'params': {
             'brands': brands,
             'marks_avtosalon': marks_avtosalon,
-            'models_all': models_all,
             'brand_edit': brand_edit,
         },
     })

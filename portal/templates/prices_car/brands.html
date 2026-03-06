@@ -37,7 +37,7 @@
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label">Марки Автору (входят в бренд)</label>
-                        <select name="marks" class="form-select" multiple size="6">
+                        <select name="marks" id="brandsMarks" class="form-select" multiple size="6">
                             {% for m in params.marks_avtosalon %}
                             <option value="{{ m.id }}" {% if params.brand_edit and m in params.brand_edit.marks.all %}selected{% endif %}>{{ m.name }}</option>
                             {% endfor %}
@@ -46,10 +46,8 @@
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label">Модели в бренде (опционально)</label>
-                        <select name="models_included" class="form-select" multiple size="8">
-                            {% for mod in params.models_all %}
-                            <option value="{{ mod.id }}" {% if params.brand_edit and mod in params.brand_edit.models_included.all %}selected{% endif %}>{{ mod.mark.name }} — {{ mod.name }}</option>
-                            {% endfor %}
+                        <select name="models_included" id="brandsModelsIncluded" class="form-select" multiple size="8" disabled>
+                            <option value="">— Сначала выберите марки выше —</option>
                         </select>
                         <small class="text-muted">Если пусто — учитываются все модели выбранных марок</small>
                     </div>
@@ -102,4 +100,68 @@
         </div>
     </div>
 </div>
+<script>
+(function() {
+    var marksSelect = document.getElementById('brandsMarks');
+    var modelsSelect = document.getElementById('brandsModelsIncluded');
+    var getModelsUrl = '{% url "prices_car:brands_get_models" %}';
+    var editModelIds = {% if params.brand_edit %}[{% for m in params.brand_edit.models_included.all %}{{ m.id }}{% if not forloop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %};
+
+    function getSelectedMarkIds() {
+        var opts = marksSelect.selectedOptions;
+        var ids = [];
+        for (var i = 0; i < opts.length; i++) { ids.push(opts[i].value); }
+        return ids;
+    }
+
+    function getSelectedModelIds() {
+        var opts = modelsSelect.selectedOptions;
+        var ids = [];
+        for (var i = 0; i < opts.length; i++) { if (opts[i].value) ids.push(opts[i].value); }
+        return ids;
+    }
+
+    function loadModels(preselectIds) {
+        var markIds = getSelectedMarkIds();
+        if (markIds.length === 0) {
+            modelsSelect.innerHTML = '<option value="">— Сначала выберите марки выше —</option>';
+            modelsSelect.disabled = true;
+            return;
+        }
+        modelsSelect.disabled = true;
+        modelsSelect.innerHTML = '<option value="">Загрузка...</option>';
+        var qs = markIds.map(function(id) { return 'mark_ids[]=' + encodeURIComponent(id); }).join('&');
+        fetch(getModelsUrl + '?' + qs)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                modelsSelect.innerHTML = '';
+                var preselectSet = {};
+                if (preselectIds && preselectIds.length) {
+                    preselectIds.forEach(function(id) { preselectSet[String(id)] = true; });
+                }
+                (data.models || []).forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = (m.mark_name || '') + ' — ' + m.name;
+                    if (preselectSet[String(m.id)]) opt.selected = true;
+                    modelsSelect.appendChild(opt);
+                });
+                modelsSelect.disabled = false;
+            })
+            .catch(function() {
+                modelsSelect.innerHTML = '<option value="">— Ошибка загрузки —</option>';
+                modelsSelect.disabled = false;
+            });
+    }
+
+    marksSelect.addEventListener('change', function() {
+        var keepSelection = getSelectedModelIds();
+        loadModels(keepSelection);
+    });
+
+    if (marksSelect && getSelectedMarkIds().length > 0) {
+        loadModels(editModelIds);
+    }
+})();
+</script>
 {% endblock %}
