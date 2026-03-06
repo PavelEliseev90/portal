@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'analytics.apps.AnalyticsConfig',
     'classifieds.apps.ClassifiedsConfig',
     'website.apps.WebsiteConfig',
+    'prices_car.apps.PricesCarConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
