@@ -10149,7 +10149,7 @@ def sb_lo(request):
     
 
 def test(request):
-    
+    swap_estimation()
     #from register.models import RegSwapKors
     #RegSwapKors.objects.all().delete()
 

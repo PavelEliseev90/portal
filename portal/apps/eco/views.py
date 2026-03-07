@@ -2671,8 +2671,8 @@ def doc(request, id):
             }
             warning_list.append(info_warning)
 
-    if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
-        lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
+    if DocLO.objects.filter(rlk = interactiv_rlk.rlk).count() > 0:
+        lo  = DocLO.objects.filter(rlk = interactiv_rlk.rlk)[0]  
 
     if request.method == "GET":
         
@@ -2792,8 +2792,8 @@ def doc(request, id):
             if balance_count == 1:
                 balance = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]   
 
-            if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
-                lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
+            if DocLO.objects.filter(rlk = interactiv_rlk.rlk).count() > 0:
+                lo  = DocLO.objects.filter(rlk = interactiv_rlk.rlk)[0]  
                 if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
                     car = RefCarsOrganization.objects.get(lo = lo)
                     if car.quantity == 0:
@@ -2849,8 +2849,8 @@ def doc(request, id):
             if balance_count == 1:
                 balance = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]   
 
-            if DocLO.objects.filter(rlk = estimation.rlk).count() > 0:
-                lo  = DocLO.objects.filter(rlk = estimation.rlk)[0]  
+            if DocLO.objects.filter(rlk = interactiv_rlk.rlk).count() > 0:
+                lo  = DocLO.objects.filter(rlk = interactiv_rlk.rlk)[0]  
                 if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
                     car = RefCarsOrganization.objects.get(lo = lo)
                     if car.quantity == 0:

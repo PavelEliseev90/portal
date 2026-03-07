@@ -85,10 +85,11 @@ def get_car(reg_interactiv_ocenka):
     return 0
 
 
-def check_estimations(reg_interactiv_ocenka):
+def check_estimations(interactiv_rlk):
     
     date_null = DT.datetime(1,1,1)
 
+    reg_interactiv_ocenka = interactiv_rlk.estimation
     error       = False
     list_check  = list()
     
@@ -120,45 +121,45 @@ def check_estimations(reg_interactiv_ocenka):
         error_documents = True
     else:
         page_documents = reg_interactiv_ocenka.page_documents
-        # if page_documents.type_reception == None: 
-        #     error_documents = True
-        #     field = tr_check('Тип приема', 'Ошибка', False)
-        #     list_documents.append(field)
-        # else:
-        #     field = tr_check('Тип приема', 'ОК', True)
-        #     list_documents.append(field)
+        if interactiv_rlk.type_reception == None: 
+            error_documents = True
+            field = tr_check('Тип приема', 'Ошибка', False)
+            list_documents.append(field)
+        else:
+            field = tr_check('Тип приема', 'ОК', True)
+            list_documents.append(field)
         
-        # if page_documents.organization == None: 
-        #     error_documents = True
-        #     field = tr_check('Организация', 'Ошибка', False)
-        #     list_documents.append(field)
-        # else:
-        #     field = tr_check('Организация', 'ОК', True)
-        #     list_documents.append(field)
+        if interactiv_rlk.organization == None: 
+            error_documents = True
+            field = tr_check('Организация', 'Ошибка', False)
+            list_documents.append(field)
+        else:
+            field = tr_check('Организация', 'ОК', True)
+            list_documents.append(field)
 
-        # if page_documents.filial == None: 
-        #     error_documents = True
-        #     field = tr_check('Филиал', 'Ошибка', False)
-        #     list_documents.append(field)
-        # else:
-        #     field = tr_check('Филиал', 'ОК', True)
-        #     list_documents.append(field)
+        if interactiv_rlk.filial == None: 
+            error_documents = True
+            field = tr_check('Филиал', 'Ошибка', False)
+            list_documents.append(field)
+        else:
+            field = tr_check('Филиал', 'ОК', True)
+            list_documents.append(field)
 
-        # if page_documents.unit == None: 
-        #     error_documents = True
-        #     field = tr_check('Подразделение', 'Ошибка', False)
-        #     list_documents.append(field)
-        # else:
-        #     field = tr_check('Подразделение', 'ОК', True)
-        #     list_documents.append(field)
+        if interactiv_rlk.unit == None: 
+            error_documents = True
+            field = tr_check('Подразделение', 'Ошибка', False)
+            list_documents.append(field)
+        else:
+            field = tr_check('Подразделение', 'ОК', True)
+            list_documents.append(field)
 
-        # if page_documents.store == None: 
-        #     error_documents = True
-        #     field = tr_check('Стоянка', 'Ошибка', False)
-        #     list_documents.append(field)
-        # else:
-        #     field = tr_check('Стоянка', 'ОК', True)
-        #     list_documents.append(field)
+        if interactiv_rlk.store == None: 
+            error_documents = True
+            field = tr_check('Стоянка', 'Ошибка', False)
+            list_documents.append(field)
+        else:
+            field = tr_check('Стоянка', 'ОК', True)
+            list_documents.append(field)
 
         if page_documents.customer_family == None or page_documents.customer_family == '': 
             error_documents = True
@@ -484,9 +485,9 @@ def estimation_rlk(request, rlk_id):
     else:
         reg_interactiv_ocenka = interactiv_rlk.estimation
 
-    list_statuses = [1, 2, 7, 9]
-    if not interactiv_rlk.status.id in list_statuses:
-         return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
+    # list_statuses = [1, 2, 7, 9]
+    # if not interactiv_rlk.status.id in list_statuses:
+    #      return HttpResponseRedirect('/eco/' + str(rlk_id) + '/?page=9')
 
     if request.method == 'POST':
         
@@ -1588,8 +1589,8 @@ def estimation_rlk(request, rlk_id):
             pribor_errors = RegDashboardError.objects.all()
 
         if page == 8:
-            users = User.objects.exclude(pk__in = reg_interactiv_ocenka.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email')
-            list_checks = check_estimations(reg_interactiv_ocenka)
+            users = User.objects.exclude(pk__in = interactiv_rlk.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email')
+            list_checks = check_estimations(interactiv_rlk)
         
         if page == 5:
            mark_tyres = RefMarkTyres.objects.all().order_by('name')

@@ -1668,7 +1668,7 @@
           {% if estimation_rlk.rlk == params.rlk %}
             <div class="kors-brand-pill bg-success bg-opacity-75 bg-gradient text-white fs-8 align-items-center align-self-center">
               <span class="icon-mbri-globe" aria-hidden="true"></span>
-              
+              {{ estimation_rlk.filial.name }} ·
               {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}}
 
               {% if estimation_rlk.status.id == 7 %}
@@ -1680,7 +1680,8 @@
               <a href="/eco/{{estimation_rlk.rlk.id}}/?page={{params.page}}" class="text-white fs-8">
                 <span class="icon-mbri-globe" aria-hidden="true"></span>
                 
-                {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} <br>  
+                {{ estimation_rlk.filial.name }} ·
+               {{estimation_rlk.unit.name}} · РЛК {{estimation_rlk.rlk.nomer}} <br>  
                 
               </a>
             </div>
@@ -2572,7 +2573,7 @@
                       <div class="col-sm">
                   
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.type_reception|default_if_none:"-"}}">
+                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.interactiv_rlk.type_reception|default_if_none:"-"}}">
                           <label for="floatingInput">Тип оценки</label>
                         </div>
                   
@@ -2582,7 +2583,7 @@
                       <div class="col-sm">
                   
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.new_car|default_if_none:"-"}}">
+                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.interactiv_rlk.page_documents.new_car|default_if_none:"-"}}">
                           <label for="floatingInput">Модель нового АМ</label>
                         </div>
                   
@@ -2592,7 +2593,7 @@
                       <div class="col-sm">
                   
                         <div class="form-floating mb-3">
-                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.new_staff_name|default_if_none:"-"}}">
+                          <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.interactiv_rlk.page_documents.new_staff_name|default_if_none:"-"}}">
                           <label for="floatingInput">Менеджер ОП</label>
                         </div>
                   
@@ -2610,7 +2611,7 @@
                           <div class="col-sm">
                             
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.organization|default_if_none:"-"}}">
+                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.interactiv_rlk.organization|default_if_none:"-"}}">
                               <label for="floatingInput">Организация</label>
                             </div>
                       
@@ -2619,7 +2620,7 @@
                           <div class="col-sm">
                             
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.unit.name}}">
+                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.interactiv_rlk.unit.name}}">
                               <label for="floatingInput">Подразделение</label>
                             </div>
                       
@@ -2628,7 +2629,7 @@
                           <div class="col-sm">
                             
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_documents.filial|default_if_none:"-"}}">
+                              <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.interactiv_rlk.filial|default_if_none:"-"}}">
                               <label for="floatingInput">Филиал</label>
                             </div>
                       
@@ -2637,7 +2638,7 @@
                           <div class="col-sm">
                       
                             <div class="form-floating mb-3">
-                              <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.estimation.page_documents.store|default_if_none:"-"}}">
+                              <input class="form-control form-control-sm" type="text" id="rlk_nomer" name="rlk_nomer" value="{{params.interactiv_rlk.store|default_if_none:"-"}}">
                               <label for="floatingInput">Стоянка</label>
                             </div>
                       
