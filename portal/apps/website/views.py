@@ -193,49 +193,85 @@ def custom_bad_request_view(request, exception=None):
 ##agga
 # Главная страница портала
 
+def get_evaluator_by_status(user):
+    """Статистика оценок оценщика по статусам (RegInteractivOcenkaRLK)."""
+    from django.db.models import Count
+    qs = RegInteractivOcenkaRLK.objects.filter(
+        Q(staff_rlk__domain_login=user.username) | Q(access_user=user)
+    )
+    return list(qs.values('status__name').annotate(cnt=Count('id')).order_by('-cnt'))
+
+
+def get_evaluator_chat_today(user):
+    """Оценки, в чатах которых пользователь участвовал сегодня (RegInteractivOcenkaRLK)."""
+    today = DT.datetime.now().date()
+    chat_ids = ChatMessage.objects.filter(user=user, date__date=today).values_list('chat_id', flat=True).distinct()
+    rlk_ids = list(Chat.objects.filter(pk__in=chat_ids).exclude(rlk_id__isnull=True).exclude(rlk_id=0).values_list('rlk_id', flat=True).distinct())
+    if not rlk_ids:
+        return []
+    rlks = RegInteractivOcenkaRLK.objects.filter(rlk_id__in=rlk_ids)
+    return list(rlks.values(
+        slug_rlk=F('rlk__id'),
+        slug=F('slug'),
+        estimation=F('estimation__id'),
+        estimation_vin=F('estimation__vin'),
+        estimation_modification_name=F('estimation__modification__name'),
+        estimation_model_name=F('estimation__modification__model__name'),
+        estimation_mark_name=F('estimation__modification__model__mark__name'),
+        estimation_year=F('estimation__year'),
+        unit_name=F('rlk__unit__name'),
+        estimation_start_formated=Func(F('estimation__start_estimation'), Value('DD.MM.YYYY HH:MM:SS'), function='to_char', output_field=CharField()),
+        date=Func(F('rlk__dataTime'), Value('DD.MM.YYYY HH:MM:SS'), function='to_char', output_field=CharField()),
+        staff_name=F('rlk__staff__name'),
+        comment_administrator=F('rlk__commentAdministrator'),
+        comment_manager=F('rlk__commentManager'),
+        type_contact=F('rlk__contacType__name'),
+        customer_name=F('rlk__clientName'),
+        price_reception=F('page_soglasovanie__price_reception'),
+        price_sale=F('page_soglasovanie__price_sale'),
+        number=F('rlk__nomer'),
+        estimation_status=F('status__name'),
+    ).values(
+        'estimation_start_formated', 'slug_rlk', 'slug', 'estimation', 'estimation_vin',
+        'unit_name', 'date', 'staff_name', 'comment_administrator', 'comment_manager',
+        'type_contact', 'customer_name', 'number', 'estimation_modification_name',
+        'estimation_model_name', 'estimation_mark_name', 'estimation_year',
+        'price_reception', 'price_sale', 'estimation_status',
+    ).distinct().order_by('-rlk__dataTime'))
+
+
 def get_rlk_eco(user, type):
-    
-    rlks = RegInteractivOcenka.objects.filter(staff__domain_login = user.username)
-    
+    """Списки оценок для рабочего стола (RegInteractivOcenkaRLK)."""
+    rlks = RegInteractivOcenkaRLK.objects.filter(staff_rlk__domain_login=user.username)
 
-    if type == 1: #Продолжить оценку
-        rlks1 = rlks.filter(end_estimation = None)
-    elif type == 2: #На согласовании
-        rlks1 = rlks.exclude(end_estimation = None).filter(page_soglasovanie__price_after_kd = 0)
+    if type == 1:  # Продолжить оценку
+        rlks = rlks.filter(estimation__end_estimation=None)
+    elif type == 2:  # На согласовании
+        rlks = rlks.exclude(estimation__end_estimation=None).filter(page_soglasovanie__price_after_kd=0)
 
-    
     rlks = rlks.values(
-        slug_rlk = F("rlk__id"),
-        estimation      = F('id'),
-        estimation_vin  = F('vin'),
-        estimation_modification_name  = F('modification__name'),
-        estimation_model_name      = F('modification__model__name'),
-        estimation_mark_name       = F('modification__model__mark__name'),
-        estimation_year       = F('year'),
-        unit_name       = F('rlk__unit__name'),
-        estimation_start_formated =Func(
-            F('start_estimation'),
-            Value('DD.MM.YYYY HH:MM:SS'),
-            function='to_char',
-            output_field=CharField()
-        ),
-        date =Func(
-            F('rlk__dataTime'),
-            Value('DD.MM.YYYY HH:MM:SS'),
-            function='to_char',
-            output_field=CharField()
-        ),
-        staff_name = F('rlk__staff__name'),
-        comment_administrator = F('rlk__commentAdministrator'),
-        comment_manager = F('rlk__commentManager'),
-        type_contact = F('rlk__contacType__name'),
-        customer_name = F('rlk__clientName'),
-        price_reception = F('page_soglasovanie__price_reception'),
-        price_sale = F('page_soglasovanie__price_sale'),
-        number = F('rlk__nomer'),
-        estimation_status = F('status__name'),
-            ).values(
-                'estimation_start_formated' ,
+        slug_rlk=F('rlk__id'),
+        slug=F('slug'),
+        estimation=F('estimation__id'),
+        estimation_vin=F('estimation__vin'),
+        estimation_modification_name=F('estimation__modification__name'),
+        estimation_model_name=F('estimation__modification__model__name'),
+        estimation_mark_name=F('estimation__modification__model__mark__name'),
+        estimation_year=F('estimation__year'),
+        unit_name=F('rlk__unit__name'),
+        estimation_start_formated=Func(F('estimation__start_estimation'), Value('DD.MM.YYYY HH:MM:SS'), function='to_char', output_field=CharField()),
+        date=Func(F('rlk__dataTime'), Value('DD.MM.YYYY HH:MM:SS'), function='to_char', output_field=CharField()),
+        staff_name=F('rlk__staff__name'),
+        comment_administrator=F('rlk__commentAdministrator'),
+        comment_manager=F('rlk__commentManager'),
+        type_contact=F('rlk__contacType__name'),
+        customer_name=F('rlk__clientName'),
+        price_reception=F('page_soglasovanie__price_reception'),
+        price_sale=F('page_soglasovanie__price_sale'),
+        number=F('rlk__nomer'),
+        estimation_status=F('status__name'),
+    ).values(
+                'estimation_start_formated',
                 'slug_rlk',
                 'slug',
                 'estimation',
@@ -402,6 +438,10 @@ def get_start(user):
 
     #param_help = tasks_user_desctop(user)
     
+    # Рабочий стол оценщика
+    evaluator_by_status = get_evaluator_by_status(user)
+    evaluator_chat_today = get_evaluator_chat_today(user)
+
     rab_stol = {
         'rlk_count'     : rlks_count,
         'doc_zn_count'  : doc_zn_count,
@@ -412,6 +452,8 @@ def get_start(user):
         'rating_common' : rating_common,
         'rlk_estimation_continue' : get_rlk_eco(user=user, type=1),
         'rlks_estimation_sogrlasovanie' : get_rlk_eco(user=user, type=2),
+        'evaluator_by_status' : evaluator_by_status,
+        'evaluator_chat_today' : evaluator_chat_today,
     }
     
     return rab_stol

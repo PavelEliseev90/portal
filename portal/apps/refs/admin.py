@@ -231,33 +231,40 @@ class RefTypeItemRepairAdmin(admin.ModelAdmin):
 	list_filter     = ("name",)
 
 
+# --- Автору: марки, модели, модификации, комплектации ---
+
 @admin.register(AutoruMark)
 class AutoruMarkAdmin(admin.ModelAdmin):
-	list_display    = ('name', 'idSite',)
-	list_filter     = ("name",)
-	search_fields   = ('name',)
+    list_display    = ('name', 'nameEn', 'idSite', 'avtosalon')
+    list_filter     = ('avtosalon', 'name')
+    search_fields   = ('name', 'nameEn')
 
 
 @admin.register(AutoruModel)
 class AutoruModelAdmin(admin.ModelAdmin):
-    list_display    = ('mark', 'name', 'idSite',)
-    list_filter     = ("mark",)
+    list_display    = ('mark', 'name', 'nameEn', 'idSite')
+    list_filter     = ('mark',)
+    search_fields   = ('name', 'nameEn', 'mark__name')
     raw_id_fields   = ('mark',)
+    list_select_related = ('mark',)
 
 
 @admin.register(AutoruModification)
 class AutoruModificationAdmin(admin.ModelAdmin):
-    list_display    = ('model', 'name', 'idSite', )
-    search_fields   = ('idSite', 'model__name', 'name', )
-    raw_id_fields   = ('model', )
+    list_display    = ('model', 'name', 'idSite', 'typeBody', 'typeEngine', 'typeGear')
+    list_filter     = ('model__mark',)
+    search_fields   = ('name', 'nameEn', 'model__name', 'model__mark__name')
+    raw_id_fields   = ('model', 'typeBody', 'typeEngine', 'typeGear')
+    list_select_related = ('model', 'model__mark')
 
 
 @admin.register(AutoruComplectation)
 class AutoruComplectationAdmin(admin.ModelAdmin):
-    list_display    = ('modification', 'name', 'idSite',)
-    search_fields   = ('name', 'idSite', )
+    list_display    = ('modification', 'name', 'idSite')
+    list_filter     = ('modification__model__mark', 'modification__model', 'idSite')
+    search_fields   = ('name', 'modification__name', 'modification__model__name')
     raw_id_fields   = ('modification',)
-    list_filter     = ('modification__model__mark', 'idSite',)
+    list_select_related = ('modification', 'modification__model', 'modification__model__mark')
 
 
 @admin.register(RefArea)

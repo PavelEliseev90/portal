@@ -92,93 +92,162 @@
 	{% endif %}
 	
 
-	{% if params.rab_stol.rlks_estimation_sogrlasovanie|length > 0 %}
-		
+	{% if params.rab_stol.evaluator_by_status|length > 0 or params.rab_stol.evaluator_chat_today|length > 0 or params.rab_stol.rlk_estimation_continue|length > 0 or params.rab_stol.rlks_estimation_sogrlasovanie|length > 0 %}
 		<br>
-		
-		<div class="row g-1" id="rlks_trade_in" style="width: 100%; overflow-x: hidden;">
-			<div style="display: flex; text-align: start; margin-bottom: 1em;">
-				<div class='row g-1 entries flex-nowrap overflow-auto' id="myTable">
-						
-					{% for object in params.rab_stol.rlks_estimation_sogrlasovanie %}
+		<div class="card mb-3">
+			<div class="card-header bg-light">
+				<h5 class="mb-0"><span class="icon-mbri-add-submenu"></span> Рабочий стол оценщика</h5>
+			</div>
+			<div class="card-body">
 
-						
-							<div class="card" style="width: 18rem; margin-right: 0.2rem;">
+				{% if params.rab_stol.evaluator_by_status|length > 0 %}
+				<div class="mb-4">
+					<h6 class="text-muted mb-2">Мои оценки по статусам</h6>
+					<div class="d-flex flex-wrap gap-2">
+						{% for s in params.rab_stol.evaluator_by_status %}
+						<span class="badge bg-secondary fs-6">{{ s.status__name|default:"Без статуса" }}: {{ s.cnt }}</span>
+						{% endfor %}
+					</div>
+				</div>
+				{% endif %}
+
+				{% if params.rab_stol.evaluator_chat_today|length > 0 %}
+				<div class="mb-4">
+					<h6 class="text-muted mb-2">Сегодня были сообщения в чате (я участвовал)</h6>
+					<div class="row g-1" style="width: 100%; overflow-x: hidden;">
+						<div class="d-flex flex-nowrap overflow-auto" style="gap: 0.5rem;">
+							{% for object in params.rab_stol.evaluator_chat_today %}
+							<div class="card flex-shrink-0" style="width: 18rem;">
 								<div class="card-body">
-									<a href="/rlks_trade_in/{{object.slug_rlk}}/" class="text-dark" >
-										<label> <span class="icon-mbri-add-submenu"></span> {{object.estimation_status|default_if_none:"Новый"}}</label>
-										<hr style="width: 75%;">
+									<a href="/rlks_trade_in/{{ object.slug_rlk }}/" class="text-dark text-decoration-none">
+										<label><span class="icon-mbri-chat"></span> {{ object.estimation_status|default:"Новый" }}</label>
+										<hr class="my-2" style="width: 75%;">
 										<div class="row g-1">
-											<div class="col-2 align-self-center">
-												<span class="icon-mbri-sites"></span>
-											</div>
+											<div class="col-2"><span class="icon-mbri-sites"></span></div>
 											<div class="col">
-												<label>{{object.number}}</label>
-												<br>
-												<label>{{object.date}}</label>
-												<br>
-												<label>
-													{% if object.customer_name|length > 0 %} 
-														{{object.customer_name}} 
-													{% elif object.customer_estination %}
-														{{object}}
-													{% else %} 
-														Не указан 
-													{% endif %}</label>
+												<label>{{ object.number }}</label><br>
+												<label>{{ object.date }}</label><br>
+												<label>{{ object.customer_name|default:"Не указан" }}</label>
 											</div>
 										</div>
-
-										<hr style="width: 75%;">
-
+										<hr class="my-2" style="width: 75%;">
 										<div class="row g-1">
-											<div class="col-2 align-self-center">
-												<span class="icon-mbri-delivery"></span>
-											</div>
+											<div class="col-2"><span class="icon-mbri-delivery"></span></div>
 											<div class="col">
-												<label>{{object.estimation_mark_name|default_if_none:"Пока нет данных"}} {{object.estimation_model_name|default_if_none:""}} {{object.estimation_modification_name|default_if_none:""}}</label>
-												<br>
-												<label>{% if object.estimation_year > 0 %} {{ object.estimation_year }} г. {% else %} - {% endif %}</label>
-												<br>
-												<label>{% if object.estimation_vin|length > 0 %} {{ object.estimation_vin }} {% else %} - {% endif %}</label>
+												<label>{{ object.estimation_mark_name|default:"—" }} {{ object.estimation_model_name|default:"" }} {{ object.estimation_modification_name|default:"" }}</label><br>
+												<label>{% if object.estimation_year %} {{ object.estimation_year }} г. {% else %} — {% endif %}</label><br>
+												<label>{{ object.estimation_vin|default:"—" }}</label>
 											</div>
 										</div>
-
-										<hr style="width: 75%;">
-
+										<hr class="my-2" style="width: 75%;">
 										<div class="row g-1">
-											<div class="col-2 align-self-center">
-												<span class="icon-mbri-sale"></span>
-											</div>
+											<div class="col-2"><span class="icon-mbri-sale"></span></div>
 											<div class="col">
-												<label>{{object.price_reception|floatformat:"2g" }} &#8381; </label>
-												<br>
-												<label>{{object.price_sale|floatformat:"2g" }} &#8381; </label>
-												
+												<label>{{ object.price_reception|floatformat:"2g" }} ₽</label><br>
+												<label>{{ object.price_sale|floatformat:"2g" }} ₽</label>
 											</div>
 										</div>
 									</a>
 								</div>
 							</div>
-						
-
-					{% endfor %} 
-
+							{% endfor %}
+						</div>
+					</div>
 				</div>
+				{% endif %}
+
+				{% if params.rab_stol.rlk_estimation_continue|length > 0 %}
+				<div class="mb-4">
+					<h6 class="text-muted mb-2">Продолжить оценку</h6>
+					<div class="row g-1" style="width: 100%; overflow-x: hidden;">
+						<div class="d-flex flex-nowrap overflow-auto" style="gap: 0.5rem;">
+							{% for object in params.rab_stol.rlk_estimation_continue %}
+							<div class="card flex-shrink-0" style="width: 18rem;">
+								<div class="card-body">
+									<a href="/rlks_trade_in/{{ object.slug_rlk }}/" class="text-dark text-decoration-none">
+										<label><span class="icon-mbri-edit"></span> {{ object.estimation_status|default:"Новый" }}</label>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-sites"></span></div>
+											<div class="col">
+												<label>{{ object.number }}</label><br>
+												<label>{{ object.date }}</label><br>
+												<label>{{ object.customer_name|default:"Не указан" }}</label>
+											</div>
+										</div>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-delivery"></span></div>
+											<div class="col">
+												<label>{{ object.estimation_mark_name|default:"—" }} {{ object.estimation_model_name|default:"" }} {{ object.estimation_modification_name|default:"" }}</label><br>
+												<label>{% if object.estimation_year %} {{ object.estimation_year }} г. {% else %} — {% endif %}</label><br>
+												<label>{{ object.estimation_vin|default:"—" }}</label>
+											</div>
+										</div>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-sale"></span></div>
+											<div class="col">
+												<label>{{ object.price_reception|floatformat:"2g" }} ₽</label><br>
+												<label>{{ object.price_sale|floatformat:"2g" }} ₽</label>
+											</div>
+										</div>
+									</a>
+								</div>
+							</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+
+				{% if params.rab_stol.rlks_estimation_sogrlasovanie|length > 0 %}
+				<div>
+					<h6 class="text-muted mb-2">На согласовании</h6>
+					<div class="row g-1" style="width: 100%; overflow-x: hidden;">
+						<div class="d-flex flex-nowrap overflow-auto" style="gap: 0.5rem;">
+							{% for object in params.rab_stol.rlks_estimation_sogrlasovanie %}
+							<div class="card flex-shrink-0" style="width: 18rem;">
+								<div class="card-body">
+									<a href="/rlks_trade_in/{{ object.slug_rlk }}/" class="text-dark text-decoration-none">
+										<label><span class="icon-mbri-add-submenu"></span> {{ object.estimation_status|default:"Новый" }}</label>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-sites"></span></div>
+											<div class="col">
+												<label>{{ object.number }}</label><br>
+												<label>{{ object.date }}</label><br>
+												<label>{{ object.customer_name|default:"Не указан" }}</label>
+											</div>
+										</div>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-delivery"></span></div>
+											<div class="col">
+												<label>{{ object.estimation_mark_name|default:"Пока нет данных" }} {{ object.estimation_model_name|default:"" }} {{ object.estimation_modification_name|default:"" }}</label><br>
+												<label>{% if object.estimation_year %} {{ object.estimation_year }} г. {% else %} — {% endif %}</label><br>
+												<label>{{ object.estimation_vin|default:"—" }}</label>
+											</div>
+										</div>
+										<hr class="my-2" style="width: 75%;">
+										<div class="row g-1">
+											<div class="col-2"><span class="icon-mbri-sale"></span></div>
+											<div class="col">
+												<label>{{ object.price_reception|floatformat:"2g" }} ₽</label><br>
+												<label>{{ object.price_sale|floatformat:"2g" }} ₽</label>
+											</div>
+										</div>
+									</a>
+								</div>
+							</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+
 			</div>
 		</div>
-
-
-
-		<div class="row g-1"  style="width: 100%; overflow-x: scroll;">
-			<div style="display: flex; text-align: start; margin-bottom: 1em;">
-								
-				
-
-				<br>
-				
-			</div>
-		</div>
-
 	{% endif %}
 
 
