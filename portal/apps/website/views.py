@@ -211,8 +211,8 @@ def get_evaluator_chat_today(user):
         return []
     rlks = RegInteractivOcenkaRLK.objects.filter(rlk_id__in=rlk_ids)
     return list(rlks.values(
+        'slug',
         slug_rlk=F('rlk__id'),
-        slug=F('slug'),
         estimation=F('estimation__id'),
         estimation_vin=F('estimation__vin'),
         estimation_modification_name=F('estimation__modification__name'),
@@ -250,8 +250,8 @@ def get_rlk_eco(user, type):
         rlks = rlks.exclude(estimation__end_estimation=None).filter(page_soglasovanie__price_after_kd=0)
 
     rlks = rlks.values(
+        'slug',
         slug_rlk=F('rlk__id'),
-        slug=F('slug'),
         estimation=F('estimation__id'),
         estimation_vin=F('estimation__vin'),
         estimation_modification_name=F('estimation__modification__name'),
