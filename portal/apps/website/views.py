@@ -212,7 +212,6 @@ def get_evaluator_chat_today(user):
     rlks = RegInteractivOcenkaRLK.objects.filter(rlk_id__in=rlk_ids)
     return list(rlks.values(
         slug_rlk=F('rlk__id'),
-        slug=F('slug'),
         estimation=F('estimation__id'),
         estimation_vin=F('estimation__vin'),
         estimation_modification_name=F('estimation__modification__name'),
@@ -232,7 +231,7 @@ def get_evaluator_chat_today(user):
         number=F('rlk__nomer'),
         estimation_status=F('status__name'),
     ).values(
-        'estimation_start_formated', 'slug_rlk', 'slug', 'estimation', 'estimation_vin',
+        'estimation_start_formated', 'slug_rlk', 'estimation', 'estimation_vin',
         'unit_name', 'date', 'staff_name', 'comment_administrator', 'comment_manager',
         'type_contact', 'customer_name', 'number', 'estimation_modification_name',
         'estimation_model_name', 'estimation_mark_name', 'estimation_year',
@@ -251,7 +250,6 @@ def get_rlk_eco(user, type):
 
     rlks = rlks.values(
         slug_rlk=F('rlk__id'),
-        slug=F('slug'),
         estimation=F('estimation__id'),
         estimation_vin=F('estimation__vin'),
         estimation_modification_name=F('estimation__modification__name'),
@@ -273,7 +271,6 @@ def get_rlk_eco(user, type):
     ).values(
                 'estimation_start_formated',
                 'slug_rlk',
-                'slug',
                 'estimation',
                 'estimation_vin',
                 'unit_name',
