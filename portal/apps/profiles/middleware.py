@@ -35,8 +35,14 @@ class SingleDeviceSessionMiddleware:
 
         if allowed_sk and allowed_sk != current_sk:
             logout(request)
-            from django.http import HttpResponseRedirect
-            login_url = getattr(settings, 'LOGIN_URL', '/login/')
-            return HttpResponseRedirect(login_url + "?single_device=1")
+            try:
+                next = str(request.get_full_path_info())
+                from django.http import HttpResponseRedirect
+                login_url = getattr(settings, 'LOGIN_URL', '/login/')
+                return HttpResponseRedirect(login_url + "?single_device=1" + "&next=" + next)
+            except:
+                from django.http import HttpResponseRedirect
+                login_url = getattr(settings, 'LOGIN_URL', '/login/')
+                return HttpResponseRedirect(login_url + "?single_device=1")
 
         return self.get_response(request)
