@@ -967,7 +967,7 @@
                         {% if request.user.is_superuser or request.user.profiles.korsavto_settings_dc %}
                         
                             <li class="nav-item">
-                                <a class="nav-link text-{% if params.type == 'main_menu' %}secondary active {% else %}white {% endif %}" href="{% url 'website:main_menu' %}">
+                                <a class="nav-link text-{% if params.type == 'director_menu' %}secondary active {% else %}white {% endif %}" href="{% url 'website:director_menu' %}">
                                     <span class="sidebar-icon bi bi-list-ul"></span>
                                     Меню
                                 </a>

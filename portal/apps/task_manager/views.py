@@ -2201,22 +2201,25 @@ def swap_estimation():
     
     for info in infos:
         if info.estimation != None and info.rlk != None:
-            interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id = info.rlk.id).filter(estimation__id = info.estimation.id).first()
-            estimation  = interactiv_rlk.estimation
-            rlk         = interactiv_rlk.rlk
-            js_data = {
-                'Type'          : 'estimation',
-                'Rlk'           : DocRLKSerializer(rlk, many=False).data,
-                'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
-                'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
-                'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
-            }
-            response = requests.post(url_hs_kors_auto, json=js_data)
-            #if response.status_code == 200:
-            info.status_code = 200
-            info.status = 'Ok'
-            info.status_date = DT.datetime.now()
-            info.save()
+            try:
+                interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id = info.rlk.id).filter(estimation__id = info.estimation.id).first()
+                estimation  = interactiv_rlk.estimation
+                rlk         = interactiv_rlk.rlk
+                js_data = {
+                    'Type'          : 'estimation',
+                    'Rlk'           : DocRLKSerializer(rlk, many=False).data,
+                    'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
+                    'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
+                    'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
+                }
+                response = requests.post(url_hs_kors_auto, json=js_data)
+                #if response.status_code == 200:
+                info.status_code = 200
+                info.status = 'Ok'
+                info.status_date = DT.datetime.now()
+                info.save()
+            except:
+                s = 1
             #else:
             #    s = 1
                 
