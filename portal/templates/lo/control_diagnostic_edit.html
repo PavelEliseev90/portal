@@ -4,94 +4,113 @@
 {% block title %} - Редактирование контрольной диагностики {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4>Редактирование контрольной диагностики</h4>
-    <div class="d-flex gap-2">
-      <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id params.cd.id %}" class="btn btn-outline-primary btn-sm" target="_blank">Сравнение с оценкой</a>
-      <a href="/eco/{{ params.rlk.id }}/?page=9#control_diagnostics" class="btn btn-outline-secondary btn-sm">← К оценке</a>
-    </div>
-  </div>
+{% include 'lo/control_diagnostic_styles.html' %}
 
-  <div class="mb-2 text-muted small">
-    РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
-  </div>
-
-  {% if params.saved %}
-  <div class="alert alert-success py-2 mb-3">Изменения сохранены.</div>
-  {% endif %}
-
-  <form method="post" action="">
-    {% csrf_token %}
-
-    {# Внешний осмотр #}
-    <div class="card mb-3">
-      <div class="card-header">
-        <h6 class="mb-0">Внешний осмотр</h6>
+<div class="container-fluid py-3 control-diagnostic-page">
+  <div class="portal-page">
+    <section class="kors-hero kors-hero-dop mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h1 class="kors-hero__title mb-1">Редактирование контрольной диагностики</h1>
+          <p class="kors-hero__subtitle mb-0">
+            РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
+          </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id params.cd.id %}" class="btn btn-primary btn-sm" target="_blank">Сравнение с оценкой</a>
+          <a href="/eco/{{ params.rlk.id }}/?page=9#control_diagnostics" class="btn btn-outline-secondary btn-sm">← К оценке</a>
+        </div>
       </div>
-      <div class="card-body">
+    </section>
+
+    {% if params.saved %}
+    <div class="alert alert-success py-2 mb-3">Изменения сохранены.</div>
+    {% endif %}
+
+    <form method="post" action="">
+      {% csrf_token %}
+
+      {# Внешний осмотр #}
+      <div class="portal-panel">
+        <h6 class="d-flex align-items-center gap-2 mb-3">
+          <span class="icon-mbri-credit-card"></span> Внешний осмотр
+        </h6>
         <div class="row g-2">
           <div class="col-md-6">
-            <label class="form-label small">Лобовое стекло с обогревом</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="windshield_heat_int" id="wh0" value="0" {% if params.cd_vnesh.windshield_heat_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-secondary" for="wh0">Нет</label>
-              <input type="radio" class="btn-check" name="windshield_heat_int" id="wh1" value="1" {% if params.cd_vnesh.windshield_heat_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-secondary" for="wh1">Да</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Лобовое стекло с обогревом</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="windshield_heat_int" id="wh0" value="0" {% if params.cd_vnesh.windshield_heat_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-secondary" for="wh0">Нет</label>
+                <input type="radio" class="btn-check" name="windshield_heat_int" id="wh1" value="1" {% if params.cd_vnesh.windshield_heat_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-secondary" for="wh1">Да</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Проверка VIN</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="check_vin_int" id="cvi1" value="1" {% if params.cd_vnesh.check_vin_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="cvi1">В порядке</label>
-              <input type="radio" class="btn-check" name="check_vin_int" id="cvi0" value="0" {% if params.cd_vnesh.check_vin_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="cvi0">Не читается</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Проверка VIN</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="check_vin_int" id="cvi1" value="1" {% if params.cd_vnesh.check_vin_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="cvi1">В порядке</label>
+                <input type="radio" class="btn-check" name="check_vin_int" id="cvi0" value="0" {% if params.cd_vnesh.check_vin_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="cvi0">Не читается</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">ДВС и КПП на месте</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="check_engine_int" id="cei1" value="1" {% if params.cd_vnesh.check_engine_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="cei1">В порядке</label>
-              <input type="radio" class="btn-check" name="check_engine_int" id="cei0" value="0" {% if params.cd_vnesh.check_engine_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="cei0">Проблемы</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">ДВС и КПП на месте</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="check_engine_int" id="cei1" value="1" {% if params.cd_vnesh.check_engine_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="cei1">В порядке</label>
+                <input type="radio" class="btn-check" name="check_engine_int" id="cei0" value="0" {% if params.cd_vnesh.check_engine_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="cei0">Проблемы</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Подтекание масла</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="oil_error_int" id="oe0" value="0" {% if params.cd_vnesh.oil_error_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="oe0">Нет</label>
-              <input type="radio" class="btn-check" name="oil_error_int" id="oe1" value="1" {% if params.cd_vnesh.oil_error_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="oe1">Есть</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Подтекание масла</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="oil_error_int" id="oe0" value="0" {% if params.cd_vnesh.oil_error_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="oe0">Нет</label>
+                <input type="radio" class="btn-check" name="oil_error_int" id="oe1" value="1" {% if params.cd_vnesh.oil_error_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="oe1">Есть</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Подтекание ОЖ</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="water_error_int" id="we0" value="0" {% if params.cd_vnesh.water_error_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="we0">Нет</label>
-              <input type="radio" class="btn-check" name="water_error_int" id="we1" value="1" {% if params.cd_vnesh.water_error_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="we1">Есть</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Подтекание ОЖ</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="water_error_int" id="we0" value="0" {% if params.cd_vnesh.water_error_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="we0">Нет</label>
+                <input type="radio" class="btn-check" name="water_error_int" id="we1" value="1" {% if params.cd_vnesh.water_error_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="we1">Есть</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Лобовое стекло с повреждениями</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="windshield_error_int" id="windshield_err0" value="0" {% if params.cd_vnesh.windshield_error_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="windshield_err0">Нет</label>
-              <input type="radio" class="btn-check" name="windshield_error_int" id="windshield_err1" value="1" {% if params.cd_vnesh.windshield_error_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="windshield_err1">Да</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Лобовое стекло с повреждениями</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="windshield_error_int" id="windshield_err0" value="0" {% if params.cd_vnesh.windshield_error_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="windshield_err0">Нет</label>
+                <input type="radio" class="btn-check" name="windshield_error_int" id="windshield_err1" value="1" {% if params.cd_vnesh.windshield_error_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="windshield_err1">Да</label>
+              </div>
             </div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Световые приборы</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="light_error_int" id="lei0" value="0" {% if params.cd_vnesh.light_error_int == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="lei0">Нет</label>
-              <input type="radio" class="btn-check" name="light_error_int" id="lei1" value="1" {% if params.cd_vnesh.light_error_int == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="lei1">Проблемы</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Световые приборы</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="light_error_int" id="lei0" value="0" {% if params.cd_vnesh.light_error_int == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="lei0">Нет</label>
+                <input type="radio" class="btn-check" name="light_error_int" id="lei1" value="1" {% if params.cd_vnesh.light_error_int == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="lei1">Проблемы</label>
+              </div>
             </div>
           </div>
           <div class="col-12 col-md-6">
@@ -104,14 +123,13 @@
           </div>
         </div>
       </div>
-    </div>
 
-    {# Салон #}
-    <div class="card mb-3">
-      <div class="card-header">
-        <h6 class="mb-0">Салон</h6>
-      </div>
-      <div class="card-body">
+      {# Салон #}
+      <div class="portal-panel">
+        <h6 class="d-flex align-items-center gap-2 mb-3">
+          <span class="icon-mbri-user"></span> Салон
+        </h6>
+        <div class="row g-2">
         <div class="row g-2">
           <div class="col-md-4">
             <label class="form-label small">Пробег</label>
@@ -124,57 +142,69 @@
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Ручной тормоз</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="hand_brake" id="hb1" value="1" {% if params.cd_salon.hand_brake == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="hb1">Работает</label>
-              <input type="radio" class="btn-check" name="hand_brake" id="hb0" value="0" {% if params.cd_salon.hand_brake == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="hb0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Ручной тормоз</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="hand_brake" id="hb1" value="1" {% if params.cd_salon.hand_brake == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="hb1">Работает</label>
+                <input type="radio" class="btn-check" name="hand_brake" id="hb0" value="0" {% if params.cd_salon.hand_brake == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="hb0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Кондиционер</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="conductor" id="cond1" value="1" {% if params.cd_salon.conductor == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="cond1">Работает</label>
-              <input type="radio" class="btn-check" name="conductor" id="cond0" value="0" {% if params.cd_salon.conductor == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="cond0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Кондиционер</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="conductor" id="cond1" value="1" {% if params.cd_salon.conductor == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="cond1">Работает</label>
+                <input type="radio" class="btn-check" name="conductor" id="cond0" value="0" {% if params.cd_salon.conductor == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="cond0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Стеклоочиститель</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="wiper" id="wip1" value="1" {% if params.cd_salon.wiper == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="wip1">Работает</label>
-              <input type="radio" class="btn-check" name="wiper" id="wip0" value="0" {% if params.cd_salon.wiper == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="wip0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Стеклоочиститель</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="wiper" id="wip1" value="1" {% if params.cd_salon.wiper == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="wip1">Работает</label>
+                <input type="radio" class="btn-check" name="wiper" id="wip0" value="0" {% if params.cd_salon.wiper == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="wip0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Сигнал</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="signal" id="sig1" value="1" {% if params.cd_salon.signal == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="sig1">Работает</label>
-              <input type="radio" class="btn-check" name="signal" id="sig0" value="0" {% if params.cd_salon.signal == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="sig0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Сигнал</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="signal" id="sig1" value="1" {% if params.cd_salon.signal == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="sig1">Работает</label>
+                <input type="radio" class="btn-check" name="signal" id="sig0" value="0" {% if params.cd_salon.signal == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="sig0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Стеклоподъёмники</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="power_windows" id="pw1" value="1" {% if params.cd_salon.power_windows == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="pw1">Работают</label>
-              <input type="radio" class="btn-check" name="power_windows" id="pw0" value="0" {% if params.cd_salon.power_windows == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="pw0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Стеклоподъёмники</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="power_windows" id="pw1" value="1" {% if params.cd_salon.power_windows == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="pw1">Работают</label>
+                <input type="radio" class="btn-check" name="power_windows" id="pw0" value="0" {% if params.cd_salon.power_windows == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="pw0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Ремни безопасности</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="seat_belt" id="sb1" value="1" {% if params.cd_salon.seat_belt == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="sb1">Работают</label>
-              <input type="radio" class="btn-check" name="seat_belt" id="sb0" value="0" {% if params.cd_salon.seat_belt == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="sb0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Ремни безопасности</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="seat_belt" id="sb1" value="1" {% if params.cd_salon.seat_belt == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="sb1">Работают</label>
+                <input type="radio" class="btn-check" name="seat_belt" id="sb0" value="0" {% if params.cd_salon.seat_belt == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="sb0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-md-4">
@@ -187,12 +217,14 @@
             </select>
           </div>
           <div class="col-md-4">
-            <label class="form-label small">Пробег соответствует</label>
-            <div class="btn-group btn-group-sm w-100" role="group">
-              <input type="radio" class="btn-check" name="run_respond" id="rr1" value="1" {% if params.cd_salon.run_respond == 1 %}checked{% endif %}>
-              <label class="btn btn-outline-success" for="rr1">Да</label>
-              <input type="radio" class="btn-check" name="run_respond" id="rr0" value="0" {% if params.cd_salon.run_respond == 0 %}checked{% endif %}>
-              <label class="btn btn-outline-danger" for="rr0">Нет</label>
+            <div class="kors-btn-group-wrapper">
+              <label class="fs-6">Пробег соответствует</label>
+              <div class="kors-btn-group-compact" role="group">
+                <input type="radio" class="btn-check" name="run_respond" id="rr1" value="1" {% if params.cd_salon.run_respond == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-success" for="rr1">Да</label>
+                <input type="radio" class="btn-check" name="run_respond" id="rr0" value="0" {% if params.cd_salon.run_respond == 0 %}checked{% endif %}>
+                <label class="btn btn-outline-danger" for="rr0">Нет</label>
+              </div>
             </div>
           </div>
           <div class="col-12 col-md-6">
@@ -215,14 +247,13 @@
           </div>
         </div>
       </div>
-    </div>
 
-    {# Тест-драйв #}
-    <div class="card mb-3">
-      <div class="card-header">
-        <h6 class="mb-0">Тест-драйв</h6>
-      </div>
-      <div class="card-body">
+      {# Тест-драйв #}
+      <div class="portal-panel">
+        <h6 class="d-flex align-items-center gap-2 mb-3">
+          <span class="icon-mbri-car"></span> Тест-драйв
+        </h6>
+        <div class="row g-2">
         <p class="small text-muted mb-2">0 — не работает, 1 — норма, 2 — замечания, 3 — без проверки</p>
         <div class="row g-2">
           {% with td=params.cd_td %}
@@ -455,12 +486,12 @@
           {% endwith %}
         </div>
       </div>
-    </div>
 
-    <div class="mb-4">
-      <button type="submit" name="save_control_diagnostic" value="1" class="btn btn-primary">Сохранить</button>
-      <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id params.cd.id %}" class="btn btn-outline-secondary ms-2">Сравнение</a>
-    </div>
-  </form>
+      <div class="portal-panel mb-4">
+        <button type="submit" name="save_control_diagnostic" value="1" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id params.cd.id %}" class="btn btn-outline-secondary ms-2">Сравнение</a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
