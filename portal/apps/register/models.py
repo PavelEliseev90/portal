@@ -3784,6 +3784,95 @@ class RegControlDiagnosticSalon(models.Model):
         verbose_name_plural = 'КД: салоны'
 
 
+class RegControlDiagnosticTestDrive(models.Model):
+    """Слепок данных тест-драйва для контрольной диагностики."""
+    control_diagnostic = models.OneToOneField(
+        RegControlDiagnostic,
+        on_delete=models.CASCADE,
+        related_name='page_test_drive_copy',
+        verbose_name='Контрольная диагностика',
+    )
+    start_estimation = models.DateTimeField('Дата начала', blank=True, null=True)
+    end_estimation = models.DateTimeField('Дата окончания', blank=True, null=True)
+    text_json = models.TextField("Текст", blank=True, null=True)
+
+    engine = models.IntegerField('Двигатель', default=10, null=True, blank=True)
+    system_og = models.IntegerField('Система выпуска ОГ', default=10, null=True, blank=True)
+    gear = models.IntegerField('КПП', default=10, null=True, blank=True)
+    suspension = models.IntegerField('Подвеска', default=10, null=True, blank=True)
+    airbag = models.IntegerField('Подушка безопастности', default=10, null=True, blank=True)
+    wheel = models.IntegerField('Рулевое управление', default=10, null=True, blank=True)
+    brake = models.IntegerField('Тормозная система', default=10, null=True, blank=True)
+    subframe = models.IntegerField('Подрамник', default=10, null=True, blank=True)
+    conditioner = models.IntegerField('Кондиционер', default=10, null=True, blank=True)
+    turbo = models.IntegerField('Турбина', default=10, null=True, blank=True)
+    drive = models.IntegerField('Полный привод', default=10, null=True, blank=True)
+    to = models.IntegerField('ТО', default=10, null=True, blank=True)
+
+    stapele_type = models.IntegerField('Тип стапеля', null=True, blank=True)
+    stapele_hours = models.IntegerField('Часы стапеля', null=True, blank=True)
+    stapele_cost = models.IntegerField('Стоимость стапеля', null=True, blank=True)
+
+    comment_engine = models.CharField('Комментарий двигатель', max_length=512, default='', null=True, blank=True)
+    comment_system_og = models.CharField('Комментарий система выпуска ОГ', max_length=512, default='', null=True, blank=True)
+    comment_gear = models.CharField('Комментарий коробка передач', max_length=512, default='', null=True, blank=True)
+    comment_suspension = models.CharField('Комментарий подвеска', max_length=512, default='', null=True, blank=True)
+    comment_airbag = models.CharField('Комментарий подушки безопастности', max_length=512, default='', null=True, blank=True)
+    airbag_issues = models.CharField('Проблемы безопасности (JSON)', max_length=2048, default='', null=True, blank=True)
+    airbag_driver_issue = models.BooleanField('Проблема: Подушка водителя', default=False, null=True, blank=True)
+    airbag_passenger_issue = models.BooleanField('Проблема: Подушка пассажира + перешив торпеды', default=False, null=True, blank=True)
+    airbag_side_issue = models.BooleanField('Проблема: Боковые подушки', default=False, null=True, blank=True)
+    airbag_knee_issue = models.BooleanField('Проблема: Подушка коленная', default=False, null=True, blank=True)
+    seat_belt_restore_issue = models.BooleanField('Проблема: Восстановление ремней безопасности', default=False, null=True, blank=True)
+    srs_block_issue = models.BooleanField('Проблема: Блок SRS', default=False, null=True, blank=True)
+    comment_wheel = models.CharField('Комментарий рулевого управления', max_length=512, default='', null=True, blank=True)
+    comment_brake = models.CharField('Комментарий тормозной системы', max_length=512, default='', null=True, blank=True)
+    comment_subframe = models.CharField('Комментарий подрамника', max_length=512, default='', null=True, blank=True)
+    hood_trunk_shock_absorber = models.IntegerField('Амортизатор капота/багажника', default=10, null=True, blank=True)
+    comment_hood_trunk_shock_absorber = models.CharField('Комментарий амортизатор капота/багажника', max_length=512, default='', null=True, blank=True)
+    comment_conditioner = models.CharField('Комментарий системы кондиционирования', max_length=512, default='', null=True, blank=True)
+    comment_turbo = models.CharField('Комментарий турбокомпрессора', max_length=512, default='', null=True, blank=True)
+    comment_drive = models.CharField('Комментарий полный привод', max_length=512, default='', null=True, blank=True)
+
+    pp_dinamyc = models.IntegerField('Разгонная динамика, посторонние шумы, вибрации при движении', default=10, null=True, blank=True)
+    pp_kpp = models.IntegerField('Плавность включения передач', default=10, null=True, blank=True)
+    pp_uvod = models.IntegerField('Увод от прямолинейного движения', default=10, null=True, blank=True)
+    pp_pribor = models.IntegerField('Работа измерительных приборов и указателей', default=10, null=True, blank=True)
+
+    no_test = models.BooleanField("Тест драйв не производился", default=False, null=True, blank=True)
+    comment = models.CharField('Комментарий тест - драйва', max_length=250, default='', null=True, blank=True)
+
+    class Meta:
+        db_table = 'regControlDiagnosticTestDrive'
+        verbose_name = 'КД: тест-драйв'
+        verbose_name_plural = 'КД: тест-драйв'
+
+
+class RegControlDiagnosticReferenceSelection(models.Model):
+    """Выборы элементов справочника диагностики для контрольной диагностики (тест-драйв)."""
+    control_test_drive = models.ForeignKey(
+        RegControlDiagnosticTestDrive,
+        on_delete=models.CASCADE,
+        related_name='reference_selections',
+        verbose_name='КД тест-драйв',
+        db_index=True,
+    )
+    category_code = models.CharField('Код категории', max_length=50, db_index=True)
+    reference_item = models.ForeignKey(
+        DiagnosticReferenceItem,
+        on_delete=models.CASCADE,
+        related_name='control_diagnostic_selections',
+        verbose_name='Элемент справочника',
+    )
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+
+    class Meta:
+        db_table = 'regControlDiagnosticReferenceSelection'
+        verbose_name = 'КД: выбор элемента справочника'
+        verbose_name_plural = 'КД: выборы элементов справочника'
+        unique_together = [['control_test_drive', 'category_code', 'reference_item']]
+
+
 class RegInteractivOcenkaOptions(models.Model):
     estimation          = models.OneToOneField(RegInteractivOcenka, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
     name                = models.CharField('Опция', max_length=21, default='')

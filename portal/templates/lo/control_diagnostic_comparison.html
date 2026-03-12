@@ -5,9 +5,12 @@
 
 {% block content %}
 <div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <h4>Отчёт сравнения: интерактивная оценка vs контрольная диагностика</h4>
-    <a href="/eco/{{ params.rlk.id }}/?page=9" class="btn btn-outline-secondary btn-sm">← К оценке</a>
+    <div class="d-flex gap-2">
+      <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id params.cd.id %}" class="btn btn-outline-primary btn-sm">Редактировать КД</a>
+      <a href="/eco/{{ params.rlk.id }}/?page=9" class="btn btn-outline-secondary btn-sm">← К оценке</a>
+    </div>
   </div>
 
   <div class="mb-3 text-muted">
@@ -106,6 +109,72 @@
       </div>
     </div>
   </div>
+
+  {# Тест-драйв: сравнение параметров #}
+  {% if params.orig_test_drive or params.cd_test_drive %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h6 class="mb-0">Тест-драйв: сравнение параметров</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Параметр</th>
+              <th class="text-end">Интерактивная оценка</th>
+              <th class="text-end">Контрольная диагностика</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% with o=params.orig_test_drive c=params.cd_test_drive %}
+            <tr>
+              <td>Двигатель</td>
+              <td class="text-end">{% if o %}{{ o.engine|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.engine != c.engine %}table-warning{% endif %}">{% if c %}{{ c.engine|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>КПП</td>
+              <td class="text-end">{% if o %}{{ o.gear|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.gear != c.gear %}table-warning{% endif %}">{% if c %}{{ c.gear|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Подвеска</td>
+              <td class="text-end">{% if o %}{{ o.suspension|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.suspension != c.suspension %}table-warning{% endif %}">{% if c %}{{ c.suspension|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Тормозная система</td>
+              <td class="text-end">{% if o %}{{ o.brake|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.brake != c.brake %}table-warning{% endif %}">{% if c %}{{ c.brake|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Рулевое управление</td>
+              <td class="text-end">{% if o %}{{ o.wheel|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.wheel != c.wheel %}table-warning{% endif %}">{% if c %}{{ c.wheel|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Подушка безопасности</td>
+              <td class="text-end">{% if o %}{{ o.airbag|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.airbag != c.airbag %}table-warning{% endif %}">{% if c %}{{ c.airbag|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Тест не производился</td>
+              <td class="text-end">{% if o %}{% if o.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.no_test != c.no_test %}table-warning{% endif %}">{% if c %}{% if c.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Комментарий</td>
+              <td class="text-start small">{% if o and o.comment %}{{ o.comment|truncatewords:30 }}{% else %}—{% endif %}</td>
+              <td class="text-start small {% if o and c and o.comment != c.comment %}table-warning{% endif %}">{% if c and c.comment %}{{ c.comment|truncatewords:30 }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endwith %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   {# Фото: оригинал | КД — друг напротив друга #}
   <div class="card">
