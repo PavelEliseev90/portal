@@ -5915,6 +5915,29 @@
                 <hr class="my-3">
               </div>
 
+                {# Контрольная диагностика: кнопка создания и список КД #}
+                <div id="control_diagnostics" class="portal-panel mb-3">
+                  <h6><span class="icon-mbri-link"></span> Контрольная диагностика</h6>
+                  <hr class="my-2">
+                  <form method="post" action="{% url 'eco:create_control_diagnostic' params.rlk.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-primary btn-sm mb-2">
+                      <span class="icon-mbri-plus"></span> Создать контрольную диагностику
+                    </button>
+                  </form>
+                  {% if params.control_diagnostics %}
+                  <div class="mt-2">
+                    {% for cd in params.control_diagnostics %}
+                    <div class="d-flex align-items-center mb-1">
+                      <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id cd.id %}" class="btn btn-link btn-sm text-decoration-none p-0 me-2" target="_blank">
+                        КД от {{ cd.created_at|date:"d.m.Y H:i" }}{% if cd.author %} — {{ cd.author.last_name }} {{ cd.author.first_name }}{% endif %}
+                      </a>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
                 <div class="my_pages_info_doc_eco">
                   
                   {% for warning in params.warning_list %}

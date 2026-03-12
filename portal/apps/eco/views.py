@@ -4,7 +4,7 @@ from collections import defaultdict
 from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
-from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
+from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
@@ -2593,6 +2593,208 @@ def list_eco(request):
     return render(request, 'lo/lo_list.html', {'params': params})
 
 
+# Типы файлов для копирования во внешний осмотр и салон (КД)
+CONTROL_DIAGNOSTIC_FILE_TYPES = frozenset([
+    'vnesh_car_all', 'vin', 'pod_capot', 'windshield_error', 'light_error',
+    'vnesh_windows_error', 'vnesh_light_error',
+    'vnesh_car_osmotr_pered', 'vnesh_car_osmotr_vod', 'vnesh_car_osmotr_zad',
+    'vnesh_car_osmotr_up', 'vnesh_car_osmotr_pass',
+    'array_images_pered', 'array_images_vod', 'array_images_zad',
+    'array_images_up', 'array_images_pass',
+    'salon_all', 'salon_error', 'run', 'osmotr_salon',
+])
+
+
+def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk):
+    """Создаёт контрольную диагностику: копирует vnesh/salon/файлы и пересчитывает результат."""
+    cd = RegControlDiagnostic(estimation=estimation, author=user)
+    cd.save()
+
+    # 1. Копируем внешний осмотр
+    if estimation.page_vnesh:
+        v = estimation.page_vnesh
+        cd_vnesh = RegControlDiagnosticVnesh(
+            control_diagnostic=cd,
+            text_json=v.text_json,
+            windshield_error=v.windshield_error,
+            light_error=v.light_error,
+            oil_error=v.oil_error,
+            water_error=v.water_error,
+            color=v.color or '',
+            check_vin=v.check_vin,
+            check_engine=v.check_engine,
+            comment_vnesh=v.comment_vnesh or '',
+            check_vin_int=getattr(v, 'check_vin_int', 10) or 10,
+            check_engine_int=getattr(v, 'check_engine_int', 10) or 10,
+            windshield_error_int=getattr(v, 'windshield_error_int', 10) or 10,
+            light_error_int=getattr(v, 'light_error_int', 10) or 10,
+            oil_error_int=getattr(v, 'oil_error_int', 10) or 10,
+            water_error_int=getattr(v, 'water_error_int', 10) or 10,
+            windshield_heat_int=getattr(v, 'windshield_heat_int', 10) or 10,
+        )
+        cd_vnesh.save()
+
+    # 2. Копируем салон
+    if estimation.page_salon:
+        s = estimation.page_salon
+        cd_salon = RegControlDiagnosticSalon(
+            control_diagnostic=cd,
+            text_json=s.text_json,
+            run=s.run or 0,
+            run_confirmed=s.run_confirmed or False,
+            hand_brake=s.hand_brake if s.hand_brake is not None else 10,
+            conductor=s.conductor if s.conductor is not None else 10,
+            wiper=s.wiper if s.wiper is not None else 10,
+            signal=s.signal if s.signal is not None else 10,
+            power_windows=s.power_windows if s.power_windows is not None else 10,
+            seat_belt=s.seat_belt if s.seat_belt is not None else 10,
+            cleaning=s.cleaning or False,
+            damage_kpp=s.damage_kpp or False,
+            damage_wheel=s.damage_wheel or False,
+            damage_pedal=s.damage_pedal or False,
+            damage_door=s.damage_door or False,
+            damage_seat=s.damage_seat or False,
+            run_respond=getattr(s, 'run_respond', 10) or 10,
+            run_confirmed_comment=s.run_confirmed_comment or '',
+            cleaning_int=getattr(s, 'cleaning_int', 10) or 10,
+            damage_kpp_int=getattr(s, 'damage_kpp_int', 10) or 10,
+            damage_wheel_int=getattr(s, 'damage_wheel_int', 10) or 10,
+            damage_pedal_int=getattr(s, 'damage_pedal_int', 10) or 10,
+            damage_door_int=getattr(s, 'damage_door_int', 10) or 10,
+            damage_seat_int=getattr(s, 'damage_seat_int', 10) or 10,
+            type_salon_int=getattr(s, 'type_salon_int', 10) or 10,
+        )
+        cd_salon.save()
+        if hasattr(s, 'dashboard_error') and s.dashboard_error.exists():
+            cd_salon.dashboard_error.set(s.dashboard_error.all())
+
+    # 3. Создаём mock estimation для пересчёта (подмена page_vnesh/page_salon)
+    class _MockEstimation:
+        pass
+
+    mock = _MockEstimation()
+    for attr in dir(estimation):
+        if not attr.startswith('_'):
+            try:
+                setattr(mock, attr, getattr(estimation, attr))
+            except Exception:
+                pass
+    if hasattr(cd, 'page_vnesh_copy') and cd.page_vnesh_copy:
+        mock.page_vnesh = cd.page_vnesh_copy
+    if hasattr(cd, 'page_salon_copy') and cd.page_salon_copy:
+        mock.page_salon = cd.page_salon_copy
+
+    # 4. Пересчёт и сохранение результата
+    price_kors = estimations_price_calculation(interactiv_rlk, mock, type_calculation='kors')
+    price_autohub = estimations_price_calculation(interactiv_rlk, mock, type_calculation='autohub')
+    price_avito = estimations_price_calculation(interactiv_rlk, mock, type_calculation='avito')
+    price_custom = estimations_price_calculation(interactiv_rlk, mock, type_calculation='custom')
+
+    if price_kors:
+        cd.price_auto_1 = int(price_kors.get('estimation_price', 0) or 0)
+        cd.price_auto_bcp_1 = int(price_kors.get('cna_expenses', 0) or 0)
+        cd.price_zna_1 = int(price_kors.get('zna', 0) or 0)
+    if price_autohub:
+        cd.price_auto_2 = int(price_autohub.get('estimation_price', 0) or 0)
+        cd.price_auto_bcp_2 = int(price_autohub.get('cna_expenses', 0) or 0)
+        cd.price_zna_2 = int(price_autohub.get('zna', 0) or 0)
+    if price_avito:
+        cd.price_auto_3 = int(price_avito.get('estimation_price', 0) or 0)
+        cd.price_auto_bcp_3 = int(price_avito.get('cna_expenses', 0) or 0)
+        cd.price_zna_3 = int(price_avito.get('zna', 0) or 0)
+    if price_custom:
+        cd.amount_podgotovka = float(price_custom.get('amount_podgotovka', 0) or 0)
+        cd.amount_ss = float(price_custom.get('amount_ss', 0) or 0)
+        cd.amount_mcu = float(price_custom.get('amount_mcu', 0) or 0)
+        cd.amount_recovery = float(
+            (price_custom.get('amount_podgotovka', 0) or 0) +
+            (price_custom.get('amount_ss', 0) or 0) +
+            (price_custom.get('amount_mcu', 0) or 0)
+        )
+    cd.save()
+
+    # 5. Копируем файлы
+    for src in RegRegInteractivOcenkaFiles.objects.filter(estimation=estimation).filter(
+            type_file__in=CONTROL_DIAGNOSTIC_FILE_TYPES
+    ).order_by('type_file', 'file_number'):
+        RegControlDiagnosticFile.objects.create(
+            control_diagnostic=cd,
+            source_file=src,
+            name=src.name or '',
+            type_file=src.type_file or '',
+            file=src.file,
+            file_mini=src.file_mini,
+            comment=src.comment or '',
+            file_number=src.file_number or 0,
+            text=src.text or '',
+            type_point=src.type_point or '',
+            cor_x=src.cor_x or 0,
+            cor_y=src.cor_y or 0,
+            kraska=src.kraska or 0,
+            order=src.order or 0,
+            blank=src.blank or False,
+            date=src.date,
+            user=user,
+        )
+
+    return cd
+
+
+@login_required
+def create_control_diagnostic(request, id):
+    """Создаёт контрольную диагностику для оценки (RLK id)."""
+    if request.method != 'POST':
+        return HttpResponseRedirect('/eco/' + str(id) + '/')
+    rlk = DocRLK.objects.get(pk=id)
+    interactiv_rlk, _ = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
+    estimation = interactiv_rlk.estimation
+    if not estimation:
+        return HttpResponseRedirect('/eco/' + str(id) + '/')
+    cd = _create_control_diagnostic_from_estimation(estimation, request.user, interactiv_rlk)
+    return HttpResponseRedirect('/eco/' + str(id) + '/?page=9#control_diagnostics')
+
+
+@login_required
+def control_diagnostic_comparison(request, id, cd_id):
+    """Отчёт сравнения: интерактивная оценка vs контрольная диагностика."""
+    rlk = DocRLK.objects.get(pk=id)
+    interactiv_rlk, _ = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
+    estimation = interactiv_rlk.estimation
+    if not estimation:
+        return HttpResponseRedirect('/eco/' + str(id) + '/')
+    cd = RegControlDiagnostic.objects.filter(estimation=estimation, pk=cd_id).first()
+    if not cd:
+        raise Http404('Контрольная диагностика не найдена')
+
+    # Файлы для сравнения (оригинал vs КД) — пары по type_file + file_number
+    orig_files = list(RegRegInteractivOcenkaFiles.objects.filter(
+        estimation=estimation
+    ).filter(type_file__in=CONTROL_DIAGNOSTIC_FILE_TYPES).order_by('type_file', 'file_number'))
+    cd_files_by_key = {(f.type_file, f.file_number or 0): f for f in RegControlDiagnosticFile.objects.filter(control_diagnostic=cd)}
+    cd_files_by_source = {f.source_file_id: f for f in RegControlDiagnosticFile.objects.filter(control_diagnostic=cd) if f.source_file_id}
+    file_pairs = []
+    seen_cd_ids = set()
+    for orig in orig_files:
+        cf = cd_files_by_source.get(orig.id) or cd_files_by_key.get((orig.type_file or '', orig.file_number or 0))
+        if cf:
+            seen_cd_ids.add(cf.id)
+        file_pairs.append((orig, cf))
+    for cf in RegControlDiagnosticFile.objects.filter(control_diagnostic=cd).order_by('type_file', 'file_number'):
+        if cf.id not in seen_cd_ids:
+            file_pairs.append((None, cf))
+
+    orig_soglasovanie = estimation.page_soglasovanie
+    params = {
+        'estimation': estimation,
+        'rlk': rlk,
+        'cd': cd,
+        'orig_soglasovanie': orig_soglasovanie,
+        'file_pairs': file_pairs,
+        'request': request,
+    }
+    return render(request, 'lo/control_diagnostic_comparison.html', {'params': params})
+
+
 @login_required
 def doc(request, id):
      
@@ -3019,7 +3221,8 @@ def doc(request, id):
                 'signal'                : signal,
                 'warning_list'          : warning_list,
                 'expenses'              : expenses,
-                'selected'              : selected
+                'selected'              : selected,
+                'control_diagnostics'   : estimation.control_diagnostics.all(),
 
             }
     

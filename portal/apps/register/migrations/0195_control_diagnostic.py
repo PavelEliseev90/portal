@@ -1,0 +1,138 @@
+# Generated manually for control diagnostic models
+
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('register', '0194_reginteractivocenkaemailpush_rlk'),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='RegControlDiagnostic',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Время контрольной диагностики')),
+                ('price_auto_1', models.IntegerField(blank=True, default=0, verbose_name='Автоматическая 1')),
+                ('price_auto_2', models.IntegerField(blank=True, default=0, verbose_name='Автоматическая 2')),
+                ('price_auto_3', models.IntegerField(blank=True, default=0, verbose_name='Автоматическая 3')),
+                ('price_zna_1', models.IntegerField(blank=True, default=0, verbose_name='ЦНА Автоматическая 1')),
+                ('price_zna_2', models.IntegerField(blank=True, default=0, verbose_name='ЦНА Автоматическая 2')),
+                ('price_zna_3', models.IntegerField(blank=True, default=0, verbose_name='ЦНА Автоматическая 3')),
+                ('price_auto_bcp_1', models.IntegerField(blank=True, default=0, verbose_name='БЦП 1')),
+                ('price_auto_bcp_2', models.IntegerField(blank=True, default=0, verbose_name='БЦП 2')),
+                ('price_auto_bcp_3', models.IntegerField(blank=True, default=0, verbose_name='БЦП 3')),
+                ('amount_podgotovka', models.FloatField(blank=True, default=0.0, null=True, verbose_name='Затраты на подготовку')),
+                ('amount_ss', models.FloatField(blank=True, default=0.0, null=True, verbose_name='Затраты на слесарный ремонт')),
+                ('amount_mcu', models.FloatField(blank=True, default=0.0, null=True, verbose_name='Затраты на кузовной ремонт')),
+                ('amount_recovery', models.FloatField(blank=True, default=0.0, null=True, verbose_name='Затраты на восстановительный ремонт')),
+                ('author', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='control_diagnostics_authored', to=settings.AUTH_USER_MODEL, verbose_name='Автор')),
+                ('estimation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='control_diagnostics', to='register.reginteractivocenka', verbose_name='Оценка')),
+            ],
+            options={
+                'verbose_name': 'Контрольная диагностика',
+                'verbose_name_plural': 'Контрольные диагностики',
+                'db_table': 'regControlDiagnostic',
+                'ordering': ['-created_at'],
+            },
+        ),
+        migrations.CreateModel(
+            name='RegControlDiagnosticVnesh',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('text_json', models.TextField(blank=True, null=True, verbose_name='Текст')),
+                ('windshield_error', models.BooleanField(blank=True, default=False, null=True, verbose_name='Лобовое стекло с повреждениями')),
+                ('light_error', models.BooleanField(blank=True, default=False, null=True, verbose_name='Световые приборы есть проблемы')),
+                ('oil_error', models.BooleanField(blank=True, default=False, null=True, verbose_name='Следы подтекания масла')),
+                ('water_error', models.BooleanField(blank=True, default=False, null=True, verbose_name='Следы подтекания охлаждающей жидкости')),
+                ('color', models.CharField(blank=True, default='', max_length=150, null=True, verbose_name='Цвет')),
+                ('check_vin', models.BooleanField(blank=True, default=False, null=True, verbose_name='Проверка VIN')),
+                ('check_engine', models.BooleanField(blank=True, default=False, null=True, verbose_name='Проверка двигателя и коробки на месте')),
+                ('comment_vnesh', models.CharField(blank=True, default='', max_length=1500, null=True, verbose_name='Комментарий внешнего осмотра')),
+                ('check_vin_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Проверка VIN')),
+                ('check_engine_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Проверка ДВС и КПП на месте')),
+                ('windshield_error_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Лобовое стекло с повреждениями')),
+                ('light_error_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Световые приборы есть проблемы')),
+                ('oil_error_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Следы подтекания масла')),
+                ('water_error_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Следы подтекания охлаждающей жидкости')),
+                ('windshield_heat_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Лобовое стекло с обогревом')),
+                ('control_diagnostic', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='page_vnesh_copy', to='register.regcontroldiagnostic', verbose_name='Контрольная диагностика')),
+            ],
+            options={
+                'verbose_name': 'КД: внешний осмотр',
+                'verbose_name_plural': 'КД: внешние осмотры',
+                'db_table': 'regControlDiagnosticVnesh',
+            },
+        ),
+        migrations.CreateModel(
+            name='RegControlDiagnosticSalon',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('text_json', models.TextField(blank=True, null=True, verbose_name='Текст')),
+                ('run', models.IntegerField(blank=True, default=0, null=True, verbose_name='Пробег')),
+                ('run_confirmed', models.BooleanField(blank=True, default=False, null=True, verbose_name='Пробег подтвержден')),
+                ('hand_brake', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность ручного тормоза')),
+                ('conductor', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность кондиционера')),
+                ('wiper', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность стеклоочистителя')),
+                ('signal', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность сигнала')),
+                ('power_windows', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность стеклоподьемников')),
+                ('seat_belt', models.IntegerField(blank=True, default=10, null=True, verbose_name='работоспособность ремней безопастности')),
+                ('cleaning', models.BooleanField(blank=True, default=False, null=True, verbose_name='Требуеться химчистка')),
+                ('damage_kpp', models.BooleanField(blank=True, default=False, null=True, verbose_name='Повреждения рычага кпп')),
+                ('damage_wheel', models.BooleanField(blank=True, default=False, null=True, verbose_name='Повреждения / затертый руль')),
+                ('damage_pedal', models.BooleanField(blank=True, default=False, null=True, verbose_name='Повреждения / затертые педали')),
+                ('damage_door', models.BooleanField(blank=True, default=False, null=True, verbose_name='Повреждения / затертые карты дверей')),
+                ('damage_seat', models.BooleanField(blank=True, default=False, null=True, verbose_name='Повреждения / затертые сиденья')),
+                ('run_respond', models.IntegerField(blank=True, default=10, null=True, verbose_name='Пробег соответствует состоянию')),
+                ('run_confirmed_comment', models.CharField(blank=True, default='', max_length=250, null=True, verbose_name='Пробег подтвержден комментарий')),
+                ('cleaning_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Требуеться химчистка')),
+                ('damage_kpp_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Повреждения рычага кпп')),
+                ('damage_wheel_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Повреждения / затертый руль')),
+                ('damage_pedal_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Повреждения / затертые педали')),
+                ('damage_door_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Повреждения / затертые карты дверей')),
+                ('damage_seat_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Повреждения / затертые сиденья')),
+                ('type_salon_int', models.IntegerField(blank=True, default=10, null=True, verbose_name='Тип салона')),
+                ('control_diagnostic', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='page_salon_copy', to='register.regcontroldiagnostic', verbose_name='Контрольная диагностика')),
+                ('dashboard_error', models.ManyToManyField(blank=True, to='register.regdashboarderror', verbose_name='Ошибки приборной панели')),
+            ],
+            options={
+                'verbose_name': 'КД: салон',
+                'verbose_name_plural': 'КД: салоны',
+                'db_table': 'regControlDiagnosticSalon',
+            },
+        ),
+        migrations.CreateModel(
+            name='RegControlDiagnosticFile',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(blank=True, default='', max_length=512, verbose_name='Наименование')),
+                ('type_file', models.CharField(blank=True, default='', max_length=512, verbose_name='Принадлежность файлов')),
+                ('file', models.FileField(blank=True, null=True, upload_to='control_diagnostic/%Y/%m/%d/', verbose_name='Файл')),
+                ('file_mini', models.FileField(blank=True, null=True, upload_to='control_diagnostic/%Y/%m/%d/', verbose_name='Файл сжатый')),
+                ('comment', models.CharField(blank=True, default='', max_length=512, verbose_name='Комментарий')),
+                ('file_number', models.IntegerField(blank=True, default=0, null=True, verbose_name='Порядок')),
+                ('text', models.CharField(blank=True, default='', max_length=512, verbose_name='Текст')),
+                ('type_point', models.CharField(blank=True, default='', max_length=512, verbose_name='Тип метки')),
+                ('cor_x', models.IntegerField(blank=True, default=0, null=True, verbose_name='Координата X')),
+                ('cor_y', models.IntegerField(blank=True, default=0, null=True, verbose_name='Координата Y')),
+                ('kraska', models.IntegerField(blank=True, default=0, null=True, verbose_name='Показание толщиномера')),
+                ('order', models.IntegerField(blank=True, default=0, null=True, verbose_name='Приоритет')),
+                ('blank', models.BooleanField(blank=True, default=False, null=True, verbose_name='Пустой')),
+                ('date', models.DateTimeField(blank=True, null=True, verbose_name='Дата')),
+                ('control_diagnostic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files', to='register.regcontroldiagnostic', verbose_name='Контрольная диагностика')),
+                ('source_file', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='control_diagnostic_copies', to='register.regreginteractivocenkafiles', verbose_name='Исходный файл оценки')),
+                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='control_diagnostic_file_author', to=settings.AUTH_USER_MODEL, verbose_name='Автор')),
+            ],
+            options={
+                'verbose_name': 'Фото контрольной диагностики',
+                'verbose_name_plural': 'Фото контрольной диагностики',
+                'db_table': 'regControlDiagnosticFile',
+                'ordering': ['type_file', 'file_number'],
+            },
+        ),
+    ]
