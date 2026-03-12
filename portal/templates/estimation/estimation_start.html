@@ -1325,9 +1325,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (estimationHistoryBlock) {
       estimationHistoryBlock.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Загрузка...</p></div>';
     }
-    
+    var mod = '{{params.mod}}';
     // Загружаем активные интерактивные оценки
     if (vin) {
+      if (mod == ''){
       apiFetch(`/api/get_info_estimation_vin/?vin=${encodeURIComponent(vin)}&exclude_rlk=${encodeURIComponent(rlkId)}`)
         .then(response => response.json())
         .then(data => {
@@ -1389,7 +1390,7 @@ document.addEventListener('DOMContentLoaded', function() {
           $('#active_estimation_panel').addClass('d-none');
           $('#catalog_data').removeClass('d-none');
         });
-      
+      };
       // Загружаем историю ремонтов
       apiFetch(`/estimations/${rlkId}/api/repair-history/?vin=${encodeURIComponent(vin)}`)
         .then(response => response.json())
