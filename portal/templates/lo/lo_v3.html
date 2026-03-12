@@ -19310,43 +19310,45 @@
                   <hr class="my-3">
                 </div>
 
-                <div class="table-responsive-sm">
-                  <table class="table table-sm table-striped table-hover">
-                    <thead>
-                    <tr>
-                      <th scope="col">
-                        Дата изменения <br> 
-                        Пользователь <br>
-                        Тип изменения</th>
-                      <th scope="col">Измененные данные</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                      {% for version in params.versions.page_1 %}
-                        <tr>
-                          <td>{{version.changed}} <br>
-                            {{version.user}} <br>
-                            {{version.action_on_model}} 
-                          </td>
-                          <td>
-                            <table class="table table-sm table-striped">
-                              <tbody>
-                                {% for change in version.get_change_human %}
-                                  <tr>
-                                    <td>{{change.name}}</td>
-                                    <td>{{change.value}}</td>
-                                  </tr>
-                                {% endfor%}
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+                {% if params.versions.page_1 %}
+                <div class="version-history">
+                  {% for version in params.versions.page_1 %}
+                  <div class="card border mb-3 version-history__item shadow-sm">
+                    <div class="card-header bg-light d-flex flex-wrap align-items-center gap-2 py-2">
+                      <time class="fw-semibold text-body" datetime="{{ version.changed|date:'c' }}">{{ version.changed|date:"d.m.Y H:i" }}</time>
+                      <span class="text-muted">·</span>
+                      <span class="text-body">{% if version.user %}{{ version.user.get_full_name|default:version.user.username }}{% else %}—{% endif %}</span>
+                      {% if version.action_on_model == 'create' %}
+                      <span class="badge bg-success">Создание</span>
+                      {% elif version.action_on_model == 'update' %}
+                      <span class="badge bg-primary">Изменение</span>
+                      {% elif version.action_on_model == 'delete' %}
+                      <span class="badge bg-danger">Удаление</span>
+                      {% else %}
+                      <span class="badge bg-secondary">{{ version.action_on_model|default:"—" }}</span>
+                      {% endif %}
+                    </div>
+                    <div class="card-body py-2">
+                      {% with changes=version.get_change_human %}
+                      {% if changes %}
+                      <dl class="row mb-0 version-history__changes">
+                        {% for change in changes %}
+                        <dt class="col-sm-4 col-md-3 text-muted small mb-1">{{ change.name }}</dt>
+                        <dd class="col-sm-8 col-md-9 mb-1">{{ change.value|default:"—" }}</dd>
+                        {% endfor %}
+                      </dl>
+                      {% else %}
+                      <span class="text-muted small">Нет детализации</span>
+                      {% endif %}
+                      {% endwith %}
+                    </div>
+                  </div>
+                  {% endfor %}
                 </div>
+                {% else %}
+                <p class="text-muted mb-0">Нет записей об изменениях.</p>
+                {% endif %}
 
-                
               {% endif %}
 
             </div>
