@@ -5928,10 +5928,11 @@
                   {% if params.control_diagnostics %}
                   <div class="mt-2">
                     {% for cd in params.control_diagnostics %}
-                    <div class="d-flex align-items-center mb-1">
+                    <div class="d-flex align-items-center mb-1 flex-wrap gap-1">
                       <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id cd.id %}" class="btn btn-link btn-sm text-decoration-none p-0 me-2" target="_blank">
                         КД от {{ cd.created_at|date:"d.m.Y H:i" }}{% if cd.author %} — {{ cd.author.last_name }} {{ cd.author.first_name }}{% endif %}
                       </a>
+                      <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id cd.id %}" class="btn btn-outline-secondary btn-sm" target="_blank">Редактировать</a>
                     </div>
                     {% endfor %}
                   </div>
