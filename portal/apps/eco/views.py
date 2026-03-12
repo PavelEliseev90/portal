@@ -10256,9 +10256,9 @@ def tradein_funnel_analytics_detail(request):
 # УДАЛЕНО: функция tradein_funnel_analytics_rejected больше не используется, заменена на tradein_funnel_rejected
 
 
-#История изменений
+#История изменений (сначала новые)
 def get_versions(table, id):
-	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')
+	return ChangeLog.objects.filter(model=table, record_id=id).select_related('user').order_by('-changed')
 
 
 def tradein_funnel_analytics_export(request):
@@ -11488,6 +11488,6 @@ def eco_appraisers_performance(request):
     return render(request, 'lo/eco_appraisers_performance.html', {'params': params})
 
 
-#История изменений
+#История изменений (сначала новые) — дубликат для совместимости
 def get_versions(table, id):
-	return ChangeLog.objects.filter(model = table).filter(record_id = id).order_by('changed')
+	return ChangeLog.objects.filter(model=table, record_id=id).select_related('user').order_by('-changed')
