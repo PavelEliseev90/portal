@@ -181,7 +181,7 @@
     </div>
     {% endif %}
 
-    {# Тест-драйв: сравнение параметров #}
+    {# Тест-драйв: сравнение параметров — кнопки как в оценке (1=success, 2=warning, иначе danger) #}
     {% if params.orig_test_drive or params.cd_test_drive %}
     <div class="portal-panel">
       <h6 class="d-flex align-items-center gap-2 mb-3">
@@ -192,46 +192,118 @@
           <thead class="table-light">
             <tr>
               <th>Параметр</th>
-              <th class="text-end">Интерактивная оценка</th>
-              <th class="text-end">Контрольная диагностика</th>
+              <th>Интерактивная оценка</th>
+              <th>Контрольная диагностика</th>
             </tr>
           </thead>
           <tbody>
             {% with o=params.orig_test_drive c=params.cd_test_drive %}
             <tr>
               <td>Двигатель</td>
-              <td class="text-end">{% if o %}{{ o.engine|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.engine != c.engine %}table-warning{% endif %}">{% if c %}{{ c.engine|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.engine == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>
+                  {% elif o.engine == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.engine != c.engine %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.engine == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>
+                  {% elif c.engine == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-engine"></span> &nbsp; Двигатель &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>КПП</td>
-              <td class="text-end">{% if o %}{{ o.gear|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.gear != c.gear %}table-warning{% endif %}">{% if c %}{{ c.gear|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.gear == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>
+                  {% elif o.gear == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.gear != c.gear %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.gear == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>
+                  {% elif c.gear == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-transmission1"></span> &nbsp; КПП &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Подвеска</td>
-              <td class="text-end">{% if o %}{{ o.suspension|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.suspension != c.suspension %}table-warning{% endif %}">{% if c %}{{ c.suspension|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.suspension == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>
+                  {% elif o.suspension == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.suspension != c.suspension %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.suspension == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>
+                  {% elif c.suspension == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подвеска &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Тормозная система</td>
-              <td class="text-end">{% if o %}{{ o.brake|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.brake != c.brake %}table-warning{% endif %}">{% if c %}{{ c.brake|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.brake == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>
+                  {% elif o.brake == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.brake != c.brake %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.brake == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>
+                  {% elif c.brake == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Тормозная система &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Рулевое управление</td>
-              <td class="text-end">{% if o %}{{ o.wheel|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.wheel != c.wheel %}table-warning{% endif %}">{% if c %}{{ c.wheel|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.wheel == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>
+                  {% elif o.wheel == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.wheel != c.wheel %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.wheel == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>
+                  {% elif c.wheel == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Рулевое управление &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Подушка безопасности</td>
-              <td class="text-end">{% if o %}{{ o.airbag|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.airbag != c.airbag %}table-warning{% endif %}">{% if c %}{{ c.airbag|default:"—" }}{% else %}—{% endif %}</td>
+              <td>
+                {% if o %}
+                  {% if o.airbag == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>
+                  {% elif o.airbag == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="{% if o and c and o.airbag != c.airbag %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.airbag == 1 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-success text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>
+                  {% elif c.airbag == 2 %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-warning text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>
+                  {% else %}<span style="padding: 0.2rem; margin: 0.2rem;" class="btn btn-danger text-nowrap btn-sm"><b><span class="icon-mbri-up-down"></span> &nbsp; Подушки безопасности &nbsp; </b></span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
             </tr>
             <tr>
               <td>Тест не производился</td>
-              <td class="text-end">{% if o %}{% if o.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.no_test != c.no_test %}table-warning{% endif %}">{% if c %}{% if c.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+              <td>{% if o %}{% if o.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+              <td class="{% if o and c and o.no_test != c.no_test %}table-warning{% endif %}">{% if c %}{% if c.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
             </tr>
             <tr>
               <td>Комментарий</td>
