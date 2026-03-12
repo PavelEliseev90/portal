@@ -1,0 +1,158 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Отчёт сравнения: интерактивная оценка vs контрольная диагностика {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Отчёт сравнения: интерактивная оценка vs контрольная диагностика</h4>
+    <a href="/eco/{{ params.rlk.id }}/?page=9" class="btn btn-outline-secondary btn-sm">← К оценке</a>
+  </div>
+
+  <div class="mb-3 text-muted">
+    РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
+  </div>
+
+  {# Таблица сравнения чисел #}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h6 class="mb-0">Сравнение результата пересчёта</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Показатель</th>
+              <th class="text-end">Интерактивная оценка</th>
+              <th class="text-end">Контрольная диагностика</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% with orig=params.orig_soglasovanie %}
+            {% if orig %}
+            <tr>
+              <td>Автоматическая 1 (price_auto_1)</td>
+              <td class="text-end">{{ orig.price_auto_1|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_1 != orig.price_auto_1 %}table-warning{% endif %}">{{ params.cd.price_auto_1|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Автоматическая 2 (price_auto_2)</td>
+              <td class="text-end">{{ orig.price_auto_2|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_2 != orig.price_auto_2 %}table-warning{% endif %}">{{ params.cd.price_auto_2|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Автоматическая 3 (price_auto_3)</td>
+              <td class="text-end">{{ orig.price_auto_3|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_3 != orig.price_auto_3 %}table-warning{% endif %}">{{ params.cd.price_auto_3|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>ЦНА 1</td>
+              <td class="text-end">{{ orig.price_zna_1|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_zna_1 != orig.price_zna_1 %}table-warning{% endif %}">{{ params.cd.price_zna_1|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>ЦНА 2</td>
+              <td class="text-end">{{ orig.price_zna_2|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_zna_2 != orig.price_zna_2 %}table-warning{% endif %}">{{ params.cd.price_zna_2|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>ЦНА 3</td>
+              <td class="text-end">{{ orig.price_zna_3|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_zna_3 != orig.price_zna_3 %}table-warning{% endif %}">{{ params.cd.price_zna_3|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>БЦП 1</td>
+              <td class="text-end">{{ orig.price_auto_bcp_1|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_bcp_1 != orig.price_auto_bcp_1 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_1|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>БЦП 2</td>
+              <td class="text-end">{{ orig.price_auto_bcp_2|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_bcp_2 != orig.price_auto_bcp_2 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_2|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>БЦП 3</td>
+              <td class="text-end">{{ orig.price_auto_bcp_3|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.price_auto_bcp_3 != orig.price_auto_bcp_3 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_3|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Затраты на подготовку</td>
+              <td class="text-end">{{ orig.amount_podgotovka|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.amount_podgotovka != orig.amount_podgotovka %}table-warning{% endif %}">{{ params.cd.amount_podgotovka|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Затраты на слесарный</td>
+              <td class="text-end">{{ orig.amount_ss|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.amount_ss != orig.amount_ss %}table-warning{% endif %}">{{ params.cd.amount_ss|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Затраты на кузовной</td>
+              <td class="text-end">{{ orig.amount_mcu|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.amount_mcu != orig.amount_mcu %}table-warning{% endif %}">{{ params.cd.amount_mcu|floatformat:"0g" }} ₽</td>
+            </tr>
+            <tr>
+              <td>Затраты на восстановительный ремонт</td>
+              <td class="text-end">{{ orig.amount_recovery|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.amount_recovery != orig.amount_recovery %}table-warning{% endif %}">{{ params.cd.amount_recovery|floatformat:"0g" }} ₽</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-muted">Нет данных согласования в интерактивной оценке.</td></tr>
+            {% endif %}
+            {% endwith %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Фото: оригинал | КД — друг напротив друга #}
+  <div class="card">
+    <div class="card-header">
+      <h6 class="mb-0">Сравнение фото: интерактивная оценка | контрольная диагностика</h6>
+    </div>
+    <div class="card-body">
+      {% if params.file_pairs %}
+      <div class="row g-3">
+        {% for orig_file, cd_file in params.file_pairs %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 border">
+            <div class="card-header py-1 small">
+              {% if orig_file %}{{ orig_file.type_file }} #{{ orig_file.file_number }}{% else %}{{ cd_file.type_file }} #{{ cd_file.file_number }} — только в КД{% endif %}
+            </div>
+            <div class="card-body p-2">
+              <div class="row g-1">
+                <div class="col-6 text-center">
+                  <div class="small text-muted">Оценка</div>
+                  {% if orig_file %}
+                  <a href="{{ orig_file.get_absolute_url }}" target="_blank" rel="noopener">
+                    <img src="{{ orig_file.get_absolute_url }}" alt="{{ orig_file.name }}" class="img-fluid rounded" style="max-height: 160px; object-fit: contain;">
+                  </a>
+                  {% else %}
+                  <div class="text-muted small py-2">—</div>
+                  {% endif %}
+                </div>
+                <div class="col-6 text-center">
+                  <div class="small text-muted">КД</div>
+                  {% if cd_file %}
+                  <a href="{{ cd_file.get_absolute_url }}" target="_blank" rel="noopener">
+                    <img src="{{ cd_file.get_absolute_url }}" alt="{{ cd_file.name }}" class="img-fluid rounded" style="max-height: 160px; object-fit: contain;">
+                  </a>
+                  {% else %}
+                  <div class="text-muted small py-2">—</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted">Нет фото для сравнения.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

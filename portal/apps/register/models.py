@@ -3643,6 +3643,121 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         verbose_name_plural = "данные интерактивных оценок рабочего листа"
 
 
+# ========== Контрольная диагностика (слепки входа + результат для сравнения) ==========
+
+class RegControlDiagnostic(models.Model):
+    """Контрольная диагностика: привязка к оценке, время, автор, результат пересчёта для сравнения."""
+    estimation = models.ForeignKey(
+        RegInteractivOcenka,
+        on_delete=models.CASCADE,
+        related_name='control_diagnostics',
+        verbose_name='Оценка',
+    )
+    created_at = models.DateTimeField('Время контрольной диагностики', auto_now_add=True)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='control_diagnostics_authored',
+        verbose_name='Автор',
+    )
+    # Результат пересчёта — для сравнения с оценкой (estimation.page_soglasovanie)
+    price_auto_1 = models.IntegerField('Автоматическая 1', default=0, null=False, blank=True)
+    price_auto_2 = models.IntegerField('Автоматическая 2', default=0, null=False, blank=True)
+    price_auto_3 = models.IntegerField('Автоматическая 3', default=0, null=False, blank=True)
+    price_zna_1 = models.IntegerField('ЦНА Автоматическая 1', default=0, null=False, blank=True)
+    price_zna_2 = models.IntegerField('ЦНА Автоматическая 2', default=0, null=False, blank=True)
+    price_zna_3 = models.IntegerField('ЦНА Автоматическая 3', default=0, null=False, blank=True)
+    price_auto_bcp_1 = models.IntegerField('БЦП 1', default=0, null=False, blank=True)
+    price_auto_bcp_2 = models.IntegerField('БЦП 2', default=0, null=False, blank=True)
+    price_auto_bcp_3 = models.IntegerField('БЦП 3', default=0, null=False, blank=True)
+    amount_podgotovka = models.FloatField('Затраты на подготовку', default=0.00, null=True, blank=True)
+    amount_ss = models.FloatField('Затраты на слесарный ремонт', default=0.00, null=True, blank=True)
+    amount_mcu = models.FloatField('Затраты на кузовной ремонт', default=0.00, null=True, blank=True)
+    amount_recovery = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
+
+    class Meta:
+        db_table = 'regControlDiagnostic'
+        verbose_name = 'Контрольная диагностика'
+        verbose_name_plural = 'Контрольные диагностики'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return 'КД {} — {}'.format(self.estimation_id, self.created_at.strftime('%d.%m.%Y %H:%M') if self.created_at else '')
+
+
+class RegControlDiagnosticVnesh(models.Model):
+    """Слепок данных внешнего осмотра для контрольной диагностики."""
+    control_diagnostic = models.OneToOneField(
+        RegControlDiagnostic,
+        on_delete=models.CASCADE,
+        related_name='page_vnesh_copy',
+        verbose_name='Контрольная диагностика',
+    )
+    text_json = models.TextField("Текст", blank=True, null=True)
+    windshield_error = models.BooleanField("Лобовое стекло с повреждениями", default=False, null=True, blank=True)
+    light_error = models.BooleanField("Световые приборы есть проблемы", default=False, null=True, blank=True)
+    oil_error = models.BooleanField("Следы подтекания масла", default=False, null=True, blank=True)
+    water_error = models.BooleanField("Следы подтекания охлаждающей жидкости", default=False, null=True, blank=True)
+    color = models.CharField("Цвет", max_length=150, default='', null=True, blank=True)
+    check_vin = models.BooleanField("Проверка VIN", default=False, null=True, blank=True)
+    check_engine = models.BooleanField("Проверка двигателя и коробки на месте", default=False, null=True, blank=True)
+    comment_vnesh = models.CharField("Комментарий внешнего осмотра", max_length=1500, default='', null=True, blank=True)
+    check_vin_int = models.IntegerField('Проверка VIN', default=10, null=True, blank=True)
+    check_engine_int = models.IntegerField('Проверка ДВС и КПП на месте', default=10, null=True, blank=True)
+    windshield_error_int = models.IntegerField('Лобовое стекло с повреждениями', default=10, null=True, blank=True)
+    light_error_int = models.IntegerField('Световые приборы есть проблемы', default=10, null=True, blank=True)
+    oil_error_int = models.IntegerField('Следы подтекания масла', default=10, null=True, blank=True)
+    water_error_int = models.IntegerField('Следы подтекания охлаждающей жидкости', default=10, null=True, blank=True)
+    windshield_heat_int = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True)
+
+    class Meta:
+        db_table = 'regControlDiagnosticVnesh'
+        verbose_name = 'КД: внешний осмотр'
+        verbose_name_plural = 'КД: внешние осмотры'
+
+
+class RegControlDiagnosticSalon(models.Model):
+    """Слепок данных осмотра салона для контрольной диагностики."""
+    control_diagnostic = models.OneToOneField(
+        RegControlDiagnostic,
+        on_delete=models.CASCADE,
+        related_name='page_salon_copy',
+        verbose_name='Контрольная диагностика',
+    )
+    text_json = models.TextField("Текст", blank=True, null=True)
+    run = models.IntegerField('Пробег', default=0, null=True, blank=True)
+    run_confirmed = models.BooleanField('Пробег подтвержден', default=False, null=True, blank=True)
+    hand_brake = models.IntegerField('работоспособность ручного тормоза', default=10, null=True, blank=True)
+    conductor = models.IntegerField('работоспособность кондиционера', default=10, null=True, blank=True)
+    wiper = models.IntegerField('работоспособность стеклоочистителя', default=10, null=True, blank=True)
+    signal = models.IntegerField('работоспособность сигнала', default=10, null=True, blank=True)
+    power_windows = models.IntegerField('работоспособность стеклоподьемников', default=10, null=True, blank=True)
+    seat_belt = models.IntegerField('работоспособность ремней безопастности', default=10, null=True, blank=True)
+    cleaning = models.BooleanField('Требуеться химчистка', default=False, null=True, blank=True)
+    damage_kpp = models.BooleanField('Повреждения рычага кпп', default=False, null=True, blank=True)
+    damage_wheel = models.BooleanField('Повреждения / затертый руль', default=False, null=True, blank=True)
+    damage_pedal = models.BooleanField('Повреждения / затертые педали', default=False, null=True, blank=True)
+    damage_door = models.BooleanField('Повреждения / затертые карты дверей', default=False, null=True, blank=True)
+    damage_seat = models.BooleanField('Повреждения / затертые сиденья', default=False, null=True, blank=True)
+    dashboard_error = models.ManyToManyField(RegDashboardError, verbose_name='Ошибки приборной панели', blank=True)
+    run_respond = models.IntegerField('Пробег соответствует состоянию', default=10, null=True, blank=True)
+    run_confirmed_comment = models.CharField('Пробег подтвержден комментарий', max_length=250, default='', null=True, blank=True)
+    cleaning_int = models.IntegerField('Требуеться химчистка', default=10, null=True, blank=True)
+    damage_kpp_int = models.IntegerField('Повреждения рычага кпп', default=10, null=True, blank=True)
+    damage_wheel_int = models.IntegerField('Повреждения / затертый руль', default=10, null=True, blank=True)
+    damage_pedal_int = models.IntegerField('Повреждения / затертые педали', default=10, null=True, blank=True)
+    damage_door_int = models.IntegerField('Повреждения / затертые карты дверей', default=10, null=True, blank=True)
+    damage_seat_int = models.IntegerField('Повреждения / затертые сиденья', default=10, null=True, blank=True)
+    type_salon_int = models.IntegerField('Тип салона', default=10, null=True, blank=True)
+
+    class Meta:
+        db_table = 'regControlDiagnosticSalon'
+        verbose_name = 'КД: салон'
+        verbose_name_plural = 'КД: салоны'
+
+
 class RegInteractivOcenkaOptions(models.Model):
     estimation          = models.OneToOneField(RegInteractivOcenka, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
     name                = models.CharField('Опция', max_length=21, default='')
@@ -3731,6 +3846,56 @@ class RegRegInteractivOcenkaFiles(models.Model):
         db_table = 'regRegInteractivOcenkaFiles'
         verbose_name = "Фото интерактивной оценки"
         verbose_name_plural = "Фото интерактивной оценки"
+
+
+class RegControlDiagnosticFile(models.Model):
+    """Фото/файлы контрольной диагностики — копия и редактирование для сравнения с интерактивной оценкой."""
+    control_diagnostic = models.ForeignKey(
+        RegControlDiagnostic,
+        on_delete=models.CASCADE,
+        related_name='files',
+        verbose_name='Контрольная диагностика',
+    )
+    source_file = models.ForeignKey(
+        RegRegInteractivOcenkaFiles,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='control_diagnostic_copies',
+        verbose_name='Исходный файл оценки',
+    )
+    name = models.CharField("Наименование", max_length=512, default='', blank=True)
+    type_file = models.CharField("Принадлежность файлов", max_length=512, default='', blank=True)
+    file = models.FileField(storage=save_directory, upload_to="control_diagnostic/%Y/%m/%d/", verbose_name="Файл", blank=True, null=True)
+    file_mini = models.FileField(storage=save_directory, upload_to="control_diagnostic/%Y/%m/%d/", verbose_name="Файл сжатый", blank=True, null=True)
+    comment = models.CharField("Комментарий", max_length=512, default='', blank=True)
+    file_number = models.IntegerField('Порядок', default=0, null=True, blank=True)
+    text = models.CharField("Текст", max_length=512, default='', blank=True)
+    type_point = models.CharField("Тип метки", max_length=512, default='', blank=True)
+    cor_x = models.IntegerField('Координата X', default=0, null=True, blank=True)
+    cor_y = models.IntegerField('Координата Y', default=0, null=True, blank=True)
+    kraska = models.IntegerField('Показание толщиномера', default=0, null=True, blank=True)
+    order = models.IntegerField('Приоритет', default=0, null=True, blank=True)
+    blank = models.BooleanField("Пустой", default=False, null=True, blank=True)
+    date = models.DateTimeField('Дата', blank=True, null=True)
+    user = models.ForeignKey(User, related_name='control_diagnostic_file_author', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
+
+    def get_absolute_url(self):
+        try:
+            return self.file.url.replace('/media/', '/media_dop/')
+        except Exception:
+            if self.kraska > 0:
+                return '/media_dop/static/estimation/pribor.jpg'
+        return '/media_dop/static/estimation/no_foto.jpg'
+
+    def __str__(self):
+        return "{} / {} / {}".format(self.control_diagnostic, self.type_file, self.file_number)
+
+    class Meta:
+        db_table = 'regControlDiagnosticFile'
+        verbose_name = 'Фото контрольной диагностики'
+        verbose_name_plural = 'Фото контрольной диагностики'
+        ordering = ['type_file', 'file_number']
 
 
 class RegInteractivOcenkaEmailPush(models.Model):
