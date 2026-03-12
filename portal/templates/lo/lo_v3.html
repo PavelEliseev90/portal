@@ -1281,7 +1281,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
       <div class="modal-body">
-        <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
+        <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} {{params.estimation.complectation.name|default:"—"}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
         <br>
         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
         <hr class="my-3">
@@ -1694,7 +1694,7 @@
           <div class="col-12 col-xxl-5">            
           
             <h1 class="kors-hero__title">
-              {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} 
+              {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} {{params.estimation.complectation.name|default:""}}
             </h1>
 
             <p class="kors-hero__subtitle">
@@ -23871,7 +23871,7 @@
       <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
         <tr>
           <td style="padding: 8px; width: 30%; font-weight: bold; border: 1px solid #ddd;">Автомобиль:</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.mark.name|default:"—"}} {{params.estimation.modification.model.name|default:"—"}} {{params.estimation.modification.name|default:"—"}}</td> 
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.mark.name|default:"—"}} {{params.estimation.modification.model.name|default:"—"}} {{params.estimation.modification.name|default:"—"}} {{params.estimation.complectation.name|default:"—"}}</td> 
         </tr>
         <tr>
           <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Год выпуска:</td>
