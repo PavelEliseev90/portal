@@ -4,25 +4,33 @@
 {% block title %} - Отчёт сравнения: интерактивная оценка vs контрольная диагностика {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h4>Отчёт сравнения: интерактивная оценка vs контрольная диагностика</h4>
-    <div class="d-flex gap-2">
-      <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id params.cd.id %}" class="btn btn-outline-primary btn-sm">Редактировать КД</a>
-      <a href="/eco/{{ params.rlk.id }}/?page=9" class="btn btn-outline-secondary btn-sm">← К оценке</a>
-    </div>
-  </div>
+{% include 'lo/control_diagnostic_styles.html' %}
 
-  <div class="mb-3 text-muted">
-    РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
-  </div>
+<div class="container-fluid py-3 control-diagnostic-page">
+  <div class="portal-page">
+    {# Шапка в стиле интерактивной оценки #}
+    <section class="kors-hero kors-hero-dop mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h1 class="kors-hero__title mb-1">Сравнение: оценка и контрольная диагностика</h1>
+          <p class="kors-hero__subtitle mb-0">
+            РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
+          </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id params.cd.id %}" class="btn btn-primary btn-sm">
+            <span class="icon-mbri-edit"></span> Редактировать КД
+          </a>
+          <a href="/eco/{{ params.rlk.id }}/?page=9#control_diagnostics" class="btn btn-outline-secondary btn-sm">← К оценке</a>
+        </div>
+      </div>
+    </section>
 
-  {# Таблица сравнения чисел #}
-  <div class="card mb-4">
-    <div class="card-header">
-      <h6 class="mb-0">Сравнение результата пересчёта</h6>
-    </div>
-    <div class="card-body p-0">
+    {# Результат пересчёта #}
+    <div class="portal-panel">
+      <h6 class="d-flex align-items-center gap-2 mb-3">
+        <span class="icon-mbri-credit-card"></span> Сравнение результата пересчёта
+      </h6>
       <div class="table-responsive">
         <table class="table table-bordered table-sm mb-0">
           <thead class="table-light">
@@ -36,17 +44,17 @@
             {% with orig=params.orig_soglasovanie %}
             {% if orig %}
             <tr>
-              <td>Автоматическая 1 (price_auto_1)</td>
+              <td>Автоматическая 1</td>
               <td class="text-end">{{ orig.price_auto_1|floatformat:"0g" }} ₽</td>
               <td class="text-end {% if params.cd.price_auto_1 != orig.price_auto_1 %}table-warning{% endif %}">{{ params.cd.price_auto_1|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
-              <td>Автоматическая 2 (price_auto_2)</td>
+              <td>Автоматическая 2</td>
               <td class="text-end">{{ orig.price_auto_2|floatformat:"0g" }} ₽</td>
               <td class="text-end {% if params.cd.price_auto_2 != orig.price_auto_2 %}table-warning{% endif %}">{{ params.cd.price_auto_2|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
-              <td>Автоматическая 3 (price_auto_3)</td>
+              <td>Автоматическая 3</td>
               <td class="text-end">{{ orig.price_auto_3|floatformat:"0g" }} ₽</td>
               <td class="text-end {% if params.cd.price_auto_3 != orig.price_auto_3 %}table-warning{% endif %}">{{ params.cd.price_auto_3|floatformat:"0g" }} ₽</td>
             </tr>
@@ -108,15 +116,77 @@
         </table>
       </div>
     </div>
-  </div>
 
-  {# Тест-драйв: сравнение параметров #}
-  {% if params.orig_test_drive or params.cd_test_drive %}
-  <div class="card mb-4">
-    <div class="card-header">
-      <h6 class="mb-0">Тест-драйв: сравнение параметров</h6>
+    {# Салон: сравнение параметров #}
+    {% if params.orig_salon or params.cd_salon %}
+    <div class="portal-panel">
+      <h6 class="d-flex align-items-center gap-2 mb-3">
+        <span class="icon-mbri-user"></span> Салон: сравнение параметров
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Параметр</th>
+              <th class="text-end">Интерактивная оценка</th>
+              <th class="text-end">Контрольная диагностика</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% with o=params.orig_salon c=params.cd_salon %}
+            <tr>
+              <td>Пробег</td>
+              <td class="text-end">{% if o %}{{ o.run|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.run != c.run %}table-warning{% endif %}">{% if c %}{{ c.run|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Пробег подтверждён</td>
+              <td class="text-end">{% if o %}{% if o.run_confirmed %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.run_confirmed != c.run_confirmed %}table-warning{% endif %}">{% if c %}{% if c.run_confirmed %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Ручной тормоз</td>
+              <td class="text-end">{% if o %}{{ o.hand_brake|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.hand_brake != c.hand_brake %}table-warning{% endif %}">{% if c %}{{ c.hand_brake|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Кондиционер</td>
+              <td class="text-end">{% if o %}{{ o.conductor|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.conductor != c.conductor %}table-warning{% endif %}">{% if c %}{{ c.conductor|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Химчистка (0/1/2/3)</td>
+              <td class="text-end">{% if o %}{{ o.cleaning_int|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.cleaning_int != c.cleaning_int %}table-warning{% endif %}">{% if c %}{{ c.cleaning_int|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Повреждения (КПП, руль, педали, двери, сиденья)</td>
+              <td class="text-end small">{% if o %}{{ o.damage_kpp_int|default:"—" }} / {{ o.damage_wheel_int|default:"—" }} / {{ o.damage_pedal_int|default:"—" }} / {{ o.damage_door_int|default:"—" }} / {{ o.damage_seat_int|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end small {% if o and c and o.damage_kpp_int != c.damage_kpp_int or o.damage_wheel_int != c.damage_wheel_int or o.damage_pedal_int != c.damage_pedal_int or o.damage_door_int != c.damage_door_int or o.damage_seat_int != c.damage_seat_int %}table-warning{% endif %}">{% if c %}{{ c.damage_kpp_int|default:"—" }} / {{ c.damage_wheel_int|default:"—" }} / {{ c.damage_pedal_int|default:"—" }} / {{ c.damage_door_int|default:"—" }} / {{ c.damage_seat_int|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Пробег соответствует состоянию</td>
+              <td class="text-end">{% if o %}{{ o.run_respond|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end {% if o and c and o.run_respond != c.run_respond %}table-warning{% endif %}">{% if c %}{{ c.run_respond|default:"—" }}{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+              <td>Комментарий пробега</td>
+              <td class="text-start small">{% if o and o.run_confirmed_comment %}{{ o.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
+              <td class="text-start small {% if o and c and o.run_confirmed_comment != c.run_confirmed_comment %}table-warning{% endif %}">{% if c and c.run_confirmed_comment %}{{ c.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endwith %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="card-body p-0">
+    {% endif %}
+
+    {# Тест-драйв: сравнение параметров #}
+    {% if params.orig_test_drive or params.cd_test_drive %}
+    <div class="portal-panel">
+      <h6 class="d-flex align-items-center gap-2 mb-3">
+        <span class="icon-mbri-car"></span> Тест-драйв: сравнение параметров
+      </h6>
       <div class="table-responsive">
         <table class="table table-bordered table-sm mb-0">
           <thead class="table-light">
@@ -173,15 +243,13 @@
         </table>
       </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  {# Фото: оригинал | КД — друг напротив друга #}
-  <div class="card">
-    <div class="card-header">
-      <h6 class="mb-0">Сравнение фото: интерактивная оценка | контрольная диагностика</h6>
-    </div>
-    <div class="card-body">
+    {# Фото: оригинал | КД #}
+    <div class="portal-panel">
+      <h6 class="d-flex align-items-center gap-2 mb-3">
+        <span class="icon-mbri-photo"></span> Сравнение фото: интерактивная оценка | контрольная диагностика
+      </h6>
       {% if params.file_pairs %}
       <div class="row g-3">
         {% for orig_file, cd_file in params.file_pairs %}
@@ -219,7 +287,7 @@
         {% endfor %}
       </div>
       {% else %}
-      <p class="text-muted">Нет фото для сравнения.</p>
+      <p class="text-muted mb-0">Нет фото для сравнения.</p>
       {% endif %}
     </div>
   </div>
