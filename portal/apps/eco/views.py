@@ -4,7 +4,7 @@ from collections import defaultdict
 from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
-from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile
+from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
@@ -2606,7 +2606,7 @@ CONTROL_DIAGNOSTIC_FILE_TYPES = frozenset([
 
 
 def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk):
-    """Создаёт контрольную диагностику: копирует vnesh/salon/файлы и пересчитывает результат."""
+    """Создаёт контрольную диагностику: копирует vnesh, salon, test_drive, файлы. Параметры КД можно редактировать, затем сравнить с исходной оценкой."""
     cd = RegControlDiagnostic(estimation=estimation, author=user)
     cd.save()
 
@@ -2668,50 +2668,65 @@ def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk)
         if hasattr(s, 'dashboard_error') and s.dashboard_error.exists():
             cd_salon.dashboard_error.set(s.dashboard_error.all())
 
-    # 3. Создаём mock estimation для пересчёта (подмена page_vnesh/page_salon)
-    class _MockEstimation:
-        pass
-
-    mock = _MockEstimation()
-    for attr in dir(estimation):
-        if not attr.startswith('_'):
-            try:
-                setattr(mock, attr, getattr(estimation, attr))
-            except Exception:
-                pass
-    if hasattr(cd, 'page_vnesh_copy') and cd.page_vnesh_copy:
-        mock.page_vnesh = cd.page_vnesh_copy
-    if hasattr(cd, 'page_salon_copy') and cd.page_salon_copy:
-        mock.page_salon = cd.page_salon_copy
-
-    # 4. Пересчёт и сохранение результата
-    price_kors = estimations_price_calculation(interactiv_rlk, mock, type_calculation='kors')
-    price_autohub = estimations_price_calculation(interactiv_rlk, mock, type_calculation='autohub')
-    price_avito = estimations_price_calculation(interactiv_rlk, mock, type_calculation='avito')
-    price_custom = estimations_price_calculation(interactiv_rlk, mock, type_calculation='custom')
-
-    if price_kors:
-        cd.price_auto_1 = int(price_kors.get('estimation_price', 0) or 0)
-        cd.price_auto_bcp_1 = int(price_kors.get('cna_expenses', 0) or 0)
-        cd.price_zna_1 = int(price_kors.get('zna', 0) or 0)
-    if price_autohub:
-        cd.price_auto_2 = int(price_autohub.get('estimation_price', 0) or 0)
-        cd.price_auto_bcp_2 = int(price_autohub.get('cna_expenses', 0) or 0)
-        cd.price_zna_2 = int(price_autohub.get('zna', 0) or 0)
-    if price_avito:
-        cd.price_auto_3 = int(price_avito.get('estimation_price', 0) or 0)
-        cd.price_auto_bcp_3 = int(price_avito.get('cna_expenses', 0) or 0)
-        cd.price_zna_3 = int(price_avito.get('zna', 0) or 0)
-    if price_custom:
-        cd.amount_podgotovka = float(price_custom.get('amount_podgotovka', 0) or 0)
-        cd.amount_ss = float(price_custom.get('amount_ss', 0) or 0)
-        cd.amount_mcu = float(price_custom.get('amount_mcu', 0) or 0)
-        cd.amount_recovery = float(
-            (price_custom.get('amount_podgotovka', 0) or 0) +
-            (price_custom.get('amount_ss', 0) or 0) +
-            (price_custom.get('amount_mcu', 0) or 0)
+    # 3. Копируем тест-драйв
+    if estimation.page_test_drive:
+        t = estimation.page_test_drive
+        cd_td = RegControlDiagnosticTestDrive(
+            control_diagnostic=cd,
+            start_estimation=t.start_estimation,
+            end_estimation=t.end_estimation,
+            text_json=t.text_json,
+            engine=getattr(t, 'engine', 10) or 10,
+            system_og=getattr(t, 'system_og', 10) or 10,
+            gear=getattr(t, 'gear', 10) or 10,
+            suspension=getattr(t, 'suspension', 10) or 10,
+            airbag=getattr(t, 'airbag', 10) or 10,
+            wheel=getattr(t, 'wheel', 10) or 10,
+            brake=getattr(t, 'brake', 10) or 10,
+            subframe=getattr(t, 'subframe', 10) or 10,
+            conditioner=getattr(t, 'conditioner', 10) or 10,
+            turbo=getattr(t, 'turbo', 10) or 10,
+            drive=getattr(t, 'drive', 10) or 10,
+            to=getattr(t, 'to', 10) or 10,
+            stapele_type=t.stapele_type,
+            stapele_hours=t.stapele_hours,
+            stapele_cost=t.stapele_cost,
+            comment_engine=(t.comment_engine or '')[:512],
+            comment_system_og=(t.comment_system_og or '')[:512],
+            comment_gear=(t.comment_gear or '')[:512],
+            comment_suspension=(t.comment_suspension or '')[:512],
+            comment_airbag=(t.comment_airbag or '')[:512],
+            airbag_issues=(getattr(t, 'airbag_issues', '') or '')[:2048],
+            airbag_driver_issue=getattr(t, 'airbag_driver_issue', False) or False,
+            airbag_passenger_issue=getattr(t, 'airbag_passenger_issue', False) or False,
+            airbag_side_issue=getattr(t, 'airbag_side_issue', False) or False,
+            airbag_knee_issue=getattr(t, 'airbag_knee_issue', False) or False,
+            seat_belt_restore_issue=getattr(t, 'seat_belt_restore_issue', False) or False,
+            srs_block_issue=getattr(t, 'srs_block_issue', False) or False,
+            comment_wheel=(t.comment_wheel or '')[:512],
+            comment_brake=(t.comment_brake or '')[:512],
+            comment_subframe=(t.comment_subframe or '')[:512],
+            hood_trunk_shock_absorber=getattr(t, 'hood_trunk_shock_absorber', 10) or 10,
+            comment_hood_trunk_shock_absorber=(getattr(t, 'comment_hood_trunk_shock_absorber', '') or '')[:512],
+            comment_conditioner=(t.comment_conditioner or '')[:512],
+            comment_turbo=(t.comment_turbo or '')[:512],
+            comment_drive=(t.comment_drive or '')[:512],
+            pp_dinamyc=getattr(t, 'pp_dinamyc', 10) or 10,
+            pp_kpp=getattr(t, 'pp_kpp', 10) or 10,
+            pp_uvod=getattr(t, 'pp_uvod', 10) or 10,
+            pp_pribor=getattr(t, 'pp_pribor', 10) or 10,
+            no_test=t.no_test or False,
+            comment=(t.comment or '')[:250],
         )
-    cd.save()
+        cd_td.save()
+        for sel in DiagnosticReferenceSelection.objects.filter(test_drive=t):
+            RegControlDiagnosticReferenceSelection.objects.create(
+                control_test_drive=cd_td,
+                category_code=sel.category_code,
+                reference_item=sel.reference_item,
+            )
+
+    # 4. Пересчёт для КД не вызываем — estimations_price_calculation не меняем. Поля результата в КД остаются 0 (можно заполнить отдельной функцией расчёта по данным КД позже).
 
     # 5. Копируем файлы
     for src in RegRegInteractivOcenkaFiles.objects.filter(estimation=estimation).filter(
@@ -2784,15 +2799,220 @@ def control_diagnostic_comparison(request, id, cd_id):
             file_pairs.append((None, cf))
 
     orig_soglasovanie = estimation.page_soglasovanie
+    orig_test_drive = estimation.page_test_drive
+    cd_test_drive = getattr(cd, 'page_test_drive_copy', None)
     params = {
         'estimation': estimation,
         'rlk': rlk,
         'cd': cd,
         'orig_soglasovanie': orig_soglasovanie,
+        'orig_test_drive': orig_test_drive,
+        'cd_test_drive': cd_test_drive,
         'file_pairs': file_pairs,
         'request': request,
     }
     return render(request, 'lo/control_diagnostic_comparison.html', {'params': params})
+
+
+def _get_or_create_cd_vnesh(cd):
+    """Возвращает page_vnesh_copy для КД, создаёт при отсутствии."""
+    if hasattr(cd, 'page_vnesh_copy') and cd.page_vnesh_copy:
+        return cd.page_vnesh_copy
+    v = RegControlDiagnosticVnesh(control_diagnostic=cd)
+    v.save()
+    return v
+
+
+def _get_or_create_cd_salon(cd):
+    """Возвращает page_salon_copy для КД, создаёт при отсутствии."""
+    if hasattr(cd, 'page_salon_copy') and cd.page_salon_copy:
+        return cd.page_salon_copy
+    s = RegControlDiagnosticSalon(control_diagnostic=cd)
+    s.save()
+    return s
+
+
+def _get_or_create_cd_test_drive(cd):
+    """Возвращает page_test_drive_copy для КД, создаёт при отсутствии."""
+    if hasattr(cd, 'page_test_drive_copy') and cd.page_test_drive_copy:
+        return cd.page_test_drive_copy
+    t = RegControlDiagnosticTestDrive(control_diagnostic=cd)
+    t.save()
+    return t
+
+
+@login_required
+def control_diagnostic_edit(request, id, cd_id):
+    """Экран редактирования контрольной диагностики: внешний осмотр, салон, тест-драйв."""
+    rlk = DocRLK.objects.get(pk=id)
+    interactiv_rlk, _ = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
+    estimation = interactiv_rlk.estimation
+    if not estimation:
+        return HttpResponseRedirect('/eco/' + str(id) + '/')
+    cd = RegControlDiagnostic.objects.filter(estimation=estimation, pk=cd_id).first()
+    if not cd:
+        raise Http404('Контрольная диагностика не найдена')
+
+    if request.method == 'POST' and 'save_control_diagnostic' in request.POST:
+        cd_vnesh = _get_or_create_cd_vnesh(cd)
+        cd_salon = _get_or_create_cd_salon(cd)
+        cd_td = _get_or_create_cd_test_drive(cd)
+
+        # Внешний осмотр
+        def _int_post(key, default=10):
+            try:
+                return int(request.POST.get(key, default))
+            except (TypeError, ValueError):
+                return default
+        cd_vnesh.windshield_heat_int = _int_post('windshield_heat_int', 10)
+        cd_vnesh.check_vin_int = _int_post('check_vin_int', 10)
+        cd_vnesh.check_engine_int = _int_post('check_engine_int', 10)
+        cd_vnesh.oil_error_int = _int_post('oil_error_int', 10)
+        cd_vnesh.water_error_int = _int_post('water_error_int', 10)
+        cd_vnesh.windshield_error_int = _int_post('windshield_error_int', 10)
+        cd_vnesh.light_error_int = _int_post('light_error_int', 10)
+        cd_vnesh.color = (request.POST.get('color') or '')[:150]
+        cd_vnesh.comment_vnesh = (request.POST.get('comment_vnesh') or '')[:1500]
+        cd_vnesh.save()
+
+        # Салон
+        cd_salon.run = _int_post('run', 0)
+        cd_salon.run_confirmed = 'run_confirmed' in request.POST
+        cd_salon.hand_brake = _int_post('hand_brake', 10)
+        cd_salon.conductor = _int_post('conductor', 10)
+        cd_salon.wiper = _int_post('wiper', 10)
+        cd_salon.signal = _int_post('signal', 10)
+        cd_salon.power_windows = _int_post('power_windows', 10)
+        cd_salon.seat_belt = _int_post('seat_belt', 10)
+        cd_salon.cleaning_int = _int_post('cleaning_int', 10)
+        cd_salon.damage_kpp_int = _int_post('damage_kpp_int', 10)
+        cd_salon.damage_wheel_int = _int_post('damage_wheel_int', 10)
+        cd_salon.damage_pedal_int = _int_post('damage_pedal_int', 10)
+        cd_salon.damage_door_int = _int_post('damage_door_int', 10)
+        cd_salon.damage_seat_int = _int_post('damage_seat_int', 10)
+        cd_salon.type_salon_int = _int_post('type_salon_int', 10)
+        cd_salon.run_respond = _int_post('run_respond', 10)
+        cd_salon.run_confirmed_comment = (request.POST.get('run_confirmed_comment') or '')[:250]
+        cd_salon.save()
+
+        # Тест-драйв
+        cd_td.engine = _int_post('radio_engine', 10)
+        cd_td.comment_engine = (request.POST.get('comment_engine') or '')[:512]
+        cd_td.system_og = _int_post('radio_system_og', 10)
+        cd_td.comment_system_og = (request.POST.get('comment_system_og') or '')[:512]
+        cd_td.gear = _int_post('radio_gear', 10)
+        cd_td.comment_gear = (request.POST.get('comment_gear') or '')[:512]
+        cd_td.suspension = _int_post('radio_suspension', 10)
+        cd_td.comment_suspension = (request.POST.get('comment_suspension') or '')[:512]
+        cd_td.conditioner = _int_post('radio_conditioner', 10)
+        cd_td.comment_conditioner = (request.POST.get('comment_conditioner') or '')[:512]
+        cd_td.turbo = _int_post('radio_turbo', 10)
+        cd_td.comment_turbo = (request.POST.get('comment_turbo') or '')[:512]
+        cd_td.drive = _int_post('radio_drive', 10)
+        cd_td.comment_drive = (request.POST.get('comment_drive') or '')[:512]
+        cd_td.wheel = _int_post('radio_wheel', 10)
+        cd_td.comment_wheel = (request.POST.get('comment_wheel') or '')[:512]
+        cd_td.airbag = _int_post('radio_airbag', 10)
+        cd_td.comment_airbag = (request.POST.get('comment_airbag') or '')[:512]
+        cd_td.airbag_driver_issue = 'airbag_driver_issue' in request.POST
+        cd_td.airbag_passenger_issue = 'airbag_passenger_issue' in request.POST
+        cd_td.airbag_side_issue = 'airbag_side_issue' in request.POST
+        cd_td.airbag_knee_issue = 'airbag_knee_issue' in request.POST
+        cd_td.seat_belt_restore_issue = 'seat_belt_restore_issue' in request.POST
+        cd_td.srs_block_issue = 'srs_block_issue' in request.POST
+        cd_td.brake = _int_post('radio_brake', 10)
+        cd_td.comment_brake = (request.POST.get('comment_brake') or '')[:512]
+        cd_td.subframe = _int_post('radio_subframe', 10)
+        cd_td.comment_subframe = (request.POST.get('comment_subframe') or '')[:512]
+        cd_td.hood_trunk_shock_absorber = _int_post('radio_hood_trunk_shock_absorber', 10)
+        cd_td.comment_hood_trunk_shock_absorber = (request.POST.get('comment_hood_trunk_shock_absorber') or '')[:512]
+        cd_td.to = _int_post('radio_to', 10)
+        stapele_type = request.POST.get('radio_stapele', '')
+        if stapele_type:
+            try:
+                stapele_type_int = int(stapele_type)
+                sh = request.POST.get('stapele_hours', '')
+                if sh:
+                    sh_int = int(sh)
+                    min_h = 12 if stapele_type_int in (1, 2) else 14
+                    if sh_int < min_h:
+                        sh_int = min_h
+                    cd_td.stapele_type = stapele_type_int
+                    cd_td.stapele_hours = sh_int
+                    cd_td.stapele_cost = 3000 if stapele_type_int == 1 else (6000 if stapele_type_int == 2 else 9000)
+                else:
+                    cd_td.stapele_type = cd_td.stapele_hours = cd_td.stapele_cost = None
+            except (ValueError, TypeError):
+                cd_td.stapele_type = cd_td.stapele_hours = cd_td.stapele_cost = None
+        else:
+            cd_td.stapele_type = cd_td.stapele_hours = cd_td.stapele_cost = None
+        cd_td.pp_dinamyc = _int_post('radio_pp_dinamyc', 10)
+        cd_td.pp_kpp = _int_post('radio_pp_kpp', 10)
+        cd_td.pp_uvod = _int_post('radio_pp_uvod', 10)
+        cd_td.pp_pribor = _int_post('radio_pp_pribor', 10)
+        cd_td.no_test = 'no_test' in request.POST
+        cd_td.comment = (request.POST.get('comment') or '')[:250]
+        cd_td.save()
+
+        # Справочник диагностики (выборы по категориям)
+        RegControlDiagnosticReferenceSelection.objects.filter(control_test_drive=cd_td).delete()
+        category_codes = ['engine', 'gear', 'brake', 'suspension', 'system_og', 'wheel',
+                         'conditioner', 'turbo', 'drive', 'to', 'subframe', 'airbag', 'hood_trunk_shock_absorber']
+        for category_code in category_codes:
+            key = 'selected_reference_items_' + category_code
+            if key not in request.POST:
+                continue
+            ids_str = request.POST.get(key, '')
+            if not ids_str:
+                continue
+            try:
+                ids = [int(x.strip()) for x in ids_str.split(',') if x.strip().isdigit()]
+                if not ids:
+                    continue
+                items = DiagnosticReferenceItem.objects.filter(
+                    id__in=ids, category__code=category_code, is_active=True
+                )
+                for item in items:
+                    RegControlDiagnosticReferenceSelection.objects.get_or_create(
+                        control_test_drive=cd_td, category_code=category_code, reference_item=item
+                    )
+            except (ValueError, TypeError):
+                pass
+        return HttpResponseRedirect(request.path + '?saved=1')
+
+    # GET: подготовка данных для формы
+    cd_vnesh = _get_or_create_cd_vnesh(cd)
+    cd_salon = _get_or_create_cd_salon(cd)
+    cd_td = _get_or_create_cd_test_drive(cd)
+    selected_references = {}
+    for sel in RegControlDiagnosticReferenceSelection.objects.filter(control_test_drive=cd_td).select_related('reference_item', 'reference_item__category'):
+        cc = sel.category_code
+        if cc not in selected_references:
+            selected_references[cc] = []
+        selected_references[cc].append({
+            'id': sel.reference_item.id, 'title': sel.reference_item.title,
+            'description': sel.reference_item.description,
+        })
+    diagnostic_categories = list(
+        DiagnosticReferenceCategory.objects.filter(is_active=True).order_by('order', 'name').prefetch_related('items')
+    )
+    selected_ids_by_cat = {cc: [s['id'] for s in sel_list] for cc, sel_list in selected_references.items()}
+    for cat in diagnostic_categories:
+        for item in cat.items.filter(is_active=True):
+            setattr(item, 'selected', item.id in selected_ids_by_cat.get(cat.code, []))
+    params = {
+        'estimation': estimation,
+        'rlk': rlk,
+        'cd': cd,
+        'cd_vnesh': cd_vnesh,
+        'cd_salon': cd_salon,
+        'cd_td': cd_td,
+        'selected_references': selected_references,
+        'diagnostic_categories': diagnostic_categories,
+        'request': request,
+        'saved': request.GET.get('saved') == '1',
+    }
+    return render(request, 'lo/control_diagnostic_edit.html', {'params': params})
 
 
 @login_required
@@ -4335,7 +4555,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
     list_work_mcu           = list()
 
     run_estimation = 0
-    if estimation.page_salon != None:  
+    if estimation.page_salon != None:
         run_estimation = estimation.page_salon.run
     elif estimation.page_remote != None:
         run_estimation = estimation.page_remote.run
@@ -5216,7 +5436,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 amount_mcu = amount_mcu + diff_sum 
                 lob_add = True 
 
-    if estimation.page_salon != None:        
+    if estimation.page_salon != None:
         # Химчистка +
         if estimation.page_salon.cleaning_int == 1:
             work = RegPodgotovkaWork.objects.get(pk = 117) 
@@ -6307,7 +6527,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 amount_mcu = amount_mcu + diff_sum              
         elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
             if lob_add == False:
-                if estimation.page_vnesh.windshield_heat_int == 1:
+                if estimation.page_vnesh != None and estimation.page_vnesh.windshield_heat_int == 1:
                     price_diff = windshield_heat
                     info_diff   = info['name'] + " c подогревом"
                 else:
