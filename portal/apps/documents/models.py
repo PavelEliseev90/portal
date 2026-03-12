@@ -564,47 +564,57 @@ class DocRLK(models.Model):
         return None
     
     def estimation_staff_uin(self):
-        if hasattr(self, 'reginteractivocenka'):
-            if self.reginteractivocenka.staff != None:
-                return self.reginteractivocenka.staff.uin
+        if hasattr(self, 'reginteractivocenkarlk'):
+            if self.reginteractivocenkarlk.staff_rlk != None:
+                return self.reginteractivocenkarlk.staff_rlk.uin
         return None
 
     def estimation_vin(self):
-        if hasattr(self, 'reginteractivocenka'):
-            return self.reginteractivocenka.vin
+        # Сначала пробуем через RLK-обёртку
+        try:
+            rlk_link = self.reginteractivocenkarlk
+            if rlk_link.estimation:
+                return rlk_link.estimation.vin
+        except Exception:
+            pass
+
+        # Фоллбек на прямое отношение оценки
+        if hasattr(self, 'reginteractivocenkarlk'):
+            return self.reginteractivocenkarlk.estimation.vin
+
         return None
         
     def estimation_status(self):
-        if hasattr(self, 'reginteractivocenka'):
-            if self.reginteractivocenka.status == None:
+        if hasattr(self, 'reginteractivocenkarlk'):
+            if self.reginteractivocenkarlk.status == None:
                 return None
-            return self.reginteractivocenka.status.name 
+            return self.reginteractivocenkarlk.status.name 
         return None
     
     def estimation_modification_info(self):
-        if hasattr(self, 'reginteractivocenka'):
-            if self.reginteractivocenka.modification == None:
+        if hasattr(self, 'reginteractivocenkarlk'):
+            if self.reginteractivocenkarlk.estimation.modification == None:
                 return None
-            return self.reginteractivocenka.modification.model.mark.name  + ' ' + self.reginteractivocenka.modification.model.name + ' ' + self.reginteractivocenka.modification.name  
+            return self.reginteractivocenkarlk.estimation.modification.model.mark.name  + ' ' + self.reginteractivocenkarlk.estimation.modification.model.name + ' ' + self.reginteractivocenkarlk.estimation.modification.name  
         return None
 
     def estimation_start_formated(self):
-        if hasattr(self, 'reginteractivocenka'):
-            if self.reginteractivocenka.start_estimation == None:
+        if hasattr(self, 'reginteractivocenkarlk'):
+            if self.reginteractivocenkarlk.estimation.start_estimation == None:
                 return None
-            return self.reginteractivocenka.start_estimation.strftime("%d.%m.%Y %H:%M:%S")   
+            return self.reginteractivocenkarlk.estimation.start_estimation.strftime("%d.%m.%Y %H:%M:%S")   
         return None
 
     def estimation_end_formated(self):
-        if hasattr(self, 'reginteractivocenka'):
-            if self.reginteractivocenka.end_estimation == None:
+        if hasattr(self, 'reginteractivocenkarlk'):
+            if self.reginteractivocenkarlk.estimation.end_estimation == None:
                 return None
-            return self.reginteractivocenka.end_estimation.strftime("%d.%m.%Y %H:%M:%S")   
+            return self.reginteractivocenkarlk.estimation.end_estimation.strftime("%d.%m.%Y %H:%M:%S")   
         return None
     
     def estimation_year(self):
-        if hasattr(self, 'reginteractivocenka'):
-            return self.reginteractivocenka.year
+        if hasattr(self, 'reginteractivocenkarlk'):
+            return self.reginteractivocenkarlk.estimation.year
         return 0
 
     def save(self, *args, **kwargs):
