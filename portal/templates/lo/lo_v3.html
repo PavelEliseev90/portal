@@ -1281,7 +1281,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
       <div class="modal-body">
-        <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
+        <label class="fs-6"> {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} {{params.estimation.complectation.name|default:"—"}} - {{params.estimation.vin}} - {{params.estimation.page_documents.plate_number}}</label>
         <br>
         {{params.estimation.page_vnesh.color}} / {{params.estimation.year}} г. в.  / {{params.estimation.page_salon.run|floatformat:"0g"}} км.  
         <hr class="my-3">
@@ -1302,7 +1302,12 @@
                             <tr>
                                 <td class="align-middle">{{work.name}}</td>
                                 <td class="text-nowrap text-end align-middle"> {{work.normo|floatformat:"2g"}}</td>
-                                <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                {% if work.price_kors > 0 %}
+                                  <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                {% else %} 
+                                  <td class="text-nowrap text-end align-middle"> {{work.price_podrad|floatformat:"2g"}} &#8381;</td>
+                                {% endif %}
+                                
                             </tr>     
                         {% endfor %} 
                         <tr>
@@ -1417,7 +1422,7 @@
                             <tr>
                                 <td class="align-middle">{{work.name}}</td>
                                 <td class="text-nowrap text-end align-middle"> {{work.normo|floatformat:"2g"}}</td>
-                                <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                <td class="text-nowrap text-end align-middle"> {{work.price_podrad|floatformat:"2g"}} &#8381;</td>
                             </tr>     
                         {% endfor %} 
                         <tr>
@@ -1694,7 +1699,7 @@
           <div class="col-12 col-xxl-5">            
           
             <h1 class="kors-hero__title">
-              {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} 
+              {{params.estimation.modification.model.mark.name}} {{params.estimation.modification.model.name}} {{params.estimation.modification.name}} {{params.estimation.complectation.name|default:""}}
             </h1>
 
             <p class="kors-hero__subtitle">
@@ -5914,7 +5919,7 @@
                 <h5>Согласование</h5>
                 <hr class="my-3">
               </div>
-
+                
                 {# Контрольная диагностика: кнопка создания и список КД #}
                 <div id="control_diagnostics" class="portal-panel mb-3">
                   <h6><span class="icon-mbri-link"></span> Контрольная диагностика</h6>
@@ -5938,7 +5943,7 @@
                   </div>
                   {% endif %}
                 </div>
-
+              
                 <div class="my_pages_info_doc_eco">
                   
                   {% for warning in params.warning_list %}
@@ -6519,7 +6524,7 @@
                                                     <tr>
                                                         <td class="align-middle">{{work.name}}</td>
                                                         <td class="text-nowrap text-end align-middle"> {{work.normo|floatformat:"2g"}}</td>
-                                                        <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                                        <td class="text-nowrap text-end align-middle"> {{work.price_podrad|floatformat:"2g"}} &#8381;</td>
                                                     </tr>     
                                                 {% endfor %} 
                                                 <tr>
@@ -19919,7 +19924,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20210,7 +20219,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20550,7 +20563,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20827,7 +20844,11 @@
                                                 <tr>
                                                     <td class="align-middle">{{work.name}}</td>
                                                     <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                    <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                    {% if work.amount == 0 %} 
+                                                      <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                    {% else %}
+                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                    {% endif %}
                                                 </tr>     
                                             {% endfor %} 
                                             {% for product in params.doc.products %}
@@ -23897,7 +23918,7 @@
       <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
         <tr>
           <td style="padding: 8px; width: 30%; font-weight: bold; border: 1px solid #ddd;">Автомобиль:</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.mark.name|default:"—"}} {{params.estimation.modification.model.name|default:"—"}} {{params.estimation.modification.name|default:"—"}}</td> 
+          <td style="padding: 8px; border: 1px solid #ddd;">{{params.estimation.modification.model.mark.name|default:"—"}} {{params.estimation.modification.model.name|default:"—"}} {{params.estimation.modification.name|default:"—"}} {{params.estimation.complectation.name|default:"—"}}</td> 
         </tr>
         <tr>
           <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">Год выпуска:</td>

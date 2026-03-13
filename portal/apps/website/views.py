@@ -9163,29 +9163,29 @@ def kpi_eco(request):
     return render(request, "kors/kpi_eco.html", {'params': params})
 
 
-def refresh_estimation_balance_unit(id_estimation):
+def refresh_estimation_balance_unit(id_rlk):
     
-    estimations_list    = RegInteractivOcenka.objects.filter(rlk__pk = id_estimation).exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 6, 1)).exclude(modification = None).order_by('-start_estimation')
+    estimations_list    = RegInteractivOcenkaRLK.objects.filter(rlk__pk = id_rlk).exclude(estimation__year = 0).filter(estimation__start_estimation__gt = DT.date(2025, 6, 1)).exclude(estimation__modification = None).order_by('-estimation__start_estimation')
     docs_lo             = DocLO.objects.filter(rlk__pk = OuterRef(name='rlk__pk'))
     estimations_list    = estimations_list.annotate(
         lo_active               = Subquery(docs_lo.values('active')[:1])).annotate(
         lo_uin                  = Subquery(docs_lo.values('uin')[:1])).annotate(
         lo_agreement_unit_pk    = Subquery(docs_lo.values('agreement_unit__pk')[:1]))
     
-    estimations_list = estimations_list.filter(lo_active = True).filter(auction = False).values('pk', 'lo_agreement_unit_pk', 'lo_uin')
+    estimations_list = estimations_list.filter(lo_active = True).filter(estimation__auction = False).values('pk', 'lo_agreement_unit_pk', 'lo_uin')
     from register.models import RegEstimationBalanceUnit, RegEstimationsSettings, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU
     
     for estimation_pk in estimations_list:
         
-        estimation  = RegInteractivOcenka.objects.get(pk = estimation_pk['pk']) 
+        interactiv_rlk  = RegInteractivOcenkaRLK.objects.get(pk = estimation_pk['pk']) 
         
-        unit        = estimation.rlk.unit
+        unit        = interactiv_rlk.unit
         
         if unit == None:
-            unit = estimation.rlk.unit_dc
+            unit = interactiv_rlk.rlk.unit_dc
         
-        if estimation.page_documents.type_reception.id == 7 and estimation.rlk.unit != None:
-            unit = estimation.rlk.unit
+        if interactiv_rlk.type_reception.id == 7 and interactiv_rlk.rlk.unit != None:
+            unit = interactiv_rlk.rlk.unit
         
         if estimation_pk['lo_agreement_unit_pk'] != None:
             unit = RefUnit.objects.get(pk = estimation_pk['lo_agreement_unit_pk'])
@@ -9193,37 +9193,37 @@ def refresh_estimation_balance_unit(id_estimation):
         save            = True
         new_record      = None
 
-        new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count() 
+        new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation).count() 
         if new_record_count > 0:
-            new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]
+            new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0]
             if new_record.shipment != None:
                 save = False
             else:
-                new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0] 
+                new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0] 
 
         if save:
             if new_record == None:
                 new_record = RegEstimationBalanceUnit()
 
-            new_record.estimation = estimation
+            new_record.estimation = interactiv_rlk.estimation
         if unit == None:
-            unit = estimation.page_documents.unit
+            unit = interactiv_rlk.unit
         
-        if estimation.page_documents.type_reception.id != 3 and estimation.page_documents.type_reception.id != 15:
+        if interactiv_rlk.type_reception.id != 3 and interactiv_rlk.type_reception.id != 15:
             save = True
         
         amount = 0
         
-        if estimation.page_documents.type_reception.id == 3:
+        if interactiv_rlk.type_reception.id == 3:
             save = False
 
-        if estimation.page_soglasovanie != None:
+        if interactiv_rlk.page_soglasovanie != None:
             
-            reg_interactiv_ocenka_soglasovanie = estimation.page_soglasovanie
+            reg_interactiv_ocenka_soglasovanie = interactiv_rlk.page_soglasovanie
             if reg_interactiv_ocenka_soglasovanie.settings == None:
                 reg_interactiv_ocenka_soglasovanie.settings = RegEstimationsSettings.objects.all().last()
 
-            price_autohub   = estimations_price_calculation(estimation, type_calculation='autohub')
+            price_autohub   = estimations_price_calculation(interactiv_rlk, interactiv_rlk.estimation, type_calculation='autohub')
             if price_autohub != None:
                 reg_interactiv_ocenka_soglasovanie.price_auto_2         = price_autohub['estimation_price']
                 reg_interactiv_ocenka_soglasovanie.price_auto_bcp_2     = price_autohub['cna_expenses']
@@ -9234,7 +9234,7 @@ def refresh_estimation_balance_unit(id_estimation):
                 reg_interactiv_ocenka_soglasovanie.save()
                 price_info = price_autohub
             else:
-                price_avito   = estimations_price_calculation(estimation, type_calculation='avito')
+                price_avito   = estimations_price_calculation(interactiv_rlk, interactiv_rlk.estimation, type_calculation='avito')
                 if price_avito != None:
                     if price_avito['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
                         reg_interactiv_ocenka_soglasovanie.price_auto_3         = price_avito['estimation_price']
@@ -9248,27 +9248,27 @@ def refresh_estimation_balance_unit(id_estimation):
 
             if reg_interactiv_ocenka_soglasovanie.price_auto_auction == False:
                 
-                if estimation.page_soglasovanie.price_auto_2 > 0:
-                    if estimation.page_soglasovanie.price_auto_2 < estimation.page_soglasovanie.price_after_kd:
-                        amount = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.price_after_kd
-                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
-                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+                if interactiv_rlk.page_soglasovanie.price_auto_2 > 0:
+                    if interactiv_rlk.page_soglasovanie.price_auto_2 < interactiv_rlk.page_soglasovanie.price_after_kd:
+                        amount = interactiv_rlk.page_soglasovanie.price_auto_2 - interactiv_rlk.page_soglasovanie.price_after_kd
+                    elif interactiv_rlk.page_soglasovanie.zachita_ot_ubitka != None and interactiv_rlk.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = interactiv_rlk.page_soglasovanie.zachita_ot_ubitka
 
-                elif estimation.page_soglasovanie.price_auto_3 > 0:
-                    if estimation.page_soglasovanie.price_auto_3 < estimation.page_soglasovanie.price_after_kd:
-                        amount = estimation.page_soglasovanie.price_auto_3 - estimation.page_soglasovanie.price_after_kd
-                    elif estimation.page_soglasovanie.zachita_ot_ubitka != None and estimation.page_soglasovanie.zachita_ot_ubitka > 0:
-                        amount = estimation.page_soglasovanie.zachita_ot_ubitka
+                elif interactiv_rlk.page_soglasovanie.price_auto_3 > 0:
+                    if interactiv_rlk.page_soglasovanie.price_auto_3 < interactiv_rlk.page_soglasovanie.price_after_kd:
+                        amount = interactiv_rlk.page_soglasovanie.price_auto_3 - interactiv_rlk.page_soglasovanie.price_after_kd
+                    elif interactiv_rlk.page_soglasovanie.zachita_ot_ubitka != None and interactiv_rlk.page_soglasovanie.zachita_ot_ubitka > 0:
+                        amount = interactiv_rlk.page_soglasovanie.zachita_ot_ubitka
                     
                 if save:
-                    count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                    count = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation).count()
                     if count > 0:
-                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]
+                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0]
                     else:
                         new_record              = RegEstimationBalanceUnit()
                     new_record.unit         = unit
-                    new_record.date         = estimation.start_estimation
-                    new_record.estimation   = estimation
+                    new_record.date         = interactiv_rlk.estimation.start_estimation
+                    new_record.estimation   = interactiv_rlk.estimation
                     new_record.amount_in    = amount
                     new_record.save()
 
@@ -9282,7 +9282,7 @@ def refresh_estimation_balance_unit(id_estimation):
                         docs = DocCarShipment.objects.filter(agreement = agreement).count()
                         if docs > 0:
                             doc = DocCarShipment.objects.filter(agreement = agreement)[0] 
-                            page_soglasovanie = estimation.page_soglasovanie
+                            page_soglasovanie = interactiv_rlk.page_soglasovanie
                             if page_soglasovanie != None:
                                 price_info = None 
                                 zna = 0
@@ -9290,14 +9290,14 @@ def refresh_estimation_balance_unit(id_estimation):
                                 if page_soglasovanie.price_zna_2 > 0:
                                     zna = page_soglasovanie.price_zna_2
                                     zak = page_soglasovanie.price_auto_2
-                                    price_info = estimations_price_calculation(estimation, 'autohub')
+                                    price_info = estimations_price_calculation(interactiv_rlk, interactiv_rlk.estimation, 'autohub')
                                 else:
                                     zna = page_soglasovanie.price_zna_3 
                                     zak = page_soglasovanie.price_auto_3
-                                    price_info = estimations_price_calculation(estimation, 'avito')
+                                    price_info = estimations_price_calculation(interactiv_rlk, interactiv_rlk.estimation, 'avito')
 
                                 if zna > 0:
-                                    car_organizations = RefCarsOrganization.objects.filter(lo__rlk = estimation.rlk) 
+                                    car_organizations = RefCarsOrganization.objects.filter(lo__rlk = interactiv_rlk.rlk) 
                                     if len(car_organizations) == 1:
                                         
                                         car_organization    = car_organizations[0]
@@ -9379,18 +9379,18 @@ def refresh_estimation_balance_unit(id_estimation):
                                             elif stage.pk == 4:
                                                 kf = unit.correction_test_1c_5001
 
-                                        if estimation != None:
+                                        if interactiv_rlk.estimation != None:
                                             
-                                            new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()     
+                                            new_record_count = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation).count()     
                                             if new_record_count > 0:
-                                                new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0] 
+                                                new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0] 
                                                 
                                                 fin_prim = price_info['finance_price']
                                                 
                                                 kso_fact        = agreement.kso_actual
                                                 bu_wheels_fact  = agreement.bu_wheels_actual
                                                 
-                                                fin_fact = round(estimation.page_soglasovanie.price_after_kd * 0.25 /365 * car_organization.days_in_stok)
+                                                fin_fact = round(interactiv_rlk.page_soglasovanie.price_after_kd * 0.25 /365 * car_organization.days_in_stok)
                                                 zak     = zak
                                                 zak_new = zak + price_info['iznos_price'] + price_info['amount_sum']  
                                                 
@@ -9421,15 +9421,15 @@ def refresh_estimation_balance_unit(id_estimation):
                                                     
                                                     new_record.save()                                
                 else:
-                    count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                    count = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation).count()
                     if count > 0:
-                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                        new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0]  
                         if new_record.shipment == None:
                             new_record.delete()
             else:
-                count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
+                count = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation).count()
                 if count > 0:
-                    new_record = RegEstimationBalanceUnit.objects.filter(estimation = estimation)[0]  
+                    new_record = RegEstimationBalanceUnit.objects.filter(estimation = interactiv_rlk.estimation)[0]  
                     if new_record.shipment == None:
                         new_record.delete()    
 
@@ -10287,7 +10287,15 @@ def test(request):
     #     print(' ' + str(s) + ' ' + str(count))
 
     #AutoruComplectation.objects.all().delete()
-    
+    from register.models import RegInteractivOcenkaRLK
+    date_start = DT.datetime.now().replace(day=1, hour = 1, month=3, year=2026)
+    count = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).count()
+    s = 0
+    estimations_id = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).order_by('-id').values('id')
+    for estimation_id in estimations_id:
+        estimation  = RegInteractivOcenkaRLK.objects.get(id = estimation_id['id'])        
+        estimation.save()
+
     # from register.models import RegInteractivOcenkaRLK
     # date_start = DT.datetime.now().replace(day=24, hour = 1, month=2, year=2026)
     # count = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).count()

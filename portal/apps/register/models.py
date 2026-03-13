@@ -3253,21 +3253,21 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         
         #add_swap(self)
         
-        try:
-            if self.status == RefStatusEstimation.objects.get(pk = 8):
-                from website.views import refresh_estimation_balance_unit
-                refresh_estimation_balance_unit(self.rlk.id)
-        except:
-            s = 1
+        # try:
+        #     if self.status == RefStatusEstimation.objects.get(pk = 8):
+        #         from website.views import refresh_estimation_balance_unit
+        #         refresh_estimation_balance_unit(self.rlk.id)
+        # except:
+        #     s = 1
 
         super().save(*args, **kwargs)
 
         # Обновляем витрину аналитиков
-        try:
-            if self.start_estimation != None:
-                update_trade_in_funnel(self)
-        except Exception:
-            pass
+        # try:
+        #     if self.start_estimation != None:
+        #         update_trade_in_funnel(self)
+        # except Exception:
+        #     pass
         
 
     def __str__(self):
@@ -3284,13 +3284,19 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
-def update_trade_in_funnel(estimation):
+def update_trade_in_funnel(interactiv_rlk):
     try:
         from analytics.models import TradeInFunnel
     except Exception:
         return
     
-    rlk_id = estimation.rlk.id
+    rlk_id              = interactiv_rlk.rlk.id
+    page_soglasovanie   = interactiv_rlk.page_soglasovanie
+    page_remote         = None
+    estimation_rlk      = None
+    if interactiv_rlk.estimation != None:
+        estimation_rlk  = interactiv_rlk.estimation
+        page_remote     = interactiv_rlk.estimation.page_remote
 
     mark_id     = 0
     mark_name   = ''
@@ -3345,62 +3351,67 @@ def update_trade_in_funnel(estimation):
     diagostica          = False 
     diff_summ           = 0
 
-    date_start_estimation = estimation.start_estimation
+    date_start_estimation = estimation_rlk.start_estimation
 
-    remote = False if not estimation.page_remote else True
-    if remote and estimation.page_remote != None:
+    remote = False if not page_remote else True
+    if remote and page_remote != None:
         
-        run = estimation.page_remote.run
-        type_reception_id   = estimation.page_remote.type_reception.id
-        type_reception_name = estimation.page_remote.type_reception.name
-        unit_id   = estimation.page_remote.unit.id
-        unit_name = estimation.page_remote.unit.name
-        if estimation.page_remote.price_eco > 0:
-            analyst_remote_id       = estimation.page_remote.price_eco_user.profiles.id
-            analyst_remote_name     = estimation.page_remote.price_eco_user.profiles.eco_name
-        city_id     = estimation.page_remote.unit.city.id
-        city_name   = estimation.page_remote.unit.city.name
-        owners      = estimation.page_remote.count_owners
-        price_reception_staff   = estimation.page_remote.price_reception
-        price_sale_staff        = estimation.page_remote.price_sale
-        price_remote            = estimation.page_remote.price_eco
-        price_auto_remote       = estimation.page_remote.price_auto
-        zna             = estimation.page_remote.price_zna 
-        price_auto_bcp  = estimation.page_remote.price_auto_bcp
-        diff            = estimation.page_remote.discount_torg + estimation.page_remote.zachita_ot_ubitka
-        diff_summ = estimation.page_remote.price_eco - estimation.page_remote.price_auto
+        run = page_remote.run
+        if page_remote.type_reception != None:
+            type_reception_id   = page_remote.type_reception.id
+            type_reception_name = page_remote.type_reception.name
+        if page_remote.unit != None:
+            unit_id   = page_remote.unit.id
+            unit_name = page_remote.unit.name
+            city_id     = page_remote.unit.city.id
+            city_name   = page_remote.unit.city.name
+        
+        if page_remote.price_eco > 0:
+            analyst_remote_id       = page_remote.price_eco_user.profiles.id
+            analyst_remote_name     = page_remote.price_eco_user.profiles.eco_name
+        owners      = page_remote.count_owners
+        price_reception_staff   = page_remote.price_reception
+        price_sale_staff        = page_remote.price_sale
+        price_remote            = page_remote.price_eco
+        price_auto_remote       = page_remote.price_auto
+        zna             = page_remote.price_zna 
+        price_auto_bcp  = page_remote.price_auto_bcp
+        diff            = page_remote.discount_torg + page_remote.zachita_ot_ubitka
+        diff_summ = page_remote.price_eco - page_remote.price_auto
         if diff_summ < 0:
             comparison_remote_type = -1
         elif diff_summ >= 0 and diff_summ <= diff:
             comparison_remote_type = 0
         else:
             comparison_remote_type = 1
-        comparison_remote = estimation.page_remote.price_eco - estimation.page_remote.price_auto
+        comparison_remote = page_remote.price_eco - page_remote.price_auto
 
-    if estimation.page_soglasovanie != None:
-        if estimation.page_salon != None:
-            run = estimation.page_salon.run
-        if estimation.page_documents != None: 
-            type_reception_id   = estimation.page_documents.type_reception.id
-            type_reception_name = estimation.page_documents.type_reception.name
-            unit_id   = estimation.page_documents.unit.id
-            unit_name = estimation.page_documents.unit.name
-            city_id     = estimation.page_documents.unit.city.id
-            city_name   = estimation.page_documents.unit.city.name
-            owners      = estimation.page_documents.count_owners
-        if estimation.page_soglasovanie != None:
-            price_reception_staff   = estimation.page_soglasovanie.price_reception
-            price_sale_staff        = estimation.page_soglasovanie.price_sale
-            cost_plan               = estimation.page_soglasovanie.amount_podgotovka + estimation.page_soglasovanie.amount_ss + estimation.page_soglasovanie.amount_mcu  
-            cost_plan_ss            = estimation.page_soglasovanie.amount_ss
-            cost_plan_mcu           = estimation.page_soglasovanie.amount_mcu
-            cost_plan_preparation   = estimation.page_soglasovanie.amount_podgotovka
-            price_before            = estimation.page_soglasovanie.price_before_kd
-            price_after             = estimation.page_soglasovanie.price_after_kd
-            if estimation.page_soglasovanie.price_before_kd > 0:
-                price_auto_before       = estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
-                comparison_before       = price_before - estimation.page_soglasovanie.price_auto_2 - estimation.page_soglasovanie.amount_ss
-                diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
+    if page_soglasovanie != None:
+        if estimation_rlk.page_salon != None:
+            run = estimation_rlk.page_salon.run
+        if estimation_rlk.page_documents != None: 
+            if estimation_rlk.page_documents.type_reception != None:
+                type_reception_id   = estimation_rlk.page_documents.type_reception.id
+                type_reception_name = estimation_rlk.page_documents.type_reception.name
+            if estimation_rlk.page_documents.unit != None:
+                unit_id     = estimation_rlk.page_documents.unit.id
+                unit_name   = estimation_rlk.page_documents.unit.name
+                city_id     = estimation_rlk.page_documents.unit.city.id
+                city_name   = estimation_rlk.page_documents.unit.city.name
+            owners      = estimation_rlk.page_documents.count_owners
+        if page_soglasovanie != None:
+            price_reception_staff   = page_soglasovanie.price_reception
+            price_sale_staff        = page_soglasovanie.price_sale
+            cost_plan               = page_soglasovanie.amount_podgotovka + page_soglasovanie.amount_ss + page_soglasovanie.amount_mcu  
+            cost_plan_ss            = page_soglasovanie.amount_ss
+            cost_plan_mcu           = page_soglasovanie.amount_mcu
+            cost_plan_preparation   = page_soglasovanie.amount_podgotovka
+            price_before            = page_soglasovanie.price_before_kd
+            price_after             = page_soglasovanie.price_after_kd
+            if page_soglasovanie.price_before_kd > 0:
+                price_auto_before       = page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
+                comparison_before       = price_before - page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
+                diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
                 diff_summ       = price_before - price_auto_before
                 if diff_summ < 0:
                     comparison_before_type = -1
@@ -3409,10 +3420,10 @@ def update_trade_in_funnel(estimation):
                 else:
                     comparison_before_type = 1
             if price_after> 0: 
-                price_auto_after        = estimation.page_soglasovanie.price_auto_2
-                comparison_after        = price_after - estimation.page_soglasovanie.price_auto_2
-                diff            = estimation.page_soglasovanie.discount_torg + estimation.page_soglasovanie.zachita_ot_ubitka
-                diff_summ       = price_after - estimation.page_soglasovanie.price_auto_2
+                price_auto_after        = page_soglasovanie.price_auto_2
+                comparison_after        = price_after - page_soglasovanie.price_auto_2
+                diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
+                diff_summ       = price_after - page_soglasovanie.price_auto_2
                 if diff_summ < 0:
                     comparison_after_type = -1
                 elif diff_summ >= 0 and diff_summ <= diff:
@@ -3420,31 +3431,31 @@ def update_trade_in_funnel(estimation):
                 else:
                     comparison_after_type = 1
 
-            price_auto_bcp = estimation.page_soglasovanie.price_auto_bcp_2
-            zna = estimation.page_soglasovanie.price_zna_2 
-            diagostica = not estimation.page_soglasovanie.no_diagnostica
+            price_auto_bcp = page_soglasovanie.price_auto_bcp_2
+            zna = page_soglasovanie.price_zna_2 
+            diagostica = not page_soglasovanie.no_diagnostica
     
-    year    = estimation.year
-    vin     = estimation.vin 
-    if estimation.staff != None:
-        staff_id    = estimation.staff.id
-        staff_name  = estimation.staff.name
+    year    = estimation_rlk.year
+    vin     = estimation_rlk.vin 
+    if interactiv_rlk.staff_rlk != None:
+        staff_id    = interactiv_rlk.staff_rlk.id
+        staff_name  = interactiv_rlk.staff_rlk.name
 
-    if estimation.staff_eco_1 != None:
-        analyst_before_id       = estimation.staff_eco_1.profiles.id
-        analyst_before_name     = estimation.staff_eco_1.profiles.eco_name
+    if interactiv_rlk.staff_eco_1_rlk != None:
+        analyst_before_id       = interactiv_rlk.staff_eco_1_rlk.profiles.id
+        analyst_before_name     = interactiv_rlk.staff_eco_1_rlk.profiles.eco_name
 
-    if estimation.staff_eco_2 != None:    
-        analyst_after_id        = estimation.staff_eco_2.profiles.id
-        analyst_after_name      = estimation.staff_eco_2.profiles.eco_name
+    if interactiv_rlk.staff_eco_2_rlk != None:    
+        analyst_after_id        = interactiv_rlk.staff_eco_2_rlk.profiles.id
+        analyst_after_name      = interactiv_rlk.staff_eco_2_rlk.profiles.eco_name
    
-    if estimation.modification != None:
-        mark_id             = estimation.modification.model.mark.idSite
-        mark_name           = estimation.modification.model.mark.name
-        model_id            = estimation.modification.model.idSite
-        model_name          = estimation.modification.model.name
-        modification_id     = estimation.modification.idSite
-        modification_name   = estimation.modification.name
+    if estimation_rlk.modification != None:
+        mark_id             = estimation_rlk.modification.model.mark.idSite
+        mark_name           = estimation_rlk.modification.model.mark.name
+        model_id            = estimation_rlk.modification.model.idSite
+        model_name          = estimation_rlk.modification.model.name
+        modification_id     = estimation_rlk.modification.idSite
+        modification_name   = estimation_rlk.modification.name
     
     zg_id = 0
     zg_name = ''
@@ -3476,7 +3487,7 @@ def update_trade_in_funnel(estimation):
     TradeInFunnel.objects.update_or_create(
                         rlk_id = rlk_id,
                         defaults={
-                            'estimation_id' : estimation.id,
+                            'estimation_id' : estimation_rlk.id,
                             'unit_id'       : unit_id,
                             'unit_name'     : unit_name,
                             'staff_id'      : staff_id,
@@ -3503,20 +3514,20 @@ def update_trade_in_funnel(estimation):
                             'date_start_estimation' : date_start_estimation,
                             'remote'    : remote,
                             'owners'    : owners,
-                            'count_dtp' : estimation.count_dtp,
-                            'dtp_red'   : estimation.dtp_red,
-                            'iznos'     : estimation.iznos,
-                            'taxi'      : estimation.taxi,
-                            'carsharing'    : estimation.carsharing,
-                            'k_i'           : estimation.k_i,
-                            'autodex'       : estimation.avtoteka_car_autodex,
-                            'date_before_success'       : estimation.date_s_do_diag,
-                            'date_diagnostic_success'   : estimation.date_diagnostic,
-                            'date_after_success'        : estimation.date_s_diag,
-                            'date_remote_success'       : estimation.date_s_remote,
+                            'count_dtp' : estimation_rlk.count_dtp,
+                            'dtp_red'   : estimation_rlk.dtp_red,
+                            'iznos'     : estimation_rlk.iznos,
+                            'taxi'      : estimation_rlk.taxi,
+                            'carsharing'    : estimation_rlk.carsharing,
+                            'k_i'           : estimation_rlk.k_i,
+                            'autodex'       : estimation_rlk.avtoteka_car_autodex,
+                            'date_before_success'       : estimation_rlk.date_s_do_diag,
+                            'date_diagnostic_success'   : estimation_rlk.date_diagnostic,
+                            'date_after_success'        : estimation_rlk.date_s_diag,
+                            'date_remote_success'       : estimation_rlk.date_s_remote,
                             'price_reception_staff'     : price_reception_staff,
                             'price_sale_staff'          : price_sale_staff,                       
-                            'auction'                   : estimation.auction,
+                            'auction'                   : estimation_rlk.auction,
                             'cost_plan'                 : cost_plan,
                             'cost_plan_ss'              : cost_plan_ss,
                             'cost_plan_mcu'             : cost_plan_mcu,
@@ -3529,10 +3540,10 @@ def update_trade_in_funnel(estimation):
                             'price_auto_after'          : price_auto_after,
                             'price_sale'                : price_auto_bcp,
                             'price_auto_bcp'            : price_auto_bcp,
-                            'stage'                     : estimation.status.name,
+                            'stage'                     : interactiv_rlk.status.name,
                             'diagostica'                : diagostica,
                             'zna'                       : zna,
-                            'zna_custom'                : estimation.custom_zna,
+                            'zna_custom'                : estimation_rlk.custom_zna,
                             'comparison_after'          : comparison_after,
                             'comparison_before'         : comparison_before,
                             'comparison_remote'         : comparison_remote,
@@ -3628,6 +3639,21 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
                 add_swap(self)
         except:
             s=1
+
+        try:
+            if self.status == RefStatusEstimation.objects.get(pk = 8):
+                from website.views import refresh_estimation_balance_unit
+                refresh_estimation_balance_unit(self.rlk.id)
+        except:
+            s = 1
+
+        # Обновляем витрину аналитиков
+        try:
+            if self.estimation != None:
+                update_trade_in_funnel(self)
+        except Exception:
+            pass
+
         super().save(*args, **kwargs)
     
 

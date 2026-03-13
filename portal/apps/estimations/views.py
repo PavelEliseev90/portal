@@ -1673,14 +1673,19 @@ def estimation_start(request, rlk_id):
     object                          = DocRLK.objects.get(id=rlk_id)
     interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     estimation_active               = None
+    mod = ''
     
     if request.method == 'GET':
-        active = request.GET.get('active', '').strip()
+        active  = request.GET.get('active', '').strip()
+        mod     = request.GET.get('mod', '').strip()
         if active != '':
             estimation_active_all   = RegInteractivOcenkaRLK.objects.filter(rlk__id = int(active)).first()
             reg_interactiv_ocenka   = estimation_active_all.estimation 
             interactiv_rlk.estimation = reg_interactiv_ocenka
             interactiv_rlk.save()
+            if interactiv_rlk.estimation.modification == None:
+                if mod == '':
+                    return HttpResponseRedirect(request.path_info + '?active=' + str(active) + '&mod=none')
 
     if interactiv_rlk.estimation == None:
         if estimation_active == None:
@@ -1824,7 +1829,8 @@ def estimation_start(request, rlk_id):
         'type_engines': type_engines,
         'type_drives': type_drives,
         'type_kpp': type_kpp,
-        'years': years,
+        'years' : years,
+        'mod'   : mod
     }
     
     return render(request, 'estimation/estimation_start.html', {'params': params})	
