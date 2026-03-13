@@ -6404,7 +6404,10 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             elif info['dirka'] > 0:
                 diff_sum    = 0
                 work        = RegPodgotovkaWork.objects.get(pk = 130)
-                diff_sum    = work.price_kors
+                if work.price_kors == 0:
+                    diff_sum    = work.price_podrad * info['dirka']
+                else:
+                    diff_sum    = work.price_kors * info['dirka']
                 dop = {
                     'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
                     'quantity'  : work.normo * info['dirka'],
@@ -6417,10 +6420,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 diff_sum    = 0
                 work        = RegPodgotovkaWork.objects.get(pk = 130)
                 if work.price_kors == 0:
-                    price_kors = work.price_podrad
+                    diff_sum    = work.price_podrad 
                 else:
-                    price_kors = work.price_kors               
-                diff_sum    = price_kors
+                    diff_sum    = work.price_kors 
                 dop = {
                     'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
                     'quantity'  : work.normo,

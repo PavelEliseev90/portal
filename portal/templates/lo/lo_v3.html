@@ -1302,7 +1302,12 @@
                             <tr>
                                 <td class="align-middle">{{work.name}}</td>
                                 <td class="text-nowrap text-end align-middle"> {{work.normo|floatformat:"2g"}}</td>
-                                <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                {% if work.price_kors > 0 %}
+                                  <td class="text-nowrap text-end align-middle"> {{work.price_kors|floatformat:"2g"}} &#8381;</td>
+                                {% else %} 
+                                  <td class="text-nowrap text-end align-middle"> {{work.price_podrad|floatformat:"2g"}} &#8381;</td>
+                                {% endif %}
+                                
                             </tr>     
                         {% endfor %} 
                         <tr>
@@ -19919,7 +19924,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20210,7 +20219,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20550,7 +20563,11 @@
                                                   <tr>
                                                       <td class="align-middle">{{work.name}}</td>
                                                       <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% if work.amount == 0 %} 
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                      {% else %}
+                                                        <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                      {% endif %}
                                                   </tr>     
                                               {% endfor %} 
                                               {% for product in params.doc.products %}
@@ -20827,7 +20844,11 @@
                                                 <tr>
                                                     <td class="align-middle">{{work.name}}</td>
                                                     <td class="text-nowrap text-end align-middle"> {{work.quantity|floatformat:"2g"}}</td>
-                                                    <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                    {% if work.amount == 0 %} 
+                                                      <td class="text-nowrap text-end align-middle"> {{work.amount_pod|floatformat:"2g"}} &#8381;</td>
+                                                    {% else %}
+                                                      <td class="text-nowrap text-end align-middle"> {{work.amount|floatformat:"2g"}} &#8381;</td>
+                                                    {% endif %}
                                                 </tr>     
                                             {% endfor %} 
                                             {% for product in params.doc.products %}

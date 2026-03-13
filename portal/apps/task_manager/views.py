@@ -801,11 +801,18 @@ def get_info_max(interactiv_rlk, estimation_id):
             'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
         }
 
-        vehicle = {
-            'year'      : estimation.year,
-            'mileage'   : estimation.page_salon.run,
-            'rubPrice'  : interactiv_rlk.page_soglasovanie.price_sale
-        }
+        if estimation.page_salon != None:
+            vehicle = {
+                'year'      : estimation.year,
+                'mileage'   : estimation.page_salon.run,
+                'rubPrice'  : interactiv_rlk.page_soglasovanie.price_sale
+            }
+        else:
+            vehicle = {
+                'year'      : estimation.year,
+                'mileage'   : estimation.page_remote.run,
+                'rubPrice'  : estimation.page_remote.price_sale
+            }
         
         data_info = {
             'dealerId'          : 2107,
