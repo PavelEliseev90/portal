@@ -6427,7 +6427,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
                     'quantity'  : work.normo,
                     'amount_pod': work.price_podrad, 
-                    'amount'    : price_kors
+                    'amount'    : diff_sum
                 }
                 list_work_podgotovka.append(dop)
                 amount_podgotovka = amount_podgotovka + diff_sum   
