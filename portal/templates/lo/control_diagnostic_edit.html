@@ -35,100 +35,119 @@
         <h6 class="d-flex align-items-center gap-2 mb-3">
           <span class="icon-mbri-user"></span> Салон
         </h6>
+
         <div class="row g-2">
-        <div class="row g-2">
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Ручной тормоз</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="hand_brake" id="hb1" value="1" {% if params.cd_salon.hand_brake == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="hb1">Работает</label>
-                <input type="radio" class="btn-check" name="hand_brake" id="hb0" value="0" {% if params.cd_salon.hand_brake == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="hb0">Нет</label>
+          <div class="col-12 col-lg-6">
+            <div class="portal-panel mb-2">
+              <h6 class="d-flex align-items-center gap-2 mb-3">
+                <span class="icon-mbri-info"></span> Работоспособность элементов
+              </h6>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Ручной тормоз">
+                  <input type="radio" class="btn-check" name="hand_brake" id="hand_brake-radio0" autocomplete="off" value="0" {% if params.cd_salon.hand_brake == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="hand_brake-radio0">Не работает</label>
+                  <input type="radio" class="btn-check" name="hand_brake" id="hand_brake-radio1" autocomplete="off" value="1" {% if params.cd_salon.hand_brake == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="hand_brake-radio1">Работает</label>
+                </div>
+                <label class="fs-6">Ручной тормоз</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Кондиционер">
+                  <input type="radio" class="btn-check" name="conductor" id="conductor-radio0" autocomplete="off" value="0" {% if params.cd_salon.conductor == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="conductor-radio0">Не работает</label>
+                  <input type="radio" class="btn-check" name="conductor" id="conductor-radio1" autocomplete="off" value="1" {% if params.cd_salon.conductor == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="conductor-radio1">Работает</label>
+                </div>
+                <label class="fs-6">Кондиционер</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Стеклоочистители">
+                  <input type="radio" class="btn-check" name="wiper" id="wiper-radio0" autocomplete="off" value="0" {% if params.cd_salon.wiper == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="wiper-radio0">Не работает</label>
+                  <input type="radio" class="btn-check" name="wiper" id="wiper-radio1" autocomplete="off" value="1" {% if params.cd_salon.wiper == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="wiper-radio1">Работает</label>
+                </div>
+                <label class="fs-6">Стеклоочистители</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Сигнал">
+                  <input type="radio" class="btn-check" name="signal" id="signal-radio0" autocomplete="off" value="0" {% if params.cd_salon.signal == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="signal-radio0">Не работает</label>
+                  <input type="radio" class="btn-check" name="signal" id="signal-radio1" autocomplete="off" value="1" {% if params.cd_salon.signal == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="signal-radio1">Работает</label>
+                </div>
+                <label class="fs-6">Сигнал</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Стеклоподъёмники">
+                  <input type="radio" class="btn-check" name="power_windows" id="power_windows-radio0" autocomplete="off" value="0" {% if params.cd_salon.power_windows == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="power_windows-radio0">Не работают</label>
+                  <input type="radio" class="btn-check" name="power_windows" id="power_windows-radio1" autocomplete="off" value="1" {% if params.cd_salon.power_windows == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="power_windows-radio1">Работают</label>
+                </div>
+                <label class="fs-6">Стеклоподъёмники</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Ремни безопасности">
+                  <input type="radio" class="btn-check" name="seat_belt" id="seat_belt-radio0" autocomplete="off" value="0" {% if params.cd_salon.seat_belt == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="seat_belt-radio0">Не работают</label>
+                  <input type="radio" class="btn-check" name="seat_belt" id="seat_belt-radio1" autocomplete="off" value="1" {% if params.cd_salon.seat_belt == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="seat_belt-radio1">Работают</label>
+                </div>
+                <label class="fs-6">Ремни безопасности</label>
               </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Кондиционер</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="conductor" id="cond1" value="1" {% if params.cd_salon.conductor == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="cond1">Работает</label>
-                <input type="radio" class="btn-check" name="conductor" id="cond0" value="0" {% if params.cd_salon.conductor == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="cond0">Нет</label>
+
+          <div class="col-12 col-lg-6">
+            <div class="portal-panel mb-2">
+              <h6 class="d-flex align-items-center gap-2 mb-3">
+                <span class="icon-mbri-info"></span> Салон: вариант и чистота
+              </h6>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Вариант салона">
+                  <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio0" autocomplete="off" value="0" {% if params.cd_salon.type_salon_int == 0 or not params.cd_salon.type_salon_int %}checked{% endif %}>
+                  <label class="btn btn-outline-secondary" for="type_salon_int-radio0">Ткань</label>
+                  <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio1" autocomplete="off" value="1" {% if params.cd_salon.type_salon_int == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="type_salon_int-radio1">Кожа</label>
+                  <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio10" autocomplete="off" value="10" {% if params.cd_salon.type_salon_int == 10 %}checked{% endif %}>
+                  <label class="btn btn-outline-secondary" for="type_salon_int-radio10">Не указано</label>
+                </div>
+                <label class="fs-6" for="type_salon_int-radio0">Вариант салона</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Химчистка салона">
+                  <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio0" autocomplete="off" value="0" {% if params.cd_salon.cleaning_int == 0 or not params.cd_salon.cleaning_int %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="cleaning_int-radio0">Не требуется</label>
+                  <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio3" autocomplete="off" value="3" {% if params.cd_salon.cleaning_int == 3 %}checked{% endif %}>
+                  <label class="btn btn-outline-warning" for="cleaning_int-radio3">Легкая</label>
+                  <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio2" autocomplete="off" value="2" {% if params.cd_salon.cleaning_int == 2 %}checked{% endif %}>
+                  <label class="btn btn-outline-warning" for="cleaning_int-radio2">Средняя</label>
+                  <input type="radio" class="btn-check" name="cleaning_int" id="cleaning_int-radio1" autocomplete="off" value="1" {% if params.cd_salon.cleaning_int == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="cleaning_int-radio1">Сложная</label>
+                </div>
+                <label class="fs-6" for="cleaning_int-radio0">Химчистка салона</label>
+              </div>
+
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Пробег соответствует">
+                  <input type="radio" class="btn-check" name="run_respond" id="run_respond-radio1" autocomplete="off" value="1" {% if params.cd_salon.run_respond == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="run_respond-radio1">Да</label>
+                  <input type="radio" class="btn-check" name="run_respond" id="run_respond-radio0" autocomplete="off" value="0" {% if params.cd_salon.run_respond == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="run_respond-radio0">Нет</label>
+                </div>
+                <label class="fs-6">Пробег соответствует состоянию салона</label>
               </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Стеклоочиститель</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="wiper" id="wip1" value="1" {% if params.cd_salon.wiper == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="wip1">Работает</label>
-                <input type="radio" class="btn-check" name="wiper" id="wip0" value="0" {% if params.cd_salon.wiper == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="wip0">Нет</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Сигнал</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="signal" id="sig1" value="1" {% if params.cd_salon.signal == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="sig1">Работает</label>
-                <input type="radio" class="btn-check" name="signal" id="sig0" value="0" {% if params.cd_salon.signal == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="sig0">Нет</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Стеклоподъёмники</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="power_windows" id="pw1" value="1" {% if params.cd_salon.power_windows == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="pw1">Работают</label>
-                <input type="radio" class="btn-check" name="power_windows" id="pw0" value="0" {% if params.cd_salon.power_windows == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="pw0">Нет</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Ремни безопасности</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="seat_belt" id="sb1" value="1" {% if params.cd_salon.seat_belt == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="sb1">Работают</label>
-                <input type="radio" class="btn-check" name="seat_belt" id="sb0" value="0" {% if params.cd_salon.seat_belt == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="sb0">Нет</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label small">Химчистка</label>
-            <select class="form-select form-select-sm" name="cleaning_int">
-              <option value="0" {% if params.cd_salon.cleaning_int == 0 %}selected{% endif %}>Не требуется</option>
-              <option value="1" {% if params.cd_salon.cleaning_int == 1 %}selected{% endif %}>Требуется</option>
-              <option value="2" {% if params.cd_salon.cleaning_int == 2 %}selected{% endif %}>Умеренно</option>
-              <option value="3" {% if params.cd_salon.cleaning_int == 3 %}selected{% endif %}>Сильная</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Пробег соответствует</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="run_respond" id="rr1" value="1" {% if params.cd_salon.run_respond == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="rr1">Да</label>
-                <input type="radio" class="btn-check" name="run_respond" id="rr0" value="0" {% if params.cd_salon.run_respond == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="rr0">Нет</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6">
-            <label class="form-label small">Тип салона (0/1/10)</label>
-            <input type="number" class="form-control form-control-sm" name="type_salon_int" value="{{ params.cd_salon.type_salon_int|default:10 }}" min="0" max="10" style="width:6rem">
-          </div>
-          
-        </div>
         </div>
       </div>
 

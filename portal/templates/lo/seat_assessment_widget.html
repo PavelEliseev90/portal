@@ -1,0 +1,338 @@
+{# Виджет оценки сидений: ваша картинка + кликабельные зоны + расчёт затрат #}
+{# Поместите изображение в static/eco/seat_front_interior.png или передайте seat_diagram_url в контексте #}
+<div class="portal-panel seat-assessment-widget" id="seat-assessment-widget">
+  <h6 class="d-flex align-items-center gap-2 mb-3">
+    <span class="icon-mbri-car"></span> Оценка сидений по зонам (FRONT INTERIOR)
+  </h6>
+  <p class="small text-muted mb-2">Кликните по зоне на схеме, выберите тип повреждения и степень. Затраты рассчитываются по комплектам.</p>
+
+  <div class="mb-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="seat-coord-picker-btn">
+      📐 Режим подбора координат
+    </button>
+    <span class="ms-2 small text-muted" id="seat-coord-hint">Включите режим и кликайте по картинке — координаты появятся ниже. Используйте их в теге &lt;area coords="x1,y1,x2,y2"&gt;</span>
+  </div>
+  <div id="seat-coord-output" class="small font-monospace bg-light p-2 rounded d-none mb-2"></div>
+
+  <div class="seat-img-wrapper position-relative d-inline-block">
+    <img src="C:/Users/p.eliseev/.cursor/repos/kors/portal/static/eco/seat_front_interior.png" alt="Схема салона" id="seat-diagram-img" class="img-fluid" style="max-width:100%; height:auto; display:block;">
+    <div id="seat-click-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="cursor:pointer; left:0; top:0; z-index:2;"></div>
+    <map name="seatMap" id="seatMap">
+      {# Сиденье водителя: зоны 1-7. coords="left,top,right,bottom" в пикселях ОРИГИНАЛЬНОГО изображения #}
+      {# Подставьте свои координаты после подбора. Ниже — примерные значения для картинки ~900x600 #}
+      <area shape="rect" coords="80,220,180,280" data-seat="driver" data-zone="1" href="javascript:void(0)" title="1. Подголовник" alt="Зона 1">
+      <area shape="rect" coords="60,280,130,380" data-seat="driver" data-zone="2" href="javascript:void(0)" title="2. Спинка (L)" alt="Зона 2">
+      <area shape="rect" coords="130,280,260,380" data-seat="driver" data-zone="3" href="javascript:void(0)" title="3. Спинка (C)" alt="Зона 3">
+      <area shape="rect" coords="260,280,330,380" data-seat="driver" data-zone="4" href="javascript:void(0)" title="4. Спинка (R)" alt="Зона 4">
+      <area shape="rect" coords="60,380,130,520" data-seat="driver" data-zone="5" href="javascript:void(0)" title="5. Подушка (L)" alt="Зона 5">
+      <area shape="rect" coords="130,380,260,520" data-seat="driver" data-zone="6" href="javascript:void(0)" title="6. Подушка (C)" alt="Зона 6">
+      <area shape="rect" coords="260,380,330,520" data-seat="driver" data-zone="7" href="javascript:void(0)" title="7. Подушка (R)" alt="Зона 7">
+      {# Сиденье пассажира: зоны 8-14 #}
+      <area shape="rect" coords="550,220,650,280" data-seat="passenger" data-zone="1" href="javascript:void(0)" title="8. Подголовник" alt="Зона 8">
+      <area shape="rect" coords="530,280,600,380" data-seat="passenger" data-zone="2" href="javascript:void(0)" title="9. Спинка (L)" alt="Зона 9">
+      <area shape="rect" coords="600,280,730,380" data-seat="passenger" data-zone="3" href="javascript:void(0)" title="10. Спинка (C)" alt="Зона 10">
+      <area shape="rect" coords="730,280,800,380" data-seat="passenger" data-zone="4" href="javascript:void(0)" title="11. Спинка (R)" alt="Зона 11">
+      <area shape="rect" coords="530,380,600,520" data-seat="passenger" data-zone="5" href="javascript:void(0)" title="12. Подушка (L)" alt="Зона 12">
+      <area shape="rect" coords="600,380,730,520" data-seat="passenger" data-zone="6" href="javascript:void(0)" title="13. Подушка (C)" alt="Зона 13">
+      <area shape="rect" coords="730,380,800,520" data-seat="passenger" data-zone="7" href="javascript:void(0)" title="14. Подушка (R)" alt="Зона 14">
+    </map>
+    {# Оверлеи для подсветки выбранных зон (JS рисует поверх) #}
+    <div id="seat-overlay-container" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events:none; z-index:3;"></div>
+  </div>
+  <p class="small text-muted mt-1">Левая половина — сиденье водителя (1–7), правая — пассажира (8–14).</p>
+
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card border seat-zone-panel d-none" id="seat-zone-panel">
+        <div class="card-header py-2 small">
+          <span id="seat-zone-label">Зона: —</span>
+          <button type="button" class="btn-close btn-sm float-end" aria-label="Закрыть" id="seat-zone-close"></button>
+        </div>
+        <div class="card-body py-2">
+          <input type="hidden" id="seat-zone-current-seat">
+          <input type="hidden" id="seat-zone-current-zone">
+          <div class="mb-2">
+            <label class="form-label small">Тип повреждения</label>
+            <select class="form-select form-select-sm" id="seat-zone-damage-type">
+              <option value="">— не выбрано —</option>
+              <option value="tear">Разрыв / порез</option>
+              <option value="wear">Затирание</option>
+              <option value="stain">Пятно</option>
+              <option value="crack">Трещина (кожа)</option>
+              <option value="upholstery_wear">Износ обивки</option>
+              <option value="foam_wear">Износ наполнителя/паралона</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Степень (1–5)</label>
+            <select class="form-select form-select-sm" id="seat-zone-severity">
+              <option value="0">—</option>
+              <option value="1">1 — минимальная</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5 — критическая</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="seat-zone-apply">Применить</button>
+          <button type="button" class="btn btn-outline-danger btn-sm ms-1" id="seat-zone-clear">Сбросить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card border">
+        <div class="card-header py-2 small fw-bold">Расчёт затрат на восстановление сидений</div>
+        <div class="card-body py-2">
+          <div id="seat-cost-summary" class="small">
+            <div>Выбранные комплекты: <span id="seat-cost-kits">—</span></div>
+            <div class="mt-1 fw-bold">Итого: <span id="seat-cost-total">0</span> ₽</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" name="seat_zones_json" id="seat_zones_json_input" value="">
+    </div>
+  </div>
+</div>
+
+<style>
+.seat-assessment-widget .seat-img-wrapper { display: inline-block; position: relative; }
+.seat-assessment-widget .seat-img-wrapper img { display: block; }
+.seat-assessment-widget map area { cursor: pointer; }
+.seat-overlay-box { position: absolute; border: 2px solid; border-radius: 2px; pointer-events: none; }
+.seat-overlay-box.severity-1 { border-color: #ffc107; background: rgba(255,193,7,0.25); }
+.seat-overlay-box.severity-2, .seat-overlay-box.severity-3 { border-color: #fd7e14; background: rgba(253,126,20,0.25); }
+.seat-overlay-box.severity-4, .seat-overlay-box.severity-5 { border-color: #dc3545; background: rgba(220,53,69,0.25); }
+.seat-overlay-box.has-damage { border-color: #dc3545; background: rgba(220,53,69,0.2); }
+</style>
+
+<script>
+(function() {
+  var ZONE_NAMES = {
+    1: 'Подголовник', 2: 'Спинка (L)', 3: 'Спинка (C)', 4: 'Спинка (R)',
+    5: 'Подушка (L)', 6: 'Подушка (C)', 7: 'Подушка (R)'
+  };
+  var KIT_PRICES = {
+    headrest: 3000, backrest: 8000, cushion: 8000, full_seat: 18000,
+    foam_headrest: 1500, foam_backrest: 4000, foam_cushion: 4000
+  };
+  var severityMultiplier = [0, 0.3, 0.5, 0.8, 1.0, 1.2];
+
+  function getZoneKit(zoneId) {
+    if (zoneId <= 1) return 'headrest';
+    if (zoneId <= 4) return 'backrest';
+    return 'cushion';
+  }
+  function isFoamDamage(type) { return type === 'foam_wear'; }
+
+  var data = { driver: {}, passenger: {} };
+  var areaCoords = {}; // seat_zone -> [x1,y1,x2,y2]
+  var coordPickerMode = false;
+
+  function loadFromInput() {
+    var inp = document.getElementById('seat_zones_json_input');
+    if (inp && inp.value) {
+      try {
+        var parsed = JSON.parse(inp.value);
+        if (parsed.driver) data.driver = parsed.driver;
+        if (parsed.passenger) data.passenger = parsed.passenger;
+      } catch(e) {}
+    }
+  }
+
+  function saveToInput() {
+    var inp = document.getElementById('seat_zones_json_input');
+    if (inp) inp.value = JSON.stringify(data);
+  }
+
+  function collectAreaCoords() {
+    var areas = document.querySelectorAll('#seatMap area[data-seat][data-zone]');
+    var img = document.getElementById('seat-diagram-img');
+    if (!img || !img.offsetWidth) return;
+    areas.forEach(function(a) {
+      var k = a.dataset.seat + '_' + a.dataset.zone;
+      var c = (a.getAttribute('coords') || '').split(',').map(Number);
+      if (c.length >= 4) areaCoords[k] = c;
+    });
+  }
+
+  function updateOverlays() {
+    var container = document.getElementById('seat-overlay-container');
+    var img = document.getElementById('seat-diagram-img');
+    if (!container || !img) return;
+    container.innerHTML = '';
+    var w = img.offsetWidth, h = img.offsetHeight;
+    var nw = img.naturalWidth || w, nh = img.naturalHeight || h;
+    var sx = w / nw, sy = h / nh;
+
+    ['driver', 'passenger'].forEach(function(seat) {
+      for (var z in data[seat]) {
+        var d = data[seat][z];
+        if (!d || !d.type) continue;
+        var k = seat + '_' + z;
+        var c = areaCoords[k];
+        if (!c) continue;
+        var div = document.createElement('div');
+        div.className = 'seat-overlay-box has-damage';
+        if (d.severity >= 1 && d.severity <= 5) div.classList.add('severity-' + d.severity);
+        div.style.left = (c[0] * sx) + 'px';
+        div.style.top = (c[1] * sy) + 'px';
+        div.style.width = ((c[2] - c[0]) * sx) + 'px';
+        div.style.height = ((c[3] - c[1]) * sy) + 'px';
+        container.appendChild(div);
+      }
+    });
+  }
+
+  function calcCost() {
+    var total = 0, kits = [];
+    ['driver', 'passenger'].forEach(function(seat) {
+      var seen = {};
+      for (var z in data[seat]) {
+        var d = data[seat][z];
+        if (!d.type) continue;
+        var zid = parseInt(z, 10);
+        var kit = isFoamDamage(d.type) ? 'foam_' + getZoneKit(zid) : getZoneKit(zid);
+        var key = seat + '_' + kit;
+        if (!seen[key]) {
+          seen[key] = true;
+          var base = KIT_PRICES[kit] || 0;
+          var mult = severityMultiplier[d.severity] || 1;
+          total += Math.round(base * mult);
+          kits.push((seat === 'driver' ? 'Водитель' : 'Пассажир') + ': ' + kit.replace('_', ' ') + ' (' + Math.round(base * mult) + ' ₽)');
+        }
+      }
+    });
+    var kitsEl = document.getElementById('seat-cost-kits');
+    var totalEl = document.getElementById('seat-cost-total');
+    if (kitsEl) kitsEl.textContent = kits.length ? kits.join('; ') : '—';
+    if (totalEl) totalEl.textContent = total.toLocaleString('ru-RU');
+  }
+
+  function handleAreaClick(seat, zoneId) {
+    if (coordPickerMode) return;
+    document.getElementById('seat-zone-current-seat').value = seat;
+    document.getElementById('seat-zone-current-zone').value = zoneId;
+    document.getElementById('seat-zone-label').textContent = 'Зона: ' + (seat === 'driver' ? 'Водитель' : 'Пассажир') + ' — ' + (ZONE_NAMES[zoneId] || zoneId);
+    var d = data[seat][zoneId] || {};
+    document.getElementById('seat-zone-damage-type').value = d.type || '';
+    document.getElementById('seat-zone-severity').value = String(d.severity || 0);
+    document.getElementById('seat-zone-panel').classList.remove('d-none');
+  }
+
+  window.seatZoneClick = function(seat, zoneId) {
+    handleAreaClick(seat, parseInt(zoneId, 10));
+    return false;
+  };
+
+  function applyZone() {
+    var seat = document.getElementById('seat-zone-current-seat').value;
+    var zoneId = parseInt(document.getElementById('seat-zone-current-zone').value, 10);
+    var type = document.getElementById('seat-zone-damage-type').value;
+    var severity = parseInt(document.getElementById('seat-zone-severity').value, 10);
+    if (!type) delete data[seat][zoneId];
+    else data[seat][zoneId] = { type: type, severity: severity };
+    updateOverlays();
+    calcCost();
+    saveToInput();
+    document.getElementById('seat-zone-panel').classList.add('d-none');
+  }
+
+  function clearZone() {
+    var seat = document.getElementById('seat-zone-current-seat').value;
+    var zoneId = parseInt(document.getElementById('seat-zone-current-zone').value, 10);
+    delete data[seat][zoneId];
+    updateOverlays();
+    calcCost();
+    saveToInput();
+    document.getElementById('seat-zone-damage-type').value = '';
+    document.getElementById('seat-zone-severity').value = '0';
+    document.getElementById('seat-zone-panel').classList.add('d-none');
+  }
+
+  function toggleCoordPicker() {
+    coordPickerMode = !coordPickerMode;
+    var btn = document.getElementById('seat-coord-picker-btn');
+    var out = document.getElementById('seat-coord-output');
+    if (coordPickerMode) {
+      btn.textContent = '📐 Выключить подбор координат';
+      btn.classList.add('active');
+      out.classList.remove('d-none');
+      out.textContent = 'Кликайте по картинке. Координаты (left,top,right,bottom):';
+    } else {
+      btn.textContent = '📐 Режим подбора координат';
+      btn.classList.remove('active');
+      out.classList.add('d-none');
+    }
+  }
+
+  function getClickCoordsInImagePixels(e, overlayEl, imgEl) {
+    var rect = overlayEl.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    var nw = imgEl.naturalWidth || imgEl.offsetWidth;
+    var nh = imgEl.naturalHeight || imgEl.offsetHeight;
+    var scaleX = nw / (overlayEl.offsetWidth || 1);
+    var scaleY = nh / (overlayEl.offsetHeight || 1);
+    return { px: Math.round(x * scaleX), py: Math.round(y * scaleY), nw: nw, nh: nh };
+  }
+
+  function findAreaAtPoint(px, py) {
+    var areas = document.querySelectorAll('#seatMap area[data-seat][data-zone]');
+    for (var i = 0; i < areas.length; i++) {
+      var a = areas[i];
+      var c = (a.getAttribute('coords') || '').split(',').map(Number);
+      if (a.getAttribute('shape') === 'rect' && c.length >= 4) {
+        if (px >= c[0] && px <= c[2] && py >= c[1] && py <= c[3])
+          return { seat: a.dataset.seat, zone: parseInt(a.dataset.zone, 10) };
+      }
+    }
+    return null;
+  }
+
+  function onSeatDiagramClick(e) {
+    var overlay = document.getElementById('seat-click-overlay');
+    var img = document.getElementById('seat-diagram-img');
+    if (!overlay || !img || e.target !== overlay) return;
+    var co = getClickCoordsInImagePixels(e, overlay, img);
+    if (coordPickerMode) {
+      var out = document.getElementById('seat-coord-output');
+      var w = 60, h = 50;
+      var x1 = Math.max(0, co.px - w/2), y1 = Math.max(0, co.py - h/2);
+      var x2 = Math.min(co.nw, x1 + w), y2 = Math.min(co.nh, y1 + h);
+      x1 = Math.max(0, x2 - w); y1 = Math.max(0, y2 - h);
+      var s = 'Клик: x=' + co.px + ', y=' + co.py + ' → &lt;area shape="rect" coords="' + x1 + ',' + y1 + ',' + x2 + ',' + y2 + '" ...&gt;';
+      out.innerHTML = (out.innerHTML || '') + '<div class="mt-1">' + s + '</div>';
+      return;
+    }
+    var hit = findAreaAtPoint(co.px, co.py);
+    if (hit) handleAreaClick(hit.seat, hit.zone);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadFromInput();
+    document.getElementById('seat-zone-close').addEventListener('click', function() {
+      document.getElementById('seat-zone-panel').classList.add('d-none');
+    });
+    document.getElementById('seat-zone-apply').addEventListener('click', applyZone);
+    document.getElementById('seat-zone-clear').addEventListener('click', clearZone);
+    document.getElementById('seat-coord-picker-btn').addEventListener('click', toggleCoordPicker);
+    var overlay = document.getElementById('seat-click-overlay');
+    var img = document.getElementById('seat-diagram-img');
+    if (overlay) overlay.addEventListener('click', onSeatDiagramClick);
+    if (img) {
+      img.addEventListener('load', function() {
+        collectAreaCoords();
+        updateOverlays();
+      });
+    }
+    setTimeout(function() {
+      collectAreaCoords();
+      updateOverlays();
+      calcCost();
+    }, 100);
+  });
+})();
+</script>
