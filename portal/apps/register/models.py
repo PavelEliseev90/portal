@@ -3777,6 +3777,7 @@ class RegControlDiagnosticSalon(models.Model):
     damage_door_int = models.IntegerField('Повреждения / затертые карты дверей', default=10, null=True, blank=True)
     damage_seat_int = models.IntegerField('Повреждения / затертые сиденья', default=10, null=True, blank=True)
     type_salon_int = models.IntegerField('Тип салона', default=10, null=True, blank=True)
+    seat_zones_json = models.JSONField('Оценка зон сидений (JSON)', default=dict, null=True, blank=True)
 
     class Meta:
         db_table = 'regControlDiagnosticSalon'
@@ -3905,7 +3906,6 @@ class RegRegInteractivOcenkaFiles(models.Model):
     user        = models.ForeignKey(User, related_name="author", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
 
     def get_absolute_url(self):
-        
         try:
             return self.file.url.replace('/media/', '/media_dop/')
         except:
@@ -3913,6 +3913,15 @@ class RegRegInteractivOcenkaFiles(models.Model):
                 return '/media_dop/static/estimation/pribor.jpg'
 
         return '/media_dop/static/estimation/no_foto.jpg'
+
+    def get_thumbnail_url(self):
+        """URL миниатюры (400×300), если есть; иначе — оригинал."""
+        try:
+            if self.file_mini and self.file_mini.name:
+                return self.file_mini.url.replace('/media/', '/media_dop/')
+        except Exception:
+            pass
+        return self.get_absolute_url()
     
     def is_video(self):
         list_world_name = self.file.name.lower().split('.')
@@ -3920,6 +3929,45 @@ class RegRegInteractivOcenkaFiles(models.Model):
         if format.find('jpg') > -1 or format.find('jpeg') > -1 or format.find('svg') > -1 or format.find('gif') > -1 or format.find('png') > -1 or format.find('tiff') > -1:
             return False
         return True
+
+    def _generate_thumbnail(self):
+        """Генерирует миниатюру 400×300 (fit по длинной стороне), сохраняет в file_mini."""
+        import os
+        if not self.file or not self.file.name:
+            return
+        if self.is_video():
+            return
+        try:
+            from PIL import Image
+            from django.core.files.base import ContentFile
+            path = getattr(self.file, 'path', None)
+            if path and os.path.isfile(path):
+                img = Image.open(path)
+            else:
+                self.file.open('rb')
+                img = Image.open(io.BytesIO(self.file.read()))
+                self.file.close()
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                if img.mode == 'RGBA' and len(img.split()) >= 4:
+                    background.paste(img, mask=img.split()[3])
+                else:
+                    background.paste(img)
+                img = background
+            elif img.mode not in ('RGB', 'L'):
+                img = img.convert('RGB')
+            img.thumbnail((400, 300), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            base, ext = os.path.splitext(self.file.name)
+            thumb_name = base + '_mini.jpg'
+            img.save(buf, format='JPEG', quality=85, optimize=True)
+            buf.seek(0)
+            self.file_mini.save(thumb_name, ContentFile(buf.read()), save=False)
+            super(RegRegInteractivOcenkaFiles, self).save(update_fields=['file_mini'])
+        except Exception:
+            pass
 
     def save(self, *args, **kwargs):
         try:
@@ -3953,6 +4001,7 @@ class RegRegInteractivOcenkaFiles(models.Model):
             self.order = 0
 
         super().save(*args, **kwargs)
+        self._generate_thumbnail()
 
     def __str__(self):
         return "{}".format(self.estimation)

@@ -108,14 +108,18 @@
 
           <div class="col-12 col-lg-6">
             <div class="portal-panel mb-2">
-              
+              <h6 class="d-flex align-items-center gap-2 mb-3">
+                <span class="icon-mbri-info"></span> Салон: вариант и чистота
+              </h6>
+
               <div class="kors-btn-group-wrapper">
                 <div class="kors-btn-group-compact" role="group" aria-label="Вариант салона">
                   <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio0" autocomplete="off" value="0" {% if params.cd_salon.type_salon_int == 0 or not params.cd_salon.type_salon_int %}checked{% endif %}>
                   <label class="btn btn-outline-secondary" for="type_salon_int-radio0">Ткань</label>
                   <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio1" autocomplete="off" value="1" {% if params.cd_salon.type_salon_int == 1 %}checked{% endif %}>
                   <label class="btn btn-outline-success" for="type_salon_int-radio1">Кожа</label>
-                  
+                  <input type="radio" class="btn-check" name="type_salon_int" id="type_salon_int-radio10" autocomplete="off" value="10" {% if params.cd_salon.type_salon_int == 10 %}checked{% endif %}>
+                  <label class="btn btn-outline-secondary" for="type_salon_int-radio10">Не указано</label>
                 </div>
                 <label class="fs-6" for="type_salon_int-radio0">Вариант салона</label>
               </div>
@@ -134,10 +138,14 @@
                 <label class="fs-6" for="cleaning_int-radio0">Химчистка салона</label>
               </div>
 
-              <div class="carousel-inner gallery-containe">
-                <div class="col-sm gallery-item-salon-shema background_images" onclick="visible_foto('gallery-item-salon-shema', 0)" data-index="0">
-                  <img class="d-block w-100" style="max-height: 600px; object-fit: none; border-radius: 10px;" src="{{params.estimation.fotos_salon_capture}}" src1="{{params.estimation.fotos_salon_capture}}"> 
+              <div class="kors-btn-group-wrapper">
+                <div class="kors-btn-group-compact" role="group" aria-label="Пробег соответствует">
+                  <input type="radio" class="btn-check" name="run_respond" id="run_respond-radio1" autocomplete="off" value="1" {% if params.cd_salon.run_respond == 1 %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="run_respond-radio1">Да</label>
+                  <input type="radio" class="btn-check" name="run_respond" id="run_respond-radio0" autocomplete="off" value="0" {% if params.cd_salon.run_respond == 0 %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="run_respond-radio0">Нет</label>
                 </div>
+                <label class="fs-6">Пробег соответствует состоянию салона</label>
               </div>
               
             </div>
