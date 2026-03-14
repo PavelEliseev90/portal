@@ -10287,14 +10287,14 @@ def test(request):
     #     print(' ' + str(s) + ' ' + str(count))
 
     #AutoruComplectation.objects.all().delete()
-    from register.models import RegInteractivOcenkaRLK
-    date_start = DT.datetime.now().replace(day=1, hour = 1, month=3, year=2026)
-    count = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).count()
-    s = 0
-    estimations_id = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).order_by('-id').values('id')
-    for estimation_id in estimations_id:
-        estimation  = RegInteractivOcenkaRLK.objects.get(id = estimation_id['id'])        
-        estimation.save()
+    # from register.models import RegInteractivOcenkaRLK
+    # date_start = DT.datetime.now().replace(day=1, hour = 1, month=3, year=2026)
+    # count = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).count()
+    # s = 0
+    # estimations_id = RegInteractivOcenkaRLK.objects.filter(estimation__start_estimation__gt = date_start).order_by('-id').values('id')
+    # for estimation_id in estimations_id:
+    #     estimation  = RegInteractivOcenkaRLK.objects.get(id = estimation_id['id'])        
+    #     estimation.save()
 
     # from register.models import RegInteractivOcenkaRLK
     # date_start = DT.datetime.now().replace(day=24, hour = 1, month=2, year=2026)
