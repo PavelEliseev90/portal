@@ -2750,8 +2750,8 @@
                           
                           {% for img in params.estimation.fotos_car_all %}
                           
-                            <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-all" onclick="visible_foto('gallery-item-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
-                              <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                            <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-all" onclick="visible_foto('gallery-item-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
+                              <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                             </div>
 
                           {% endfor %}
@@ -2938,9 +2938,9 @@
                               
                               {% for img in params.estimation.fotos_sts %}
                               
-                                <div class="carousel-item background_images  {% if forloop.counter == 1 %} active {% endif %} gallery-item-sts" onclick="visible_foto('gallery-item-sts', {{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images  {% if forloop.counter == 1 %} active {% endif %} gallery-item-sts" onclick="visible_foto('gallery-item-sts', {{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                   
-                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 0.2rem; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 0.2rem; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                     
                                   {% if img.type_file == 'sts' %}
                                     
@@ -3030,9 +3030,9 @@
                               
                               {% for img in params.estimation.fotos_pts %}
                               
-                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pts" onclick="visible_foto('gallery-item-pts',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pts" onclick="visible_foto('gallery-item-pts',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                   
-                                  <img class="d-block w-100" style="border-radius: 10px; max-height: 320px;" src1="{{img.get_absolute_url}}" src="{{img.get_absolute_url}}">
+                                  <img class="d-block w-100" style="border-radius: 10px; max-height: 320px;" src1="{{img.get_absolute_url}}" src="{{img.get_thumbnail_url}}">
                                   
                                   {% if img.type_file == 'sts' %}
                                     
@@ -3391,9 +3391,9 @@
                             
                             {% for img in params.estimation.fotos_salon %}
                             
-                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon-all" onclick="visible_foto('gallery-item-salon-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-salon-all" onclick="visible_foto('gallery-item-salon-all',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                 
-                                <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                 
                                 {% if img.type_file == 'run' %}
                                   
@@ -3655,7 +3655,7 @@
                           <div class="carousel-indicators">
                             {% for img in params.estimation.fotos_car_all_new %}
                               {% if img.path != "" %} 
-                                <button type="button" data-bs-target="#JsonArrayCarAll" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                <button type="button" data-bs-target="#JsonArrayCarAll" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                               {% endif %}
                             {% endfor %}
                           </div>
@@ -3664,11 +3664,11 @@
                             
                             {% for img in params.estimation.fotos_car_all_new %}
                             
-                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-fotos-car-all" onclick="visible_foto('gallery-item-fotos-car-all', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); ">
+                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-fotos-car-all" onclick="visible_foto('gallery-item-fotos-car-all', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); ">
                                 
                                 {% if img.path != "" %}
                                 
-                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 420px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 420px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                   
                                   <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
         
@@ -3722,7 +3722,7 @@
                                           
                             <div class="carousel-indicators">
                               {% for img in params.estimation.fotos_array_images_pered %}
-                                <button type="button" data-bs-target="#JsonArrayArrayImagesPered" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                <button type="button" data-bs-target="#JsonArrayArrayImagesPered" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                               {% endfor %}
                             </div>
                             
@@ -3731,7 +3731,7 @@
                               {% for img in params.estimation.fotos_array_images_pered %}
                               
                                 <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pered" onclick="visible_foto('gallery-item-pered', {{forloop.counter}})" data-index="{{forloop.counter}}"  >
-                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                     <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                       {% if img.kraska %}
                                         <h6>Показание толщиномера - {{img.text}}</h6>
@@ -3777,7 +3777,7 @@
                             <div class="carousel-indicators">
                               {% for img in params.estimation.fotos_array_images_vod %}
                                 
-                                  <button type="button" data-bs-target="#JsonArrayArrayImagesVod" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                  <button type="button" data-bs-target="#JsonArrayArrayImagesVod" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                                 
                               {% endfor %}
                             </div>
@@ -3787,7 +3787,7 @@
                               {% for img in params.estimation.fotos_array_images_vod %}
                               
                                 <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-vod" onclick="visible_foto('gallery-item-vod', {{forloop.counter}})" data-index="{{forloop.counter}}"  >
-                                    <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                    <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                     <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                       {% if img.kraska %}
                                         <h6>Показание толщиномера - {{img.text}}</h6>
@@ -3833,7 +3833,7 @@
                             <div class="carousel-indicators">
                               {% for img in params.estimation.fotos_array_images_zad %}
                                 
-                                  <button type="button" data-bs-target="#JsonArrayArrayImagesZad" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                  <button type="button" data-bs-target="#JsonArrayArrayImagesZad" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                                 
                               {% endfor %}
                             </div>
@@ -3844,7 +3844,7 @@
                               
                                 <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-zad" onclick="visible_foto('gallery-item-zad', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                   
-                                    <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                    <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                     <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                       {% if img.kraska %}
                                         <h6>Показание толщиномера - {{img.text}}</h6>
@@ -3891,7 +3891,7 @@
                             <div class="carousel-indicators">
                               {% for img in params.estimation.fotos_array_images_pass %}
                                 
-                                  <button type="button" data-bs-target="#JsonArrayArrayImagesPas" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                  <button type="button" data-bs-target="#JsonArrayArrayImagesPas" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                                 
                               {% endfor %}
                             </div>
@@ -3902,7 +3902,7 @@
                               
                                 <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pass" onclick="visible_foto('gallery-item-pass', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                   
-                                    <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                    <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                     <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                       {% if img.kraska %}
                                         <h6>Показание толщиномера - {{img.text}}</h6>
@@ -3945,7 +3945,7 @@
                                           
                             <div class="carousel-indicators">
                               {% for img in params.estimation.fotos_array_images_up %}
-                                <button type="button" data-bs-target="#JsonArrayArrayImagesUP" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_absolute_url}}'); ">
+                                <button type="button" data-bs-target="#JsonArrayArrayImagesUP" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
                                 
                               {% endfor %}
                             </div>
@@ -3955,7 +3955,7 @@
                               {% for img in params.estimation.fotos_array_images_up %}
                               
                                 <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-up" onclick="visible_foto('gallery-item-up', {{forloop.counter}})" data-index="{{forloop.counter}}">
-                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}">
+                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
                                     <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
                                       {% if img.kraska %}
                                         <h6>Показание толщиномера - {{img.text}}</h6>
@@ -4292,9 +4292,9 @@
                               
                               {% for img in params.estimation.fotos_kolesa %}
                               
-                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-koleso" onclick="visible_foto('gallery-item-koleso', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-koleso" onclick="visible_foto('gallery-item-koleso', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                   
-                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; max-height: 450px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; max-height: 450px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                   
                                   {% if img.type_file == 'kolesa' %}
                                     
@@ -4530,9 +4530,9 @@
                                 
                                 {% for img in params.estimation.fotos_kolesa2 %}
                                 
-                                  <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-koleso2" onclick="visible_foto('gallery-item-koleso2', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                  <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-koleso2" onclick="visible_foto('gallery-item-koleso2', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                     
-                                    <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                    <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 450px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                     
                                     {% if img.type_file == 'kolesa2' %}
                                       
@@ -4872,9 +4872,9 @@
                               
                               {% for img in params.estimation.fotos_gibdd %}
                               
-                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-gibdd" onclick="visible_foto('gallery-item-gibdd', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-gibdd" onclick="visible_foto('gallery-item-gibdd', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                   
-                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                   
                                   {% if img.type_file == 'gibdd' %}
                                     
@@ -4946,9 +4946,9 @@
                               
                               {% for img in params.estimation.fotos_reestr %}
                               
-                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-reestr" onclick="visible_foto('gallery-item-reestr', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-reestr" onclick="visible_foto('gallery-item-reestr', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                 
-                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                   
                                   {% if img.type_file == 'reestr' %}
                                     
@@ -5010,9 +5010,9 @@
                               
                               {% for img in params.estimation.fotos_market %}
                               
-                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-market" onclick="visible_foto('gallery-item-market', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-market" onclick="visible_foto('gallery-item-market', {{forloop.counter}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                   
-                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                  <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; max-height: 300px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                                   
                                   {% if img.type_file == 'reestr' %}
                                     
@@ -6316,7 +6316,7 @@
                                           
                                               <div class="col-sm-3 gallery-item-task{{task.id}}" onclick="visible_foto('gallery-item-task{{task.id}}', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                                 
-                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                                 
                                               </div>
         
@@ -8008,7 +8008,7 @@
                                       
                                           <div class="col-sm-3 gallery-item-diagnostic" onclick="visible_foto('gallery-item-diagnostic', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                             
-                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                             
                                           </div>
                 
@@ -8030,7 +8030,7 @@
                                       
                                           <div class="col-sm-3 gallery-item-endoscop" onclick="visible_foto('gallery-item-endoscop', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                             
-                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                             
                                           </div>
                 
@@ -8056,7 +8056,7 @@
                                       
                                           <div class="col-sm-3 gallery-item-scaner" onclick="visible_foto('gallery-item-scaner', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                             
-                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                             
                                           </div>
                 
@@ -8310,9 +8310,9 @@
                           
                           {% for img in params.estimation.fotos_remote_alls %}
                           
-                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} gallery-item-remote" onclick="visible_foto('gallery-item-remote',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_absolute_url}}'); border-radius: 0.2rem;">
+                            <div class="carousel-item {% if forloop.counter == 1 %} active {% endif %} gallery-item-remote" onclick="visible_foto('gallery-item-remote',{{forloop.counter0}})" data-index="{{forloop.counter}}" style="--background: url('{{img.get_thumbnail_url}}'); border-radius: 0.2rem;">
                                 
-                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" >
+                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" >
                               
                                 <div class="carousel-caption d-md-block bg-title-slider">
                                     <label class="fs-6">Дистанционная оценка<label class="fs-6">
@@ -16058,7 +16058,7 @@
                         <div class="modern-gallery-container" id="modernGalleryContainer">
                           {% for files in params.estimation.get_files_all %}
                             <div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}" data-alt="{{files.name}}">
-                              <img src="{{files.get_absolute_url}}" alt="{{files.name}}" class="modern-gallery-image" loading="lazy">
+                              <img src="{{files.get_thumbnail_url}}" alt="{{files.name}}" class="modern-gallery-image" loading="lazy">
                             </div>
                           {% endfor %}
                           
@@ -16108,7 +16108,7 @@
                       <div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
                         {% for files in params.estimation.get_files_all %}
                           <div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}">
-                            <img src="{{files.get_absolute_url}}" alt="{{files.name}}" class="modern-gallery-thumbnail-img" loading="lazy">
+                            <img src="{{files.get_thumbnail_url}}" alt="{{files.name}}" class="modern-gallery-thumbnail-img" loading="lazy">
                           </div>
                         {% endfor %}
                       </div>
