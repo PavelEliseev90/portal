@@ -4,6 +4,7 @@
 {% block title %} - Редактирование контрольной диагностики {% endblock %}
 
 {% block content %}
+
 {% include 'lo/control_diagnostic_styles.html' %}
 
 <div class="container-fluid py-3 control-diagnostic-page">
@@ -146,6 +147,7 @@
                 </div>
                 <label class="fs-6">Пробег соответствует состоянию салона</label>
               </div>
+              
             </div>
           </div>
         </div>
@@ -234,14 +236,7 @@
               </div>
             </div>
           </div>
-          <div class="col-12 col-md-6">
-            <label class="form-label small">Цвет</label>
-            <input type="text" class="form-control form-control-sm" name="color" value="{{ params.cd_vnesh.color|default:'' }}" maxlength="150">
-          </div>
-          <div class="col-12">
-            <label class="form-label small">Комментарий внешнего осмотра</label>
-            <textarea class="form-control form-control-sm" name="comment_vnesh" rows="2" maxlength="1500">{{ params.cd_vnesh.comment_vnesh|default:'' }}</textarea>
-          </div>
+          
         </div>
       </div>
 
@@ -250,13 +245,10 @@
       {# Тест-драйв — в стиле интерактивной оценки: portal-panel на параметр, кнопки Исправен/Не исправен/Есть замечания #}
       <div class="portal-panel">
         <h6 class="d-flex align-items-center gap-2 mb-3">
-          <span class="icon-mbri-car"></span> Тест-драйв (пробная поездка)
+          <span class="icon-mbri-car"></span> Диагностика
         </h6>
         <div class="mb-3">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="no_test" id="no_test" {% if params.cd_td.no_test %}checked{% endif %}>
-            <label class="form-check-label" for="no_test">Тест-драйв не производился</label>
-          </div>
+          
         </div>
         <div class="row g-2">
           {% with td=params.cd_td %}
@@ -360,15 +352,7 @@
                 <input type="text" class="form-control" name="comment_airbag" id="comment_airbag" value="{{ td.comment_airbag|default:'' }}" placeholder="" maxlength="512">
                 <label for="comment_airbag">Комментарий</label>
               </div>
-              <div class="mb-3">
-                <label class="form-label small fw-bold">Укажите конкретные проблемы:</label>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="airbag_driver_issue" id="adi" {% if td.airbag_driver_issue %}checked{% endif %}><label class="form-check-label" for="adi">Подушка водителя</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="airbag_passenger_issue" id="api" {% if td.airbag_passenger_issue %}checked{% endif %}><label class="form-check-label" for="api">Подушка пассажира + перешив торпеды</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="airbag_side_issue" id="asi" {% if td.airbag_side_issue %}checked{% endif %}><label class="form-check-label" for="asi">Боковые подушки</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="airbag_knee_issue" id="aki" {% if td.airbag_knee_issue %}checked{% endif %}><label class="form-check-label" for="aki">Подушка коленная</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="seat_belt_restore_issue" id="sbri" {% if td.seat_belt_restore_issue %}checked{% endif %}><label class="form-check-label" for="sbri">Восстановление ремней безопасности</label></div>
-                <div class="form-check"><input class="form-check-input" type="checkbox" name="srs_block_issue" id="srs" {% if td.srs_block_issue %}checked{% endif %}><label class="form-check-label" for="srs">Блок SRS</label></div>
-              </div>
+              
             </div>
           </div>
           {# Кондиционер #}
@@ -517,79 +501,38 @@
               </div>
             </div>
           </div>
+      
           {# ТО #}
-          <div class="col-12 col-xl-6">
+          <div class="col-12">
             <div class="portal-panel">
-              <h6><span class="icon-mbri-credit-card"></span> ТО</h6>
-              <select class="form-select" name="radio_to">
-                <option value="10" {% if td.to == 10 or td.to == None %}selected{% endif %}>—</option>
-                <option value="1" {% if td.to == 1 %}selected{% endif %}>1</option>
-                <option value="2" {% if td.to == 2 %}selected{% endif %}>2</option>
-                <option value="3" {% if td.to == 3 %}selected{% endif %}>3</option>
-              </select>
-            </div>
-          </div>
-          {# Разгонная динамика, КПП, увод, приборы #}
-          <div class="col-12 col-xl-6">
-            <div class="portal-panel">
-              <h6><span class="icon-mbri-credit-card"></span> Разгонная динамика, шумы, вибрации</h6>
+              <h6><span class="icon-mbri-setting3"></span> ТО</h6>
               <div class="kors-btn-group-wrapper-simple">
-                <div class="kors-btn-group-compact" role="group">
-                  <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="ppd1" value="1" {% if td.pp_dinamyc == 1 or td.pp_dinamyc == 10 or td.pp_dinamyc == None %}checked{% endif %}>
-                  <label class="btn btn-outline-success" for="ppd1">Норма</label>
-                  <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="ppd0" value="0" {% if td.pp_dinamyc == 0 %}checked{% endif %}>
-                  <label class="btn btn-outline-danger" for="ppd0">Ремонт</label>
-                  <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="ppd2" value="2" {% if td.pp_dinamyc == 2 %}checked{% endif %}>
-                  <label class="btn btn-outline-warning" for="ppd2">Диагностика</label>
+                <div class="kors-btn-group-compact" role="group" aria-label="ТО">
+                  <input type="radio" class="btn-check" name="radio_to" id="inlineRadio1_to" value="10" {% if td.to == 10 %} checked {% endif %}>
+                  <label class="btn btn-outline-success" for="inlineRadio1_to" style="height: 90px;">
+                    <div>Все ок</div>
+                    <small style="font-size: 0.7rem; opacity: 0.8;">ТО не нужно</small>
+                  </label>
+                  <input type="radio" class="btn-check" name="radio_to" id="inlineRadio2_to" value="1" {% if td.to == 1 %} checked {% endif %}>
+                  <label class="btn btn-outline-warning" for="inlineRadio2_to" style="height: 90px;">
+                    <div>Minimal</div>
+                    <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр</small>
+                  </label>
+                  <input type="radio" class="btn-check" name="radio_to" id="inlineRadio3_to" value="2" {% if td.to == 2 %} checked {% endif %}>
+                  <label class="btn btn-outline-warning" for="inlineRadio3_to" style="height: 90px;">
+                    <div>Middle</div>
+                    <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания</small>
+                  </label>
+                  <input type="radio" class="btn-check" name="radio_to" id="inlineRadio4_to" value="3" {% if td.to == 3 %} checked {% endif %}>
+                  <label class="btn btn-outline-warning" for="inlineRadio4_to" style="height: 90px;"> 
+                    <div>Full</div>
+                    <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки</small>
+                  </label>
                 </div>
               </div>
             </div>
           </div>
-          <div class="col-12 col-xl-6">
-            <div class="portal-panel">
-              <h6><span class="icon-mbri-credit-card"></span> Плавность включения передач</h6>
-              <div class="kors-btn-group-wrapper-simple">
-                <div class="kors-btn-group-compact" role="group">
-                  <input type="radio" class="btn-check" name="radio_pp_kpp" id="ppk1" value="1" {% if td.pp_kpp == 1 or td.pp_kpp == 10 or td.pp_kpp == None %}checked{% endif %}>
-                  <label class="btn btn-outline-success" for="ppk1">Норма</label>
-                  <input type="radio" class="btn-check" name="radio_pp_kpp" id="ppk0" value="0" {% if td.pp_kpp == 0 %}checked{% endif %}>
-                  <label class="btn btn-outline-danger" for="ppk0">Ремонт</label>
-                  <input type="radio" class="btn-check" name="radio_pp_kpp" id="ppk2" value="2" {% if td.pp_kpp == 2 %}checked{% endif %}>
-                  <label class="btn btn-outline-warning" for="ppk2">Диагностика</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-xl-6">
-            <div class="portal-panel">
-              <h6><span class="icon-mbri-credit-card"></span> Увод от прямолинейного движения</h6>
-              <div class="kors-btn-group-wrapper-simple">
-                <div class="kors-btn-group-compact" role="group">
-                  <input type="radio" class="btn-check" name="radio_pp_uvod" id="ppu1" value="1" {% if td.pp_uvod == 1 or td.pp_uvod == 10 or td.pp_uvod == None %}checked{% endif %}>
-                  <label class="btn btn-outline-success" for="ppu1">Норма</label>
-                  <input type="radio" class="btn-check" name="radio_pp_uvod" id="ppu0" value="0" {% if td.pp_uvod == 0 %}checked{% endif %}>
-                  <label class="btn btn-outline-danger" for="ppu0">Ремонт</label>
-                  <input type="radio" class="btn-check" name="radio_pp_uvod" id="ppu2" value="2" {% if td.pp_uvod == 2 %}checked{% endif %}>
-                  <label class="btn btn-outline-warning" for="ppu2">Диагностика</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-xl-6">
-            <div class="portal-panel">
-              <h6><span class="icon-mbri-credit-card"></span> Работа измерительных приборов</h6>
-              <div class="kors-btn-group-wrapper-simple">
-                <div class="kors-btn-group-compact" role="group">
-                  <input type="radio" class="btn-check" name="radio_pp_pribor" id="ppp1" value="1" {% if td.pp_pribor == 1 or td.pp_pribor == 10 or td.pp_pribor == None %}checked{% endif %}>
-                  <label class="btn btn-outline-success" for="ppp1">Норма</label>
-                  <input type="radio" class="btn-check" name="radio_pp_pribor" id="ppp0" value="0" {% if td.pp_pribor == 0 %}checked{% endif %}>
-                  <label class="btn btn-outline-danger" for="ppp0">Ремонт</label>
-                  <input type="radio" class="btn-check" name="radio_pp_pribor" id="ppp2" value="2" {% if td.pp_pribor == 2 %}checked{% endif %}>
-                  <label class="btn btn-outline-warning" for="ppp2">Диагностика</label>
-                </div>
-              </div>
-            </div>
-          </div>
+
           {# Стапель #}
           <div class="col-12">
             <div class="portal-panel">
@@ -597,7 +540,7 @@
               <div class="kors-btn-group-wrapper-simple">
                 <div class="kors-btn-group-compact" role="group">
                   <input type="radio" class="btn-check" name="radio_stapele" id="st0" value="" {% if not td.stapele_type %}checked{% endif %}>
-                  <label class="btn btn-outline-secondary" for="st0">—</label>
+                  <label class="btn btn-outline-success" for="st0">—</label>
                   <input type="radio" class="btn-check" name="radio_stapele" id="st1" value="1" {% if td.stapele_type == 1 %}checked{% endif %}>
                   <label class="btn btn-outline-warning" for="st1">Легкий (3000 ₽, мин. 12 ч)</label>
                   <input type="radio" class="btn-check" name="radio_stapele" id="st2" value="2" {% if td.stapele_type == 2 %}checked{% endif %}>
@@ -616,31 +559,8 @@
               </div>
             </div>
           </div>
-          {# Комментарий тест-драйва #}
-          <div class="col-12">
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" name="comment" id="comment" value="{{ td.comment|default:'' }}" placeholder="" maxlength="250">
-              <label for="comment">Комментарий тест-драйва</label>
-            </div>
-          </div>
-          {# Справочник диагностики #}
-          {% if params.diagnostic_categories %}
-          <div class="col-12">
-            <label class="form-label small fw-bold">Элементы справочника диагностики (выбор по категориям)</label>
-            {% for cat in params.diagnostic_categories %}
-            <div class="mb-2">
-              <span class="fw-bold small">{{ cat.name }} ({{ cat.code }}):</span>
-              <select class="form-select form-select-sm d-inline-block w-50" name="selected_reference_items_{{ cat.code }}" multiple size="3">
-                {% for item in cat.items.all %}
-                {% if item.is_active %}
-                <option value="{{ item.id }}" {% if item.selected %}selected{% endif %}>{{ item.title }}</option>
-                {% endif %}
-                {% endfor %}
-              </select>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
+         
+          
           {% endwith %}
         </div>
       </div>
