@@ -321,26 +321,7 @@
         <div id="selectedStaffs" class="mt-2"></div>
       </div>
       
-      <div class="col-md-3">
-        <label class="form-label text-uppercase">Аналитики</label>
-        <div class="position-relative">
-          <input type="text" class="form-control" id="analystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
-          <div class="list-group position-absolute w-100 mt-1" id="analystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-            {% if params.analysts %}
-              {% for analyst in params.analysts %}
-                <label class="list-group-item">
-                  <input class="form-check-input me-2" type="checkbox" name="analyst_ids" value="{{ analyst.id }}" 
-                    {% if analyst.id in params.filters.analyst_ids_list %}checked{% endif %}>
-                  {{ analyst.eco_name }}
-                </label>
-              {% endfor %}
-            {% else %}
-              <div class="list-group-item text-muted">Нет данных</div>
-            {% endif %}
-          </div>
-        </div>
-        <div id="selectedAnalysts" class="mt-2"></div>
-      </div>
+      
       
       <div class="col-md-3">
         <label class="form-label text-uppercase">Дистанционная оценка</label>
@@ -488,21 +469,6 @@
           <div id="selectedCompareStaffs" class="mt-2"></div>
         </div>
         
-        <div class="col-md-3">
-          <label class="form-label text-uppercase">Аналитики (сравнение)</label>
-          <div class="position-relative">
-            <input type="text" class="form-control" id="compareAnalystSearch" placeholder="Поиск по аналитикам..." autocomplete="off">
-            <div class="list-group position-absolute w-100 mt-1" id="compareAnalystDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-              {% for analyst in params.analysts %}
-                <label class="list-group-item">
-                  <input class="form-check-input me-2" type="checkbox" name="compare_analyst_ids" value="{{ analyst.id }}">
-                  {{ analyst.name }}
-                </label>
-              {% endfor %}
-            </div>
-          </div>
-          <div id="selectedCompareAnalysts" class="mt-2"></div>
-        </div>
         
         <div class="col-md-3">
           <label class="form-label text-uppercase">Дистанционная оценка (сравнение)</label>

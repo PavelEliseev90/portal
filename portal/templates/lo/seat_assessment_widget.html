@@ -1,21 +1,22 @@
-{# Виджет оценки сидений: ваша картинка + кликабельные зоны + расчёт затрат #}
+{% load static %}
+{# Виджет оценки салона FRONT INTERIOR: схема + кликабельные зоны + редактор повреждений #}
 {# Поместите изображение в static/eco/seat_front_interior.png или передайте seat_diagram_url в контексте #}
 <div class="portal-panel seat-assessment-widget" id="seat-assessment-widget">
   <h6 class="d-flex align-items-center gap-2 mb-3">
-    <span class="icon-mbri-car"></span> Оценка сидений по зонам (FRONT INTERIOR)
+    <span class="icon-mbri-car"></span> Осмотр салона (FRONT INTERIOR)
   </h6>
-  <p class="small text-muted mb-2">Кликните по зоне на схеме, выберите тип повреждения и степень. Затраты рассчитываются по комплектам.</p>
+  <p class="small text-muted mb-2">Кликните по зоне на схеме — откроется редактор. Укажите тип повреждения, степень и при необходимости комментарий.</p>
 
   <div class="mb-2">
     <button type="button" class="btn btn-outline-secondary btn-sm" id="seat-coord-picker-btn">
       📐 Режим подбора координат
     </button>
-    <span class="ms-2 small text-muted" id="seat-coord-hint">Включите режим и кликайте по картинке — координаты появятся ниже. Используйте их в теге &lt;area coords="x1,y1,x2,y2"&gt;</span>
+    <span class="ms-2 small text-muted" id="seat-coord-hint">Для уточнения зон: включите режим и кликайте по картинке.</span>
   </div>
   <div id="seat-coord-output" class="small font-monospace bg-light p-2 rounded d-none mb-2"></div>
 
   <div class="seat-img-wrapper position-relative d-inline-block">
-    <img src="C:/Users/p.eliseev/.cursor/repos/kors/portal/static/eco/seat_front_interior.png" alt="Схема салона" id="seat-diagram-img" class="img-fluid" style="max-width:100%; height:auto; display:block;">
+    <img src="{% if seat_diagram_url %}{{ seat_diagram_url }}{% else %}{% static 'eco/seat_front_interior.png' %}{% endif %}" alt="Схема салона FRONT INTERIOR" id="seat-diagram-img" class="img-fluid" style="max-width:100%; height:auto; display:block;">
     <div id="seat-click-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="cursor:pointer; left:0; top:0; z-index:2;"></div>
     <map name="seatMap" id="seatMap">
       {# Сиденье водителя: зоны 1-7. coords="left,top,right,bottom" в пикселях ОРИГИНАЛЬНОГО изображения #}
@@ -35,18 +36,29 @@
       <area shape="rect" coords="530,380,600,520" data-seat="passenger" data-zone="5" href="javascript:void(0)" title="12. Подушка (L)" alt="Зона 12">
       <area shape="rect" coords="600,380,730,520" data-seat="passenger" data-zone="6" href="javascript:void(0)" title="13. Подушка (C)" alt="Зона 13">
       <area shape="rect" coords="730,380,800,520" data-seat="passenger" data-zone="7" href="javascript:void(0)" title="14. Подушка (R)" alt="Зона 14">
+      {# Торпедо и консоль: зоны 15-21 #}
+      <area shape="rect" coords="360,100,540,200" data-seat="interior" data-zone="20" href="javascript:void(0)" title="20. Торпедо (верх)" alt="Зона 20">
+      <area shape="rect" coords="350,180,550,280" data-seat="interior" data-zone="15" href="javascript:void(0)" title="15. Консоль (верх)" alt="Зона 15">
+      <area shape="rect" coords="200,260,360,420" data-seat="interior" data-zone="19" href="javascript:void(0)" title="19. Рулевое колесо / панель" alt="Зона 19">
+      <area shape="rect" coords="400,320,500,400" data-seat="interior" data-zone="17" href="javascript:void(0)" title="17. Рычаг КПП" alt="Зона 17">
+      <area shape="rect" coords="360,380,540,460" data-seat="interior" data-zone="16" href="javascript:void(0)" title="16. Консоль (низ)" alt="Зона 16">
+      <area shape="rect" coords="360,450,540,560" data-seat="interior" data-zone="18" href="javascript:void(0)" title="18. Нижний отсек хранения" alt="Зона 18">
+      <area shape="rect" coords="520,200,640,340" data-seat="interior" data-zone="21" href="javascript:void(0)" title="21. Бардачок" alt="Зона 21">
     </map>
     {# Оверлеи для подсветки выбранных зон (JS рисует поверх) #}
     <div id="seat-overlay-container" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events:none; z-index:3;"></div>
   </div>
-  <p class="small text-muted mt-1">Левая половина — сиденье водителя (1–7), правая — пассажира (8–14).</p>
+  <p class="small text-muted mt-1">Сиденье водителя (1–7), пассажира (8–14), торпедо и консоль (15–21). Координаты зон 15–21 можно скорректировать режимом подбора.</p>
 
   <div class="row mt-3">
-    <div class="col-12">
+    <div class="col-12 col-lg-5">
       <div class="card border seat-zone-panel d-none" id="seat-zone-panel">
-        <div class="card-header py-2 small">
-          <span id="seat-zone-label">Зона: —</span>
-          <button type="button" class="btn-close btn-sm float-end" aria-label="Закрыть" id="seat-zone-close"></button>
+        <div class="card-header py-2 d-flex align-items-center justify-content-between">
+          <div>
+            <span class="badge bg-secondary me-1" id="seat-zone-badge">—</span>
+            <span id="seat-zone-label" class="small fw-bold">Выберите зону</span>
+          </div>
+          <button type="button" class="btn-close btn-sm" aria-label="Закрыть" id="seat-zone-close"></button>
         </div>
         <div class="card-body py-2">
           <input type="hidden" id="seat-zone-current-seat">
@@ -61,6 +73,8 @@
               <option value="crack">Трещина (кожа)</option>
               <option value="upholstery_wear">Износ обивки</option>
               <option value="foam_wear">Износ наполнителя/паралона</option>
+              <option value="scratch">Царапина</option>
+              <option value="discoloration">Выцветание</option>
             </select>
           </div>
           <div class="mb-2">
@@ -74,8 +88,20 @@
               <option value="5">5 — критическая</option>
             </select>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" id="seat-zone-apply">Применить</button>
-          <button type="button" class="btn btn-outline-danger btn-sm ms-1" id="seat-zone-clear">Сбросить</button>
+          <div class="mb-2">
+            <label class="form-label small">Комментарий <span class="text-muted">(опционально)</span></label>
+            <textarea class="form-control form-control-sm" id="seat-zone-comment" rows="2" placeholder="Дополнительное описание повреждения"></textarea>
+          </div>
+          <div class="d-flex gap-1 flex-wrap">
+            <button type="button" class="btn btn-primary btn-sm" id="seat-zone-apply">Применить</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" id="seat-zone-clear">Сбросить зону</button>
+          </div>
+        </div>
+      </div>
+      <div class="card border mt-2" id="seat-zones-list-card">
+        <div class="card-header py-2 small fw-bold">Выбранные зоны с повреждениями</div>
+        <div class="card-body py-2 small" id="seat-zones-list">
+          <span class="text-muted">Нет выбранных зон. Кликните по схеме.</span>
         </div>
       </div>
     </div>
@@ -106,14 +132,23 @@
 .seat-overlay-box.severity-2, .seat-overlay-box.severity-3 { border-color: #fd7e14; background: rgba(253,126,20,0.25); }
 .seat-overlay-box.severity-4, .seat-overlay-box.severity-5 { border-color: #dc3545; background: rgba(220,53,69,0.25); }
 .seat-overlay-box.has-damage { border-color: #dc3545; background: rgba(220,53,69,0.2); }
+.seat-assessment-widget .seat-zone-list-item:hover { background: rgba(0,123,255,0.15) !important; }
 </style>
 
 <script>
 (function() {
   var ZONE_NAMES = {
     1: 'Подголовник', 2: 'Спинка (L)', 3: 'Спинка (C)', 4: 'Спинка (R)',
-    5: 'Подушка (L)', 6: 'Подушка (C)', 7: 'Подушка (R)'
+    5: 'Подушка (L)', 6: 'Подушка (C)', 7: 'Подушка (R)',
+    15: 'Консоль (верх)', 16: 'Консоль (низ)', 17: 'Рычаг КПП', 18: 'Нижний отсек',
+    19: 'Рулевое колесо', 20: 'Торпедо (верх)', 21: 'Бардачок'
   };
+  var DAMAGE_LABELS = {
+    tear: 'Разрыв', wear: 'Затирание', stain: 'Пятно', crack: 'Трещина',
+    upholstery_wear: 'Износ обивки', foam_wear: 'Износ наполнителя',
+    scratch: 'Царапина', discoloration: 'Выцветание'
+  };
+  var SEAT_LABELS = { driver: 'Водитель', passenger: 'Пассажир', interior: 'Салон' };
   var KIT_PRICES = {
     headrest: 3000, backrest: 8000, cushion: 8000, full_seat: 18000,
     foam_headrest: 1500, foam_backrest: 4000, foam_cushion: 4000
@@ -127,7 +162,7 @@
   }
   function isFoamDamage(type) { return type === 'foam_wear'; }
 
-  var data = { driver: {}, passenger: {} };
+  var data = { driver: {}, passenger: {}, interior: {} };
   var areaCoords = {}; // seat_zone -> [x1,y1,x2,y2]
   var coordPickerMode = false;
 
@@ -138,8 +173,21 @@
         var parsed = JSON.parse(inp.value);
         if (parsed.driver) data.driver = parsed.driver;
         if (parsed.passenger) data.passenger = parsed.passenger;
+        if (parsed.interior) data.interior = parsed.interior;
       } catch(e) {}
     }
+  }
+
+  function getGlobalZoneNum(seat, zoneId) {
+    if (seat === 'driver') return zoneId;
+    if (seat === 'passenger') return 7 + parseInt(zoneId, 10);
+    return parseInt(zoneId, 10);
+  }
+
+  function getZoneDisplayName(seat, zoneId) {
+    var num = getGlobalZoneNum(seat, zoneId);
+    var name = ZONE_NAMES[zoneId] || ZONE_NAMES[num] || 'Зона ' + num;
+    return num + '. ' + name;
   }
 
   function saveToInput() {
@@ -167,7 +215,8 @@
     var nw = img.naturalWidth || w, nh = img.naturalHeight || h;
     var sx = w / nw, sy = h / nh;
 
-    ['driver', 'passenger'].forEach(function(seat) {
+    ['driver', 'passenger', 'interior'].forEach(function(seat) {
+      if (!data[seat]) return;
       for (var z in data[seat]) {
         var d = data[seat][z];
         if (!d || !d.type) continue;
@@ -211,14 +260,49 @@
     if (totalEl) totalEl.textContent = total.toLocaleString('ru-RU');
   }
 
+  function updateZonesList() {
+    var list = document.getElementById('seat-zones-list');
+    if (!list) return;
+    var items = [];
+    ['driver', 'passenger', 'interior'].forEach(function(seat) {
+      if (!data[seat]) return;
+      for (var z in data[seat]) {
+        var d = data[seat][z];
+        if (!d || !d.type) continue;
+        var label = getZoneDisplayName(seat, z);
+        var damage = DAMAGE_LABELS[d.type] || d.type;
+        var sev = d.severity ? ' (степ. ' + d.severity + ')' : '';
+        var comment = (d.comment || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        comment = comment ? ' — ' + comment : '';
+        items.push({ seat: seat, zone: z, html: label + ': ' + damage + sev + comment });
+      }
+    });
+    if (items.length === 0) {
+      list.innerHTML = '<span class="text-muted">Нет выбранных зон. Кликните по схеме.</span>';
+      return;
+    }
+    list.innerHTML = items.map(function(it) {
+      return '<div class="seat-zone-list-item mb-1 p-1 rounded bg-light cursor-pointer" data-seat="' + it.seat + '" data-zone="' + it.zone + '"><small>' + it.html + '</small></div>';
+    }).join('');
+    list.querySelectorAll('.seat-zone-list-item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        handleAreaClick(el.dataset.seat, parseInt(el.dataset.zone, 10));
+      });
+    });
+  }
+
   function handleAreaClick(seat, zoneId) {
     if (coordPickerMode) return;
+    var zoneIdStr = String(zoneId);
     document.getElementById('seat-zone-current-seat').value = seat;
-    document.getElementById('seat-zone-current-zone').value = zoneId;
-    document.getElementById('seat-zone-label').textContent = 'Зона: ' + (seat === 'driver' ? 'Водитель' : 'Пассажир') + ' — ' + (ZONE_NAMES[zoneId] || zoneId);
-    var d = data[seat][zoneId] || {};
+    document.getElementById('seat-zone-current-zone').value = zoneIdStr;
+    document.getElementById('seat-zone-badge').textContent = getGlobalZoneNum(seat, zoneIdStr);
+    document.getElementById('seat-zone-label').textContent = (SEAT_LABELS[seat] || seat) + ' — ' + (ZONE_NAMES[zoneId] || ZONE_NAMES[zoneIdStr] || 'Зона ' + zoneIdStr);
+    var d = (data[seat] && data[seat][zoneIdStr]) || {};
     document.getElementById('seat-zone-damage-type').value = d.type || '';
     document.getElementById('seat-zone-severity').value = String(d.severity || 0);
+    var commentEl = document.getElementById('seat-zone-comment');
+    if (commentEl) commentEl.value = d.comment || '';
     document.getElementById('seat-zone-panel').classList.remove('d-none');
   }
 
@@ -232,9 +316,12 @@
     var zoneId = parseInt(document.getElementById('seat-zone-current-zone').value, 10);
     var type = document.getElementById('seat-zone-damage-type').value;
     var severity = parseInt(document.getElementById('seat-zone-severity').value, 10);
+    var commentEl = document.getElementById('seat-zone-comment');
+    var comment = commentEl ? (commentEl.value || '').trim() : '';
     if (!type) delete data[seat][zoneId];
-    else data[seat][zoneId] = { type: type, severity: severity };
+    else data[seat][zoneId] = { type: type, severity: severity, comment: comment };
     updateOverlays();
+    updateZonesList();
     calcCost();
     saveToInput();
     document.getElementById('seat-zone-panel').classList.add('d-none');
@@ -249,6 +336,9 @@
     saveToInput();
     document.getElementById('seat-zone-damage-type').value = '';
     document.getElementById('seat-zone-severity').value = '0';
+    var commentEl = document.getElementById('seat-zone-comment');
+    if (commentEl) commentEl.value = '';
+    updateZonesList();
     document.getElementById('seat-zone-panel').classList.add('d-none');
   }
 
@@ -331,6 +421,7 @@
     setTimeout(function() {
       collectAreaCoords();
       updateOverlays();
+      updateZonesList();
       calcCost();
     }, 100);
   });
