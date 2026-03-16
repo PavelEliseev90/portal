@@ -1749,16 +1749,28 @@ def tradein_funnel_rejected(request):
             type_reception_q |= Q(type_reception_id=tr_id) | Q(page_remote_type_reception_id=tr_id)
         docs = docs.filter(type_reception_q)
     
-    # Собираем все документы в один список (без группировки)
+    # Пагинация, чтобы не загружать в память все документы сразу
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    docs = docs.select_related('unit', 'unit_dc', 'footing').prefetch_related('footing').order_by('-dataTime', '-id')
+    page = request.GET.get('page', 1)
+    paginator = Paginator(docs, 50)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Собираем документы только для текущей страницы
     rejected_items = []
-    reason_archive_stats = defaultdict(int)  # Статистика причин архива
-    failure_reasons_stats = defaultdict(int)  # Статистика причин срыва
-    footing_stats = defaultdict(int)  # Статистика по основаниям
+    reason_archive_stats = defaultdict(int)  # Статистика причин архива (по текущей странице)
+    failure_reasons_stats = defaultdict(int)  # Статистика причин срыва (по текущей странице)
+    footing_stats = defaultdict(int)  # Статистика по основаниям (по текущей странице)
     
     # Импортируем модели для анализа сделки
     from documents.models import DocCarShipment, DocCarAgreement
     
-    for doc in docs.select_related('unit', 'unit_dc', 'footing').prefetch_related('footing'):
+    for doc in page_obj.object_list:
         # Определяем подразделение (источник поступления)
         source_unit = doc.unit_dc if doc.unit_dc else doc.unit
         source_unit_name = source_unit.name if source_unit else 'Не указано'
@@ -1906,9 +1918,6 @@ def tradein_funnel_rejected(request):
             'lo_exists': doc.lo_exists,
         })
     
-    # Сортируем по дате (новые сверху)
-    rejected_items.sort(key=lambda x: x['dataTime'], reverse=True)
-    
     filters = {
         'date_start': date_start.strftime('%Y-%m-%d') or '',
         'date_end': date_end.strftime('%Y-%m-%d') or '',
@@ -1958,7 +1967,8 @@ def tradein_funnel_rejected(request):
         'analysts': analysts,
         'type_receptions': type_receptions,
         'rejected_items': rejected_items,
-        'total_count': len(rejected_items),
+        'total_count': paginator.count,
+        'page_obj': page_obj,
         'reason_archive_stats': reason_archive_stats_sorted,
         'failure_reasons_stats': failure_reasons_stats_sorted,
         'footing_stats': footing_stats_sorted,
