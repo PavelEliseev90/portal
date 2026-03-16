@@ -8914,14 +8914,19 @@ def interactive_evaluations_report(request):
     return render(request, 'lo/interactive_evaluations_report.html', {'params': params})
 
 
-def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids):
+def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=None):
     """
     Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.
     Оптимизированная версия с применением фильтров и select_related для уменьшения количества запросов.
+    При type_reception_ids == [2] отбираются только рабочие листы подразделений не buauto, иначе — только buauto.
     """
     excluded_type_ids = [1,2,3, 4, 6, 7, 9, 10, 19, 21]
     op_rlk_qs = DocRLK.objects.exclude(nomer = '').exclude(type__id__in=excluded_type_ids).select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city')
-    
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных случаях — только buauto
+    if type_reception_ids == [2]:
+        op_rlk_qs = op_rlk_qs.filter(Q(unit_dc__isnull=True, unit__buauto=False) | Q(unit_dc__buauto=False))
+    else:
+        op_rlk_qs = op_rlk_qs.filter(Q(unit_dc__isnull=True, unit__buauto=True) | Q(unit_dc__buauto=True))
     # Применяем фильтры по датам в зависимости от варианта отчета
     if report_type == 1:
         # Сквозной - отбор по датам событий
@@ -9007,6 +9012,13 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         base_qs = base_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных случаях — только buauto
+    if type_reception_ids == [2]:
+        non_buauto_ids = RefUnit.objects.filter(buauto=False).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=non_buauto_ids)
+    else:
+        buauto_ids = RefUnit.objects.filter(buauto=True).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=buauto_ids)
     if brand_list:
         # Фильтр по списку брендов (строки)
         brand_q = Q()
@@ -9053,7 +9065,7 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
         )
     
     # Получаем данные для "Рабочие листы ОП" из DocRLK (оптимизированно)
-    op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+    op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=type_reception_ids)
     total_op_rlk = op_rlk_qs.count()
     
     # Дата для исключения некорректных дат (1.1.1)
@@ -9701,6 +9713,11 @@ def tradein_funnel_analytics(request):
         funnel_qs = funnel_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         funnel_qs = funnel_qs.filter(type_reception_id__in=type_reception_ids)
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных — только buauto
+    if type_reception_ids == [2]:
+        funnel_qs = funnel_qs.filter(unit_id__in=RefUnit.objects.filter(buauto=False).values_list('id', flat=True))
+    else:
+        funnel_qs = funnel_qs.filter(unit_id__in=RefUnit.objects.filter(buauto=True).values_list('id', flat=True))
     if brand_list:
         brand_q = Q()
         for b in brand_list:
@@ -9804,6 +9821,13 @@ def tradein_funnel_analytics_export(request):
         base_qs = base_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных случаях — только buauto
+    if type_reception_ids == [2]:
+        non_buauto_ids = RefUnit.objects.filter(buauto=False).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=non_buauto_ids)
+    else:
+        buauto_ids = RefUnit.objects.filter(buauto=True).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=buauto_ids)
     if brand_list:
         # Фильтр по списку брендов (строки)
         brand_q = Q()
@@ -9844,8 +9868,8 @@ def tradein_funnel_analytics_export(request):
     
     # Фильтруем данные в зависимости от типа экспорта
     if export_type == 'op_rlk':
-        # Рабочие листы ОП - данные из DocRLK (оптимизированно)
-        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        # Рабочие листы ОП - данные из DocRLK (оптимизированно), та же логика buauto по type_reception_ids
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=type_reception_ids)
         export_data = op_rlk_qs.select_related('unit', 'unit_dc').annotate(
             rlk_number=F('nomer'),
             date_rlk=F('dataTime'),
@@ -10075,6 +10099,13 @@ def tradein_funnel_analytics_detail(request):
         base_qs = base_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных случаях — только buauto
+    if type_reception_ids == [2]:
+        non_buauto_ids = RefUnit.objects.filter(buauto=False).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=non_buauto_ids)
+    else:
+        buauto_ids = RefUnit.objects.filter(buauto=True).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=buauto_ids)
     if brand_list:
         brand_q = Q()
         for b in brand_list:
@@ -10113,8 +10144,8 @@ def tradein_funnel_analytics_detail(request):
     
     # Применяем фильтр в зависимости от типа
     if filter_type == 'op_rlk':
-        # Рабочие листы ОП - данные из DocRLK (оптимизированно с пагинацией на уровне QuerySet)
-        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        # Рабочие листы ОП - данные из DocRLK (оптимизированно с пагинацией), та же логика buauto по type_reception_ids
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=type_reception_ids)
         op_rlk_qs = op_rlk_qs.select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city').order_by('-dataTime', '-id')
         
         # Пагинация на уровне QuerySet (оптимально)
@@ -10557,6 +10588,13 @@ def tradein_funnel_analytics_detail(request):
         base_qs = base_qs.filter(city_id__in=city_ids)
     if type_reception_ids:
         base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    # При type_reception_ids == [2] — только подразделения не buauto; в остальных случаях — только buauto
+    if type_reception_ids == [2]:
+        non_buauto_ids = RefUnit.objects.filter(buauto=False).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=non_buauto_ids)
+    else:
+        buauto_ids = RefUnit.objects.filter(buauto=True).values_list('id', flat=True)
+        base_qs = base_qs.filter(unit_id__in=buauto_ids)
     if brand_list:
         brand_q = Q()
         for b in brand_list:
@@ -10595,8 +10633,8 @@ def tradein_funnel_analytics_detail(request):
     # Применяем дополнительный фильтр по типу
     filter_title = ''
     if filter_type == 'op_rlk':
-        # Рабочие листы ОП - данные из DocRLK (оптимизированно с пагинацией на уровне QuerySet)
-        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids)
+        # Рабочие листы ОП - данные из DocRLK, та же логика buauto по type_reception_ids
+        op_rlk_qs = _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=type_reception_ids)
         op_rlk_qs = op_rlk_qs.select_related('unit', 'unit_dc', 'unit__city', 'unit_dc__city').order_by('-dataTime', '-id')
         
         # Пагинация на уровне QuerySet (оптимально)
