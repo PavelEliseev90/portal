@@ -54,6 +54,423 @@ from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 import re
 from django.views.decorators.csrf import csrf_exempt
+from dateutil.relativedelta import relativedelta
+from requests.auth import HTTPBasicAuth
+from avtosalon.models import AvtohubModifications
+
+@api_view(['POST'])
+def calculate_car(request):
+    
+    answer = ''
+    auction = False
+
+    try:
+        info = json.loads(request.body)
+
+        autohubVehicle  = info['autohubVehicle']
+        vehicle         = info['vehicle']
+        run             = vehicle['mileage']
+        year            = vehicle['year']['id']
+        minPrice        = info['minPrice']
+
+        username        = "korsgroup@maxposter.ru"
+        password        = "pJ%[QwwqH,YxP9J-"
+        url             = "api.maxposter.ru"
+        URL_TEMPLATE    = "https://api.maxposter.ru/partners-api/express"
+        token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
+        headers         = { 'Authorization' : 'Basic %s' % token }
+
+        year_curent = DT.datetime.now().year
+        if year_curent - year > 5:
+            year_start  = year - 1   
+            year_end    = year + 1
+        else:
+            year_start  = year - 1   
+            year_end    = year 
+
+        count_avtohub_modification = AvtohubModifications.objects.filter(id_avtohub = autohubVehicle['modificationID']).count()
+        if count_avtohub_modification == 1:
+            avtohub_modification    = AvtohubModifications.objects.filter(id_avtohub = autohubVehicle['modificationID'])[0]
+            if year_start < avtohub_modification.yearFrom:
+                year_start = avtohub_modification.yearFrom
+            if year_end > avtohub_modification.yearTo:
+                year_end = avtohub_modification.yearTo
+        
+        brand = {
+            'id'    : autohubVehicle['brandID'],
+            'name'  : ''
+        }
+        model = {
+            'id'    : autohubVehicle['modelID'],
+            'name'  : ''
+        }
+        generation = {
+            'id'    : autohubVehicle['generationID'],
+            'name'  : ''
+        }
+        modification = {
+            'id'    : autohubVehicle['modificationID'],
+            'name'  : ''
+        }
+        
+        marketFilter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification,
+            'geoDistance'   : 500,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end
+        }
+            
+        salesFromDate = DT.datetime.now() - relativedelta(months=2)
+        salesFromDate = salesFromDate.replace(day=1, hour=1)
+
+        filter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification,
+            'geoDistance'   : 500,
+            'useAutoFilter' : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
+            'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
+        }
+
+        vehicle = {
+            'year'      : year,
+            'mileage'   : run,
+            'rubPrice'  : minPrice
+        }
+            
+        data_info = {
+            'dealerId'          : 2107,
+            'marketFilter'      : marketFilter,
+            'filter'            : filter,
+            'vehicle'           : vehicle 
+        }
+            
+        r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
+        if r.status_code == 200:
+            
+            kf_auction          = 75 
+
+            list_info_price     = list()
+            zna                 = 0
+            zachita_ot_ubitka   = 0
+            finance_price       = 0
+            iznos_price         = 0
+            
+            
+            zg = "Неопределена"
+            
+            dc = RefUnit.objects.get(id = 90)
+
+            fin_all         = 25
+            day_sale_all    = 90
+            
+            js_data = json.loads(r.text)
+            
+            data = js_data['data']
+            if len(data) == 1:
+                data = data[0]    
+
+            analyticsByActualSales  = data['analyticsByActualSales']
+            zna                     = analyticsByActualSales['avgPriceWithCorrection']
+            day_sale_all            = analyticsByActualSales['avgDaysInSale']
+            
+            if zna == 0:
+                return None
+            
+            kf                  = 100
+            percent_ss          = 0
+            percent_torg        = 0
+            zna_izp_kf          = 0
+            zna_izp_type        = 0
+            percent_sale_1C     = 100
+            percent_sale        = 100
+            percent_sale_rdo    = 100
+            percent_sale_kor    = 100
+            battery             = 0
+            matrix_auction      = 0
+            
+            if zna < 200000:
+                zg              = '200'
+                kf              = getattr(dc, 'correction_txt_200', None) if getattr(dc, 'correction_txt_200', None) not in (None, 0) else dc.ratio_avtohub_txt_200
+                percent_ss      = getattr(dc, 'markup_txt_200',   None) if getattr(dc, 'markup_txt_200',   None) not in (None, 0) else dc.percent_txt_200
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_200', None) if getattr(dc, 'max_discount_bargain_percent_200', None) not in (None, 0) else dc.percent_torg_txt_200
+                percent_sale_1C = getattr(dc, 'correction_test_1c_200', None) if getattr(dc, 'correction_test_1c_200', None) not in (None, 0) else dc.ratio_1с_test_price_200
+                percent_sale    = getattr(dc, 'correction_test_200',    None) if getattr(dc, 'correction_test_200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_200
+                percent_sale_rdo= getattr(dc, 'correction_rdo_200',     None) if getattr(dc, 'correction_rdo_200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_200
+                percent_sale_kor= getattr(dc, 'correction_kor_200',     None) if getattr(dc, 'correction_kor_200',     None) not in (None, 0) else dc.ratio_avtohub_kor_200
+            elif zna < 400000:
+                zg              = '400'
+                kf              = getattr(dc, 'correction_txt_400', None) if getattr(dc, 'correction_txt_400', None) not in (None, 0) else dc.ratio_avtohub_txt_400
+                percent_ss      = getattr(dc, 'markup_txt_400',   None) if getattr(dc, 'markup_txt_400',   None) not in (None, 0) else dc.percent_txt_400
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_400', None) if getattr(dc, 'max_discount_bargain_percent_400', None) not in (None, 0) else dc.percent_torg_txt_400
+                percent_sale_1C = getattr(dc, 'correction_test_1c_400', None) if getattr(dc, 'correction_test_1c_400', None) not in (None, 0) else dc.ratio_1с_test_price_400
+                percent_sale    = getattr(dc, 'correction_test_400',    None) if getattr(dc, 'correction_test_400',    None) not in (None, 0) else dc.ratio_avtohub_test_price_400
+                percent_sale_rdo= getattr(dc, 'correction_rdo_400',     None) if getattr(dc, 'correction_rdo_400',     None) not in (None, 0) else dc.ratio_avtohub_rdo_400
+                percent_sale_kor= getattr(dc, 'correction_kor_400',     None) if getattr(dc, 'correction_kor_400',     None) not in (None, 0) else dc.ratio_avtohub_kor_400        
+            elif zna < 700000:
+                zg              = '700'
+                kf              = getattr(dc, 'correction_txt_700', None) if getattr(dc, 'correction_txt_700', None) not in (None, 0) else dc.ratio_avtohub_txt_700
+                percent_ss      = getattr(dc, 'markup_txt_700',   None) if getattr(dc, 'markup_txt_700',   None) not in (None, 0) else dc.percent_txt_700
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_700', None) if getattr(dc, 'max_discount_bargain_percent_700', None) not in (None, 0) else dc.percent_torg_txt_700
+                percent_sale_1C = getattr(dc, 'correction_test_1c_700', None) if getattr(dc, 'correction_test_1c_700', None) not in (None, 0) else dc.ratio_1с_test_price_700
+                percent_sale    = getattr(dc, 'correction_test_700',    None) if getattr(dc, 'correction_test_700',    None) not in (None, 0) else dc.ratio_avtohub_test_price_700
+                percent_sale_rdo= getattr(dc, 'correction_rdo_700',     None) if getattr(dc, 'correction_rdo_700',     None) not in (None, 0) else dc.ratio_avtohub_rdo_700
+                percent_sale_kor= getattr(dc, 'correction_kor_700',     None) if getattr(dc, 'correction_kor_700',     None) not in (None, 0) else dc.ratio_avtohub_kor_700            
+            elif zna < 1200000:
+                zg              = '1 200'
+                kf              = getattr(dc, 'correction_txt_1200', None) if getattr(dc, 'correction_txt_1200', None) not in (None, 0) else dc.ratio_avtohub_txt_1200
+                percent_ss      = getattr(dc, 'markup_txt_1200',   None) if getattr(dc, 'markup_txt_1200',   None) not in (None, 0) else dc.percent_txt_1200
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_1200', None) if getattr(dc, 'max_discount_bargain_percent_1200', None) not in (None, 0) else dc.percent_torg_txt_1200
+                percent_sale_1C = getattr(dc, 'correction_test_1c_1200', None) if getattr(dc, 'correction_test_1c_1200', None) not in (None, 0) else dc.ratio_1с_test_price_1200
+                percent_sale    = getattr(dc, 'correction_test_1200',    None) if getattr(dc, 'correction_test_1200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_1200
+                percent_sale_rdo= getattr(dc, 'correction_rdo_1200',     None) if getattr(dc, 'correction_rdo_1200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_1200
+                percent_sale_kor= getattr(dc, 'correction_kor_1200',     None) if getattr(dc, 'correction_kor_1200',     None) not in (None, 0) else dc.ratio_avtohub_kor_1200            
+            elif zna < 2000000:
+                zg              = '2 000'
+                kf              = getattr(dc, 'correction_txt_2000', None) if getattr(dc, 'correction_txt_2000', None) not in (None, 0) else dc.ratio_avtohub_txt_2000
+                percent_ss      = getattr(dc, 'markup_txt_2000',   None) if getattr(dc, 'markup_txt_2000',   None) not in (None, 0) else dc.percent_txt_2000
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_2000', None) if getattr(dc, 'max_discount_bargain_percent_2000', None) not in (None, 0) else dc.percent_torg_txt_2000
+                percent_sale_1C = getattr(dc, 'correction_test_1c_2000', None) if getattr(dc, 'correction_test_1c_2000', None) not in (None, 0) else dc.ratio_1с_test_price_2000
+                percent_sale    = getattr(dc, 'correction_test_2000',    None) if getattr(dc, 'correction_test_2000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_2000
+                percent_sale_rdo= getattr(dc, 'correction_rdo_2000',     None) if getattr(dc, 'correction_rdo_2000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_2000
+                percent_sale_kor= getattr(dc, 'correction_kor_2000',     None) if getattr(dc, 'correction_kor_2000',     None) not in (None, 0) else dc.ratio_avtohub_kor_2000            
+            elif zna < 3000000:
+                zg              = '3 000'
+                kf              = getattr(dc, 'correction_txt_3000', None) if getattr(dc, 'correction_txt_3000', None) not in (None, 0) else dc.ratio_avtohub_txt_3000
+                percent_ss      = getattr(dc, 'markup_txt_3000',   None) if getattr(dc, 'markup_txt_3000',   None) not in (None, 0) else dc.percent_txt_3000
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_3000', None) if getattr(dc, 'max_discount_bargain_percent_3000', None) not in (None, 0) else dc.percent_torg_txt_3000
+                percent_sale_1C = getattr(dc, 'correction_test_1c_3000', None) if getattr(dc, 'correction_test_1c_3000', None) not in (None, 0) else dc.ratio_1с_test_price_3000
+                percent_sale    = getattr(dc, 'correction_test_3000',    None) if getattr(dc, 'correction_test_3000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_3000
+                percent_sale_rdo= getattr(dc, 'correction_rdo_3000',     None) if getattr(dc, 'correction_rdo_3000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_3000
+                percent_sale_kor= getattr(dc, 'correction_kor_3000',     None) if getattr(dc, 'correction_kor_3000',     None) not in (None, 0) else dc.ratio_avtohub_kor_3000
+            elif zna < 5000000:
+                zg              = '5 000'
+                kf              = getattr(dc, 'correction_txt_5000', None) if getattr(dc, 'correction_txt_5000', None) not in (None, 0) else dc.ratio_avtohub_txt_5000
+                percent_ss      = getattr(dc, 'markup_txt_5000',   None) if getattr(dc, 'markup_txt_5000',   None) not in (None, 0) else dc.percent_txt_5000
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_5000', None) if getattr(dc, 'max_discount_bargain_percent_5000', None) not in (None, 0) else dc.percent_torg_txt_5000
+                percent_sale_1C = getattr(dc, 'correction_test_1c_5000', None) if getattr(dc, 'correction_test_1c_5000', None) not in (None, 0) else dc.ratio_1с_test_price_5000
+                percent_sale    = getattr(dc, 'correction_test_5000',    None) if getattr(dc, 'correction_test_5000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5000
+                percent_sale_rdo= getattr(dc, 'correction_rdo_5000',     None) if getattr(dc, 'correction_rdo_5000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5000
+                percent_sale_kor= getattr(dc, 'correction_kor_5000',     None) if getattr(dc, 'correction_kor_5000',     None) not in (None, 0) else dc.ratio_avtohub_kor_5000            
+            else:
+                zg              = '5 000+'
+                kf              = getattr(dc, 'correction_txt_5001', None) if getattr(dc, 'correction_txt_5001', None) not in (None, 0) else dc.ratio_avtohub_txt_5001
+                percent_ss      = getattr(dc, 'markup_txt_5001',   None) if getattr(dc, 'markup_txt_5001',   None) not in (None, 0) else dc.percent_txt_5001
+                percent_torg    = getattr(dc, 'max_discount_bargain_percent_5001', None) if getattr(dc, 'max_discount_bargain_percent_5001', None) not in (None, 0) else dc.percent_torg_txt_5001
+                percent_sale_1C = getattr(dc, 'correction_test_1c_5001', None) if getattr(dc, 'correction_test_1c_5001', None) not in (None, 0) else dc.ratio_1с_test_price_5001
+                percent_sale    = getattr(dc, 'correction_test_5001',    None) if getattr(dc, 'correction_test_5001',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5001
+                percent_sale_rdo= getattr(dc, 'correction_rdo_5001',     None) if getattr(dc, 'correction_rdo_5001',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5001
+                percent_sale_kor= getattr(dc, 'correction_kor_5001',     None) if getattr(dc, 'correction_kor_5001',     None) not in (None, 0) else dc.ratio_avtohub_kor_5001            
+
+            if percent_torg < 0:
+                percent_torg = percent_torg * -1
+
+            if percent_ss < 0:
+                percent_ss = percent_ss * -1
+                                                    
+            price = zna 
+            # повышенный износ / такси
+            if run > 175000:
+                price_new  = price - (price * 10 / 100)
+                diff       = price - price_new
+                price = price_new
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована c учетом повышенного износа",  
+                    'name'      : "износ" 
+                }
+                iznos_price = diff
+                list_info_price.append(inf_price)
+            
+            #Считаем авто в продаже 
+            price_sale_rdo = 0
+            price_sale_kor = 0
+            
+            price_sale      = price * percent_sale / 100
+            price_sale_rdo  = price * percent_sale_rdo / 100
+            price_sale_kor  = price *  percent_sale_kor / 100
+            
+            #Считаем авто в токсичке
+            price_old       = price
+            price           = price - (price * (100 - kf) / 100) 
+            diff            = (price_old * (100 - kf) / 100)
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "ЦНА * ИРЦ ТХТ / посчитана цена с учетом продажи в токсичном стоке",
+                'name'      : "цена в токсичной продаже"
+            }
+            list_info_price.append(inf_price)
+            
+            #Cчитаем с защитой от убытка
+            price_old       = price
+            price           = price - (price * percent_ss / 100) 
+            diff            = (price_old * percent_ss / 100)
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена с учетом защиты от убытка CC " + str(percent_ss) + " %",
+                'name'      : "защита от убытка"   
+            }
+            zachita_ot_ubitka = diff
+            list_info_price.append(inf_price)
+            
+            # cчитаем с защитой от скидкой торг
+            price_old       = price
+            price           = price - (price * percent_torg / 100) 
+            diff            = (price_old * percent_torg / 100)
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена с учетом защиты скидки торг " + str(percent_torg) + " %",
+                'name'      : "скидка торг"  
+            }
+            discount_torg    = diff
+            list_info_price.append(inf_price)
+
+            # Финансирование
+            fin = fin_all
+            finance = round(price * ((fin / 365) / 100) * day_sale_all, 2) 
+                
+            price           = price - finance
+            diff            = finance
+            finance_price   = finance
+
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day_sale_all)) + " дней",
+                'name'      : "финансирование"
+            }
+            list_info_price.append(inf_price)
+        
+        #Смотрим автотеку
+        
+        autoteka_events = info['autoteka']['report']['events']
+        for event in autoteka_events:
+            if event['type'] == 'taxi' and event['status'] != 'ok' or event['type'] == 'carsharing' and event['status'] != 'ok':
+                auction = True
+            elif event['type'] == 'mileageTwisted' and event['status'] != 'ok':
+                auction = True
+
+        if auction:
+            price_new  = price - (price * 40 / 100)
+            diff       = price - price_new
+            price = price_new
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована c учетом скрученного пробега",  
+                'name'      : "пробег"
+            }
+            list_info_price.append(inf_price) 
+                
+        
+        # продажи и статистика корсавто
+        # пока убрали
+        #if estimation.kors_sale_cost_price_avg > 0:
+        #    price_new   = (price + estimation.kors_sale_cost_price_avg) / 2
+        #    diff        = price - price_new
+        #    if diff > 0:
+        #        price = price_new
+        #        inf_price = {
+        #            'price'     : price,
+        #            'dif'       : diff,
+        #            'comment'   : "Цена скоректирована c учетом истории продаж аналогичных АМ КорсАвто",  
+        #            'name'      : "история корсавто"  
+        #        }
+        #        list_info_price.append(inf_price)
+
+        
+        
+        #Финансирование
+        # if zna_type != '1C':
+        #     #Проверяем корректировку ЦНА
+        #     if zna_izp_type > -1:            
+        #         #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
+        #         zna_type_name = ''
+        #         if zna_izp_type == 1:
+        #             zna_type_name = '""'
+        #         else:
+        #             zna_type_name = '""'
+        #         price_old       = price
+        #         day = day_sale_all
+        #         if day_sale_zg > 0:
+        #             day = day_sale_zg
+
+        #         fin = fin_all
+        #         if fin_zg > 0:
+        #             fin = fin_zg
+
+        #         if zna_type == 'autohub_k':
+        #             if estimation.hub_days_in_stok_avg_k > 0:
+        #                 day = estimation.hub_days_in_stok_avg_k
+        #         elif estimation.hub_days_in_stok_avg > 0:
+        #             day = estimation.hub_sale_days_in_stok_avg
+        #             #day = estimation.hub_days_in_stok_avg # Переключил по согласованию с Серебрянниковым, для расчета дней не текущего рынка а истории продаж
+                
+        #         finance = round(price * ((fin / 365) / 100) * day, 2) 
+                
+        #         price           = price - finance
+        #         diff            = finance
+        #         finance_price   = finance
+
+        #         inf_price = {
+        #             'price'     : price,
+        #             'dif'       : diff,
+        #             'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней",
+        #             'name'      : "финансирование"
+        #         }
+               
+        #ИТОГ
+            estimation_price    = round(price, -2)
+            profit              = round(price_sale - price, -2)
+            difference_sum          = 0     
+            
+            cna_expenses = zna
+            
+            if cna_expenses < 0:
+                cna_expenses = zna
+            estimation_price_to_bcp = 0    
+            
+            difference_sum = 0
+            
+            answer = {
+                'profit'                        : profit,
+                'hub_sale_price_avg'            : zna,
+                'hub_price_avg'                 : day_sale_all,
+                'zna'                           : zna,
+                'estimation_price'              : estimation_price,
+                'zg'                            : zg,
+                'kf'                            : kf,
+                'kors_price_correction_sale'    : 0,
+                'list_info_price'               : list_info_price,
+                'sale'                          : price_sale,
+                'price_sale'                    : price_sale,
+                'price_sale_rdo'                : price_sale_rdo,
+                'price_sale_kor'                : price_sale_kor,
+                'cna_expenses'                  : cna_expenses,
+                'zachita_ot_ubitka'             : zachita_ot_ubitka,
+                'finance_price'                 : finance_price,
+                'iznos_price'                   : iznos_price,
+                'discount_torg'                 : discount_torg,
+                'auction'                       : auction
+            }
+    except Exception as e:
+        answer = str(e)
+
+    to_json = {
+        'answer'     : answer,
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK) 
 
 
 @api_view(['GET'])

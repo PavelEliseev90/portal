@@ -45,6 +45,8 @@ def _should_log_pageview(request):
     return False
   if path.startswith('/changelog/pageview-dashboard') or path.startswith('/admin/jsi18n'):
     return False
+  if path.startswith('/api/'):
+    return False
   return True
 
 
