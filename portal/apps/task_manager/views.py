@@ -711,6 +711,197 @@ def get_info_max_remote(interctiv_rlk, estimation_id):
     except:
         s = 1
 
+def get_info_max_znak(interactiv_rlk, estimation_id):
+    
+    estimation  = RegInteractivOcenka.objects.get(pk = estimation_id)
+    
+    if estimation.complectation != None:
+        username        = "korsgroup@maxposter.ru"
+        password        = "pJ%[QwwqH,YxP9J-"
+        url             = "api.maxposter.ru"
+        URL_TEMPLATE    = "https://api.maxposter.ru/partners-api/express"
+        token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
+        headers         = { 'Authorization' : 'Basic %s' % token }
+
+        year_curent = DT.datetime.now().year
+        if year_curent - estimation.year > 5:
+            year_start  = estimation.year - 1   
+            year_end    = estimation.year + 1
+        else:
+            year_start  = estimation.year - 1   
+            year_end    = estimation.year 
+
+        try:
+            avtohub_modification    = None
+            count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
+            if count_avtohub_modification == 1:
+                avtohub_modification    = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
+                autohub_complectation   = AvtohubComplectations.objects.filter(modificationId = avtohub_modification.id_avtohub).filter(autoruId = estimation.complectation.idSite).count()
+                if autohub_complectation == 1:
+                    autohub_complectation   = AvtohubComplectations.objects.filter(modificationId = avtohub_modification.id_avtohub).filter(autoruId = estimation.complectation.idSite)[0]
+                    if year_start < avtohub_modification.yearFrom:
+                        year_start = avtohub_modification.yearFrom
+                    if year_end > avtohub_modification.yearTo:
+                        year_end = avtohub_modification.yearTo
+                        
+            if avtohub_modification != None:
+                brand = {
+                    'id'    : avtohub_modification.brandId,
+                    'name'  : estimation.modification.model.mark.name.strip()
+                }
+                model = {
+                    'id'    : avtohub_modification.modelId,
+                    'name'  : ''
+                }
+                generation = {
+                    'id'    : avtohub_modification.generationId,
+                    'name'  : ''
+                }
+                modification = {
+                    'id'    : avtohub_modification.id_avtohub,
+                    'name'  : ''
+                }
+                complectation = {
+                    'id'    : autohub_complectation.id_avtohub,
+                    'name'  : ''
+                }
+            else:
+                brand = {
+                    'id'    : None,
+                    'name'  : estimation.modification.model.mark.name.strip()
+                }
+                model = {
+                    'id'    : None,
+                    'name'  : get_name_re(estimation.modification.model.name, 0)
+                }
+                generation = {
+                    'id'    : None,
+                    'name'  : get_name_re(estimation.modification.model.name, 1)
+                }
+                modification = {
+                    'id'    : None,
+                    'name'  : estimation.modification.name
+                }
+                complectation = {
+                    'id'    : estimation.complectation.name,
+                    'name'  : ''
+                }
+            marketFilter = {
+                'brand'         : brand,
+                'model'         : model,
+                'generation'    : generation,
+                'modification'  : modification,
+                'complectation' : complectation,
+                'geoDistance'   : 500,
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end
+            }
+            
+            salesFromDate = estimation.start_estimation - relativedelta(months=2)
+            salesFromDate = salesFromDate.replace(day=1, hour=1)
+
+            filter = {
+                'brand'         : brand,
+                'model'         : model,
+                'generation'    : generation,
+                'modification'  : modification,
+                'complectation' : complectation,
+                'geoDistance'   : 500,
+                'useAutoFilter' : False,
+                'yearFrom'      : year_start,
+                "yearTo"        : year_end,
+                'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
+            }
+
+            if estimation.page_salon != None:
+                vehicle = {
+                    'year'      : estimation.year,
+                    'mileage'   : estimation.page_salon.run,
+                    'rubPrice'  : interactiv_rlk.page_soglasovanie.price_sale
+                }
+            else:
+                vehicle = {
+                    'year'      : estimation.year,
+                    'mileage'   : estimation.page_remote.run,
+                    'rubPrice'  : estimation.page_remote.price_sale
+                }
+            
+            data_info = {
+                'dealerId'          : 2107,
+                'marketFilter'      : marketFilter,
+                'filter'            : filter,
+                'vehicle'           : vehicle 
+            }
+            
+            r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
+            if r.status_code == 200:
+                
+                estimation.hub_data = r.text
+                js_data = json.loads(r.text)
+                
+                data = js_data['data']
+                if len(data) == 1:
+                    data = data[0]    
+
+                analyticsByCompletedSales               = data['analyticsByCompletedSales']
+                estimation.hub_sale_avg_k                 = analyticsByCompletedSales['avgPriceWithCorrection']
+                estimation.hub_sale_days_in_stok_avg_k    = analyticsByCompletedSales['avgDaysInSale']
+                estimation.hub_sale_run_avg_k             = analyticsByCompletedSales['avgMileage']
+                estimation.hub_sale_year_avg_k            = analyticsByCompletedSales['avgYear']
+                estimation.hub_sale_price_max_k           = analyticsByCompletedSales['maxPriceWithCorrection']
+                estimation.hub_sale_price_min_k           = analyticsByCompletedSales['minPriceWithCorrection']
+                estimation.hub_sale_pricePosition_k       = analyticsByCompletedSales['pricePosition']
+                estimation.hub_sale_vRating_k             = analyticsByCompletedSales['vRating']
+                estimation.hub_sale_total_k               = analyticsByCompletedSales['usefulSalesTotal']
+            
+                
+                analyticsByActualSales                  = data['analyticsByActualSales']
+                estimation.hub_avg_k                    = analyticsByActualSales['avgPriceWithCorrection']
+                estimation.hub_days_in_stok_avg_k       = analyticsByActualSales['avgDaysInSale']
+                estimation.hub_run_avg_k                = analyticsByActualSales['avgMileage']
+                estimation.hub_year_avg_k               = analyticsByActualSales['avgYear']
+                estimation.hub_price_max_k              = analyticsByActualSales['maxPriceWithCorrection']
+                estimation.hub_price_min_k              = analyticsByActualSales['minPriceWithCorrection']
+                estimation.hub_pricePosition_k          = analyticsByActualSales['pricePosition']
+                estimation.hub_vRating_k                = analyticsByActualSales['vRating']
+                estimation.hub_total_k                  = analyticsByActualSales['usefulSalesTotal']
+                estimation.hub_start_k                  = DT.datetime.now()
+                estimation.save(
+                    update_fields=[
+                        'hub_sale_avg_k',
+                        'hub_sale_days_in_stok_avg_k',
+                        'hub_sale_run_avg_k',
+                        'hub_sale_year_avg_k',
+                        'hub_sale_price_max_k',
+                        'hub_sale_price_min_k',
+                        'hub_sale_pricePosition_k',
+                        'hub_sale_vRating_k',
+                        'hub_sale_total_k',
+                        'hub_avg_k',
+                        'hub_days_in_stok_avg_k',
+                        'hub_run_avg_k',
+                        'hub_year_avg_k',
+                        'hub_price_max_k',
+                        'hub_price_min_k',
+                        'hub_pricePosition_k',
+                        'hub_vRating_k',
+                        'hub_total_k',
+                        'hub_start_k',
+                        ])
+
+            else:
+                text = r.text
+                estimation.hub_start_k  = DT.datetime.now()
+                estimation.hub_data_2   = r.text
+                estimation.save(update_fields=[
+                        'hub_data_2',
+                        'hub_start_k',
+                        ])
+
+        except:
+            s = 1
+
+
 def get_info_max(interactiv_rlk, estimation_id):
     
     estimation  = RegInteractivOcenka.objects.get(pk = estimation_id)
@@ -977,7 +1168,7 @@ def send_auction(auction):
 
 def info_car_auction(slug):
     cars        = RefCarsOrganization.objects.filter(slug = slug)
-    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
+    subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
     cars        = cars.annotate(
         int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
         int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
@@ -1081,25 +1272,26 @@ def info_car_auction(slug):
         estimation = None
         diagnostika = ''
         if car['int_ocenka_id'] != None and car['int_ocenka_id'] != '': 
-            estimation  = RegInteractivOcenka.objects.get(id = car['int_ocenka_id'])
-            diagnostika = estimation.page_soglasovanie.comment_diagnostica
+            estimationrlk  = RegInteractivOcenkaRLK.objects.get(id = car['int_ocenka_id'])
+            estimation = estimationrlk.estimation 
+            diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
 
-        car['int_ocenka_url_vnesh']     = get_url_int(car['int_ocenka_id'], 'vnesh_car_all')
-        car['int_ocenka_url_damage']    = get_url_int(car['int_ocenka_id'], 'damage')
+        car['int_ocenka_url_vnesh']     = get_url_int(estimation.id, 'vnesh_car_all')
+        car['int_ocenka_url_damage']    = get_url_int(estimation.id, 'damage')
         
-        car['int_ocenka_url_diagnostic']    = get_url_int(car['int_ocenka_id'], 'diagnostic')
-        car['int_ocenka_url_wheel']         = get_url_int(car['int_ocenka_id'], 'wheel')
-        car['int_ocenka_url_salon_all']     = get_url_int(car['int_ocenka_id'], 'salon')
+        car['int_ocenka_url_diagnostic']    = get_url_int(estimation.id, 'diagnostic')
+        car['int_ocenka_url_wheel']         = get_url_int(estimation.id, 'wheel')
+        car['int_ocenka_url_salon_all']     = get_url_int(estimation.id, 'salon')
 
         car['int_ocenka_diagnostika']   = diagnostika
-        car['int_ocenka_work']          = list_work(car['int_ocenka_id'])
+        car['int_ocenka_work']          = list_work(estimation.id)
 
-        car['int_ocenka_url_salon'] = get_url_image_salon(car['int_ocenka_id'], 'osmotr_salon')
-        car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
-        car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
-        car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
-        car['int_ocenka_url_right'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pass')
-        car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
+        car['int_ocenka_url_salon'] = get_url_image_salon(estimation.id, 'osmotr_salon')
+        car['int_ocenka_url_pered'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pered')
+        car['int_ocenka_url_zad']   = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_zad')
+        car['int_ocenka_url_up']    = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_up')
+        car['int_ocenka_url_right'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pass')
+        car['int_ocenka_url_left']  = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_vod')
     
     return car
 

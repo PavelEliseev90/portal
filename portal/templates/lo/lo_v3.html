@@ -5710,7 +5710,7 @@
 
                             <div class="portal-panel">
                               <div class="">
-                                <h6><span class="icon-mbri-info"></span> Оценка автомобиля от Авито</h6>
+                                <h6><span class="icon-mbri-info"></span> Оценка автомобиля от Автотека</h6>
                                 
                                 
                                   <div class="row g-1">
@@ -6316,7 +6316,7 @@
                                           
                                               <div class="col-sm-3 gallery-item-task{{task.id}}" onclick="visible_foto('gallery-item-task{{task.id}}', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                                 
-                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                                 
                                               </div>
         
@@ -9359,7 +9359,7 @@
                           <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                             <div class="modal-content">
                             <div class="modal-header">
-                              <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                              <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
                               <div class="modal-body">
@@ -9382,7 +9382,7 @@
                           <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                             <div class="modal-content">
                             <div class="modal-header">
-                              <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                              <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
                               <div class="modal-body">
@@ -9463,7 +9463,8 @@
                                   Обновить
                                 </button>
                                 <ul class="dropdown-menu">
-                                  <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=autohub">Автохаб</a></li>
+                                  <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=znak">ЦНА + K</a></li>
+                                  <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=autohub">ЦНА</a></li>
                                   <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=kors">Данные КорсАвто</a></li>
                                   <li><a class="dropdown-item" href="{{request.get_full_path}}&refresh_data=all">Все</a></li>
                                 </ul>
@@ -9478,7 +9479,7 @@
                                   <div class="" >
                                     <div class="row">
                                       <div class="col">
-                                        <label class="fs-6">1С</label>
+                                        <label class="fs-6">ЦНА + К</label>
                                       </div>
                                     </div>
                                     
@@ -9498,7 +9499,7 @@
                                   <div class="" >
                                     <div class="row">
                                       <div class="col">
-                                        <label class="fs-6">Автохаб</label>
+                                        <label class="fs-6">ЦНА</label>
                                       </div>
                                     </div>
                                     
@@ -9520,7 +9521,7 @@
                                   <div class="" >
                                     <div class="row">
                                       <div class="col">
-                                        <label class="fs-6">Авито</label>
+                                        <label class="fs-6">Автотека</label>
                                       </div>
                                     </div>
                                     
@@ -9759,7 +9760,7 @@
                           
                           <div class="row">
                             <div class="col">
-                              <label class="fs-5">1С (Автоматическая - 1)</label>
+                              <label class="fs-5">ЦНА + К (Автоматическая - 1)</label>
                             </div>
                             <div class="col align-self-end">
                                 
@@ -10292,7 +10293,7 @@
                           
                           <div class="row">
                             <div class="col">
-                              <label class="fs-5">Автохаб (Автоматическая - 2)</label>
+                              <label class="fs-5">ЦНА (Автоматическая - 2)</label>
                             </div>
                             <div class="col-auto align-self-end">
                                 
@@ -10701,7 +10702,7 @@
                       <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;" id="price">
                         <div class="card-body {% if params.price.auction %} bg-danger {% else %} bg-success {% endif %} bg-opacity-25" >
                           
-                          <label class="fs-5">Авито (Автоматическая - 3)</label>
+                          <label class="fs-5">Автотека (Автоматическая - 3)</label>
                           <hr style="margin: 0.2rem;">
                           ЦНА:
                           <br>
@@ -11300,7 +11301,7 @@
                   <div class="col">
                     <div class="card mb-4 rounded-3 shadow-sm  bg-secondary bg-gradient bg-opacity-10">
                       <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
-                        <h4 class="my-0 fw-normal" >Авито</h4>
+                        <h4 class="my-0 fw-normal" >Автотека</h4>
                       </div>
                       <div class="card-body collapse show" id="collapse_avito">
                         
@@ -11689,7 +11690,7 @@
                   <div class="col">
                     <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-secondary bg-gradient bg-opacity-10">
                       <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
-                        <h4 class="my-0 fw-normal">Автохаб</h4>
+                        <h4 class="my-0 fw-normal">ЦНА</h4>
                       </div>
                       <div class="card-body collapse show" id="collapse_hub">
                         <ul class="list-unstyled mt-3 mb-4">
@@ -14558,7 +14559,7 @@
                         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                           <div class="modal-content">
                           <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                           </div>
                             <div class="modal-body">
@@ -14581,7 +14582,7 @@
                         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                           <div class="modal-content">
                           <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                           </div>
                             <div class="modal-body">
@@ -14659,7 +14660,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">1С</label>
+                                    <label class="fs-6">ЦНА + К</label>
                                   </div>
                                 </div>
                                 
@@ -14678,7 +14679,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">Автохаб</label>
+                                    <label class="fs-6">ЦНА</label>
                                   </div>
                                 </div>
                                 
@@ -14697,7 +14698,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">Авито</label>
+                                    <label class="fs-6">Автотека</label>
                                   </div>
                                 </div>
                                 
@@ -14862,7 +14863,7 @@
                     <div class="col">
                       <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
                         <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
-                          <h4 class="my-0 fw-normal" >Авито</h4>
+                          <h4 class="my-0 fw-normal" >Автотека</h4>
                         </div>
                         <div class="card-body collapse show" id="collapse_avito">
                           
@@ -15249,7 +15250,7 @@
                     <div class="col">
                       <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
                         <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
-                          <h4 class="my-0 fw-normal">Автохаб</h4>
+                          <h4 class="my-0 fw-normal">ЦНА</h4>
                         </div>
                         <div class="card-body collapse show" id="collapse_hub">
                           <ul class="list-unstyled mt-3 mb-4">
@@ -17823,7 +17824,7 @@
                         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                           <div class="modal-content">
                           <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                           </div>
                             <div class="modal-body">
@@ -17846,7 +17847,7 @@
                         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                           <div class="modal-content">
                           <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Авито</h1>
+                            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Автотека</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                           </div>
                             <div class="modal-body">
@@ -17924,7 +17925,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">1С</label>
+                                    <label class="fs-6">ЦНА + К</label>
                                   </div>
                                 </div>
                                 
@@ -17943,7 +17944,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">Автохаб</label>
+                                    <label class="fs-6">ЦНА</label>
                                   </div>
                                 </div>
                                 
@@ -17962,7 +17963,7 @@
                               <div class="card-body" >
                                 <div class="row">
                                   <div class="col">
-                                    <label class="fs-6">Авито</label>
+                                    <label class="fs-6">Автотека</label>
                                   </div>
                                 </div>
                                 
@@ -18125,7 +18126,7 @@
                     <div class="col">
                       <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
                         <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
-                          <h4 class="my-0 fw-normal" >Авито</h4>
+                          <h4 class="my-0 fw-normal" >Автотека</h4>
                         </div>
                         <div class="card-body collapse show" id="collapse_avito">
                           
@@ -18512,7 +18513,7 @@
                     <div class="col">
                       <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
                         <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
-                          <h4 class="my-0 fw-normal">Автохаб</h4>
+                          <h4 class="my-0 fw-normal">ЦНА</h4>
                         </div>
                         <div class="card-body collapse show" id="collapse_hub">
                           <ul class="list-unstyled mt-3 mb-4">
@@ -19801,11 +19802,17 @@
                               <div class="col-auto">
                                 <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#robot_price_korsavto"> <span class="icon-mbri-database"></span> 1С</button>	
                               </div>
+
                               <div class="col-auto">
-                                <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#price_autohub_info"> <span class="icon-mbri-database"></span> Автохаб</button>	
+                                <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#robot_price_znak"> <span class="icon-mbri-database"></span> ЦНА + К</button>	
                               </div>
+
                               <div class="col-auto">
-                                <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#price_avito"> <span class="icon-mbri-database"></span> Авито</button>	
+                                <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#price_autohub_info"> <span class="icon-mbri-database"></span> ЦНА</button>	
+                              </div>
+
+                              <div class="col-auto">
+                                <button type="button" class="btn btn-block btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#price_avito"> <span class="icon-mbri-database"></span> Автотека</button>	
                               </div>
                               
                             </div>
@@ -21329,7 +21336,7 @@
                                       <button type="submit" class="btn btn-secondary"> <span class="icon-mbri-success"></span> Применить</button>
                                     </div>
                                     <div class="col text-end">
-                                      <a class="btn btn-outline-secondary justify-content-end" href="{{request.get_full_path}}&refresh_data=data1c"> <span class="icon-mbri-update"></span> Обновить в 1С</a>    
+                                      <a class="btn btn-outline-secondary justify-content-end" href="{{request.get_full_path}}&refresh_data=data1c"> <span class="icon-mbri-update"></span> Обновить в 1C</a>    
                                     </div>
                                   </div>
                                   

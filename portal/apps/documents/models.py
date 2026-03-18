@@ -780,7 +780,7 @@ class DocLO(models.Model):
     clientName              = models.CharField('Клиент строкой', default='', null=True, max_length=250, blank=False)
     cars                    = models.ForeignKey(RefCars, on_delete=models.SET_NULL, null=True, verbose_name="Автомобиль") 
     vin                     = models.CharField("ВИН", max_length=21, default='')
-    vin2                    = models.CharField("Дополнительный ВИН", max_length=21, default='')
+    vin2                    = models.CharField("Дополнительный ВИН", max_length=21, default='', blank=True)
     year                    = models.IntegerField("Год выпуска", blank=True, default=0)
     run                     = models.IntegerField("Пробег", default=0, blank=True)
     owners                  = models.IntegerField("Владельцев", blank=True, default=0)
@@ -791,7 +791,7 @@ class DocLO(models.Model):
     rlk                     = models.ForeignKey(DocRLK, on_delete=models.SET_NULL, null=True, verbose_name="Рабочий лист")
     recomendation           = models.CharField('Рекомендация / результат диагностики', default='', null=True, max_length=5024, blank=True)
     modification_autoru     = models.ForeignKey(AutoruModification, null=True, on_delete=models.SET_NULL, verbose_name='Модификация')
-    complectation_autoru    = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Комплектация')
+    complectation_autoru    = models.ForeignKey(AutoruComplectation, null=True, on_delete=models.SET_NULL, verbose_name='Комплектация', blank=True)
     description_podgotovka  = models.CharField("Комментарий для отдела подготовки", max_length=15120, default='')
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=15120, default='')
     vin_new                 = models.CharField("ВИН нового авто", max_length=21, default='')
@@ -800,7 +800,7 @@ class DocLO(models.Model):
     agreement_unit          = models.ForeignKey(RefUnit, on_delete=models.SET_NULL, null=True, related_name='agreement_unit', verbose_name="Подразделение соглашение")
     agreement_unit_bu       = models.BooleanField("Соглашение БУ", default=False)
     auction                 = models.BooleanField("Аукцион", default=False)
-    auction_comment         = models.CharField("Аукцион коментарий", max_length=1024, default='')
+    auction_comment         = models.CharField("Аукцион коментарий", max_length=1024, default='', blank=True)
 
     def __str__(self):
         return "{} ({} - {}) - {}".format(self.dataTime, self.clientName, self.nomer, self.type_reception)

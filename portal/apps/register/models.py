@@ -2568,15 +2568,40 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     hub_sale_vRating                = models.FloatField('hub_sale_vRating', default=0.00, null=True, blank=True)
     hub_sale_total                  = models.FloatField('hub_sale_salesTotal', default=0.00, null=True, blank=True)      
 
-    hub_avg                    = models.FloatField('avgPriceWithCorrection', default=0.00, null=True, blank=True)
-    hub_days_in_stok_avg       = models.FloatField('hub_days_in_stok_avg', default=0.00, null=True, blank=True)
-    hub_run_avg                = models.FloatField('hub_run_avg', default=0.00, null=True, blank=True)
-    hub_year_avg               = models.FloatField('hub_year_avg', default=0.00, null=True, blank=True)
-    hub_price_max              = models.FloatField('hub_price_max', default=0.00, null=True, blank=True)
-    hub_price_min              = models.FloatField('hub_price_min', default=0.00, null=True, blank=True)
-    hub_pricePosition          = models.FloatField('hub_pricePosition', default=0.00, null=True, blank=True)
+    hub_avg                     = models.FloatField('avgPriceWithCorrection', default=0.00, null=True, blank=True)
+    hub_days_in_stok_avg        = models.FloatField('hub_days_in_stok_avg', default=0.00, null=True, blank=True)
+    hub_run_avg                 = models.FloatField('hub_run_avg', default=0.00, null=True, blank=True)
+    hub_year_avg                = models.FloatField('hub_year_avg', default=0.00, null=True, blank=True)
+    hub_price_max               = models.FloatField('hub_price_max', default=0.00, null=True, blank=True)
+    hub_price_min               = models.FloatField('hub_price_min', default=0.00, null=True, blank=True)
+    hub_pricePosition           = models.FloatField('hub_pricePosition', default=0.00, null=True, blank=True)
     hub_vRating                 = models.FloatField('hub_vRating', default=0.00, null=True, blank=True)
     hub_total                   = models.FloatField('hub_salesTotal', default=0.00, null=True, blank=True)      
+
+    hub_price                      = models.FloatField('Оценка автохаб', default=0.00, null=True, blank=True)      
+    hub_price_correction           = models.FloatField('Оценка автохаб скоректированная', default=0.00, null=True, blank=True)                            
+
+    hub_start_k                       = models.DateTimeField('Дата анализа автохаб', blank=True, null=True)
+
+    hub_sale_avg_k                    = models.FloatField('avgPriceWithCorrection', default=0.00, null=True, blank=True)
+    hub_sale_days_in_stok_avg_k       = models.FloatField('hub_sale_days_in_stok_avg', default=0.00, null=True, blank=True)
+    hub_sale_run_avg_k                = models.FloatField('hub_sale_run_avg', default=0.00, null=True, blank=True)
+    hub_sale_year_avg_k               = models.FloatField('hub_sale_year_avg', default=0.00, null=True, blank=True)
+    hub_sale_price_max_k              = models.FloatField('hub_sale_price_max', default=0.00, null=True, blank=True)
+    hub_sale_price_min_k              = models.FloatField('hub_sale_price_min', default=0.00, null=True, blank=True)
+    hub_sale_pricePosition_k          = models.FloatField('hub_sale_pricePosition', default=0.00, null=True, blank=True)
+    hub_sale_vRating_k                = models.FloatField('hub_sale_vRating', default=0.00, null=True, blank=True)
+    hub_sale_total_k                  = models.FloatField('hub_sale_salesTotal', default=0.00, null=True, blank=True)      
+
+    hub_avg_k                     = models.FloatField('avgPriceWithCorrection', default=0.00, null=True, blank=True)
+    hub_days_in_stok_avg_k        = models.FloatField('hub_days_in_stok_avg', default=0.00, null=True, blank=True)
+    hub_run_avg_k                 = models.FloatField('hub_run_avg', default=0.00, null=True, blank=True)
+    hub_year_avg_k                = models.FloatField('hub_year_avg', default=0.00, null=True, blank=True)
+    hub_price_max_k               = models.FloatField('hub_price_max', default=0.00, null=True, blank=True)
+    hub_price_min_k               = models.FloatField('hub_price_min', default=0.00, null=True, blank=True)
+    hub_pricePosition_k           = models.FloatField('hub_pricePosition', default=0.00, null=True, blank=True)
+    hub_vRating_k                 = models.FloatField('hub_vRating', default=0.00, null=True, blank=True)
+    hub_total_k                   = models.FloatField('hub_salesTotal', default=0.00, null=True, blank=True)      
 
     hub_data        = models.TextField("Автохаб дата", blank=True, null=True)
     hub_data_2      = models.TextField("Автохаб дата 2", blank=True, null=True)
@@ -3388,55 +3413,58 @@ def update_trade_in_funnel(interactiv_rlk):
 
     if page_soglasovanie != None:
         if estimation_rlk.page_salon != None:
-            run = estimation_rlk.page_salon.run
-        if estimation_rlk.page_documents != None: 
-            if estimation_rlk.page_documents.type_reception != None:
-                type_reception_id   = estimation_rlk.page_documents.type_reception.id
-                type_reception_name = estimation_rlk.page_documents.type_reception.name
-            if estimation_rlk.page_documents.unit != None:
-                unit_id     = estimation_rlk.page_documents.unit.id
-                unit_name   = estimation_rlk.page_documents.unit.name
-                city_id     = estimation_rlk.page_documents.unit.city.id
-                city_name   = estimation_rlk.page_documents.unit.city.name
+            run         = estimation_rlk.page_salon.run
             owners      = estimation_rlk.page_documents.count_owners
-        if page_soglasovanie != None:
-            price_reception_staff   = page_soglasovanie.price_reception
-            price_sale_staff        = page_soglasovanie.price_sale
-            cost_plan               = page_soglasovanie.amount_podgotovka + page_soglasovanie.amount_ss + page_soglasovanie.amount_mcu  
-            cost_plan_ss            = page_soglasovanie.amount_ss
-            cost_plan_mcu           = page_soglasovanie.amount_mcu
-            cost_plan_preparation   = page_soglasovanie.amount_podgotovka
-            price_before            = page_soglasovanie.price_before_kd
-            price_after             = page_soglasovanie.price_after_kd
-            if page_soglasovanie.price_before_kd > 0:
-                price_auto_before       = page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
-                comparison_before       = price_before - page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
-                diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
-                diff_summ       = price_before - price_auto_before
-                if diff_summ < 0:
-                    comparison_before_type = -1
-                elif diff_summ >= 0 and diff_summ <= diff:
-                    comparison_before_type = 0
-                else:
-                    comparison_before_type = 1
-            if price_after> 0: 
-                price_auto_after        = page_soglasovanie.price_auto_2
-                comparison_after        = price_after - page_soglasovanie.price_auto_2
-                diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
-                diff_summ       = price_after - page_soglasovanie.price_auto_2
-                if diff_summ < 0:
-                    comparison_after_type = -1
-                elif diff_summ >= 0 and diff_summ <= diff:
-                    comparison_after_type = 0
-                else:
-                    comparison_after_type = 1
+    
+    if interactiv_rlk.type_reception != None:
+        type_reception_id   = interactiv_rlk.type_reception.id
+        type_reception_name = interactiv_rlk.type_reception.name
+    
+    if interactiv_rlk.unit != None:
+        unit_id     = interactiv_rlk.unit.id
+        unit_name   = interactiv_rlk.unit.name
+        city_id     = interactiv_rlk.unit.city.id
+        city_name   = interactiv_rlk.unit.city.name
+        
+    if page_soglasovanie != None:
+        price_reception_staff   = page_soglasovanie.price_reception
+        price_sale_staff        = page_soglasovanie.price_sale
+        cost_plan               = page_soglasovanie.amount_podgotovka + page_soglasovanie.amount_ss + page_soglasovanie.amount_mcu  
+        cost_plan_ss            = page_soglasovanie.amount_ss
+        cost_plan_mcu           = page_soglasovanie.amount_mcu
+        cost_plan_preparation   = page_soglasovanie.amount_podgotovka
+        price_before            = page_soglasovanie.price_before_kd
+        price_after             = page_soglasovanie.price_after_kd
+        if page_soglasovanie.price_before_kd > 0:
+            price_auto_before       = page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
+            comparison_before       = price_before - page_soglasovanie.price_auto_2 - page_soglasovanie.amount_ss
+            diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
+            diff_summ       = price_before - price_auto_before
+            if diff_summ < 0:
+                comparison_before_type = -1
+            elif diff_summ >= 0 and diff_summ <= diff:
+                comparison_before_type = 0
+            else:
+                comparison_before_type = 1
+        if price_after> 0: 
+            price_auto_after        = page_soglasovanie.price_auto_2
+            comparison_after        = price_after - page_soglasovanie.price_auto_2
+            diff            = page_soglasovanie.discount_torg + page_soglasovanie.zachita_ot_ubitka
+            diff_summ       = price_after - page_soglasovanie.price_auto_2
+            if diff_summ < 0:
+                comparison_after_type = -1
+            elif diff_summ >= 0 and diff_summ <= diff:
+                comparison_after_type = 0
+            else:
+                comparison_after_type = 1
 
-            price_auto_bcp = page_soglasovanie.price_auto_bcp_2
-            zna = page_soglasovanie.price_zna_2 
-            diagostica = not page_soglasovanie.no_diagnostica
+        price_auto_bcp  = page_soglasovanie.price_auto_bcp_2
+        zna             = page_soglasovanie.price_zna_2 
+        diagostica      = not page_soglasovanie.no_diagnostica
     
     year    = estimation_rlk.year
     vin     = estimation_rlk.vin 
+    
     if interactiv_rlk.staff_rlk != None:
         staff_id    = interactiv_rlk.staff_rlk.id
         staff_name  = interactiv_rlk.staff_rlk.name
@@ -3521,9 +3549,9 @@ def update_trade_in_funnel(interactiv_rlk):
                             'carsharing'    : estimation_rlk.carsharing,
                             'k_i'           : estimation_rlk.k_i,
                             'autodex'       : estimation_rlk.avtoteka_car_autodex,
-                            'date_before_success'       : estimation_rlk.date_s_do_diag,
+                            'date_before_success'       : interactiv_rlk.date_s_do_diag,
                             'date_diagnostic_success'   : estimation_rlk.date_diagnostic,
-                            'date_after_success'        : estimation_rlk.date_s_diag,
+                            'date_after_success'        : interactiv_rlk.date_s_diag,
                             'date_remote_success'       : estimation_rlk.date_s_remote,
                             'price_reception_staff'     : price_reception_staff,
                             'price_sale_staff'          : price_sale_staff,                       
@@ -3634,11 +3662,11 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         else:
             self.status = RefStatusEstimation.objects.get(pk = 2)
 
-        try:
-            if self.rlk != None and self.estimation != None:
-                add_swap(self)
-        except:
-            s=1
+        # try:
+        #     if self.rlk != None and self.estimation != None:
+        #         add_swap(self)
+        # except:
+        #     s=1
 
         try:
             if self.status == RefStatusEstimation.objects.get(pk = 8):
@@ -4001,7 +4029,7 @@ class RegRegInteractivOcenkaFiles(models.Model):
             self.order = 0
 
         super().save(*args, **kwargs)
-        self._generate_thumbnail()
+        #self._generate_thumbnail()
 
     def __str__(self):
         return "{}".format(self.estimation)

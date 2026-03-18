@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
 from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
-from task_manager.views import send_message_socket, get_info_max, kors_estimation_data
+from task_manager.views import send_message_socket, get_info_max, get_info_max_znak, kors_estimation_data
 import json
 from checklists.models import CheckListTradeIn
 from chats.models import Chat, ChatMessage
@@ -3158,10 +3158,10 @@ def doc(request, id):
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= User.objects.get(pk = 1), text='Автомобиль приехал на осмотр. Данные автотека, корсавто будут обновлены автоматически.', estimation_id= estimation.id)
             return HttpResponseRedirect('/estimations/' + str(estimation.rlk.pk) + '/')
             
-        price           = {}
-        price_autohub   = {}
-        price_custom    = {}
-        price_kors      = {}
+        price               = {}
+        price_autohub       = {}
+        price_custom        = {}
+        price_autohub_k     = {}
 
         repair_info         = list()
         estimation_history  = list()
@@ -3194,6 +3194,9 @@ def doc(request, id):
             if refresh != '':
                 if refresh == 'autohub':
                     get_info_max(interactiv_rlk, estimation.id)
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                elif refresh == 'znak':
+                    get_info_max_znak(interactiv_rlk, estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'kors':
                     kors_estimation_data(estimation.id)
@@ -3241,7 +3244,7 @@ def doc(request, id):
                         if agreements > 0:
                             agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
-            price_kors      = None #estimations_price_calculation(interactiv_rlk, estimation, type_calculation='kors')
+            price_autohub_k =  estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k')
             price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
@@ -3300,7 +3303,7 @@ def doc(request, id):
 
             expenses        = list_expenses(estimation)
 
-            price_kors      = None #estimations_price_calculation(interactiv_rlk, estimation, type_calculation='kors')
+            price_autohub_k = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k')
             price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito')
             price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
             price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
@@ -3422,7 +3425,7 @@ def doc(request, id):
                 'rlk_estimations'       : rlk_estimations,
                 'estimation'            : estimation,
                 'price'                 : price,
-                'price_kors'            : price_kors,
+                'price_kors'            : price_autohub_k,
                 'price_autohub'         : price_autohub,
                 'price_custom'          : price_custom,
                 'tabindex'              : page,
@@ -3805,17 +3808,17 @@ def doc(request, id):
             except:
                 s=1
 
-            '''   
-            price_kors      = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='kors')
-            if price_kors != None:
-                if price_kors['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
-                    reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_kors['estimation_price']
-                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_1     = price_kors['cna_expenses']
-                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_kors['zachita_ot_ubitka']
-                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_kors['finance_price']
-                    reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_kors['zna']
+               
+            price_autohub_k      = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub_k')
+            if price_autohub_k != None:
+                if price_autohub_k['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
+                    reg_interactiv_ocenka_soglasovanie.price_auto_1         = price_autohub_k['estimation_price']
+                    reg_interactiv_ocenka_soglasovanie.price_auto_bcp_1     = price_autohub_k['cna_expenses']
+                    reg_interactiv_ocenka_soglasovanie.zachita_ot_ubitka    = price_autohub_k['zachita_ot_ubitka']
+                    reg_interactiv_ocenka_soglasovanie.finance_price        = price_autohub_k['finance_price']
+                    reg_interactiv_ocenka_soglasovanie.price_zna_1          = price_autohub_k['zna']
                     reg_interactiv_ocenka_soglasovanie.save()
-            ''' 
+             
             price_autohub   = estimations_price_calculation(interactiv_rlk, reg_interactiv_ocenka, type_calculation='autohub')
             if price_autohub != None:
                 #if price_autohub['estimation_price'] > reg_interactiv_ocenka_soglasovanie.price_after_kd:
@@ -4556,2669 +4559,2689 @@ def estimation_lo_history(estimation, count = False):
 
 def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, remote = False):
 
+    try:
+        estimation_settings     = RegEstimationsSettings.objects.all().last()
+        if interactiv_rlk.page_soglasovanie != None:
+            if interactiv_rlk.page_soglasovanie.settings != None:
+                estimation_settings = interactiv_rlk.page_soglasovanie.settings 
 
-    estimation_settings     = RegEstimationsSettings.objects.all().last()
-    if interactiv_rlk.page_soglasovanie != None:
-        if interactiv_rlk.page_soglasovanie.settings != None:
-            estimation_settings = interactiv_rlk.page_soglasovanie.settings 
-
-    modification            = estimation.modification
-    
-    list_work_podgotovka    = list()
-    list_work_service       = list()
-    list_work_mcu           = list()
-
-    run_estimation = 0
-    if estimation.page_salon != None:
-        run_estimation = estimation.page_salon.run
-    elif estimation.page_remote != None:
-        run_estimation = estimation.page_remote.run
-
-    auction_success     = False
-    auction             = False
-    auction_comment     = ''
-    amount_podgotovka   = 0
-    amount_ss           = 0
-    amount_mcu          = 0
-    ammount_sum         = 0
-    kf_auction          = 75 
-
-    list_info_price     = list()
-    zna_type            = ''
-    zna                 = 0
-    zachita_ot_ubitka   = 0
-    finance_price       = 0
-    iznos_price         = 0
-    damage_gear         = False
-    damage_wheels       = False
-
-    if type_calculation == 'kors':
-        zna         = estimation.kors_price
-        zna_type    = '1C'
-    if type_calculation == 'autohub':
-        if estimation.hub_avg == 0 and estimation.page_remote != None:
-            zna = estimation.page_remote.hub_avg
-        else:
-            zna         = estimation.hub_avg
-        if remote:
-            if estimation.page_remote != None:
-                zna = estimation.page_remote.hub_avg    
-        zna_type    = 'Автохаб'
-    elif type_calculation == 'avito':
-        zna = estimation.avito_price_avg_market_price
-        zna_type = 'Авито'   
-    elif type_calculation == 'custom':
-        zna = estimation.custom_zna
-        zna_type = 'Ручная'
-
-    if zna == 0:
-        return None
-    
-    zg  = "Неопределена"
-    # if interactiv_rlk.unit == None:
-    #     dc              = estimation.page_remote.unit
-    # else:
-    #     dc              = estimation.unit
-    dc = interactiv_rlk.unit
-
-    fin_all         = estimation_settings.all_percent_financity
-    day_sale_all    = estimation_settings.all_days_stok_financity
-    
-    kf                  = 100
-    percent_ss          = 0
-    percent_torg        = 0
-    zna_izp_kf          = 0
-    zna_izp_type        = 0
-    percent_sale_1C     = 100
-    percent_sale        = 100
-    percent_sale_rdo    = 100
-    percent_sale_kor    = 100
-    battery             = 0
-    matrix_auction      = 0
-    
-    settings_matrix = SettingsMatrixAuction.objects.get(pk = 1)
-    
-    if zna < 200000:
-        zg              = '200'
-        matrix_auction  = settings_matrix.charge_bcp_200
-        # ИРЦ ТХТ / защита от скидок / лимиты
-        kf              = getattr(dc, 'correction_txt_200', None) if getattr(dc, 'correction_txt_200', None) not in (None, 0) else dc.ratio_avtohub_txt_200
-        percent_ss      = getattr(dc, 'markup_txt_200',   None) if getattr(dc, 'markup_txt_200',   None) not in (None, 0) else dc.percent_txt_200
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_200', None) if getattr(dc, 'max_discount_bargain_percent_200', None) not in (None, 0) else dc.percent_torg_txt_200
-        zna_izp_kf      = estimation_settings.izp_200
-        zna_izp_type    = estimation_settings.izp_200_v
-        # Коэффициенты продажи по каналам
-        percent_sale_1C = getattr(dc, 'correction_test_1c_200', None) if getattr(dc, 'correction_test_1c_200', None) not in (None, 0) else dc.ratio_1с_test_price_200
-        percent_sale    = getattr(dc, 'correction_test_200',    None) if getattr(dc, 'correction_test_200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_200
-        percent_sale_rdo= getattr(dc, 'correction_rdo_200',     None) if getattr(dc, 'correction_rdo_200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_200
-        percent_sale_kor= getattr(dc, 'correction_kor_200',     None) if getattr(dc, 'correction_kor_200',     None) not in (None, 0) else dc.ratio_avtohub_kor_200
-        kf_auction      = estimation_settings.auction_kf_200
-        fin_zg          = estimation_settings.percent_financity_200
-        day_sale_zg     = estimation_settings.days_stok_financity_200
+        modification            = estimation.modification
         
-        windshield      = estimation_settings.windshield_200
-        windshield_heat = estimation_settings.windshield_heat_200
-        light_pered     = estimation_settings.light_pered_200
-        light_pered_kf  = estimation_settings.light_pered_kf_200
-        light_zad       = estimation_settings.light_zad_200
-        light_zad_kf    = estimation_settings.light_zad_kf_200
-        battery         = estimation_settings.battery_200
-        engine_danger_kf            = estimation_settings.engine_danger_kf_200            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_200        
-        engine_warning_kf           = estimation_settings.engine_warning_kf_200 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_200 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_200   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_200   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_200    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_200    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_200 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_200 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_200  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_200  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_200  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_200  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_200   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_200   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_200  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_200  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_200   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_200   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_200 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_200 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_200     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_200   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_200   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_200       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_200        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_200       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_200     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_200     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_200      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_200
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_200
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_200
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_200
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_200
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_200
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_200
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_200
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_200
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_200
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_200
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_200
-        brake_danger_kf              = estimation_settings.brake_danger_kf_200
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_200
-        brake_warning_kf             = estimation_settings.brake_warning_kf_200
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_200
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_200
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_200
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_200
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_200
-        drive_danger_kf              = estimation_settings.drive_danger_kf_200
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
-        drive_warning_kf             = estimation_settings.drive_warning_kf_200
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_200
-        to_1                         = estimation_settings.to_1_200
-        to_2                         = estimation_settings.to_2_200
-        to_3                         = estimation_settings.to_3_200
-    elif zna < 400000:
-        zg              = '400'
-        matrix_auction  = settings_matrix.charge_bcp_400
-        fin_zg          = estimation_settings.percent_financity_400
-        day_sale_zg     = estimation_settings.days_stok_financity_400
-        kf              = getattr(dc, 'correction_txt_400', None) if getattr(dc, 'correction_txt_400', None) not in (None, 0) else dc.ratio_avtohub_txt_400
-        percent_ss      = getattr(dc, 'markup_txt_400',   None) if getattr(dc, 'markup_txt_400',   None) not in (None, 0) else dc.percent_txt_400
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_400', None) if getattr(dc, 'max_discount_bargain_percent_400', None) not in (None, 0) else dc.percent_torg_txt_400
-        zna_izp_kf      = estimation_settings.izp_400
-        zna_izp_type    = estimation_settings.izp_400_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_400', None) if getattr(dc, 'correction_test_1c_400', None) not in (None, 0) else dc.ratio_1с_test_price_400
-        percent_sale    = getattr(dc, 'correction_test_400',    None) if getattr(dc, 'correction_test_400',    None) not in (None, 0) else dc.ratio_avtohub_test_price_400
-        percent_sale_rdo= getattr(dc, 'correction_rdo_400',     None) if getattr(dc, 'correction_rdo_400',     None) not in (None, 0) else dc.ratio_avtohub_rdo_400
-        percent_sale_kor= getattr(dc, 'correction_kor_400',     None) if getattr(dc, 'correction_kor_400',     None) not in (None, 0) else dc.ratio_avtohub_kor_400
-        kf_auction      = estimation_settings.auction_kf_400
-        windshield      = estimation_settings.windshield_400
-        windshield_heat = estimation_settings.windshield_heat_400
-        light_pered     = estimation_settings.light_pered_400
-        light_pered_kf  = estimation_settings.light_pered_kf_400
-        light_zad       = estimation_settings.light_zad_400
-        light_zad_kf    = estimation_settings.light_zad_kf_400
-        battery         = estimation_settings.battery_400
-        engine_danger_kf            = estimation_settings.engine_danger_kf_400            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_400
-        engine_warning_kf           = estimation_settings.engine_warning_kf_400 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_400 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_400   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_400   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_400    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_400    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_400 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_400 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_400  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_400  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_400  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_400  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_400   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_400   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_400  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_400  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_400   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_400   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_400 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_400 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_400     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_400   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_400   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_400       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_400        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_400       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_400     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_400     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_400      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_400
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_400
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_400
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_400
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_400
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_400
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_400
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_400
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_400
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_400
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_400
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_400
-        brake_danger_kf              = estimation_settings.brake_danger_kf_400
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_400
-        brake_warning_kf             = estimation_settings.brake_warning_kf_400
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_400
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_400
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_400
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_400
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_400
-        drive_danger_kf              = estimation_settings.drive_danger_kf_400
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
-        drive_warning_kf             = estimation_settings.drive_warning_kf_400
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_400
-        to_1                         = estimation_settings.to_1_400
-        to_2                         = estimation_settings.to_2_400
-        to_3                         = estimation_settings.to_3_400
-    elif zna < 700000:
-        zg              = '700'
-        matrix_auction  = settings_matrix.charge_bcp_700
-        fin_zg          = estimation_settings.percent_financity_700
-        day_sale_zg     = estimation_settings.days_stok_financity_700
-        kf              = getattr(dc, 'correction_txt_700', None) if getattr(dc, 'correction_txt_700', None) not in (None, 0) else dc.ratio_avtohub_txt_700
-        percent_ss      = getattr(dc, 'markup_txt_700',   None) if getattr(dc, 'markup_txt_700',   None) not in (None, 0) else dc.percent_txt_700
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_700', None) if getattr(dc, 'max_discount_bargain_percent_700', None) not in (None, 0) else dc.percent_torg_txt_700
-        zna_izp_kf      = estimation_settings.izp_700
-        zna_izp_type    = estimation_settings.izp_700_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_700', None) if getattr(dc, 'correction_test_1c_700', None) not in (None, 0) else dc.ratio_1с_test_price_700
-        percent_sale    = getattr(dc, 'correction_test_700',    None) if getattr(dc, 'correction_test_700',    None) not in (None, 0) else dc.ratio_avtohub_test_price_700
-        percent_sale_rdo= getattr(dc, 'correction_rdo_700',     None) if getattr(dc, 'correction_rdo_700',     None) not in (None, 0) else dc.ratio_avtohub_rdo_700
-        percent_sale_kor= getattr(dc, 'correction_kor_700',     None) if getattr(dc, 'correction_kor_700',     None) not in (None, 0) else dc.ratio_avtohub_kor_700
-        kf_auction      = estimation_settings.auction_kf_700
-        windshield      = estimation_settings.windshield_700
-        windshield_heat = estimation_settings.windshield_heat_700
-        light_pered     = estimation_settings.light_pered_700
-        light_pered_kf  = estimation_settings.light_pered_kf_700
-        light_zad       = estimation_settings.light_zad_700
-        light_zad_kf    = estimation_settings.light_zad_kf_700
-        battery         = estimation_settings.battery_700
-        engine_danger_kf            = estimation_settings.engine_danger_kf_700            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_700
-        engine_warning_kf           = estimation_settings.engine_warning_kf_700 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_700 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_700   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_700   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_700    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_700    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_700 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_700 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_700  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_700  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_700  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_700  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_700   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_700   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_700  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_700  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_700   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_700   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_700 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_700 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_700     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_700   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_700   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_700       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_700        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_700       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_700     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_700     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_700      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_700
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_700
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_700
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_700
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_700
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_700
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_700
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_700
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_700
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_700
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_700
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_700
-        brake_danger_kf              = estimation_settings.brake_danger_kf_700
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_700
-        brake_warning_kf             = estimation_settings.brake_warning_kf_700
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_700
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_700
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_700
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_700
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_700
-        drive_danger_kf              = estimation_settings.drive_danger_kf_700
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
-        drive_warning_kf             = estimation_settings.drive_warning_kf_700
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_700
-        to_1                         = estimation_settings.to_1_700
-        to_2                         = estimation_settings.to_2_700
-        to_3                         = estimation_settings.to_3_700
-    elif zna < 1200000:
-        zg              = '1 200'
-        matrix_auction  = settings_matrix.charge_bcp_1200
-        fin_zg          = estimation_settings.percent_financity_1200
-        day_sale_zg     = estimation_settings.days_stok_financity_1200
-        kf              = getattr(dc, 'correction_txt_1200', None) if getattr(dc, 'correction_txt_1200', None) not in (None, 0) else dc.ratio_avtohub_txt_1200
-        percent_ss      = getattr(dc, 'markup_txt_1200',   None) if getattr(dc, 'markup_txt_1200',   None) not in (None, 0) else dc.percent_txt_1200
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_1200', None) if getattr(dc, 'max_discount_bargain_percent_1200', None) not in (None, 0) else dc.percent_torg_txt_1200
-        zna_izp_kf      = estimation_settings.izp_1200
-        zna_izp_type    = estimation_settings.izp_1200_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_1200', None) if getattr(dc, 'correction_test_1c_1200', None) not in (None, 0) else dc.ratio_1с_test_price_1200
-        percent_sale    = getattr(dc, 'correction_test_1200',    None) if getattr(dc, 'correction_test_1200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_1200
-        percent_sale_rdo= getattr(dc, 'correction_rdo_1200',     None) if getattr(dc, 'correction_rdo_1200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_1200
-        percent_sale_kor= getattr(dc, 'correction_kor_1200',     None) if getattr(dc, 'correction_kor_1200',     None) not in (None, 0) else dc.ratio_avtohub_kor_1200
-        kf_auction      = estimation_settings.auction_kf_1200
-        windshield      = estimation_settings.windshield_1200
-        windshield_heat = estimation_settings.windshield_heat_1200
-        light_pered     = estimation_settings.light_pered_1200
-        light_pered_kf  = estimation_settings.light_pered_kf_1200
-        light_zad       = estimation_settings.light_zad_1200
-        light_zad_kf    = estimation_settings.light_zad_kf_1200
-        battery         = estimation_settings.battery_1200
-        engine_danger_kf            = estimation_settings.engine_danger_kf_1200            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_1200
-        engine_warning_kf           = estimation_settings.engine_warning_kf_1200 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_1200 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_1200   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_1200   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_1200    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_1200    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_1200 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_1200 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_1200  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_1200  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_1200  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_1200  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_1200   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_1200   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_1200  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_1200  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_1200   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_1200   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_1200 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_1200 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_1200     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_1200   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_1200   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_1200       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_1200        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_1200       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_1200     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_1200     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_1200      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_1200
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_1200
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_1200
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_1200
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_1200
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_1200
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_1200
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_1200
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_1200
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_1200
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_1200
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_1200
-        brake_danger_kf              = estimation_settings.brake_danger_kf_1200
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_1200
-        brake_warning_kf             = estimation_settings.brake_warning_kf_1200
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_1200
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_1200
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_1200
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_1200
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_1200
-        drive_danger_kf              = estimation_settings.drive_danger_kf_1200
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
-        drive_warning_kf             = estimation_settings.drive_warning_kf_1200
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_1200
-        to_1                         = estimation_settings.to_1_1200
-        to_2                         = estimation_settings.to_2_1200
-        to_3                         = estimation_settings.to_3_1200
-    elif zna < 2000000:
-        zg              = '2 000'
-        matrix_auction  = settings_matrix.charge_bcp_2000
-        fin_zg          = estimation_settings.percent_financity_2000
-        day_sale_zg     = estimation_settings.days_stok_financity_2000
-        kf              = getattr(dc, 'correction_txt_2000', None) if getattr(dc, 'correction_txt_2000', None) not in (None, 0) else dc.ratio_avtohub_txt_2000
-        percent_ss      = getattr(dc, 'markup_txt_2000',   None) if getattr(dc, 'markup_txt_2000',   None) not in (None, 0) else dc.percent_txt_2000
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_2000', None) if getattr(dc, 'max_discount_bargain_percent_2000', None) not in (None, 0) else dc.percent_torg_txt_2000
-        zna_izp_kf      = estimation_settings.izp_2000
-        zna_izp_type    = estimation_settings.izp_2000_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_2000', None) if getattr(dc, 'correction_test_1c_2000', None) not in (None, 0) else dc.ratio_1с_test_price_2000
-        percent_sale    = getattr(dc, 'correction_test_2000',    None) if getattr(dc, 'correction_test_2000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_2000
-        percent_sale_rdo= getattr(dc, 'correction_rdo_2000',     None) if getattr(dc, 'correction_rdo_2000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_2000
-        percent_sale_kor= getattr(dc, 'correction_kor_2000',     None) if getattr(dc, 'correction_kor_2000',     None) not in (None, 0) else dc.ratio_avtohub_kor_2000
-        kf_auction      = estimation_settings.auction_kf_2000
-        windshield      = estimation_settings.windshield_2000
-        windshield_heat = estimation_settings.windshield_heat_2000
-        light_pered     = estimation_settings.light_pered_2000
-        light_pered_kf  = estimation_settings.light_pered_kf_2000
-        light_zad       = estimation_settings.light_zad_2000
-        light_zad_kf    = estimation_settings.light_zad_kf_2000
-        battery         = estimation_settings.battery_2000
-        engine_danger_kf            = estimation_settings.engine_danger_kf_2000            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_2000
-        engine_warning_kf           = estimation_settings.engine_warning_kf_2000 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_2000 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_2000   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_2000   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_2000    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_2000    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_2000 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_2000 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_2000  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_2000  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_2000  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_2000  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_2000   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_2000   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_2000  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_2000  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_2000   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_2000   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_2000 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_2000 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_2000     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_2000   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_2000   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_2000       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_2000        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_2000       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_2000     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_2000     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_2000      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_2000
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_2000
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_2000
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_2000
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_2000
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_2000
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_2000
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_2000
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_2000
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_2000
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_2000
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_2000
-        brake_danger_kf              = estimation_settings.brake_danger_kf_2000
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_2000
-        brake_warning_kf             = estimation_settings.brake_warning_kf_2000
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_2000
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_2000
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_2000
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_2000
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_2000
-        drive_danger_kf              = estimation_settings.drive_danger_kf_2000
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
-        drive_warning_kf             = estimation_settings.drive_warning_kf_2000
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_2000
-        to_1                         = estimation_settings.to_1_2000
-        to_2                         = estimation_settings.to_2_2000
-        to_3                         = estimation_settings.to_3_2000
-    elif zna < 3000000:
-        zg              = '3 000'
-        matrix_auction  = settings_matrix.charge_bcp_3000
-        fin_zg          = estimation_settings.percent_financity_3000
-        day_sale_zg     = estimation_settings.days_stok_financity_3000
-        kf              = getattr(dc, 'correction_txt_3000', None) if getattr(dc, 'correction_txt_3000', None) not in (None, 0) else dc.ratio_avtohub_txt_3000
-        percent_ss      = getattr(dc, 'markup_txt_3000',   None) if getattr(dc, 'markup_txt_3000',   None) not in (None, 0) else dc.percent_txt_3000
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_3000', None) if getattr(dc, 'max_discount_bargain_percent_3000', None) not in (None, 0) else dc.percent_torg_txt_3000
-        zna_izp_kf      = estimation_settings.izp_3000
-        zna_izp_type    = estimation_settings.izp_3000_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_3000', None) if getattr(dc, 'correction_test_1c_3000', None) not in (None, 0) else dc.ratio_1с_test_price_3000
-        percent_sale    = getattr(dc, 'correction_test_3000',    None) if getattr(dc, 'correction_test_3000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_3000
-        percent_sale_rdo= getattr(dc, 'correction_rdo_3000',     None) if getattr(dc, 'correction_rdo_3000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_3000
-        percent_sale_kor= getattr(dc, 'correction_kor_3000',     None) if getattr(dc, 'correction_kor_3000',     None) not in (None, 0) else dc.ratio_avtohub_kor_3000
-        kf_auction      = estimation_settings.auction_kf_3000
-        windshield      = estimation_settings.windshield_3000
-        windshield_heat = estimation_settings.windshield_heat_3000
-        light_pered     = estimation_settings.light_pered_3000
-        light_pered_kf  = estimation_settings.light_pered_kf_3000
-        light_zad       = estimation_settings.light_zad_3000
-        light_zad_kf    = estimation_settings.light_zad_kf_3000
-        battery         = estimation_settings.battery_3000
-        engine_danger_kf            = estimation_settings.engine_danger_kf_3000            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_3000
-        engine_warning_kf           = estimation_settings.engine_warning_kf_3000 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_3000 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_3000   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_3000   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_3000    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_3000    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_3000 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_3000 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_3000  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_3000  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_3000  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_3000  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_3000   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_3000   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_3000  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_3000  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_3000   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_3000   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_3000 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_3000 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_3000     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_3000   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_3000   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_3000       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_3000        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_3000       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_3000     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_3000     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_3000      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_3000
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_3000
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_3000
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_3000
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_3000
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_3000
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_3000
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_3000
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_3000
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_3000
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_3000
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_3000
-        brake_danger_kf              = estimation_settings.brake_danger_kf_3000
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_3000
-        brake_warning_kf             = estimation_settings.brake_warning_kf_3000
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_3000
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_3000
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_3000
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_3000
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_3000
-        drive_danger_kf              = estimation_settings.drive_danger_kf_3000
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
-        drive_warning_kf             = estimation_settings.drive_warning_kf_3000
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_3000
-        to_1                         = estimation_settings.to_1_3000
-        to_2                         = estimation_settings.to_2_3000
-        to_3                         = estimation_settings.to_3_3000
-    elif zna < 5000000:
-        zg              = '5 000'
-        matrix_auction  = settings_matrix.charge_bcp_5000
-        fin_zg          = estimation_settings.percent_financity_5000
-        day_sale_zg     = estimation_settings.days_stok_financity_5000
-        kf              = getattr(dc, 'correction_txt_5000', None) if getattr(dc, 'correction_txt_5000', None) not in (None, 0) else dc.ratio_avtohub_txt_5000
-        percent_ss      = getattr(dc, 'markup_txt_5000',   None) if getattr(dc, 'markup_txt_5000',   None) not in (None, 0) else dc.percent_txt_5000
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_5000', None) if getattr(dc, 'max_discount_bargain_percent_5000', None) not in (None, 0) else dc.percent_torg_txt_5000
-        zna_izp_kf      = estimation_settings.izp_5000
-        zna_izp_type    = estimation_settings.izp_5000_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_5000', None) if getattr(dc, 'correction_test_1c_5000', None) not in (None, 0) else dc.ratio_1с_test_price_5000
-        percent_sale    = getattr(dc, 'correction_test_5000',    None) if getattr(dc, 'correction_test_5000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5000
-        percent_sale_rdo= getattr(dc, 'correction_rdo_5000',     None) if getattr(dc, 'correction_rdo_5000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5000
-        percent_sale_kor= getattr(dc, 'correction_kor_5000',     None) if getattr(dc, 'correction_kor_5000',     None) not in (None, 0) else dc.ratio_avtohub_kor_5000
-        kf_auction      = estimation_settings.auction_kf_5000
-        windshield      = estimation_settings.windshield_5000
-        windshield_heat = estimation_settings.windshield_heat_5000
-        light_pered     = estimation_settings.light_pered_5000
-        light_pered_kf  = estimation_settings.light_pered_kf_5000
-        light_zad       = estimation_settings.light_zad_5000
-        light_zad_kf    = estimation_settings.light_zad_kf_5000
-        battery         = estimation_settings.battery_5000
-        engine_danger_kf            = estimation_settings.engine_danger_kf_5000            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5000
-        engine_warning_kf           = estimation_settings.engine_warning_kf_5000 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_5000 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_5000   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_5000   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_5000    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_5000    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_5000 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_5000 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_5000  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_5000  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_5000  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_5000  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_5000   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_5000   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_5000  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_5000  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_5000   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_5000   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_5000 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_5000 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_5000     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_5000   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_5000   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_5000       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_5000        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_5000       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_5000     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5000     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_5000      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5000
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5000
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5000
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5000
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5000
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5000
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5000
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5000
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5000
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5000
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5000
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5000
-        brake_danger_kf              = estimation_settings.brake_danger_kf_5000
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5000
-        brake_warning_kf             = estimation_settings.brake_warning_kf_5000
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5000
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_5000
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5000
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_5000
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5000
-        drive_danger_kf              = estimation_settings.drive_danger_kf_5000
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
-        drive_warning_kf             = estimation_settings.drive_warning_kf_5000
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5000
-        to_1                         = estimation_settings.to_1_5000
-        to_2                         = estimation_settings.to_2_5000
-        to_3                         = estimation_settings.to_3_5000
-    else:
-        zg              = '5 000+'
-        matrix_auction  = settings_matrix.charge_bcp_5001
-        fin_zg          = estimation_settings.percent_financity_5001
-        day_sale_zg     = estimation_settings.days_stok_financity_5001
-        kf              = getattr(dc, 'correction_txt_5001', None) if getattr(dc, 'correction_txt_5001', None) not in (None, 0) else dc.ratio_avtohub_txt_5001
-        percent_ss      = getattr(dc, 'markup_txt_5001',   None) if getattr(dc, 'markup_txt_5001',   None) not in (None, 0) else dc.percent_txt_5001
-        percent_torg    = getattr(dc, 'max_discount_bargain_percent_5001', None) if getattr(dc, 'max_discount_bargain_percent_5001', None) not in (None, 0) else dc.percent_torg_txt_5001
-        zna_izp_kf      = estimation_settings.izp_5001
-        zna_izp_type    = estimation_settings.izp_5001_v
-        percent_sale_1C = getattr(dc, 'correction_test_1c_5001', None) if getattr(dc, 'correction_test_1c_5001', None) not in (None, 0) else dc.ratio_1с_test_price_5001
-        percent_sale    = getattr(dc, 'correction_test_5001',    None) if getattr(dc, 'correction_test_5001',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5001
-        percent_sale_rdo= getattr(dc, 'correction_rdo_5001',     None) if getattr(dc, 'correction_rdo_5001',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5001
-        percent_sale_kor= getattr(dc, 'correction_kor_5001',     None) if getattr(dc, 'correction_kor_5001',     None) not in (None, 0) else dc.ratio_avtohub_kor_5001
-        kf_auction      = estimation_settings.auction_kf_5001
-        windshield      = estimation_settings.windshield_5001
-        windshield_heat = estimation_settings.windshield_heat_5001
-        light_pered     = estimation_settings.light_pered_5001
-        light_pered_kf  = estimation_settings.light_pered_kf_5001
-        light_zad       = estimation_settings.light_zad_5001
-        light_zad_kf    = estimation_settings.light_zad_kf_5001
-        battery         = estimation_settings.battery_5001
-        engine_danger_kf            = estimation_settings.engine_danger_kf_5001            
-        engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5001
-        engine_warning_kf           = estimation_settings.engine_warning_kf_5001 
-        engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_5001 
-        engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_5001   
-        engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_5001   
-        engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_5001    
-        engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_5001    
-        gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_5001 
-        gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_5001 
-        gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_5001  
-        gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_5001  
-        gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_5001  
-        gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_5001  
-        gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_5001   
-        gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_5001   
-        gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_5001  
-        gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_5001  
-        gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_5001   
-        gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_5001   
-        gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_5001 
-        gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_5001 
-        gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_5001     
-        gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_5001   
-        suspension_danger_kf        = estimation_settings.suspension_danger_kf_5001   
-        suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_5001       
-        suspension_warning_kf        = estimation_settings.suspension_warning_kf_5001        
-        suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_5001       
-        system_og_danger_kf          = estimation_settings.system_og_danger_kf_5001     
-        system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5001     
-        system_og_warning_kf         = estimation_settings.system_og_warning_kf_5001      
-        system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5001
-        conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5001
-        conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5001
-        conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5001
-        conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5001
-        turbo_danger_kf              = estimation_settings.turbo_danger_kf_5001
-        turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5001
-        turbo_warning_kf             = estimation_settings.turbo_warning_kf_5001
-        turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5001
-        wheel_danger_kf              = estimation_settings.wheel_danger_kf_5001
-        wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5001
-        wheel_warning_kf             = estimation_settings.wheel_warning_kf_5001
-        wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5001
-        brake_danger_kf              = estimation_settings.brake_danger_kf_5001
-        brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5001
-        brake_warning_kf             = estimation_settings.brake_warning_kf_5001
-        brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5001
-        subframe_danger_kf           = estimation_settings.subframe_danger_kf_5001
-        subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5001
-        subframe_warning_kf          = estimation_settings.subframe_warning_kf_5001
-        subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5001
-        drive_danger_kf              = estimation_settings.drive_danger_kf_5001
-        drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
-        drive_warning_kf             = estimation_settings.drive_warning_kf_5001
-        drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5001
-        to_1                         = estimation_settings.to_1_5001
-        to_2                         = estimation_settings.to_2_5001
-        to_3                         = estimation_settings.to_3_5001
-
-    if percent_torg < 0:
-        percent_torg = percent_torg * -1
-
-    if percent_ss < 0:
-        percent_ss = percent_ss * -1
-                                            
-    price = zna 
-    # повышенный износ / такси
-    if estimation.iznos and estimation.taxi:
-        price_new  = price - (price * 40 / 100)
-        diff       = price - price_new
-        price = price_new
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'   : "Цена скоректирована c учетом повышенного износа и использования в такси",  
-            'name'      : "износ"
-        }
-        list_info_price.append(inf_price)
-        if estimation.auction_auto_no_user != True:
-            auction = True
-            auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
-            auction_success = True
-    elif estimation.iznos:
-        price_new  = price - (price * 10 / 100)
-        diff       = price - price_new
-        price = price_new
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'  : "Цена скоректирована c учетом повышенного износа",  
-            'name'      : "износ" 
-        }
-        iznos_price = diff
-        list_info_price.append(inf_price)
-    elif estimation.taxi:
-        price_new  = price - (price * (100 - kf_auction) / 100)
-        diff       = price - price_new
-        price = price_new
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'  : "Цена скоректирована c учетом использования в такси",  
-            'name'      : "износ" 
-        }
-        iznos_price = diff
-        list_info_price.append(inf_price)
-
-    #Считаем авто в продаже 
-    price_sale_rdo = 0
-    price_sale_kor = 0
-    if type_calculation == 'kors':
-        price_sale      = price *  percent_sale_1C / 100
-        price_sale_rdo  = price * percent_sale_rdo / 100
-        price_sale_kor  = price *  percent_sale_kor / 100
-        
-    if type_calculation == 'autohub':
-        price_sale = price * percent_sale / 100
-        price_sale_rdo  = price * percent_sale_rdo / 100
-        price_sale_kor  = price *  percent_sale_kor / 100
-        
-    elif type_calculation == 'avito':
-        price_sale = price * percent_sale / 100
-        price_sale_rdo  = price * percent_sale_rdo/ 100
-        price_sale_kor  = price *  percent_sale_kor / 100
-        
-    elif type_calculation == 'custom':
-        price_sale = price *  percent_sale_1C / 100
-        price_sale_rdo  = price * percent_sale_rdo / 100
-        price_sale_kor  = price *  percent_sale_kor / 100
-    
-    #Считаем авто в токсичке
-    price_old       = price
-    price           = price - (price * (100 - kf) / 100) 
-    diff            = (price_old * (100 - kf) / 100)
-    inf_price = {
-        'price'     : price,
-        'dif'       : diff,
-        'comment'   : "ЦНА * ИРЦ ТХТ / посчитана цена с учетом продажи в токсичном стоке",
-        'name'      : "цена в токсичной продаже"
-    }
-    list_info_price.append(inf_price)
-    
-    #Cчитаем с защитой от убытка
-    price_old       = price
-    price           = price - (price * percent_ss / 100) 
-    diff            = (price_old * percent_ss / 100)
-    inf_price = {
-        'price'     : price,
-        'dif'       : diff,
-        'comment'   : "Цена с учетом защиты от убытка CC " + str(percent_ss) + " %",
-        'name'      : "защита от убытка"   
-    }
-    zachita_ot_ubitka = diff
-    list_info_price.append(inf_price)
-    
-    # cчитаем с защитой от скидкой торг
-    price_old       = price
-    price           = price - (price * percent_torg / 100) 
-    diff            = (price_old * percent_torg / 100)
-    inf_price = {
-        'price'     : price,
-        'dif'       : diff,
-        'comment'   : "Цена с учетом защиты скидки торг " + str(percent_torg) + " %",
-        'name'      : "скидка торг"  
-    }
-    discount_torg    = diff
-    list_info_price.append(inf_price)
-    
-    
-    # продажи и статистика корсавто
-    # пока убрали
-    #if estimation.kors_sale_cost_price_avg > 0:
-    #    price_new   = (price + estimation.kors_sale_cost_price_avg) / 2
-    #    diff        = price - price_new
-    #    if diff > 0:
-    #        price = price_new
-    #        inf_price = {
-    #            'price'     : price,
-    #            'dif'       : diff,
-    #            'comment'   : "Цена скоректирована c учетом истории продаж аналогичных АМ КорсАвто",  
-    #            'name'      : "история корсавто"  
-    #        }
-    #        list_info_price.append(inf_price)
-
-    # расчеты ремонта
-    autodex = 0
-    if estimation.avtoteka_car_autodex > 0:
-        price           = price - (estimation.avtoteka_car_autodex / 2)
-        diff            = estimation.avtoteka_car_autodex / 2
-        autodex         = diff
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'   : "Цена скоректирована на основании суммы ремонтов / 2",  
-            'name'      : "расчеты ремонтов"   
-        }
-        list_info_price.append(inf_price)
-    lob_add = False
-    if estimation.page_vnesh != None:
-        if estimation.page_vnesh.windshield_error_int == 1:
-                if estimation.page_vnesh.windshield_heat_int == 1:
-                    price_diff = windshield_heat
-                    info_diff   = "Лобовое стекло c подогревом"
-                else:
-                    price_diff = windshield
-                    info_diff   = "Лобовое стекло"
-
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum 
-                lob_add = True 
-
-    if estimation.page_salon != None:
-        # Химчистка +
-        if estimation.page_salon.cleaning_int == 1:
-            work = RegPodgotovkaWork.objects.get(pk = 117) 
-            diff = work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : diff
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff
-        elif estimation.page_salon.cleaning_int == 2:
-            work = RegPodgotovkaWork.objects.get(pk = 116) 
-            diff = work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : diff
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff
-        elif estimation.page_salon.cleaning_int == 3:
-            work = RegPodgotovkaWork.objects.get(pk = 115) 
-            diff = work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : diff
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff
-            
-        #Рычаг КПП +
-        if estimation.page_salon.damage_kpp_int == 1:
-            diff_sum = 0
-            work = RegPodgotovkaWork.objects.get(pk = 66) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            work = RegPodgotovkaWork.objects.get(pk = 67) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff_sum
-
-        #Руль +
-        if estimation.page_salon.damage_wheel_int == 2:
-            diff_sum = 0
-            work = RegPodgotovkaWork.objects.get(pk = 96) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            work = RegPodgotovkaWork.objects.get(pk = 99) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff_sum
-        #Руль +
-        if estimation.page_salon.damage_wheel_int == 1:
-            diff_sum = 0
-            work = RegPodgotovkaWork.objects.get(pk = 96) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            work = RegPodgotovkaWork.objects.get(pk = 133) 
-            diff_sum = diff_sum + work.price_kors 
-            dop = {
-                'name'      : work.name_group + " / " +  work.name,
-                'quantity'  : work.normo,
-                'amount_pod': work.price_podrad,   
-                'amount'    : work.price_kors
-            }
-            list_work_podgotovka.append(dop)  
-            amount_podgotovka = amount_podgotovka + diff_sum
-
-        if estimation.page_salon.damage_pedal_int == 1:
-            price           = price - estimation_settings.damage_pedal_int
-            diff            = estimation_settings.damage_pedal_int
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'   : "Цена скоректирована повреждений / затертости педалей",  
-                'name'      : "салон - педали"  
-            }
-            list_info_price.append(inf_price)
-            amount_podgotovka = amount_podgotovka + diff
-
-        if estimation.page_salon.damage_door_int == 1:
-            price           = price - estimation_settings.damage_door_int
-            diff            = estimation_settings.damage_door_int
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'   : "Цена скоректирована повреждений / затертости дверей",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)
-            amount_podgotovka = amount_podgotovka + diff
-        
-        if estimation.page_salon.damage_seat_int == 1:
-            price           = price - estimation_settings.damage_seat_int
-            diff            = estimation_settings.damage_seat_int
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована повреждений / затертости сидений",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price) 
-            amount_podgotovka = amount_podgotovka + diff 
-
-        if estimation.page_salon.hand_brake == 0:
-            price           = price - estimation_settings.hand_brake
-            diff            = estimation_settings.hand_brake
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающего ручного тормоза",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)  
-
-        if estimation.page_salon.conductor == 0:
-            price           = price - estimation_settings.conductor
-            diff            = estimation_settings.conductor
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающего кондиционера",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price) 
-        
-        if estimation.page_salon.wiper == 0:
-            price           = price - estimation_settings.wiper
-            diff            = estimation_settings.wiper
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающего стеклоочистителей",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)
-
-        if estimation.page_salon.signal == 0:
-            price           = price - estimation_settings.signal
-            diff            = estimation_settings.signal
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающего сигнала",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)
-
-        if estimation.page_salon.power_windows == 0:
-            price           = price - estimation_settings.power_windows
-            diff            = estimation_settings.power_windows
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающющих стеклоподъемников",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)   
-
-        if estimation.page_salon.seat_belt == 0:
-            price           = price - estimation_settings.seat_belt
-            diff            = estimation_settings.seat_belt
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "Цена скоректирована с учетом не работающющих ремней безопастности",
-                'name'      : 'неопределено'  
-            }
-            list_info_price.append(inf_price)      
-
-
-    # двигатель
-    if estimation.page_test_drive != None and estimation.page_test_drive.engine == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        if modification.typeEngine.id == 1:
-            price_diff  = (price * engine_danger_kf / 100)
-            info_diff   = 'Бензиновый двигатель ремонт'
-
-            if price_diff < engine_danger_amount_min:
-                price_diff  = engine_danger_amount_min
-                info_diff   = 'Бензиновый двигатель ремонт'
-        else:
-            price_diff  = (price * engine_dt_danger_kf / 100)
-            info_diff   = 'Дизельный двигатель ремонт'
-
-            if price_diff < engine_dt_danger_amount_min:
-                price_diff  = engine_dt_danger_amount_min
-                info_diff   = 'Дизельный двигатель ремонт'
-        dop = {
-            'name'      : info_diff,
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop)
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.engine == 2:
-        
-        info_diff = ''
-        price_diff = 0
-        
-        if modification.typeEngine.id == 1:  
-            price_diff = (price * engine_warning_kf / 100)
-            info_diff   = 'Бензиновый двигатель устранение замечаний'
-            
-            if price_diff < engine_warning_amount_min:
-                price_diff = engine_warning_amount_min
-                info_diff   = 'Бензиновый двигатель устранение замечаний'
-        else:
-        
-            price_diff = (price * engine_dt_warning_kf / 100)
-            info_diff   = 'Дизельный двигатель устранение замечаний'
-
-            if price_diff < engine_dt_warning_amount_min:
-                price_diff = engine_dt_warning_amount_min
-                info_diff   = 'Дизельный двигатель устранение замечаний'
-
-        dop = {
-            'name'      : info_diff,
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop)
-        amount_ss = amount_ss + price_diff
-
-    # кпп
-    if estimation.page_test_drive != None and estimation.page_test_drive.gear == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        
-        if modification.typeGear.id == 1:
-            price_diff = (price * gear_amt_danger_kf / 100)
-            info_diff   = 'Робот устранение замечаний'
-
-            if price_diff < gear_amt_danger_amount_min:
-                price_diff = gear_amt_danger_amount_min
-                info_diff   = 'Робот устранение замечаний'
-
-        elif modification.typeGear.id == 2:
-            price_diff = (price * gear_mt_danger_kf / 100)
-            info_diff   = 'Механика устранение замечаний'
-
-            if price_diff < gear_mt_danger_amount_min:
-                price_diff = gear_mt_danger_amount_min
-                info_diff   = 'Механика устранение замечаний'
-
-        elif modification.typeGear.id == 3:
-            price_diff = (price * gear_at_danger_kf / 100)
-            info_diff   = 'Автомат устранение замечаний'
-            if price_diff < gear_at_danger_amount_min:
-                price_diff = gear_at_danger_amount_min
-                info_diff   = 'Автомат устранение замечаний'
-
-        elif modification.typeGear.id == 4:
-            price_diff = (price * gear_cvt_danger_kf / 100)
-            info_diff   = 'Вариатор устранение замечаний'
-
-            if price_diff < gear_cvt_danger_amount_min:
-                price_diff = gear_cvt_danger_amount_min
-                info_diff   = 'Вариатор устранение замечаний'
-
-        dop = {
-            'name'      : info_diff,
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop)
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.gear == 2:
-        
-        price_diff = 0
-        info_diff = ''
-
-        if modification.typeGear.id == 1:
-            
-            price_diff = (price * gear_amt_warning_kf / 100)
-            info_diff   = 'Робот ремонт'
-
-            if price_diff < gear_amt_warning_amount_min:
-                price_diff = gear_amt_warning_amount_min
-                info_diff   = 'Робот ремонт'
-
-        elif modification.typeGear.id == 2:
-            
-            price_diff = (price * gear_mt_warning_kf / 100)
-            info_diff   = 'Механика ремонт'
-
-            if price_diff < gear_mt_warning_amount_min:
-                price_diff = gear_mt_warning_amount_min
-                info_diff   = 'Механика ремонт'
-
-        elif modification.typeGear.id == 3:
-            
-            price_diff = (price * gear_at_warning_kf / 100)
-            info_diff   = 'Автомат ремонт'
-
-            if price_diff < gear_at_warning_amount_min:
-                price_diff = gear_at_warning_amount_min
-                info_diff   = 'Автомат ремонт'
-        
-        elif modification.typeGear.id == 4:
-            
-            price_diff = (price * gear_cvt_warning_kf / 100)
-            info_diff   = 'Вариатор ремонт'
-
-            if price_diff < gear_cvt_warning_amount_min:
-                price_diff = gear_cvt_warning_amount_min
-                info_diff   = 'Вариатор ремонт'
-        
-        dop = {
-            'name'      : info_diff,
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop)
-        amount_ss = amount_ss + price_diff
-    
-    # подвеска
-    if estimation.page_test_drive != None and estimation.page_test_drive.suspension == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * suspension_danger_kf / 100)
-        info_diff   = 'Сумма ремонта в процентах ' +  str(suspension_danger_kf)
-
-        if price_diff < suspension_danger_amount_min:
-            price_diff = suspension_danger_amount_min
-            info_diff   = 'Сумма ремонта минимальное значение ' +  str(suspension_danger_amount_min)
-
-        dop = {
-            'name'      : 'Подвеска ремонт неисправности',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop)  
-        
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.suspension == 2:
-        
-        info_diff = ''
-        price_diff = 0
-        
-        price_diff = (price * suspension_warning_kf / 100)
-        
-        if price_diff < suspension_warning_amount_min:
-            price_diff = suspension_warning_amount_min
-            
-        dop = {
-            'name'      : 'Подвеска устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # система выпуска ог
-    if estimation.page_test_drive != None and estimation.page_test_drive.system_og == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * system_og_danger_kf / 100)
-        
-        if price_diff < system_og_danger_amount_min:
-            price_diff = system_og_danger_amount_min
-            
-        dop = {
-            'name'      : 'Система выпуска ОГ ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.system_og == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * system_og_warning_kf / 100)
-        
-        if price_diff < system_og_warning_amount_min:
-            price_diff = system_og_warning_amount_min
-           
-        dop = {
-            'name'      : 'Система выпуска ОГ устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # кондиционер
-    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * conditioner_danger_kf / 100)
-        
-        if price_diff < conditioner_danger_amount_min:
-            price_diff = conditioner_danger_amount_min
-            
-        dop = {
-            'name'      : 'Кондиционер ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * conditioner_warning_kf / 100)
-       
-        if price_diff < conditioner_warning_amount_min:
-            price_diff = conditioner_warning_amount_min
-            
-        dop = {
-            'name'      : 'Кондиционер устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # турбокомпрессор
-    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * turbo_danger_kf / 100)
-        
-        if price_diff < turbo_danger_amount_min:
-            price_diff = turbo_danger_amount_min
-            
-        dop = {
-            'name'      : 'Турбокомпрессор ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * turbo_warning_kf / 100)
-       
-        if price_diff < turbo_warning_amount_min:
-            price_diff = turbo_warning_amount_min
-            
-        dop = {
-            'name'      : 'Турбокомпрессор устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # рулевое управление
-    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * wheel_danger_kf / 100)
-       
-        if price_diff < wheel_danger_amount_min:
-            price_diff = wheel_danger_amount_min
-           
-        dop = {
-            'name'      : 'Рулевое управление ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * wheel_warning_kf / 100)
-       
-        if price_diff < wheel_warning_amount_min:
-            price_diff = wheel_warning_amount_min
-           
-        dop = {
-            'name'      : 'Рулевое управление устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # привод
-    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * drive_danger_kf / 100)
-        
-        if price_diff < drive_danger_amount_min:
-            price_diff = drive_danger_amount_min
-           
-        dop = {
-            'name'      : 'Привод ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.drive == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * drive_warning_kf / 100)
-        
-        if price_diff < drive_warning_amount_min:
-            price_diff = drive_warning_amount_min
-            
-        dop = {
-            'name'      : 'Привод устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # тормозная система
-    if estimation.page_test_drive != None and estimation.page_test_drive.brake == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * brake_danger_kf / 100)
-       
-        if price_diff < brake_danger_amount_min:
-            price_diff = brake_danger_amount_min
-           
-        dop = {
-            'name'      : 'Тормозная система ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.brake == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * brake_warning_kf / 100)
-       
-        if price_diff < brake_warning_amount_min:
-            price_diff = brake_warning_amount_min
-           
-        dop = {
-            'name'      : 'Тормозная система устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # подрамник
-    if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 0:
-        
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * subframe_danger_kf / 100)
-       
-        if price_diff < subframe_danger_amount_min:
-            price_diff = subframe_danger_amount_min
-           
-        dop = {
-            'name'      : 'Подрамник ремонт',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 2:
-        info_diff = ''
-        price_diff = 0
-        price_diff = (price * subframe_warning_kf / 100)
-       
-        if price_diff < subframe_warning_amount_min:
-            price_diff = subframe_warning_amount_min
-           
-        dop = {
-            'name'      : 'Подрамник устранение замечаний',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # Амортизатор 
-    if estimation.page_test_drive != None and estimation.page_test_drive.hood_trunk_shock_absorber != None and estimation.page_test_drive.hood_trunk_shock_absorber == 0:
-        price_diff = 10000 
-        dop = {
-            'name'      : 'Амортизатор капата/багажника',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-    # Стапель 
-    if estimation.page_test_drive != None and estimation.page_test_drive.stapele_hours != None and estimation.page_test_drive.stapele_hours > 0:
-        price_diff = estimation.page_test_drive.stapele_hours * estimation.page_test_drive.stapele_cost 
-        dop = {
-            'name'      : 'Стапель',
-            'quantity'  : estimation.page_test_drive.stapele_hours,
-            'amount_pod': price_diff, 
-            'amount'    : price_diff
-        }
-        list_work_mcu.append(dop) 
-        amount_mcu = amount_mcu + price_diff
-    # ТО
-    if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
-        price_diff = to_1 
-        dop = {
-            'name'      : 'ТО Minimal (масло, масляный фильтр)',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 2:
-        price_diff = to_2 
-        dop = {
-            'name'      : 'ТО Middle (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания)',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-    elif estimation.page_test_drive != None and estimation.page_test_drive.to == 3:
-        price_diff = to_3 
-        dop = {
-            'name'      : 'ТО Full (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки)',
-            'quantity'  : 1,
-            'amount_pod': 1, 
-            'amount'    : price_diff
-        }
-        list_work_service.append(dop) 
-        amount_ss = amount_ss + price_diff
-
-    # Безопасность - расчет для каждого пункта, если выбрано "не исправны" или "есть замечания"
-    # Используем только минимальную сумму опасности для обоих случаев
-    if estimation.page_test_drive != None and (estimation.page_test_drive.airbag == 0 or estimation.page_test_drive.airbag == 2):
-        # Получаем значения для текущей ценовой группы
-        airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{zg}', 0)
-        airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{zg}', 0)
-        airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{zg}', 0)
-        airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{zg}', 0)
-        seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{zg}', 0)
-        srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{zg}', 0)
-        
-        # Подушка водителя
-        if estimation.page_test_drive.airbag_driver_issue and airbag_driver_danger_amount_min > 0:
-            dop = {
-                'name': 'Подушка водителя',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': airbag_driver_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + airbag_driver_danger_amount_min
-        
-        # Подушка пассажира + перешив торпеды
-        if estimation.page_test_drive.airbag_passenger_issue and airbag_passenger_danger_amount_min > 0:
-            dop = {
-                'name': 'Подушка пассажира + перешив торпеды',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': airbag_passenger_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + airbag_passenger_danger_amount_min
-        
-        # Боковые подушки
-        if estimation.page_test_drive.airbag_side_issue and airbag_side_danger_amount_min > 0:
-            dop = {
-                'name': 'Боковые подушки',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': airbag_side_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + airbag_side_danger_amount_min
-        
-        # Подушка коленная
-        if estimation.page_test_drive.airbag_knee_issue and airbag_knee_danger_amount_min > 0:
-            dop = {
-                'name': 'Подушка коленная',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': airbag_knee_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + airbag_knee_danger_amount_min
-        
-        # Восстановление ремней безопасности
-        if estimation.page_test_drive.seat_belt_restore_issue and seat_belt_restore_danger_amount_min > 0:
-            dop = {
-                'name': 'Восстановление ремней безопасности',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': seat_belt_restore_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + seat_belt_restore_danger_amount_min
-        
-        # Блок SRS
-        if estimation.page_test_drive.srs_block_issue and srs_block_danger_amount_min > 0:
-            dop = {
-                'name': 'Блок SRS',
-                'quantity': 1,
-                'amount_pod': 1,
-                'amount': srs_block_danger_amount_min
-            }
-            list_work_podgotovka.append(dop)
-            amount_podgotovka = amount_podgotovka + srs_block_danger_amount_min
-
-    kors_price_reception = 0
-    if estimation.kors_count_sale > 0: 
-        kors_price_reception = round(((estimation.kors_sale_cost_price_min + estimation.kors_sale_cost_price_max)  / 2) - estimation.kors_outlay_avg, -3)
-    
-    hub_sale_price_avg = 0
-    if estimation.hub_sale_total > 0:
-        hub_sale_price_avg = (estimation.hub_sale_price_min + estimation.hub_sale_price_max)  / 2 
-    
-    kors_hub_correction_sale = 0
-    kors_hub_correction_store = 0
-    count_hub = (estimation.hub_sale_total + estimation.hub_total) / 2
-
-    hub_sale_price_avg = 0
-    if estimation.hub_sale_total > 0:
-        hub_sale_price_avg  = (estimation.hub_sale_price_min + estimation.hub_sale_price_max)  / 2 
-    
-    hub_price_avg = 0
-    if estimation.hub_total > 0:
-        hub_price_avg       = (estimation.hub_price_min + estimation.hub_price_max)  / 2
-
-    if count_hub > 0:
-        kors_hub_correction = round((kors_hub_correction_sale + kors_hub_correction_store) / 2 * 0.82, 0)
-    
-    ###Проверяем пробег
-    run_ok  = True
-    run_sum = 0
-    if estimation.avtoteka_data != None and len(estimation.avtoteka_data) > 100:
-        data_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
-        eventsOthersHistory = data_autoteka.get('eventsOthersHistory')
-        run         = 0
-        run_other   = 0
-        
-        for event in eventsOthersHistory:
-            if event['source'] != 'Audatex':
-                if event['mileage'] > 0:
-                    run = event['mileage']
-                    if run_other > run:
-                        if run_other - run > 1000:
-                            run_ok = False
-                            run_sum = run_sum + (run_other - run)
-                            if estimation.auction_auto_no_user != True:
-                                auction = True
-                            
-                    run_other = run
-        if run_sum > 0:
-            real_runs = run_estimation + run_sum 
-            auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
-
-    ###Проверяем требуется ли замена аккумулятора
-    if battery > 0:
-        try:
-            if estimation.start_estimation.year - estimation.year > 4:
-                diff_sum    = 0
-                work        = 'Замена аккумулятора'
-                diff_sum    = battery
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-        except:
-            s = 1
-
-    salon_info = salon_estimation(estimation)
-    for info in salon_info['array']:
-        if info['name'] == 'ручка кпп':
-            if info['all'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 66)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 67)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-        elif info['name'] == 'подлокотник':
-            if info['all'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 57)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 58)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-        elif info['name'] == 'рулевое колесо':
-            if info['all'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 96)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-            if info['perecras'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 99)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-            if info['pereshiv'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 133)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-        elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0:
-            if info['pereshiv'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 134)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-            elif info['vost'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 135)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-            elif info['dirka'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 130)
-                if work.price_kors == 0:
-                    diff_sum    = work.price_podrad * info['dirka']
-                else:
-                    diff_sum    = work.price_kors * info['dirka']
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo * info['dirka'],
-                    'amount_pod': work.price_podrad * info['dirka'], 
-                    'amount'    : work.price_kors * info['dirka']
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum
-            elif info['perecras'] > 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 130)
-                if work.price_kors == 0:
-                    diff_sum    = work.price_podrad 
-                else:
-                    diff_sum    = work.price_kors 
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : diff_sum
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum   
-
-
-    body_info = body_estimation(estimation)            
-    elem_rzav = 0
-    elem_rzav_data = ''
-    for info in body_info['array']:
-        if (info['name'] == 'фара правая' or info['name'] == 'фара левая') and info['all'] > 0:
-            if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 77)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-            elif info['replace_add'] > 0:
-                price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].capitalize() + ' / замена'
-
-                if price_diff < light_pered:
-                    price_diff = light_pered
-                    info_diff   = info['name']
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum * 2, 
-                    'amount'    : diff_sum * 2
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum
+        list_work_podgotovka    = list()
+        list_work_service       = list()
+        list_work_mcu           = list()
+
+        run_estimation = 0
+        if estimation.page_salon != None:
+            run_estimation = estimation.page_salon.run
+        elif estimation.page_remote != None:
+            run_estimation = estimation.page_remote.run
+
+        auction_success     = False
+        auction             = False
+        auction_comment     = ''
+        amount_podgotovka   = 0
+        amount_ss           = 0
+        amount_mcu          = 0
+        ammount_sum         = 0
+        kf_auction          = 75 
+
+        list_info_price     = list()
+        zna_type            = ''
+        zna                 = 0
+        zachita_ot_ubitka   = 0
+        finance_price       = 0
+        iznos_price         = 0
+        damage_gear         = False
+        damage_wheels       = False
+
+        if type_calculation == 'kors':
+            zna         = estimation.kors_price
+            zna_type    = '1C'
+        if type_calculation == 'autohub_k':
+            if estimation.hub_avg_k == 0 and estimation.page_remote != None:
+                zna = estimation.page_remote.hub_avg_k
+            elif estimation.hub_avg_k != None:
+                zna         = estimation.hub_avg_k
+            if remote:
+                if estimation.page_remote != None:
+                    zna = estimation.page_remote.hub_avg_k    
+            zna_type    = 'ЦНА + К'
+        if type_calculation == 'autohub':
+            if estimation.hub_avg == 0 and estimation.page_remote != None:
+                zna = estimation.page_remote.hub_avg
             else:
-                price_diff = (price * light_pered_kf / 100)
-                info_diff   = info['name'].capitalize()
+                zna         = estimation.hub_avg
+            if remote:
+                if estimation.page_remote != None:
+                    zna = estimation.page_remote.hub_avg    
+            zna_type    = 'ЦНА'
+        elif type_calculation == 'avito':
+            zna = estimation.avito_price_avg_market_price
+            zna_type = 'Автотека'   
+        elif type_calculation == 'custom':
+            zna = estimation.custom_zna
+            zna_type = 'Ручная'
 
-                if price_diff < light_pered:
-                    price_diff = light_pered
-                    info_diff   = info['name']
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum
-        elif (info['name'] == 'фонарь правый' or info['name'] == 'фонарь левый' ) and info['all'] > 0:
-            if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 77)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
-            elif info['replace_add'] > 0:
-                price_diff = (price * light_zad_kf / 100)
-                info_diff   = info['name'] + ' / замена'
+        if zna == 0:
+            return None
+        
+        zg  = "Неопределена"
+        # if interactiv_rlk.unit == None:
+        #     dc              = estimation.page_remote.unit
+        # else:
+        #     dc              = estimation.unit
+        dc = interactiv_rlk.unit
 
-                if price_diff < light_zad:
-                    price_diff = light_zad
-                    info_diff   = info['name']
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum 
-            else:
-                price_diff = (price * light_zad_kf / 100)
-                info_diff   = info['name']
-
-                if price_diff < light_zad:
-                    price_diff = light_zad
-                    info_diff   = info['name']
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum              
-        elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
-            if lob_add == False:
-                if estimation.page_vnesh != None and estimation.page_vnesh.windshield_heat_int == 1:
-                    price_diff = windshield_heat
-                    info_diff   = info['name'] + " c подогревом"
-                else:
-                    price_diff = windshield
-                    info_diff   = info['name']
-
-                work        = info_diff.capitalize()
-                diff_sum    = price_diff
-                dop = {
-                    'name'      : work,
-                    'quantity'  : 1,
-                    'amount_pod': diff_sum, 
-                    'amount'    : diff_sum
-                }
-                list_work_mcu.append(dop)
-                amount_mcu = amount_mcu + diff_sum    
+        fin_all         = estimation_settings.all_percent_financity
+        day_sale_all    = estimation_settings.all_days_stok_financity
+        
+        kf                  = 100
+        percent_ss          = 0
+        percent_torg        = 0
+        zna_izp_kf          = 0
+        zna_izp_type        = 0
+        percent_sale_1C     = 100
+        percent_sale        = 100
+        percent_sale_rdo    = 100
+        percent_sale_kor    = 100
+        battery             = 0
+        matrix_auction      = 0
+        
+        settings_matrix = SettingsMatrixAuction.objects.get(pk = 1)
+        
+        if zna < 200000:
+            zg              = '200'
+            matrix_auction  = settings_matrix.charge_bcp_200
+            # ИРЦ ТХТ / защита от скидок / лимиты
+            kf              = getattr(dc, 'correction_txt_200', None) if getattr(dc, 'correction_txt_200', None) not in (None, 0) else dc.ratio_avtohub_txt_200
+            percent_ss      = getattr(dc, 'markup_txt_200',   None) if getattr(dc, 'markup_txt_200',   None) not in (None, 0) else dc.percent_txt_200
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_200', None) if getattr(dc, 'max_discount_bargain_percent_200', None) not in (None, 0) else dc.percent_torg_txt_200
+            zna_izp_kf      = estimation_settings.izp_200
+            zna_izp_type    = estimation_settings.izp_200_v
+            # Коэффициенты продажи по каналам
+            percent_sale_1C = getattr(dc, 'correction_test_1c_200', None) if getattr(dc, 'correction_test_1c_200', None) not in (None, 0) else dc.ratio_1с_test_price_200
+            percent_sale    = getattr(dc, 'correction_test_200',    None) if getattr(dc, 'correction_test_200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_200
+            percent_sale_rdo= getattr(dc, 'correction_rdo_200',     None) if getattr(dc, 'correction_rdo_200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_200
+            percent_sale_kor= getattr(dc, 'correction_kor_200',     None) if getattr(dc, 'correction_kor_200',     None) not in (None, 0) else dc.ratio_avtohub_kor_200
+            kf_auction      = estimation_settings.auction_kf_200
+            fin_zg          = estimation_settings.percent_financity_200
+            day_sale_zg     = estimation_settings.days_stok_financity_200
+            
+            windshield      = estimation_settings.windshield_200
+            windshield_heat = estimation_settings.windshield_heat_200
+            light_pered     = estimation_settings.light_pered_200
+            light_pered_kf  = estimation_settings.light_pered_kf_200
+            light_zad       = estimation_settings.light_zad_200
+            light_zad_kf    = estimation_settings.light_zad_kf_200
+            battery         = estimation_settings.battery_200
+            engine_danger_kf            = estimation_settings.engine_danger_kf_200            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_200        
+            engine_warning_kf           = estimation_settings.engine_warning_kf_200 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_200 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_200   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_200   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_200    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_200    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_200 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_200 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_200  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_200  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_200  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_200  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_200   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_200   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_200  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_200  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_200   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_200   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_200 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_200 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_200     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_200   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_200   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_200       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_200        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_200       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_200     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_200     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_200      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_200
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_200
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_200
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_200
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_200
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_200
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_200
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_200
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_200
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_200
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_200
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_200
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_200
+            brake_danger_kf              = estimation_settings.brake_danger_kf_200
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_200
+            brake_warning_kf             = estimation_settings.brake_warning_kf_200
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_200
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_200
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_200
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_200
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_200
+            drive_danger_kf              = estimation_settings.drive_danger_kf_200
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_200
+            drive_warning_kf             = estimation_settings.drive_warning_kf_200
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_200
+            to_1                         = estimation_settings.to_1_200
+            to_2                         = estimation_settings.to_2_200
+            to_3                         = estimation_settings.to_3_200
+        elif zna < 400000:
+            zg              = '400'
+            matrix_auction  = settings_matrix.charge_bcp_400
+            fin_zg          = estimation_settings.percent_financity_400
+            day_sale_zg     = estimation_settings.days_stok_financity_400
+            kf              = getattr(dc, 'correction_txt_400', None) if getattr(dc, 'correction_txt_400', None) not in (None, 0) else dc.ratio_avtohub_txt_400
+            percent_ss      = getattr(dc, 'markup_txt_400',   None) if getattr(dc, 'markup_txt_400',   None) not in (None, 0) else dc.percent_txt_400
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_400', None) if getattr(dc, 'max_discount_bargain_percent_400', None) not in (None, 0) else dc.percent_torg_txt_400
+            zna_izp_kf      = estimation_settings.izp_400
+            zna_izp_type    = estimation_settings.izp_400_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_400', None) if getattr(dc, 'correction_test_1c_400', None) not in (None, 0) else dc.ratio_1с_test_price_400
+            percent_sale    = getattr(dc, 'correction_test_400',    None) if getattr(dc, 'correction_test_400',    None) not in (None, 0) else dc.ratio_avtohub_test_price_400
+            percent_sale_rdo= getattr(dc, 'correction_rdo_400',     None) if getattr(dc, 'correction_rdo_400',     None) not in (None, 0) else dc.ratio_avtohub_rdo_400
+            percent_sale_kor= getattr(dc, 'correction_kor_400',     None) if getattr(dc, 'correction_kor_400',     None) not in (None, 0) else dc.ratio_avtohub_kor_400
+            kf_auction      = estimation_settings.auction_kf_400
+            windshield      = estimation_settings.windshield_400
+            windshield_heat = estimation_settings.windshield_heat_400
+            light_pered     = estimation_settings.light_pered_400
+            light_pered_kf  = estimation_settings.light_pered_kf_400
+            light_zad       = estimation_settings.light_zad_400
+            light_zad_kf    = estimation_settings.light_zad_kf_400
+            battery         = estimation_settings.battery_400
+            engine_danger_kf            = estimation_settings.engine_danger_kf_400            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_400
+            engine_warning_kf           = estimation_settings.engine_warning_kf_400 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_400 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_400   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_400   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_400    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_400    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_400 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_400 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_400  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_400  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_400  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_400  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_400   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_400   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_400  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_400  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_400   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_400   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_400 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_400 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_400     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_400   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_400   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_400       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_400        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_400       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_400     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_400     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_400      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_400
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_400
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_400
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_400
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_400
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_400
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_400
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_400
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_400
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_400
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_400
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_400
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_400
+            brake_danger_kf              = estimation_settings.brake_danger_kf_400
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_400
+            brake_warning_kf             = estimation_settings.brake_warning_kf_400
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_400
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_400
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_400
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_400
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_400
+            drive_danger_kf              = estimation_settings.drive_danger_kf_400
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_400
+            drive_warning_kf             = estimation_settings.drive_warning_kf_400
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_400
+            to_1                         = estimation_settings.to_1_400
+            to_2                         = estimation_settings.to_2_400
+            to_3                         = estimation_settings.to_3_400
+        elif zna < 700000:
+            zg              = '700'
+            matrix_auction  = settings_matrix.charge_bcp_700
+            fin_zg          = estimation_settings.percent_financity_700
+            day_sale_zg     = estimation_settings.days_stok_financity_700
+            kf              = getattr(dc, 'correction_txt_700', None) if getattr(dc, 'correction_txt_700', None) not in (None, 0) else dc.ratio_avtohub_txt_700
+            percent_ss      = getattr(dc, 'markup_txt_700',   None) if getattr(dc, 'markup_txt_700',   None) not in (None, 0) else dc.percent_txt_700
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_700', None) if getattr(dc, 'max_discount_bargain_percent_700', None) not in (None, 0) else dc.percent_torg_txt_700
+            zna_izp_kf      = estimation_settings.izp_700
+            zna_izp_type    = estimation_settings.izp_700_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_700', None) if getattr(dc, 'correction_test_1c_700', None) not in (None, 0) else dc.ratio_1с_test_price_700
+            percent_sale    = getattr(dc, 'correction_test_700',    None) if getattr(dc, 'correction_test_700',    None) not in (None, 0) else dc.ratio_avtohub_test_price_700
+            percent_sale_rdo= getattr(dc, 'correction_rdo_700',     None) if getattr(dc, 'correction_rdo_700',     None) not in (None, 0) else dc.ratio_avtohub_rdo_700
+            percent_sale_kor= getattr(dc, 'correction_kor_700',     None) if getattr(dc, 'correction_kor_700',     None) not in (None, 0) else dc.ratio_avtohub_kor_700
+            kf_auction      = estimation_settings.auction_kf_700
+            windshield      = estimation_settings.windshield_700
+            windshield_heat = estimation_settings.windshield_heat_700
+            light_pered     = estimation_settings.light_pered_700
+            light_pered_kf  = estimation_settings.light_pered_kf_700
+            light_zad       = estimation_settings.light_zad_700
+            light_zad_kf    = estimation_settings.light_zad_kf_700
+            battery         = estimation_settings.battery_700
+            engine_danger_kf            = estimation_settings.engine_danger_kf_700            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_700
+            engine_warning_kf           = estimation_settings.engine_warning_kf_700 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_700 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_700   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_700   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_700    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_700    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_700 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_700 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_700  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_700  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_700  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_700  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_700   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_700   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_700  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_700  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_700   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_700   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_700 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_700 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_700     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_700   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_700   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_700       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_700        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_700       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_700     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_700     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_700      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_700
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_700
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_700
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_700
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_700
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_700
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_700
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_700
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_700
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_700
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_700
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_700
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_700
+            brake_danger_kf              = estimation_settings.brake_danger_kf_700
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_700
+            brake_warning_kf             = estimation_settings.brake_warning_kf_700
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_700
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_700
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_700
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_700
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_700
+            drive_danger_kf              = estimation_settings.drive_danger_kf_700
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_700
+            drive_warning_kf             = estimation_settings.drive_warning_kf_700
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_700
+            to_1                         = estimation_settings.to_1_700
+            to_2                         = estimation_settings.to_2_700
+            to_3                         = estimation_settings.to_3_700
+        elif zna < 1200000:
+            zg              = '1 200'
+            matrix_auction  = settings_matrix.charge_bcp_1200
+            fin_zg          = estimation_settings.percent_financity_1200
+            day_sale_zg     = estimation_settings.days_stok_financity_1200
+            kf              = getattr(dc, 'correction_txt_1200', None) if getattr(dc, 'correction_txt_1200', None) not in (None, 0) else dc.ratio_avtohub_txt_1200
+            percent_ss      = getattr(dc, 'markup_txt_1200',   None) if getattr(dc, 'markup_txt_1200',   None) not in (None, 0) else dc.percent_txt_1200
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_1200', None) if getattr(dc, 'max_discount_bargain_percent_1200', None) not in (None, 0) else dc.percent_torg_txt_1200
+            zna_izp_kf      = estimation_settings.izp_1200
+            zna_izp_type    = estimation_settings.izp_1200_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_1200', None) if getattr(dc, 'correction_test_1c_1200', None) not in (None, 0) else dc.ratio_1с_test_price_1200
+            percent_sale    = getattr(dc, 'correction_test_1200',    None) if getattr(dc, 'correction_test_1200',    None) not in (None, 0) else dc.ratio_avtohub_test_price_1200
+            percent_sale_rdo= getattr(dc, 'correction_rdo_1200',     None) if getattr(dc, 'correction_rdo_1200',     None) not in (None, 0) else dc.ratio_avtohub_rdo_1200
+            percent_sale_kor= getattr(dc, 'correction_kor_1200',     None) if getattr(dc, 'correction_kor_1200',     None) not in (None, 0) else dc.ratio_avtohub_kor_1200
+            kf_auction      = estimation_settings.auction_kf_1200
+            windshield      = estimation_settings.windshield_1200
+            windshield_heat = estimation_settings.windshield_heat_1200
+            light_pered     = estimation_settings.light_pered_1200
+            light_pered_kf  = estimation_settings.light_pered_kf_1200
+            light_zad       = estimation_settings.light_zad_1200
+            light_zad_kf    = estimation_settings.light_zad_kf_1200
+            battery         = estimation_settings.battery_1200
+            engine_danger_kf            = estimation_settings.engine_danger_kf_1200            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_1200
+            engine_warning_kf           = estimation_settings.engine_warning_kf_1200 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_1200 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_1200   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_1200   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_1200    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_1200    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_1200 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_1200 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_1200  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_1200  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_1200  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_1200  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_1200   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_1200   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_1200  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_1200  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_1200   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_1200   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_1200 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_1200 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_1200     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_1200   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_1200   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_1200       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_1200        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_1200       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_1200     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_1200     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_1200      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_1200
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_1200
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_1200
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_1200
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_1200
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_1200
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_1200
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_1200
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_1200
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_1200
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_1200
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_1200
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_1200
+            brake_danger_kf              = estimation_settings.brake_danger_kf_1200
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_1200
+            brake_warning_kf             = estimation_settings.brake_warning_kf_1200
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_1200
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_1200
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_1200
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_1200
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_1200
+            drive_danger_kf              = estimation_settings.drive_danger_kf_1200
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_1200
+            drive_warning_kf             = estimation_settings.drive_warning_kf_1200
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_1200
+            to_1                         = estimation_settings.to_1_1200
+            to_2                         = estimation_settings.to_2_1200
+            to_3                         = estimation_settings.to_3_1200
+        elif zna < 2000000:
+            zg              = '2 000'
+            matrix_auction  = settings_matrix.charge_bcp_2000
+            fin_zg          = estimation_settings.percent_financity_2000
+            day_sale_zg     = estimation_settings.days_stok_financity_2000
+            kf              = getattr(dc, 'correction_txt_2000', None) if getattr(dc, 'correction_txt_2000', None) not in (None, 0) else dc.ratio_avtohub_txt_2000
+            percent_ss      = getattr(dc, 'markup_txt_2000',   None) if getattr(dc, 'markup_txt_2000',   None) not in (None, 0) else dc.percent_txt_2000
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_2000', None) if getattr(dc, 'max_discount_bargain_percent_2000', None) not in (None, 0) else dc.percent_torg_txt_2000
+            zna_izp_kf      = estimation_settings.izp_2000
+            zna_izp_type    = estimation_settings.izp_2000_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_2000', None) if getattr(dc, 'correction_test_1c_2000', None) not in (None, 0) else dc.ratio_1с_test_price_2000
+            percent_sale    = getattr(dc, 'correction_test_2000',    None) if getattr(dc, 'correction_test_2000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_2000
+            percent_sale_rdo= getattr(dc, 'correction_rdo_2000',     None) if getattr(dc, 'correction_rdo_2000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_2000
+            percent_sale_kor= getattr(dc, 'correction_kor_2000',     None) if getattr(dc, 'correction_kor_2000',     None) not in (None, 0) else dc.ratio_avtohub_kor_2000
+            kf_auction      = estimation_settings.auction_kf_2000
+            windshield      = estimation_settings.windshield_2000
+            windshield_heat = estimation_settings.windshield_heat_2000
+            light_pered     = estimation_settings.light_pered_2000
+            light_pered_kf  = estimation_settings.light_pered_kf_2000
+            light_zad       = estimation_settings.light_zad_2000
+            light_zad_kf    = estimation_settings.light_zad_kf_2000
+            battery         = estimation_settings.battery_2000
+            engine_danger_kf            = estimation_settings.engine_danger_kf_2000            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_2000
+            engine_warning_kf           = estimation_settings.engine_warning_kf_2000 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_2000 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_2000   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_2000   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_2000    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_2000    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_2000 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_2000 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_2000  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_2000  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_2000  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_2000  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_2000   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_2000   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_2000  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_2000  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_2000   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_2000   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_2000 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_2000 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_2000     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_2000   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_2000   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_2000       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_2000        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_2000       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_2000     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_2000     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_2000      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_2000
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_2000
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_2000
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_2000
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_2000
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_2000
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_2000
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_2000
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_2000
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_2000
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_2000
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_2000
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_2000
+            brake_danger_kf              = estimation_settings.brake_danger_kf_2000
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_2000
+            brake_warning_kf             = estimation_settings.brake_warning_kf_2000
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_2000
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_2000
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_2000
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_2000
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_2000
+            drive_danger_kf              = estimation_settings.drive_danger_kf_2000
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_2000
+            drive_warning_kf             = estimation_settings.drive_warning_kf_2000
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_2000
+            to_1                         = estimation_settings.to_1_2000
+            to_2                         = estimation_settings.to_2_2000
+            to_3                         = estimation_settings.to_3_2000
+        elif zna < 3000000:
+            zg              = '3 000'
+            matrix_auction  = settings_matrix.charge_bcp_3000
+            fin_zg          = estimation_settings.percent_financity_3000
+            day_sale_zg     = estimation_settings.days_stok_financity_3000
+            kf              = getattr(dc, 'correction_txt_3000', None) if getattr(dc, 'correction_txt_3000', None) not in (None, 0) else dc.ratio_avtohub_txt_3000
+            percent_ss      = getattr(dc, 'markup_txt_3000',   None) if getattr(dc, 'markup_txt_3000',   None) not in (None, 0) else dc.percent_txt_3000
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_3000', None) if getattr(dc, 'max_discount_bargain_percent_3000', None) not in (None, 0) else dc.percent_torg_txt_3000
+            zna_izp_kf      = estimation_settings.izp_3000
+            zna_izp_type    = estimation_settings.izp_3000_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_3000', None) if getattr(dc, 'correction_test_1c_3000', None) not in (None, 0) else dc.ratio_1с_test_price_3000
+            percent_sale    = getattr(dc, 'correction_test_3000',    None) if getattr(dc, 'correction_test_3000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_3000
+            percent_sale_rdo= getattr(dc, 'correction_rdo_3000',     None) if getattr(dc, 'correction_rdo_3000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_3000
+            percent_sale_kor= getattr(dc, 'correction_kor_3000',     None) if getattr(dc, 'correction_kor_3000',     None) not in (None, 0) else dc.ratio_avtohub_kor_3000
+            kf_auction      = estimation_settings.auction_kf_3000
+            windshield      = estimation_settings.windshield_3000
+            windshield_heat = estimation_settings.windshield_heat_3000
+            light_pered     = estimation_settings.light_pered_3000
+            light_pered_kf  = estimation_settings.light_pered_kf_3000
+            light_zad       = estimation_settings.light_zad_3000
+            light_zad_kf    = estimation_settings.light_zad_kf_3000
+            battery         = estimation_settings.battery_3000
+            engine_danger_kf            = estimation_settings.engine_danger_kf_3000            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_3000
+            engine_warning_kf           = estimation_settings.engine_warning_kf_3000 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_3000 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_3000   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_3000   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_3000    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_3000    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_3000 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_3000 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_3000  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_3000  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_3000  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_3000  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_3000   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_3000   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_3000  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_3000  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_3000   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_3000   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_3000 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_3000 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_3000     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_3000   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_3000   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_3000       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_3000        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_3000       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_3000     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_3000     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_3000      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_3000
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_3000
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_3000
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_3000
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_3000
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_3000
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_3000
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_3000
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_3000
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_3000
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_3000
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_3000
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_3000
+            brake_danger_kf              = estimation_settings.brake_danger_kf_3000
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_3000
+            brake_warning_kf             = estimation_settings.brake_warning_kf_3000
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_3000
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_3000
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_3000
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_3000
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_3000
+            drive_danger_kf              = estimation_settings.drive_danger_kf_3000
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_3000
+            drive_warning_kf             = estimation_settings.drive_warning_kf_3000
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_3000
+            to_1                         = estimation_settings.to_1_3000
+            to_2                         = estimation_settings.to_2_3000
+            to_3                         = estimation_settings.to_3_3000
+        elif zna < 5000000:
+            zg              = '5 000'
+            matrix_auction  = settings_matrix.charge_bcp_5000
+            fin_zg          = estimation_settings.percent_financity_5000
+            day_sale_zg     = estimation_settings.days_stok_financity_5000
+            kf              = getattr(dc, 'correction_txt_5000', None) if getattr(dc, 'correction_txt_5000', None) not in (None, 0) else dc.ratio_avtohub_txt_5000
+            percent_ss      = getattr(dc, 'markup_txt_5000',   None) if getattr(dc, 'markup_txt_5000',   None) not in (None, 0) else dc.percent_txt_5000
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_5000', None) if getattr(dc, 'max_discount_bargain_percent_5000', None) not in (None, 0) else dc.percent_torg_txt_5000
+            zna_izp_kf      = estimation_settings.izp_5000
+            zna_izp_type    = estimation_settings.izp_5000_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_5000', None) if getattr(dc, 'correction_test_1c_5000', None) not in (None, 0) else dc.ratio_1с_test_price_5000
+            percent_sale    = getattr(dc, 'correction_test_5000',    None) if getattr(dc, 'correction_test_5000',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5000
+            percent_sale_rdo= getattr(dc, 'correction_rdo_5000',     None) if getattr(dc, 'correction_rdo_5000',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5000
+            percent_sale_kor= getattr(dc, 'correction_kor_5000',     None) if getattr(dc, 'correction_kor_5000',     None) not in (None, 0) else dc.ratio_avtohub_kor_5000
+            kf_auction      = estimation_settings.auction_kf_5000
+            windshield      = estimation_settings.windshield_5000
+            windshield_heat = estimation_settings.windshield_heat_5000
+            light_pered     = estimation_settings.light_pered_5000
+            light_pered_kf  = estimation_settings.light_pered_kf_5000
+            light_zad       = estimation_settings.light_zad_5000
+            light_zad_kf    = estimation_settings.light_zad_kf_5000
+            battery         = estimation_settings.battery_5000
+            engine_danger_kf            = estimation_settings.engine_danger_kf_5000            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5000
+            engine_warning_kf           = estimation_settings.engine_warning_kf_5000 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_5000 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_5000   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_5000   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_5000    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_5000    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_5000 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_5000 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_5000  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_5000  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_5000  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_5000  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_5000   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_5000   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_5000  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_5000  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_5000   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_5000   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_5000 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_5000 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_5000     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_5000   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_5000   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_5000       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_5000        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_5000       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_5000     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5000     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_5000      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5000
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5000
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5000
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5000
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5000
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_5000
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5000
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_5000
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5000
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_5000
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5000
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_5000
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5000
+            brake_danger_kf              = estimation_settings.brake_danger_kf_5000
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5000
+            brake_warning_kf             = estimation_settings.brake_warning_kf_5000
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5000
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_5000
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5000
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_5000
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5000
+            drive_danger_kf              = estimation_settings.drive_danger_kf_5000
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5000
+            drive_warning_kf             = estimation_settings.drive_warning_kf_5000
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5000
+            to_1                         = estimation_settings.to_1_5000
+            to_2                         = estimation_settings.to_2_5000
+            to_3                         = estimation_settings.to_3_5000
         else:
-            if info['rzav_strong'] > 0:
-                elem_rzav = elem_rzav + 1
-                elem_rzav_data    = elem_rzav_data + info['name'] + "; "
-            
-            if info['replace_add'] > 0:
-                if info['name'] == 'передний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 14)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum 
-                elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 43) 
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'задний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 9)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 59)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 46)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крыша':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 51)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крышка багажника':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 4)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 24)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 28)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'капот':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 38)
-                    diff_sum    = work.price_podrad * 2
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
-                        'quantity'  : work.normo * 2,
-                        'amount_pod': work.price_podrad * 2, 
-                        'amount'    : work.price_kors * 2
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-            if (info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
-                if info['name'] == 'передний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 14)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum 
-                elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 43)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'задний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 9)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 59)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 46)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крыша':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 51)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'крышка багажника':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 4)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 24)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 28)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                elif info['name'] ==  'капот':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 38)
-                    diff_sum    = work.price_podrad
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-            elif info['carap'] > 0:
-                if info['name'] == 'передний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 16)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum 
-                elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 45)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'задний бампер':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 11)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 61)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 47)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'крыша':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 52)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'крышка багажника':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 5)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 25)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 29)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-                elif info['name'] ==  'капот':
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 39)
-                    diff_sum    = work.price_kors
-                    dop = {
-                        'name'      : work.name_group + ' / ' +  work.name,
-                        'quantity'  : work.normo,
-                        'amount_pod': work.price_podrad, 
-                        'amount'    : work.price_kors
-                    }
-                    list_work_podgotovka.append(dop)
-                    amount_podgotovka = amount_podgotovka + diff_sum
-            elif (info['vmyat_strong'] > 0 or info['vmyat'] > 0):
-                if info['vmyat_strong'] > 0:
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 131)
-                    diff_sum    = work.price_kors * info['vmyat_strong']
-                    dop = {
-                        'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name + " сильная " +  ' (' + str(info['vmyat_strong']) +')',
-                        'quantity'  : work.normo * info['vmyat_strong'],
-                        'amount_pod': work.price_podrad * info['vmyat_strong'], 
-                        'amount'    : work.price_kors * info['vmyat_strong']
-                    }
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum
-                if info['vmyat'] > 0:
-                    diff_sum    = 0
-                    work        = RegPodgotovkaWork.objects.get(pk = 131)
-                    diff_sum    = work.price_kors * info['vmyat']
-                    dop = {
-                        'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
-                        'quantity'  : work.normo * info['vmyat'],
-                        'amount_pod': work.price_podrad * info['vmyat'], 
-                        'amount'    : work.price_kors * info['vmyat']
-                    } 
-                    list_work_mcu.append(dop)
-                    amount_mcu = amount_mcu + diff_sum                 
- 
-            if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
-            
-                diff_sum    = 0
-                work        = RegPodgotovkaWork.objects.get(pk = 80)
-                diff_sum    = work.price_kors
-                dop = {
-                    'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
-                    'quantity'  : work.normo,
-                    'amount_pod': work.price_podrad, 
-                    'amount'    : work.price_kors
-                }
-                list_work_podgotovka.append(dop)
-                amount_podgotovka = amount_podgotovka + diff_sum 
+            zg              = '5 000+'
+            matrix_auction  = settings_matrix.charge_bcp_5001
+            fin_zg          = estimation_settings.percent_financity_5001
+            day_sale_zg     = estimation_settings.days_stok_financity_5001
+            kf              = getattr(dc, 'correction_txt_5001', None) if getattr(dc, 'correction_txt_5001', None) not in (None, 0) else dc.ratio_avtohub_txt_5001
+            percent_ss      = getattr(dc, 'markup_txt_5001',   None) if getattr(dc, 'markup_txt_5001',   None) not in (None, 0) else dc.percent_txt_5001
+            percent_torg    = getattr(dc, 'max_discount_bargain_percent_5001', None) if getattr(dc, 'max_discount_bargain_percent_5001', None) not in (None, 0) else dc.percent_torg_txt_5001
+            zna_izp_kf      = estimation_settings.izp_5001
+            zna_izp_type    = estimation_settings.izp_5001_v
+            percent_sale_1C = getattr(dc, 'correction_test_1c_5001', None) if getattr(dc, 'correction_test_1c_5001', None) not in (None, 0) else dc.ratio_1с_test_price_5001
+            percent_sale    = getattr(dc, 'correction_test_5001',    None) if getattr(dc, 'correction_test_5001',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5001
+            percent_sale_rdo= getattr(dc, 'correction_rdo_5001',     None) if getattr(dc, 'correction_rdo_5001',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5001
+            percent_sale_kor= getattr(dc, 'correction_kor_5001',     None) if getattr(dc, 'correction_kor_5001',     None) not in (None, 0) else dc.ratio_avtohub_kor_5001
+            kf_auction      = estimation_settings.auction_kf_5001
+            windshield      = estimation_settings.windshield_5001
+            windshield_heat = estimation_settings.windshield_heat_5001
+            light_pered     = estimation_settings.light_pered_5001
+            light_pered_kf  = estimation_settings.light_pered_kf_5001
+            light_zad       = estimation_settings.light_zad_5001
+            light_zad_kf    = estimation_settings.light_zad_kf_5001
+            battery         = estimation_settings.battery_5001
+            engine_danger_kf            = estimation_settings.engine_danger_kf_5001            
+            engine_danger_amount_min    = estimation_settings.engine_danger_amount_min_5001
+            engine_warning_kf           = estimation_settings.engine_warning_kf_5001 
+            engine_warning_amount_min   = estimation_settings.engine_warning_amount_min_5001 
+            engine_dt_danger_kf         = estimation_settings.engine_dt_danger_kf_5001   
+            engine_dt_danger_amount_min = estimation_settings.engine_dt_danger_amount_min_5001   
+            engine_dt_warning_kf        = estimation_settings.engine_dt_warning_kf_5001    
+            engine_dt_warning_amount_min= estimation_settings.engine_dt_warning_amount_min_5001    
+            gear_at_danger_kf           = estimation_settings.gear_at_danger_kf_5001 
+            gear_at_danger_amount_min   = estimation_settings.gear_at_danger_amount_min_5001 
+            gear_at_warning_kf          = estimation_settings.gear_at_warning_kf_5001  
+            gear_at_warning_amount_min  = estimation_settings.gear_at_warning_amount_min_5001  
+            gear_amt_danger_kf          = estimation_settings.gear_amt_danger_kf_5001  
+            gear_amt_danger_amount_min  = estimation_settings.gear_amt_danger_amount_min_5001  
+            gear_amt_warning_kf         = estimation_settings.gear_amt_warning_kf_5001   
+            gear_amt_warning_amount_min = estimation_settings.gear_amt_warning_amount_min_5001   
+            gear_cvt_danger_kf          = estimation_settings.gear_cvt_danger_kf_5001  
+            gear_cvt_danger_amount_min  = estimation_settings.gear_cvt_danger_amount_min_5001  
+            gear_cvt_warning_kf         = estimation_settings.gear_cvt_warning_kf_5001   
+            gear_cvt_warning_amount_min = estimation_settings.gear_cvt_warning_amount_min_5001   
+            gear_mt_danger_kf           = estimation_settings.gear_mt_danger_kf_5001 
+            gear_mt_danger_amount_min   = estimation_settings.gear_mt_danger_amount_min_5001 
+            gear_mt_warning_kf          = estimation_settings.gear_mt_warning_kf_5001     
+            gear_mt_warning_amount_min  = estimation_settings.gear_mt_warning_amount_min_5001   
+            suspension_danger_kf        = estimation_settings.suspension_danger_kf_5001   
+            suspension_danger_amount_min= estimation_settings.suspension_danger_amount_min_5001       
+            suspension_warning_kf        = estimation_settings.suspension_warning_kf_5001        
+            suspension_warning_amount_min= estimation_settings.suspension_warning_amount_min_5001       
+            system_og_danger_kf          = estimation_settings.system_og_danger_kf_5001     
+            system_og_danger_amount_min  = estimation_settings.system_og_danger_amount_min_5001     
+            system_og_warning_kf         = estimation_settings.system_og_warning_kf_5001      
+            system_og_warning_amount_min = estimation_settings.system_og_warning_amount_min_5001
+            conditioner_danger_kf        = estimation_settings.conditioner_danger_kf_5001
+            conditioner_danger_amount_min = estimation_settings.conditioner_danger_amount_min_5001
+            conditioner_warning_kf       = estimation_settings.conditioner_warning_kf_5001
+            conditioner_warning_amount_min = estimation_settings.conditioner_warning_amount_min_5001
+            turbo_danger_kf              = estimation_settings.turbo_danger_kf_5001
+            turbo_danger_amount_min      = estimation_settings.turbo_danger_amount_min_5001
+            turbo_warning_kf             = estimation_settings.turbo_warning_kf_5001
+            turbo_warning_amount_min     = estimation_settings.turbo_warning_amount_min_5001
+            wheel_danger_kf              = estimation_settings.wheel_danger_kf_5001
+            wheel_danger_amount_min      = estimation_settings.wheel_danger_amount_min_5001
+            wheel_warning_kf             = estimation_settings.wheel_warning_kf_5001
+            wheel_warning_amount_min     = estimation_settings.wheel_warning_amount_min_5001
+            brake_danger_kf              = estimation_settings.brake_danger_kf_5001
+            brake_danger_amount_min      = estimation_settings.brake_danger_amount_min_5001
+            brake_warning_kf             = estimation_settings.brake_warning_kf_5001
+            brake_warning_amount_min     = estimation_settings.brake_warning_amount_min_5001
+            subframe_danger_kf           = estimation_settings.subframe_danger_kf_5001
+            subframe_danger_amount_min   = estimation_settings.subframe_danger_amount_min_5001
+            subframe_warning_kf          = estimation_settings.subframe_warning_kf_5001
+            subframe_warning_amount_min  = estimation_settings.subframe_warning_amount_min_5001
+            drive_danger_kf              = estimation_settings.drive_danger_kf_5001
+            drive_danger_amount_min      = estimation_settings.drive_danger_amount_min_5001
+            drive_warning_kf             = estimation_settings.drive_warning_kf_5001
+            drive_warning_amount_min     = estimation_settings.drive_warning_amount_min_5001
+            to_1                         = estimation_settings.to_1_5001
+            to_2                         = estimation_settings.to_2_5001
+            to_3                         = estimation_settings.to_3_5001
 
-    if elem_rzav > 3 and estimation.auction_auto_no_user != True:
-        auction = True
-        auction_comment = auction_comment + " " + "3 более элемента с сквозной корозией (" +  elem_rzav_data +  "). "
+        if percent_torg < 0:
+            percent_torg = percent_torg * -1
 
-    if amount_ss > 0:
-        price           = price - amount_ss
-        diff            = amount_ss
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'   : "Цена скоректирована с учетом затрат на слесарный ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-            'name'      : "слесарный"
-        }
-        list_info_price.append(inf_price)     
-
-    if amount_podgotovka > 0:
-        price           = price - amount_podgotovka
-        diff            = amount_podgotovka
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'   : "Цена скоректирована с учетом затрат на подготовку " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-            'name'      : "подготовка"
-        }
-        list_info_price.append(inf_price)   
-
-    if amount_mcu > 0:
-        price           = price - amount_mcu
-        diff            = amount_mcu
-        inf_price = {
-            'price'     : price,
-            'dif'       : diff,
-            'comment'   : "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-            'name'      : "кузовной"
-        }
-        list_info_price.append(inf_price)
-    
-    if estimation.auction_auto_no_user != True:
-        if auction_success == False and auction:
+        if percent_ss < 0:
+            percent_ss = percent_ss * -1
+                                                
+        price = zna 
+        # повышенный износ / такси
+        if estimation.iznos and estimation.taxi:
+            price_new  = price - (price * 40 / 100)
+            diff       = price - price_new
+            price = price_new
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована c учетом повышенного износа и использования в такси",  
+                'name'      : "износ"
+            }
+            list_info_price.append(inf_price)
+            if estimation.auction_auto_no_user != True:
+                auction = True
+                auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
+                auction_success = True
+        elif estimation.iznos:
+            price_new  = price - (price * 10 / 100)
+            diff       = price - price_new
+            price = price_new
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'  : "Цена скоректирована c учетом повышенного износа",  
+                'name'      : "износ" 
+            }
+            iznos_price = diff
+            list_info_price.append(inf_price)
+        elif estimation.taxi:
             price_new  = price - (price * (100 - kf_auction) / 100)
             diff       = price - price_new
             price = price_new
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
+                'comment'  : "Цена скоректирована c учетом использования в такси",  
+                'name'      : "износ" 
             }
+            iznos_price = diff
             list_info_price.append(inf_price)
 
-    #Финансирование
-    if zna_type != '1C':
-        #Проверяем корректировку ЦНА
-        if zna_izp_type > -1:            
-            #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
-            zna_type_name = ''
-            if zna_izp_type == 1:
-                zna_type_name = '""'
+        #Считаем авто в продаже 
+        price_sale_rdo = 0
+        price_sale_kor = 0
+        
+        if type_calculation == 'kors':
+            price_sale      = price *  percent_sale_1C / 100
+            price_sale_rdo  = price * percent_sale_rdo / 100
+            price_sale_kor  = price *  percent_sale_kor / 100
+        
+        if type_calculation == 'autohub_k':
+
+            price_sale      = price * percent_sale / 100
+            price_sale_rdo  = price * percent_sale_rdo / 100
+            price_sale_kor  = price *  percent_sale_kor / 100    
+        if type_calculation == 'autohub':
+            price_sale = price * percent_sale / 100
+            price_sale_rdo  = price * percent_sale_rdo / 100
+            price_sale_kor  = price *  percent_sale_kor / 100
+            
+        elif type_calculation == 'avito':
+            price_sale = price * percent_sale / 100
+            price_sale_rdo  = price * percent_sale_rdo/ 100
+            price_sale_kor  = price *  percent_sale_kor / 100
+            
+        elif type_calculation == 'custom':
+            price_sale = price *  percent_sale_1C / 100
+            price_sale_rdo  = price * percent_sale_rdo / 100
+            price_sale_kor  = price *  percent_sale_kor / 100
+        
+        #Считаем авто в токсичке
+        price_old       = price
+        price           = price - (price * (100 - kf) / 100) 
+        diff            = (price_old * (100 - kf) / 100)
+        inf_price = {
+            'price'     : price,
+            'dif'       : diff,
+            'comment'   : "ЦНА * ИРЦ ТХТ / посчитана цена с учетом продажи в токсичном стоке",
+            'name'      : "цена в токсичной продаже"
+        }
+        list_info_price.append(inf_price)
+        
+        #Cчитаем с защитой от убытка
+        price_old       = price
+        price           = price - (price * percent_ss / 100) 
+        diff            = (price_old * percent_ss / 100)
+        inf_price = {
+            'price'     : price,
+            'dif'       : diff,
+            'comment'   : "Цена с учетом защиты от убытка CC " + str(percent_ss) + " %",
+            'name'      : "защита от убытка"   
+        }
+        zachita_ot_ubitka = diff
+        list_info_price.append(inf_price)
+        
+        # cчитаем с защитой от скидкой торг
+        price_old       = price
+        price           = price - (price * percent_torg / 100) 
+        diff            = (price_old * percent_torg / 100)
+        inf_price = {
+            'price'     : price,
+            'dif'       : diff,
+            'comment'   : "Цена с учетом защиты скидки торг " + str(percent_torg) + " %",
+            'name'      : "скидка торг"  
+        }
+        discount_torg    = diff
+        list_info_price.append(inf_price)
+        
+        
+        # продажи и статистика корсавто
+        # пока убрали
+        #if estimation.kors_sale_cost_price_avg > 0:
+        #    price_new   = (price + estimation.kors_sale_cost_price_avg) / 2
+        #    diff        = price - price_new
+        #    if diff > 0:
+        #        price = price_new
+        #        inf_price = {
+        #            'price'     : price,
+        #            'dif'       : diff,
+        #            'comment'   : "Цена скоректирована c учетом истории продаж аналогичных АМ КорсАвто",  
+        #            'name'      : "история корсавто"  
+        #        }
+        #        list_info_price.append(inf_price)
+
+        # расчеты ремонта
+        autodex = 0
+        if estimation.avtoteka_car_autodex > 0:
+            price           = price - (estimation.avtoteka_car_autodex / 2)
+            diff            = estimation.avtoteka_car_autodex / 2
+            autodex         = diff
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована на основании суммы ремонтов / 2",  
+                'name'      : "расчеты ремонтов"   
+            }
+            list_info_price.append(inf_price)
+        lob_add = False
+        if estimation.page_vnesh != None:
+            if estimation.page_vnesh.windshield_error_int == 1:
+                    if estimation.page_vnesh.windshield_heat_int == 1:
+                        price_diff = windshield_heat
+                        info_diff   = "Лобовое стекло c подогревом"
+                    else:
+                        price_diff = windshield
+                        info_diff   = "Лобовое стекло"
+
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum 
+                    lob_add = True 
+
+        if estimation.page_salon != None:
+            # Химчистка +
+            if estimation.page_salon.cleaning_int == 1:
+                work = RegPodgotovkaWork.objects.get(pk = 117) 
+                diff = work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : diff
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff
+            elif estimation.page_salon.cleaning_int == 2:
+                work = RegPodgotovkaWork.objects.get(pk = 116) 
+                diff = work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : diff
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff
+            elif estimation.page_salon.cleaning_int == 3:
+                work = RegPodgotovkaWork.objects.get(pk = 115) 
+                diff = work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : diff
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff
+                
+            #Рычаг КПП +
+            if estimation.page_salon.damage_kpp_int == 1:
+                diff_sum = 0
+                work = RegPodgotovkaWork.objects.get(pk = 66) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                work = RegPodgotovkaWork.objects.get(pk = 67) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff_sum
+
+            #Руль +
+            if estimation.page_salon.damage_wheel_int == 2:
+                diff_sum = 0
+                work = RegPodgotovkaWork.objects.get(pk = 96) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                work = RegPodgotovkaWork.objects.get(pk = 99) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff_sum
+            #Руль +
+            if estimation.page_salon.damage_wheel_int == 1:
+                diff_sum = 0
+                work = RegPodgotovkaWork.objects.get(pk = 96) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                work = RegPodgotovkaWork.objects.get(pk = 133) 
+                diff_sum = diff_sum + work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : work.price_kors
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff_sum
+
+            if estimation.page_salon.damage_pedal_int == 1:
+                price           = price - estimation_settings.damage_pedal_int
+                diff            = estimation_settings.damage_pedal_int
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'   : "Цена скоректирована повреждений / затертости педалей",  
+                    'name'      : "салон - педали"  
+                }
+                list_info_price.append(inf_price)
+                amount_podgotovka = amount_podgotovka + diff
+
+            if estimation.page_salon.damage_door_int == 1:
+                price           = price - estimation_settings.damage_door_int
+                diff            = estimation_settings.damage_door_int
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'   : "Цена скоректирована повреждений / затертости дверей",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)
+                amount_podgotovka = amount_podgotovka + diff
+            
+            if estimation.page_salon.damage_seat_int == 1:
+                price           = price - estimation_settings.damage_seat_int
+                diff            = estimation_settings.damage_seat_int
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована повреждений / затертости сидений",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price) 
+                amount_podgotovka = amount_podgotovka + diff 
+
+            if estimation.page_salon.hand_brake == 0:
+                price           = price - estimation_settings.hand_brake
+                diff            = estimation_settings.hand_brake
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающего ручного тормоза",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)  
+
+            if estimation.page_salon.conductor == 0:
+                price           = price - estimation_settings.conductor
+                diff            = estimation_settings.conductor
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающего кондиционера",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price) 
+            
+            if estimation.page_salon.wiper == 0:
+                price           = price - estimation_settings.wiper
+                diff            = estimation_settings.wiper
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающего стеклоочистителей",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)
+
+            if estimation.page_salon.signal == 0:
+                price           = price - estimation_settings.signal
+                diff            = estimation_settings.signal
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающего сигнала",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)
+
+            if estimation.page_salon.power_windows == 0:
+                price           = price - estimation_settings.power_windows
+                diff            = estimation_settings.power_windows
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающющих стеклоподъемников",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)   
+
+            if estimation.page_salon.seat_belt == 0:
+                price           = price - estimation_settings.seat_belt
+                diff            = estimation_settings.seat_belt
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована с учетом не работающющих ремней безопастности",
+                    'name'      : 'неопределено'  
+                }
+                list_info_price.append(inf_price)      
+
+
+        # двигатель
+        if estimation.page_test_drive != None and estimation.page_test_drive.engine == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            if modification.typeEngine.id == 1:
+                price_diff  = (price * engine_danger_kf / 100)
+                info_diff   = 'Бензиновый двигатель ремонт'
+
+                if price_diff < engine_danger_amount_min:
+                    price_diff  = engine_danger_amount_min
+                    info_diff   = 'Бензиновый двигатель ремонт'
             else:
-                zna_type_name = '""'
-            price_old       = price
-            day = day_sale_all
-            if day_sale_zg > 0:
-                day = day_sale_zg
+                price_diff  = (price * engine_dt_danger_kf / 100)
+                info_diff   = 'Дизельный двигатель ремонт'
 
-            fin = fin_all
-            if fin_zg > 0:
-                fin = fin_zg
-
-            if estimation.hub_days_in_stok_avg > 0:
-                day = estimation.hub_sale_days_in_stok_avg
-                #day = estimation.hub_days_in_stok_avg # Переключил по согласованию с Серебрянниковым, для расчета дней не текущего рынка а истории продаж
-            
-            finance = round(price * ((fin / 365) / 100) * day, 2) 
-            
-            price           = price - finance
-            diff            = finance
-            finance_price   = finance
-
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней",
-                'name'      : "финансирование"
+                if price_diff < engine_dt_danger_amount_min:
+                    price_diff  = engine_dt_danger_amount_min
+                    info_diff   = 'Дизельный двигатель ремонт'
+            dop = {
+                'name'      : info_diff,
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
             }
-            '''
-            price           = price - (price * zna_izp_kf / 100) 
-            diff            = (price_old *  zna_izp_kf / 100)
-            inf_price = {
-                'price'     : price,
-                'dif'       : diff,
-                'comment'  : "ЦНА скоректирована на " + str(zna_izp_kf)  + "% (вариант использования: " + zna_type_name + ")"
-            }
-            '''
-            list_info_price.append(inf_price)
-    if estimation.auction_auto_no_user == True:
-        auction = False
-        auction_comment = ''
+            list_work_service.append(dop)
+            amount_ss = amount_ss + price_diff
 
-    #ИТОГ
-    estimation_price    = round(price, -2)
-    amount_sum          = amount_mcu + amount_podgotovka + amount_ss
-    profit              = round(price_sale - price - amount_sum, -2)
-    estimation_price_do_kd  = estimation_price + amount_ss
-    difference_sum          = 0     
+        if estimation.page_test_drive != None and estimation.page_test_drive.engine == 2:
+            
+            info_diff = ''
+            price_diff = 0
+            
+            if modification.typeEngine.id == 1:  
+                price_diff = (price * engine_warning_kf / 100)
+                info_diff   = 'Бензиновый двигатель устранение замечаний'
+                
+                if price_diff < engine_warning_amount_min:
+                    price_diff = engine_warning_amount_min
+                    info_diff   = 'Бензиновый двигатель устранение замечаний'
+            else:
+            
+                price_diff = (price * engine_dt_warning_kf / 100)
+                info_diff   = 'Дизельный двигатель устранение замечаний'
+
+                if price_diff < engine_dt_warning_amount_min:
+                    price_diff = engine_dt_warning_amount_min
+                    info_diff   = 'Дизельный двигатель устранение замечаний'
+
+            dop = {
+                'name'      : info_diff,
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop)
+            amount_ss = amount_ss + price_diff
+
+        # кпп
+        if estimation.page_test_drive != None and estimation.page_test_drive.gear == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            
+            if modification.typeGear.id == 1:
+                price_diff = (price * gear_amt_danger_kf / 100)
+                info_diff   = 'Робот устранение замечаний'
+
+                if price_diff < gear_amt_danger_amount_min:
+                    price_diff = gear_amt_danger_amount_min
+                    info_diff   = 'Робот устранение замечаний'
+
+            elif modification.typeGear.id == 2:
+                price_diff = (price * gear_mt_danger_kf / 100)
+                info_diff   = 'Механика устранение замечаний'
+
+                if price_diff < gear_mt_danger_amount_min:
+                    price_diff = gear_mt_danger_amount_min
+                    info_diff   = 'Механика устранение замечаний'
+
+            elif modification.typeGear.id == 3:
+                price_diff = (price * gear_at_danger_kf / 100)
+                info_diff   = 'Автомат устранение замечаний'
+                if price_diff < gear_at_danger_amount_min:
+                    price_diff = gear_at_danger_amount_min
+                    info_diff   = 'Автомат устранение замечаний'
+
+            elif modification.typeGear.id == 4:
+                price_diff = (price * gear_cvt_danger_kf / 100)
+                info_diff   = 'Вариатор устранение замечаний'
+
+                if price_diff < gear_cvt_danger_amount_min:
+                    price_diff = gear_cvt_danger_amount_min
+                    info_diff   = 'Вариатор устранение замечаний'
+
+            dop = {
+                'name'      : info_diff,
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop)
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.gear == 2:
+            
+            price_diff = 0
+            info_diff = ''
+
+            if modification.typeGear.id == 1:
+                
+                price_diff = (price * gear_amt_warning_kf / 100)
+                info_diff   = 'Робот ремонт'
+
+                if price_diff < gear_amt_warning_amount_min:
+                    price_diff = gear_amt_warning_amount_min
+                    info_diff   = 'Робот ремонт'
+
+            elif modification.typeGear.id == 2:
+                
+                price_diff = (price * gear_mt_warning_kf / 100)
+                info_diff   = 'Механика ремонт'
+
+                if price_diff < gear_mt_warning_amount_min:
+                    price_diff = gear_mt_warning_amount_min
+                    info_diff   = 'Механика ремонт'
+
+            elif modification.typeGear.id == 3:
+                
+                price_diff = (price * gear_at_warning_kf / 100)
+                info_diff   = 'Автомат ремонт'
+
+                if price_diff < gear_at_warning_amount_min:
+                    price_diff = gear_at_warning_amount_min
+                    info_diff   = 'Автомат ремонт'
+            
+            elif modification.typeGear.id == 4:
+                
+                price_diff = (price * gear_cvt_warning_kf / 100)
+                info_diff   = 'Вариатор ремонт'
+
+                if price_diff < gear_cvt_warning_amount_min:
+                    price_diff = gear_cvt_warning_amount_min
+                    info_diff   = 'Вариатор ремонт'
+            
+            dop = {
+                'name'      : info_diff,
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop)
+            amount_ss = amount_ss + price_diff
+        
+        # подвеска
+        if estimation.page_test_drive != None and estimation.page_test_drive.suspension == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * suspension_danger_kf / 100)
+            info_diff   = 'Сумма ремонта в процентах ' +  str(suspension_danger_kf)
+
+            if price_diff < suspension_danger_amount_min:
+                price_diff = suspension_danger_amount_min
+                info_diff   = 'Сумма ремонта минимальное значение ' +  str(suspension_danger_amount_min)
+
+            dop = {
+                'name'      : 'Подвеска ремонт неисправности',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop)  
+            
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.suspension == 2:
+            
+            info_diff = ''
+            price_diff = 0
+            
+            price_diff = (price * suspension_warning_kf / 100)
+            
+            if price_diff < suspension_warning_amount_min:
+                price_diff = suspension_warning_amount_min
+                
+            dop = {
+                'name'      : 'Подвеска устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # система выпуска ог
+        if estimation.page_test_drive != None and estimation.page_test_drive.system_og == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * system_og_danger_kf / 100)
+            
+            if price_diff < system_og_danger_amount_min:
+                price_diff = system_og_danger_amount_min
+                
+            dop = {
+                'name'      : 'Система выпуска ОГ ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.system_og == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * system_og_warning_kf / 100)
+            
+            if price_diff < system_og_warning_amount_min:
+                price_diff = system_og_warning_amount_min
+            
+            dop = {
+                'name'      : 'Система выпуска ОГ устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # кондиционер
+        if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * conditioner_danger_kf / 100)
+            
+            if price_diff < conditioner_danger_amount_min:
+                price_diff = conditioner_danger_amount_min
+                
+            dop = {
+                'name'      : 'Кондиционер ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.conditioner == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * conditioner_warning_kf / 100)
+        
+            if price_diff < conditioner_warning_amount_min:
+                price_diff = conditioner_warning_amount_min
+                
+            dop = {
+                'name'      : 'Кондиционер устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # турбокомпрессор
+        if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * turbo_danger_kf / 100)
+            
+            if price_diff < turbo_danger_amount_min:
+                price_diff = turbo_danger_amount_min
+                
+            dop = {
+                'name'      : 'Турбокомпрессор ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.turbo == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * turbo_warning_kf / 100)
+        
+            if price_diff < turbo_warning_amount_min:
+                price_diff = turbo_warning_amount_min
+                
+            dop = {
+                'name'      : 'Турбокомпрессор устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # рулевое управление
+        if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * wheel_danger_kf / 100)
+        
+            if price_diff < wheel_danger_amount_min:
+                price_diff = wheel_danger_amount_min
+            
+            dop = {
+                'name'      : 'Рулевое управление ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.wheel == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * wheel_warning_kf / 100)
+        
+            if price_diff < wheel_warning_amount_min:
+                price_diff = wheel_warning_amount_min
+            
+            dop = {
+                'name'      : 'Рулевое управление устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # привод
+        if estimation.page_test_drive != None and estimation.page_test_drive.drive == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * drive_danger_kf / 100)
+            
+            if price_diff < drive_danger_amount_min:
+                price_diff = drive_danger_amount_min
+            
+            dop = {
+                'name'      : 'Привод ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.drive == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * drive_warning_kf / 100)
+            
+            if price_diff < drive_warning_amount_min:
+                price_diff = drive_warning_amount_min
+                
+            dop = {
+                'name'      : 'Привод устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # тормозная система
+        if estimation.page_test_drive != None and estimation.page_test_drive.brake == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * brake_danger_kf / 100)
+        
+            if price_diff < brake_danger_amount_min:
+                price_diff = brake_danger_amount_min
+            
+            dop = {
+                'name'      : 'Тормозная система ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.brake == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * brake_warning_kf / 100)
+        
+            if price_diff < brake_warning_amount_min:
+                price_diff = brake_warning_amount_min
+            
+            dop = {
+                'name'      : 'Тормозная система устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # подрамник
+        if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 0:
+            
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * subframe_danger_kf / 100)
+        
+            if price_diff < subframe_danger_amount_min:
+                price_diff = subframe_danger_amount_min
+            
+            dop = {
+                'name'      : 'Подрамник ремонт',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        if estimation.page_test_drive != None and estimation.page_test_drive.subframe == 2:
+            info_diff = ''
+            price_diff = 0
+            price_diff = (price * subframe_warning_kf / 100)
+        
+            if price_diff < subframe_warning_amount_min:
+                price_diff = subframe_warning_amount_min
+            
+            dop = {
+                'name'      : 'Подрамник устранение замечаний',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # Амортизатор 
+        if estimation.page_test_drive != None and estimation.page_test_drive.hood_trunk_shock_absorber != None and estimation.page_test_drive.hood_trunk_shock_absorber == 0:
+            price_diff = 10000 
+            dop = {
+                'name'      : 'Амортизатор капота/багажника',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+        # Стапель 
+        if estimation.page_test_drive != None and estimation.page_test_drive.stapele_hours != None and estimation.page_test_drive.stapele_hours > 0:
+            price_diff = estimation.page_test_drive.stapele_hours * estimation.page_test_drive.stapele_cost 
+            dop = {
+                'name'      : 'Стапель',
+                'quantity'  : estimation.page_test_drive.stapele_hours,
+                'amount_pod': price_diff, 
+                'amount'    : price_diff
+            }
+            list_work_mcu.append(dop) 
+            amount_mcu = amount_mcu + price_diff
+        # ТО
+        if estimation.page_test_drive != None and estimation.page_test_drive.to == 1:
+            price_diff = to_1 
+            dop = {
+                'name'      : 'ТО Minimal (масло, масляный фильтр)',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+        elif estimation.page_test_drive != None and estimation.page_test_drive.to == 2:
+            price_diff = to_2 
+            dop = {
+                'name'      : 'ТО Middle (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания)',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+        elif estimation.page_test_drive != None and estimation.page_test_drive.to == 3:
+            price_diff = to_3 
+            dop = {
+                'name'      : 'ТО Full (масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки)',
+                'quantity'  : 1,
+                'amount_pod': 1, 
+                'amount'    : price_diff
+            }
+            list_work_service.append(dop) 
+            amount_ss = amount_ss + price_diff
+
+        # Безопасность - расчет для каждого пункта, если выбрано "не исправны" или "есть замечания"
+        # Используем только минимальную сумму опасности для обоих случаев
+        if estimation.page_test_drive != None and (estimation.page_test_drive.airbag == 0 or estimation.page_test_drive.airbag == 2):
+            # Получаем значения для текущей ценовой группы
+            airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{zg}', 0)
+            airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{zg}', 0)
+            airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{zg}', 0)
+            airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{zg}', 0)
+            seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{zg}', 0)
+            srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{zg}', 0)
+            
+            # Подушка водителя
+            if estimation.page_test_drive.airbag_driver_issue and airbag_driver_danger_amount_min > 0:
+                dop = {
+                    'name': 'Подушка водителя',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': airbag_driver_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + airbag_driver_danger_amount_min
+            
+            # Подушка пассажира + перешив торпеды
+            if estimation.page_test_drive.airbag_passenger_issue and airbag_passenger_danger_amount_min > 0:
+                dop = {
+                    'name': 'Подушка пассажира + перешив торпеды',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': airbag_passenger_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + airbag_passenger_danger_amount_min
+            
+            # Боковые подушки
+            if estimation.page_test_drive.airbag_side_issue and airbag_side_danger_amount_min > 0:
+                dop = {
+                    'name': 'Боковые подушки',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': airbag_side_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + airbag_side_danger_amount_min
+            
+            # Подушка коленная
+            if estimation.page_test_drive.airbag_knee_issue and airbag_knee_danger_amount_min > 0:
+                dop = {
+                    'name': 'Подушка коленная',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': airbag_knee_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + airbag_knee_danger_amount_min
+            
+            # Восстановление ремней безопасности
+            if estimation.page_test_drive.seat_belt_restore_issue and seat_belt_restore_danger_amount_min > 0:
+                dop = {
+                    'name': 'Восстановление ремней безопасности',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': seat_belt_restore_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + seat_belt_restore_danger_amount_min
+            
+            # Блок SRS
+            if estimation.page_test_drive.srs_block_issue and srs_block_danger_amount_min > 0:
+                dop = {
+                    'name': 'Блок SRS',
+                    'quantity': 1,
+                    'amount_pod': 1,
+                    'amount': srs_block_danger_amount_min
+                }
+                list_work_podgotovka.append(dop)
+                amount_podgotovka = amount_podgotovka + srs_block_danger_amount_min
+
+        kors_price_reception = 0
+        if estimation.kors_count_sale > 0: 
+            kors_price_reception = round(((estimation.kors_sale_cost_price_min + estimation.kors_sale_cost_price_max)  / 2) - estimation.kors_outlay_avg, -3)
+        
+        hub_sale_price_avg = 0
+        if estimation.hub_sale_total > 0:
+            hub_sale_price_avg = (estimation.hub_sale_price_min + estimation.hub_sale_price_max)  / 2 
+        
+        kors_hub_correction_sale = 0
+        kors_hub_correction_store = 0
+        count_hub = (estimation.hub_sale_total + estimation.hub_total) / 2
+
+        hub_sale_price_avg = 0
+        if estimation.hub_sale_total > 0:
+            hub_sale_price_avg  = (estimation.hub_sale_price_min + estimation.hub_sale_price_max)  / 2 
+        
+        hub_price_avg = 0
+        if estimation.hub_total > 0:
+            hub_price_avg       = (estimation.hub_price_min + estimation.hub_price_max)  / 2
+
+        if count_hub > 0:
+            kors_hub_correction = round((kors_hub_correction_sale + kors_hub_correction_store) / 2 * 0.82, 0)
+        
+        ###Проверяем пробег
+        run_ok  = True
+        run_sum = 0
+        if estimation.avtoteka_data != None and len(estimation.avtoteka_data) > 100:
+            data_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
+            eventsOthersHistory = data_autoteka.get('eventsOthersHistory')
+            run         = 0
+            run_other   = 0
+            
+            for event in eventsOthersHistory:
+                if event['source'] != 'Audatex':
+                    if event['mileage'] > 0:
+                        run = event['mileage']
+                        if run_other > run:
+                            if run_other - run > 1000:
+                                run_ok = False
+                                run_sum = run_sum + (run_other - run)
+                                if estimation.auction_auto_no_user != True:
+                                    auction = True
+                                
+                        run_other = run
+            if run_sum > 0:
+                real_runs = run_estimation + run_sum 
+                auction_comment = auction_comment + 'Пробег автомобиля вызывает сомнения. (примерно на '  + str(run_sum) + ' км.). Реальный пробег примерно: ' + '{0:,}'.format(real_runs).replace(',', ' ')  + ' км.'
+
+        ###Проверяем требуется ли замена аккумулятора
+        if battery > 0:
+            try:
+                if estimation.start_estimation.year - estimation.year > 4:
+                    diff_sum    = 0
+                    work        = 'Замена аккумулятора'
+                    diff_sum    = battery
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+            except:
+                s = 1
+
+        salon_info = salon_estimation(estimation)
+        for info in salon_info['array']:
+            if info['name'] == 'ручка кпп':
+                if info['all'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 66)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 67)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+            elif info['name'] == 'подлокотник':
+                if info['all'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 57)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 58)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+            elif info['name'] == 'рулевое колесо':
+                if info['all'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 96)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                if info['perecras'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 99)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+                if info['pereshiv'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 133)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+            elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0:
+                if info['pereshiv'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 134)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+                elif info['vost'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 135)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+                elif info['dirka'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 130)
+                    if work.price_kors == 0:
+                        diff_sum    = work.price_podrad * info['dirka']
+                    else:
+                        diff_sum    = work.price_kors * info['dirka']
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo * info['dirka'],
+                        'amount_pod': work.price_podrad * info['dirka'], 
+                        'amount'    : work.price_kors * info['dirka']
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum
+                elif info['perecras'] > 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 130)
+                    if work.price_kors == 0:
+                        diff_sum    = work.price_podrad 
+                    else:
+                        diff_sum    = work.price_kors 
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum   
+
+
+        body_info = body_estimation(estimation)            
+        elem_rzav = 0
+        elem_rzav_data = ''
+        for info in body_info['array']:
+            if (info['name'] == 'фара правая' or info['name'] == 'фара левая') and info['all'] > 0:
+                if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 77)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+                elif info['replace_add'] > 0:
+                    price_diff = (price * light_pered_kf / 100)
+                    info_diff   = info['name'].capitalize() + ' / замена'
+
+                    if price_diff < light_pered:
+                        price_diff = light_pered
+                        info_diff   = info['name']
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum * 2, 
+                        'amount'    : diff_sum * 2
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+                else:
+                    price_diff = (price * light_pered_kf / 100)
+                    info_diff   = info['name'].capitalize()
+
+                    if price_diff < light_pered:
+                        price_diff = light_pered
+                        info_diff   = info['name']
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum
+            elif (info['name'] == 'фонарь правый' or info['name'] == 'фонарь левый' ) and info['all'] > 0:
+                if info['poly'] > 0 and info['replace_add'] == 0 and info['tr'] == 0:
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 77)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+                elif info['replace_add'] > 0:
+                    price_diff = (price * light_zad_kf / 100)
+                    info_diff   = info['name'] + ' / замена'
+
+                    if price_diff < light_zad:
+                        price_diff = light_zad
+                        info_diff   = info['name']
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum 
+                else:
+                    price_diff = (price * light_zad_kf / 100)
+                    info_diff   = info['name']
+
+                    if price_diff < light_zad:
+                        price_diff = light_zad
+                        info_diff   = info['name']
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum              
+            elif (info['name'] == 'лобовое стекло') and info['all'] > 0:
+                if lob_add == False:
+                    if estimation.page_vnesh != None and estimation.page_vnesh.windshield_heat_int == 1:
+                        price_diff = windshield_heat
+                        info_diff   = info['name'] + " c подогревом"
+                    else:
+                        price_diff = windshield
+                        info_diff   = info['name']
+
+                    work        = info_diff.capitalize()
+                    diff_sum    = price_diff
+                    dop = {
+                        'name'      : work,
+                        'quantity'  : 1,
+                        'amount_pod': diff_sum, 
+                        'amount'    : diff_sum
+                    }
+                    list_work_mcu.append(dop)
+                    amount_mcu = amount_mcu + diff_sum    
+            else:
+                if info['rzav_strong'] > 0:
+                    elem_rzav = elem_rzav + 1
+                    elem_rzav_data    = elem_rzav_data + info['name'] + "; "
+                
+                if info['replace_add'] > 0:
+                    if info['name'] == 'передний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 14)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum 
+                    elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 43) 
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'задний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 9)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 59)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 46)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крыша':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 51)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крышка багажника':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 4)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 24)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 28)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'капот':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 38)
+                        diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
+                            'quantity'  : work.normo * 2,
+                            'amount_pod': work.price_podrad * 2, 
+                            'amount'    : work.price_kors * 2
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                if (info['carap_strong'] > 0 or info['rzav'] > 0 or info['tr'] > 0 or info['rzav_strong'] > 0) and info['replace_add'] == 0:
+                    if info['name'] == 'передний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 14)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum 
+                    elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 43)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'задний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 9)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 59)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 46)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крыша':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 51)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'крышка багажника':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 4)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 24)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 28)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'капот':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 38)
+                        diff_sum    = work.price_podrad
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                elif info['carap'] > 0:
+                    if info['name'] == 'передний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 16)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum 
+                    elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 45)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'задний бампер':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 11)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 61)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 47)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'крыша':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 52)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'крышка багажника':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 5)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 25)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 29)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                    elif info['name'] ==  'капот':
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 39)
+                        diff_sum    = work.price_kors
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name,
+                            'quantity'  : work.normo,
+                            'amount_pod': work.price_podrad, 
+                            'amount'    : work.price_kors
+                        }
+                        list_work_podgotovka.append(dop)
+                        amount_podgotovka = amount_podgotovka + diff_sum
+                elif (info['vmyat_strong'] > 0 or info['vmyat'] > 0):
+                    if info['vmyat_strong'] > 0:
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 131)
+                        diff_sum    = work.price_kors * info['vmyat_strong']
+                        dop = {
+                            'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name + " сильная " +  ' (' + str(info['vmyat_strong']) +')',
+                            'quantity'  : work.normo * info['vmyat_strong'],
+                            'amount_pod': work.price_podrad * info['vmyat_strong'], 
+                            'amount'    : work.price_kors * info['vmyat_strong']
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    if info['vmyat'] > 0:
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 131)
+                        diff_sum    = work.price_kors * info['vmyat']
+                        dop = {
+                            'name'      : info['name'] + ' / ' + work.name_group + ' / ' +  work.name +  ' (' + str(info['vmyat']) +')',
+                            'quantity'  : work.normo * info['vmyat'],
+                            'amount_pod': work.price_podrad * info['vmyat'], 
+                            'amount'    : work.price_kors * info['vmyat']
+                        } 
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum                 
     
-    if zna_type == "custom":
+                if info['skol'] > 0 and info['vmyat_strong'] == 0 and info['carap_strong'] == 0 and info['rzav'] == 0 and info['rzav_strong'] == 0:
+                
+                    diff_sum    = 0
+                    work        = RegPodgotovkaWork.objects.get(pk = 80)
+                    diff_sum    = work.price_kors
+                    dop = {
+                        'name'      : info['name'].capitalize() + " / " + work.name_group + ' / ' +  work.name,
+                        'quantity'  : work.normo,
+                        'amount_pod': work.price_podrad, 
+                        'amount'    : work.price_kors
+                    }
+                    list_work_podgotovka.append(dop)
+                    amount_podgotovka = amount_podgotovka + diff_sum 
+
+        if elem_rzav > 3 and estimation.auction_auto_no_user != True:
+            auction = True
+            auction_comment = auction_comment + " " + "3 более элемента с сквозной корозией (" +  elem_rzav_data +  "). "
+
+        if amount_ss > 0:
+            price           = price - amount_ss
+            diff            = amount_ss
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована с учетом затрат на слесарный ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                'name'      : "слесарный"
+            }
+            list_info_price.append(inf_price)     
+
+        if amount_podgotovka > 0:
+            price           = price - amount_podgotovka
+            diff            = amount_podgotovka
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована с учетом затрат на подготовку " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                'name'      : "подготовка"
+            }
+            list_info_price.append(inf_price)   
+
+        if amount_mcu > 0:
+            price           = price - amount_mcu
+            diff            = amount_mcu
+            inf_price = {
+                'price'     : price,
+                'dif'       : diff,
+                'comment'   : "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                'name'      : "кузовной"
+            }
+            list_info_price.append(inf_price)
+        
+        if estimation.auction_auto_no_user != True:
+            if auction_success == False and auction:
+                price_new  = price - (price * (100 - kf_auction) / 100)
+                diff       = price - price_new
+                price = price_new
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "Цена скоректирована c учетом продажи АМ на АУКЦИОНЕ " + str(kf_auction) + "%"  
+                }
+                list_info_price.append(inf_price)
+
+        #Финансирование
+        if zna_type != '1C':
+            #Проверяем корректировку ЦНА
+            if zna_izp_type > -1:            
+                #if zna_izp_type == 2 or zna_izp_type == 1 and estimation.kors_sale_cost_price_avg == 0:
+                zna_type_name = ''
+                if zna_izp_type == 1:
+                    zna_type_name = '""'
+                else:
+                    zna_type_name = '""'
+                price_old       = price
+                day = day_sale_all
+                if day_sale_zg > 0:
+                    day = day_sale_zg
+
+                fin = fin_all
+                if fin_zg > 0:
+                    fin = fin_zg
+
+                if zna_type == 'autohub_k':
+                    if estimation.hub_days_in_stok_avg_k > 0:
+                        day = estimation.hub_days_in_stok_avg_k
+                elif estimation.hub_days_in_stok_avg > 0:
+                    day = estimation.hub_sale_days_in_stok_avg
+                    #day = estimation.hub_days_in_stok_avg # Переключил по согласованию с Серебрянниковым, для расчета дней не текущего рынка а истории продаж
+                
+                finance = round(price * ((fin / 365) / 100) * day, 2) 
+                
+                price           = price - finance
+                diff            = finance
+                finance_price   = finance
+
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day)) + " дней",
+                    'name'      : "финансирование"
+                }
+                '''
+                price           = price - (price * zna_izp_kf / 100) 
+                diff            = (price_old *  zna_izp_kf / 100)
+                inf_price = {
+                    'price'     : price,
+                    'dif'       : diff,
+                    'comment'  : "ЦНА скоректирована на " + str(zna_izp_kf)  + "% (вариант использования: " + zna_type_name + ")"
+                }
+                '''
+                list_info_price.append(inf_price)
+        if estimation.auction_auto_no_user == True:
+            auction = False
+            auction_comment = ''
+
+        #ИТОГ
+        estimation_price    = round(price, -2)
+        amount_sum          = amount_mcu + amount_podgotovka + amount_ss
+        profit              = round(price_sale - price - amount_sum, -2)
+        estimation_price_do_kd  = estimation_price + amount_ss
+        difference_sum          = 0     
+        
+        if zna_type == "custom":
+            if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
+                estimation_price = estimation_price_do_kd - amount_ss 
+                if estimation_price < 1000:
+                    estimation_price = 1000
+            else:
+                estimation_price = 0
+
+            if estimation_price_do_kd < 1000:
+                estimation_price_do_kd = 1000 
+            
+            difference_sum = 0
+            if estimation.page_soglasovanie != None:
+                if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                    difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+            
+            estimation_price = estimation_price + difference_sum
+        
         if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
             estimation_price = estimation_price_do_kd - amount_ss 
             if estimation_price < 1000:
                 estimation_price = 1000
-        else:
-            estimation_price = 0
+        
+            if estimation_price_do_kd < 1000:
+                estimation_price_do_kd = 1000 
+            
+            difference_sum = 0
+            if estimation.page_soglasovanie != None:
+                if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
+                    difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
+
+        #cna_expenses = zna + difference_sum - amount_sum
+        cna_expenses = zna - amount_sum - autodex
+        
+        if estimation_price < 1000:
+            estimation_price = 1000
+        
+        if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
+            estimation_price = estimation_price_do_kd - amount_ss 
+            if estimation_price < 1000:
+                estimation_price = 1000
 
         if estimation_price_do_kd < 1000:
             estimation_price_do_kd = 1000 
+
+        if cna_expenses < 0:
+            cna_expenses = zna
+        estimation_price_to_bcp = 0    
         
+        
+
         difference_sum = 0
         if estimation.page_soglasovanie != None:
             if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
                 difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
-        
-        estimation_price = estimation_price + difference_sum
-    
-    if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
-        estimation_price = estimation_price_do_kd - amount_ss 
-        if estimation_price < 1000:
-            estimation_price = 1000
-       
-        if estimation_price_do_kd < 1000:
-            estimation_price_do_kd = 1000 
-        
-        difference_sum = 0
-        if estimation.page_soglasovanie != None:
-            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
-
-    #cna_expenses = zna + difference_sum - amount_sum
-    cna_expenses = zna - amount_sum - autodex
-    
-    if estimation_price < 1000:
-        estimation_price = 1000
-    
-    if estimation.page_test_drive != None and estimation.page_test_drive.end_estimation != None:
-        estimation_price = estimation_price_do_kd - amount_ss 
-        if estimation_price < 1000:
-            estimation_price = 1000
-
-    if estimation_price_do_kd < 1000:
-        estimation_price_do_kd = 1000 
-
-    if cna_expenses < 0:
-        cna_expenses = zna
-    estimation_price_to_bcp = 0    
-    
-    
-
-    difference_sum = 0
-    if estimation.page_soglasovanie != None:
-        if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-            difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
-    if difference_sum > 0:
-        estimation_price_to_bcp = estimation_price + difference_sum
-    else:
-        estimation_price_to_bcp = estimation_price         
-    
-    matrix_auction = 0
-
-    if auction:   
-        if estimation_price_to_bcp < 200000:
-            matrix_auction  = settings_matrix.charge_bcp_200
-        elif estimation_price_to_bcp < 400000:
-            matrix_auction  = settings_matrix.charge_bcp_400
-        elif estimation_price_to_bcp < 700000:
-            matrix_auction  = settings_matrix.charge_bcp_700
-        elif estimation_price_to_bcp < 1200000:
-            matrix_auction  = settings_matrix.charge_bcp_1200
-        elif estimation_price_to_bcp < 2000000:
-            matrix_auction  = settings_matrix.charge_bcp_2000
-        elif estimation_price_to_bcp < 3000000:
-            matrix_auction  = settings_matrix.charge_bcp_3000
-        elif estimation_price_to_bcp < 5000000:
-            matrix_auction  = settings_matrix.charge_bcp_5000
+        if difference_sum > 0:
+            estimation_price_to_bcp = estimation_price + difference_sum
         else:
-            matrix_auction  = settings_matrix.charge_bcp_5001        
-        cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
-    else:
-        cna_expenses = cna_expenses + difference_sum
-    
-    try:
-        if type_calculation == 'custom':
-            s = 1
-            estimation.page_soglasovanie.amount_podgotovka  = amount_podgotovka
-            estimation.page_soglasovanie.amount_ss          = amount_ss
-            estimation.page_soglasovanie.amount_mcu         = amount_mcu
-            estimation.page_soglasovanie.amount_recovery    = amount_podgotovka + amount_ss + amount_mcu
-            estimation.page_soglasovanie.save()
-        if type_calculation == 'kors':
-            estimation.page_soglasovanie.price_auto_1       = estimation_price
-            estimation.page_soglasovanie.price_auto_bcp_1   = cna_expenses
-            estimation.page_soglasovanie.price_zna_1        = zna
-            estimation.page_soglasovanie.save()
-        elif type_calculation == 'autohub':
-            estimation.page_soglasovanie.price_auto_2         = estimation_price
-            estimation.page_soglasovanie.price_auto_bcp_2     = cna_expenses
-            estimation.page_soglasovanie.price_zna_2          = zna
-            estimation.page_soglasovanie.save()
-        elif type_calculation == 'avito':
-            estimation.page_soglasovanie.price_auto_3         = estimation_price
-            estimation.page_soglasovanie.price_auto_bcp_3     = cna_expenses
-            estimation.page_soglasovanie.price_zna_3          = zna
-            estimation.page_soglasovanie.save()
+            estimation_price_to_bcp = estimation_price         
+        
+        matrix_auction = 0
+
+        if auction:   
+            if estimation_price_to_bcp < 200000:
+                matrix_auction  = settings_matrix.charge_bcp_200
+            elif estimation_price_to_bcp < 400000:
+                matrix_auction  = settings_matrix.charge_bcp_400
+            elif estimation_price_to_bcp < 700000:
+                matrix_auction  = settings_matrix.charge_bcp_700
+            elif estimation_price_to_bcp < 1200000:
+                matrix_auction  = settings_matrix.charge_bcp_1200
+            elif estimation_price_to_bcp < 2000000:
+                matrix_auction  = settings_matrix.charge_bcp_2000
+            elif estimation_price_to_bcp < 3000000:
+                matrix_auction  = settings_matrix.charge_bcp_3000
+            elif estimation_price_to_bcp < 5000000:
+                matrix_auction  = settings_matrix.charge_bcp_5000
+            else:
+                matrix_auction  = settings_matrix.charge_bcp_5001        
+            cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
+        else:
+            cna_expenses = cna_expenses + difference_sum
+        
+        try:
+            if type_calculation == 'custom':
+                s = 1
+                estimation.page_soglasovanie.amount_podgotovka  = amount_podgotovka
+                estimation.page_soglasovanie.amount_ss          = amount_ss
+                estimation.page_soglasovanie.amount_mcu         = amount_mcu
+                estimation.page_soglasovanie.amount_recovery    = amount_podgotovka + amount_ss + amount_mcu
+                estimation.page_soglasovanie.save()
+            if type_calculation == 'kors':
+                estimation.page_soglasovanie.price_auto_1       = estimation_price
+                estimation.page_soglasovanie.price_auto_bcp_1   = cna_expenses
+                estimation.page_soglasovanie.price_zna_1        = zna
+                estimation.page_soglasovanie.save()
+            elif type_calculation == 'autohub':
+                estimation.page_soglasovanie.price_auto_2         = estimation_price
+                estimation.page_soglasovanie.price_auto_bcp_2     = cna_expenses
+                estimation.page_soglasovanie.price_zna_2          = zna
+                estimation.page_soglasovanie.save()
+            elif type_calculation == 'avito':
+                estimation.page_soglasovanie.price_auto_3         = estimation_price
+                estimation.page_soglasovanie.price_auto_bcp_3     = cna_expenses
+                estimation.page_soglasovanie.price_zna_3          = zna
+                estimation.page_soglasovanie.save()
+        except:
+            s= 1   
+
+        price = {
+            'kors_price_reception'          : kors_price_reception,
+            'profit'                        : profit,
+            'hub_sale_price_avg'            : hub_sale_price_avg,
+            'hub_price_avg'                 : hub_price_avg,
+            'zna'                           : zna,
+            'zna_type'                      : zna_type,
+            'estimation_price_do_kd'        : estimation_price_do_kd,
+            'estimation_price'              : estimation_price,
+            'zg'                            : zg,
+            'kf'                            : kf,
+            'kors_price_correction_sale'    : 0,
+            'list_info_price'               : list_info_price,
+            'array_body'                    : body_info,
+            'amount_podgotovka'             : amount_podgotovka,
+            'list_work_podgotovka'          : list_work_podgotovka,
+            'list_work_service'             : list_work_service,
+            'list_work_mcu'                 : list_work_mcu,
+            'amount_sum'                    : amount_sum,
+            'amount_ss'                     : amount_ss,
+            'amount_mcu'                    : amount_mcu,
+            'auction'                       : auction,
+            'auction_comment'               : auction_comment,
+            'sale'                          : price_sale,
+            'price_sale'                    : price_sale,
+            'price_sale_rdo'                : price_sale_rdo,
+            'price_sale_kor'                : price_sale_kor,
+            'cna_expenses'                  : cna_expenses,
+            'zachita_ot_ubitka'             : zachita_ot_ubitka,
+            'finance_price'                 : finance_price,
+            'run_sum'                       : run_sum,
+            'iznos_price'                   : iznos_price,
+            'discount_torg'                 : discount_torg,
+            'estimation_settings'           : estimation_settings
+        }
+
+        return price
     except:
-        s= 1   
-
-    price = {
-        'kors_price_reception'          : kors_price_reception,
-        'profit'                        : profit,
-        'hub_sale_price_avg'            : hub_sale_price_avg,
-        'hub_price_avg'                 : hub_price_avg,
-        'zna'                           : zna,
-        'zna_type'                      : zna_type,
-        'estimation_price_do_kd'        : estimation_price_do_kd,
-        'estimation_price'              : estimation_price,
-        'zg'                            : zg,
-        'kf'                            : kf,
-        'kors_price_correction_sale'    : 0,
-        'list_info_price'               : list_info_price,
-        'array_body'                    : body_info,
-        'amount_podgotovka'             : amount_podgotovka,
-        'list_work_podgotovka'          : list_work_podgotovka,
-        'list_work_service'             : list_work_service,
-        'list_work_mcu'                 : list_work_mcu,
-        'amount_sum'                    : amount_sum,
-        'amount_ss'                     : amount_ss,
-        'amount_mcu'                    : amount_mcu,
-        'auction'                       : auction,
-        'auction_comment'               : auction_comment,
-        'sale'                          : price_sale,
-        'price_sale'                    : price_sale,
-        'price_sale_rdo'                : price_sale_rdo,
-        'price_sale_kor'                : price_sale_kor,
-        'cna_expenses'                  : cna_expenses,
-        'zachita_ot_ubitka'             : zachita_ot_ubitka,
-        'finance_price'                 : finance_price,
-        'run_sum'                       : run_sum,
-        'iznos_price'                   : iznos_price,
-        'discount_torg'                 : discount_torg,
-        'estimation_settings'           : estimation_settings
-    }
-
-    return price
+        return None
 
 
 def estimation_history_vin(vin, count = False):
