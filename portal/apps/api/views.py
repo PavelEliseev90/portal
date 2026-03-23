@@ -354,11 +354,17 @@ def calculate_car(request):
         #Смотрим автотеку
         
         autoteka_events = info['autoteka']['report']['events']
+        auction_text    = ''
         for event in autoteka_events:
-            if event['type'] == 'taxi' and event['status'] != 'ok' or event['type'] == 'carsharing' and event['status'] != 'ok':
+            if event['type'] == 'taxi' and event['status'] != 'ok':
                 auction = True
+                auction_text = auction_text + '' + 'такси / '
+            elif event['type'] == 'carsharing' and event['status'] != 'ok':
+                auction = True
+                auction_text = auction_text + '' + 'каршеринг / '
             elif event['type'] == 'mileageTwisted' and event['status'] != 'ok':
                 auction = True
+                auction_text = auction_text + '' + 'пробег / '
 
         if auction:
             price_new  = price - (price * 40 / 100)
@@ -367,7 +373,7 @@ def calculate_car(request):
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "Цена скоректирована c учетом скрученного пробега",  
+                'comment'   : "Цена скоректирована аукцион: " + auction_text,  
                 'name'      : "пробег"
             }
             list_info_price.append(inf_price) 
@@ -430,39 +436,39 @@ def calculate_car(request):
         #         }
                
         #ИТОГ
-            estimation_price    = round(price, -2)
-            profit              = round(price_sale - price, -2)
-            difference_sum          = 0     
-            
+        estimation_price    = round(price, -2)
+        profit              = round(price_sale - price, -2)
+        difference_sum          = 0     
+        
+        cna_expenses = zna
+        
+        if cna_expenses < 0:
             cna_expenses = zna
-            
-            if cna_expenses < 0:
-                cna_expenses = zna
-            estimation_price_to_bcp = 0    
-            
-            difference_sum = 0
-            
-            answer = {
-                'profit'                        : profit,
-                'hub_sale_price_avg'            : zna,
-                'hub_price_avg'                 : day_sale_all,
-                'zna'                           : zna,
-                'estimation_price'              : estimation_price,
-                'zg'                            : zg,
-                'kf'                            : kf,
-                'kors_price_correction_sale'    : 0,
-                'list_info_price'               : list_info_price,
-                'sale'                          : price_sale,
-                'price_sale'                    : price_sale,
-                'price_sale_rdo'                : price_sale_rdo,
-                'price_sale_kor'                : price_sale_kor,
-                'cna_expenses'                  : cna_expenses,
-                'zachita_ot_ubitka'             : zachita_ot_ubitka,
-                'finance_price'                 : finance_price,
-                'iznos_price'                   : iznos_price,
-                'discount_torg'                 : discount_torg,
-                'auction'                       : auction
-            }
+        estimation_price_to_bcp = 0    
+        
+        difference_sum = 0
+        
+        answer = {
+            'profit'                        : profit,
+            'hub_sale_price_avg'            : zna,
+            'hub_price_avg'                 : day_sale_all,
+            'zna'                           : zna,
+            'estimation_price'              : estimation_price,
+            'zg'                            : zg,
+            'kf'                            : kf,
+            'kors_price_correction_sale'    : 0,
+            'list_info_price'               : list_info_price,
+            'sale'                          : price_sale,
+            'price_sale'                    : price_sale,
+            'price_sale_rdo'                : price_sale_rdo,
+            'price_sale_kor'                : price_sale_kor,
+            'cna_expenses'                  : cna_expenses,
+            'zachita_ot_ubitka'             : zachita_ot_ubitka,
+            'finance_price'                 : finance_price,
+            'iznos_price'                   : iznos_price,
+            'discount_torg'                 : discount_torg,
+            'auction'                       : auction
+        }
     except Exception as e:
         answer = str(e)
 

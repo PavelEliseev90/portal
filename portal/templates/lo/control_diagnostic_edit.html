@@ -9,11 +9,7 @@
 
 
 {# Салон #}
-<div class="portal-panel">
-  ...
-  {% include 'lo/seat_assessment_widget.html' %}
-  ...
-</div>
+
 
 <div class="container-fluid py-3 control-diagnostic-page">
   <div class="portal-page">
@@ -155,6 +151,15 @@
                 </div>
                 <label class="fs-6">Пробег соответствует состоянию салона</label>
               </div>
+
+              <div class="fixOverlayDiv">
+            
+                <div class="col-sm gallery-item-salon fixOverlayDiv" onclick="visible_foto('gallery-item-pered-one', 0)" data-index="0">
+                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 550px;" src="{{params.cd.fotos_salon_capture}}" src1="{{params.estimation.fotos_salon_capture}}"> 
+                  <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_salon/" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>
+                </div>
+                
+              </div>
               
             </div>
           </div>
@@ -246,6 +251,40 @@
           </div>
           
         </div>
+
+        <div class="row g-2">
+          <div class="col-12 col-sm-4">
+            <div class="gallery-item-pered-one fixOverlayDiv" onclick="visible_foto('gallery-item-pered-one', 0)" data-index="0">
+              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{params.cd.fotos_vnesh_pered}}" src1="{{params.cd.fotos_vnesh_pered}}"> 
+              <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_body/?type=pered" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                
+            </div>                                                            
+          </div>
+          <div class="col-12 col-sm-4">
+            <div class="gallery-item-vod-one fixOverlayDiv" onclick="visible_foto('gallery-item-vod-one', 0)" data-index="0">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.cd.fotos_vnesh_vod}}" src1="{{params.cd.fotos_vnesh_vod}}"> 
+              <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_body/?type=vod" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                
+            </div>
+          </div>
+          <div class="col-12 col-sm-4">
+            <div class="gallery-item-zad-one fixOverlayDiv" onclick="visible_foto('gallery-item-zad-one', 0)" data-index="0">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.cd.fotos_vnesh_zad}}" src1="{{params.cd.fotos_vnesh_zad}}"> 
+              <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_body/?type=zad" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                
+            </div>
+          </div>
+          <div class="col-12 col-sm-4">
+            <div class="gallery-item-pass-one fixOverlayDiv" onclick="visible_foto('gallery-item-pass-one', 0)" data-index="0">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.cd.fotos_vnesh_pass}}"  src1="{{params.cd.fotos_vnesh_pass}}"> 
+              <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_body/?type=pass" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                              
+            </div>
+          </div>
+          <div class="col-12 col-sm-4">
+            <div class="gallery-item-up-one fixOverlayDiv" onclick="visible_foto('gallery-item-up-one', 0)" data-index="0">
+              <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.cd.fotos_vnesh_up}}" src1="{{params.cd.fotos_vnesh_up}}"> 
+              <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/eco/{{params.rlk.id}}/control_diagnostic/{{params.cd.id}}/control_diagnostic_body/?type=up" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                              
+            </div>
+          </div>
+        </div>
+
       </div>
 
       

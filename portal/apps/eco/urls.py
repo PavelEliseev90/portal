@@ -30,6 +30,9 @@ urlpatterns = [
     path('<int:id>/create_control_diagnostic/', views.create_control_diagnostic, name='create_control_diagnostic'),
     path('<int:id>/control_diagnostic/<int:cd_id>/comparison/', views.control_diagnostic_comparison, name='control_diagnostic_comparison'),
     path('<int:id>/control_diagnostic/<int:cd_id>/edit/', views.control_diagnostic_edit, name='control_diagnostic_edit'),
+    path('<int:id>/control_diagnostic/<int:cd_id>/control_diagnostic_salon/', views.control_diagnostic_salon, name='control_diagnostic_salon'),
+    path('<int:id>/control_diagnostic/<int:cd_id>/control_diagnostic_body/', views.control_diagnostic_body, name='control_diagnostic_body'),
+    
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

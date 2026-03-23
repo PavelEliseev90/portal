@@ -807,7 +807,7 @@ def get_info_max_znak(interactiv_rlk, estimation_id):
                 'modification'  : modification,
                 'complectation' : complectation,
                 'geoDistance'   : 500,
-                'useAutoFilter' : False,
+                'useAutoFilter' : True,
                 'yearFrom'      : year_start,
                 "yearTo"        : year_end,
                 'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
@@ -1663,6 +1663,7 @@ def refresh_avtoteka_vin():
     
     #VIN
     object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).order_by('start_estimation') | RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = date_start).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').order_by('start_estimation')
+    #object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = None) | RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '')
     if len(object_estimations) > 0:
         
         token = get_token_avtoteka()

@@ -44,69 +44,63 @@
             {% with orig=params.orig_soglasovanie %}
             {% if orig %}
             <tr>
-              <td>Автоматическая 1</td>
-              <td class="text-end">{{ orig.price_auto_1|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_1 != orig.price_auto_1 %}table-warning{% endif %}">{{ params.cd.price_auto_1|floatformat:"0g" }} ₽</td>
+              <td>ЦНА</td>
+              <td class="text-end">{{ param.price_estimation.zna|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.price_estimation.zna != params.price_cd.zna %}table-warning{% endif %}">{{ params.price_cd.zna|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
-              <td>Автоматическая 2</td>
-              <td class="text-end">{{ orig.price_auto_2|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_2 != orig.price_auto_2 %}table-warning{% endif %}">{{ params.cd.price_auto_2|floatformat:"0g" }} ₽</td>
+              <td>Прием</td>
+              <td class="text-end">{{ orig.price_after_kd|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if orig.price_after_kd != params.price_cd.estimation_price %}table-warning{% endif %}">{{ params.price_cd.estimation_price|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
-              <td>Автоматическая 3</td>
-              <td class="text-end">{{ orig.price_auto_3|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_3 != orig.price_auto_3 %}table-warning{% endif %}">{{ params.cd.price_auto_3|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>ЦНА 1</td>
-              <td class="text-end">{{ orig.price_zna_1|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_zna_1 != orig.price_zna_1 %}table-warning{% endif %}">{{ params.cd.price_zna_1|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>ЦНА 2</td>
-              <td class="text-end">{{ orig.price_zna_2|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_zna_2 != orig.price_zna_2 %}table-warning{% endif %}">{{ params.cd.price_zna_2|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>ЦНА 3</td>
-              <td class="text-end">{{ orig.price_zna_3|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_zna_3 != orig.price_zna_3 %}table-warning{% endif %}">{{ params.cd.price_zna_3|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>БЦП 1</td>
-              <td class="text-end">{{ orig.price_auto_bcp_1|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_bcp_1 != orig.price_auto_bcp_1 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_1|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>БЦП 2</td>
-              <td class="text-end">{{ orig.price_auto_bcp_2|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_bcp_2 != orig.price_auto_bcp_2 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_2|floatformat:"0g" }} ₽</td>
-            </tr>
-            <tr>
-              <td>БЦП 3</td>
-              <td class="text-end">{{ orig.price_auto_bcp_3|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.price_auto_bcp_3 != orig.price_auto_bcp_3 %}table-warning{% endif %}">{{ params.cd.price_auto_bcp_3|floatformat:"0g" }} ₽</td>
+              <td>БЦП</td>
+              <td class="text-end">{{ orig.price_bcp|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.price_cd.price_auto_3 != orig.price_bcp %}table-warning{% endif %}">{{ params.price_cd.cna_expenses|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
               <td>Затраты на подготовку</td>
-              <td class="text-end">{{ orig.amount_podgotovka|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.amount_podgotovka != orig.amount_podgotovka %}table-warning{% endif %}">{{ params.cd.amount_podgotovka|floatformat:"0g" }} ₽</td>
+              <td class="text-end">{{ orig.amount_podgotovka|floatformat:"0g" }} ₽
+                {% for work_service in params.price_estimation.list_work_podgotovka %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
+              <td class="text-end {% if params.cd.amount_podgotovka != orig.amount_podgotovka %}table-warning{% endif %}">{{ params.price_cd.amount_podgotovka|floatformat:"0g" }} ₽
+                {% for work_service in params.price_cd.list_work_podgotovka %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
             </tr>
             <tr>
               <td>Затраты на слесарный</td>
-              <td class="text-end">{{ orig.amount_ss|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.amount_ss != orig.amount_ss %}table-warning{% endif %}">{{ params.cd.amount_ss|floatformat:"0g" }} ₽</td>
+              <td class="text-end">{{ orig.amount_ss|floatformat:"0g" }} ₽
+                {% for work_service in params.price_estimation.list_work_service %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
+              <td class="text-end {% if params.cd.amount_ss != orig.price_cd.amount_ss %}table-warning{% endif %}">{{ params.price_cd.amount_ss|floatformat:"0g" }} ₽
+                {% for work_service in params.price_cd.list_work_service %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
             </tr>
             <tr>
               <td>Затраты на кузовной</td>
-              <td class="text-end">{{ orig.amount_mcu|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.amount_mcu != orig.amount_mcu %}table-warning{% endif %}">{{ params.cd.amount_mcu|floatformat:"0g" }} ₽</td>
+              <td class="text-end">{{ orig.amount_mcu|floatformat:"0g" }} ₽
+                {% for work_service in params.price_estimation.list_work_mcu %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
+              <td class="text-end {% if params.cd.amount_mcu != orig.price_cd.amount_mcu %}table-warning{% endif %}">{{ params.price_cd.amount_mcu|floatformat:"0g" }} ₽
+                {% for work_service in params.price_cd.list_work_mcu %}
+                <br>{{work_service.name}} · {{work_service.quantity}} ·  {{work_service.amount_pod|floatformat:"0g"}} ₽
+                {% endfor %}
+              </td>
             </tr>
             <tr>
               <td>Затраты на восстановительный ремонт</td>
               <td class="text-end">{{ orig.amount_recovery|floatformat:"0g" }} ₽</td>
-              <td class="text-end {% if params.cd.amount_recovery != orig.amount_recovery %}table-warning{% endif %}">{{ params.cd.amount_recovery|floatformat:"0g" }} ₽</td>
+              <td class="text-end {% if params.cd.amount_recovery != orig.price_cd.amount_sum %}table-warning{% endif %}">{{ params.price_cd.amount_sum|floatformat:"0g" }} ₽</td>
             </tr>
             {% else %}
             <tr><td colspan="3" class="text-muted">Нет данных согласования в интерактивной оценке.</td></tr>
@@ -154,12 +148,92 @@
             </tr>
             <tr>
               <td>Кондиционер</td>
-              <td class="text-end">{% if o %}{{ o.conductor|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.conductor != c.conductor %}table-warning{% endif %}">{% if c %}{{ c.conductor|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end">
+                {% if o.conductor == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.conductor != c.conductor %}table-warning{% endif %}">
+                {% if c.conductor == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Стеклоочистители</td>
+              <td class="text-end">
+                {% if o.wiper == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.wiper != c.wiper %}table-warning{% endif %}">
+                {% if c.wiper == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Сигнал</td>
+              <td class="text-end">
+                {% if o.signal == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.wiper != c.wiper %}table-warning{% endif %}">
+                {% if c.signal == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Стеклоподъёмники</td>
+              <td class="text-end">
+                {% if o.power_windows == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.wiper != c.wiper %}table-warning{% endif %}">
+                {% if c.power_windows == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Ремни безопасности</td>
+              <td class="text-end">
+                {% if o.seat_belt == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.wiper != c.wiper %}table-warning{% endif %}">
+                {% if c.seat_belt == 0 %}
+                  <label class="btn btn-danger bg-gradient" for="hand_brake-radio1">Не работает</label>
+                {% else %}
+                  <label class="btn btn-success bg-gradient" for="hand_brake-radio1">Работает</label>
+                {% endif %}
+              </td>
             </tr>
             <tr>
               <td>Химчистка салона</td>
-              <td>
+              <td class="text-end">
                 {% if o %}
                   {% if o.cleaning_int == 0 %}<span class="btn btn-success bg-gradienttext-nowrap">Не требуется</span>
                   {% elif o.cleaning_int == 1 %}<span class="btn btn-danger bg-gradienttext-nowrap">Сложная</span>
@@ -168,7 +242,7 @@
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
               </td>
-              <td class="{% if o and c and o.cleaning_int != c.cleaning_int %}table-warning{% endif %}">
+              <td class="text-end  {% if o and c and o.cleaning_int != c.cleaning_int %}table-warning{% endif %}">
                 {% if c %}
                   {% if c.cleaning_int == 0 %}<span class="btn btn-success bg-gradienttext-nowrap">Не требуется</span>
                   {% elif c.cleaning_int == 1 %}<span class="btn btn-danger bg-gradienttext-nowrap">Сложная</span>
@@ -181,13 +255,30 @@
             
             <tr>
               <td>Пробег соответствует состоянию</td>
-              <td class="text-end">{% if o %}{{ o.run_respond|default:"—" }}{% else %}—{% endif %}</td>
-              <td class="text-end {% if o and c and o.run_respond != c.run_respond %}table-warning{% endif %}">{% if c %}{{ c.run_respond|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="text-end">
+                
+                {% if o %}
+                  {% if o.run_respond == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Нет</span>
+                  {% elif o.run_respond == 1 %}<span class="btn btn-success bg-gradienttext-nowrap">Да</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>
+                  {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.run_respond != c.run_respond %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.run_respond == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Нет</span>
+                  {% elif c.run_respond == 1 %}<span class="btn btn-success bg-gradienttext-nowrap">Да</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                
+              </td>
             </tr>
             <tr>
               <td>Комментарий пробега</td>
-              <td class="text-start small">{% if o and o.run_confirmed_comment %}{{ o.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
-              <td class="text-start small {% if o and c and o.run_confirmed_comment != c.run_confirmed_comment %}table-warning{% endif %}">{% if c and c.run_confirmed_comment %}{{ c.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
+              <td class="text-end text-start small">{% if o and o.run_confirmed_comment %}{{ o.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
+              <td class="text-end text-start small {% if o and c and o.run_confirmed_comment != c.run_confirmed_comment %}table-warning{% endif %}">{% if c and c.run_confirmed_comment %}{{ c.run_confirmed_comment|truncatewords:15 }}{% else %}—{% endif %}</td>
             </tr>
             {% endwith %}
           </tbody>
@@ -215,130 +306,461 @@
             {% with o=params.orig_test_drive c=params.cd_test_drive %}
             <tr>
               <td>Двигатель</td>
-              <td>
+              <td class="text-end">
                 {% if o %}
                   {% if o.engine == 1 or o.engine == 3 or o.engine == 10 or o.engine == None %}<span class="btn btn-success bg-gradient text-nowrap">Исправен</span>
                   {% elif o.engine == 0 %}<span class="btn btn-danger bg-gradient text-nowrap">Не исправен</span>
                   {% elif o.engine == 2 %}<span class="btn btn-warning bg-gradient text-nowrap">Есть замечания</span>
                   {% else %}<span class="btn btn-secondary bg-gradient text-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
+                <br>
+                {% if o.comment_engine == '' %}
+                  -
+                {% else %}
+                  {{o.comment_engine}}
+                {% endif %}
               </td>
-              <td class="{% if o and c and o.engine != c.engine %}table-warning{% endif %}">
+              <td class="text-end {% if o and c and o.engine != c.engine %}table-warning{% endif %}">
                 {% if c %}
                   {% if c.engine == 1 or c.engine == 3 or c.engine == 10 or c.engine == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
                   {% elif c.engine == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
                   {% elif c.engine == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
+                <br>
+                {% if c.comment_engine == '' %}
+                  -
+                {% else %}
+                  {{c.comment_engine}}
+                {% endif %}
               </td>
             </tr>
             <tr>
-              <td>КПП</td>
-              <td>
+              <td>Система выпуска ОГ</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.system_og == 1 or o.system_og == 3 or o.system_og == 10 or o.system_og == None %}<span class="btn btn-success bg-gradient text-nowrap">Исправен</span>
+                  {% elif o.system_og == 0 %}<span class="btn btn-danger bg-gradient text-nowrap">Не исправен</span>
+                  {% elif o.system_og == 2 %}<span class="btn btn-warning bg-gradient text-nowrap">Есть замечания</span>
+                  {% else %}<span class="btn btn-secondary bg-gradient text-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_system_og == '' %}
+                  -
+                {% else %}
+                  {{o.comment_system_og}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.system_og != c.system_og %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.system_og == 1 or c.system_og == 3 or c.system_og == 10 or c.system_og == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.system_og == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.system_og == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_system_og == '' %}
+                  -
+                {% else %}
+                  {{c.comment_system_og}}
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Подвеска</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.suspension == 1 or o.suspension == 3 or o.suspension == 10 or o.suspension == None %}<span class="btn btn-success bg-gradient text-nowrap">Исправен</span>
+                  {% elif o.suspension == 0 %}<span class="btn btn-danger bg-gradient text-nowrap">Не исправен</span>
+                  {% elif o.suspension == 2 %}<span class="btn btn-warning bg-gradient text-nowrap">Есть замечания</span>
+                  {% else %}<span class="btn btn-secondary bg-gradient text-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_suspension == '' %}
+                  -
+                {% else %}
+                  {{o.comment_suspension}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.suspension != c.suspension %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.suspension == 1 or c.suspension == 3 or c.suspension == 10 or c.suspension == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.suspension == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.suspension == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_suspension == '' %}
+                  -
+                {% else %}
+                  {{c.comment_suspension}}
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Коробка передач</td>
+              <td class="text-end">
                 {% if o %}
                   {% if o.gear == 1 or o.gear == 3 or o.gear == 10 or o.gear == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
                   {% elif o.gear == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
                   {% elif o.gear == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
+                <br>
+                {% if o.comment_gear == '' %}
+                  -
+                {% else %}
+                  {{o.comment_gear}}
+                {% endif %}
               </td>
-              <td class="{% if o and c and o.gear != c.gear %}table-warning{% endif %}">
+              <td class="text-end {% if o and c and o.gear != c.gear %}table-warning{% endif %}">
                 {% if c %}
                   {% if c.gear == 1 or c.gear == 3 or c.gear == 10 or c.gear == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
                   {% elif c.gear == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
                   {% elif c.gear == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td>Подвеска</td>
-              <td>
-                {% if o %}
-                  {% if o.suspension == 1 or o.suspension == 3 or o.suspension == 10 or o.suspension == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
-                  {% elif o.suspension == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
-                  {% elif o.suspension == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
-              </td>
-              <td class="{% if o and c and o.suspension != c.suspension %}table-warning{% endif %}">
-                {% if c %}
-                  {% if c.suspension == 1 or c.suspension == 3 or c.suspension == 10 or c.suspension == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
-                  {% elif c.suspension == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
-                  {% elif c.suspension == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td>Тормозная система</td>
-              <td>
-                {% if o %}
-                  {% if o.brake == 1 or o.brake == 3 or o.brake == 10 or o.brake == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
-                  {% elif o.brake == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
-                  {% elif o.brake == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
-              </td>
-              <td class="{% if o and c and o.brake != c.brake %}table-warning{% endif %}">
-                {% if c %}
-                  {% if c.brake == 1 or c.brake == 3 or c.brake == 10 or c.brake == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
-                  {% elif c.brake == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
-                  {% elif c.brake == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td>Рулевое управление</td>
-              <td>
-                {% if o %}
-                  {% if o.wheel == 1 or o.wheel == 3 or o.wheel == 10 or o.wheel == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправно</span>
-                  {% elif o.wheel == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправно</span>
-                  {% elif o.wheel == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
-              </td>
-              <td class="{% if o and c and o.wheel != c.wheel %}table-warning{% endif %}">
-                {% if c %}
-                  {% if c.wheel == 1 or c.wheel == 3 or c.wheel == 10 or c.wheel == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправно</span>
-                  {% elif c.wheel == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправно</span>
-                  {% elif c.wheel == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
-                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
-                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_gear == '' %}
+                  -
+                {% else %}
+                  {{c.comment_gear}}
+                {% endif %}
               </td>
             </tr>
             <tr>
               <td>Подушки безопасности</td>
-              <td>
+              <td class="text-end">
                 {% if o %}
                   {% if o.airbag == 1 or o.airbag == 3 or o.airbag == 10 or o.airbag == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправны</span>
-                  {% elif o.airbag == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
                   {% elif o.airbag == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправны</span>
                   {% elif o.airbag == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.airbag == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрены</span>
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
+                <br>
+                {% if o.comment_airbag == '' %}
+                  -
+                {% else %}
+                  {{o.comment_airbag}}
+                {% endif %}
               </td>
-              <td class="{% if o and c and o.airbag != c.airbag %}table-warning{% endif %}">
+              <td class="text-end {% if o and c and o.airbag != c.airbag %}table-warning{% endif %}">
                 {% if c %}
                   {% if c.airbag == 1 or c.airbag == 3 or c.airbag == 10 or c.airbag == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправны</span>
-                  {% elif c.airbag == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
                   {% elif c.airbag == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправны</span>
                   {% elif c.airbag == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.airbag == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрены</span>
                   {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
                 {% else %}—{% endif %}
+                <br>
+                {% if c.comment_airbag == '' %}
+                  -
+                {% else %}
+                  {{c.comment_airbag}}
+                {% endif %}
               </td>
             </tr>
             <tr>
-              <td>Тест не производился</td>
-              <td>{% if o %}{% if o.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
-              <td class="{% if o and c and o.no_test != c.no_test %}table-warning{% endif %}">{% if c %}{% if c.no_test %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+              <td>Кондиционер</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.conditioner == 1 or o.conditioner == 3 or o.conditioner == 10 or o.conditioner == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif o.conditioner == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif o.conditioner == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.conditioner == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_conditioner == '' %}
+                  -
+                {% else %}
+                  {{o.comment_conditioner}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.conditioner != c.conditioner %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.conditioner == 1 or c.conditioner == 3 or c.conditioner == 10 or c.conditioner == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.conditioner == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.conditioner == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.conditioner == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_conditioner == '' %}
+                  -
+                {% else %}
+                  {{c.comment_conditioner}}
+                {% endif %}
+              </td>
             </tr>
+
             <tr>
-              <td>Комментарий</td>
-              <td class="text-start small">{% if o and o.comment %}{{ o.comment|truncatewords:30 }}{% else %}—{% endif %}</td>
-              <td class="text-start small {% if o and c and o.comment != c.comment %}table-warning{% endif %}">{% if c and c.comment %}{{ c.comment|truncatewords:30 }}{% else %}—{% endif %}</td>
+              <td>Турбокомпрессор</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.turbo == 1 or o.turbo == 3 or o.turbo == 10 or o.turbo == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif o.turbo == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif o.turbo == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.turbo == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_turbo == '' %}
+                  -
+                {% else %}
+                  {{o.comment_turbo}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.turbo != c.turbo %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.turbo == 1 or c.turbo == 3 or c.turbo == 10 or c.turbo == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.turbo == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.turbo == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.turbo == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_turbo == '' %}
+                  -
+                {% else %}
+                  {{c.comment_turbo}}
+                {% endif %}
+              </td>
             </tr>
+
+            <tr>
+              <td>Рулевое управление</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.wheel == 1 or o.wheel == 3 or o.wheel == 10 or o.wheel == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправно</span>
+                  {% elif o.wheel == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправно</span>
+                  {% elif o.wheel == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.wheel == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_wheel == '' %}
+                  -
+                {% else %}
+                  {{o.comment_wheel}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.wheel != c.wheel %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.wheel == 1 or c.wheel == 3 or c.wheel == 10 or c.wheel == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправно</span>
+                  {% elif c.wheel == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправно</span>
+                  {% elif c.wheel == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.wheel == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_wheel == '' %}
+                  -
+                {% else %}
+                  {{c.comment_wheel}}
+                {% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td>Полный привод</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.drive == 1 or o.drive == 3 or o.drive == 10 or o.drive == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправнен</span>
+                  {% elif o.drive == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif o.drive == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.drive == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_drive == '' %}
+                  -
+                {% else %}
+                  {{o.comment_drive}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.drive != c.drive %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.drive == 1 or c.drive == 3 or c.drive == 10 or c.drive == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.drive == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.drive == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.drive == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_drive == '' %}
+                  -
+                {% else %}
+                  {{c.comment_drive}}
+                {% endif %}
+              </td>
+            </tr>
+            
+            <tr>
+              <td>Тормозная система</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.brake == 1 or o.brake == 3 or o.brake == 10 or o.brake == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
+                  {% elif o.brake == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
+                  {% elif o.brake == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.brake == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_brake == '' %}
+                  -
+                {% else %}
+                  {{o.comment_brake}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.brake != c.brake %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.brake == 1 or c.brake == 3 or c.brake == 10 or c.brake == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправна</span>
+                  {% elif c.brake == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправна</span>
+                  {% elif c.brake == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.brake == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_brake == '' %}
+                  -
+                {% else %}
+                  {{c.comment_brake}}
+                {% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td>Подрамник</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.subframe == 1 or o.subframe == 3 or o.subframe == 10 or o.subframe == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif o.subframe == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif o.subframe == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.subframe == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_subframe == '' %}
+                  -
+                {% else %}
+                  {{o.comment_subframe}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.subframe != c.subframe %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.subframe == 1 or c.subframe == 3 or c.subframe == 10 or c.subframe == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправен</span>
+                  {% elif c.subframe == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправен</span>
+                  {% elif c.subframe == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.subframe == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрен</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_subframe == '' %}
+                  -
+                {% else %}
+                  {{c.comment_subframe}}
+                {% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td>Амортизатор капота/багажника</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.hood_trunk_shock_absorber == 1 or o.hood_trunk_shock_absorber == 3 or o.hood_trunk_shock_absorber == 10 or o.hood_trunk_shock_absorber == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправны</span>
+                  {% elif o.hood_trunk_shock_absorber == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправны</span>
+                  {% elif o.hood_trunk_shock_absorber == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif o.hood_trunk_shock_absorber == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрены</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.comment_hood_trunk_shock_absorber == '' %}
+                  -
+                {% else %}
+                  {{o.comment_hood_trunk_shock_absorber}}
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.hood_trunk_shock_absorber != c.hood_trunk_shock_absorber %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.hood_trunk_shock_absorber == 1 or c.hood_trunk_shock_absorber == 3 or c.hood_trunk_shock_absorber == 10 or c.hood_trunk_shock_absorber == None %}<span class="btn btn-success bg-gradienttext-nowrap">Исправны</span>
+                  {% elif c.hood_trunk_shock_absorber == 0 %}<span class="btn btn-danger bg-gradienttext-nowrap">Не исправны</span>
+                  {% elif c.hood_trunk_shock_absorber == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Есть замечания</span>
+                  {% elif c.hood_trunk_shock_absorber == 4 %}<span class="btn btn-success bg-gradienttext-nowrap">Не предусмотрены</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if c.comment_hood_trunk_shock_absorber == '' %}
+                  -
+                {% else %}
+                  {{c.comment_hood_trunk_shock_absorber}}
+                {% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td>Стапель</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.stapele_type == 0 or o.stapele_type == 10 or o.stapele_type == None %}<span class="btn btn-success bg-gradienttext-nowrap">-</span>
+                  {% elif o.stapele_type == 1 %}<span class="btn btn-warning bg-gradienttext-nowrap">Легкий</span>
+                  {% elif o.stapele_type == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Средний</span>
+                  {% elif o.stapele_type == 3 %}<span class="btn btn-danger bg-gradienttext-nowrap">Тяжелый</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                {% if o.stapele_hours == 0 or o.stapele_hours == None %}
+                  -
+                {% else %}
+                  {{o.stapele_hours}} ч. {{o.stapele_cost}} руб.
+                {% endif %}
+              </td>
+              <td class="text-end {% if o and c and o.stapele_type != c.stapele_type %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.stapele_type == 0 or c.stapele_type == 10 or c.stapele_type == None %}<span class="btn btn-success bg-gradienttext-nowrap">-</span>
+                  {% elif c.stapele_type == 1 %}<span class="btn btn-warning bg-gradienttext-nowrap">Легкий</span>
+                  {% elif c.stapele_type == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Средний</span>
+                  {% elif c.stapele_type == 3 %}<span class="btn btn-danger bg-gradienttext-nowrap">Тяжелый</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                
+                {% if c.stapele_hours == 0 or c.stapele_hours == None %}
+                  -
+                {% else %}
+                  {{c.stapele_hours}} ч. {{c.stapele_cost}} руб.
+                {% endif %}
+              </td>
+            </tr>
+
+            <tr>
+              <td>ТО</td>
+              <td class="text-end">
+                {% if o %}
+                  {% if o.to == 0 or o.to == 10 or o.to == None %}<span class="btn btn-success bg-gradienttext-nowrap">-</span>
+                  {% elif o.to == 1 %}<span class="btn btn-warning bg-gradienttext-nowrap">Minimal</span>
+                  {% elif o.to == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Middle</span>
+                  {% elif o.to == 3 %}<span class="btn btn-warning bg-gradienttext-nowrap">Full</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                
+              </td>
+              <td class="text-end {% if o and c and o.to != c.to %}table-warning{% endif %}">
+                {% if c %}
+                  {% if c.to == 0 or c.to == 10 or c.to == None %}<span class="btn btn-success bg-gradienttext-nowrap">-</span>
+                  {% elif c.to == 1 %}<span class="btn btn-warning bg-gradienttext-nowrap">Minimal</span>
+                  {% elif c.to == 2 %}<span class="btn btn-warning bg-gradienttext-nowrap">Middle</span>
+                  {% elif c.to == 3 %}<span class="btn btn-warning bg-gradienttext-nowrap">Full</span>
+                  {% else %}<span class="btn btn-secondary bg-gradienttext-nowrap">—</span>{% endif %}
+                {% else %}—{% endif %}
+                <br>
+                
+               
+              </td>
+            </tr>
+
             {% endwith %}
           </tbody>
         </table>
@@ -354,11 +776,9 @@
       {% if params.file_pairs %}
       <div class="row g-3">
         {% for orig_file, cd_file in params.file_pairs %}
-        <div class="col-12 col-md-6 col-lg-4">
+        <div class="col-12 col-md-6">
           <div class="card h-100 border">
-            <div class="card-header py-1 small">
-              {% if orig_file %}{{ orig_file.type_file }} #{{ orig_file.file_number }}{% else %}{{ cd_file.type_file }} #{{ cd_file.file_number }} — только в КД{% endif %}
-            </div>
+            
             <div class="card-body p-2">
               <div class="row g-1">
                 <div class="col-6 text-center">
