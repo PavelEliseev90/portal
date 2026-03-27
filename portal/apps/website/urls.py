@@ -34,7 +34,8 @@ urlpatterns = [
    
    path('sb_lo/',                views.sb_lo),
    # Мониторинг
-   path('monitorings/',          views.board_monitoring),
+   path('monitorings/',             views.board_monitoring),
+   path('monitorings_eco/',         views.board_monitoring_eco),
 
    # Справочники
    path('refs/',                 views.refs),

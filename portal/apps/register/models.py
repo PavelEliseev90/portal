@@ -81,7 +81,7 @@ def transliterate_to_rus(name):
 
 def get_qrcode(name):
     
-    slug = 'https://ah.kors-group.com/es/' + name + '/'
+    slug = 'https://ah.kors-group.com/es/' + name + '/?q=1'
 
     qr_code_image   = qrcode.make(slug)
     buffer          = io.BytesIO()
@@ -1877,7 +1877,8 @@ class RegViewsCarsOrganization(models.Model):
     date        = models.DateTimeField('Дата', default=datetime.now, blank=False)
     quantity    = models.IntegerField('Остаток на момент запроса', default=0, null=True, blank=True)
     reserve     = models.IntegerField('Резерв на момент запроса', default=0, null=True, blank=True)
-
+    user        = models.ForeignKey(User, related_name="user_view_car", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Пользователь")
+    
     def __str__(self):
         return "{} / {} / {}".format(self.cars, self.store, self.type)
 
@@ -2161,7 +2162,7 @@ class RegInteractivOcenkaKolesa(ChangeloggableMixin, models.Model):
     psd_disk2           = models.ForeignKey(RefPsdDisk, related_name="psd_disk2", on_delete=models.PROTECT, null=True, blank=True, verbose_name="PSD дисков 2")
     count_disk2         = models.IntegerField('Количество дисков 2', default=0, null=True, blank=True)
     count_tyre2         = models.IntegerField('Количество резины 2', default=0, null=True, blank=True)
-    
+    kolesa2_estimation  = models.IntegerField('Количество дисков 2', default=10, null=False, blank=False)
     
 
     def __str__(self):
@@ -3662,11 +3663,11 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         else:
             self.status = RefStatusEstimation.objects.get(pk = 2)
 
-        # try:
-        #     if self.rlk != None and self.estimation != None:
-        #         add_swap(self)
-        # except:
-        #     s=1
+        try:
+            if self.rlk != None and self.estimation != None:
+                add_swap(self)
+        except:
+            s=1
 
         try:
             if self.status == RefStatusEstimation.objects.get(pk = 8):
@@ -3731,6 +3732,67 @@ class RegControlDiagnostic(models.Model):
     amount_mcu = models.FloatField('Затраты на кузовной ремонт', default=0.00, null=True, blank=True)
     amount_recovery = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
 
+    def fotos_vnesh_pered(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_pered')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/body_capture/sedan_new.png'
+    
+    def fotos_vnesh_vod_count(self):
+        return RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_vod').count()
+        if fotos.count() > 0:
+            return fotos[0]    
+        return '/media_dop/body_capture/sedan_left_new.png'
+
+    def fotos_vnesh_vod(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_vod')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url() 
+        return '/media_dop/body_capture/sedan_left_new.png'
+
+    def fotos_vnesh_zad_count(self):
+        return RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_zad').count()
+        if fotos.count() > 0:
+            return fotos[0]    
+        return '/media_dop/body_capture/sedan_back_new.png'
+    
+    def fotos_vnesh_zad(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_zad')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/body_capture/sedan_back_new.png'
+
+    def fotos_vnesh_up_count(self):
+        return RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_up').count()
+        if fotos.count() > 0:
+            return fotos[0]    
+        return '/media_dop/body_capture/sedan_up.png'
+
+    def fotos_vnesh_up(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_up')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()     
+        return '/media_dop/body_capture/sedan_up.png'
+
+    def fotos_vnesh_pass_count(self):
+        return RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_pass').count()
+        if fotos.count() > 0:
+            return fotos[0]    
+        return '/media_dop/body_capture/sedan_right_new.png'    
+    
+    def fotos_vnesh_pass(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_pass')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/body_capture/sedan_right_new.png'
+    
+
+    def fotos_salon_capture(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'osmotr_salon')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/salon_capture/salon.png'
+    
     class Meta:
         db_table = 'regControlDiagnostic'
         verbose_name = 'Контрольная диагностика'

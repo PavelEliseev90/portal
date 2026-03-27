@@ -3012,16 +3012,45 @@
                       <div class="col-12 col-xl-6">
                         <h6>
                           <span class="icon-mbri-image-slider"></span> Второй комплект 
-                          <div class="form-check">
-                            <input class="form-check-input" 
-                                  type="checkbox" 
-                                  value="true" 
-                                  id="kolesa2" 
-                                  name="kolesa2" 
-                                  {% if params.estimation.page_kolesa.kolesa2 %} checked {% endif %}>
-                          </div> 
-                        </h6>
-                  
+                          </h6>
+                        
+                        <div class="row">
+                          <div class="kors-btn-group-wrapper">
+                            <div class="kors-btn-group-compact" role="group" aria-label="Оценка со вторым комплектом колес">
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="kolesa2_estimation" 
+                                     id="kolesa2_estimation-radio1" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_kolesa.kolesa2_estimation == 0 %} checked {% endif %} 
+                                     value="0" 
+                                     required>
+                              <label class="btn btn-outline-danger" for="kolesa2_estimation-radio1">Нет второго комплекта колес</label>
+                          
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="kolesa2_estimation" 
+                                     id="kolesa2_estimation-radio2" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_kolesa.kolesa2_estimation == 1 %} checked {% endif %} 
+                                     value="1" 
+                                     required>
+                              <label class="btn btn-outline-success" for="kolesa2_estimation-radio2">Оценка со вторым комплектом колес</label>
+                            </div>
+                            <label class="fs-6">Наличие второго комплекта колес</label>
+                          </div>
+                        </div>
+
+                        <br>
+                        <div class="form-check">
+                          <input class="form-check-input" 
+                                type="checkbox" 
+                                value="true" 
+                                id="kolesa2" 
+                                name="kolesa2" 
+                                {% if params.estimation.page_kolesa.kolesa2 %} checked {% endif %}>
+                              <label class="fs-6" for="radio_hood_trunk_shock_absorber">Прием второго комплекта колес</label>
+                        </div> 
                         <div class="row g-1 {% if not params.estimation.page_kolesa.kolesa2 %} d-none {% endif %}" id="div_kolesa2">
                           
                           <div class="col-12 col-xl-6">

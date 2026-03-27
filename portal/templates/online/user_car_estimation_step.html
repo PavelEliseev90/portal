@@ -1,0 +1,284 @@
+{% extends 'base_web.html' %}
+
+{% block title %} Онлайн-оценка автомобиля {% endblock %}
+
+{% block content %}
+<style>
+  .estimate-shell {
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #0b3b8f, #0a58ca 55%, #1d4ed8);
+    color: #fff;
+    margin-bottom: 1rem;
+    padding: 1rem 1.25rem;
+  }
+  .estimate-shell::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -80px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .estimate-shell h4 {
+    margin-bottom: .25rem;
+    font-weight: 700;
+  }
+  .estimate-shell p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+  }
+  .estimate-benefit {
+    margin-top: .75rem;
+    display: inline-flex;
+    gap: .45rem;
+    align-items: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    padding: .35rem .75rem;
+    font-size: .85rem;
+  }
+  .hero-chip-list {
+    margin-top: .75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+  }
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    background: rgba(255, 255, 255, .14);
+    padding: .3rem .65rem;
+    font-size: .8rem;
+    line-height: 1;
+    color: #fff;
+  }
+  .hero-chip b {
+    font-weight: 600;
+    opacity: .95;
+  }
+  .wizard-progress-wrap {
+    margin-bottom: 1rem;
+  }
+  .wizard-progress-track {
+    height: 10px;
+    background: #e9eef5;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .wizard-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d6efd, #0a58ca);
+    border-radius: 999px;
+    transition: width .25s ease;
+  }
+  .wizard-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .75rem;
+  }
+  .wizard-step {
+    font-size: .8rem;
+    color: #6b7b90;
+    border: 1px solid #d9e1ec;
+    background: #f7faff;
+    border-radius: 999px;
+    padding: .2rem .6rem;
+  }
+  .wizard-step.active {
+    color: #fff;
+    background: #0d6efd;
+    border-color: #0d6efd;
+  }
+  .wizard-step.done {
+    color: #0f5132;
+    background: #d1e7dd;
+    border-color: #badbcc;
+  }
+  .estimate-card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(2, 18, 54, 0.08);
+  }
+  .estimate-section {
+    background: linear-gradient(135deg, #f0f7ff, #eef4ff);
+    border: 1px solid #d8e7ff;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6);
+  }
+  .estimate-section-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-weight: 700;
+    color: #0b3b8f;
+    margin-bottom: .7rem;
+  }
+  .estimate-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+  }
+  .estimate-chip {
+    display: inline-flex;
+    gap: .35rem;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #d5e3fb;
+    border-radius: 999px;
+    padding: .35rem .7rem;
+    font-size: .85rem;
+    color: #1f3559;
+  }
+  .estimate-chip strong {
+    color: #0b3b8f;
+  }
+  .btn-next {
+    min-width: 120px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+</style>
+<div class="container py-4" style="max-width: 900px;">
+  <div class="estimate-shell">
+    <h4>Онлайн-оценка автомобиля</h4>
+    <p>Заполнение по шагам займет пару минут.</p>
+    <div class="estimate-benefit">
+      <i class="bi bi-cash-coin"></i>
+      <span>После заполнения вы получите рассчитанную сумму за автомобиль до осмотра.</span>
+    </div>
+    <div class="hero-chip-list">
+      <span class="hero-chip"><b>Год:</b> {{ params.summary.year|default:'-' }}</span>
+      <span class="hero-chip"><b>Марка:</b> {{ params.summary.mark|default:'-' }}</span>
+      <span class="hero-chip"><b>Модель:</b> {{ params.summary.model|default:'-' }}</span>
+      <span class="hero-chip"><b>Модификация:</b> {{ params.summary.modification|default:'-' }}</span>
+      <span class="hero-chip"><b>Комплектация:</b> {{ params.summary.complectation|default:'-' }}</span>
+    </div>
+  </div>
+
+  <div class="card estimate-card">
+    <div class="card-body p-4 p-lg-5">
+      <div class="wizard-progress-wrap">
+        <div class="wizard-progress-track">
+          <div class="wizard-progress-fill" style="width: {{ params.progress_percent|default:16 }}%;"></div>
+        </div>
+        <div class="wizard-steps">
+          <span class="wizard-step {% if params.step_index > 1 %}done{% elif params.step_index == 1 %}active{% endif %}">1. Год</span>
+          <span class="wizard-step {% if params.step_index > 2 %}done{% elif params.step_index == 2 %}active{% endif %}">2. Марка</span>
+          <span class="wizard-step {% if params.step_index > 3 %}done{% elif params.step_index == 3 %}active{% endif %}">3. Модель</span>
+          <span class="wizard-step {% if params.step_index > 4 %}done{% elif params.step_index == 4 %}active{% endif %}">4. Модификация</span>
+          <span class="wizard-step {% if params.step_index > 5 %}done{% elif params.step_index == 5 %}active{% endif %}">5. Комплектация</span>
+          <span class="wizard-step {% if params.step_index == 6 %}active{% endif %}">6. Финал</span>
+        </div>
+      </div>
+      <p class="text-muted mb-3">
+        Шаг:
+        {% if params.step == 'year' %}Год выпуска
+        {% elif params.step == 'mark' %}Марка
+        {% elif params.step == 'model' %}Модель
+        {% elif params.step == 'modification' %}Модификация
+        {% elif params.step == 'complectation' %}Комплектация
+        {% else %}Финальные данные{% endif %}
+      </p>
+
+      {% if params.submitted %}
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle me-2"></i>Данные успешно отправлены. Спасибо! Мы подготовим расчет стоимости автомобиля до осмотра.
+        </div>
+      {% endif %}
+
+      {% if params.error %}
+        <div class="alert alert-danger">{{ params.error }}</div>
+      {% endif %}
+      {% if params.errors %}
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            {% for err in params.errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if params.step != 'details' %}
+        <form method="post">
+          {% csrf_token %}
+          <label class="form-label">{{ params.title }}</label>
+          <select class="form-select mb-3" name="selected_id" required>
+            <option value="">Выберите...</option>
+            {% for o in params.options %}
+              <option value="{{ o.id }}" {% if params.selected_id == o.id|stringformat:'s' %}selected{% endif %}>{{ o.name }}</option>
+            {% endfor %}
+          </select>
+
+          <div class="d-flex justify-content-between">
+            <div>
+              {% if params.step == 'mark' %}
+                <a class="btn btn-outline-secondary" href="/online/estimate/{{ params.estimation.slug }}/year/">Назад</a>
+              {% elif params.step == 'model' %}
+                <a class="btn btn-outline-secondary" href="/online/estimate/{{ params.estimation.slug }}/mark/">Назад</a>
+              {% elif params.step == 'modification' %}
+                <a class="btn btn-outline-secondary" href="/online/estimate/{{ params.estimation.slug }}/model/">Назад</a>
+              {% elif params.step == 'complectation' %}
+                <a class="btn btn-outline-secondary" href="/online/estimate/{{ params.estimation.slug }}/modification/">Назад</a>
+              {% endif %}
+            </div>
+            <button class="btn btn-dark btn-next" type="submit">Далее</button>
+          </div>
+        </form>
+      {% else %}
+        <div class="mb-3 estimate-section">
+          <div class="estimate-section-title">
+            <i class="bi bi-shield-check"></i>
+            <span>Проверьте данные перед отправкой</span>
+          </div>
+          <div class="estimate-chip-list">
+            <span class="estimate-chip"><strong>Год:</strong> {{ params.estimation.year }}</span>
+            <span class="estimate-chip"><strong>Марка:</strong> {{ params.estimation.modification.model.mark.name }}</span>
+            <span class="estimate-chip"><strong>Модель:</strong> {{ params.estimation.modification.model.name }}</span>
+            <span class="estimate-chip"><strong>Модификация:</strong> {{ params.estimation.modification.name }}</span>
+            <span class="estimate-chip"><strong>Комплектация:</strong> {% if params.estimation.complectation %}{{ params.estimation.complectation.name }}{% else %}-{% endif %}</span>
+          </div>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">VIN</label>
+              <input class="form-control" name="vin" maxlength="32" value="{{ params.estimation.vin|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Номер кузова</label>
+              <input class="form-control" name="body_number" maxlength="64" value="{{ params.estimation.body_number|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Пробег *</label>
+              <input class="form-control" type="number" min="0" name="run" value="{{ params.estimation.run|default:0 }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Фото автомобиля</label>
+              <input class="form-control" type="file" accept="image/*" name="photo_car">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Фото пробега</label>
+              <input class="form-control" type="file" accept="image/*" name="photo_mileage">
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <a class="btn btn-outline-secondary" href="/online/estimate/{{ params.estimation.slug }}/complectation/">Назад</a>
+            <button class="btn btn-dark btn-next" type="submit">Отправить</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

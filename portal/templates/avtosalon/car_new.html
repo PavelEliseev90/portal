@@ -7,7 +7,24 @@
 {% block title_navbar %} - {{params.object.name}}  {% endblock %}
     
 {% block content %}
-<div class="portal-page">
+
+<style>
+	.kors-brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 1rem;
+	  
+    }
+</style>
+<div class="">
+	
 	{% if request.user.is_authenticated %}
 		<div class="breadcrumb-nav">
 			<div class="d-flex flex-wrap align-items-center">
@@ -23,250 +40,648 @@
 	{% endif %}
 	
 	
+	
+	{% if not request.user.is_authenticated %}
+	
+	
+	<div class="d-flex justify-content-center">
+<div class="car-price-block mt-3" style="border-radius:18px; overflow:hidden; position:relative; max-width: 600px; border-radius: 1.5rem;">
+		<div style="border-radius: 1.5rem;
+  padding:18px;
+  position:relative;
+  overflow:hidden;
+  color:#fff;
+">
+  <!-- 1) Фон: размытая фотка -->
+  <div style="
+    position:absolute; inset:0;
+    background-image:url('{{params.object.get_photo}}');
+    background-size:cover;
+    background-position:center;
+    filter: blur(5px);
+    transform: scale(1.12);
+    opacity:.8;
+    z-index:0;
+  "></div>
 
+  <!-- 2) Твой градиент поверх фото (он и делает читабельность) -->
+  <div style="
+    position:absolute; inset:0;
+    background:
+      radial-gradient(1200px 400px at 20% 0%, rgba(13,110,253,.25), transparent 55%),
+      linear-gradient(135deg, rgba(11,16,32,.35), rgba(11,42,85,.25));
+    z-index:1;
+  "></div>
+
+  <!-- 3) Контент поверх -->
+  <div style="position:relative; z-index:2;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-weight:800; letter-spacing:.2px;"></div>
+      <span style="
+        font-size:.78rem; padding:.25rem .55rem; border-radius:999px;
+        background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22);
+      "> <span class="icon-mbri-lock"></span> Доступ после входа</span>
+    </div>
+	<br>
+	<div  style="margin-top:8px; color:rgba(255,255,255,.86); font-size:1rem;">
+		{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}
+		<br>
+		{{params.object.modification_autoru.engine_volume}} л. / {{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{params.object.modification_autoru.typeEngine.name}}<br>
+					  {{params.object.modification_autoru.typeGear.name}} / {{params.object.modification_autoru.typeBody.name}}
+	</div>
+
+    <div style="margin-top:10px; font-size:2rem; font-weight:1000; line-height:1;">
+      <span style="filter: blur(5px); opacity:.9;">1 234 567 ₽</span>
+    </div>
+
+    <div style="margin-top:8px; color:rgba(255,255,255,.86); font-size:.92rem;">
+      Разблокируйте цену и условия покупки за 10–15 секунд
+    </div>
+
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/login/" class="btn btn-primary bg-gradient" style="border-radius:12px; font-weight:800;" data-bs-toggle="modal" data-bs-target="#smsAuthModal" id="openSmsAuthModal">
+        <span class="icon-mbri-paper-plane"></span> Получить код по SMS
+      </a>
+      
+    </div>
+
+    <div style="margin-top:10px; font-size:.82rem; color:rgba(255,255,255,.75);">
+      
+    </div>
+  </div>
+</div>
+
+		<div style="margin-top:8px; color:rgba(255,255,255,.86); font-size:.92rem;">
+			<span class="icon-mbri-minus"></span> А так же покажем <span class="icon-mbri-minus"></span>
+		</div>	  
+
+		<div style="padding:12px 16px; ">
+			
+			<div class="kors-brand-pill text-nowrap">
+				<span class="icon-mbri-credit-card"></span>Контакты и склад
+			</div>
+
+			<div class="kors-brand-pill text-nowrap">
+				<span class="icon-mbri-sale"></span>Скидки
+			</div>
+
+			<div class="kors-brand-pill text-nowrap">
+				<span class="icon-mbri-image-slider"></span>Подберем похожие
+			</div>
+
+			<div class="kors-brand-pill text-nowrap">
+				<span class="icon-mbri-setting"></span>Технические характеристки
+			</div>
+			
+		  </div>
+		</div>
+	  </div>
+	</div>	
+	
+	<div class="modal fade" id="smsAuthModal" tabindex="-1" aria-labelledby="smsAuthModalLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-dialog-centered">
+	    <div class="modal-content" style="border-radius: 16px;">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="smsAuthModalLabel"><span class="icon-mbri-lock"></span> Вход по SMS</h5>
+	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+	      </div>
+	      <div class="modal-body">
+	        <form id="smsAuthForm" action="/login/" method="get">
+	          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+	          <div class="form-floating mb-3">
+	            <input type="tel" class="form-control" id="smsPhone" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
+	            <label for="smsPhone">Номер телефона</label>
+	          </div>
+
+	          <div id="smsCodeWrap" class="form-floating mb-3 d-none">
+	            <input type="text" class="form-control" id="smsCode" name="sms_code" placeholder="Код из SMS" inputmode="numeric" autocomplete="one-time-code">
+	            <label for="smsCode">Код из SMS</label>
+	          </div>
+
+	          <div class="form-check mb-2">
+	            <input class="form-check-input" type="checkbox" id="smsAgreePd" required>
+	            <label class="form-check-label small" for="smsAgreePd">
+	              Я даю согласие на обработку персональных данных и принимаю условия
+	              <a href="#" id="openPrivacyFromSms" data-bs-toggle="modal" data-bs-target="#smsPrivacyModal">Политики конфиденциальности</a>.
+	            </label>
+	          </div>
+	          <div class="form-check mb-3">
+	            <input class="form-check-input" type="checkbox" id="smsAgreeAds">
+	            <label class="form-check-label small" for="smsAgreeAds">
+	              Я даю согласие на рекламную коммуникацию (рассылки).
+	            </label>
+	          </div>
+
+	          <div id="smsHint" class="small text-muted mb-3">
+	            Введите номер телефона, получите код и подтвердите вход.
+	          </div>
+
+	          <div class="d-flex gap-2">
+	            <button type="button" class="btn btn-outline-primary w-100" id="smsSendCodeBtn">
+					<span class="icon-mbri-paper-plane"></span> Получить код
+	            </button>
+	            <button type="submit" class="btn btn-primary w-100 d-none bg-gradient" id="smsConfirmBtn">
+	              <span class="icon-mbri-success"></span> Подтвердить
+	            </button>
+	          </div>
+	        </form>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="modal fade" id="smsPrivacyModal" tabindex="-1" aria-labelledby="smsPrivacyModalLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+	    <div class="modal-content" style="border-radius: 16px;">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="smsPrivacyModalLabel"><span class="icon-mbri-protect"></span> Условия обработки данных</h5>
+	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+	      </div>
+	      <div class="modal-body">
+	        <p class="mb-2"><b>Коротко:</b> мы используем ваш номер телефона для отправки SMS-кода входа и обратной связи по заявке.</p>
+	        <ul class="small mb-3">
+	          <li>Собираемые данные: номер телефона, технические данные сессии/устройства.</li>
+	          <li>Цели: авторизация, доступ к цене и условиям, связь по обращению.</li>
+	          <li>Обработка по законодательству РФ о персональных данных.</li>
+	          <li>Вы можете отозвать согласие в порядке, указанном в политике.</li>
+	        </ul>
+	        <div class="small text-muted">
+	          Полный текст политики:
+	          <a href="https://kors-group.ru/privacy-policy/" target="_blank" rel="noopener">kors-group.ru/privacy-policy</a>
+	        </div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-close"></span> Закрыть</button>
+	        <button type="button" class="btn btn-primary bg-gradient" id="acceptPrivacyBtn"><span class="icon-mbri-success"></span>Я согласен</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<script>
+	  (function () {
+	    const openBtn = document.getElementById('openSmsAuthModal');
+	    const phoneEl = document.getElementById('smsPhone');
+	    const codeWrap = document.getElementById('smsCodeWrap');
+	    const codeEl = document.getElementById('smsCode');
+	    const pdEl = document.getElementById('smsAgreePd');
+	    const sendBtn = document.getElementById('smsSendCodeBtn');
+	    const confirmBtn = document.getElementById('smsConfirmBtn');
+	    const hintEl = document.getElementById('smsHint');
+	    const formEl = document.getElementById('smsAuthForm');
+	    const modalEl = document.getElementById('smsAuthModal');
+	    const privacyModalEl = document.getElementById('smsPrivacyModal');
+	    const acceptPrivacyBtn = document.getElementById('acceptPrivacyBtn');
+	    const openPrivacyFromSms = document.getElementById('openPrivacyFromSms');
+	    let preserveSmsFormState = false;
+
+	    if (!openBtn || !phoneEl || !sendBtn || !confirmBtn || !hintEl || !formEl || !modalEl) return;
+
+	    function digitsOnly(v) {
+	      return (v || '').replace(/\D/g, '');
+	    }
+
+	    function normalizePhone(v) {
+	      const d = digitsOnly(v);
+	      if (d.length === 11 && d.startsWith('8')) return '7' + d.slice(1);
+	      if (d.length === 11 && d.startsWith('7')) return d;
+	      if (d.length === 10) return '7' + d;
+	      return d;
+	    }
+
+	    openBtn.addEventListener('click', function (e) {
+	      e.preventDefault();
+	    });
+
+	    sendBtn.addEventListener('click', function () {
+	      const phoneNormalized = normalizePhone(phoneEl.value);
+	      if (phoneNormalized.length !== 11) {
+	        hintEl.textContent = 'Проверьте номер телефона. Формат: +7XXXXXXXXXX.';
+	        hintEl.classList.add('text-danger');
+	        phoneEl.focus();
+	        return;
+	      }
+	      if (!pdEl.checked) {
+	        hintEl.textContent = 'Нужно принять условия обработки персональных данных.';
+	        hintEl.classList.add('text-danger');
+	        pdEl.focus();
+	        return;
+	      }
+
+	      phoneEl.value = '+' + phoneNormalized;
+	      hintEl.textContent = 'Код отправлен. Введите его для подтверждения.';
+	      hintEl.classList.remove('text-danger');
+	      codeWrap.classList.remove('d-none');
+	      confirmBtn.classList.remove('d-none');
+	      sendBtn.classList.add('d-none');
+	      codeEl.required = true;
+	      codeEl.focus();
+	    });
+
+	    formEl.addEventListener('submit', function (e) {
+	      const phoneNormalized = normalizePhone(phoneEl.value);
+	      const code = digitsOnly(codeEl.value);
+	      if (phoneNormalized.length !== 11 || code.length < 4) {
+	        e.preventDefault();
+	        hintEl.textContent = 'Введите корректный номер и код из SMS.';
+	        hintEl.classList.add('text-danger');
+	      }
+	    });
+
+	    modalEl.addEventListener('hidden.bs.modal', function () {
+	      if (preserveSmsFormState) return;
+	      formEl.reset();
+	      hintEl.textContent = 'Введите номер телефона, получите код и подтвердите вход.';
+	      hintEl.classList.remove('text-danger');
+	      codeWrap.classList.add('d-none');
+	      confirmBtn.classList.add('d-none');
+	      sendBtn.classList.remove('d-none');
+	      codeEl.required = false;
+	    });
+
+	    if (openPrivacyFromSms) {
+	      openPrivacyFromSms.addEventListener('click', function () {
+	        preserveSmsFormState = true;
+	      });
+	    }
+
+	    if (acceptPrivacyBtn && privacyModalEl) {
+	      acceptPrivacyBtn.addEventListener('click', function () {
+	        pdEl.checked = true;
+	        try {
+	          const privacyInstance = bootstrap.Modal.getOrCreateInstance(privacyModalEl);
+	          privacyInstance.hide();
+	          const authInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+	          authInstance.show();
+	          preserveSmsFormState = false;
+	        } catch (e) {
+	          privacyModalEl.classList.remove('show');
+	          modalEl.classList.add('show');
+	          preserveSmsFormState = false;
+	        }
+	      });
+	    }
+	  })();
+	</script>
+
+	<!--
+		<div class="row g-1 justify-content-center">
+
+			<div class="col-12 col-sm-4">
+				<div class="">
+					<div class="">
+
+						
+
+						<div class="car-price-block mt-3" style="border-radius: 16px;
+																border: 1px dashed rgba(0,42,90,.22);
+																padding: 8px;
+																background: #ffffff;
+																box-shadow: 0 10px 24px rgba(0,23,61,.08);
+																">
+							
+							<div class="d-flex ">
+								<div>
+								
+									<div style="font-size: 1.35rem; font-weight: 900; color:#0b2a55; display:flex; gap:.5rem;">
+										<span class="icon-mbri-lock"></span> Подробная информация о автомобиле доступна только после входа
+									</div>
+								</div>
+							</div>
+
+								<div class="mt-3" style="
+									border-radius: 12px;
+									background: #f7fbff;
+									border: 1px solid rgba(13,110,253,.14);
+									padding: 10px 12px;
+									color:#48607a;
+									font-size:.9rem;
+									display:flex; gap:.6rem; align-items:flex-start;
+								">
+									<span class="icon-mbri-shield" style="color:#0d6efd; margin-top:2px;"></span>
+									<div>
+									<div style="font-weight:700; color:#0b2a55;">Почему так?</div>
+									Это защита от неактуальных цен и автоматических парсеров.
+									<div style="font-size:.82rem; color:#6b7b90; margin-top:4px;">Займёт 10–15 секунд. Без спама.</div>
+									</div>
+								</div>
+
+								<div class="d-flex flex-wrap gap-2 mt-3">
+									<a href="/login/" class="btn btn-success bg-success bg-gradient" style="border-radius: 12px; font-weight:700;">
+									<span class="icon-mbri-home"></span> Войти
+									</a>
+									<a href="/login/" class="btn btn-secondary bg-secondary bg-gradient" style="border-radius: 12px; font-weight:700;">
+										<span class="icon-mbri-chat"></span> Получить код по SMS
+									</a>
+								</div>
+							</div>
+						
+
+						<div class="row g-1">
+						  <div class="col-12 col-md-4">
+							<div class="car-spec-card">
+							  <div class="car-spec-label"><span class="icon-mbri-cash"></span> Цена </div>
+							  <div class="car-spec-value">Покажем цену, статус и условия после входа по SMS</div>
+							</div>
+						  </div>
+						  <div class="col-12 col-md-4">
+							<div class="car-spec-card">
+							  <div class="car-spec-label"><span class="icon-mbri-pin"></span> Локация и склад</div>
+							  <div class="car-spec-value">Откроем склад, контакты и карту расположения автомобиля</div>
+							</div>
+						  </div>
+						  <div class="col-12 col-md-4">
+							<div class="car-spec-card">
+							  <div class="car-spec-label"><span class="icon-mbri-calendar"></span> Быстрые действия</div>
+							  <div class="car-spec-value">Запись на просмотр и связь с менеджером в один клик</div>
+							</div>
+						  </div>
+					  </div>
+					</div>
+								  
+				</div>
+			</div>
+
+			<div class="col-12 col-sm-2">
+				<div class="car-card">
+				  <img src="{{params.object.get_photo}}" alt="{{params.object.modification_autoru.model.mark.name}} {{params.object.modification_autoru.model.name}}" class="car-card-image">
+				  <div class="car-card-body">
+					<div class="car-card-header">
+					  <img src="{{params.object.logo}}" alt="{{params.object.modification_autoru.model.mark.name}}" class="car-card-logo">
+					  <div class="car-card-location">
+						<span class="icon-mbri-pin"></span>
+						{{params.object.unit.name}} 
+					  </div>
+					</div>
+	
+					<div class="d-flex justify-content-between align-items-start mb-2">
+					  <div class="car-card-title">
+						{{params.object.modification_autoru.model.mark.name}}<br>
+						{{params.object.modification_autoru.model.name}}
+					  </div>
+					 
+					</div>
+	
+					<div class="car-card-specs">
+					  {{params.object.modification_autoru.engine_volume}} л. / {{params.object.modification_autoru.enginePower|floatformat:"0g"}} л.c. / {{params.object.modification_autoru.typeEngine.name}}<br>
+					  {{params.object.modification_autoru.typeGear.name}} / {{params.object.modification_autoru.typeBody.name}}
+					</div>
+	
+					<div class="car-card-meta">
+					  <span>{{params.object.year}} г.</span>
+					  <span>{{params.object.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+					</div>
+				  </div>
+				</div>
+			</div>
+			
+		</div>
+	-->
+	{% else %}
 	<div class="row g-3">
 		<div class="col-sm-12 col-md-7 col-lg-7">
 			{% with photos=params.object.get_files %}
-			{% with total=photos|length %}
-			{% if total > 0 %}
-				<div class="portal-panel">
-					<div class="modern-gallery-layout">
-					<div class="modern-gallery-wrapper">
-						<div class="modern-gallery-container" id="modernGalleryContainer">
-							{% for files in photos %}
-								<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" data-alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}">
-									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-image" loading="lazy">
+				{% with total=photos|length %}
+					{% if total > 0 %}
+						<div class="portal-panel">
+							<div class="modern-gallery-layout">
+								<div class="modern-gallery-wrapper">
+									<div class="modern-gallery-container" id="modernGalleryContainer">
+										{% for files in photos %}
+											<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" data-alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}">
+												<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-image" loading="lazy">
+											</div>
+										{% endfor %}
+										
+										{% if total > 1 %}
+											<button class="modern-gallery-nav modern-gallery-prev" id="modernGalleryPrev" aria-label="Предыдущее изображение">
+												<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M15 18l-6-6 6-6"/>
+												</svg>
+											</button>
+											<button class="modern-gallery-nav modern-gallery-next" id="modernGalleryNext" aria-label="Следующее изображение">
+												<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M9 18l6-6-6-6"/>
+												</svg>
+											</button>
+										{% endif %}
+										
+										<div class="modern-gallery-controls">
+											<button class="modern-gallery-control-btn" id="modernGalleryRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
+												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+												</svg>
+											</button>
+											<button class="modern-gallery-control-btn" id="modernGalleryZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<circle cx="11" cy="11" r="8"/>
+													<path d="m21 21-4.35-4.35"/>
+													<line x1="11" y1="8" x2="11" y2="14"/>
+													<line x1="8" y1="11" x2="14" y2="11"/>
+												</svg>
+											</button>
+											<button class="modern-gallery-control-btn" id="modernGalleryZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+												<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<circle cx="11" cy="11" r="8"/>
+													<path d="m21 21-4.35-4.35"/>
+													<line x1="8" y1="11" x2="14" y2="11"/>
+												</svg>
+											</button>
+										</div>
+										
+										<div class="modern-gallery-counter" id="modernGalleryCounter">
+											<span class="modern-gallery-current" id="modernGalleryCurrent">1</span>
+											<span class="modern-gallery-separator">из</span>
+											<span class="modern-gallery-total" id="modernGalleryTotal">{{ total }}</span>
+										</div>
+									</div>
 								</div>
-							{% endfor %}
 							
-							{% if total > 1 %}
-								<button class="modern-gallery-nav modern-gallery-prev" id="modernGalleryPrev" aria-label="Предыдущее изображение">
+								{% if total > 1 %}
+									<div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
+										{% for files in photos %}
+											<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}">
+												<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-thumbnail-img" loading="lazy">
+											</div>
+										{% endfor %}
+									</div>
+								{% endif %}
+							</div>
+						</div>
+
+						<div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
+							<div class="modern-gallery-fullscreen-overlay">
+
+							</div>
+							<button class="modern-gallery-close" id="modernGalleryClose" aria-label="Закрыть">
+								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<line x1="18" y1="6" x2="6" y2="18"></line>
+									<line x1="6" y1="6" x2="18" y2="18"></line>
+								</svg>
+							</button>
+							<div class="modern-gallery-fullscreen-controls">
+								<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
 									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-										<path d="M15 18l-6-6 6-6"/>
-									</svg>
-								</button>
-								<button class="modern-gallery-nav modern-gallery-next" id="modernGalleryNext" aria-label="Следующее изображение">
-									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-										<path d="M9 18l6-6-6-6"/>
-									</svg>
-								</button>
-							{% endif %}
-							
-							<div class="modern-gallery-controls">
-								<button class="modern-gallery-control-btn" id="modernGalleryRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
-									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
 									</svg>
 								</button>
-								<button class="modern-gallery-control-btn" id="modernGalleryZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
-									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<circle cx="11" cy="11" r="8"/>
 										<path d="m21 21-4.35-4.35"/>
 										<line x1="11" y1="8" x2="11" y2="14"/>
 										<line x1="8" y1="11" x2="14" y2="11"/>
 									</svg>
 								</button>
-								<button class="modern-gallery-control-btn" id="modernGalleryZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
-									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<circle cx="11" cy="11" r="8"/>
 										<path d="m21 21-4.35-4.35"/>
 										<line x1="8" y1="11" x2="14" y2="11"/>
 									</svg>
 								</button>
 							</div>
-							
-							<div class="modern-gallery-counter" id="modernGalleryCounter">
-								<span class="modern-gallery-current" id="modernGalleryCurrent">1</span>
-								<span class="modern-gallery-separator">из</span>
-								<span class="modern-gallery-total" id="modernGalleryTotal">{{ total }}</span>
+							<div class="modern-gallery-fullscreen-content">
+								<img src="" alt="" id="modernGalleryFullscreenImage" class="modern-gallery-fullscreen-img">
+								{% if total > 1 %}
+									<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-prev" id="modernGalleryFullscreenPrev" aria-label="Предыдущее изображение">
+										<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M15 18l-6-6 6-6"/>
+										</svg>
+									</button>
+									<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-next" id="modernGalleryFullscreenNext" aria-label="Следующее изображение">
+										<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M9 18l6-6-6-6"/>
+										</svg>
+									</button>
+								{% endif %}
+								<div class="modern-gallery-fullscreen-counter" id="modernGalleryFullscreenCounter">
+									<span class="modern-gallery-fullscreen-current" id="modernGalleryFullscreenCurrent">1</span>
+									<span class="modern-gallery-separator">из</span>
+									<span class="modern-gallery-fullscreen-total" id="modernGalleryFullscreenTotal">{{ total }}</span>
+								</div>
 							</div>
 						</div>
-					</div>
-					
-					{% if total > 1 %}
-						<div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
-							{% for files in photos %}
-								<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}">
-									<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-thumbnail-img" loading="lazy">
-								</div>
-							{% endfor %}
+					{% else %}
+						<div class="portal-panel">
+							<div class="text-center py-5">
+								<span class="icon-mbri-photo" style="font-size: 3rem; color: #8ea1ba;"></span>
+								<p class="mt-3 text-muted">Фотографии скоро появятся</p>
+							</div>
 						</div>
 					{% endif %}
-					</div>
-				</div>
-
-				<div class="modern-gallery-fullscreen" id="modernGalleryFullscreen">
-					<div class="modern-gallery-fullscreen-overlay"></div>
-					<button class="modern-gallery-close" id="modernGalleryClose" aria-label="Закрыть">
-						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<line x1="18" y1="6" x2="6" y2="18"></line>
-							<line x1="6" y1="6" x2="18" y2="18"></line>
-						</svg>
-					</button>
-					<div class="modern-gallery-fullscreen-controls">
-						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenRotate" aria-label="Повернуть изображение" title="Повернуть изображение на 90°">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-							</svg>
-						</button>
-						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomIn" aria-label="Увеличить изображение" title="Увеличить изображение">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<circle cx="11" cy="11" r="8"/>
-								<path d="m21 21-4.35-4.35"/>
-								<line x1="11" y1="8" x2="11" y2="14"/>
-								<line x1="8" y1="11" x2="14" y2="11"/>
-							</svg>
-						</button>
-						<button class="modern-gallery-fullscreen-control-btn" id="modernGalleryFullscreenZoomOut" aria-label="Уменьшить изображение" title="Уменьшить изображение">
-							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<circle cx="11" cy="11" r="8"/>
-								<path d="m21 21-4.35-4.35"/>
-								<line x1="8" y1="11" x2="14" y2="11"/>
-							</svg>
-						</button>
-					</div>
-					<div class="modern-gallery-fullscreen-content">
-						<img src="" alt="" id="modernGalleryFullscreenImage" class="modern-gallery-fullscreen-img">
-						{% if total > 1 %}
-							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-prev" id="modernGalleryFullscreenPrev" aria-label="Предыдущее изображение">
-								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M15 18l-6-6 6-6"/>
-								</svg>
-							</button>
-							<button class="modern-gallery-fullscreen-nav modern-gallery-fullscreen-next" id="modernGalleryFullscreenNext" aria-label="Следующее изображение">
-								<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M9 18l6-6-6-6"/>
-								</svg>
-							</button>
-						{% endif %}
-						<div class="modern-gallery-fullscreen-counter" id="modernGalleryFullscreenCounter">
-							<span class="modern-gallery-fullscreen-current" id="modernGalleryFullscreenCurrent">1</span>
-							<span class="modern-gallery-separator">из</span>
-							<span class="modern-gallery-fullscreen-total" id="modernGalleryFullscreenTotal">{{ total }}</span>
-						</div>
-					</div>
-				</div>
-			{% else %}
-				<div class="portal-panel">
-					<div class="text-center py-5">
-						<span class="icon-mbri-photo" style="font-size: 3rem; color: #8ea1ba;"></span>
-						<p class="mt-3 text-muted">Фотографии скоро появятся</p>
-					</div>
-				</div>
-			{% endif %}
-			{% endwith %}
+				{% endwith %}
 			{% endwith %}
 	
 			
 
-		{% if request.user_agent.is_pc %}
-			{% if params.object.dop_cars|length > 0 %}
-				<div class="portal-panel mt-3">
-					<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">
-						<span class="icon-mbri-star me-2"></span>Может заинтересовать
-					</h3>
-					<div class="row g-3">
-						{% if params.object.dop_cars %}
-							{% for car in params.object.dop_cars %}
-								<div class="col-12 col-sm-6 col-lg-4">
-									<div class="related-car-card-improved" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
-										<div class="related-car-image-wrapper">
-											<img src="{{car.get_photo_mini}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="related-car-image">
-											<div class="related-car-badges">
-												{% if car.modification_autoru.model.id == params.object.modification_autoru.model.id %}
-													<span class="badge bg-primary" title="Та же модель">
-														<span class="icon-mbri-car"></span> Та же модель
-													</span>
-												{% endif %}
-												<span class="badge-similar-price badge bg-success" 
-													data-car-price="{{car.price}}" 
-													data-current-price="{{params.object.price}}"
-													title="Похожая цена" style="display: none;">
-													<span class="icon-mbri-dollar"></span> Похожая цена
-												</span>
-												<span class="badge-similar-year badge bg-info" 
-													data-car-year="{{car.year}}" 
-													data-current-year="{{params.object.year}}"
-													title="Похожий год выпуска" style="display: none;">
-													<span class="icon-calendar"></span> Похожий год
-												</span>
-												<span class="badge-similar-run badge bg-warning text-dark" 
-													data-car-run="{{car.run}}" 
-													data-current-run="{{params.object.run}}"
-													title="Похожий пробег" style="display: none;">
-													<span class="icon-cd"></span> Похожий пробег
-												</span>
-												{% if car.modification_autoru.engine_volume == params.object.modification_autoru.engine_volume %}
-													<span class="badge bg-secondary" title="Тот же объем двигателя">
-														<span class="icon-mbri-engine"></span> Тот же двигатель
-													</span>
-												{% endif %}
-												{% if car.modification_autoru.typeGear.id == params.object.modification_autoru.typeGear.id %}
-													<span class="badge bg-dark" title="Та же коробка передач">
-														<span class="icon-mbri-transmission1"></span> Та же КПП
-													</span>
-												{% endif %}
-												{% if car.modification_autoru.typeBody.id == params.object.modification_autoru.typeBody.id %}
-													<span class="badge bg-light text-dark" title="Тот же кузов">
-														<span class="icon-truck"></span> Тот же кузов
-													</span>
-												{% endif %}
-												{% if car.days_in_stok <= 7 %}
-													<span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;" title="Новинка">
-														<span class="icon-mbri-star"></span> Новинка
-													</span>
-												{% endif %}
-												{% if car.view_card_cars > 50 %}
-													<span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;" title="Популярная модель">
-														<span class="icon-mbri-preview"></span> Популярная
-													</span>
-												{% endif %}
-											</div>
-										</div>
-										<div class="related-car-content">
-											<h5 class="related-car-title">
-												{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
-											</h5>
-											<div class="related-car-specs">
-												<div class="spec-item">
-													<span class="spec-icon icon-calendar"></span>
-													<span class="spec-value">{{car.year}} г.</span>
-												</div>
-												<div class="spec-item">
-													<span class="spec-icon icon-cd"></span>
-													<span class="spec-value">{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
-												</div>
-												<div class="spec-item">
-													<span class="spec-icon icon-mbri-engine"></span>
-													<span class="spec-value">{{car.modification_autoru.engine_volume}} л / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.с.</span>
-												</div>
-												<div class="spec-item">
-													<span class="spec-icon icon-mbri-transmission1"></span>
-													<span class="spec-value">{{car.modification_autoru.typeGear.name}}</span>
-												</div>
-											</div>
-											<div class="related-car-footer">
-												<div class="related-car-location">
-													<span class="icon-mbri-home"></span>
-													<small>{{car.unit.name_web}}</small>
-												</div>
-												<div class="related-car-price">
-													<strong>{{car.price|floatformat:"2g"}} ₽</strong>
-													<small class="price-diff text-danger d-block" 
+			{% if request.user_agent.is_pc %}
+				{% if params.object.dop_cars|length > 0 %}
+					<div class="portal-panel mt-3">
+						<h3 class="mb-3" style="font-size: 1.1rem; font-weight: 600; color: #002a5a;">
+							<span class="icon-mbri-star me-2"></span>Может заинтересовать
+						</h3>
+						<div class="row g-3">
+							{% if params.object.dop_cars %}
+								{% for car in params.object.dop_cars %}
+									<div class="col-12 col-sm-6 col-lg-4">
+										<div class="related-car-card-improved" onclick="window.location.href='/cars/{{car.slug}}/'; return false">
+											<div class="related-car-image-wrapper">
+												<img src="{{car.get_photo_mini}}" alt="{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}" class="related-car-image">
+												<div class="related-car-badges">
+													{% if car.modification_autoru.model.id == params.object.modification_autoru.model.id %}
+														<span class="badge bg-primary" title="Та же модель">
+															<span class="icon-mbri-car"></span> Та же модель
+														</span>
+													{% endif %}
+													<span class="badge-similar-price badge bg-success" 
 														data-car-price="{{car.price}}" 
 														data-current-price="{{params.object.price}}"
-														style="display: none;"></small>
+														title="Похожая цена" style="display: none;">
+														<span class="icon-mbri-dollar"></span> Похожая цена
+													</span>
+													<span class="badge-similar-year badge bg-info" 
+														data-car-year="{{car.year}}" 
+														data-current-year="{{params.object.year}}"
+														title="Похожий год выпуска" style="display: none;">
+														<span class="icon-calendar"></span> Похожий год
+													</span>
+													<span class="badge-similar-run badge bg-warning text-dark" 
+														data-car-run="{{car.run}}" 
+														data-current-run="{{params.object.run}}"
+														title="Похожий пробег" style="display: none;">
+														<span class="icon-cd"></span> Похожий пробег
+													</span>
+													{% if car.modification_autoru.engine_volume == params.object.modification_autoru.engine_volume %}
+														<span class="badge bg-secondary" title="Тот же объем двигателя">
+															<span class="icon-mbri-engine"></span> Тот же двигатель
+														</span>
+													{% endif %}
+													{% if car.modification_autoru.typeGear.id == params.object.modification_autoru.typeGear.id %}
+														<span class="badge bg-dark" title="Та же коробка передач">
+															<span class="icon-mbri-transmission1"></span> Та же КПП
+														</span>
+													{% endif %}
+													{% if car.modification_autoru.typeBody.id == params.object.modification_autoru.typeBody.id %}
+														<span class="badge bg-light text-dark" title="Тот же кузов">
+															<span class="icon-truck"></span> Тот же кузов
+														</span>
+													{% endif %}
+													{% if car.days_in_stok <= 7 %}
+														<span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;" title="Новинка">
+															<span class="icon-mbri-star"></span> Новинка
+														</span>
+													{% endif %}
+													{% if car.view_card_cars > 50 %}
+														<span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;" title="Популярная модель">
+															<span class="icon-mbri-preview"></span> Популярная
+														</span>
+													{% endif %}
+												</div>
+											</div>
+											<div class="related-car-content">
+												<h5 class="related-car-title">
+													{{car.modification_autoru.model.mark.name}} {{car.modification_autoru.model.name}}
+												</h5>
+												<div class="related-car-specs">
+													<div class="spec-item">
+														<span class="spec-icon icon-calendar"></span>
+														<span class="spec-value">{{car.year}} г.</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-cd"></span>
+														<span class="spec-value">{{car.run|floatformat:"0g"|default_if_none:"---"}} км</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-mbri-engine"></span>
+														<span class="spec-value">{{car.modification_autoru.engine_volume}} л / {{car.modification_autoru.enginePower|floatformat:"0g"}} л.с.</span>
+													</div>
+													<div class="spec-item">
+														<span class="spec-icon icon-mbri-transmission1"></span>
+														<span class="spec-value">{{car.modification_autoru.typeGear.name}}</span>
+													</div>
+												</div>
+												<div class="related-car-footer">
+													<div class="related-car-location">
+														<span class="icon-mbri-home"></span>
+														<small>{{car.unit.name_web}}</small>
+													</div>
+													<div class="related-car-price">
+														<strong>{{car.price|floatformat:"2g"}} ₽</strong>
+														<small class="price-diff text-danger d-block" 
+															data-car-price="{{car.price}}" 
+															data-current-price="{{params.object.price}}"
+															style="display: none;"></small>
+													</div>
 												</div>
 											</div>
 										</div>
 									</div>
-								</div>
-							{% endfor %} 
-						{% endif %}
+								{% endfor %} 
+							{% endif %}
+						</div>
 					</div>
-				</div>
+				{% endif %}
 			{% endif %}
-		{% endif %}
 
 
 		</div>
@@ -761,6 +1176,9 @@
 
 		</div>
 	</div>
+
+	{% endif %}
+	
 </div>
 
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
@@ -993,14 +1411,14 @@
 
 		$('#button_map').click(
 			function(){
-				$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=2', function (json){});
+				$.getJSON('/api/v1/info_cars_organization/?slug={{params.object.slug}}&type=2&user={{params.user.id}}', function (json){});
 			
 				$('#exampleModal').show();
 			})
 		
 		$('#phone').click(
 		function(){
-			$.getJSON('/api/v1/info_cars_organization?slug={{params.object.slug}}&type=3', function (json){});
+			$.getJSON('/api/v1/info_cars_organization/?slug={{params.object.slug}}&type=3&user={{params.user.id}}', function (json){});
 		
 		})
 	</script>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Online_doc, Records_online_doc, PersonalDataConsent
+from .models import Online_doc, Records_online_doc, PersonalDataConsent, UserCarEstimation
 from import_export.admin import ImportExportActionModelAdmin
 
 
@@ -43,3 +43,12 @@ class PersonalDataConsentAdmin(ImportExportActionModelAdmin):
 	def get_full_name(self, obj):
 		return obj.get_full_name()
 	get_full_name.short_description = 'ФИО'
+
+
+@admin.register(UserCarEstimation)
+class UserCarEstimationAdmin(ImportExportActionModelAdmin):
+	list_display = ('date_created', 'slug', 'vin', 'body_number', 'year', 'modification', 'complectation', 'run', 'is_submitted')
+	list_filter = ('is_submitted', 'date_created', 'date_opened', 'date_submitted')
+	search_fields = ('slug', 'vin', 'body_number')
+	raw_id_fields = ('modification', 'complectation')
+	readonly_fields = ('slug', 'date_created', 'date_opened', 'date_submitted')

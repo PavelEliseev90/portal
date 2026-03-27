@@ -19,9 +19,9 @@ z-index: 1030;">
     <hr>
 </div>
 
-<div class="offcanvas-body">
-    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
-        <div class="container">
+<div class="offcanvas-body" style="padding: 0rem;">
+    <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 4rem;">
+        <div class="container" style="padding: 0rem;">
         
             <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
                 
@@ -107,13 +107,16 @@ z-index: 1030;">
     var chatSocket_eco;
     var wsProtocol = '';
 
-    $("#message").keypress(function (e) {
-        
-        if(e.which === 13 && !e.shiftKey) {
+    $("#message").on('keydown', function (e) {
+        // Enter отправляет сообщение, но не вставляет новую строку.
+        // Shift+Enter — новая строка.
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
             $('#form-sumbit').click();
-        };
+            return false;
+        }
         scrollToBottom();
-
     });
 
     $(document).ready ( function(){

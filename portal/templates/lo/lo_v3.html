@@ -1851,6 +1851,22 @@
 
           <div class="row g-1">
             
+            {% if params.estimation.page_kolesa.kolesa2_estimation == 1 %}
+              <div class="col-auto">
+                <div class="kors-brand-pill bg-success text-nowrap">
+                  <span class="icon-cd"></span> Второй комплект
+                </div>
+              </div>
+            {% endif %}
+
+            {% if params.estimation.page_proverki.car_credit == True %}
+              <div class="col-auto">
+                <div class="kors-brand-pill bg-danger text-nowrap">
+                  <b>В залоге!</b>
+                </div>
+              </div>
+            {% endif %}
+
             {% if params.estimation.check_run == False %}
               <div class="col-auto">   
                 <div class="kors-brand-pill bg-danger text-nowrap">
@@ -4338,6 +4354,33 @@
                       <span class="icon-mbri-image-slider"></span> Второй комплект
                     </h6>
                     
+                    <div class="row">
+                      <div class="kors-btn-group-wrapper">
+                        <div class="kors-btn-group-compact" role="group" aria-label="Оценка со вторым комплектом колес">
+                          <input type="radio" 
+                                 class="btn-check" 
+                                 name="kolesa2_estimation" 
+                                 id="kolesa2_estimation-radio1" 
+                                 autocomplete="off" 
+                                 {% if params.estimation.page_kolesa.kolesa2_estimation == 0 %} checked {% endif %} 
+                                 value="0" 
+                                 required>
+                          <label class="btn btn-outline-danger" for="kolesa2_estimation-radio1">Нет второго комплекта колес</label>
+                      
+                          <input type="radio" 
+                                 class="btn-check" 
+                                 name="kolesa2_estimation" 
+                                 id="kolesa2_estimation-radio2" 
+                                 autocomplete="off" 
+                                 {% if params.estimation.page_kolesa.kolesa2_estimation == 1 %} checked {% endif %} 
+                                 value="1" 
+                                 required>
+                          <label class="btn btn-outline-success" for="kolesa2_estimation-radio2">Оценка со вторым комплектом колес</label>
+                        </div>
+                        <label class="fs-6">Наличие второго комплекта колес</label>
+                      </div>
+                    </div> 
+
                     <div class="row">
                       <div class="col-auto">
                         <h6> Есть второй комплект</h6>
@@ -6846,7 +6889,7 @@
                                 <div class="row g-0">
                                   <div class="col-12 col-sm-2">
                                     <img class=" w-20" style="object-fit: cover; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_pered}}" src1="{{params.estimation.fotos_vnesh_pered}}"> 
-                                  
+                                    
                                   </div>
                                   <div class="col-12 col-sm-3">
                                     <img class="d- w-20" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_vod}}" src1="{{params.estimation.fotos_vnesh_vod}}"> 

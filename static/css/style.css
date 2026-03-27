@@ -1188,30 +1188,46 @@ body.modal-open .mobile-filters-button-container {
 	}
 }
 
+.item-content-chat {
+	margin-bottom: 0.1rem;
+}
+
 .item-time-chat,.item-time-chat-owner {
-	font-size: smaller
+	font-size: smaller;
+	margin-bottom: 0.2rem;
 }
 
 .item-chat-message{
-	margin: 0.2rem;
+	margin:  0rem 0rem 0.4rem 0rem;
 }
 
 .item-chat-message-owner{
-	margin: 0.2rem;
+	margin: 0rem 0rem 0.4rem 0rem;
+}
+
+.item-chat-message-owner-red{
+	margin: 0rem 0rem 0.4rem 0rem;
 }
 
 .item-chat-body{
 	background-color: #464A5530;
-	border-radius:  1rem 1rem 1rem 0rem;
+	border-radius:  0rem 1rem 1rem 0rem;
 	margin-right: 1rem;
-	padding: 0.2rem;
+	padding: 0.4rem;
 }
 
 .item-chat-body-owner{
-	background-color: #0c960090;
-	border-radius:  1rem 1rem 0rem 1rem;
+	background-color: #00529650;
+	border-radius:  1rem 0rem 0rem 1rem ;
 	margin-left: 1rem;
-	padding: 0.2rem;
+	padding: 0.4rem;
+}
+
+.item-chat-body-owner-red{
+	background-color: #d3000030;
+	border-radius:  1rem 0rem 0rem 1rem ;
+	margin-left: 1rem;
+	padding: 0.4rem;
 }
 
 .page-num {

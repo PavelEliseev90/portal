@@ -1060,6 +1060,9 @@ def estimation_rlk(request, rlk_id):
             if request.POST.get('psd_disk', '') != '':
                 reg_interactiv_ocenka_kolesa.psd_disk       = RefPsdDisk.objects.filter(pk = request.POST.get('psd_disk', '0')).first()
             
+            if request.POST.get('kolesa2_estimation', '') != '':
+                reg_interactiv_ocenka_kolesa.kolesa2_estimation       = int(request.POST.get('kolesa2_estimation', '10'))
+
             if 'kolesa2' in request.POST:
                 reg_interactiv_ocenka_kolesa.kolesa2         = True
                 reg_interactiv_ocenka_kolesa.mark_tyre2      = RefMarkTyres.objects.filter(pk = request.POST.get('mark_tyre2', '0')).first()
@@ -1456,14 +1459,14 @@ def estimation_rlk(request, rlk_id):
     if reg_interactiv_ocenka.staff == None or reg_interactiv_ocenka.staff.domain_login == '':
         count = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True).count()
         if count > 0:
-            staff = RefStaff.objects.filter(domain_login = user.username)[0]
+            staff = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True)[0]
             reg_interactiv_ocenka.staff = staff
             reg_interactiv_ocenka.save()
     
     if interactiv_rlk.staff_rlk == None or interactiv_rlk.staff_rlk.domain_login == '':
         count = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True).count()
         if count > 0:
-            staff = RefStaff.objects.filter(domain_login = user.username)[0]
+            staff = RefStaff.objects.filter(domain_login = user.username).filter(buauto = True)[0]
             interactiv_rlk.staff_rlk = staff
             interactiv_rlk.save()
     

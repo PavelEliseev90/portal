@@ -67,7 +67,7 @@ def transliterate_to_rus(name):
 
 def get_qrcode(name):
     
-    slug = 'https://ah.kors-group.com/cars/' + name + '/'
+    slug = 'https://ah.kors-group.com/cars/' + name + '/?q=1'
 
     qr_code_image   = qrcode.make(slug)
     buffer          = io.BytesIO()

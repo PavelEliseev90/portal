@@ -1,0 +1,455 @@
+{% extends 'base_web.html' %}
+
+{% block title %} Онлайн оценка автомобиля {% endblock %}
+
+{% block content %}
+<style>
+  .est-wrap {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  .est-card {
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 23, 61, 0.08);
+  }
+
+  .search-select-wrapper {
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  .search-select-wrapper label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    padding: 0.6rem 0.75rem;
+    pointer-events: none;
+    transform-origin: 0 0;
+    transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+    color: #8ea1ba;
+    font-size: 0.85rem;
+    z-index: 1;
+  }
+
+  .search-select {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    box-shadow: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+    padding: 1.625rem 0.75rem 0.625rem;
+    height: calc(3.5rem + 2px);
+    min-height: calc(3.5rem + 2px);
+  }
+
+  .search-select:focus {
+    border-color: #002a5a;
+    box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+    outline: 0;
+  }
+
+  .search-select-wrapper.has-value label {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+    color: #002a5a;
+  }
+
+  .select2-container--default .select2-selection--single {
+    border-radius: 0.95rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+    height: calc(3.5rem + 2px);
+    min-height: calc(3.5rem + 2px);
+    padding: 1.2rem 0.75rem 0.625rem;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(3.5rem + 2px);
+    right: 0.75rem;
+  }
+
+  .btn-send {
+    min-height: 48px;
+    border-radius: 12px;
+  }
+
+  .wizard-steps {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .wizard-step-badge {
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    color: #58708f;
+    background: #f8fbff;
+  }
+
+  .wizard-step-badge.active {
+    background: #002a5a;
+    color: #fff;
+    border-color: #002a5a;
+  }
+
+  .wizard-screen {
+    display: none;
+  }
+
+  .wizard-screen.active {
+    display: block;
+  }
+</style>
+
+<div class="container py-4 est-wrap">
+  <div class="card est-card">
+    <div class="card-body p-4 p-lg-5">
+      <h3 class="mb-1">Онлайн-оценка автомобиля</h3>
+      <p class="text-muted mb-4">Укажите параметры автомобиля и отправьте заявку.</p>
+
+      {% if params.submitted %}
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle me-2"></i>Данные успешно отправлены. Спасибо!
+        </div>
+      {% endif %}
+
+      {% if params.errors %}
+        <div class="alert alert-danger">
+          <ul class="mb-0">
+            {% for err in params.errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" id="userEstimationForm">
+        {% csrf_token %}
+        <div class="wizard-steps" id="wizardSteps">
+          <span class="wizard-step-badge active" data-step-badge="1">1. Год</span>
+          <span class="wizard-step-badge" data-step-badge="2">2. Марка</span>
+          <span class="wizard-step-badge" data-step-badge="3">3. Модель</span>
+          <span class="wizard-step-badge" data-step-badge="4">4. Модификация</span>
+          <span class="wizard-step-badge" data-step-badge="5">5. Комплектация</span>
+          <span class="wizard-step-badge" data-step-badge="6">6. Данные авто</span>
+        </div>
+
+        <div class="row g-3 wizard-screen active" data-step-screen="1">
+          <div class="col-md-6">
+            <label for="vin" class="form-label">VIN</label>
+            <input id="vin" name="vin" maxlength="32" class="form-control" value="{{ params.estimation.vin|default:'' }}" placeholder="Например: XTA12345678901234">
+          </div>
+          <div class="col-md-6">
+            <label for="body_number" class="form-label">Номер кузова</label>
+            <input id="body_number" name="body_number" maxlength="64" class="form-control" value="{{ params.estimation.body_number|default:'' }}" placeholder="Если VIN отсутствует">
+          </div>
+
+          <div class="col-md-6">
+            <div class="search-select-wrapper select2-wrapper">
+              <select id="year" name="year" class="search-select form-control" required>
+                <option selected></option>
+                {% for year in params.years %}
+                  <option value="{{ year }}" {% if params.estimation.year == year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+              </select>
+              <label for="year">Год выпуска <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button class="btn btn-dark" type="button" id="toStep2">Далее</button>
+          </div>
+        </div>
+
+        <div class="row g-3 wizard-screen" data-step-screen="2">
+          <div class="col-md-6">
+            <div class="search-select-wrapper select2-wrapper">
+              <select id="mark" class="search-select form-control" disabled>
+                <option selected></option>
+              </select>
+              <label for="mark">Марка</label>
+            </div>
+          </div>
+          <div class="col-12 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" type="button" id="backTo1">Назад</button>
+            <button class="btn btn-dark" type="button" id="toStep3">Далее</button>
+          </div>
+        </div>
+
+        <div class="row g-3 wizard-screen" data-step-screen="3">
+          <div class="col-md-6">
+            <div class="search-select-wrapper select2-wrapper">
+              <select id="model" class="search-select form-control" disabled>
+                <option selected></option>
+              </select>
+              <label for="model">Модель</label>
+            </div>
+          </div>
+          <div class="col-12 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" type="button" id="backTo2">Назад</button>
+            <button class="btn btn-dark" type="button" id="toStep4">Далее</button>
+          </div>
+        </div>
+
+        <div class="row g-3 wizard-screen" data-step-screen="4">
+          <div class="col-md-6">
+            <div class="search-select-wrapper select2-wrapper">
+              <select id="modification_id" name="modification_id" class="search-select form-control" required disabled>
+                <option selected></option>
+              </select>
+              <label for="modification_id">Модификация <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          <div class="col-12 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" type="button" id="backTo3">Назад</button>
+            <button class="btn btn-dark" type="button" id="toStep5">Далее</button>
+          </div>
+        </div>
+
+        <div class="row g-3 wizard-screen" data-step-screen="5">
+          <div class="col-md-6 d-none" id="complectationRow">
+            <div class="search-select-wrapper select2-wrapper">
+              <select id="complectation_id" name="complectation_id" class="search-select form-control" disabled>
+                <option selected></option>
+              </select>
+              <label for="complectation_id">Комплектация</label>
+            </div>
+          </div>
+          <div class="col-12 d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" type="button" id="backTo4">Назад</button>
+            <button class="btn btn-dark" type="button" id="toStep6">Далее</button>
+          </div>
+        </div>
+
+        <div class="row g-3 wizard-screen" data-step-screen="6">
+          <div class="col-md-6">
+            <label for="run" class="form-label">Пробег *</label>
+            <input id="run" type="number" min="0" name="run" class="form-control" value="{{ params.estimation.run|default:0 }}" required>
+          </div>
+          <div class="col-md-6">
+            <label for="photo_car" class="form-label">Фото автомобиля</label>
+            <input id="photo_car" type="file" accept="image/*" name="photo_car" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label for="photo_mileage" class="form-label">Фото пробега</label>
+            <input id="photo_mileage" type="file" accept="image/*" name="photo_mileage" class="form-control">
+          </div>
+          <div class="col-12 d-grid mt-2">
+            <button class="btn btn-dark btn-send" type="submit">
+              <i class="bi bi-send me-2"></i>Отправить оценку
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const apiBase = `${window.location.pathname.replace(/\/$/, '')}/api`;
+  const year = document.getElementById('year');
+  const mark = document.getElementById('mark');
+  const model = document.getElementById('model');
+  const modification = document.getElementById('modification_id');
+  const complectation = document.getElementById('complectation_id');
+  const complectationRow = document.getElementById('complectationRow');
+
+  const savedModificationId = "{{ params.estimation.modification_id|default:'' }}";
+  const savedComplectationId = "{{ params.estimation.complectation_id|default:'' }}";
+  const savedModelId = "{{ params.estimation.modification.model_id|default:'' }}";
+  const savedMarkId = "{{ params.estimation.modification.model.mark_id|default:'' }}";
+  const screens = document.querySelectorAll('[data-step-screen]');
+  const badges = document.querySelectorAll('[data-step-badge]');
+  let currentStep = 1;
+
+  function openStep(step) {
+    currentStep = step;
+    screens.forEach(s => s.classList.toggle('active', Number(s.dataset.stepScreen) === step));
+    badges.forEach(b => b.classList.toggle('active', Number(b.dataset.stepBadge) === step));
+  }
+
+  function updateWrapperState(select) {
+    const wrapper = select.closest('.search-select-wrapper');
+    if (!wrapper) return;
+    if (select.value) {
+      wrapper.classList.add('has-value');
+    } else {
+      wrapper.classList.remove('has-value');
+    }
+  }
+
+  function initSelect2(select) {
+    updateWrapperState(select);
+    if (!window.$ || !$.fn || !$.fn.select2) {
+      return;
+    }
+    const $select = $(select);
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+    const $label = $select.closest('.search-select-wrapper').find('label');
+    const placeholder = $label.length ? $label.text().replace(/\s*\*/, '') : 'Выберите...';
+    $select.select2({
+      language: 'ru',
+      placeholder: placeholder,
+      allowClear: false,
+      width: '100%',
+      dropdownAutoWidth: true
+    });
+    $select.off('change.wrapper').on('change.wrapper', function() {
+      updateWrapperState(select);
+    });
+  }
+
+  function resetSelect(select) {
+    select.innerHTML = '<option selected></option>';
+    select.disabled = true;
+    updateWrapperState(select);
+    initSelect2(select);
+  }
+
+  function fillSelect(select, items, selectedValue) {
+    select.innerHTML = '<option selected></option>';
+    for (const item of items) {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.name;
+      select.appendChild(opt);
+    }
+    if (selectedValue) {
+      select.value = String(selectedValue);
+    }
+    select.disabled = items.length === 0;
+    updateWrapperState(select);
+    initSelect2(select);
+  }
+
+  function hideComplectation() {
+    complectationRow.classList.add('d-none');
+    resetSelect(complectation);
+  }
+
+  async function fetchJson(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (err) {
+      return {};
+    }
+  }
+
+  async function loadMarks(selectedMark) {
+    if (!year.value) return resetSelect(mark);
+    const data = await fetchJson(`${apiBase}/marks/?year=${encodeURIComponent(year.value)}`);
+    fillSelect(mark, data.marks || [], selectedMark);
+    if ((data.marks || []).length) openStep(2);
+  }
+
+  async function loadModels(selectedModel) {
+    if (!mark.value || !year.value) return resetSelect(model);
+    const data = await fetchJson(`${apiBase}/models/?mark_id=${encodeURIComponent(mark.value)}&year=${encodeURIComponent(year.value)}`);
+    fillSelect(model, data.models || [], selectedModel);
+    if ((data.models || []).length) openStep(3);
+  }
+
+  async function loadModifications(selectedModification) {
+    if (!model.value || !year.value) return resetSelect(modification);
+    const data = await fetchJson(`${apiBase}/modifications/?model_id=${encodeURIComponent(model.value)}&year=${encodeURIComponent(year.value)}`);
+    fillSelect(modification, data.modifications || [], selectedModification);
+    if ((data.modifications || []).length) openStep(4);
+  }
+
+  async function loadComplectations(selectedComplectation) {
+    if (!modification.value) return hideComplectation();
+    const data = await fetchJson(`${apiBase}/complectations/?modification_id=${encodeURIComponent(modification.value)}`);
+    const items = data.complectations || [];
+    if (!items.length) {
+      hideComplectation();
+      openStep(6);
+      return;
+    }
+    complectationRow.classList.remove('d-none');
+    fillSelect(complectation, items, selectedComplectation);
+    openStep(5);
+  }
+
+  year.addEventListener('change', async function() {
+    resetSelect(mark);
+    resetSelect(model);
+    resetSelect(modification);
+    hideComplectation();
+    await loadMarks();
+  });
+
+  if (window.$ && $.fn && $.fn.select2) {
+    $(year).off('select2:select.year').on('select2:select.year', async function() {
+      resetSelect(mark);
+      resetSelect(model);
+      resetSelect(modification);
+      hideComplectation();
+      await loadMarks();
+    });
+  }
+
+  mark.addEventListener('change', async function() {
+    resetSelect(model);
+    resetSelect(modification);
+    hideComplectation();
+    await loadModels();
+  });
+
+  model.addEventListener('change', async function() {
+    resetSelect(modification);
+    hideComplectation();
+    await loadModifications();
+  });
+
+  modification.addEventListener('change', async function() {
+    hideComplectation();
+    await loadComplectations();
+  });
+
+  if (complectation) {
+    complectation.addEventListener('change', function() {
+      if (complectation.value) openStep(6);
+    });
+  }
+
+  document.getElementById('toStep2')?.addEventListener('click', async function() {
+    if (!year.value) return;
+    await loadMarks();
+  });
+  document.getElementById('toStep3')?.addEventListener('click', function() { if (mark.value) openStep(3); });
+  document.getElementById('toStep4')?.addEventListener('click', function() { if (model.value) openStep(4); });
+  document.getElementById('toStep5')?.addEventListener('click', function() { if (modification.value) openStep(5); });
+  document.getElementById('toStep6')?.addEventListener('click', function() { openStep(6); });
+  document.getElementById('backTo1')?.addEventListener('click', function() { openStep(1); });
+  document.getElementById('backTo2')?.addEventListener('click', function() { openStep(2); });
+  document.getElementById('backTo3')?.addEventListener('click', function() { openStep(3); });
+  document.getElementById('backTo4')?.addEventListener('click', function() { openStep(4); });
+
+  [year, mark, model, modification, complectation].forEach(initSelect2);
+
+  (async function bootstrap() {
+    if (!year.value) return hideComplectation();
+    await loadMarks(savedMarkId);
+    await loadModels(savedModelId);
+    await loadModifications(savedModificationId);
+    await loadComplectations(savedComplectationId);
+    if (savedComplectationId || !complectationRow.classList.contains('d-none')) {
+      openStep(6);
+    }
+  })();
+})();
+</script>
+{% endblock %}

@@ -727,6 +727,7 @@ class DocRLK(models.Model):
                 TradeInFunnel.objects.update_or_create(
                         rlk_id = self.id,
                         defaults={
+                            'rlk_uin'           : self.uin,
                             'rlk_number'        : rlk_number,
                             'footing_rlk_id'    : footing_rlk_id,
                             'footing_rlk_uin'   : footing_rlk_uin,
@@ -838,7 +839,7 @@ class DocLO(models.Model):
                         rlk_id = self.rlk.id,
                         defaults={
                             'lo_number'                : lo_number,
-                            'date_reception_success'    : date_reception,
+                            'date_reception_success'   : date_reception,
                             'unit_id'   : unit_id,
                             'unit_name' : unit_name,
                             'vin'       : self.vin,

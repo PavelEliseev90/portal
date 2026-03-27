@@ -1,16 +1,16 @@
 from asyncio.windows_events import NULL
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 import datetime
-from online.models import Online_doc, Records_online_doc, PersonalDataConsent
-from refs.models import RefCity, RefUnit
+from online.models import Online_doc, Records_online_doc, PersonalDataConsent, UserCarEstimation
+from refs.models import RefCity, RefUnit, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation
 from django.conf import settings
 import json
 import requests
 from django.template.loader import get_template
 from django.core.mail import EmailMultiAlternatives
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q, Min, Max
 
 
 @csrf_exempt
@@ -310,3 +310,396 @@ def get_consent_text():
 5. Я подтверждаю, что предоставленные мной персональные данные являются достоверными.
 
 6. Я понимаю, что в случае отзыва согласия обработка персональных данных должна быть прекращена, а мои персональные данные уничтожены в срок, не превышающий 30 дней с даты поступления указанного отзыва."""
+
+
+def user_car_estimation(request, slug):
+    return HttpResponseRedirect(f'/online/estimate/{slug}/year/')
+
+
+def _wizard_session_key(slug):
+    return f'user_estimation_wizard_{slug}'
+
+
+def _get_wizard_state(request, slug):
+    return request.session.get(_wizard_session_key(slug), {})
+
+
+def _set_wizard_state(request, slug, state):
+    request.session[_wizard_session_key(slug)] = state
+    request.session.modified = True
+
+
+def _clear_wizard_state(request, slug):
+    if _wizard_session_key(slug) in request.session:
+        del request.session[_wizard_session_key(slug)]
+        request.session.modified = True
+
+
+def _get_years_list():
+    year_bounds = AutoruModification.objects.aggregate(
+        min_year=Min('ProductionStartYear'),
+        max_year=Max('ProductionEndYear'),
+    )
+    min_year = year_bounds.get('min_year') or 1960
+    max_year = year_bounds.get('max_year') or datetime.datetime.now().year
+    current_year = datetime.datetime.now().year
+    max_year = min(max_year, current_year)
+    years = list(range(max_year, min_year - 1, -1))
+    return years if years else list(range(current_year, 1960, -1))
+
+
+def _mods_for_year(year):
+    return AutoruModification.objects.filter(
+        Q(ProductionStartYear__lte=year) &
+        (Q(ProductionEndYear__gte=year) | Q(ProductionEndYear=2050) | Q(ProductionEndYear=0))
+    )
+
+
+def _build_step_context(estimation, step, title, options, selected_id='', error=''):
+    step_map = {
+        'year': 1,
+        'mark': 2,
+        'model': 3,
+        'modification': 4,
+        'complectation': 5,
+        'details': 6,
+    }
+    step_index = step_map.get(step, 1)
+    return {
+        'estimation': estimation,
+        'step': step,
+        'step_index': step_index,
+        'progress_percent': int((step_index / 6) * 100),
+        'title': title,
+        'options': options,
+        'selected_id': str(selected_id) if selected_id else '',
+        'error': error,
+        'selected_year': estimation.year,
+    }
+
+
+def _build_selected_summary(estimation, state):
+    mark_name = ''
+    model_name = ''
+    mark_id = state.get('mark_id', '')
+    model_id = state.get('model_id', '')
+
+    if mark_id:
+        mark = AutoruMark.objects.filter(pk=mark_id).only('name').first()
+        mark_name = mark.name if mark else ''
+    if model_id:
+        model = AutoruModel.objects.filter(pk=model_id).only('name').first()
+        model_name = model.name if model else ''
+
+    modification_name = estimation.modification.name if estimation.modification else ''
+    complectation_name = estimation.complectation.name if estimation.complectation else ''
+
+    return {
+        'year': estimation.year or '',
+        'mark': mark_name,
+        'model': model_name,
+        'modification': modification_name,
+        'complectation': complectation_name,
+    }
+
+
+def user_car_estimation_year(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    if request.method == 'GET' and not estimation.date_opened:
+        estimation.date_opened = datetime.datetime.now()
+        estimation.save(update_fields=['date_opened'])
+
+    error = ''
+    if request.method == 'POST':
+        year_raw = request.POST.get('selected_id', '').strip()
+        try:
+            year_val = int(year_raw)
+            estimation.year = year_val
+            estimation.modification = None
+            estimation.complectation = None
+            estimation.save(update_fields=['year', 'modification', 'complectation'])
+            _clear_wizard_state(request, slug)
+            return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+        except (TypeError, ValueError):
+            error = 'Выберите корректный год.'
+
+    options = [{'id': y, 'name': str(y)} for y in _get_years_list()]
+    params = _build_step_context(estimation, 'year', 'Выберите год выпуска', options, estimation.year, error)
+    params['summary'] = _build_selected_summary(estimation, _get_wizard_state(request, slug))
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def user_car_estimation_mark(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    if not estimation.year:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/year/')
+
+    state = _get_wizard_state(request, slug)
+    # Если в сессии остались значения от старого шага - очищаем их
+    if state.get('model_id'):
+        state['model_id'] = ''
+        _set_wizard_state(request, slug, state)
+    mods = _mods_for_year(int(estimation.year))
+    if not mods.exists():
+        mods = AutoruModification.objects.all()
+    mark_ids = mods.values_list('model__mark__id', flat=True).distinct()
+    marks = list(AutoruMark.objects.filter(pk__in=mark_ids).order_by('name'))
+    options = [{'id': m.id, 'name': m.name} for m in marks]
+
+    error = ''
+    if request.method == 'POST':
+        mark_id = request.POST.get('selected_id', '').strip()
+        if not mark_id or not any(str(m['id']) == mark_id for m in options):
+            error = 'Выберите марку из списка.'
+        else:
+            state['mark_id'] = mark_id
+            state['model_id'] = ''
+            _set_wizard_state(request, slug, state)
+            return HttpResponseRedirect(f'/online/estimate/{slug}/model/')
+
+    params = _build_step_context(estimation, 'mark', 'Выберите марку', options, state.get('mark_id', ''), error)
+    params['summary'] = _build_selected_summary(estimation, state)
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def user_car_estimation_model(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    state = _get_wizard_state(request, slug)
+    mark_id = state.get('mark_id')
+    if not estimation.year:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/year/')
+    if not mark_id:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+
+    mods = _mods_for_year(int(estimation.year)).filter(model__mark_id=mark_id)
+    if not mods.exists():
+        mods = AutoruModification.objects.filter(model__mark_id=mark_id)
+    model_ids = mods.values_list('model__id', flat=True).distinct()
+    models = list(AutoruModel.objects.filter(pk__in=model_ids).order_by('name'))
+    options = [{'id': m.id, 'name': m.name} for m in models]
+    # Если марка невалидна для текущего года/списка, возвращаем на выбор марки
+    valid_mark_ids = set(str(m.model.mark_id) for m in mods.select_related('model'))
+    if str(mark_id) not in valid_mark_ids:
+        state['mark_id'] = ''
+        state['model_id'] = ''
+        _set_wizard_state(request, slug, state)
+        return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+
+    error = ''
+    if request.method == 'POST':
+        model_id = request.POST.get('selected_id', '').strip()
+        if not model_id or not any(str(m['id']) == model_id for m in options):
+            error = 'Выберите модель из списка.'
+        else:
+            state['model_id'] = model_id
+            _set_wizard_state(request, slug, state)
+            return HttpResponseRedirect(f'/online/estimate/{slug}/modification/')
+
+    params = _build_step_context(estimation, 'model', 'Выберите модель', options, state.get('model_id', ''), error)
+    params['summary'] = _build_selected_summary(estimation, state)
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def user_car_estimation_modification(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    state = _get_wizard_state(request, slug)
+    model_id = state.get('model_id')
+    if not estimation.year:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/year/')
+    if not state.get('mark_id'):
+        return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+    if not model_id:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/model/')
+
+    mods = _mods_for_year(int(estimation.year)).filter(model_id=model_id).order_by('name')
+    if not mods.exists():
+        mods = AutoruModification.objects.filter(model_id=model_id).order_by('name')
+    options = [{'id': m.id, 'name': m.name} for m in mods]
+    # Защита от прямого перехода: модель должна соответствовать выбранной марке
+    if not AutoruModel.objects.filter(pk=model_id, mark_id=state.get('mark_id')).exists():
+        state['model_id'] = ''
+        _set_wizard_state(request, slug, state)
+        return HttpResponseRedirect(f'/online/estimate/{slug}/model/')
+
+    error = ''
+    if request.method == 'POST':
+        mod_id = request.POST.get('selected_id', '').strip()
+        if not mod_id or not any(str(m['id']) == mod_id for m in options):
+            error = 'Выберите модификацию из списка.'
+        else:
+            estimation.modification = AutoruModification.objects.filter(pk=mod_id).first()
+            estimation.complectation = None
+            estimation.save(update_fields=['modification', 'complectation'])
+            return HttpResponseRedirect(f'/online/estimate/{slug}/complectation/')
+
+    selected_mod = estimation.modification.id if estimation.modification else ''
+    params = _build_step_context(estimation, 'modification', 'Выберите модификацию', options, selected_mod, error)
+    params['summary'] = _build_selected_summary(estimation, state)
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def user_car_estimation_complectation(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    if not estimation.modification:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/modification/')
+    state = _get_wizard_state(request, slug)
+    if not state.get('mark_id') or not state.get('model_id'):
+        return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+
+    comps = AutoruComplectation.objects.filter(modification=estimation.modification).order_by('name')
+    options = [{'id': c.id, 'name': c.name} for c in comps]
+
+    if not options:
+        estimation.complectation = None
+        estimation.save(update_fields=['complectation'])
+        return HttpResponseRedirect(f'/online/estimate/{slug}/details/')
+
+    error = ''
+    if request.method == 'POST':
+        comp_id = request.POST.get('selected_id', '').strip()
+        if comp_id and any(str(c['id']) == comp_id for c in options):
+            estimation.complectation = AutoruComplectation.objects.filter(pk=comp_id).first()
+            estimation.save(update_fields=['complectation'])
+            return HttpResponseRedirect(f'/online/estimate/{slug}/details/')
+        error = 'Выберите комплектацию из списка.'
+
+    selected_comp = estimation.complectation.id if estimation.complectation else ''
+    params = _build_step_context(estimation, 'complectation', 'Выберите комплектацию', options, selected_comp, error)
+    params['summary'] = _build_selected_summary(estimation, state)
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def user_car_estimation_details(request, slug):
+    estimation = get_object_or_404(UserCarEstimation, slug=slug)
+    if not estimation.year:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/year/')
+    if not estimation.modification:
+        return HttpResponseRedirect(f'/online/estimate/{slug}/modification/')
+    state = _get_wizard_state(request, slug)
+    if not state.get('mark_id') or not state.get('model_id'):
+        return HttpResponseRedirect(f'/online/estimate/{slug}/mark/')
+
+    errors = []
+    if request.method == 'POST':
+        vin = request.POST.get('vin', '').strip()
+        body_number = request.POST.get('body_number', '').strip()
+        run_raw = request.POST.get('run', '').strip()
+
+        if not vin and not body_number:
+            errors.append("Укажите VIN или номер кузова")
+        if not run_raw:
+            errors.append("Укажите пробег")
+
+        if not errors:
+            estimation.vin = vin
+            estimation.body_number = body_number
+            estimation.run = int(run_raw)
+            estimation.photo_car = request.FILES.get('photo_car') or estimation.photo_car
+            estimation.photo_mileage = request.FILES.get('photo_mileage') or estimation.photo_mileage
+            estimation.is_submitted = True
+            estimation.date_submitted = datetime.datetime.now()
+            estimation.save()
+            return HttpResponseRedirect(request.build_absolute_uri())
+
+    params = {
+        'estimation': estimation,
+        'step': 'details',
+        'step_index': 6,
+        'progress_percent': 100,
+        'title': 'Финальные данные',
+        'errors': errors,
+        'submitted': estimation.is_submitted,
+        'summary': _build_selected_summary(estimation, state),
+    }
+    return render(request, 'online/user_car_estimation_step.html', {'params': params})
+
+
+def _validate_estimation_slug(slug):
+    if not UserCarEstimation.objects.filter(slug=slug).exists():
+        raise UserCarEstimation.DoesNotExist
+
+
+def user_estimation_api_marks(request, slug):
+    try:
+        _validate_estimation_slug(slug)
+        year = request.GET.get('year', '')
+        if not year:
+            return JsonResponse({'marks': []})
+        try:
+            year_int = int(year)
+        except (TypeError, ValueError):
+            return JsonResponse({'marks': [], 'error': 'Некорректный год'})
+        modifications = AutoruModification.objects.filter(
+            Q(ProductionStartYear__lte=year_int) &
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050) | Q(ProductionEndYear=0))
+        )
+        if not modifications.exists():
+            # Фоллбэк: если для конкретного года нет данных, показываем доступные марки
+            modifications = AutoruModification.objects.all()
+        mark_ids = modifications.values_list('model__mark__id', flat=True).distinct()
+        marks = AutoruMark.objects.filter(pk__in=mark_ids).order_by('name')
+        return JsonResponse({'marks': [{'id': m.id, 'name': m.name} for m in marks]})
+    except Exception as e:
+        return JsonResponse({'marks': [], 'error': str(e)})
+
+
+def user_estimation_api_models(request, slug):
+    try:
+        _validate_estimation_slug(slug)
+        mark_id = request.GET.get('mark_id', '')
+        year = request.GET.get('year', '')
+        if not mark_id or not year:
+            return JsonResponse({'models': []})
+        try:
+            year_int = int(year)
+        except (TypeError, ValueError):
+            return JsonResponse({'models': [], 'error': 'Некорректный год'})
+        modifications = AutoruModification.objects.filter(
+            model__mark_id=mark_id
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) &
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050) | Q(ProductionEndYear=0))
+        )
+        if not modifications.exists():
+            modifications = AutoruModification.objects.filter(model__mark_id=mark_id)
+        model_ids = modifications.values_list('model__id', flat=True).distinct()
+        models = AutoruModel.objects.filter(pk__in=model_ids).order_by('name')
+        return JsonResponse({'models': [{'id': m.id, 'name': m.name} for m in models]})
+    except Exception as e:
+        return JsonResponse({'models': [], 'error': str(e)})
+
+
+def user_estimation_api_modifications(request, slug):
+    try:
+        _validate_estimation_slug(slug)
+        model_id = request.GET.get('model_id', '')
+        year = request.GET.get('year', '')
+        if not model_id or not year:
+            return JsonResponse({'modifications': []})
+        try:
+            year_int = int(year)
+        except (TypeError, ValueError):
+            return JsonResponse({'modifications': [], 'error': 'Некорректный год'})
+        modifications = AutoruModification.objects.filter(
+            model_id=model_id
+        ).filter(
+            Q(ProductionStartYear__lte=year_int) &
+            (Q(ProductionEndYear__gte=year_int) | Q(ProductionEndYear=2050) | Q(ProductionEndYear=0))
+        ).order_by('name')
+        if not modifications.exists():
+            modifications = AutoruModification.objects.filter(model_id=model_id).order_by('name')
+        return JsonResponse({'modifications': [{'id': m.id, 'name': m.name} for m in modifications]})
+    except Exception as e:
+        return JsonResponse({'modifications': [], 'error': str(e)})
+
+
+def user_estimation_api_complectations(request, slug):
+    try:
+        _validate_estimation_slug(slug)
+        modification_id = request.GET.get('modification_id', '')
+        if not modification_id:
+            return JsonResponse({'complectations': []})
+        complectations = AutoruComplectation.objects.filter(modification_id=modification_id).order_by('name')
+        return JsonResponse({'complectations': [{'id': c.id, 'name': c.name} for c in complectations]})
+    except Exception as e:
+        return JsonResponse({'complectations': [], 'error': str(e)})

@@ -7,7 +7,6 @@ from django.utils.translation import activate
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from collections import defaultdict
-from django.contrib.auth.models import Group
 from decimal import Decimal
 from django.conf import settings
 from django.http import Http404, HttpResponseRedirect
@@ -18,7 +17,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework import status
 from rest_framework.decorators import api_view
 import json
-
+from django.contrib.auth.models import User, Group
 import datetime as DT
 import base64
 from email import header
@@ -42,14 +41,15 @@ from datetime import datetime
 from django.db.models import Q
 
 
-def add_statistic_cars_organization(cars, store, type):
+def add_statistic_cars_organization(user, cars, store, type):
     new_view        = RegViewsCarsOrganization()
     new_view.cars   = cars
     new_view.store  = store
     new_view.type   = RefEventCarsOrganization.objects.get(pk = type)
     new_view.date   = datetime.now()
     new_view.quantity   = cars.quantity
-    new_view.reserve    = cars.reserve    
+    new_view.reserve    = cars.reserve
+    new_view.user       = user
     new_view.save()
 
 
@@ -225,7 +225,11 @@ def info_cars_organization(request):
     try:
         cars_organization = RefCarsOrganization.objects.get(slug= slug)
         store = cars_organization.store
-        add_statistic_cars_organization(cars_organization, store= store, type=request.GET.get('type'))
+        user = None
+        user_id = request.GET.get('user','')
+        if user_id != '':
+            user = User.objects.get(pk = int(user_id))
+        add_statistic_cars_organization(user, cars_organization, store= store, type=request.GET.get('type'))
         
     except:
         s=1

@@ -3,6 +3,7 @@ from django.db import models
 
 class TradeInFunnel(models.Model):
     
+    rlk_uin      = models.CharField(max_length=255, blank=True)
     rlk_id      = models.PositiveIntegerField(primary_key=True, help_text='ID DocRLK')
     rlk_number  = models.CharField(max_length=255, blank=True)
     lo_number   = models.CharField(max_length=255, blank=True)
@@ -23,6 +24,8 @@ class TradeInFunnel(models.Model):
 
     unit_source_id      = models.PositiveIntegerField(null=True, blank=True, help_text='ID подразделения источник')
     unit_source_name    = models.CharField(max_length=255, blank=True)
+
+    source_bu   = models.BooleanField(default=False)
 
     staff_id    = models.PositiveIntegerField(null=True, blank=True)
     staff_name  = models.CharField(max_length=255, blank=True)
