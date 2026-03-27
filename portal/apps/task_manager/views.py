@@ -2398,7 +2398,7 @@ def estimation_send_1c(rlk_id, id):
 def swap_estimation():
     
     infos = RegSwapKors.objects.filter(status_code = 60).order_by('rlk','date')
-    
+    #infos = RegSwapKors.objects.filter(id = 938747).order_by('rlk','date')
     for info in infos:
         if info.estimation != None and info.rlk != None:
             try:

@@ -81,7 +81,7 @@ def transliterate_to_rus(name):
 
 def get_qrcode(name):
     
-    slug = 'https://ah.kors-group.com/es/' + name + '/'
+    slug = 'https://ah.kors-group.com/es/' + name + '/?q=1'
 
     qr_code_image   = qrcode.make(slug)
     buffer          = io.BytesIO()
@@ -1877,7 +1877,8 @@ class RegViewsCarsOrganization(models.Model):
     date        = models.DateTimeField('Дата', default=datetime.now, blank=False)
     quantity    = models.IntegerField('Остаток на момент запроса', default=0, null=True, blank=True)
     reserve     = models.IntegerField('Резерв на момент запроса', default=0, null=True, blank=True)
-
+    user        = models.ForeignKey(User, related_name="user_view_car", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Пользователь")
+    
     def __str__(self):
         return "{} / {} / {}".format(self.cars, self.store, self.type)
 
@@ -2161,7 +2162,7 @@ class RegInteractivOcenkaKolesa(ChangeloggableMixin, models.Model):
     psd_disk2           = models.ForeignKey(RefPsdDisk, related_name="psd_disk2", on_delete=models.PROTECT, null=True, blank=True, verbose_name="PSD дисков 2")
     count_disk2         = models.IntegerField('Количество дисков 2', default=0, null=True, blank=True)
     count_tyre2         = models.IntegerField('Количество резины 2', default=0, null=True, blank=True)
-    
+    kolesa2_estimation  = models.IntegerField('Количество дисков 2', default=10, null=False, blank=False)
     
 
     def __str__(self):

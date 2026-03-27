@@ -2198,105 +2198,121 @@ def text_to_dict(text_json):
 
 
 def get_chats_list_online_info(request, id):
-    
-    chats                   = Chat.objects.filter(slug = id)
-    subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk = OuterRef(name = 'rlk_id'))
-    #subqyery_reg_interactiv = RegInteractivOcenka.objects.filter(rlk = OuterRef(name = 'rlk_id'))
-    subqyery_message_rlk    = DocRLK.objects.filter(id = OuterRef(name = 'rlk_id'))
-    subqyery_message_info   = ChatMessage.objects.filter(chat_id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
-    subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
-    chats = chats.annotate(max_date = subqyery_message)
-    chats = chats.order_by('-max_date')
-    chats = chats.exclude(max_date = None)
-    
-    # Количество РЛК, в которых используется та же оценка (по RegInteractivOcenkaRLK.estimation)
+
+    chats = Chat.objects.filter(slug=id)
+
+    if not chats.exists():
+        return JsonResponse([], safe=False, status=status.HTTP_200_OK)
+
+    # До тяжёлых аннотаций: только чаты с оценкой в нужном статусе
+    chats = chats.filter(
+        Exists(
+            RegInteractivOcenkaRLK.objects.filter(
+                rlk_id=OuterRef('rlk_id'),
+                status_id__gte=2,
+            )
+        )
+    )
+
+    if not chats.exists():
+        return JsonResponse([], safe=False, status=status.HTTP_200_OK)
+
+    last_msg_date_sq = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('id'))
+        .order_by('-date')
+        .values('date')[:1]
+    )
+
+    chats = chats.annotate(max_date=last_msg_date_sq).exclude(max_date=None)
+
+    if not chats.exists():
+        return JsonResponse([], safe=False, status=status.HTTP_200_OK)
+
+    subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk=OuterRef('rlk_id'))
+    subqyery_message_rlk = DocRLK.objects.filter(id=OuterRef('rlk_id'))
+    subqyery_message_info = ChatMessage.objects.filter(chat_id=OuterRef('id')).filter(
+        date=OuterRef('max_date')
+    )
+
     subq_estimation_id = RegInteractivOcenkaRLK.objects.filter(
         rlk_id=OuterRef('rlk_id')
     ).values('estimation_id')[:1]
-    # Сначала аннотируем чат estimation_id, затем считаем по нему — так корреляция в подзапросе одна
+
+    subq_rlk_count = (
+        RegInteractivOcenkaRLK.objects.filter(estimation_id=OuterRef('_estimation_id'))
+        .values('estimation_id')
+        .annotate(cnt=Count('id'))
+        .values('cnt')[:1]
+    )
+
     chats = chats.annotate(_estimation_id=Subquery(subq_estimation_id))
-    subq_rlk_count = RegInteractivOcenkaRLK.objects.filter(
-        estimation_id=OuterRef('_estimation_id')
-    ).values('estimation_id').annotate(cnt=Count('id')).values('cnt')[:1]
     chats = chats.annotate(
         estimation_rlk_count=Coalesce(
             Subquery(subq_rlk_count),
             Value(0),
-            output_field=IntegerField()
+            output_field=IntegerField(),
         )
     )
-        
-    # chats = chats.annotate(
-    #     type_estimation_ocenka = Subquery(subqyery_reg_interactiv.values('page_documents__type_reception__name')[:1])).annotate(
-    #     car_year                = Subquery(subqyery_reg_interactiv.values('year')[:1])).annotate( 
-    #     car_prev_img            = Subquery(subqyery_reg_interactiv.values('prev_img')[:1])).annotate( 
-    #     car_run                 = Subquery(subqyery_reg_interactiv.values('page_salon__run')[:1])).annotate(    
-    #     unit_name               = Subquery(subqyery_reg_interactiv.values('page_documents__unit__name')[:1])).annotate(
-    #     unit_name_dc            = Subquery(subqyery_reg_interactiv.values('page_documents__unit__id')[:1])).annotate(
-    #     status_estimation       = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
-    #     status_estimation_id    = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
-    #     start_estimation        = Subquery(subqyery_reg_interactiv.values('start_estimation')[:1])).annotate(
-    #     end_estimation          = Subquery(subqyery_reg_interactiv.values('end_estimation')[:1])).annotate(
-    #     staff_estimation_name   = Subquery(subqyery_reg_interactiv.values('staff__name')[:1])).annotate(
-    #     staff_estimation        = Subquery(subqyery_reg_interactiv.values('staff')[:1])).annotate(            
-    #     soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-    #     car_price_before_kd = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
-    #     car_price_after_kd  = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
-    #     car_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-    #     car_price_sale      = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1])).annotate(                       
-    #     car_price_bcp       = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
-    #     rlk_date = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
-    #     rlk_number = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
-    #     rlk_unit = Subquery(subqyery_message_rlk.values('unit__name')[:1])).annotate(
-    #     rlk_unit_dc = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-    #     vin = Subquery(subqyery_reg_interactiv.values('vin')[:1])).annotate(
-    #     mark = Subquery(subqyery_reg_interactiv.values('modification__model__mark__name')[:1])).annotate(
-    #     model = Subquery(subqyery_reg_interactiv.values('modification__model__name')[:1])).annotate(
-    #     modification = Subquery(subqyery_reg_interactiv.values('modification__name')[:1])).annotate(
-    #     staff_name = Subquery(subqyery_message_rlk.values('staff__name')[:1])).annotate(
-    #     content = Subquery(subqyery_message_info.values('content')[:1])).annotate(
-    #     user_name = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
-    #     user_content = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-    #     eco         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1]))
+
     chats = chats.annotate(
-        type_estimation_ocenka          = Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1])).annotate(
-        car_year                        = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
-        car_prev_img                    = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
-        car_run                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]))).annotate(    
-        unit_name                       = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
-        unit_name_dc                    = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('unit__id')[:1]))).annotate(
-        status_estimation               = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
-        status_estimation_id            = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
-        start_estimation                = Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1])).annotate(
-        end_estimation                  = Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1])).annotate(
-        staff_estimation_name           = Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1])).annotate(
-        staff_estimation                = Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1])).annotate(            
-        soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
-        car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
-        car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]))).annotate(                       
-        car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]))).annotate(                       
-        car_price_bcp               = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
-        rlk_date                    = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
-        rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
-        rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
-        rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-        vin                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]))).annotate(
-        mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
-        model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
-        modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(
-        staff_name                  = Coalesce(Subquery(subqyery_message_rlk.values('staff__name')[:1]), Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]))).annotate(
-        content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
-        user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
-        user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
-        auction                     = Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]))
-    
-    chats = chats.filter(status_estimation_id__gte = 2)
-    chats = chats.annotate(rlk = Subquery(subqyery_message_rlk.values('pk')[:1]))[:1] 
+        type_estimation_ocenka=Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1]),
+        car_year=Subquery(subqyery_reg_interactiv.values('estimation__year')[:1]),
+        car_prev_img=Subquery(subqyery_reg_interactiv.values('prev_img')[:1]),
+        car_run=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]),
+        ),
+        unit_name=Subquery(subqyery_reg_interactiv.values('unit__name')[:1]),
+        unit_name_dc=Subquery(subqyery_reg_interactiv.values('unit__id')[:1]),
+        status_estimation=Subquery(subqyery_reg_interactiv.values('status__name')[:1]),
+        status_estimation_id=Subquery(subqyery_reg_interactiv.values('status__id')[:1]),
+        start_estimation=Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1]),
+        end_estimation=Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1]),
+        staff_estimation_name=Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]),
+        staff_estimation=Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1]),
+        soglasovanie_price_reception=Subquery(
+            subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]
+        ),
+        car_price_before_kd=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1]),
+        car_price_after_kd=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1]),
+        car_price_reception=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]),
+        ),
+        car_price_sale=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]),
+        ),
+        car_price_bcp=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1]),
+        rlk_date=Subquery(subqyery_message_rlk.values('dataTime')[:1]),
+        rlk_number=Subquery(subqyery_message_rlk.values('nomer')[:1]),
+        rlk_unit=Coalesce(
+            Subquery(subqyery_message_rlk.values('unit__name')[:1]),
+            Subquery(subqyery_reg_interactiv.values('unit__name')[:1]),
+        ),
+        rlk_unit_dc=Subquery(subqyery_message_rlk.values('unit_dc__name')[:1]),
+        vin=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]),
+        ),
+        mark=Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1]),
+        model=Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1]),
+        modification=Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1]),
+        staff_name=Coalesce(
+            Subquery(subqyery_message_rlk.values('staff__name')[:1]),
+            Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]),
+        ),
+        content=Subquery(subqyery_message_info.values('content')[:1]),
+        user_name=Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1]),
+        user_content=Subquery(subqyery_message_info.values('user')[:1]),
+        eco=Subquery(subqyery_message_info.values('user__profiles__eco')[:1]),
+        auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
+        kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
+    )
+
+    chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))[:1]
 
     return JsonResponse(list(chats.values()), safe=False, status=status.HTTP_200_OK)
-
 
 def get_users_list_online(request, id):
     search = request.GET.get('search', '')
@@ -2311,87 +2327,262 @@ def get_users_list_online(request, id):
 
 
 def get_chats_list_online(request):
-    
-    filtr_search                = request.GET.get('search', '')
-    filtr_vin                   = request.GET.get('vin', '')
-    page                        = int(request.GET.get('page', '1')) - 1
 
-    
-    chats                   = Chat.objects.all()
-    subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk = OuterRef(name = 'rlk_id'))
-    # subqyery_reg_interactiv = subqyery_reg_interactiv.annotate()
-    subqyery_message_rlk    = DocRLK.objects.filter(id = OuterRef(name = 'rlk_id'))
-    subqyery_message_info   = ChatMessage.objects.filter(chat_id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
-    subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
-    chats = chats.annotate(max_date = subqyery_message)
-    chats = chats.order_by('-max_date')
-    chats = chats.exclude(max_date = None)
-    
-    # Количество РЛК, в которых используется та же оценка (по RegInteractivOcenkaRLK.estimation)
+    filtr_search = request.GET.get('search', '').strip()
+    filtr_vin = request.GET.get('vin', '').strip()
+    page = int(request.GET.get('page', '1')) - 1
+
+    # --- 1) Лёгкий этап: дата последнего сообщения + отбор чатов без тяжёлых аннотаций ---
+    last_msg_date_sq = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('id'))
+        .order_by('-date')
+        .values('date')[:1]
+    )
+
+    chats_base = Chat.objects.annotate(max_date=last_msg_date_sq).exclude(max_date=None)
+
+    # Статус оценки >= 2 до тяжёлых полей
+    chats_base = chats_base.filter(
+        Exists(
+            RegInteractivOcenkaRLK.objects.filter(
+                rlk_id=OuterRef('rlk_id'),
+                status_id__gte=2,
+            )
+        )
+    )
+
+    if filtr_vin != '':
+        vin_q = (
+            Q(estimation__vin__icontains=filtr_vin)
+            | Q(estimation__number_body__icontains=filtr_vin)
+        )
+        chats_base = chats_base.filter(
+            Exists(
+                RegInteractivOcenkaRLK.objects.filter(
+                    rlk_id=OuterRef('rlk_id'),
+                    status_id__gte=2,
+                ).filter(vin_q)
+            )
+        )
+
+    if filtr_search != '':
+        s = filtr_search
+        search_q = (
+            Q(estimation__modification__model__mark__name__icontains=s)
+            | Q(estimation__modification__model__name__icontains=s)
+            | Q(estimation__modification__name__icontains=s)
+        )
+        chats_base = chats_base.filter(
+            Exists(
+                RegInteractivOcenkaRLK.objects.filter(
+                    rlk_id=OuterRef('rlk_id'),
+                    status_id__gte=2,
+                ).filter(search_q)
+            )
+        )
+
+    chats_base = chats_base.order_by('-max_date')
+
+    start = 30 * page
+    end = start + 30
+
+    page_ids = list(chats_base.values_list('id', flat=True)[start:end])
+
+    if not page_ids:
+        return JsonResponse([], safe=False, status=status.HTTP_200_OK)
+
+    # Порядок как на странице (после id__in порядок не гарантирован)
+    _page_order = Case(
+        *[When(pk=pk, then=Value(i)) for i, pk in enumerate(page_ids)],
+        output_field=IntegerField(),
+    )
+
+    # --- 2) Тяжёлый этап: только для 30 чатов ---
+    subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk=OuterRef('rlk_id'))
+    subqyery_message_rlk = DocRLK.objects.filter(id=OuterRef('rlk_id'))
+
+    last_msg_date_sq2 = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('id'))
+        .order_by('-date')
+        .values('date')[:1]
+    )
+
+    subqyery_message_info = ChatMessage.objects.filter(chat_id=OuterRef('id')).filter(
+        date=OuterRef('max_date')
+    )
+
     subq_estimation_id = RegInteractivOcenkaRLK.objects.filter(
         rlk_id=OuterRef('rlk_id')
     ).values('estimation_id')[:1]
-    # Сначала аннотируем чат estimation_id, затем считаем по нему — так корреляция в подзапросе одна
+
+    subq_rlk_count = (
+        RegInteractivOcenkaRLK.objects.filter(estimation_id=OuterRef('_estimation_id'))
+        .values('estimation_id')
+        .annotate(cnt=Count('id'))
+        .values('cnt')[:1]
+    )
+
+    chats = (
+        Chat.objects.filter(id__in=page_ids)
+        .annotate(max_date=last_msg_date_sq2)
+        .annotate(_page_order=_page_order)
+        .order_by('_page_order')
+    )
+
     chats = chats.annotate(_estimation_id=Subquery(subq_estimation_id))
-    subq_rlk_count = RegInteractivOcenkaRLK.objects.filter(
-        estimation_id=OuterRef('_estimation_id')
-    ).values('estimation_id').annotate(cnt=Count('id')).values('cnt')[:1]
     chats = chats.annotate(
         estimation_rlk_count=Coalesce(
             Subquery(subq_rlk_count),
             Value(0),
-            output_field=IntegerField()
+            output_field=IntegerField(),
         )
     )
-        
+
     chats = chats.annotate(
-        type_estimation_ocenka          = Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1])).annotate(
-        car_year                        = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
-        car_prev_img                    = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
-        car_run                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]))).annotate(    
-        unit_name                       = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
-        unit_name_dc                    = Coalesce(Subquery(subqyery_reg_interactiv.values('unit__id')[:1]), Subquery(subqyery_reg_interactiv.values('unit__id')[:1]))).annotate(
-        status_estimation               = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
-        status_estimation_id            = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
-        start_estimation                = Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1])).annotate(
-        end_estimation                  = Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1])).annotate(
-        staff_estimation_name           = Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1])).annotate(
-        staff_estimation                = Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1])).annotate(            
-        soglasovanie_price_reception = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1])).annotate(                       
-        car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
-        car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
-        car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]))).annotate(                       
-        car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]))).annotate(                       
-        car_price_bcp               = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
-        rlk_date                    = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
-        rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
-        rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
-        rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
-        vin                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]))).annotate(
-        mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
-        model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
-        modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(
-        staff_name                  = Coalesce(Subquery(subqyery_message_rlk.values('staff__name')[:1]), Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]))).annotate(
-        content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
-        user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
-        user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
-        eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
-        auction                     = Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]))
-    
-    chats = chats.filter(status_estimation_id__gte = 2)
-    
-    if filtr_vin != '':
-        chats = chats.filter(vin__icontains = filtr_vin)
+        type_estimation_ocenka=Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1]),
+        car_year=Subquery(subqyery_reg_interactiv.values('estimation__year')[:1]),
+        car_prev_img=Subquery(subqyery_reg_interactiv.values('prev_img')[:1]),
+        car_run=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]),
+        ),
+        unit_name=Subquery(subqyery_reg_interactiv.values('unit__name')[:1]),
+        unit_name_dc=Subquery(subqyery_reg_interactiv.values('unit__id')[:1]),
+        status_estimation=Subquery(subqyery_reg_interactiv.values('status__name')[:1]),
+        status_estimation_id=Subquery(subqyery_reg_interactiv.values('status__id')[:1]),
+        start_estimation=Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1]),
+        end_estimation=Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1]),
+        staff_estimation_name=Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]),
+        staff_estimation=Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1]),
+        soglasovanie_price_reception=Subquery(
+            subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]
+        ),
+        car_price_before_kd=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1]),
+        car_price_after_kd=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1]),
+        car_price_reception=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]),
+        ),
+        car_price_sale=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]),
+        ),
+        car_price_bcp=Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1]),
+        rlk_date=Subquery(subqyery_message_rlk.values('dataTime')[:1]),
+        rlk_number=Subquery(subqyery_message_rlk.values('nomer')[:1]),
+        rlk_unit=Coalesce(
+            Subquery(subqyery_message_rlk.values('unit__name')[:1]),
+            Subquery(subqyery_reg_interactiv.values('unit__name')[:1]),
+        ),
+        rlk_unit_dc=Subquery(subqyery_message_rlk.values('unit_dc__name')[:1]),
+        vin=Coalesce(
+            Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]),
+            Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]),
+        ),
+        mark=Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1]),
+        model=Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1]),
+        modification=Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1]),
+        staff_name=Coalesce(
+            Subquery(subqyery_message_rlk.values('staff__name')[:1]),
+            Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]),
+        ),
+        content=Subquery(subqyery_message_info.values('content')[:1]),
+        user_name=Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1]),
+        user_content=Subquery(subqyery_message_info.values('user')[:1]),
+        eco=Subquery(subqyery_message_info.values('user__profiles__eco')[:1]),
+        auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
+        kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
+    )
 
-    if filtr_search != '':
-        chats = chats.filter(mark__icontains = filtr_search) | chats.filter(model__icontains = filtr_search) | chats.filter(modification__icontains = filtr_search)
+    chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))
+
+    rows = list(chats.values())
+    for row in rows:
+        row.pop('_page_order', None)
+
+    return JsonResponse(rows, safe=False, status=status.HTTP_200_OK)
+
+
+# def get_chats_list_online(request):
     
-    start   = 0 + (30 * page)
-    end     = 30 + (30 * page)
+#     filtr_search                = request.GET.get('search', '')
+#     filtr_vin                   = request.GET.get('vin', '')
+#     page                        = int(request.GET.get('page', '1')) - 1
 
-    chats = chats.annotate(rlk = Subquery(subqyery_message_rlk.values('pk')[:1]))[start:end] 
+    
+#     chats                   = Chat.objects.all()
+#     subqyery_reg_interactiv = RegInteractivOcenkaRLK.objects.filter(rlk = OuterRef(name = 'rlk_id'))
+#     # subqyery_reg_interactiv = subqyery_reg_interactiv.annotate()
+#     subqyery_message_rlk    = DocRLK.objects.filter(id = OuterRef(name = 'rlk_id'))
+#     subqyery_message_info   = ChatMessage.objects.filter(chat_id = OuterRef(name = 'id')).filter(date = OuterRef(name = 'max_date'))
+#     subqyery_message        = Subquery(ChatMessage.objects.filter(chat__id = OuterRef(name = 'id')).annotate(max_date = Max('date')).order_by('-max_date').values('max_date')[:1])
+#     chats = chats.annotate(max_date = subqyery_message)
+#     chats = chats.order_by('-max_date')
+#     chats = chats.exclude(max_date = None)
+    
+#     # Количество РЛК, в которых используется та же оценка (по RegInteractivOcenkaRLK.estimation)
+#     subq_estimation_id = RegInteractivOcenkaRLK.objects.filter(
+#         rlk_id=OuterRef('rlk_id')
+#     ).values('estimation_id')[:1]
+#     # Сначала аннотируем чат estimation_id, затем считаем по нему — так корреляция в подзапросе одна
+#     chats = chats.annotate(_estimation_id=Subquery(subq_estimation_id))
+#     subq_rlk_count = RegInteractivOcenkaRLK.objects.filter(
+#         estimation_id=OuterRef('_estimation_id')
+#     ).values('estimation_id').annotate(cnt=Count('id')).values('cnt')[:1]
+#     chats = chats.annotate(
+#         estimation_rlk_count=Coalesce(
+#             Subquery(subq_rlk_count),
+#             Value(0),
+#             output_field=IntegerField()
+#         )
+#     )
+        
+#     chats = chats.annotate(
+#         type_estimation_ocenka          = Subquery(subqyery_reg_interactiv.values('type_reception__name')[:1])).annotate(
+#         car_year                        = Subquery(subqyery_reg_interactiv.values('estimation__year')[:1])).annotate( 
+#         car_run                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__page_salon__run')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__run')[:1]))).annotate(    
+#         unit_name                       = Subquery(subqyery_reg_interactiv.values('unit__name')[:1])).annotate(
+#         unit_name_dc                    = Subquery(subqyery_reg_interactiv.values('unit__id')[:1])).annotate(
+#         status_estimation               = Subquery(subqyery_reg_interactiv.values('status__name')[:1])).annotate(
+#         status_estimation_id            = Subquery(subqyery_reg_interactiv.values('status__id')[:1])).annotate(
+#         start_estimation                = Subquery(subqyery_reg_interactiv.values('estimation__start_estimation')[:1])).annotate(
+#         end_estimation                  = Subquery(subqyery_reg_interactiv.values('estimation__end_estimation')[:1])).annotate(
+#         staff_estimation_name           = Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1])).annotate(
+#         staff_estimation                = Subquery(subqyery_reg_interactiv.values('staff_rlk')[:1])).annotate(            
+#         car_price_before_kd         = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_before_kd')[:1])).annotate(                       
+#         car_price_after_kd          = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_after_kd')[:1])).annotate(                       
+#         car_price_reception         = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_reception')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_reception')[:1]))).annotate(                       
+#         car_price_sale              = Coalesce(Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_sale')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__page_remote__price_sale')[:1]))).annotate(                       
+#         car_price_bcp               = Subquery(subqyery_reg_interactiv.values('page_soglasovanie__price_bcp')[:1])).annotate(                       
+#         rlk_date                    = Subquery(subqyery_message_rlk.values('dataTime')[:1])).annotate(    
+#         rlk_number                  = Subquery(subqyery_message_rlk.values('nomer')[:1])).annotate(    
+#         rlk_unit                    = Coalesce(Subquery(subqyery_message_rlk.values('unit__name')[:1]), Subquery(subqyery_reg_interactiv.values('unit__name')[:1]))).annotate(
+#         rlk_unit_dc                 = Subquery(subqyery_message_rlk.values('unit_dc__name')[:1])).annotate(
+#         vin                         = Coalesce(Subquery(subqyery_reg_interactiv.values('estimation__vin')[:1]), Subquery(subqyery_reg_interactiv.values('estimation__number_body')[:1]))).annotate(
+#         mark                        = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__mark__name')[:1])).annotate(
+#         model                       = Subquery(subqyery_reg_interactiv.values('estimation__modification__model__name')[:1])).annotate(
+#         modification                = Subquery(subqyery_reg_interactiv.values('estimation__modification__name')[:1])).annotate(
+#         staff_name                  = Coalesce(Subquery(subqyery_message_rlk.values('staff__name')[:1]), Subquery(subqyery_reg_interactiv.values('staff_rlk__name')[:1]))).annotate(
+#         content                     = Subquery(subqyery_message_info.values('content')[:1])).annotate(
+#         user_name                   = Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1])).annotate(
+#         user_content                = Subquery(subqyery_message_info.values('user')[:1])).annotate(
+#         eco                         = Subquery(subqyery_message_info.values('user__profiles__eco')[:1])).annotate(
+#         auction                     = Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]))
+    
+#     chats = chats.filter(status_estimation_id__gte = 2)
+    
+#     if filtr_vin != '':
+#         chats = chats.filter(vin__icontains = filtr_vin)
 
-    return JsonResponse(list(chats.values()), safe=False, status=status.HTTP_200_OK)
+#     if filtr_search != '':
+#         chats = chats.filter(Q(mark__icontains = filtr_search) | Q(model__icontains = filtr_search) | Q(modification__icontains = filtr_search))
+    
+#     start   = 0 + (30 * page)
+#     end     = 30 + (30 * page)
+
+#     chats = chats.annotate(rlk = Subquery(subqyery_message_rlk.values('pk')[:1]))[start:end] 
+
+#     return JsonResponse(list(chats.values()), safe=False, status=status.HTTP_200_OK)
 
 
 def list_eco_online(request):
@@ -12540,16 +12731,16 @@ def _process_funnel_filters(date_start, date_end, report_type, unit_source_ids, 
     )
     
     totals_agg = qs.aggregate(
-        total_rlk=Count('rlk_id', filter=valid_date_rlk),
-        total_before=Count('rlk_id', filter=valid_date_before | valid_date_remote),
-        total_after=Count('rlk_id', filter=valid_date_after),
+        total_rlk=Count('rlk_uin', filter=valid_date_rlk, distinct=True),
+        total_before=Count('rlk_uin', filter=valid_date_before | valid_date_remote, distinct=True),
+        total_after=Count('rlk_uin', filter=valid_date_after, distinct=True),
         total_reception=Count('rlk_id', filter=valid_date_reception),
         total_reception_without_interactive=Count('rlk_id', filter=reception_without_interactive),
-        total_taxi=Count('rlk_id', filter=Q(taxi=True)),
-        total_carsharing=Count('rlk_id', filter=Q(carsharing=True)),
-        total_iznos=Count('rlk_id', filter=Q(iznos=True)),
-        total_auction=Count('rlk_id', filter=Q(auction=True)),
-        total_no_diag=Count('rlk_id', filter=Q(diagostica=False) & valid_date_after),
+        total_taxi=Count('rlk_uin', filter=Q(taxi=True), distinct=True),
+        total_carsharing=Count('rlk_uin', filter=Q(carsharing=True), distinct=True),
+        total_iznos=Count('rlk_uin', filter=Q(iznos=True), distinct=True),
+        total_auction=Count('rlk_uin', filter=Q(auction=True), distinct=True),
+        total_no_diag=Count('rlk_uin', filter=Q(diagostica=False) & valid_date_after, distinct=True),
         total_all=Count('rlk_id'),
     )
     

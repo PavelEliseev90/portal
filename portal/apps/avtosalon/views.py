@@ -810,6 +810,7 @@ def disposition_get_models(request):
 
 
 def car(request, slug):
+    
     # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для всех связанных объектов
     car = RefCarsOrganization.objects.select_related(
         'modification_autoru',
@@ -833,10 +834,20 @@ def car(request, slug):
         'refcarsorganizationfiles_set'
     ).get(slug=slug)
     
-    add_statistic_cars_organization(cars=car, store=car.store, type=1)
+    qr = request.GET.get('q', '')
+    
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
+    
+    if qr != '':
+        add_statistic_cars_organization(user, cars=car, store=car.store, type=4)
+    else:
+        add_statistic_cars_organization(user, cars=car, store=car.store, type=1)
+    
     
     # Генерация QR-кода со ссылкой на страницу автомобиля
-    car_url = request.build_absolute_uri(f'/cars/{car.slug}/')
+    car_url = request.build_absolute_uri(f'/cars/{car.slug}/?q=1')
     qr_code_image = qrcode.make(car_url)
     buffer = io.BytesIO()
     qr_code_image.save(buffer, format="PNG")
@@ -851,13 +862,19 @@ def car(request, slug):
         'groupprices'   : RefGroupPrice.objects.only('id', 'name').order_by('name'),
         'ratings'       : RefRatingCarsOrganization.objects.only('id', 'name').order_by('name'), 
     }
+    tasks_count = 0
+    tasks_new_count = 0
+    tasks_in_progress_count = 0
 
-    # Подсчет задач по автомобилю
-    tasks_count = RegCarsOrganizationTask.objects.filter(car=car).count()
-    tasks_new_count = RegCarsOrganizationTask.objects.filter(car=car, status='new').count()
-    tasks_in_progress_count = RegCarsOrganizationTask.objects.filter(car=car, status='in_progress').count()
+    if not request.user.is_authenticated:
+        if request.user.is_staff:
+            # Подсчет задач по автомобилю
+            tasks_count = RegCarsOrganizationTask.objects.filter(car=car).count()
+            tasks_new_count = RegCarsOrganizationTask.objects.filter(car=car, status='new').count()
+            tasks_in_progress_count = RegCarsOrganizationTask.objects.filter(car=car, status='in_progress').count()
     
     params = {
+        'user'          : user,
         'object'        : car,
         'selected'      : selected,
         'qr_code'       : qr_code_base64,

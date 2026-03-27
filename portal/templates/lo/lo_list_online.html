@@ -9,27 +9,29 @@
 {% block content %}
 
 
-<div class="row g-1 align-self-center">
+<div class="row g-1 align-self-center" style="margin-bottom: 0.2rem;">
   
   <div class="col-sm">
                 
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="">
+    <div class="form-floating position-relative">
+      <input class="form-control form-control-sm pe-5" type="text" id="vin" name="vin" value="{{params.filtr.vin}}" autocomplete="">
       <label for="floatingInput">VIN / Номер кузова</label>
+      <button type="button" class="btn btn-sm btn-outline-secondary position-absolute end-0 top-50 translate-middle-y" id="btn_clear_vin" aria-label="Очистить VIN" style="padding: 0.15rem 0.45rem; border-radius:50%; margin-right: 0.5rem;">×</button>
     </div>
 
   </div>
   
   <div class="col">
     
-    <div class="form-floating mb-3">
-      <input class="form-control form-control-sm" type="text" id="search" name="search" value="{{params.filtr.search}}">
+    <div class="form-floating position-relative">
+      <input class="form-control form-control-sm pe-5" type="text" id="search" name="search" value="{{params.filtr.search}}">
       <label for="floatingInput">Марка, Модель, Модификация</label>
+      <button type="button" class="btn btn-sm btn-outline-secondary position-absolute end-0 top-50 translate-middle-y " id="btn_clear_search" aria-label="Очистить поиск" style="padding: 0.15rem 0.45rem; border-radius:50%; margin-right: 0.5rem;">×</button>
     </div>
 
   </div>
   
-  <div class="col-auto align-items-center ">
+  <div class="col-auto align-self-center h-100">
     <button class="btn btn-outline-dark justify-content-center" id="btn_start_search"><span class="icon-mbri-play" > </span></button>
   </div>
 
@@ -66,9 +68,9 @@ z-index: 1044;">
     <hr>
 </div>
 
-<div class="offcanvas-body">
+<div class="offcanvas-body" style="padding: 0rem;">
     <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
-        <div class="container">
+        <div class="container" style="padding: 0rem;">
         
             <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
                 
@@ -76,8 +78,8 @@ z-index: 1044;">
                     
                     {% for message in params.chats %}
                         <a href="{{message.name}}/" class="text-dark">
-                            <div class="item-chat-message{% if message.user == params.user %}-owner text-end{% endif %} col-12">
-                                <div class="item-chat-body{% if message.user == params.user %}-owner text-end{% endif %} " >
+                            <div class="item-chat-message-owner col-12">
+                                <div class="item-chat-body-owner" >
                                     
                                     <div class="item-content-chat">
                                         <label class="item-subtitle">
@@ -90,7 +92,7 @@ z-index: 1044;">
                                         <hr>                                  
                                     </div>
                                     
-                                    <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} id='chat_m_id_{{message.id}}'">{{message.content}} <br> {{message.max_date}}</p>
+                                    <p class="text-muted item-time-chat{% if message.user == params.user %}-owner text-end{% endif %} id='chat_m_id_{{message.id}}'">{{message.content}} <br> {{message.max_date}}</p>
                                     
                                 </div>
                             </div>
@@ -182,6 +184,55 @@ z-index: 1044;">
 	<img src="/media/loading.gif" alt="">
 </div>
 
+<style>
+  /* Animated loading plate for infinite-scroll trigger */
+  #showmore-triger{
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 10px;
+    background: #00529650;
+    border-radius: 0.5rem;
+    min-height: 46px;
+  }
+  #showmore-triger img{
+    position: relative;
+    z-index: 2;
+  }
+  #showmore-triger::after{
+    content: "";
+    position: absolute;
+    top: -40%;
+    left: -60%;
+    width: 55%;
+    height: 180%;
+    transform: rotate(18deg);
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.55) 50%,
+      rgba(255,255,255,0) 100%
+    );
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0; /* включаем только во время загрузки */
+  }
+  #showmore-triger.is-loading::after{
+    opacity: 1;
+    animation: showmoreShimmer 1.05s ease-in-out infinite;
+  }
+  @keyframes showmoreShimmer{
+    0%   { left: -70%; opacity: .0; }
+    15%  { opacity: .9; }
+    50%  { opacity: .55; }
+    85%  { opacity: .9; }
+    100% { left: 120%; opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #showmore-triger.is-loading::after{ animation: none; }
+  }
+</style>
+
 <audio id="notif" src="/media_dop/music/vin.mp3"></audio>
 
    <script type="text/javascript">
@@ -202,10 +253,28 @@ z-index: 1044;">
       
       page = 1;
       
+      // При новом поиске сбрасываем infinite-scroll
+      var $target = $('#showmore-triger');
+      $target.attr('data-page', 1);
+      $target.show();
+      
       document.querySelector('#list_estimations').innerHTML = '';    
+      // Чтобы при фильтре список сообщений соответствовал выдаче
+      document.querySelector('#message-list').innerHTML = '';
       
       refresh_data_online(); 
 
+    });
+
+    // Кнопки очистки фильтров
+    $('#btn_clear_vin').click(function() {
+      $('#vin').val('');
+      $('#btn_start_search').trigger('click');
+    });
+
+    $('#btn_clear_search').click(function() {
+      $('#search').val('');
+      $('#btn_start_search').trigger('click');
     });
 
     function refresh_data_online(){
@@ -215,9 +284,41 @@ z-index: 1044;">
         
         var url     = 'js/get_chats_list_online/?search=' + search + '&vin='+vin + '&page='+page;
 
+        // На время запроса показываем плашку и включаем shimmer-анимацию
+        var $target = $('#showmore-triger');
+        $target.addClass('is-loading').show();
+
         $.get(url, function( data, status ) { 
             
             let i = data.length;
+            // Если вернули меньше лимита на страницу — дальше догружать нечего
+            const PAGE_SIZE = 30;
+            if (i < PAGE_SIZE) {
+              $target.hide();
+            } else {
+              $target.show();
+            }
+
+            // Плашка "Нет данных по фильтру поиска" при пустом результате
+            // (показываем только если реально был задан фильтр: search или vin)
+            if (page === 1 && i === 0) {
+              var searchTrim = (search || '').trim();
+              var vinTrim = (vin || '').trim();
+              if (searchTrim.length > 0 || vinTrim.length > 0) {
+                const noDataId = 'no-data-by-filter';
+                const existing = document.getElementById(noDataId);
+                if (existing) existing.remove();
+
+                document.querySelector('#list_estimations').innerHTML =
+                  '<div id="' + noDataId + '" class="alert alert-light border text-center my-2" style="border-radius:12px;">'
+                  + '  <div class="fw-bold">Нет данных по фильтру поиска</div>'
+                  + '  <div class="text-muted" style="font-size:0.9rem;">Попробуйте изменить условия.</div>'
+                  + '</div>';
+
+                document.querySelector('#message-list').innerHTML = '';
+                return;
+              }
+            }
             da = data;
             for (s = 0; s < i; s++) { 
                 
@@ -314,7 +415,10 @@ z-index: 1044;">
                 if ( obj.car_price_sale != null){
                   car_price_sale = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_sale,);
                 }
-                
+                var visible_red = '';
+                if (obj.eco == false){
+                  visible_red = "-red";  
+                };
                 var visible_badge = " d-none ";
                 if (obj.eco == false){
                   visible_badge = "";  
@@ -324,11 +428,14 @@ z-index: 1044;">
                 if (obj.auction){
                   auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
                 };
-                estimation_rlk_count = ''
+                estimation_rlk_count = '';
                 if (obj.estimation_rlk_count > 1){
                   estimation_rlk_count = '<span class="badge bg-success rounded-pill justify-content-end">E ' + obj.estimation_rlk_count + '</span>';
                 };
-                
+                kolesa2_estimation = '';
+                if (obj.kolesa2_estimation == 1){
+                  kolesa2_estimation = '<span class="badge bg-success rounded-pill justify-content-end">2КК</span>';
+                };
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -359,6 +466,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=             kolesa2_estimation;
                 html +=             estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
                 html += '          ';
@@ -393,13 +501,14 @@ z-index: 1044;">
                 var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
 
                 html_list = '<a id="chat_list_data_' + id + '" href="' + obj.name + '/" target="_blank" class="text-dark" style="padding:0">'
-                html_list += '   <div class="item-chat-message col-12">'
-                html_list += '                <div class="item-chat-body " >'
-                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p><hr style="margin:0.1rem;"><p class="item-time-chat" style="margin:0.1rem;">' + unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
+                html_list += '   <div class="item-chat-message-owner' + visible_red + ' col-12">'
+                html_list += '                <div class="item-chat-body-owner' + visible_red + '" >'
+                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
                 html_list += '                    <div class="item-content-chat" style="margin:0.1rem;">'
-                html_list += '                        <hr style="margin:0.1rem;"> <label class="fs-6 item-subtitle">'
+                html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
+                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>' 
                 html_list += '                                                        '
                 html_list += '                    </div>'
                 html_list += '                </div>'
@@ -410,6 +519,8 @@ z-index: 1044;">
 
             }; 
             
+	    }).always(function () {
+	      $('#showmore-triger').removeClass('is-loading');
 	    })
 
     }
@@ -477,6 +588,13 @@ z-index: 1044;">
             
             let i = data.length;
             da = data;
+            
+            var search = ($("#search").val() || '').trim().toLowerCase();
+            var vin = ($("#vin").val() || '').trim().toLowerCase();
+            
+            function includesCI(value, query){
+              return (value || '').toString().toLowerCase().includes(query);
+            }
             for (s = 0; s < i; s++) { 
                 
                 let obj = data[s];
@@ -510,6 +628,20 @@ z-index: 1044;">
                     mark = '---';
                     model = '';
                     modification = '';
+                }
+
+                // Для отфильтрованной витрины список обновляем только если запись подходит по фильтрам.
+                // Сообщения (message-list) добавляем всегда.
+                var includeInList = true;
+                if (vin.length > 0) {
+                  includeInList = includeInList && includesCI(obj.vin, vin);
+                }
+                if (search.length > 0) {
+                  includeInList = includeInList && (
+                    includesCI(mark, search) ||
+                    includesCI(model, search) ||
+                    includesCI(modification, search)
+                  );
                 }
 
                 var h_status_estimation_id = ' border_blue ';
@@ -577,6 +709,10 @@ z-index: 1044;">
                 if (obj.estimation_rlk_count > 1){
                   estimation_rlk_count = '<span class="badge bg-success rounded-pill justify-content-end">E ' + obj.estimation_rlk_count + '</span>';
                 };
+                kolesa2_estimation = '';
+                if (obj.kolesa2_estimation == 1){
+                  kolesa2_estimation = '<span class="badge bg-success rounded-pill justify-content-end">2КК</span>';
+                };
 
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
@@ -607,6 +743,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=                  kolesa2_estimation;
                 html +=                  estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
                 html += '          ';
@@ -621,8 +758,10 @@ z-index: 1044;">
                 html += '  </div></div>  ';
                 html += '';
 
-                var html_before = document.querySelector('#list_estimations').innerHTML;
-                document.querySelector('#list_estimations').innerHTML = html + html_before;
+                if (includeInList) {
+                  var html_before = document.querySelector('#list_estimations').innerHTML;
+                  document.querySelector('#list_estimations').innerHTML = html + html_before;
+                }
 
                 
                 var html = '';
@@ -642,8 +781,8 @@ z-index: 1044;">
                 var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
 
                 html_list = '<a id="chat_list_data_' + id + '" href="' + obj.name + '/" target="_blank" class="text-dark" style="padding:0">'
-                html_list += '   <div class="item-chat-message col-12">'
-                html_list += '                <div class="item-chat-body " >'
+                html_list += '   <div class="item-chat-message-owner col-12">'
+                html_list += '                <div class="item-chat-body-owner" >'
                 html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + '</p><hr style="margin:0.1rem;"><p class="item-time-chat" style="margin:0.1rem;">' + obj.rlk_unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
                 html_list += '                    <div class="item-content-chat" style="margin:0.1rem;">'
                 html_list += '                        <hr style="margin:0.1rem;"> <label class="fs-6 item-subtitle">'
@@ -781,6 +920,7 @@ z-index: 1044;">
     function scrollMore(){
       
       var $target = $('#showmore-triger');
+      if ($target.is(':hidden')) return;
       
    
       var wt = $(window).scrollTop();
