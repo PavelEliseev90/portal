@@ -96,9 +96,10 @@ class PersonalDataConsent(models.Model):
     user_agent = models.TextField("User Agent", default='', blank=True)
     
     # Статус
-    confirmed = models.BooleanField("Подтверждено", default=False)
-    revoked = models.BooleanField("Отозвано", default=False)
-    date_revoked = models.DateTimeField("Дата и время отзыва", null=True, blank=True)
+    confirmed       = models.BooleanField("Подтверждено", default=False)
+    promotional     = models.BooleanField("Согласие на рассылку", default=False)
+    revoked         = models.BooleanField("Отозвано", default=False)
+    date_revoked    = models.DateTimeField("Дата и время отзыва", null=True, blank=True)
     
     # Юридический текст согласия (для хранения версии на момент подтверждения)
     consent_text = models.TextField("Текст согласия", default='', blank=True)

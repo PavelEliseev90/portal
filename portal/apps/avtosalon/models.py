@@ -452,3 +452,59 @@ class CarsWarehouseShowcase(models.Model):
         ]
 
 
+class SmsAuthSession(models.Model):
+    phone = models.CharField("Телефон (как введен)", max_length=32, default="", blank=True)
+    phone_normalized = models.CharField("Телефон (нормализованный)", max_length=16, db_index=True)
+    code_hash = models.CharField("Хэш кода", max_length=255, default="", blank=True)
+
+    car = models.ForeignKey(
+        RefCarsOrganization,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Автомобиль",
+        related_name="sms_auth_sessions",
+    )
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Пользователь",
+        related_name="sms_auth_sessions",
+    )
+
+    is_verified = models.BooleanField("Код подтвержден", default=False)
+    attempts_count = models.IntegerField("Количество попыток ввода", default=0)
+    max_attempts = models.IntegerField("Максимум попыток ввода", default=5)
+
+    consent_personal_data = models.BooleanField("Согласие на ПДн", default=False)
+    consent_personal_data_at = models.DateTimeField("Время согласия ПДн", null=True, blank=True)
+    consent_personal_data_ip = models.GenericIPAddressField("IP согласия ПДн", null=True, blank=True)
+
+    consent_ads = models.BooleanField("Согласие на рекламные рассылки", default=False)
+    consent_ads_at = models.DateTimeField("Время согласия на рассылки", null=True, blank=True)
+    consent_ads_ip = models.GenericIPAddressField("IP согласия на рассылки", null=True, blank=True)
+
+    created_at = models.DateTimeField("Создано", default=datetime.now)
+    code_sent_at = models.DateTimeField("Код отправлен", null=True, blank=True)
+    code_expires_at = models.DateTimeField("Код действует до", null=True, blank=True)
+    verified_at = models.DateTimeField("Код подтвержден в", null=True, blank=True)
+
+    request_ip = models.GenericIPAddressField("IP запроса", null=True, blank=True)
+    request_user_agent = models.TextField("User-Agent", default="", blank=True)
+
+    def __str__(self):
+        return f"{self.phone_normalized} / {'verified' if self.is_verified else 'pending'}"
+
+    class Meta:
+        db_table = "sms_auth_session"
+        verbose_name = "SMS авторизация"
+        verbose_name_plural = "SMS авторизации"
+        indexes = [
+            models.Index(fields=["phone_normalized"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["is_verified"]),
+        ]
+
+
