@@ -319,7 +319,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS   = 10240
 
 # SMS авторизация (car_new)
 # Доступные провайдеры: 'smsru', 'easysms'
-SMS_AUTH_PROVIDER = os.getenv('SMS_AUTH_PROVIDER', 'smsru')
+SMS_AUTH_PROVIDER = os.getenv('SMS_AUTH_PROVIDER', 'easysms')
 
 # SMS.ru
 SMSRU_API_ID = os.getenv('SMSRU_API_ID', '')
@@ -329,7 +329,7 @@ EASY_SMS_BASE_URL = os.getenv('EASY_SMS_BASE_URL', 'https://xml.smstec.ru')
 EASY_SMS_LOGIN = os.getenv('EASY_SMS_LOGIN', 'KORS_Group_osn')
 EASY_SMS_PASSWORD = os.getenv('EASY_SMS_PASSWORD', 'YmXbwAJF')
 EASY_SMS_CONNECT_ID = os.getenv('EASY_SMS_CONNECT_ID', '3412')
-EASY_SMS_ORIGINATOR = os.getenv('EASY_SMS_ORIGINATOR', 'KORS-GROUP')
+EASY_SMS_ORIGINATOR = os.getenv('EASY_SMS_ORIGINATOR', 'kors-group')
 
 #+Настройка почтового ящика
 EMAIL_HOST = '192.168.168.100'
