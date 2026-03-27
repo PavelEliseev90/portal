@@ -1187,12 +1187,15 @@ def car(request, slug):
     tasks_new_count = 0
     tasks_in_progress_count = 0
 
-    if not request.user.is_authenticated:
-        if request.user.is_staff:
-            # Подсчет задач по автомобилю
-            tasks_count = RegCarsOrganizationTask.objects.filter(car=car).count()
-            tasks_new_count = RegCarsOrganizationTask.objects.filter(car=car, status='new').count()
-            tasks_in_progress_count = RegCarsOrganizationTask.objects.filter(car=car, status='in_progress').count()
+    if request.user.is_authenticated and request.user.is_staff:
+        # Подсчет задач по автомобилю для сотрудников
+        tasks_count = RegCarsOrganizationTask.objects.filter(car=car).count()
+        tasks_new_count = RegCarsOrganizationTask.objects.filter(car=car, status='new').count()
+        tasks_in_progress_count = RegCarsOrganizationTask.objects.filter(car=car, status='in_progress').count()
+
+    base_template = 'base_web_customer.html'
+    if request.user.is_authenticated and request.user.is_staff:
+        base_template = 'base_web.html'
     
     params = {
         'user'          : user,
@@ -1203,6 +1206,7 @@ def car(request, slug):
         'tasks_count'   : tasks_count,
         'tasks_new_count': tasks_new_count,
         'tasks_in_progress_count': tasks_in_progress_count,
+        'base_template': base_template,
     }
     
     return render(request, "avtosalon/car_new.html", {'params': params})    
@@ -1224,12 +1228,16 @@ def specifications(request, slug):
         'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'),
         
     }
+    base_template = 'base_web_customer.html'
+    if request.user.is_authenticated and request.user.is_staff:
+        base_template = 'base_web.html'
 
     params = {
         'object'            : car,
         'selected'          : selected,
         'specifications'    : specifications,
-        'complectations'    : complectations
+        'complectations'    : complectations,
+        'base_template'     : base_template,
     }
     
     return render(request, "avtosalon/car_new_specifications.html", {'params': params})
@@ -1568,6 +1576,7 @@ def price(request, slug):
         'calc_express': [],
         'calc_autohub': [],
         'calc_1C': [],
+        'base_template': 'base_web.html' if (request.user.is_authenticated and request.user.is_staff) else 'base_web_customer.html',
     }
 
     return render(request, "avtosalon/car_new_price.html", {'params': params})
