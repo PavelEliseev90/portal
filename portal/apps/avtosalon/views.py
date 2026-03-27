@@ -1,5 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.contrib.auth import login as dj_login
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password, check_password
 from refs.models import AutoruComplectation, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefTypeDrive
 from refs.models import RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
 from api.views_avtosalon import add_statistic_cars_organization
@@ -13,6 +17,7 @@ from email import header
 from itertools import product
 import requests
 import tempfile
+import random
 from django.db.models import Count, Sum, Max, Min, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, Case, When, FloatField, ExpressionWrapper, Exists, Prefetch
 from django.db.models.functions import Coalesce, Concat
 from django.utils import timezone
@@ -28,6 +33,10 @@ import qrcode
 import io
 import base64
 from chats.models import Chat, ChatMessage
+from profiles.models import Profiles
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.crypto import get_random_string
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
@@ -807,6 +816,318 @@ def disposition_get_models(request):
         return JsonResponse({'models': models_list})
     except Exception as e:
         return JsonResponse({'models': [], 'error': str(e)})
+
+
+def _get_request_ip(request):
+    ip_address = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+    if ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    return ip_address or None
+
+
+def _normalize_phone(phone):
+    digits = ''.join(ch for ch in str(phone or '') if ch.isdigit())
+    if len(digits) == 11 and digits.startswith('8'):
+        digits = '7' + digits[1:]
+    elif len(digits) == 10:
+        digits = '7' + digits
+    return digits
+
+
+def _send_sms_code(phone_normalized, code):
+    """
+    Реальная отправка SMS через провайдера из settings.
+    Поддерживаемые значения:
+    - SMS_AUTH_PROVIDER = 'smsru'
+      - SMSRU_API_ID = '...'
+    - SMS_AUTH_PROVIDER = 'easysms'
+      - EASY_SMS_LOGIN = '...'
+      - EASY_SMS_PASSWORD = '...'
+      - EASY_SMS_CONNECT_ID = '...'
+      - EASY_SMS_ORIGINATOR = '...'
+      - EASY_SMS_BASE_URL = 'https://xml.smstec.ru' (опционально)
+    """
+    provider = getattr(settings, 'SMS_AUTH_PROVIDER', 'smsru')
+    message = f"Код входа Kors Group: {code}. Никому не сообщайте."
+
+    if provider == 'smsru':
+        api_id = getattr(settings, 'SMSRU_API_ID', '')
+        if not api_id:
+            return False, "Не настроен ключ SMS-провайдера (SMSRU_API_ID)."
+
+        try:
+            response = requests.get(
+                'https://sms.ru/sms/send',
+                params={
+                    'api_id': api_id,
+                    'to': phone_normalized,
+                    'msg': message,
+                    'json': 1,
+                },
+                timeout=15,
+            )
+            data = response.json()
+            if str(data.get('status')) == 'OK':
+                return True, None
+            status_text = data.get('status_text') or 'Ошибка SMS-провайдера.'
+            return False, status_text
+        except Exception as ex:
+            return False, str(ex)
+
+    if provider == 'easysms':
+        login = getattr(settings, 'EASY_SMS_LOGIN', '')
+        password = getattr(settings, 'EASY_SMS_PASSWORD', '')
+        connect_id = getattr(settings, 'EASY_SMS_CONNECT_ID', '')
+        originator = getattr(settings, 'EASY_SMS_ORIGINATOR', '')
+
+        if not login or not password or not connect_id:
+            return False, "Не заданы настройки EasySMS: EASY_SMS_LOGIN / EASY_SMS_PASSWORD / EASY_SMS_CONNECT_ID."
+        if not originator:
+            return False, "Не задано имя отправителя EasySMS (EASY_SMS_ORIGINATOR)."
+
+        base_url = getattr(settings, 'EASY_SMS_BASE_URL', 'https://xml.smstec.ru').rstrip('/')
+        url = f"{base_url}/api/v3/easysms/{connect_id}/SendMessage"
+
+        # Формат по документации easysms/v3
+        payload = {
+            "Header": {
+                "login": login,
+                "password": password,
+            },
+            "Payload": {
+                "message": {
+                    "client_message_id": f"sms_auth_{phone_normalized}_{int(timezone.now().timestamp())}",
+                    "messenger_type": "sms",
+                    "originator": originator,
+                    "recipient": phone_normalized,
+                    "text": message,
+                }
+            }
+        }
+
+        headers = {
+            "Content-Type": "application/json; charset=utf-8",
+            "Accept": "application/json",
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=20)
+            data = {}
+            try:
+                data = response.json()
+            except Exception:
+                data = {}
+
+            # Транспортные ошибки
+            if response.status_code != 200:
+                transport_error = data.get('error', {})
+                if isinstance(transport_error, dict):
+                    msg = transport_error.get('error_message') or transport_error.get('message')
+                    if msg:
+                        return False, f"EasySMS: {msg}"
+                return False, f"EasySMS HTTP {response.status_code}"
+
+            # Платформенные ошибки в успешном HTTP-ответе
+            msg_obj = data.get('message', {}) if isinstance(data, dict) else {}
+            err_obj = msg_obj.get('error', {}) if isinstance(msg_obj, dict) else {}
+            if isinstance(err_obj, dict) and err_obj:
+                err_code = err_obj.get('error_code', '')
+                err_message = err_obj.get('error_message') or 'Ошибка платформы easysms'
+                if err_code:
+                    return False, f"EasySMS [{err_code}]: {err_message}"
+                return False, f"EasySMS: {err_message}"
+
+            # Успех, если есть message_id либо часть каскадного ответа
+            if isinstance(msg_obj, dict) and (msg_obj.get('message_id') or msg_obj.get('cascade_message_id')):
+                return True, None
+            if isinstance(data, dict) and data.get('message'):
+                return True, None
+
+            return False, "EasySMS: некорректный ответ сервера."
+        except Exception as ex:
+            return False, str(ex)
+
+    return False, f"Провайдер SMS '{provider}' не поддерживается."
+
+
+def _check_sms_rate_limit(phone_normalized, ip):
+    """
+    Ограничения отправки SMS-кодов:
+    - не чаще 1 раза в 60 секунд на телефон;
+    - не более 5 отправок за 10 минут на телефон;
+    - не более 20 отправок за сутки на телефон;
+    - не более 30 отправок за час с одного IP.
+    """
+    from avtosalon.models import SmsAuthSession
+
+    now = timezone.now()
+    one_min_ago = now - timedelta(minutes=1)
+    ten_min_ago = now - timedelta(minutes=10)
+    one_hour_ago = now - timedelta(hours=1)
+    one_day_ago = now - timedelta(days=1)
+
+    recent_phone = SmsAuthSession.objects.filter(
+        phone_normalized=phone_normalized,
+        code_sent_at__isnull=False,
+    )
+
+    last_by_phone = recent_phone.order_by('-code_sent_at').first()
+    if last_by_phone and last_by_phone.code_sent_at and last_by_phone.code_sent_at > one_min_ago:
+        retry_after = int((last_by_phone.code_sent_at + timedelta(minutes=1) - now).total_seconds())
+        return False, f"Слишком частая отправка. Повторите через {max(retry_after, 1)} сек."
+
+    phone_10m_count = recent_phone.filter(code_sent_at__gte=ten_min_ago).count()
+    if phone_10m_count >= 5:
+        return False, "Лимит отправок на этот номер: 5 кодов за 10 минут."
+
+    phone_24h_count = recent_phone.filter(code_sent_at__gte=one_day_ago).count()
+    if phone_24h_count >= 20:
+        return False, "Лимит отправок на этот номер за сутки исчерпан."
+
+    if ip:
+        ip_1h_count = SmsAuthSession.objects.filter(
+            request_ip=ip,
+            code_sent_at__isnull=False,
+            code_sent_at__gte=one_hour_ago,
+        ).count()
+        if ip_1h_count >= 30:
+            return False, "Слишком много запросов с вашего IP. Попробуйте позже."
+
+    return True, None
+
+
+@csrf_exempt
+@require_POST
+def car_sms_send_code(request, slug):
+    from avtosalon.models import SmsAuthSession
+
+    car = get_object_or_404(RefCarsOrganization, slug=slug)
+    payload = {}
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        return JsonResponse({'ok': False, 'error': 'Некорректный формат запроса.'}, status=400)
+
+    phone_raw = payload.get('phone', '')
+    phone = _normalize_phone(phone_raw)
+    consent_pd = bool(payload.get('consent_personal_data', False))
+    consent_ads = bool(payload.get('consent_ads', False))
+
+    if len(phone) != 11:
+        return JsonResponse({'ok': False, 'error': 'Введите корректный номер телефона.'}, status=400)
+    if not consent_pd:
+        return JsonResponse({'ok': False, 'error': 'Необходимо согласие на обработку персональных данных.'}, status=400)
+
+    ip = _get_request_ip(request)
+    is_allowed, rate_limit_error = _check_sms_rate_limit(phone, ip)
+    if not is_allowed:
+        return JsonResponse({'ok': False, 'error': rate_limit_error}, status=429)
+
+    code = ''.join(random.choices('0123456789', k=6))
+    now = timezone.now()
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+    session = SmsAuthSession()
+    session.phone = str(phone_raw or '')
+    session.phone_normalized = phone
+    session.code_hash = make_password(code)
+    session.car = car
+    session.created_at = now
+    session.code_sent_at = now
+    session.code_expires_at = now + timedelta(minutes=5)
+    session.request_ip = ip
+    session.request_user_agent = user_agent
+    session.consent_personal_data = True
+    session.consent_personal_data_at = now
+    session.consent_personal_data_ip = ip
+    session.consent_ads = consent_ads
+    if consent_ads:
+        session.consent_ads_at = now
+        session.consent_ads_ip = ip
+    session.save()
+
+    sent, send_error = _send_sms_code(phone, code)
+    if not sent:
+        session.delete()
+        return JsonResponse({'ok': False, 'error': f'Не удалось отправить SMS: {send_error}'}, status=502)
+
+    return JsonResponse({
+        'ok': True,
+        'session_id': session.id,
+        'message': 'Код отправлен.',
+        'expires_in_sec': 300,
+    }, status=200)
+
+
+@csrf_exempt
+@require_POST
+def car_sms_verify_code(request, slug):
+    from avtosalon.models import SmsAuthSession
+
+    get_object_or_404(RefCarsOrganization, slug=slug)
+    payload = {}
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        return JsonResponse({'ok': False, 'error': 'Некорректный формат запроса.'}, status=400)
+
+    session_id = payload.get('session_id')
+    code = ''.join(ch for ch in str(payload.get('code', '') or '') if ch.isdigit())
+    if not session_id:
+        return JsonResponse({'ok': False, 'error': 'Сессия подтверждения не найдена.'}, status=400)
+    if len(code) < 4:
+        return JsonResponse({'ok': False, 'error': 'Введите код из SMS.'}, status=400)
+
+    try:
+        session = SmsAuthSession.objects.select_related('user').get(pk=session_id)
+    except SmsAuthSession.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Сессия подтверждения не найдена.'}, status=404)
+
+    if session.is_verified:
+        return JsonResponse({'ok': True, 'message': 'Код уже подтвержден.'}, status=200)
+    if session.code_expires_at and timezone.now() > session.code_expires_at:
+        return JsonResponse({'ok': False, 'error': 'Срок действия кода истек. Запросите новый код.'}, status=400)
+    if session.attempts_count >= session.max_attempts:
+        return JsonResponse({'ok': False, 'error': 'Превышено число попыток. Запросите новый код.'}, status=400)
+
+    is_valid = check_password(code, session.code_hash)
+    if not is_valid:
+        session.attempts_count = session.attempts_count + 1
+        session.save(update_fields=['attempts_count'])
+        return JsonResponse({'ok': False, 'error': 'Неверный код.'}, status=400)
+
+    phone = session.phone_normalized
+    username = f"phone_{phone}"
+    user = User.objects.filter(username=username).first()
+    if not user:
+        user = User.objects.create_user(
+            username=username,
+            password=get_random_string(24),
+        )
+        user.first_name = ''
+        user.last_name = ''
+        user.email = ''
+        user.is_staff = False
+        user.is_superuser = False
+        user.save()
+
+    try:
+        profile = Profiles.objects.filter(user=user).first()
+        if not profile:
+            profile = Profiles.objects.create(user=user)
+        profile.phone = f"+{phone}"
+        profile.save()
+    except Exception:
+        pass
+
+    session.is_verified = True
+    session.verified_at = timezone.now()
+    session.user = user
+    session.save(update_fields=['is_verified', 'verified_at', 'user'])
+
+    dj_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+    return JsonResponse({'ok': True, 'message': 'Авторизация успешна.'}, status=200)
 
 
 def car(request, slug):

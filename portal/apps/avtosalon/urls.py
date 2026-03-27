@@ -32,6 +32,8 @@ urlpatterns = [
    path('task/file/<int:file_id>/delete/',   views.car_task_file_delete, name='car_task_file_delete'),
    
    path('deal/calculation/',                 views.deal_calculation, name='deal_calculation'),
+   path('<slug:slug>/sms/send-code/',        views.car_sms_send_code, name='car_sms_send_code'),
+   path('<slug:slug>/sms/verify-code/',      views.car_sms_verify_code, name='car_sms_verify_code'),
    
    path('<slug>/specifications/',            views.specifications, name='slug'),
    path('<slug>/price_edit/',                views.price_edit, name='slug'),

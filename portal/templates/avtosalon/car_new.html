@@ -146,8 +146,7 @@
 	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 	      </div>
 	      <div class="modal-body">
-	        <form id="smsAuthForm" action="/login/" method="get">
-	          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+	        <form id="smsAuthForm" action="#" method="post">
 
 	          <div class="form-floating mb-3">
 	            <input type="tel" class="form-control" id="smsPhone" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel" required>
@@ -233,6 +232,8 @@
 	    const acceptPrivacyBtn = document.getElementById('acceptPrivacyBtn');
 	    const openPrivacyFromSms = document.getElementById('openPrivacyFromSms');
 	    let preserveSmsFormState = false;
+	    let smsSessionId = null;
+	    const carSlug = '{{ params.object.slug }}';
 
 	    if (!openBtn || !phoneEl || !sendBtn || !confirmBtn || !hintEl || !formEl || !modalEl) return;
 
@@ -252,7 +253,7 @@
 	      e.preventDefault();
 	    });
 
-	    sendBtn.addEventListener('click', function () {
+	    sendBtn.addEventListener('click', async function () {
 	      const phoneNormalized = normalizePhone(phoneEl.value);
 	      if (phoneNormalized.length !== 11) {
 	        hintEl.textContent = 'Проверьте номер телефона. Формат: +7XXXXXXXXXX.';
@@ -267,29 +268,84 @@
 	        return;
 	      }
 
-	      phoneEl.value = '+' + phoneNormalized;
-	      hintEl.textContent = 'Код отправлен. Введите его для подтверждения.';
-	      hintEl.classList.remove('text-danger');
-	      codeWrap.classList.remove('d-none');
-	      confirmBtn.classList.remove('d-none');
-	      sendBtn.classList.add('d-none');
-	      codeEl.required = true;
-	      codeEl.focus();
+	      try {
+	        sendBtn.disabled = true;
+	        const response = await fetch('/cars/' + carSlug + '/sms/send-code/', {
+	          method: 'POST',
+	          headers: { 'Content-Type': 'application/json' },
+	          body: JSON.stringify({
+	            phone: '+' + phoneNormalized,
+	            consent_personal_data: !!pdEl.checked,
+	            consent_ads: !!document.getElementById('smsAgreeAds')?.checked
+	          })
+	        });
+	        const data = await response.json();
+	        if (!response.ok || !data.ok) {
+	          throw new Error(data.error || 'Не удалось отправить код.');
+	        }
+
+	        smsSessionId = data.session_id;
+	        phoneEl.value = '+' + phoneNormalized;
+	        hintEl.textContent = 'Код отправлен. Введите его для подтверждения.';
+	        hintEl.classList.remove('text-danger');
+	        codeWrap.classList.remove('d-none');
+	        confirmBtn.classList.remove('d-none');
+	        sendBtn.classList.add('d-none');
+	        codeEl.required = true;
+	        codeEl.focus();
+	      } catch (err) {
+	        hintEl.textContent = (err && err.message) ? err.message : 'Ошибка отправки SMS.';
+	        hintEl.classList.add('text-danger');
+	      } finally {
+	        sendBtn.disabled = false;
+	      }
 	    });
 
-	    formEl.addEventListener('submit', function (e) {
+	    formEl.addEventListener('submit', async function (e) {
+	      e.preventDefault();
 	      const phoneNormalized = normalizePhone(phoneEl.value);
 	      const code = digitsOnly(codeEl.value);
+	      if (!smsSessionId) {
+	        hintEl.textContent = 'Сначала запросите SMS-код.';
+	        hintEl.classList.add('text-danger');
+	        return;
+	      }
 	      if (phoneNormalized.length !== 11 || code.length < 4) {
-	        e.preventDefault();
 	        hintEl.textContent = 'Введите корректный номер и код из SMS.';
 	        hintEl.classList.add('text-danger');
+	        return;
+	      }
+
+	      try {
+	        confirmBtn.disabled = true;
+	        const response = await fetch('/cars/' + carSlug + '/sms/verify-code/', {
+	          method: 'POST',
+	          headers: { 'Content-Type': 'application/json' },
+	          body: JSON.stringify({
+	            session_id: smsSessionId,
+	            code: code
+	          })
+	        });
+	        const data = await response.json();
+	        if (!response.ok || !data.ok) {
+	          throw new Error(data.error || 'Не удалось подтвердить код.');
+	        }
+
+	        hintEl.textContent = 'Успешно. Выполняем вход...';
+	        hintEl.classList.remove('text-danger');
+	        window.location.reload();
+	      } catch (err) {
+	        hintEl.textContent = (err && err.message) ? err.message : 'Ошибка подтверждения кода.';
+	        hintEl.classList.add('text-danger');
+	      } finally {
+	        confirmBtn.disabled = false;
 	      }
 	    });
 
 	    modalEl.addEventListener('hidden.bs.modal', function () {
 	      if (preserveSmsFormState) return;
 	      formEl.reset();
+	      smsSessionId = null;
 	      hintEl.textContent = 'Введите номер телефона, получите код и подтвердите вход.';
 	      hintEl.classList.remove('text-danger');
 	      codeWrap.classList.add('d-none');
