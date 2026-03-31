@@ -10254,19 +10254,19 @@ def sb_lo(request):
     
 
 def test(request):
-    from register.models import add_swap, RegSwapKors
-    if request.method == "POST":
-        datas = request.POST.get('exampleFormControlTextarea1').split('\r\n')
-        for data in datas:
-            try:
-                rlk_nomer   = '000' + data
-                rlk         = DocRLK.objects.get(nomer = rlk_nomer)
-                swap = RegSwapKors()
-                swap.rlk        = rlk
-                swap.save()
-            except:
-                s= 1
-        # swap_estimation()
+    # from register.models import add_swap, RegSwapKors
+    # if request.method == "POST":
+    #     datas = request.POST.get('exampleFormControlTextarea1').split('\r\n')
+    #     for data in datas:
+    #         try:
+    #             rlk_nomer   = '000' + data
+    #             rlk         = DocRLK.objects.get(nomer = rlk_nomer)
+    #             swap = RegSwapKors()
+    #             swap.rlk        = rlk
+    #             swap.save()
+    #         except:
+    #             s= 1
+    #     # swap_estimation()
     
     # date_start = DT.datetime.now().replace(day=1, hour = 1, month=3, year=2026)
     # docs = DocLO.objects.filter(dataTime__gte = date_start)
@@ -10516,12 +10516,16 @@ def test(request):
     
     #from task_manager.views import refresh_chat_data
     #refresh_chat_data()
-    
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    # users = User.objects.all()
+    # for us in users:
+    #     us.is_staff = True
+    #     us.save()
+
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     #refresh_avtoteka_vin()
 

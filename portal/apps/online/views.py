@@ -219,6 +219,7 @@ def personal_data_consent(request, token):
             phone = request.POST.get('phone', '').strip()
             email = request.POST.get('email', '').strip()
             agreement = request.POST.get('agreement', '')
+            promotional = request.POST.get('promotional', '')
             
             errors = []
             
@@ -254,6 +255,9 @@ def personal_data_consent(request, token):
             consent.phone = phone
             consent.email = email
             consent.confirmed = True
+            if promotional == 'on':
+                consent.promotional = True
+
             consent.date_confirmed = datetime.datetime.now()
             consent.ip_address = ip_address
             consent.user_agent = user_agent
