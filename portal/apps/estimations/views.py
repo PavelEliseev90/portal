@@ -765,6 +765,13 @@ def estimation_rlk(request, rlk_id):
 
             reg_interactiv_ocenka_vnesh.color = request.POST.get('color_body', '')
             
+            rama_int = int(request.POST.get('rama_int', '3'))
+            if rama_int == 1:
+                reg_interactiv_ocenka.rama = True
+            else:
+                reg_interactiv_ocenka.rama = False
+            reg_interactiv_ocenka.save(update_fields=['rama']) 
+
             reg_interactiv_ocenka_vnesh.check_vin_int           = int(request.POST.get('check_vin_int', '3'))
             reg_interactiv_ocenka_vnesh.check_engine_int        = int(request.POST.get('check_engine_int', '3'))
             reg_interactiv_ocenka_vnesh.windshield_heat_int     = int(request.POST.get('windshield_heat_int', '3'))
@@ -941,6 +948,11 @@ def estimation_rlk(request, rlk_id):
                 new_estimation_files.user           = request.user
                 new_estimation_files.save() 
 
+            if "page_pol" in request.POST:
+                reg_interactiv_ocenka_vnesh.save()
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/pol/'
+                return HttpResponseRedirect(url)
+            
             if "page_pered" in request.POST:
                 reg_interactiv_ocenka_vnesh.save()
                 url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr/pered/'
@@ -1949,6 +1961,7 @@ def osmotr(request, rlk_id, type, rl_id):
     json_data       = list()
     bodys_info      = list()
 
+    rama = reg_interactiv_ocenka.rama
     type_name = 'передняя часть'
 
     if type == 'pered':
@@ -1961,6 +1974,8 @@ def osmotr(request, rlk_id, type, rl_id):
         type_name = 'задняя сторона'
     if type == 'up':
         type_name = 'крыша'
+    if type == 'pol':
+        type_name = 'днище'
 
     if request.method == 'POST':
         
@@ -1980,6 +1995,19 @@ def osmotr(request, rlk_id, type, rl_id):
             new_estimation_files.user           = request.user
             new_estimation_files.save()
             type_file = 'array_images_pered'
+        elif type == 'pol':
+            url_base_64     = request.POST.get('url_image')
+            url_base        = url_base_64.split(',')[1].encode()
+            file_name       = 'imageViewOsmotrPol_maximum_' + str(reg_interactiv_ocenka.id) +'.jpg'
+            decoded_data_1  = ContentFile(base64.b64decode(url_base), name = file_name)
+            type_file       = 'vnesh_car_osmotr_pol'
+            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
+            new_estimation_files.name           = file_name
+            new_estimation_files.type_file      = type_file
+            new_estimation_files.file           = decoded_data_1
+            new_estimation_files.user           = request.user
+            new_estimation_files.save()
+            type_file = 'array_images_pol'
         elif type == 'vod':
             url_base_64     = request.POST.get('url_image')
             url_base        = url_base_64.split(',')[1].encode()
@@ -2078,6 +2106,13 @@ def osmotr(request, rlk_id, type, rl_id):
             type_name = 'передняя сторона'
             type_file = 'array_images_pered'
             bodys_info      = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'перед')
+        if type == 'pol':
+            type_name = 'днище'
+            type_file = 'array_images_pol'
+            if rama:
+                bodys_info      = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'пол рама')
+            else:
+                bodys_info      = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'пол')
         if type == 'vod':
             type_name = 'водительская сторона'
             type_file = 'array_images_vod'
@@ -2179,6 +2214,7 @@ def osmotr(request, rlk_id, type, rl_id):
         'type'          : type,
         'return_page'   : return_page,
         'type_name'     : type_name,
+        'rama'          : rama,
         'elements_body' : json.dumps(elements_body),
         'json_data'     : json.dumps(json_data)
     }   

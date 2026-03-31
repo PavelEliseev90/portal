@@ -557,14 +557,44 @@ def create_personal_data(request):
 
     try:
         info = json.loads(request.body)
+        
         rlk  = get_worksheet(info)
         
         phone = rlk.phone
-        
-        personal_data, created = PersonalDataConsent.objects.get_or_create(rlk = rlk)
 
-        personal_data.phone = phone
-        personal_data.save()
+        list_data   = list() 
+        list_infos   = PersonalDataConsent.objects.filter(phone = phone)
+        if list_infos.count() > 0:
+            for list_info in list_infos:
+                data_object = {
+                    'token'             : list_info.token,
+                    'rlk_uin'           : list_info.rlk.uin,
+                    'phone'             : list_info.phone,
+                    'date_created'      : list_info.date_created,
+                    'date_opened'       : list_info.date_opened,
+                    'date_confirmed'    : list_info.date_confirmed,
+                    'email'             : list_info.email,
+                    'last_name'         : list_info.last_name,
+                    'first_name'        : list_info.first_name,
+                    'middle_name'       : list_info.middle_name,
+                    'ip_address'        : list_info.ip_address,
+                    'user_agent'        : list_info.user_agent,
+                    'confirmed'         : list_info.confirmed,
+                    'promotional'       : list_info.promotional,
+                }
+                list_data.append(data_object)
+
+            to_json = {
+                'list'      : list_data,
+                'count'     : list_infos.count()
+            }
+
+            return JsonResponse(to_json, status=status.HTTP_200_OK)    
+            
+        else:
+            personal_data, created = PersonalDataConsent.objects.get_or_create(rlk = rlk)
+            personal_data.phone = phone
+            personal_data.save()
 
         url     = 'https://ah.kors-group.com/online/consent/' + personal_data.token + '/' 
         token   = personal_data.token
@@ -594,7 +624,7 @@ def info_personal_data(request):
     list_data   = list()
     error       = ''
     if token != '':
-        list_infos = PersonalDataConsent.objects.filter(token =token)
+        list_infos = PersonalDataConsent.objects.filter(token = token)
     else:
         list_infos = PersonalDataConsent.objects.filter(date_confirmed__gte = date_start).filter(confirmed = True)
 
@@ -612,6 +642,8 @@ def info_personal_data(request):
             'middle_name'       : list_info.middle_name,
             'ip_address'        : list_info.ip_address,
             'user_agent'        : list_info.user_agent,
+            'confirmed'         : list_info.confirmed,
+            'promotional'       : list_info.promotional,
         }
         list_data.append(data_object)
 
@@ -1792,7 +1824,7 @@ def refresh_rlk_bu(request):
         docO.unit           = unitO
         docO.staff          = masterO
         docO.uin            = docUIN
-        docO.clientName     = doc.get('ClientName')
+        docO.clientName     = doc.get('ClientName')[:250]
         docO.nomer          = doc.get('Nomer')
         docO.dataTime       = doc.get('DataTime')
         docO.timeStr        = doc.get('TimeStr')
@@ -1806,8 +1838,8 @@ def refresh_rlk_bu(request):
             docO.is_missed        = doc['IsMissed']
         
         docO.contacType           = get_contactType(doc['ContactType'])
-        docO.commentAdministrator = doc['CommentAdministrator']
-        docO.commentManager       = doc['CommentManager']
+        docO.commentAdministrator = doc['CommentAdministrator'][:5112]
+        docO.commentManager       = doc['CommentManager'][:5112]
 
         docO.save()
 
@@ -3612,8 +3644,8 @@ def get_lo(lo):
     object.vin_new              = lo['VinNew']
     object.name_new_auto        = lo['NameNewAuto']
     object.run                  = lo['Run']
-    object.description_podgotovka   = lo['DescriptionPodgotovka']
-    object.description_op           = lo['DescriptionOp']
+    object.description_podgotovka   = lo['DescriptionPodgotovka'][:5120]
+    object.description_op           = lo['DescriptionOp'][:5120]
     object.carsGRZ                  = lo['PlateNumber']
     object.year                     = lo['Year']
     
@@ -3837,7 +3869,7 @@ def get_worksheet_event(worksheets_event):
     event_object.dataTimeEvent  = worksheets_event['DateEvent']
     event_object.staff          = get_staff(worksheets_event['Staff'])
     event_object.contacType     = get_contactType(worksheets_event['ContactType'])
-    event_object.comment        = worksheets_event['Comment']
+    event_object.comment        = worksheets_event['Comment'][:1024]
     event_object.status         = get_status_event(worksheets_event['Status'])
     event_object.save()
     
@@ -3905,7 +3937,7 @@ def get_worksheet(worksheet):
         rlk_object.archive              = False
 
     if 'ReasonArchive' in worksheet:
-        rlk_object.reasonArchive      = worksheet['ReasonArchive']
+        rlk_object.reasonArchive      = worksheet['ReasonArchive'][:1024]
 
     if 'Vin' in worksheet:
         rlk_object.vin_trade_in      = worksheet['Vin']
@@ -3918,8 +3950,8 @@ def get_worksheet(worksheet):
     rlk_object.phone                = worksheet['Phone']
     rlk_object.customer             = get_сustomer(worksheet['Client'])
     
-    rlk_object.commentAdministrator = worksheet['CommentAdministrator']
-    rlk_object.commentManager       = worksheet['CommentManager']
+    rlk_object.commentAdministrator = worksheet['CommentAdministrator'][:5112]
+    rlk_object.commentManager       = worksheet['CommentManager'][:5112]
    
     rlk_object.save()
 
@@ -4147,8 +4179,8 @@ def get_agreement(agreement):
         car_object.engine_power         = car['Engine_power']
         car_object.engine_volume        = car['Engine_volume']
 
-        car_object.description_podgotovka   = car['Description_podgotovka']
-        car_object.description_op           = car['Description_op']
+        car_object.description_podgotovka   = car['Description_podgotovka'][:5120]
+        car_object.description_op           = car['Description_op'][:5120]
 
         car_object.save()
 

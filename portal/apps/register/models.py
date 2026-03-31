@@ -173,6 +173,20 @@ class SettingsMatrixAuction(models.Model):
         verbose_name_plural = "Матрица расчета БЦП аукцион"
 
 
+class BodyRefReplace(models.Model):
+    body_type   = models.ForeignKey(RefTypeBody, null=True, on_delete=models.SET_NULL, verbose_name='Вид кузова')
+    zg          = models.CharField("Наименование", null=True, blank=True, max_length=512)
+    element     = models.CharField("Элемент", null=True, blank=True, max_length=512)
+    amount      = models.IntegerField('Стоимость замены под ключ', default=0, null=True, blank=True)
+    def __str__(self):
+        return "{}".format(self.pk)
+
+    class Meta:
+        db_table = 'bodyRefReplace'
+        verbose_name = "Расчетные данные по замене элементов"
+        verbose_name_plural = "Расчетные данные по замене элементов" 
+        
+
 class RegEstimationsSettings(models.Model):
     name                    = models.CharField("Наименование", null=True, blank=True, max_length=512)
     
@@ -2618,6 +2632,8 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     
     v                       = models.IntegerField('Версия интерактивной оценки', default=3, null=True, blank=True)
     
+    rama                    = models.BooleanField("Рамный", default = False, null=True, blank=True) 
+
     auction_auto_no_user    = models.BooleanField("Аукцион не подтвержден", default = False, null=True, blank=True)
     auction_auto_comment    = models.CharField("Аукцион не подтвержден комментарий", max_length=2500, default='', null=True, blank=True)
     
@@ -2685,6 +2701,12 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         if self.fotos_vnesh_pered_count() == 0:
             info = {
                 'name'      : 'Передняя сторона',
+                'result'    : False
+            }
+            list_danger.append(info)
+        if self.fotos_vnesh_pol_count() == 0:
+            info = {
+                'name'      : 'Днище',
                 'result'    : False
             }
             list_danger.append(info)
@@ -2968,12 +2990,28 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         if fotos.count() > 0:
             return fotos[0]    
         return '/media_dop/body_capture/sedan_new.png'
+    
+    def fotos_vnesh_pol_count(self):
+        return RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_pol').count()
+        if fotos.count() > 0:
+            return fotos[0]    
+        
+        return '/media_dop/body_capture/sedan_new.png'
    
     def fotos_vnesh_pered(self):
         fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_pered')
         if fotos.count() > 0:
             return fotos[0].get_absolute_url()    
         return '/media_dop/body_capture/sedan_new.png'
+
+    def fotos_vnesh_pol(self):
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_pol')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()  
+        if self.rama:  
+            return '/media_dop/body_capture/pol_ram.png'
+        
+        return '/media_dop/body_capture/pol.png'
     
     def fotos_vnesh_vod_count(self):
         return RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_vod').count()
@@ -3028,6 +3066,11 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         fotos = fotos.order_by('type_file', 'file_number')
         return fotos
 
+    def fotos_array_images_pol(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'array_images_pol').order_by('file_number') 
+        fotos = fotos.order_by('type_file', 'file_number')
+        return fotos
+    
     def fotos_array_images_vod(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'array_images_vod').order_by('file_number') 
         fotos = fotos.order_by('type_file', 'file_number')
@@ -3737,7 +3780,15 @@ class RegControlDiagnostic(models.Model):
         if fotos.count() > 0:
             return fotos[0].get_absolute_url()    
         return '/media_dop/body_capture/sedan_new.png'
-    
+
+    def fotos_vnesh_pol(self):
+        fotos   = RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_pol')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url() 
+        if self.rama:   
+            return '/media_dop/body_capture/pol_ram.png'
+        return '/media_dop/body_capture/pol.png'
+        
     def fotos_vnesh_vod_count(self):
         return RegControlDiagnosticFile.objects.filter(control_diagnostic = self).filter(type_file = 'vnesh_car_osmotr_vod').count()
         if fotos.count() > 0:
