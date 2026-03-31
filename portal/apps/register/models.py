@@ -174,7 +174,7 @@ class SettingsMatrixAuction(models.Model):
 
 
 class BodyRefReplace(models.Model):
-    body_type   = models.ForeignKey(RefTypeBody, null=True, on_delete=models.SET_NULL, verbose_name='Вид кузова')
+    body_group  = models.ForeignKey('BodyTypeGroup', null=True, on_delete=models.SET_NULL, verbose_name='Группа кузовов')
     zg          = models.CharField("Наименование", null=True, blank=True, max_length=512)
     element     = models.CharField("Элемент", null=True, blank=True, max_length=512)
     amount      = models.IntegerField('Стоимость замены под ключ', default=0, null=True, blank=True)
@@ -186,9 +186,24 @@ class BodyRefReplace(models.Model):
         verbose_name = "Расчетные данные по замене элементов"
         verbose_name_plural = "Расчетные данные по замене элементов" 
         constraints = [
-            models.UniqueConstraint(fields=['body_type', 'zg', 'element'], name='uniq_bodyrefreplace_body_zg_element'),
+            models.UniqueConstraint(fields=['body_group', 'zg', 'element'], name='uniq_bodyrefreplace_group_zg_element'),
         ]
         
+
+class BodyTypeGroup(models.Model):
+    name = models.CharField("Название группы", max_length=300, default='', db_index=True)
+    order = models.IntegerField("Порядок", default=0)
+    is_active = models.BooleanField("Активна", default=True)
+    body_types = models.ManyToManyField(RefTypeBody, blank=True, verbose_name="Типы кузова в группе")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'bodyTypeGroup'
+        verbose_name = "Группа кузовов"
+        verbose_name_plural = "Группы кузовов"
+        ordering = ['order', 'name']
 
 class RegEstimationsSettings(models.Model):
     name                    = models.CharField("Наименование", null=True, blank=True, max_length=512)

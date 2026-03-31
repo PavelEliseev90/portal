@@ -45,6 +45,7 @@ urlpatterns = [
    path('settings/settings_diagnostic/',                    views.settings_diagnostic),
    path('settings/settings_diagnostic_reference/',          views.settings_diagnostic_reference),
    path('settings/settings_body_ref_replace/',              views.settings_body_ref_replace, name='settings_body_ref_replace'),
+   path('settings/settings_body_type_groups/',              views.settings_body_type_groups, name='settings_body_type_groups'),
    path('settings/settings_vnesh/',                         views.settings_vnesh),
    path('settings/settings_works/',                         views.settings_works),
    path('settings/settings_unit_groups/',                   views.settings_unit_groups),
