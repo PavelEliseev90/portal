@@ -8183,6 +8183,132 @@ def settings_diagnostic_reference(request):
     
     return render(request, "kors/settings_diagnostic_reference.html", {'params': params})
 
+
+@login_required
+def settings_body_ref_replace(request):
+    """
+    Справочник расчетных данных по замене элементов кузова (BodyRefReplace)
+    """
+    if not request.user.profiles.korsavto_settings:
+        return HttpResponseNotFound()
+
+    from register.models import BodyRefReplace
+    from refs.models import RefTypeBody
+
+    ZG_CHOICES = ['200', '400', '700', '1200', '2000', '3000', '5000', '5001']
+    ELEMENT_CHOICES = sorted([
+        'крыло переднее',
+        'крыло заднее',
+        'дверь передняя',
+        'дверь задняя',
+        'крышка багажника',
+        'бампер задний',
+        'капот',
+        'бампер передний',
+    ])
+
+    # POST actions (add/edit/delete)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        def _norm(s):
+            return (s or '').strip()
+
+        if action in ('add', 'edit'):
+            item_id = request.POST.get('id')
+            body_type_id = request.POST.get('body_type_id') or None
+            zg = _norm(request.POST.get('zg'))
+            element = _norm(request.POST.get('element'))
+            amount_raw = _norm(request.POST.get('amount'))
+
+            # Validate
+            errors = []
+            if not body_type_id:
+                errors.append('Укажите вид кузова.')
+            if zg not in ZG_CHOICES:
+                errors.append('Укажите ЦГ (zg) из списка.')
+            if element not in ELEMENT_CHOICES:
+                errors.append('Укажите элемент из списка.')
+            try:
+                amount = int(amount_raw) if amount_raw != '' else 0
+            except ValueError:
+                errors.append('Стоимость должна быть числом.')
+                amount = 0
+
+            qs_dup = BodyRefReplace.objects.filter(
+                body_type_id=body_type_id,
+                zg=zg,
+                element=element,
+            )
+            if action == 'edit' and item_id:
+                qs_dup = qs_dup.exclude(id=item_id)
+            if qs_dup.exists():
+                errors.append('Запись с таким сочетанием (Вид кузова + ЦГ + Элемент) уже существует.')
+
+            if errors:
+                params = {
+                    'type': 'settings',
+                    'errors': errors,
+                }
+                # Рендерим страницу с текущими фильтрами (ошибки покажем сверху)
+                # Данные списка подготовим ниже (через общий код)
+            else:
+                if action == 'add':
+                    BodyRefReplace.objects.create(
+                        body_type_id=body_type_id,
+                        zg=zg,
+                        element=element,
+                        amount=amount,
+                    )
+                else:
+                    obj = BodyRefReplace.objects.filter(id=item_id).first()
+                    if obj:
+                        obj.body_type_id = body_type_id
+                        obj.zg = zg
+                        obj.element = element
+                        obj.amount = amount
+                        obj.save()
+                return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', ''))
+
+        elif action == 'delete':
+            item_id = request.POST.get('id')
+            BodyRefReplace.objects.filter(id=item_id).delete()
+            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', ''))
+
+    # Filters (GET)
+    filtr_body_type = request.GET.get('body_type', '')
+    filtr_zg = request.GET.get('zg', '')
+    filtr_element = request.GET.get('element', '')
+    search = request.GET.get('search', '').strip()
+
+    qs = BodyRefReplace.objects.select_related('body_type').all()
+    if filtr_body_type:
+        qs = qs.filter(body_type_id=filtr_body_type)
+    if filtr_zg:
+        qs = qs.filter(zg=filtr_zg)
+    if filtr_element:
+        qs = qs.filter(element=filtr_element)
+    if search:
+        qs = qs.filter(models.Q(element__icontains=search) | models.Q(zg__icontains=search))
+
+    qs = qs.order_by('body_type__name', 'zg', 'element')
+
+    params = {
+        'type': 'settings',
+        'items': qs,
+        'body_types': RefTypeBody.objects.all().order_by('name'),
+        'zg_choices': ZG_CHOICES,
+        'element_choices': ELEMENT_CHOICES,
+        'filter': {
+            'body_type': filtr_body_type,
+            'zg': filtr_zg,
+            'element': filtr_element,
+            'search': search,
+        }
+    }
+
+    return render(request, "kors/settings_body_ref_replace.html", {'params': params})
+
 @login_required
 def settings_vnesh(request):
     
