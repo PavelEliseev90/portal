@@ -8192,8 +8192,7 @@ def settings_body_ref_replace(request):
     if not request.user.profiles.korsavto_settings:
         return HttpResponseNotFound()
 
-    from register.models import BodyRefReplace
-    from refs.models import RefTypeBody
+    from register.models import BodyRefReplace, BodyTypeGroup
 
     ZG_CHOICES = ['200', '400', '700', '1200', '2000', '3000', '5000', '5001']
     ELEMENT_CHOICES = sorted([
@@ -8216,15 +8215,15 @@ def settings_body_ref_replace(request):
 
         if action in ('add', 'edit'):
             item_id = request.POST.get('id')
-            body_type_id = request.POST.get('body_type_id') or None
+            body_group_id = request.POST.get('body_group_id') or None
             zg = _norm(request.POST.get('zg'))
             element = _norm(request.POST.get('element'))
             amount_raw = _norm(request.POST.get('amount'))
 
             # Validate
             errors = []
-            if not body_type_id:
-                errors.append('Укажите вид кузова.')
+            if not body_group_id:
+                errors.append('Укажите группу кузовов.')
             if zg not in ZG_CHOICES:
                 errors.append('Укажите ЦГ (zg) из списка.')
             if element not in ELEMENT_CHOICES:
@@ -8236,14 +8235,14 @@ def settings_body_ref_replace(request):
                 amount = 0
 
             qs_dup = BodyRefReplace.objects.filter(
-                body_type_id=body_type_id,
+                body_group_id=body_group_id,
                 zg=zg,
                 element=element,
             )
             if action == 'edit' and item_id:
                 qs_dup = qs_dup.exclude(id=item_id)
             if qs_dup.exists():
-                errors.append('Запись с таким сочетанием (Вид кузова + ЦГ + Элемент) уже существует.')
+                errors.append('Запись с таким сочетанием (Группа кузовов + ЦГ + Элемент) уже существует.')
 
             if errors:
                 params = {
@@ -8255,7 +8254,7 @@ def settings_body_ref_replace(request):
             else:
                 if action == 'add':
                     BodyRefReplace.objects.create(
-                        body_type_id=body_type_id,
+                        body_group_id=body_group_id,
                         zg=zg,
                         element=element,
                         amount=amount,
@@ -8263,7 +8262,7 @@ def settings_body_ref_replace(request):
                 else:
                     obj = BodyRefReplace.objects.filter(id=item_id).first()
                     if obj:
-                        obj.body_type_id = body_type_id
+                        obj.body_group_id = body_group_id
                         obj.zg = zg
                         obj.element = element
                         obj.amount = amount
@@ -8276,14 +8275,14 @@ def settings_body_ref_replace(request):
             return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', ''))
 
     # Filters (GET)
-    filtr_body_type = request.GET.get('body_type', '')
+    filtr_body_group = request.GET.get('body_group', '')
     filtr_zg = request.GET.get('zg', '')
     filtr_element = request.GET.get('element', '')
     search = request.GET.get('search', '').strip()
 
-    qs = BodyRefReplace.objects.select_related('body_type').all()
-    if filtr_body_type:
-        qs = qs.filter(body_type_id=filtr_body_type)
+    qs = BodyRefReplace.objects.select_related('body_group').all()
+    if filtr_body_group:
+        qs = qs.filter(body_group_id=filtr_body_group)
     if filtr_zg:
         qs = qs.filter(zg=filtr_zg)
     if filtr_element:
@@ -8291,16 +8290,16 @@ def settings_body_ref_replace(request):
     if search:
         qs = qs.filter(models.Q(element__icontains=search) | models.Q(zg__icontains=search))
 
-    qs = qs.order_by('body_type__name', 'zg', 'element')
+    qs = qs.order_by('body_group__name', 'zg', 'element')
 
     params = {
         'type': 'settings',
         'items': qs,
-        'body_types': RefTypeBody.objects.all().order_by('name'),
+        'body_groups': BodyTypeGroup.objects.all().order_by('order', 'name'),
         'zg_choices': ZG_CHOICES,
         'element_choices': ELEMENT_CHOICES,
         'filter': {
-            'body_type': filtr_body_type,
+            'body_group': filtr_body_group,
             'zg': filtr_zg,
             'element': filtr_element,
             'search': search,
@@ -8308,6 +8307,73 @@ def settings_body_ref_replace(request):
     }
 
     return render(request, "kors/settings_body_ref_replace.html", {'params': params})
+
+
+@login_required
+def settings_body_type_groups(request):
+    """
+    Управление группами кузовов (BodyTypeGroup) и привязкой RefTypeBody к группам
+    """
+    if not request.user.profiles.korsavto_settings:
+        return HttpResponseNotFound()
+
+    from register.models import BodyTypeGroup
+    from refs.models import RefTypeBody
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        def _norm(s):
+            return (s or '').strip()
+
+        if action == 'add':
+            name = _norm(request.POST.get('name'))
+            order = _norm(request.POST.get('order')) or '0'
+            is_active = request.POST.get('is_active') == 'on'
+            body_type_ids = request.POST.getlist('body_types')
+            errors = []
+            if not name:
+                errors.append('Укажите название группы.')
+            try:
+                order_int = int(order)
+            except ValueError:
+                order_int = 0
+                errors.append('Порядок должен быть числом.')
+
+            if not errors:
+                g = BodyTypeGroup.objects.create(name=name, order=order_int, is_active=is_active)
+                if body_type_ids:
+                    g.body_types.set(body_type_ids)
+                return HttpResponseRedirect(request.build_absolute_uri())
+
+        elif action == 'edit':
+            gid = request.POST.get('id')
+            g = BodyTypeGroup.objects.filter(id=gid).first()
+            if g:
+                g.name = _norm(request.POST.get('name'))
+                try:
+                    g.order = int(_norm(request.POST.get('order')) or '0')
+                except ValueError:
+                    g.order = 0
+                g.is_active = request.POST.get('is_active') == 'on'
+                g.save()
+                g.body_types.set(request.POST.getlist('body_types'))
+            return HttpResponseRedirect(request.build_absolute_uri())
+
+        elif action == 'delete':
+            gid = request.POST.get('id')
+            BodyTypeGroup.objects.filter(id=gid).delete()
+            return HttpResponseRedirect(request.build_absolute_uri())
+
+    groups = BodyTypeGroup.objects.prefetch_related('body_types').all().order_by('order', 'name')
+    body_types = RefTypeBody.objects.all().order_by('name')
+
+    params = {
+        'type': 'settings',
+        'groups': groups,
+        'body_types': body_types,
+    }
+    return render(request, "kors/settings_body_type_groups.html", {'params': params})
 
 @login_required
 def settings_vnesh(request):

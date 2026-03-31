@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace, BodyTypeGroup
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -225,7 +225,16 @@ class DiagnosticReferenceSelectionAdmin(admin.ModelAdmin):
 
 @admin.register(BodyRefReplace)
 class BodyRefReplaceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'body_type', 'zg', 'element', 'amount')
-    list_filter = ('body_type', 'zg', 'element')
+    list_display = ('id', 'body_group', 'zg', 'element', 'amount')
+    list_filter = ('body_group', 'zg', 'element')
     search_fields = ('zg', 'element')
+
+
+@admin.register(BodyTypeGroup)
+class BodyTypeGroupAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'order', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name',)
+    ordering = ('order', 'name')
+    filter_horizontal = ('body_types',)
     

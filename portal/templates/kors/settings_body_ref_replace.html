@@ -13,6 +13,9 @@
     </div>
     <div class="d-flex gap-2">
       <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+      <a href="/settings/settings_body_type_groups/" class="btn btn-outline-secondary">
+        <span class="icon-mbri-setting"></span> Группы кузовов
+      </a>
       <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bodyRefReplaceAddModal">
         <span class="icon-mbri-plus"></span> Добавить
       </button>
@@ -34,12 +37,12 @@
     <div class="card-body">
       <form method="get" class="row g-2 align-items-end">
         <div class="col-12 col-md-4">
-          <label class="form-label">Вид кузова</label>
-          <select class="form-select" name="body_type">
+          <label class="form-label">Группа кузовов</label>
+          <select class="form-select" name="body_group">
             <option value="">Все</option>
-            {% for bt in params.body_types %}
-              <option value="{{ bt.id }}" {% if params.filter.body_type|stringformat:"s" == bt.id|stringformat:"s" %}selected{% endif %}>
-                {{ bt.name }}
+            {% for g in params.body_groups %}
+              <option value="{{ g.id }}" {% if params.filter.body_group|stringformat:"s" == g.id|stringformat:"s" %}selected{% endif %}>
+                {{ g.name }}
               </option>
             {% endfor %}
           </select>
@@ -90,7 +93,7 @@
           <tbody>
             {% for it in params.items %}
               <tr>
-                <td><span class="badge bg-info">{{ it.body_type.name }}</span></td>
+                <td><span class="badge bg-info">{{ it.body_group.name }}</span></td>
                 <td><code>{{ it.zg }}</code></td>
                 <td>{{ it.element|capfirst }}</td>
                 <td><span class="fw-bold">{{ it.amount|default:0 }}</span></td>
@@ -101,7 +104,7 @@
                     data-bs-toggle="modal"
                     data-bs-target="#bodyRefReplaceEditModal"
                     data-id="{{ it.id }}"
-                    data-body-type-id="{{ it.body_type_id }}"
+                    data-body-group-id="{{ it.body_group_id }}"
                     data-zg="{{ it.zg }}"
                     data-element="{{ it.element }}"
                     data-amount="{{ it.amount|default:0 }}"
@@ -114,7 +117,7 @@
                     data-bs-toggle="modal"
                     data-bs-target="#bodyRefReplaceDeleteModal"
                     data-id="{{ it.id }}"
-                    data-title="{{ it.body_type.name }} / {{ it.zg }} / {{ it.element }}"
+                    data-title="{{ it.body_group.name }} / {{ it.zg }} / {{ it.element }}"
                   >
                     <span class="icon-mbri-trash"></span> Удалить
                   </button>
@@ -145,11 +148,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label">Вид кузова</label>
-            <select class="form-select" name="body_type_id" required>
+            <label class="form-label">Группа кузовов</label>
+            <select class="form-select" name="body_group_id" required>
               <option value="" selected disabled>Выберите…</option>
-              {% for bt in params.body_types %}
-                <option value="{{ bt.id }}">{{ bt.name }}</option>
+              {% for g in params.body_groups %}
+                <option value="{{ g.id }}">{{ g.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -202,11 +205,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label">Вид кузова</label>
-            <select class="form-select" name="body_type_id" id="brre_body_type_id" required>
+            <label class="form-label">Группа кузовов</label>
+            <select class="form-select" name="body_group_id" id="brre_body_group_id" required>
               <option value="" disabled>Выберите…</option>
-              {% for bt in params.body_types %}
-                <option value="{{ bt.id }}">{{ bt.name }}</option>
+              {% for g in params.body_groups %}
+                <option value="{{ g.id }}">{{ g.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -276,7 +279,7 @@
         const btn = event.relatedTarget;
         if (!btn) return;
         document.getElementById('brre_id').value = btn.getAttribute('data-id') || '';
-        document.getElementById('brre_body_type_id').value = btn.getAttribute('data-body-type-id') || '';
+        document.getElementById('brre_body_group_id').value = btn.getAttribute('data-body-group-id') || '';
         document.getElementById('brre_zg').value = btn.getAttribute('data-zg') || '';
         document.getElementById('brre_element').value = btn.getAttribute('data-element') || '';
         document.getElementById('brre_amount').value = btn.getAttribute('data-amount') || '0';

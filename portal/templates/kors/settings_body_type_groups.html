@@ -1,0 +1,254 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} - Настройки - Группы кузовов {% endblock %}
+{% block title_navbar %} - Настройки - Группы кузовов {% endblock %}
+
+{% block content %}
+<section class="settings-diagnostic-page">
+  <div class="settings-diagnostic-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2>Группы кузовов</h2>
+      <p class="mb-0">Объединяйте типы кузова в группы. Эти группы используются в справочнике «Замена элементов кузова».</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/settings/settings_body_ref_replace/" class="btn btn-outline-secondary">
+        <span class="icon-mbri-left"></span> Назад к справочнику
+      </a>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bodyGroupAddModal">
+        <span class="icon-mbri-plus"></span> Добавить группу
+      </button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 mt-3">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th style="width: 42%;">Группа</th>
+              <th style="width: 10%;">Порядок</th>
+              <th style="width: 12%;">Активна</th>
+              <th>Типы кузова в группе</th>
+              <th style="width: 18%;">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in params.groups %}
+              <tr>
+                <td><strong>{{ g.name }}</strong></td>
+                <td>{{ g.order }}</td>
+                <td>
+                  {% if g.is_active %}
+                    <span class="badge bg-success">Да</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Нет</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">
+                  {% if g.body_types.all|length %}
+                    {% for bt in g.body_types.all %}
+                      <span class="badge bg-light text-dark border">{{ bt.name }}</span>
+                    {% endfor %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-nowrap">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#bodyGroupEditModal"
+                    data-id="{{ g.id }}"
+                    data-name="{{ g.name }}"
+                    data-order="{{ g.order }}"
+                    data-active="{{ g.is_active|yesno:'1,0' }}"
+                    data-body-types="{% for bt in g.body_types.all %}{{ bt.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                  >
+                    <span class="icon-mbri-edit"></span> Редактировать
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#bodyGroupDeleteModal"
+                    data-id="{{ g.id }}"
+                    data-title="{{ g.name }}"
+                  >
+                    <span class="icon-mbri-trash"></span> Удалить
+                  </button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">Нет групп</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Add modal -->
+<div class="modal fade" id="bodyGroupAddModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div class="modal-header">
+          <h5 class="modal-title">Добавить группу</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-7">
+              <label class="form-label">Название</label>
+              <input type="text" class="form-control" name="name" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">Порядок</label>
+              <input type="number" class="form-control" name="order" value="0">
+            </div>
+            <div class="col-6 col-md-2 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="bg_add_active" checked>
+                <label class="form-check-label" for="bg_add_active">Активна</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Типы кузова</label>
+              <select class="form-select" name="body_types" multiple size="10">
+                {% for bt in params.body_types %}
+                  <option value="{{ bt.id }}">{{ bt.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="small text-muted mt-1">Можно выбрать несколько (Ctrl/Shift).</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal fade" id="bodyGroupEditModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="id" id="bg_id">
+        <div class="modal-header">
+          <h5 class="modal-title">Редактировать группу</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-7">
+              <label class="form-label">Название</label>
+              <input type="text" class="form-control" name="name" id="bg_name" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">Порядок</label>
+              <input type="number" class="form-control" name="order" id="bg_order" value="0">
+            </div>
+            <div class="col-6 col-md-2 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="bg_active">
+                <label class="form-check-label" for="bg_active">Активна</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Типы кузова</label>
+              <select class="form-select" name="body_types" id="bg_body_types" multiple size="10">
+                {% for bt in params.body_types %}
+                  <option value="{{ bt.id }}">{{ bt.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete modal -->
+<div class="modal fade" id="bodyGroupDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" id="bg_del_id">
+        <div class="modal-header">
+          <h5 class="modal-title">Удалить группу?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">Вы уверены, что хотите удалить группу:</div>
+          <div class="p-2 rounded bg-light border" id="bg_del_title"></div>
+          <div class="small text-muted mt-2">
+            Записи в справочнике «Замена элементов кузова», привязанные к этой группе, останутся с пустой группой.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-danger">Удалить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const editModal = document.getElementById('bodyGroupEditModal');
+    const delModal = document.getElementById('bodyGroupDeleteModal');
+
+    function setMultiSelectValues(selectEl, ids) {
+      const set = new Set(ids);
+      Array.from(selectEl.options).forEach(opt => {
+        opt.selected = set.has(opt.value);
+      });
+    }
+
+    if (editModal) {
+      editModal.addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        if (!btn) return;
+        document.getElementById('bg_id').value = btn.getAttribute('data-id') || '';
+        document.getElementById('bg_name').value = btn.getAttribute('data-name') || '';
+        document.getElementById('bg_order').value = btn.getAttribute('data-order') || '0';
+        document.getElementById('bg_active').checked = (btn.getAttribute('data-active') || '0') === '1';
+        const ids = (btn.getAttribute('data-body-types') || '').split(',').filter(Boolean);
+        setMultiSelectValues(document.getElementById('bg_body_types'), ids);
+      });
+    }
+
+    if (delModal) {
+      delModal.addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        if (!btn) return;
+        document.getElementById('bg_del_id').value = btn.getAttribute('data-id') || '';
+        document.getElementById('bg_del_title').textContent = btn.getAttribute('data-title') || '';
+      });
+    }
+  })();
+</script>
+{% endblock %}
+
