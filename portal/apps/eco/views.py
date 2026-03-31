@@ -3012,7 +3012,11 @@ def control_diagnostic_comparison(request, id, cd_id):
     cd_test_drive = getattr(cd, 'page_test_drive_copy', None)
     
     price_cd = estimations_price_calculation_cd(cd, 'custom')
-    price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
+    if price_cd == None:
+        price_cd = estimations_price_calculation_cd(cd, 'autohub')
+        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
+    else:
+        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
     params = {
         'estimation': estimation,
         'rlk'       : rlk,
@@ -9353,34 +9357,34 @@ def estimations_price_calculation_cd(cd, type_calculation):
             
             if modification.typeGear.id == 1:
                 price_diff = (price * gear_amt_danger_kf / 100)
-                info_diff   = 'Робот устранение замечаний'
+                info_diff   = 'Робот ремонт'
 
                 if price_diff < gear_amt_danger_amount_min:
                     price_diff = gear_amt_danger_amount_min
-                    info_diff   = 'Робот устранение замечаний'
+                    info_diff   = 'Робот ремонт'
 
             elif modification.typeGear.id == 2:
                 price_diff = (price * gear_mt_danger_kf / 100)
-                info_diff   = 'Механика устранение замечаний'
+                info_diff   = 'Механика ремонт'
 
                 if price_diff < gear_mt_danger_amount_min:
                     price_diff = gear_mt_danger_amount_min
-                    info_diff   = 'Механика устранение замечаний'
+                    info_diff   = 'Механика ремонт'
 
             elif modification.typeGear.id == 3:
                 price_diff = (price * gear_at_danger_kf / 100)
-                info_diff   = 'Автомат устранение замечаний'
+                info_diff   = 'Автомат ремонт'
                 if price_diff < gear_at_danger_amount_min:
                     price_diff = gear_at_danger_amount_min
-                    info_diff   = 'Автомат устранение замечаний'
+                    info_diff   = 'Автомат ремонт'
 
             elif modification.typeGear.id == 4:
                 price_diff = (price * gear_cvt_danger_kf / 100)
-                info_diff   = 'Вариатор устранение замечаний'
+                info_diff   = 'Вариатор ремонт'
 
                 if price_diff < gear_cvt_danger_amount_min:
                     price_diff = gear_cvt_danger_amount_min
-                    info_diff   = 'Вариатор устранение замечаний'
+                    info_diff   = 'Вариатор ремонт'
 
             dop = {
                 'name'      : info_diff,
@@ -9399,38 +9403,38 @@ def estimations_price_calculation_cd(cd, type_calculation):
             if modification.typeGear.id == 1:
                 
                 price_diff = (price * gear_amt_warning_kf / 100)
-                info_diff   = 'Робот ремонт'
+                info_diff   = 'Робот устранение замечаний'
 
                 if price_diff < gear_amt_warning_amount_min:
                     price_diff = gear_amt_warning_amount_min
-                    info_diff   = 'Робот ремонт'
+                    info_diff   = 'Робот устранение замечаний'
 
             elif modification.typeGear.id == 2:
                 
                 price_diff = (price * gear_mt_warning_kf / 100)
-                info_diff   = 'Механика ремонт'
+                info_diff   = 'Механика устранение замечаний'
 
                 if price_diff < gear_mt_warning_amount_min:
                     price_diff = gear_mt_warning_amount_min
-                    info_diff   = 'Механика ремонт'
+                    info_diff   = 'Механика устранение замечаний'
 
             elif modification.typeGear.id == 3:
                 
                 price_diff = (price * gear_at_warning_kf / 100)
-                info_diff   = 'Автомат ремонт'
+                info_diff   = 'Автомат устранение замечаний'
 
                 if price_diff < gear_at_warning_amount_min:
                     price_diff = gear_at_warning_amount_min
-                    info_diff   = 'Автомат ремонт'
+                    info_diff   = 'Автомат устранение замечаний'
             
             elif modification.typeGear.id == 4:
                 
                 price_diff = (price * gear_cvt_warning_kf / 100)
-                info_diff   = 'Вариатор ремонт'
+                info_diff   = 'Вариатор устранение замечаний'
 
                 if price_diff < gear_cvt_warning_amount_min:
                     price_diff = gear_cvt_warning_amount_min
-                    info_diff   = 'Вариатор ремонт'
+                    info_diff   = 'Вариатор устранение замечаний'
             
             dop = {
                 'name'      : info_diff,
