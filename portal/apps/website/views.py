@@ -30,7 +30,7 @@ from updatesportal.models import Updatesportal
 import random
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField, FloatField, ExpressionWrapper, Prefetch, Exists
 from django.db.models.functions import Cast, Coalesce, Extract
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from checklists.models import CheckList, CheckList_op_kors, CheckListServiceIn, CheckListTradeIn, CheckListServiceOut
 from .services import open_file
@@ -8187,7 +8187,8 @@ def settings_diagnostic_reference(request):
 @login_required
 def settings_body_ref_replace(request):
     """
-    Справочник расчетных данных по замене элементов кузова (BodyRefReplace)
+    Справочник расчетных данных по замене элементов кузова (BodyRefReplace).
+    Редактирование: одна запись на пару (группа кузовов + ЦГ) — все элементы в одной форме.
     """
     if not request.user.profiles.korsavto_settings:
         return HttpResponseNotFound()
@@ -8206,106 +8207,132 @@ def settings_body_ref_replace(request):
         'бампер передний',
     ])
 
-    # POST actions (add/edit/delete)
+    def _norm(s):
+        return (s or '').strip()
+
+    def _build_params(errors=None):
+        filtr_body_group = request.GET.get('body_group', '')
+        filtr_zg = request.GET.get('zg', '')
+        filtr_element = request.GET.get('element', '')
+        search = request.GET.get('search', '').strip()
+
+        combos_qs = BodyRefReplace.objects.select_related('body_group').values(
+            'body_group_id', 'body_group__name', 'zg'
+        ).distinct().order_by('body_group__name', 'zg')
+
+        grouped_rows = []
+        matrix_map = {}
+        for c in combos_qs:
+            bg_id = c['body_group_id']
+            zg = c['zg']
+            amounts = {el: 0 for el in ELEMENT_CHOICES}
+            for obj in BodyRefReplace.objects.filter(body_group_id=bg_id, zg=zg):
+                if obj.element in amounts:
+                    amounts[obj.element] = obj.amount or 0
+            key = '{}_{}'.format(bg_id, zg)
+            matrix_map[key] = amounts
+            grouped_rows.append({
+                'body_group_id': bg_id,
+                'body_group_name': c['body_group__name'],
+                'zg': zg,
+                'amounts': amounts,
+                'total': sum(amounts.values()),
+            })
+
+        # Фильтр по списку наборов
+        if filtr_body_group:
+            grouped_rows = [r for r in grouped_rows if str(r['body_group_id']) == str(filtr_body_group)]
+        if filtr_zg:
+            grouped_rows = [r for r in grouped_rows if r['zg'] == filtr_zg]
+        if filtr_element:
+            grouped_rows = [
+                r for r in grouped_rows
+                if (r['amounts'].get(filtr_element, 0) or 0) != 0
+            ]
+        if search:
+            q = search.lower()
+
+            def _row_matches_search(r):
+                if q in (r['body_group_name'] or '').lower():
+                    return True
+                if q in (r['zg'] or '').lower():
+                    return True
+                for el in ELEMENT_CHOICES:
+                    if q in el.lower() and (r['amounts'].get(el, 0) or 0) != 0:
+                        return True
+                return False
+
+            grouped_rows = [r for r in grouped_rows if _row_matches_search(r)]
+
+        return {
+            'type': 'settings',
+            'errors': errors or [],
+            'grouped_rows': grouped_rows,
+            'matrix_map': matrix_map,
+            'body_groups': BodyTypeGroup.objects.all().order_by('order', 'name'),
+            'zg_choices': ZG_CHOICES,
+            'element_choices': ELEMENT_CHOICES,
+            'filter': {
+                'body_group': filtr_body_group,
+                'zg': filtr_zg,
+                'element': filtr_element,
+                'search': search,
+            },
+        }
+
+    # POST
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        def _norm(s):
-            return (s or '').strip()
-
-        if action in ('add', 'edit'):
-            item_id = request.POST.get('id')
+        if action == 'save_matrix':
             body_group_id = request.POST.get('body_group_id') or None
             zg = _norm(request.POST.get('zg'))
-            element = _norm(request.POST.get('element'))
-            amount_raw = _norm(request.POST.get('amount'))
-
-            # Validate
             errors = []
             if not body_group_id:
-                errors.append('Укажите группу кузовов.')
+                errors.append('Укажите группу кузовов (тип кузова).')
             if zg not in ZG_CHOICES:
-                errors.append('Укажите ЦГ (zg) из списка.')
-            if element not in ELEMENT_CHOICES:
-                errors.append('Укажите элемент из списка.')
-            try:
-                amount = int(amount_raw) if amount_raw != '' else 0
-            except ValueError:
-                errors.append('Стоимость должна быть числом.')
-                amount = 0
+                errors.append('Укажите ценовую группу (ЦГ) из списка.')
 
-            qs_dup = BodyRefReplace.objects.filter(
-                body_group_id=body_group_id,
-                zg=zg,
-                element=element,
-            )
-            if action == 'edit' and item_id:
-                qs_dup = qs_dup.exclude(id=item_id)
-            if qs_dup.exists():
-                errors.append('Запись с таким сочетанием (Группа кузовов + ЦГ + Элемент) уже существует.')
+            amounts_map = {}
+            if not errors:
+                for i, el in enumerate(ELEMENT_CHOICES):
+                    raw = _norm(request.POST.get('amount_{}'.format(i), ''))
+                    try:
+                        amounts_map[el] = int(raw) if raw != '' else 0
+                    except ValueError:
+                        errors.append('Стоимость для «{}» должна быть целым числом.'.format(el))
+                        break
 
             if errors:
-                params = {
-                    'type': 'settings',
-                    'errors': errors,
-                }
-                # Рендерим страницу с текущими фильтрами (ошибки покажем сверху)
-                # Данные списка подготовим ниже (через общий код)
-            else:
-                if action == 'add':
-                    BodyRefReplace.objects.create(
+                params = _build_params(errors=errors)
+                return render(request, "kors/settings_body_ref_replace.html", {'params': params})
+
+            with transaction.atomic():
+                for el, amount in amounts_map.items():
+                    BodyRefReplace.objects.update_or_create(
                         body_group_id=body_group_id,
                         zg=zg,
-                        element=element,
-                        amount=amount,
+                        element=el,
+                        defaults={'amount': amount},
                     )
-                else:
-                    obj = BodyRefReplace.objects.filter(id=item_id).first()
-                    if obj:
-                        obj.body_group_id = body_group_id
-                        obj.zg = zg
-                        obj.element = element
-                        obj.amount = amount
-                        obj.save()
-                return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', ''))
+                BodyRefReplace.objects.filter(
+                    body_group_id=body_group_id,
+                    zg=zg,
+                ).exclude(element__in=ELEMENT_CHOICES).delete()
+            return HttpResponseRedirect(
+                request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', '')
+            )
 
-        elif action == 'delete':
-            item_id = request.POST.get('id')
-            BodyRefReplace.objects.filter(id=item_id).delete()
-            return HttpResponseRedirect(request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', ''))
+        if action == 'delete_set':
+            body_group_id = request.POST.get('body_group_id') or None
+            zg = _norm(request.POST.get('zg'))
+            if body_group_id and zg:
+                BodyRefReplace.objects.filter(body_group_id=body_group_id, zg=zg).delete()
+            return HttpResponseRedirect(
+                request.build_absolute_uri().split('?')[0] + '?' + request.META.get('QUERY_STRING', '')
+            )
 
-    # Filters (GET)
-    filtr_body_group = request.GET.get('body_group', '')
-    filtr_zg = request.GET.get('zg', '')
-    filtr_element = request.GET.get('element', '')
-    search = request.GET.get('search', '').strip()
-
-    qs = BodyRefReplace.objects.select_related('body_group').all()
-    if filtr_body_group:
-        qs = qs.filter(body_group_id=filtr_body_group)
-    if filtr_zg:
-        qs = qs.filter(zg=filtr_zg)
-    if filtr_element:
-        qs = qs.filter(element=filtr_element)
-    if search:
-        qs = qs.filter(models.Q(element__icontains=search) | models.Q(zg__icontains=search))
-
-    qs = qs.order_by('body_group__name', 'zg', 'element')
-
-    params = {
-        'type': 'settings',
-        'items': qs,
-        'body_groups': BodyTypeGroup.objects.all().order_by('order', 'name'),
-        'zg_choices': ZG_CHOICES,
-        'element_choices': ELEMENT_CHOICES,
-        'filter': {
-            'body_group': filtr_body_group,
-            'zg': filtr_zg,
-            'element': filtr_element,
-            'search': search,
-        }
-    }
-
+    params = _build_params()
     return render(request, "kors/settings_body_ref_replace.html", {'params': params})
 
 
