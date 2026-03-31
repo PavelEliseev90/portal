@@ -9,14 +9,14 @@
   <div class="settings-diagnostic-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
       <h2>Замена элементов кузова</h2>
-      <p class="mb-0">Справочник расчетных стоимостей замены «под ключ» по виду кузова, ЦГ и элементу.</p>
+      <p class="mb-0">Для каждой пары «группа кузовов + ценовая группа» задаются стоимости по всем элементам сразу. Сохранение — одной кнопкой.</p>
     </div>
     <div class="d-flex gap-2">
       <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
       <a href="/settings/settings_body_type_groups/" class="btn btn-outline-secondary">
         <span class="icon-mbri-setting"></span> Группы кузовов
       </a>
-      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bodyRefReplaceAddModal">
+      <button type="button" class="btn btn-primary" id="bodyRefReplaceOpenAdd" data-bs-toggle="modal" data-bs-target="#bodyRefReplaceMatrixModal">
         <span class="icon-mbri-plus"></span> Добавить
       </button>
     </div>
@@ -57,7 +57,7 @@
           </select>
         </div>
         <div class="col-6 col-md-3">
-          <label class="form-label">Элемент</label>
+          <label class="form-label">Элемент (не ноль)</label>
           <select class="form-select" name="element">
             <option value="">Все</option>
             {% for el in params.element_choices %}
@@ -67,7 +67,7 @@
         </div>
         <div class="col-12 col-md-3">
           <label class="form-label">Поиск</label>
-          <input type="text" class="form-control" name="search" value="{{ params.filter.search }}" placeholder="zg или элемент…">
+          <input type="text" class="form-control" name="search" value="{{ params.filter.search }}" placeholder="группа, ЦГ, часть названия элемента…">
         </div>
         <div class="col-12 d-flex gap-2">
           <button class="btn btn-outline-primary" type="submit"><span class="icon-mbri-search"></span> Найти</button>
@@ -83,49 +83,43 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th style="width: 32%;">Вид кузова</th>
-              <th style="width: 10%;">ЦГ</th>
-              <th>Элемент</th>
-              <th style="width: 14%;">Стоимость</th>
-              <th style="width: 18%;">Действия</th>
+              <th style="width: 36%;">Группа кузовов</th>
+              <th style="width: 10%;">Ценовая группа (ЦГ)</th>
+              <th style="width: 14%;" class="text-end">Сумма по элементам</th>
+              <th style="width: 40%;">Действия</th>
             </tr>
           </thead>
           <tbody>
-            {% for it in params.items %}
+            {% for row in params.grouped_rows %}
               <tr>
-                <td><span class="badge bg-info">{{ it.body_group.name }}</span></td>
-                <td><code>{{ it.zg }}</code></td>
-                <td>{{ it.element|capfirst }}</td>
-                <td><span class="fw-bold">{{ it.amount|default:0 }}</span></td>
+                <td><span class="badge bg-info">{{ row.body_group_name }}</span></td>
+                <td><code>{{ row.zg }}</code></td>
+                <td class="text-end"><span class="fw-bold">{{ row.total }}</span></td>
                 <td class="text-nowrap">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-outline-primary brm-open-edit"
                     data-bs-toggle="modal"
-                    data-bs-target="#bodyRefReplaceEditModal"
-                    data-id="{{ it.id }}"
-                    data-body-group-id="{{ it.body_group_id }}"
-                    data-zg="{{ it.zg }}"
-                    data-element="{{ it.element }}"
-                    data-amount="{{ it.amount|default:0 }}"
+                    data-bs-target="#bodyRefReplaceMatrixModal"
+                    data-body-group-id="{{ row.body_group_id }}"
+                    data-zg="{{ row.zg }}"
                   >
                     <span class="icon-mbri-edit"></span> Редактировать
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger"
-                    data-bs-toggle="modal"
-                    data-bs-target="#bodyRefReplaceDeleteModal"
-                    data-id="{{ it.id }}"
-                    data-title="{{ it.body_group.name }} / {{ it.zg }} / {{ it.element }}"
-                  >
-                    <span class="icon-mbri-trash"></span> Удалить
-                  </button>
+                  <form method="post" class="d-inline" onsubmit="return confirm('Удалить все стоимости для этой группы кузовов и ЦГ?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_set">
+                    <input type="hidden" name="body_group_id" value="{{ row.body_group_id }}">
+                    <input type="hidden" name="zg" value="{{ row.zg }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <span class="icon-mbri-trash"></span> Удалить набор
+                    </button>
+                  </form>
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="5" class="text-center text-muted py-4">Нет данных</td>
+                <td colspan="4" class="text-center text-muted py-4">Нет сохранённых наборов. Нажмите «Добавить» и заполните таблицу.</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -135,135 +129,75 @@
   </div>
 </section>
 
-<!-- Add modal -->
-<div class="modal fade" id="bodyRefReplaceAddModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+{{ params.matrix_map|json_script:"bodyRefReplaceMatrixData" }}
+{{ params.element_choices|json_script:"bodyRefReplaceElementChoices" }}
+
+<!-- Модальное окно: группа + ЦГ + все элементы -->
+<div class="modal fade" id="bodyRefReplaceMatrixModal" tabindex="-1" aria-labelledby="bodyRefReplaceMatrixModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" id="bodyRefReplaceMatrixForm">
         {% csrf_token %}
-        <input type="hidden" name="action" value="add">
+        <input type="hidden" name="action" value="save_matrix">
         <div class="modal-header">
-          <h5 class="modal-title">Добавить запись</h5>
+          <h5 class="modal-title" id="bodyRefReplaceMatrixModalLabel">Стоимости замены элементов кузова</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label">Группа кузовов</label>
-            <select class="form-select" name="body_group_id" required>
-              <option value="" selected disabled>Выберите…</option>
-              {% for g in params.body_groups %}
-                <option value="{{ g.id }}">{{ g.name }}</option>
-              {% endfor %}
-            </select>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Группа кузовов (тип)</label>
+              <select class="form-select" name="body_group_id" id="brm_body_group_id" required>
+                <option value="" disabled selected>Выберите…</option>
+                {% for g in params.body_groups %}
+                  <option value="{{ g.id }}">{{ g.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Ценовая группа (ЦГ)</label>
+              <select class="form-select" name="zg" id="brm_zg" required>
+                <option value="" disabled selected>Выберите…</option>
+                {% for z in params.zg_choices %}
+                  <option value="{{ z }}">{{ z }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
-          <div class="mb-2">
-            <label class="form-label">ЦГ (zg)</label>
-            <select class="form-select" name="zg" required>
-              <option value="" selected disabled>Выберите…</option>
-              {% for z in params.zg_choices %}
-                <option value="{{ z }}">{{ z }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Элемент</label>
-            <select class="form-select" name="element" required>
-              <option value="" selected disabled>Выберите…</option>
-              {% for el in params.element_choices %}
-                <option value="{{ el }}">{{ el|capfirst }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Стоимость замены под ключ</label>
-            <input type="number" class="form-control" name="amount" value="0" min="0" step="1">
-          </div>
-          <div class="small text-muted">
-            Проверка уникальности: в рамках (вид кузова + ЦГ + элемент) запись должна быть единственной.
+          <p class="small text-muted mb-2">Укажите стоимость замены «под ключ» по каждому элементу (0 — если не применимо).</p>
+          <div class="table-responsive border rounded">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 55%;">Элемент кузова</th>
+                  <th>Стоимость замены под ключ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for el in params.element_choices %}
+                  <tr>
+                    <td>{{ el|capfirst }}</td>
+                    <td>
+                      <input
+                        type="number"
+                        class="form-control form-control-sm brm-amount-input"
+                        name="amount_{{ forloop.counter0 }}"
+                        id="brm_amount_{{ forloop.counter0 }}"
+                        value="0"
+                        min="0"
+                        step="1"
+                        data-element="{{ el }}"
+                      >
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
           <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Edit modal -->
-<div class="modal fade" id="bodyRefReplaceEditModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="id" id="brre_id">
-        <div class="modal-header">
-          <h5 class="modal-title">Редактировать</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label">Группа кузовов</label>
-            <select class="form-select" name="body_group_id" id="brre_body_group_id" required>
-              <option value="" disabled>Выберите…</option>
-              {% for g in params.body_groups %}
-                <option value="{{ g.id }}">{{ g.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">ЦГ (zg)</label>
-            <select class="form-select" name="zg" id="brre_zg" required>
-              <option value="" disabled>Выберите…</option>
-              {% for z in params.zg_choices %}
-                <option value="{{ z }}">{{ z }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Элемент</label>
-            <select class="form-select" name="element" id="brre_element" required>
-              <option value="" disabled>Выберите…</option>
-              {% for el in params.element_choices %}
-                <option value="{{ el }}">{{ el|capfirst }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Стоимость замены под ключ</label>
-            <input type="number" class="form-control" name="amount" id="brre_amount" min="0" step="1">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Delete confirm modal -->
-<div class="modal fade" id="bodyRefReplaceDeleteModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="id" id="brre_del_id">
-        <div class="modal-header">
-          <h5 class="modal-title">Удалить запись?</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-2">Вы уверены, что хотите удалить:</div>
-          <div class="p-2 rounded bg-light border" id="brre_del_title"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-danger">Удалить</button>
         </div>
       </form>
     </div>
@@ -272,28 +206,80 @@
 
 <script>
   (function () {
-    const editModal = document.getElementById('bodyRefReplaceEditModal');
-    const delModal = document.getElementById('bodyRefReplaceDeleteModal');
-    if (editModal) {
-      editModal.addEventListener('show.bs.modal', function (event) {
-        const btn = event.relatedTarget;
-        if (!btn) return;
-        document.getElementById('brre_id').value = btn.getAttribute('data-id') || '';
-        document.getElementById('brre_body_group_id').value = btn.getAttribute('data-body-group-id') || '';
-        document.getElementById('brre_zg').value = btn.getAttribute('data-zg') || '';
-        document.getElementById('brre_element').value = btn.getAttribute('data-element') || '';
-        document.getElementById('brre_amount').value = btn.getAttribute('data-amount') || '0';
+    const modalEl = document.getElementById('bodyRefReplaceMatrixModal');
+    const form = document.getElementById('bodyRefReplaceMatrixForm');
+    const selBg = document.getElementById('brm_body_group_id');
+    const selZg = document.getElementById('brm_zg');
+    let matrixData = {};
+    let elementChoices = [];
+    try {
+      const md = document.getElementById('bodyRefReplaceMatrixData');
+      const ec = document.getElementById('bodyRefReplaceElementChoices');
+      if (md) matrixData = JSON.parse(md.textContent);
+      if (ec) elementChoices = JSON.parse(ec.textContent);
+    } catch (e) {
+      matrixData = {};
+      elementChoices = [];
+    }
+
+    function clearAmounts() {
+      elementChoices.forEach(function (_el, i) {
+        const inp = document.getElementById('brm_amount_' + i);
+        if (inp) inp.value = '0';
       });
     }
-    if (delModal) {
-      delModal.addEventListener('show.bs.modal', function (event) {
-        const btn = event.relatedTarget;
-        if (!btn) return;
-        document.getElementById('brre_del_id').value = btn.getAttribute('data-id') || '';
-        document.getElementById('brre_del_title').textContent = btn.getAttribute('data-title') || '';
+
+    function fillAmountsForKey(key) {
+      clearAmounts();
+      const block = matrixData[key];
+      if (!block) return;
+      elementChoices.forEach(function (el, i) {
+        const inp = document.getElementById('brm_amount_' + i);
+        if (!inp) return;
+        const v = block[el];
+        inp.value = v !== undefined && v !== null ? String(v) : '0';
       });
     }
+
+    function setSelectsEnabled(enabled) {
+      selBg.disabled = !enabled;
+      selZg.disabled = !enabled;
+    }
+
+    if (modalEl) {
+      modalEl.addEventListener('show.bs.modal', function (event) {
+        const opener = event.relatedTarget;
+        const isAdd = opener && opener.id === 'bodyRefReplaceOpenAdd';
+        if (isAdd) {
+          setSelectsEnabled(true);
+          form.reset();
+          return;
+        }
+        if (opener && opener.classList.contains('brm-open-edit')) {
+          const bg = opener.getAttribute('data-body-group-id');
+          const zg = opener.getAttribute('data-zg');
+          setSelectsEnabled(false);
+          if (selBg && bg) {
+            selBg.value = bg;
+          }
+          if (selZg && zg) {
+            selZg.value = zg;
+          }
+          fillAmountsForKey(bg + '_' + zg);
+        }
+      });
+
+      modalEl.addEventListener('hidden.bs.modal', function () {
+        setSelectsEnabled(true);
+      });
+    }
+
+    form.addEventListener('submit', function () {
+      if (selBg.disabled) {
+        selBg.disabled = false;
+        selZg.disabled = false;
+      }
+    });
   })();
 </script>
 {% endblock %}
-
