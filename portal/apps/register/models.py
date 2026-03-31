@@ -185,6 +185,9 @@ class BodyRefReplace(models.Model):
         db_table = 'bodyRefReplace'
         verbose_name = "Расчетные данные по замене элементов"
         verbose_name_plural = "Расчетные данные по замене элементов" 
+        constraints = [
+            models.UniqueConstraint(fields=['body_type', 'zg', 'element'], name='uniq_bodyrefreplace_body_zg_element'),
+        ]
         
 
 class RegEstimationsSettings(models.Model):
