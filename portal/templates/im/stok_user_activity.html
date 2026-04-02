@@ -1,0 +1,130 @@
+{% extends 'base_web.html' %}
+
+{% block url %} {% endblock %}
+
+{% block title %} - активность по карточкам стока {% endblock %}
+
+{% block title_navbar %} - активность по карточкам стока {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h2 class="mb-0">Активность по карточкам (портал)</h2>
+    <a href="{% url 'website:stok_im' %}" class="btn btn-outline-primary">
+      <span class="icon-mbri-left"></span> Назад к стоку
+    </a>
+  </div>
+
+  <div class="portal-panel mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-0">С даты</label>
+        <input type="date" name="date_from" class="form-control" value="{{ params.date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-0">По дату</label>
+        <input type="date" name="date_to" class="form-control" value="{{ params.date_to }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-0">Пользователь (журнал)</label>
+        <select name="user_id" class="form-select">
+          <option value="">Все</option>
+          {% for u in params.filter_users %}
+          <option value="{{ u.id }}" {% if params.user_filter_id == u.id %}selected{% endif %}>{{ u.username }}{% if u.get_full_name %} — {{ u.get_full_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Показать</button>
+      </div>
+    </form>
+    <p class="text-muted small mb-0 mt-2">Сводка — по всем пользователям за выбранный период. Журнал — с учётом фильтра по пользователю.</p>
+  </div>
+
+  <h4 class="mb-3">Сводка по пользователям</h4>
+  <div class="portal-panel mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Пользователь</th>
+            <th class="text-end">Открытий карточки</th>
+            <th class="text-end">Загрузок фото</th>
+            <th class="text-end">Удалений фото</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.summary %}
+          <tr>
+            <td>
+              {% if row.user__first_name or row.user__last_name %}
+                {{ row.user__first_name }} {{ row.user__last_name }}
+                <span class="text-muted small">({{ row.user__username }})</span>
+              {% else %}
+                {{ row.user__username }}
+              {% endif %}
+            </td>
+            <td class="text-end">{{ row.opens }}</td>
+            <td class="text-end">{{ row.uploads }}</td>
+            <td class="text-end">{{ row.deletes }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">Нет записей за период.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h4 class="mb-3">Журнал событий</h4>
+  <div class="portal-panel">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Когда</th>
+            <th>Пользователь</th>
+            <th>Действие</th>
+            <th>Товар</th>
+            <th>Фото</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in params.page_obj %}
+          <tr>
+            <td>{{ ev.created_at|date:"d.m.Y H:i:s" }}</td>
+            <td>{{ ev.user.username }}{% if ev.user.get_full_name %} <span class="text-muted small">({{ ev.user.get_full_name }})</span>{% endif %}</td>
+            <td>{{ ev.get_action_display }}</td>
+            <td>
+              <a href="{% url 'website:stok_im_product' %}?kod={{ ev.product.nomenclature_code|urlencode }}">{{ ev.product.nomenclature_code }}</a>
+              <div class="small text-muted text-truncate" style="max-width: 280px;">{{ ev.product.nomenclature|default:ev.product.title|truncatechars:80 }}</div>
+            </td>
+            <td>{% if ev.photo %}#{{ ev.photo.id }}{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">Нет записей с учётом фильтров.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if params.page_obj.paginator.num_pages > 1 %}
+    <nav class="mt-3 d-flex justify-content-center" aria-label="Страницы">
+      <ul class="pagination mb-0">
+        {% if params.page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if params.pagination_base %}{{ params.pagination_base }}&amp;{% endif %}page={{ params.page_obj.previous_page_number }}">Назад</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Стр. {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}</span></li>
+        {% if params.page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if params.pagination_base %}{{ params.pagination_base }}&amp;{% endif %}page={{ params.page_obj.next_page_number }}">Вперёд</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

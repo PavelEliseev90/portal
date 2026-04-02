@@ -93,6 +93,9 @@
         <a href="{% url 'website:stok_im_sync_log' %}" class="btn btn-outline-secondary action-btn">
           <span class="icon-mbri-file"></span> Журнал синхронизации
         </a>
+        <a href="{% url 'website:stok_im_user_activity' %}" class="btn btn-outline-secondary action-btn">
+          <span class="icon-mbri-users"></span> Активность по карточкам
+        </a>
         <form method="post" action="{% url 'website:stok_im_sync_run' %}" class="d-inline" id="syncForm">
           {% csrf_token %}
           <button type="submit" class="btn action-btn btn-sync" id="syncBtn">
@@ -100,13 +103,19 @@
             <span id="syncText">Запустить синхронизацию</span>
           </button>
         </form>
-        <form method="post" action="{% url 'website:stok_im_sync_photos' %}" class="d-inline" id="syncPhotosForm">
+        <form class="d-inline" id="syncPhotosForm" onsubmit="return false;">
           {% csrf_token %}
-          <button type="submit" class="btn action-btn btn-sync-photos" id="syncPhotosBtn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; color: #fff !important;">
+          <button type="button" class="btn action-btn btn-sync-photos" id="syncPhotosBtn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; color: #fff !important;">
             <span class="icon-mbri-picture"></span>
             <span id="syncPhotosText">Синхронизация фото</span>
           </button>
         </form>
+      </div>
+      <div id="syncPhotosProgressWrap" class="d-none w-100 mt-2">
+        <div class="progress" style="height: 10px; max-width: 480px;">
+          <div id="syncPhotosProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div id="syncPhotosProgressText" class="small text-muted mt-2"></div>
       </div>
     </div>
 
@@ -169,6 +178,14 @@
           </div>
         </a>
       </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-label">Очередь в 1С</div>
+          <div class="metric-value" style="color: #0ea5e9 !important;">{{ params.dashboard.photo_push_queue|default:0 }}</div>
+          <div class="metric-detail small text-muted mt-1">Фото к отправке</div>
+          <div class="metric-detail small text-muted">Кнопка «Синхронизация фото»</div>
+        </div>
+      </div>
     </div>
     {% else %}
     <div class="portal-panel p-5 text-center">
@@ -194,13 +211,72 @@
       text.textContent = 'Синхронизация...';
     }
   });
-  document.getElementById('syncPhotosForm')?.addEventListener('submit', function() {
+  document.getElementById('syncPhotosBtn')?.addEventListener('click', async function() {
     var btn = document.getElementById('syncPhotosBtn');
     var text = document.getElementById('syncPhotosText');
-    if (btn && text) {
-      btn.disabled = true;
-      text.textContent = 'Синхронизация фото...';
+    var wrap = document.getElementById('syncPhotosProgressWrap');
+    var bar = document.getElementById('syncPhotosProgressBar');
+    var ptext = document.getElementById('syncPhotosProgressText');
+    if (!btn || btn.disabled) return;
+    function getCsrf() {
+      var el = document.querySelector('#syncPhotosForm input[name="csrfmiddlewaretoken"]');
+      return el ? el.value : '';
     }
+    btn.disabled = true;
+    if (text) text.textContent = 'Синхронизация фото...';
+    if (wrap) wrap.classList.remove('d-none');
+    if (bar) { bar.style.width = '0%'; bar.classList.remove('bg-success', 'bg-danger'); bar.classList.add('bg-info'); }
+    if (ptext) ptext.textContent = '';
+    try {
+      var resp = await fetch('{% url "website:stok_im_sync_photos_stream" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf(), 'Accept': 'application/x-ndjson' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (!resp.body || !resp.body.getReader) {
+        throw new Error('Поток ответа недоступен в этом браузере');
+      }
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+          var ev = JSON.parse(line);
+          if (ev.phase === 'push_start') {
+            if (ptext) ptext.textContent = 'В очереди на отправку в 1С: ' + (ev.total || 0) + ' фото';
+            if (bar && (ev.total === 0 || !ev.total)) bar.style.width = '100%';
+          }
+          if (ev.phase === 'push_item' && ev.total) {
+            var pct = Math.round(100 * ev.current / ev.total);
+            if (bar) bar.style.width = pct + '%';
+            if (ptext) ptext.textContent = 'Передано в 1С: ' + ev.current + ' / ' + ev.total + (ev.ok ? ' ✓' : ' ✗');
+          }
+          if (ev.phase === 'push_done') {
+            if (ptext) ptext.textContent = 'В 1С: успешно ' + ev.pushed_ok + ', ошибок ' + ev.pushed_fail;
+            if (bar) { bar.style.width = '100%'; bar.classList.remove('progress-bar-animated'); }
+          }
+          if (ev.phase === 'pull_done') {
+            if (ptext) ptext.textContent += ev.ok ? ' Загрузка фото из 1С завершена.' : (' Ошибка: ' + (ev.error || ''));
+            if (bar && ev.ok) { bar.classList.remove('bg-info'); bar.classList.add('bg-success'); }
+            if (bar && !ev.ok) { bar.classList.remove('bg-info'); bar.classList.add('bg-danger'); }
+          }
+        }
+      }
+    } catch (e) {
+      if (ptext) ptext.textContent = 'Ошибка: ' + (e && e.message ? e.message : e);
+      if (bar) bar.classList.replace('bg-info', 'bg-danger');
+    }
+    if (text) text.textContent = 'Синхронизация фото';
+    btn.disabled = false;
+    window.location.reload();
   });
 </script>
 {% endif %}

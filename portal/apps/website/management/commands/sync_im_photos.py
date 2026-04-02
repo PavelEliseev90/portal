@@ -111,6 +111,7 @@ class Command(BaseCommand):
                             product=product,
                             source_url=photo_url,
                             sort_order=idx,
+                            upload_1c_status=ImProductPhoto.UPLOAD_1C_NA,
                         )
                         photo.file.save(fname, ContentFile(img_resp.content), save=True)
                         total_downloaded += 1
