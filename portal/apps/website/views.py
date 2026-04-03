@@ -356,6 +356,7 @@ def get_start(user):
     currentdate_end         = currentdate.replace(hour=23, minute=59) 
     curent_date_mounth      = currentdate.replace(day=1, hour=1) 
     
+    
     rating                          = 0
     rating_common                   = 0
     
@@ -377,7 +378,7 @@ def get_start(user):
     rlks_count      = DocRLK.objects.filter(dataTime__gte = currentdate).filter(staff__domain_login = user.username).count()
     doc_rlks        = list()
     # doc_zn_count      = DocZN.objects.filter(dataTime__gte = currentdate).filter(dataTime__lte = currentdate_end).filter(master__domain_login = user.username).count()
-    doc_zn_count        = ResourcePlanning.objects.filter(staff__domain_login = user.username).count()
+    doc_zn_count        = ResourcePlanning.objects.filter(staff__domain_login = user.username).count() 
     
     docs_zn_in      = list()
 
@@ -5422,7 +5423,11 @@ def stok_im_user_activity(request):
     from website.models import ImProductUserActivity
     from django.utils import timezone as tz_util
 
-    today = tz_util.localdate()
+    if settings.USE_TZ:
+        today = tz_util.localdate()
+    else:
+        today = DT.date.today()
+
     date_to_str = request.GET.get('date_to') or today.isoformat()
     date_from_str = request.GET.get('date_from') or (today - DT.timedelta(days=30)).isoformat()
     user_filter = request.GET.get('user_id', '').strip()
@@ -5436,8 +5441,12 @@ def stok_im_user_activity(request):
         date_from = today - DT.timedelta(days=30)
         date_to = today
 
-    start_dt = tz_util.make_aware(DT.datetime.combine(date_from, DT.time.min))
-    end_dt = tz_util.make_aware(DT.datetime.combine(date_to, DT.time.max))
+    if settings.USE_TZ:
+        start_dt = tz_util.make_aware(DT.datetime.combine(date_from, DT.time.min))
+        end_dt = tz_util.make_aware(DT.datetime.combine(date_to, DT.time.max))
+    else:
+        start_dt = DT.datetime.combine(date_from, DT.time.min)
+        end_dt = DT.datetime.combine(date_to, DT.time.max)
 
     base = ImProductUserActivity.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
     summary_qs = (

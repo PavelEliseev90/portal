@@ -21,15 +21,15 @@ z-index: 1030;">
 
 <div class="offcanvas-body" style="padding: 0rem;">
     <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 4rem;">
-        <div class="container" style="padding: 0rem;">
+        <div class="container" style="padding: 0 0 4rem 0;">
         
-            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list" style="padding: 0rem; margin: 0rem;">
                 
                 {% if params.messages|length > 0 %}
                     
                     {% for message in params.messages %}
                     
-                        <div class="item-chat-message{% if message.user.profiles.eco %}-owner text-end{% endif %} col-12">
+                        <div class="item-chat-message{% if message.user.profiles.eco %}-owner text-end{% endif %} col-12"  style="padding:0rem;">
                             <div class="item-chat-body{% if message.user.profiles.eco %}-owner text-end{% endif %} " >
                                 <div class="item-content-chat">
                                     <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
@@ -77,10 +77,25 @@ z-index: 1030;">
                     
                 <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
                 <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
-                
-                <div class="input-group  form-control bg-primary" style="padding: 0rem;">
-                    <textarea class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
-                    <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+
+                <style>
+                    #chat-emoji-wrap emoji-picker {
+                        width: 100%;
+                        max-width: 100%;
+                        height: min(55vh, 380px);
+                        --num-columns: 8;
+                    }
+                </style>
+
+                <div class="position-relative w-100">
+                    <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0rem;">
+                        <textarea class="form-control border-end-0" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
+                        <button type="button" class="btn btn-outline-secondary bg-white px-2" id="chat-emoji-btn" title="Эмодзи" aria-expanded="false" aria-controls="chat-emoji-wrap">😀</button>
+                        <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                    </div>
+                    <div id="chat-emoji-wrap" class="d-none border rounded bg-white shadow-sm mt-1" style="position: absolute; bottom: 100%; left: 0; right: 0; z-index: 1060; overflow: hidden;">
+                        <emoji-picker id="chat-emoji-picker"></emoji-picker>
+                    </div>
                 </div>
     
             </form>
@@ -108,8 +123,6 @@ z-index: 1030;">
     var wsProtocol = '';
 
     $("#message").on('keydown', function (e) {
-        // Enter отправляет сообщение, но не вставляет новую строку.
-        // Shift+Enter — новая строка.
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             e.stopPropagation();
@@ -120,10 +133,8 @@ z-index: 1030;">
     });
 
     $(document).ready ( function(){
-        
         scrollToBottom();
         connect_ws();
-
     });
 
     $('#chat_open').click(function() {
@@ -145,7 +156,6 @@ z-index: 1030;">
  
     
         chatSocket.onopen = function() {
-          // subscribe to some channels
           console.log('open');
           $("#div_reconect").addClass('d-none');
         };
@@ -165,7 +175,7 @@ z-index: 1030;">
                 
                     if (data.eco ){
                     
-                        html = '<div class="item-chat-message-owner text-end col-12">';
+                        html = '<div class="item-chat-message-owner text-end col-12" style="padding:0rem;">';
                         html += '   <div class="item-chat-body-owner text-end">';
                         html += '      <div class="item-content-chat">';
                         html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
@@ -184,7 +194,7 @@ z-index: 1030;">
                         scrollToBottom();
 
                     } else {
-                        html = '<div class="item-chat-message col-12">';
+                        html = '<div class="item-chat-message col-12"  style="padding:0rem;">';
                         html += '   <div class="item-chat-body">';
                         html += '      <div class="item-content-chat">';
                         html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
@@ -280,4 +290,52 @@ z-index: 1030;">
         } 
     }
 
+</script>
+
+<script type="module">
+    import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+
+    function insertAtCursor(textarea, text) {
+        const el = textarea;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const val = el.value;
+        el.value = val.slice(0, start) + text + val.slice(end);
+        const pos = start + text.length;
+        el.selectionStart = el.selectionEnd = pos;
+        el.focus();
+    }
+
+    const btn = document.getElementById('chat-emoji-btn');
+    const wrap = document.getElementById('chat-emoji-wrap');
+    const picker = document.getElementById('chat-emoji-picker');
+    const ta = document.getElementById('message');
+
+    if (btn && wrap && picker && ta) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const open = wrap.classList.toggle('d-none');
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        });
+
+        picker.addEventListener('emoji-click', function (e) {
+            var u = e.detail && e.detail.unicode;
+            if (!u && e.detail && e.detail.emoji) {
+                u = e.detail.emoji.unicode || e.detail.emoji;
+            }
+            if (typeof u === 'string') {
+                insertAtCursor(ta, u);
+            }
+            wrap.classList.add('d-none');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (wrap.classList.contains('d-none')) return;
+            if (wrap.contains(e.target) || btn.contains(e.target)) return;
+            wrap.classList.add('d-none');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    }
 </script>

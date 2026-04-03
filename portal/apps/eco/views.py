@@ -8147,8 +8147,26 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 matrix_auction  = settings_matrix.charge_bcp_5001        
             cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
         else:
+            if zg == '200':
+                matrix  = settings_matrix.charge_bcp_200
+            elif zg == '400':
+                matrix  = settings_matrix.charge_bcp_400
+            elif zg == '700':
+                matrix  = settings_matrix.charge_bcp_700
+            elif zg == '1 200':
+                matrix  = settings_matrix.charge_bcp_1200
+            elif zg == '2 000':
+                matrix  = settings_matrix.charge_bcp_2000
+            elif zg == '3 000':
+                matrix  = settings_matrix.charge_bcp_3000
+            elif zg == '5 000':
+                matrix  = settings_matrix.charge_bcp_5000
+            else:
+                matrix  = settings_matrix.charge_bcp_5001
             cna_expenses = cna_expenses + difference_sum
-        
+            if cna_expenses - estimation_price < matrix:
+                cna_expenses = estimation_price + matrix    
+                    
         try:
             if type_calculation == 'custom':
                 s = 1

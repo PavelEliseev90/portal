@@ -14,9 +14,10 @@
         <button class="btn btn-outline-danger btn-sm ms-2" id="btn_reconect_cars"><span class="icon-mbri-close"></span> Переподключиться</button>
         <hr>
     </div>
-    <div class="offcanvas-body">
-        <div class="container" style="padding-bottom: 2rem;">
-            <div class="row align-items-center align-self-center message-list" id="message-list-cars" name="message-list-cars"></div>
+    <div class="offcanvas-body" style="padding: 0rem;">
+        <div class="container" style="padding: 0rem;">
+            <div class="row align-items-center align-self-center message-list" id="message-list-cars" name="message-list-cars" style="margin: 0rem;">
+            </div>
         </div>
     </div>
 </div>
@@ -51,10 +52,10 @@
                         formattedDate = dateList.toLocaleDateString() + ' ' + dateList.toLocaleTimeString();
                     }
                     var href = (obj.name && obj.name.indexOf('/') === 0) ? obj.name : ('/cars/' + (obj.slug ? obj.slug.replace(/^car_/, '') : '') + '/');
-                    var html = '<a href="' + href + '" class="text-dark text-decoration-none">';
+                    var html = '<a href="' + href + '" class="text-dark text-decoration-none" style="padding:0rem;">';
                     html += '<div class="item-chat-message col-12"><div class="item-chat-body">';
                     html += '<div class="item-content-chat"><label class="item-subtitle">' + unit + '<br>' + mark + ' ' + model + ' ' + modification + '<br>' + vin + '</label><hr></div>';
-                    html += '<p class="item-time-chat">' + content + ' <br> ' + formattedDate + '</p>';
+                    html += '<p class="item-time-chat">' + content + ' </p><p class="text-muted" style="margin:0rem;"> ' + obj.user_name + ' / ' + formattedDate + '</p>';
                     html += '</div></div></a>';
                     el.innerHTML = el.innerHTML + html;
                 }

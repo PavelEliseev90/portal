@@ -72,7 +72,7 @@ z-index: 1044;">
     <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1"  id="product-list-2-tYUDzoCUDe" style="padding-bottom: 2rem;">
         <div class="container" style="padding: 0rem;">
         
-            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list">
+            <div class="row align-items-center align-self-center message-list" id="message-list" name="message-list" style="margin: 0rem;">
                 
                 {% if params.chats|length > 0 %}
                     
@@ -695,11 +695,16 @@ z-index: 1044;">
                   car_price_sale = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 3 }).format(obj.car_price_sale,);
                 };
 
+                var visible_red = '';
+                if (obj.eco == false){
+                  visible_red = "-red";  
+                };
+
                 var visible_badge = " d-none ";
                 if (obj.eco == false){
                   visible_badge = "";  
                 };
-                
+
                 var auction = '';
                 if (obj.auction){
                   auction = '<span class="badge bg-danger rounded-pill justify-content-end">A</span>';
@@ -781,14 +786,14 @@ z-index: 1044;">
                 var formattedDate_list = date_list.toLocaleDateString() + ' ' + date_list.toLocaleTimeString();
 
                 html_list = '<a id="chat_list_data_' + id + '" href="' + obj.name + '/" target="_blank" class="text-dark" style="padding:0">'
-                html_list += '   <div class="item-chat-message-owner col-12">'
-                html_list += '                <div class="item-chat-body-owner" >'
-                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + '</p><hr style="margin:0.1rem;"><p class="item-time-chat" style="margin:0.1rem;">' + obj.rlk_unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
+                html_list += '   <div class="item-chat-message-owner' + visible_red + ' col-12">'
+                html_list += '                <div class="item-chat-body-owner' + visible_red + '" >'
+                html_list += '                        <p class="item-time-chat" style="margin:0.1rem;">' + obj.rlk_unit + '<br>' + mark + ' ' +  model + ' ' + modification + '<br> ' + obj.vin + '</p>' 
                 html_list += '                    <div class="item-content-chat" style="margin:0.1rem;">'
-                html_list += '                        <hr style="margin:0.1rem;"> <label class="fs-6 item-subtitle">'
-                html_list += '                            ' + obj.content + ''
+                html_list += '                         <label class="fs-6 item-subtitle">'
+                html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '                                                        '
+                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>' 
                 html_list += '                    </div>'
                 html_list += '                </div>'
                 html_list += '            </div>'

@@ -1,8 +1,8 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} — Управление Км по брендам {% endblock %}
-{% block title_navbar %} — Управление Км {% endblock %}
+{% block title %} — Управление КМ по брендам {% endblock %}
+{% block title_navbar %} — Управление КМ {% endblock %}
 
 {% block content %}
 <div class="portal-page">
@@ -10,7 +10,7 @@
         <p class="mb-2">
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
-        <h2 class="mb-2">Управление Км по брендам на месяц</h2>
+        <h2 class="mb-2">Управление КМ по брендам на месяц</h2>
         <p class="text-muted mb-4">Укажите значение км (кумулятивная маржа и т.п.) по бренду на выбранный месяц. Бренды настраиваются в разделе «Бренды».</p>
 
         {% if messages %}
@@ -44,11 +44,11 @@
                     <input type="month" name="month" class="form-control" required placeholder="2025-02">
                 </div>
                 <div class="col-12 col-md-2">
-                    <label class="form-label">Км</label>
+                    <label class="form-label">КМ</label>
                     <input type="number" name="km" class="form-control" value="0" min="0" step="1">
                 </div>
                 <div class="col-12 col-md-2">
-                    <label class="form-label">Индекс Км для РДО</label>
+                    <label class="form-label">Индекс КМ для РДО</label>
                     <input type="number" name="km_index_rdo" class="form-control" value="" placeholder="0.00" step="0.01" min="0">
                 </div>
                 <div class="col-12 col-md-2">
@@ -66,8 +66,8 @@
                         <tr>
                             <th>Бренд</th>
                             <th>Месяц</th>
-                            <th>Км</th>
-                            <th>Индекс Км для РДО</th>
+                            <th>КМ</th>
+                            <th>Индекс КМ для РДО</th>
                             <th></th>
                         </tr>
                     </thead>
