@@ -8205,6 +8205,7 @@ def settings_body_ref_replace(request):
         'бампер задний',
         'капот',
         'бампер передний',
+        'порог',
     ])
 
     def _norm(s):
@@ -10766,7 +10767,7 @@ def test(request):
             s = 1 
     '''
 
-    #refresh_avtoteka_vin()
+    refresh_avtoteka_vin()
     
     
     # estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 12, 1)).values('rlk__id').order_by('-start_estimation')
