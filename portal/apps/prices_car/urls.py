@@ -9,6 +9,7 @@ urlpatterns = [
     path('brands/', views.brands_list, name='brands'),
     path('brands/get_models/', views.brands_get_models, name='brands_get_models'),
     path('settings/', views.settings_page, name='settings'),
+    path('settings/preview/', views.settings_km_preview, name='settings_km_preview'),
     path('stage_km/', views.stage_km_page, name='stage_km'),
     path('discount_km/', views.discount_km_page, name='discount_km'),
     path('discount_km/get_models/', views.discount_get_models, name='discount_get_models'),
