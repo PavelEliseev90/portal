@@ -5,6 +5,21 @@
 {% block title_navbar %} — Дисконт КМ {% endblock %}
 
 {% block content %}
+<style>
+.director-filter-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  color: #8ea1ba;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.director-search-input {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+}
+.discount-rule-active > td:not(:last-child) { color: #198754 !important; }
+.discount-rule-inactive > td:not(:last-child) { color: #dc3545 !important; }
+</style>
 <div class="portal-page">
     <div class="container-fluid py-3">
         <p class="mb-2">
@@ -14,6 +29,7 @@
         <p class="text-muted mb-2">
             КМ — кумулятивная маржа. Здесь задаётся <strong>процент</strong>, на который изменяется минимальный КМ для выбранного бренда (и при необходимости — модели, модификации, комплектации, года выпуска). Срок действия снижения обязателен: дата «с» и «по» в рамках <strong>одного месяца</strong>.
         </p>
+        <p class="small text-muted mb-3">В списке правил <span class="text-success fw-semibold">зелёным</span> выделены действующие сегодня по датам, <span class="text-danger fw-semibold">красным</span> — не действующие на текущую дату.</p>
 
         {% if messages %}
         <div class="mb-3">
@@ -26,69 +42,63 @@
         </div>
         {% endif %}
 
-        <div class="portal-panel mb-4">
-            <h5 class="mb-3">{% if params.discount_edit %}Редактировать запись{% else %}Добавить правило дисконта{% endif %}</h5>
-            <form method="post" action="{% url 'prices_car:discount_km' %}">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="{% if params.discount_edit %}edit{% else %}add{% endif %}">
-                {% if params.discount_edit %}<input type="hidden" name="id" value="{{ params.discount_edit.pk }}">{% endif %}
-                <div class="row g-3">
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <label class="form-label">Бренд <span class="text-danger">*</span></label>
-                        <select name="brand" class="form-select" required>
-                            <option value="">— Выберите бренд —</option>
-                            {% for b in params.brands %}
-                            <option value="{{ b.id }}" {% if params.discount_edit and params.discount_edit.brand_id == b.id %}selected{% endif %}>{{ b.name }}</option>
-                            {% endfor %}
-                        </select>
+        <!-- Фильтры (оформление как у директора ГК) -->
+        <div class="portal-panel mb-3">
+            <a class="d-inline-flex align-items-center gap-1 small text-secondary text-decoration-none mb-2" data-bs-toggle="collapse" href="#discountFiltersCollapse" aria-expanded="false">
+                <span class="icon-mbri-down"></span> Фильтры
+            </a>
+            <div class="collapse" id="discountFiltersCollapse">
+                <form method="get" id="discountFiltersForm">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label director-filter-label">Бренд</label>
+                            <select name="f_brand" class="form-select form-select-sm director-search-input">
+                                <option value="">Все</option>
+                                {% for b in params.brands %}
+                                <option value="{{ b.id }}" {% if params.filtr.f_brand == b.id|stringformat:"d" %}selected{% endif %}>{{ b.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Действует с (от)</label>
+                            <input type="date" name="df_min" class="form-control form-control-sm director-search-input" value="{{ params.filtr.df_min }}">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Действует с (до)</label>
+                            <input type="date" name="df_max" class="form-control form-control-sm director-search-input" value="{{ params.filtr.df_max }}">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Действует по (от)</label>
+                            <input type="date" name="dt_min" class="form-control form-control-sm director-search-input" value="{{ params.filtr.dt_min }}">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Действует по (до)</label>
+                            <input type="date" name="dt_max" class="form-control form-control-sm director-search-input" value="{{ params.filtr.dt_max }}">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Процент от</label>
+                            <input type="text" name="pct_min" class="form-control form-control-sm director-search-input" value="{{ params.filtr.pct_min }}" placeholder="%" inputmode="decimal">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label small text-uppercase text-secondary">Процент до</label>
+                            <input type="text" name="pct_max" class="form-control form-control-sm director-search-input" value="{{ params.filtr.pct_max }}" placeholder="%" inputmode="decimal">
+                        </div>
+                        <div class="col-12 col-lg-3 d-flex align-items-end gap-1 flex-wrap">
+                            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+                            <a href="{% url 'prices_car:discount_km' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <label class="form-label">Модель</label>
-                        <select name="model" id="discountModel" class="form-select" disabled>
-                            <option value="">— Сначала выберите бренд —</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <label class="form-label">Модификация</label>
-                        <select name="modification" id="discountModification" class="form-select" disabled>
-                            <option value="">— Сначала выберите модель —</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-3">
-                        <label class="form-label">Комплектация</label>
-                        <select name="complectation" id="discountComplectation" class="form-select" disabled>
-                            <option value="">— Сначала выберите модификацию —</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-2">
-                        <label class="form-label">Год выпуска</label>
-                        <input type="number" name="year" class="form-control" value="{{ params.discount_edit.year|default:'' }}" placeholder="Не указан" min="1990" max="2030" step="1">
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-2">
-                        <label class="form-label">Процент изменения мин. КМ <span class="text-danger">*</span></label>
-                        <input type="number" name="discount_percent" class="form-control" value="{{ params.discount_edit.discount_percent|default:'0' }}" step="0.01" required>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-2">
-                        <label class="form-label">Действует с <span class="text-danger">*</span></label>
-                        <input type="date" name="date_from" class="form-control" value="{{ params.discount_edit.date_from|date:'Y-m-d'|default:'' }}" required>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-2">
-                        <label class="form-label">Действует по <span class="text-danger">*</span></label>
-                        <input type="date" name="date_to" class="form-control" value="{{ params.discount_edit.date_to|date:'Y-m-d'|default:'' }}" required>
-                    </div>
-                    <div class="col-12 d-flex gap-2 align-items-end">
-                        <button type="submit" class="btn btn-primary">{% if params.discount_edit %}Сохранить{% else %}Добавить{% endif %}</button>
-                        {% if params.discount_edit %}
-                        <a href="{% url 'prices_car:discount_km' %}" class="btn btn-outline-secondary">Отмена</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </form>
-            <p class="small text-muted mt-2">Срок действия (с и по) должен попадать в один календарный месяц.</p>
+                </form>
+            </div>
         </div>
 
-        <div class="portal-panel">
-            <h5 class="mb-3">Текущие правила</h5>
+        <div class="portal-panel mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                <h5 class="mb-0">Текущие правила</h5>
+                <button type="button" class="btn btn-primary" id="btnAddDiscount" data-bs-toggle="modal" data-bs-target="#modalDiscountKm">
+                    Добавить
+                </button>
+            </div>
             <div class="table-responsive">
                 <table class="table table-sm table-striped table-hover mb-0">
                     <thead>
@@ -106,7 +116,7 @@
                     </thead>
                     <tbody>
                         {% for item in params.items %}
-                        <tr>
+                        <tr class="{% if item.date_from <= params.today and item.date_to >= params.today %}discount-rule-active{% else %}discount-rule-inactive{% endif %}">
                             <td>{{ item.brand.name }}</td>
                             <td>{{ item.model.name|default:"—" }}</td>
                             <td>{{ item.modification.name|default:"—" }}</td>
@@ -115,19 +125,20 @@
                             <td>{{ item.discount_percent }}</td>
                             <td>{{ item.date_from|date:"d.m.Y" }}</td>
                             <td>{{ item.date_to|date:"d.m.Y" }}</td>
-                            <td>
-                                <a href="?edit={{ item.pk }}" class="btn btn-outline-primary btn-sm me-1">Изменить</a>
+                            <td class="text-nowrap">
+                                <a href="{% url 'prices_car:discount_km' %}?{% if params.filter_query %}{{ params.filter_query }}&{% endif %}edit={{ item.pk }}" class="btn btn-outline-primary btn-sm me-1">Изменить</a>
                                 <form method="post" action="{% url 'prices_car:discount_km' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="{{ item.pk }}">
+                                    {% if params.filter_query %}<input type="hidden" name="return_query" value="{{ params.filter_query }}">{% endif %}
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
                                 </form>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">Нет правил. Добавьте первое выше.</td>
+                            <td colspan="9" class="text-center text-muted py-4">Нет правил по выбранным фильтрам. Нажмите «Добавить» или сбросьте фильтры.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -136,9 +147,80 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно: добавление / редактирование -->
+<div class="modal fade" id="modalDiscountKm" tabindex="-1" aria-labelledby="modalDiscountKmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'prices_car:discount_km' %}" id="formDiscountKm">
+                {% csrf_token %}
+                <input type="hidden" name="action" id="formDiscountAction" value="{% if params.discount_edit.pk %}edit{% else %}add{% endif %}">
+                {% if params.discount_edit.pk %}<input type="hidden" name="id" id="formDiscountId" value="{{ params.discount_edit.pk }}">{% endif %}
+                {% if params.filter_query %}<input type="hidden" name="return_query" value="{{ params.filter_query }}">{% endif %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalDiscountKmLabel">{% if params.discount_edit.pk %}Редактировать правило{% else %}Добавить правило дисконта{% endif %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label">Бренд <span class="text-danger">*</span></label>
+                            <select name="brand" id="discountBrand" class="form-select" required>
+                                <option value="">— Выберите бренд —</option>
+                                {% for b in params.brands %}
+                                <option value="{{ b.id }}" {% if params.discount_edit and params.discount_edit.brand_id == b.id %}selected{% endif %}>{{ b.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label">Модель</label>
+                            <select name="model" id="discountModel" class="form-select" disabled>
+                                <option value="">— Сначала выберите бренд —</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label">Модификация</label>
+                            <select name="modification" id="discountModification" class="form-select" disabled>
+                                <option value="">— Сначала выберите модель —</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label">Комплектация</label>
+                            <select name="complectation" id="discountComplectation" class="form-select" disabled>
+                                <option value="">— Сначала выберите модификацию —</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label">Год выпуска</label>
+                            <input type="number" name="year" id="discountYear" class="form-control" value="{{ params.discount_edit.year|default:'' }}" placeholder="Не указан" min="1990" max="2030" step="1">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label">Процент изменения мин. КМ <span class="text-danger">*</span></label>
+                            <input type="number" name="discount_percent" id="discountPercent" class="form-control" value="{{ params.discount_edit.discount_percent|default:'0' }}" step="0.01" required>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label">Действует с <span class="text-danger">*</span></label>
+                            <input type="date" name="date_from" id="discountDateFrom" class="form-control" value="{{ params.discount_edit.date_from|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label class="form-label">Действует по <span class="text-danger">*</span></label>
+                            <input type="date" name="date_to" id="discountDateTo" class="form-control" value="{{ params.discount_edit.date_to|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Срок действия (с и по) должен попадать в один календарный месяц.</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'prices_car:discount_km' %}{% if params.filter_query %}?{{ params.filter_query }}{% endif %}" class="btn btn-outline-secondary">{% if params.discount_edit.pk %}Отмена{% else %}Закрыть{% endif %}</a>
+                    <button type="submit" class="btn btn-primary" id="formDiscountSubmit">{% if params.discount_edit.pk %}Сохранить{% else %}Добавить{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 (function() {
-    var brandSelect = document.querySelector('select[name="brand"]');
+    var brandSelect = document.getElementById('discountBrand');
     var modelSelect = document.getElementById('discountModel');
     var modificationSelect = document.getElementById('discountModification');
     var complectationSelect = document.getElementById('discountComplectation');
@@ -150,6 +232,12 @@
         modification_id: {{ params.discount_edit.modification_id|default:"null" }},
         complectation_id: {{ params.discount_edit.complectation_id|default:"null" }}
     }{% else %}null{% endif %};
+    var modalEl = document.getElementById('modalDiscountKm');
+    var form = document.getElementById('formDiscountKm');
+    var baseListUrl = '{% url "prices_car:discount_km" %}';
+    var filterQuery = '{{ params.filter_query|escapejs }}';
+    var hasServerDiscount = {% if params.discount_edit %}true{% else %}false{% endif %};
+    var addJustReset = false;
 
     function clearSelect(sel, placeholder) {
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
@@ -248,6 +336,27 @@
             });
     }
 
+    function setModalTitle(isEdit) {
+        var h = document.getElementById('modalDiscountKmLabel');
+        var sub = document.getElementById('formDiscountSubmit');
+        if (h) h.textContent = isEdit ? 'Редактировать правило' : 'Добавить правило дисконта';
+        if (sub) sub.textContent = isEdit ? 'Сохранить' : 'Добавить';
+    }
+
+    function resetModalForAdd() {
+        if (!form) return;
+        form.reset();
+        document.getElementById('formDiscountAction').value = 'add';
+        var hid = document.getElementById('formDiscountId');
+        if (hid) hid.remove();
+        setModalTitle(false);
+        editPreset = null;
+        clearSelect(modelSelect, '— Сначала выберите бренд —');
+        clearSelect(modificationSelect, '— Сначала выберите модель —');
+        clearSelect(complectationSelect, '— Сначала выберите модификацию —');
+        document.getElementById('discountBrand').value = '';
+    }
+
     brandSelect.addEventListener('change', function() {
         var brandId = this.value;
         loadModels(brandId, null);
@@ -261,9 +370,40 @@
         loadComplectations(this.value, null);
     });
 
-    if (editPreset && brandSelect.value) {
-        loadModels(brandSelect.value, editPreset.model_id);
+    if (modalEl) {
+        modalEl.addEventListener('show.bs.modal', function(ev) {
+            if (ev.relatedTarget && ev.relatedTarget.id === 'btnAddDiscount') {
+                var u = filterQuery ? baseListUrl + '?' + filterQuery : baseListUrl;
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, '', u);
+                }
+                resetModalForAdd();
+                addJustReset = true;
+            }
+        });
+        modalEl.addEventListener('shown.bs.modal', function() {
+            if (addJustReset) {
+                addJustReset = false;
+                return;
+            }
+            var editParam = new URLSearchParams(window.location.search).get('edit');
+            if (editParam || hasServerDiscount) {
+                setModalTitle({% if params.discount_edit.pk %}true{% else %}false{% endif %});
+                if (brandSelect.value) {
+                    loadModels(brandSelect.value, editPreset && editPreset.model_id);
+                }
+            }
+        });
     }
+
+    {% if params.discount_edit %}
+    document.addEventListener('DOMContentLoaded', function() {
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            var m = bootstrap.Modal.getOrCreateInstance(modalEl);
+            m.show();
+        }
+    });
+    {% endif %}
 })();
 </script>
 {% endblock %}
