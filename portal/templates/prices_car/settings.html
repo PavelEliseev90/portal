@@ -25,47 +25,39 @@
         {% endif %}
 
         <div class="portal-panel mb-4">
-            <h5 class="mb-3">Добавить или изменить</h5>
-            <form method="post" action="{% url 'prices_car:settings' %}" class="row g-3 align-items-end">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add">
-                <div class="col-12 col-md-4">
-                    <label class="form-label">Бренд</label>
-                    <select name="brand" class="form-select" required>
-                        <option value="">— Выберите бренд —</option>
-                        {% for b in params.brands %}
-                        <option value="{{ b.id }}">{{ b.name }}</option>
-                        {% endfor %}
-                    </select>
-                    {% if not params.brands %}<small class="text-muted">Сначала добавьте бренды в разделе <a href="{% url 'prices_car:brands' %}">Бренды</a>.</small>{% endif %}
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Месяц (ГГГГ-ММ)</label>
-                    <input type="month" name="month" class="form-control" required placeholder="2025-02">
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">КМ</label>
-                    <input type="number" name="km" class="form-control" value="0" min="0" step="1">
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">Индекс КМ для РДО</label>
-                    <input type="number" name="km_index_rdo" class="form-control" value="" placeholder="0.00" step="0.01" min="0">
-                </div>
-                <div class="col-12 col-md-2">
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-            <p class="small text-muted mt-2">Для одной и той же пары «бренд + месяц» повторная отправка обновит значение км.</p>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h5 class="mb-0">Внести КМ по всем брендам</h5>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBrandKm" id="btn-open-brand-km">
+                    Добавить
+                </button>
+            </div>
+            <p class="small text-muted mb-0">Откроется форма: выберите месяц, для каждого бренда введите КМ. Рядом показывается КМ за предыдущий месяц. Сохранение записывает значения сразу по всем брендам.</p>
+            {% if not params.brands %}
+            <p class="text-warning small mt-2 mb-0">Сначала добавьте бренды в разделе <a href="{% url 'prices_car:brands' %}">Бренды</a>.</p>
+            {% endif %}
         </div>
 
         <div class="portal-panel">
-            <h5 class="mb-3">Текущие настройки</h5>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h5 class="mb-0">Текущие настройки</h5>
+                <div class="d-flex align-items-center gap-1 flex-wrap" id="settings-month-nav" aria-label="Выбор месяца">
+                    <a href="{% url 'prices_car:settings' %}?month={{ params.prev_month }}" class="btn btn-sm btn-outline-secondary" title="Предыдущий месяц" aria-label="Предыдущий месяц">‹</a>
+                    <div class="position-relative d-inline-flex align-items-center px-1">
+                        <input type="month" id="settings-filter-month-input" class="visually-hidden" value="{{ params.filter_month }}" tabindex="-1" aria-hidden="true">
+                        <button type="button" class="btn btn-link p-0 text-decoration-none fw-semibold text-body lh-sm text-start" id="settings-filter-month-btn" title="Выбрать месяц">
+                            {{ params.filter_month_title }}
+                            {% if params.is_filter_calendar_month %}<span class="badge bg-secondary ms-1 align-middle fw-normal">текущий</span>{% endif %}
+                        </button>
+                    </div>
+                    <a href="{% url 'prices_car:settings' %}?month={{ params.next_month }}" class="btn btn-sm btn-outline-secondary" title="Следующий месяц" aria-label="Следующий месяц">›</a>
+                </div>
+            </div>
+            <p class="small text-muted mb-2">Показаны записи за выбранный месяц. Стрелки переключают месяц; нажмите на название месяца, чтобы открыть календарь и выбрать любую дату.</p>
             <div class="table-responsive">
                 <table class="table table-sm table-striped table-hover mb-0">
                     <thead>
                         <tr>
                             <th>Бренд</th>
-                            <th>Месяц</th>
                             <th>КМ</th>
                             <th>Индекс КМ для РДО</th>
                             <th></th>
@@ -75,7 +67,6 @@
                         {% for item in params.items %}
                         <tr>
                             <td>{{ item.brand }}</td>
-                            <td>{{ item.month|date:"Y-m" }}</td>
                             <td>{{ item.km }}</td>
                             <td>{% if item.km_index_rdo is not None %}{{ item.km_index_rdo }}{% else %}—{% endif %}</td>
                             <td>
@@ -83,13 +74,14 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="{{ item.pk }}">
+                                    <input type="hidden" name="return_month" value="{{ params.filter_month }}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
                                 </form>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Нет записей. Добавьте первую выше.</td>
+                            <td colspan="4" class="text-center text-muted py-4">Нет записей за этот месяц. Нажмите «Добавить», чтобы внести КМ по брендам.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -98,4 +90,127 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно: месяц + таблица брендов -->
+<div class="modal fade" id="modalBrandKm" tabindex="-1" aria-labelledby="modalBrandKmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'prices_car:settings' %}" id="form-bulk-km">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="bulk_save">
+                <div class="modal-header flex-wrap gap-2">
+                    <h5 class="modal-title" id="modalBrandKmLabel">КМ по брендам на месяц</h5>
+                    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+                        <label for="bulk-month-input" class="form-label mb-0 small text-muted">Месяц</label>
+                        <input type="month" name="month" id="bulk-month-input" class="form-control form-control-sm" style="width: auto; min-width: 11rem;" required value="{{ params.default_month }}">
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2" id="bulk-prev-month-hint">КМ за предыдущий месяц: <span id="bulk-prev-month-label">—</span></p>
+                    <div class="table-responsive" style="max-height: 55vh;">
+                        <table class="table table-sm table-bordered align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Бренд</th>
+                                    <th class="text-nowrap" style="width: 7rem;">КМ (пред. мес.)</th>
+                                    <th style="width: 9rem;">КМ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in params.brands %}
+                                <tr>
+                                    <td>{{ b.name }}</td>
+                                    <td class="text-muted small prev-km-cell" data-brand-id="{{ b.id }}">—</td>
+                                    <td>
+                                        <input type="number" name="km_{{ b.id }}" class="form-control form-control-sm km-input" min="0" step="1" value="" placeholder="0" data-brand-id="{{ b.id }}">
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Нет брендов — добавьте их в разделе «Бренды».</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="bulk-submit-btn" {% if not params.brands %}disabled{% endif %}>Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var filterInp = document.getElementById('settings-filter-month-input');
+    var filterBtn = document.getElementById('settings-filter-month-btn');
+    if (filterInp && filterBtn) {
+        filterBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (typeof filterInp.showPicker === 'function') {
+                filterInp.showPicker();
+            } else {
+                filterInp.click();
+            }
+        });
+        filterInp.addEventListener('change', function () {
+            if (!this.value) return;
+            var base = '{% url "prices_car:settings" %}';
+            window.location.href = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'month=' + encodeURIComponent(this.value);
+        });
+    }
+})();
+(function () {
+    var previewUrl = '{% url "prices_car:settings_km_preview" %}';
+    var monthInput = document.getElementById('bulk-month-input');
+    var modal = document.getElementById('modalBrandKm');
+    if (!monthInput || !modal) return;
+
+    function loadPreview() {
+        var m = monthInput.value;
+        if (!m) {
+            document.querySelectorAll('.prev-km-cell').forEach(function (el) { el.textContent = '—'; });
+            var el = document.getElementById('bulk-prev-month-label');
+            if (el) el.textContent = '—';
+            return;
+        }
+        var url = previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 'month=' + encodeURIComponent(m);
+        fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) return;
+                var label = document.getElementById('bulk-prev-month-label');
+                if (label && data.prev_month_label) label.textContent = data.prev_month_label;
+                var map = {};
+                (data.brands || []).forEach(function (b) { map[b.id] = b; });
+                document.querySelectorAll('.prev-km-cell').forEach(function (cell) {
+                    var id = parseInt(cell.getAttribute('data-brand-id'), 10);
+                    var b = map[id];
+                    if (!b) { cell.textContent = '—'; return; }
+                    cell.textContent = (b.prev_km != null && b.prev_km !== '') ? String(b.prev_km) : '—';
+                });
+                document.querySelectorAll('.km-input').forEach(function (inp) {
+                    var id = parseInt(inp.getAttribute('data-brand-id'), 10);
+                    var b = map[id];
+                    if (!b) return;
+                    if (b.current_km != null && b.current_km !== '') {
+                        inp.value = b.current_km;
+                    } else {
+                        inp.value = '';
+                    }
+                });
+            })
+            .catch(function () {});
+    }
+
+    monthInput.addEventListener('change', loadPreview);
+    modal.addEventListener('shown.bs.modal', function () {
+        loadPreview();
+    });
+})();
+</script>
 {% endblock %}

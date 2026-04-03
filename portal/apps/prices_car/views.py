@@ -1,11 +1,67 @@
 from datetime import date
+
+from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from refs.models import AutoruMark, AutoruModel, RefStagePrice
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM
+
+
+def _prev_month_first(month_date: date) -> date:
+    """Первый день календарного месяца, предшествующего month_date."""
+    if month_date.month == 1:
+        return date(month_date.year - 1, 12, 1)
+    return date(month_date.year, month_date.month - 1, 1)
+
+
+_RU_MONTHS_NOM = (
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+)
+
+
+def _month_first_from_str(month_str: str):
+    """Парсит YYYY-MM в date первого числа или None."""
+    month_str = (month_str or '').strip()
+    if not month_str:
+        return None
+    try:
+        parts = month_str.split('-')
+        if len(parts) < 2:
+            raise ValueError
+        year, month = int(parts[0]), int(parts[1])
+        return date(year, month, 1)
+    except (ValueError, IndexError):
+        return None
+
+
+def _shift_month_first(month_date: date, delta: int) -> date:
+    """Сдвиг на delta месяцев от первого числа month_date."""
+    y, m = month_date.year, month_date.month + delta
+    while m > 12:
+        m -= 12
+        y += 1
+    while m < 1:
+        m += 12
+        y -= 1
+    return date(y, m, 1)
+
+
+def _month_title_ru(month_date: date) -> str:
+    return '%s %s' % (_RU_MONTHS_NOM[month_date.month - 1], month_date.year)
+
+
+def _redirect_settings(month_str: str = None):
+    url = reverse('prices_car:settings')
+    if month_str:
+        url = '%s?month=%s' % (url, month_str)
+    return redirect(url)
 
 
 @login_required
@@ -97,10 +153,56 @@ def brands_list(request):
 
 
 @login_required
+def settings_km_preview(request):
+    """JSON: для выбранного месяца — км прошлого месяца и текущие км по каждому бренду."""
+    month_str = request.GET.get('month', '').strip()
+    if not month_str:
+        return JsonResponse({'error': 'Укажите месяц'}, status=400)
+    try:
+        parts = month_str.split('-')
+        if len(parts) < 2:
+            raise ValueError
+        year, month = int(parts[0]), int(parts[1])
+        month_date = date(year, month, 1)
+    except (ValueError, IndexError):
+        return JsonResponse({'error': 'Неверный формат месяца'}, status=400)
+
+    prev_month = _prev_month_first(month_date)
+    brands = list(PriceCarBrand.objects.order_by('name').values('id', 'name'))
+
+    prev_kms = {
+        x['brand_id']: x['km']
+        for x in BrandKM.objects.filter(month=prev_month).values('brand_id', 'km')
+    }
+    curr_kms = {
+        x['brand_id']: x['km']
+        for x in BrandKM.objects.filter(month=month_date).values('brand_id', 'km')
+    }
+
+    out = []
+    for b in brands:
+        bid = b['id']
+        out.append({
+            'id': bid,
+            'name': b['name'],
+            'prev_km': prev_kms.get(bid),
+            'current_km': curr_kms.get(bid),
+        })
+
+    return JsonResponse({
+        'prev_month_label': prev_month.strftime('%Y-%m'),
+        'month_label': month_date.strftime('%Y-%m'),
+        'brands': out,
+    })
+
+
+@login_required
 def settings_page(request):
     """Страница настроек: км по брендам на месяц (BrandKM)."""
     brands = PriceCarBrand.objects.order_by('name')
-    items = BrandKM.objects.select_related('brand').order_by('-month', 'brand')
+
+    today = timezone.now().date()
+    calendar_month = date(today.year, today.month, 1)
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -110,58 +212,72 @@ def settings_page(request):
                 obj = get_object_or_404(BrandKM, pk=pk)
                 obj.delete()
                 messages.success(request, 'Запись удалена.')
-            return redirect('prices_car:settings')
+            return_month = request.POST.get('return_month', '').strip()
+            if _month_first_from_str(return_month):
+                return _redirect_settings(return_month)
+            return _redirect_settings()
 
-        if action == 'add':
-            brand_id = request.POST.get('brand')
+        if action == 'bulk_save':
             month_str = request.POST.get('month', '').strip()
-            km_str = request.POST.get('km', '0').strip()
-            km_index_rdo_str = request.POST.get('km_index_rdo', '').strip().replace(',', '.')
-            if not brand_id or not month_str:
-                messages.error(request, 'Укажите бренд и месяц.')
-                return redirect('prices_car:settings')
-            try:
-                km = int(km_str) if km_str else 0
-                if km < 0:
-                    km = 0
-            except ValueError:
-                km = 0
-            try:
-                km_index_rdo = float(km_index_rdo_str) if km_index_rdo_str else None
-            except ValueError:
-                km_index_rdo = None
+            if not month_str:
+                messages.error(request, 'Укажите месяц.')
+                return _redirect_settings()
             try:
                 parts = month_str.split('-')
-                if len(parts) >= 2:
-                    year, month = int(parts[0]), int(parts[1])
-                    month_date = date(year, month, 1)
-                else:
-                    messages.error(request, 'Неверный формат месяца (нужен ГГГГ-ММ).')
-                    return redirect('prices_car:settings')
+                if len(parts) < 2:
+                    raise ValueError
+                year, month = int(parts[0]), int(parts[1])
+                month_date = date(year, month, 1)
             except (ValueError, IndexError):
-                messages.error(request, 'Неверный формат месяца.')
-                return redirect('prices_car:settings')
+                messages.error(request, 'Неверный формат месяца (нужен ГГГГ-ММ).')
+                return _redirect_settings()
 
-            if not PriceCarBrand.objects.filter(pk=brand_id).exists():
-                messages.error(request, 'Выберите бренд из списка.')
-                return redirect('prices_car:settings')
+            brand_ids = list(PriceCarBrand.objects.values_list('id', flat=True))
+            if not brand_ids:
+                messages.warning(request, 'Нет брендов для сохранения.')
+                return _redirect_settings(month_str)
 
-            defaults = {'km': km, 'km_index_rdo': km_index_rdo}
-            obj, created = BrandKM.objects.update_or_create(
-                brand_id=brand_id,
-                month=month_date,
-                defaults=defaults,
+            with transaction.atomic():
+                for bid in brand_ids:
+                    km_str = request.POST.get('km_%s' % bid, '').strip()
+                    try:
+                        km = int(km_str) if km_str else 0
+                        if km < 0:
+                            km = 0
+                    except ValueError:
+                        km = 0
+                    BrandKM.objects.update_or_create(
+                        brand_id=bid,
+                        month=month_date,
+                        defaults={'km': km},
+                    )
+
+            messages.success(
+                request,
+                'Сохранены КМ по всем брендам на %s.' % month_date.strftime('%Y-%m'),
             )
-            if created:
-                messages.success(request, 'Запись добавлена.')
-            else:
-                messages.success(request, 'Запись обновлена.')
-            return redirect('prices_car:settings')
+            return _redirect_settings(month_date.strftime('%Y-%m'))
+
+    month_str_get = request.GET.get('month', '').strip()
+    filter_month_date = _month_first_from_str(month_str_get)
+    if filter_month_date is None:
+        filter_month_date = calendar_month
+    filter_month_str = filter_month_date.strftime('%Y-%m')
+
+    items = BrandKM.objects.select_related('brand').filter(
+        month=filter_month_date,
+    ).order_by('brand__name')
 
     return render(request, 'prices_car/settings.html', {
         'params': {
             'brands': brands,
             'items': items,
+            'default_month': filter_month_str,
+            'filter_month': filter_month_str,
+            'filter_month_title': _month_title_ru(filter_month_date),
+            'prev_month': _shift_month_first(filter_month_date, -1).strftime('%Y-%m'),
+            'next_month': _shift_month_first(filter_month_date, 1).strftime('%Y-%m'),
+            'is_filter_calendar_month': filter_month_date == calendar_month,
         },
     })
 
