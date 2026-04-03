@@ -63,24 +63,24 @@
             .catch(function() { el.innerHTML = '<p class="text-muted">Не удалось загрузить чаты</p>'; });
     }
 
-    function toast_cars(title, text, link) {
-        var container = document.getElementById('container_toast_cars');
-        if (!container) return;
-        var id = 'toast_cars_' + Date.now();
-        var time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        var html = '<div id="' + id + '" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">';
-        html += '<div class="toast-header"><strong class="me-auto">' + (title || 'Чат') + '</strong>';
-        html += '<small>' + time + '</small><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button></div>';
-        html += '<div class="toast-body">' + (text || '');
-        if (link) html += '<hr class="my-2"><a href="' + link + '" class="text-end link-dark"><span class="icon-mbri-right"></span> Открыть</a>';
-        html += '</div></div>';
-        container.insertAdjacentHTML('beforeend', html);
-        var toastEl = document.getElementById(id);
-        if (toastEl && typeof bootstrap !== 'undefined' && bootstrap.Toast) {
-            new bootstrap.Toast(toastEl).show();
-            toastEl.addEventListener('hidden.bs.toast', function() { toastEl.remove(); });
-        }
-    }
+    // function toast_cars(title, text, link) {
+    //     var container = document.getElementById('container_toast_cars');
+    //     if (!container) return;
+    //     var id = 'toast_cars_' + Date.now();
+    //     var time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    //     var html = '<div id="' + id + '" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">';
+    //     html += '<div class="toast-header"><strong class="me-auto">' + (title || 'Чат') + '</strong>';
+    //     html += '<small>' + time + '</small><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button></div>';
+    //     html += '<div class="toast-body">' + (text || '');
+    //     if (link) html += '<hr class="my-2"><a href="' + link + '" class="text-end link-dark"><span class="icon-mbri-right"></span> Открыть</a>';
+    //     html += '</div></div>';
+    //     container.insertAdjacentHTML('beforeend', html);
+    //     var toastEl = document.getElementById(id);
+    //     if (toastEl && typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+    //         new bootstrap.Toast(toastEl).show();
+    //         toastEl.addEventListener('hidden.bs.toast', function() { toastEl.remove(); });
+    //     }
+    // }
 
     function connect_ws_cars_list() {
         var wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
@@ -104,7 +104,7 @@
                 var data = JSON.parse(e.data);
                 if (data.message) {
                     var link = '/cars/' + (data.chat ? data.chat.replace(/^car_/, '') : '') + '/';
-                    toast_cars(data.chat || 'Автомобиль', data.message, link);
+                    //toast_cars(data.chat || 'Автомобиль', data.message, link);
                 }
             } catch (err) {}
             refresh_data_cars();
