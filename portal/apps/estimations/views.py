@@ -2096,7 +2096,7 @@ def osmotr(request, rlk_id, type, rl_id):
                 new_estimation_files.save()
 
         if return_page == 'eco':
-            interatictiv = RegInteractivOcenkaRLK.objects.get(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
+            interatictiv = RegInteractivOcenkaRLK.objects.filter(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
             save_recovery_estimations(interatictiv, reg_interactiv_ocenka)
             return HttpResponseRedirect('/eco/' + rl_id + '/?page=21')    
         return HttpResponseRedirect('/estimations/' + rl_id + '/?page=3')

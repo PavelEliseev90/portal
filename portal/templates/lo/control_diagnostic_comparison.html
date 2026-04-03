@@ -45,7 +45,7 @@
             {% if orig %}
             <tr>
               <td>ЦНА</td>
-              <td class="text-end">{{ param.price_estimation.zna|floatformat:"0g" }} ₽</td>
+              <td class="text-end">{{ param.price_estimation.zna|floatformat:"0g" }} ₽ {{param.price_estimation}}</td>
               <td class="text-end {% if params.price_estimation.zna != params.price_cd.zna %}table-warning{% endif %}">{{ params.price_cd.zna|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>

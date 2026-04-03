@@ -4,7 +4,7 @@ from collections import defaultdict
 from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
-from register.models import RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
+from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
@@ -3012,7 +3012,11 @@ def control_diagnostic_comparison(request, id, cd_id):
     cd_test_drive = getattr(cd, 'page_test_drive_copy', None)
     
     price_cd = estimations_price_calculation_cd(cd, 'custom')
-    price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
+    if price_cd == None:
+        price_cd = estimations_price_calculation_cd(cd, 'autohub')
+        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
+    else:
+        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
     params = {
         'estimation': estimation,
         'rlk'       : rlk,
@@ -5488,9 +5492,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
 
     try:
         estimation_settings     = RegEstimationsSettings.objects.all().last()
-        if interactiv_rlk.page_soglasovanie != None:
-            if interactiv_rlk.page_soglasovanie.settings != None:
-                estimation_settings = interactiv_rlk.page_soglasovanie.settings 
+        # if interactiv_rlk.page_soglasovanie != None:
+        #     if interactiv_rlk.page_soglasovanie.settings != None:
+        #         estimation_settings = interactiv_rlk.page_soglasovanie.settings 
 
         modification            = estimation.modification
         
@@ -7511,63 +7515,88 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     elem_rzav_data    = elem_rzav_data + info['name'] + "; "
                 
                 if info['replace_add'] > 0:
+                    body = modification.typeBody
+                    zg_data = zg.replace(' ', '')
+                    if zg_data.find('+') > 0:
+                        zg_data = zg_data.replace('0+', '1')    
                     if info['name'] == 'передний бампер':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'бампер передний').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 14)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 136)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
+
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum 
                     elif info['name'] ==  'крыло заднее левое' or info['name'] ==  'крыло заднее правое':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'крыло заднее').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 43) 
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 137)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'задний бампер':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'бампер задний').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 9)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 138)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'порог левый' or info['name'] ==  'порог правый':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'порог').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 59)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 144)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'крыло переднее левое' or info['name'] ==  'крыло переднее правое':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'крыло переднее').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 46)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 139)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7584,50 +7613,66 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'крышка багажника':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'крышка багажника').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 4)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 140)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'дверь задняя левая' or info['name'] ==  'дверь задняя правая':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'дверь задняя').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 24)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 141)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'дверь передняя левая' or info['name'] ==  'дверь передняя правая':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'дверь задняя').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 28)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 142)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'капот':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'капот').last()
                         diff_sum    = 0
-                        work        = RegPodgotovkaWork.objects.get(pk = 38)
-                        diff_sum    = work.price_podrad * 2
+                        work        = RegPodgotovkaWork.objects.get(pk = 143)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name  + ' / замена',
-                            'quantity'  : work.normo * 2,
-                            'amount_pod': work.price_podrad * 2, 
-                            'amount'    : work.price_kors * 2
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -8102,8 +8147,26 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 matrix_auction  = settings_matrix.charge_bcp_5001        
             cna_expenses = estimation_price_to_bcp + matrix_auction + difference_sum
         else:
+            if zg == '200':
+                matrix  = settings_matrix.charge_bcp_200
+            elif zg == '400':
+                matrix  = settings_matrix.charge_bcp_400
+            elif zg == '700':
+                matrix  = settings_matrix.charge_bcp_700
+            elif zg == '1 200':
+                matrix  = settings_matrix.charge_bcp_1200
+            elif zg == '2 000':
+                matrix  = settings_matrix.charge_bcp_2000
+            elif zg == '3 000':
+                matrix  = settings_matrix.charge_bcp_3000
+            elif zg == '5 000':
+                matrix  = settings_matrix.charge_bcp_5000
+            else:
+                matrix  = settings_matrix.charge_bcp_5001
             cna_expenses = cna_expenses + difference_sum
-        
+            if cna_expenses - estimation_price < matrix:
+                cna_expenses = estimation_price + matrix    
+                    
         try:
             if type_calculation == 'custom':
                 s = 1
@@ -8179,9 +8242,9 @@ def estimations_price_calculation_cd(cd, type_calculation):
         estimation              = cd.estimation
         interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(estimation = estimation).first()
         estimation_settings     = RegEstimationsSettings.objects.all().last()
-        if interactiv_rlk.page_soglasovanie != None:
-            if interactiv_rlk.page_soglasovanie.settings != None:
-                estimation_settings = interactiv_rlk.page_soglasovanie.settings
+        # if interactiv_rlk.page_soglasovanie != None:
+        #     if interactiv_rlk.page_soglasovanie.settings != None:
+        #         estimation_settings = interactiv_rlk.page_soglasovanie.settings
                 
         modification    = estimation.modification
         
@@ -9353,34 +9416,34 @@ def estimations_price_calculation_cd(cd, type_calculation):
             
             if modification.typeGear.id == 1:
                 price_diff = (price * gear_amt_danger_kf / 100)
-                info_diff   = 'Робот устранение замечаний'
+                info_diff   = 'Робот ремонт'
 
                 if price_diff < gear_amt_danger_amount_min:
                     price_diff = gear_amt_danger_amount_min
-                    info_diff   = 'Робот устранение замечаний'
+                    info_diff   = 'Робот ремонт'
 
             elif modification.typeGear.id == 2:
                 price_diff = (price * gear_mt_danger_kf / 100)
-                info_diff   = 'Механика устранение замечаний'
+                info_diff   = 'Механика ремонт'
 
                 if price_diff < gear_mt_danger_amount_min:
                     price_diff = gear_mt_danger_amount_min
-                    info_diff   = 'Механика устранение замечаний'
+                    info_diff   = 'Механика ремонт'
 
             elif modification.typeGear.id == 3:
                 price_diff = (price * gear_at_danger_kf / 100)
-                info_diff   = 'Автомат устранение замечаний'
+                info_diff   = 'Автомат ремонт'
                 if price_diff < gear_at_danger_amount_min:
                     price_diff = gear_at_danger_amount_min
-                    info_diff   = 'Автомат устранение замечаний'
+                    info_diff   = 'Автомат ремонт'
 
             elif modification.typeGear.id == 4:
                 price_diff = (price * gear_cvt_danger_kf / 100)
-                info_diff   = 'Вариатор устранение замечаний'
+                info_diff   = 'Вариатор ремонт'
 
                 if price_diff < gear_cvt_danger_amount_min:
                     price_diff = gear_cvt_danger_amount_min
-                    info_diff   = 'Вариатор устранение замечаний'
+                    info_diff   = 'Вариатор ремонт'
 
             dop = {
                 'name'      : info_diff,
@@ -9399,38 +9462,38 @@ def estimations_price_calculation_cd(cd, type_calculation):
             if modification.typeGear.id == 1:
                 
                 price_diff = (price * gear_amt_warning_kf / 100)
-                info_diff   = 'Робот ремонт'
+                info_diff   = 'Робот устранение замечаний'
 
                 if price_diff < gear_amt_warning_amount_min:
                     price_diff = gear_amt_warning_amount_min
-                    info_diff   = 'Робот ремонт'
+                    info_diff   = 'Робот устранение замечаний'
 
             elif modification.typeGear.id == 2:
                 
                 price_diff = (price * gear_mt_warning_kf / 100)
-                info_diff   = 'Механика ремонт'
+                info_diff   = 'Механика устранение замечаний'
 
                 if price_diff < gear_mt_warning_amount_min:
                     price_diff = gear_mt_warning_amount_min
-                    info_diff   = 'Механика ремонт'
+                    info_diff   = 'Механика устранение замечаний'
 
             elif modification.typeGear.id == 3:
                 
                 price_diff = (price * gear_at_warning_kf / 100)
-                info_diff   = 'Автомат ремонт'
+                info_diff   = 'Автомат устранение замечаний'
 
                 if price_diff < gear_at_warning_amount_min:
                     price_diff = gear_at_warning_amount_min
-                    info_diff   = 'Автомат ремонт'
+                    info_diff   = 'Автомат устранение замечаний'
             
             elif modification.typeGear.id == 4:
                 
                 price_diff = (price * gear_cvt_warning_kf / 100)
-                info_diff   = 'Вариатор ремонт'
+                info_diff   = 'Вариатор устранение замечаний'
 
                 if price_diff < gear_cvt_warning_amount_min:
                     price_diff = gear_cvt_warning_amount_min
-                    info_diff   = 'Вариатор ремонт'
+                    info_diff   = 'Вариатор устранение замечаний'
             
             dop = {
                 'name'      : info_diff,

@@ -2858,6 +2858,11 @@ def get_chats_list_cars(request):
         .order_by('-date')
         .values('content')[:1]
     )
+    subq_msg_user = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk'))
+        .order_by('-date')
+        .values('user__profiles__eco_name')[:1]
+    )
     # Данные авто: RefCarsOrganization.slug = Chat.name
     car_unit = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('unit__name')[:1]
     car_vin = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('vin')[:1]
@@ -2866,7 +2871,7 @@ def get_chats_list_cars(request):
     car_mod = RefCarsOrganization.objects.filter(slug=OuterRef('name')).values('modification_autoru__name')[:1]
     chats = (
         Chat.objects.filter(slug__startswith='car_')
-        .annotate(max_date=subq_msg_date, content=subq_msg_content)
+        .annotate(max_date=subq_msg_date, content=subq_msg_content, user_name = subq_msg_user)
         .annotate(
             rlk_unit=Subquery(car_unit),
             vin=Subquery(car_vin),
@@ -2890,6 +2895,7 @@ def get_chats_list_cars(request):
             'model': c.model or '',
             'modification': c.modification or '',
             'content': (c.content or '')[:200] if c.content else '',
+            'user_name': (c.user_name or '')[:200] if c.user_name else '',
             'max_date': c.max_date.strftime('%Y-%m-%dT%H:%M:%S') if c.max_date else '',
         })
     return JsonResponse(result, safe=False, status=status.HTTP_200_OK)

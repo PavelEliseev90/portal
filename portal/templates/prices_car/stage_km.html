@@ -1,8 +1,8 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} — Индексы Км по этапам {% endblock %}
-{% block title_navbar %} — Индексы Км по этапам {% endblock %}
+{% block title %} — Индексы КМ по этапам {% endblock %}
+{% block title_navbar %} — Индексы КМ по этапам {% endblock %}
 
 {% block content %}
 <div class="portal-page">
@@ -10,8 +10,8 @@
         <p class="mb-2">
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
-        <h2 class="mb-2">Индексы Км по этапам</h2>
-        <p class="text-muted mb-4">Укажите индекс Км (кумулятивная маржа) по этапу установки цены (УС) на выбранный месяц.</p>
+        <h2 class="mb-2">Индексы КМ по этапам</h2>
+        <p class="text-muted mb-4">Укажите индекс КМ (кумулятивная маржа) по этапу установки цены (УС) на выбранный месяц.</p>
 
         {% if messages %}
         <div class="mb-3">
@@ -44,7 +44,7 @@
                     <input type="month" name="month" class="form-control" required placeholder="2025-02">
                 </div>
                 <div class="col-12 col-md-2">
-                    <label class="form-label">Индекс Км</label>
+                    <label class="form-label">Индекс КМ</label>
                     <input type="number" name="km_index" class="form-control" value="0" step="0.01" min="0" placeholder="0.00">
                 </div>
                 <div class="col-12 col-md-2">
@@ -62,7 +62,7 @@
                         <tr>
                             <th>Этап УС</th>
                             <th>Месяц</th>
-                            <th>Индекс Км</th>
+                            <th>Индекс КМ</th>
                             <th></th>
                         </tr>
                     </thead>

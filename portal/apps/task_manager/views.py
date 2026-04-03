@@ -1637,8 +1637,9 @@ def refresh_avtoteka_vin():
     date_start = DT.datetime.now().replace(hour=1) - DT.timedelta(days=14)
     object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = date_start).exclude(number_body = '')
     for object_estimation in object_estimations:
-        token = get_token_avtoteka()
-        header['Authorization'] = f"Bearer {token}"
+        if token == '':
+            token = get_token_avtoteka()
+            header['Authorization'] = f"Bearer {token}"
 
         if len(object_estimation.vin) != 17:
             number_body     = object_estimation.number_body
@@ -1666,8 +1667,9 @@ def refresh_avtoteka_vin():
     #object_estimations = RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = None) | RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '')
     if len(object_estimations) > 0:
         
-        token = get_token_avtoteka()
-        header['Authorization'] = f"Bearer {token}"
+        if token == '':
+            token = get_token_avtoteka()
+            header['Authorization'] = f"Bearer {token}"
 
         for object_estimation in object_estimations: 
             
@@ -1786,7 +1788,22 @@ def refresh_avtoteka_vin():
                                 object_estimation.avito_price_max                   = price.get('maxPrice')
                             except:
                                 s = 1
-                            object_estimation.save()                 
+                            object_estimation.save(update_fields = [
+                                                        'avtoteka_data',
+                                                        'avtoteka_web',
+                                                        'avtoteka_pdf',
+                                                        'count_dtp',
+                                                        'dtp_red',
+                                                        'taxi',
+                                                        'carsharing',
+                                                        'avtoteka_car_autodex',
+                                                        'avito_price_avg_market_price',
+                                                        'avito_price_avg_condition',
+                                                        'avito_price_market_min',
+                                                        'avito_price_market_max',
+                                                        'avito_price_min',
+                                                        'avito_price_max',
+                                                    ])                 
 
 
 def get_token_avtoteka():
