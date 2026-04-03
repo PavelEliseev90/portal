@@ -3,7 +3,7 @@ from openpyxl import Workbook, load_workbook
 from documents.models import DocSMS, DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning, DocZNKA
 import datetime as DT
 from dateutil.relativedelta import relativedelta
-from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
+from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse, HttpResponseNotAllowed
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as dj_login
 from django.contrib.auth import logout as dj_logout
@@ -5091,7 +5091,7 @@ def stok_im_dashboard(request):
     """Главная страница стока интернет-магазина — дашборд с метриками."""
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
-    from website.models import ImProduct
+    from website.models import ImProduct, ImProductPhoto
     has_db_data = ImProduct.objects.exists()
     dashboard = None
     if has_db_data:
@@ -5123,12 +5123,19 @@ def stok_im_dashboard(request):
         not_uploaded = _stok_im_metric_stats(qs_not_uploaded, total)
         no_category = _stok_im_metric_stats(qs_no_category, total)
 
+        photo_push_queue = ImProductPhoto.objects.filter(
+            upload_1c_status__in=(
+                ImProductPhoto.UPLOAD_1C_PENDING,
+                ImProductPhoto.UPLOAD_1C_FAILED,
+            )
+        ).count()
         dashboard = {
             'total': {'count': total, 'percent': total_percent, 'sum_value': total_sum, 'quantity_sum': total_quantity},
             'no_photo': no_photo,
             'no_price': no_price,
             'not_uploaded': not_uploaded,
             'no_category': no_category,
+            'photo_push_queue': photo_push_queue,
         }
     params = {
         'type': 'stok_im',
@@ -5153,17 +5160,44 @@ def stok_im_sync_run(request):
 
 
 def stok_im_sync_photos(request):
-    """Запуск синхронизации фото товаров из 1C."""
+    """Отправка очереди фото в 1С и загрузка фото из 1С (без потока прогресса)."""
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
     if request.method != 'POST':
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
-    from django.core.management import call_command
     try:
-        call_command('sync_im_photos', verbosity=0)
+        from website.im_photo_push import run_push_then_pull_from_1c
+
+        run_push_then_pull_from_1c()
     except Exception:
         pass
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/stok_im/'))
+
+
+def stok_im_sync_photos_stream(request):
+    """Тот же сценарий, что stok_im_sync_photos, но NDJSON-поток: прогресс отправки в 1С + pull из 1С."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'unauthorized'}, status=401)
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    def ndjson_iter():
+        from website.im_photo_push import iter_push_pending_photos_to_1c
+
+        for line in iter_push_pending_photos_to_1c():
+            yield json.dumps(line, ensure_ascii=False) + '\n'
+        try:
+            from django.core.management import call_command
+
+            call_command('sync_im_photos', verbosity=0)
+            yield json.dumps({'phase': 'pull_done', 'ok': True}, ensure_ascii=False) + '\n'
+        except Exception as e:
+            yield json.dumps({'phase': 'pull_done', 'ok': False, 'error': str(e)[:300]}, ensure_ascii=False) + '\n'
+
+    resp = StreamingHttpResponse(ndjson_iter(), content_type='application/x-ndjson; charset=utf-8')
+    resp['Cache-Control'] = 'no-cache'
+    resp['X-Accel-Buffering'] = 'no'
+    return resp
 
 
 def stok_im(request):
@@ -5224,7 +5258,7 @@ def stok_im(request):
     return render(request, 'im/stok.html', {'params': params})
 
 def product(request):
-    """Карточка товара — всегда из БД (ImProduct + ImProductPhoto). POST — загрузка фото в 1С."""
+    """Карточка товара — всегда из БД (ImProduct + ImProductPhoto). POST — сохранение фото и очередь на отправку в 1С."""
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
 
@@ -5232,14 +5266,11 @@ def product(request):
     if not kod:
         return HttpResponseRedirect('/stok_im/list/')
 
-    from website.models import ImProduct, ImProductPhoto
+    from website.models import ImProduct, ImProductPhoto, ImProductUserActivity
 
     product_obj = ImProduct.objects.filter(nomenclature_code=kod).first()
     if not product_obj:
         return HttpResponseRedirect('/stok_im/list/')
-
-    url = request.build_absolute_uri()
-    url_search = ('?' + url.split('?')[1]) if '?' in url else ('?kod=' + kod)
 
     if request.method == "POST":
         file_objects = request.FILES.getlist('files')
@@ -5311,30 +5342,43 @@ def product(request):
                 file_object.seek(0)
                 processed_file = file_object
             
-            # Отправляем обработанный файл на сервер
-            # Если processed_file это BytesIO (оптимизированный файл), он уже готов к отправке
-            # Если это оригинальный file_object, используем его напрямую
-            response = requests.post(server_im + 'product/' + url_search,
-                                        params={'file_name': file_name},
-                                    files={"files": (file_name, processed_file)}, verify=False)
-            if response.status_code == 200:
-                import uuid
-                from django.core.files.base import ContentFile
-                processed_file.seek(0)
-                source_url = f"upload://{product_obj.nomenclature_code}/{uuid.uuid4().hex}"
-                max_order = ImProductPhoto.objects.filter(product=product_obj).aggregate(
-                    max_order=models.Max('sort_order')
-                )['max_order'] or 0
-                photo = ImProductPhoto(
-                    product=product_obj,
-                    source_url=source_url,
-                    sort_order=max_order + 1,
-                )
-                photo.file.save(file_name, ContentFile(processed_file.read()), save=True)
-        return HttpResponseRedirect(request.build_absolute_uri())        
-            
+            # Сохраняем в БД и ставим в очередь на отправку в 1С (кнопка «Синхронизация фото» на дашборде)
+            import uuid
+            from django.core.files.base import ContentFile
+
+            processed_file.seek(0)
+            source_url = f"upload://{product_obj.nomenclature_code}/{uuid.uuid4().hex}"
+            max_order = ImProductPhoto.objects.filter(product=product_obj).aggregate(
+                max_order=models.Max('sort_order')
+            )['max_order'] or 0
+            photo = ImProductPhoto(
+                product=product_obj,
+                source_url=source_url,
+                sort_order=max_order + 1,
+                upload_1c_status=ImProductPhoto.UPLOAD_1C_PENDING,
+            )
+            photo.file.save(file_name, ContentFile(processed_file.read()), save=True)
+            ImProductUserActivity.objects.create(
+                user=request.user,
+                product=product_obj,
+                action=ImProductUserActivity.ACTION_PHOTO_UPLOAD,
+                photo=photo,
+            )
+        return HttpResponseRedirect(request.build_absolute_uri())
+
+    ImProductUserActivity.objects.create(
+        user=request.user,
+        product=product_obj,
+        action=ImProductUserActivity.ACTION_OPEN,
+    )
+
     photos = list(
         ImProductPhoto.objects.filter(product=product_obj).order_by('sort_order', 'id')
+    )
+    activity_stats = ImProductUserActivity.objects.filter(product=product_obj).aggregate(
+        opens=Count('id', filter=Q(action=ImProductUserActivity.ACTION_OPEN)),
+        uploads=Count('id', filter=Q(action=ImProductUserActivity.ACTION_PHOTO_UPLOAD)),
+        deletes=Count('id', filter=Q(action=ImProductUserActivity.ACTION_PHOTO_DELETE)),
     )
     filtr = request.GET
     params = {
@@ -5343,6 +5387,7 @@ def product(request):
         'filtr_count': len(filtr),
         'answer': product_obj.to_dict(),
         'photos': photos,
+        'activity_stats': activity_stats,
     }
     return render(request, 'im/product.html', {'params': params})
 
@@ -5353,15 +5398,88 @@ def product_photo_delete(request, photo_id):
         return HttpResponseRedirect('/')
     if request.method != 'POST':
         return HttpResponseRedirect('/stok_im/list/')
-    from website.models import ImProductPhoto
+    from website.models import ImProductPhoto, ImProductUserActivity
     photo = ImProductPhoto.objects.filter(id=photo_id).select_related('product').first()
     if not photo:
         return HttpResponseRedirect('/stok_im/list/')
     kod = photo.product.nomenclature_code
+    ImProductUserActivity.objects.create(
+        user=request.user,
+        product=photo.product,
+        action=ImProductUserActivity.ACTION_PHOTO_DELETE,
+        photo=photo,
+    )
     photo.delete()
     return HttpResponseRedirect(
         request.build_absolute_uri(reverse('website:stok_im_product') + '?kod=' + kod)
     )
+
+
+def stok_im_user_activity(request):
+    """Отчёт по активности пользователей на карточках IM-стока (сводка и журнал)."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    from website.models import ImProductUserActivity
+    from django.utils import timezone as tz_util
+
+    today = tz_util.localdate()
+    date_to_str = request.GET.get('date_to') or today.isoformat()
+    date_from_str = request.GET.get('date_from') or (today - DT.timedelta(days=30)).isoformat()
+    user_filter = request.GET.get('user_id', '').strip()
+    user_filter_id = int(user_filter) if user_filter.isdigit() else None
+    page_num = request.GET.get('page', '1')
+
+    try:
+        date_from = DT.datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        date_to = DT.datetime.strptime(date_to_str, '%Y-%m-%d').date()
+    except ValueError:
+        date_from = today - DT.timedelta(days=30)
+        date_to = today
+
+    start_dt = tz_util.make_aware(DT.datetime.combine(date_from, DT.time.min))
+    end_dt = tz_util.make_aware(DT.datetime.combine(date_to, DT.time.max))
+
+    base = ImProductUserActivity.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+    summary_qs = (
+        base.values('user_id', 'user__username', 'user__first_name', 'user__last_name')
+        .annotate(
+            opens=Count('id', filter=Q(action=ImProductUserActivity.ACTION_OPEN)),
+            uploads=Count('id', filter=Q(action=ImProductUserActivity.ACTION_PHOTO_UPLOAD)),
+            deletes=Count('id', filter=Q(action=ImProductUserActivity.ACTION_PHOTO_DELETE)),
+        )
+        .order_by('user__username')
+    )
+
+    detail_qs = base.select_related('user', 'product', 'photo').order_by('-created_at')
+    if user_filter_id is not None:
+        detail_qs = detail_qs.filter(user_id=user_filter_id)
+
+    paginator = Paginator(detail_qs, 50)
+    try:
+        page_obj = paginator.page(page_num)
+    except (EmptyPage, InvalidPage):
+        page_obj = paginator.page(1)
+
+    user_ids = base.values_list('user_id', flat=True).distinct()
+    filter_users = User.objects.filter(id__in=user_ids).order_by('username')
+
+    q = request.GET.copy()
+    if 'page' in q:
+        del q['page']
+    pagination_base = q.urlencode()
+
+    params = {
+        'type': 'stok_im_user_activity',
+        'date_from': date_from.isoformat(),
+        'date_to': date_to.isoformat(),
+        'summary': list(summary_qs),
+        'page_obj': page_obj,
+        'user_filter': user_filter,
+        'user_filter_id': user_filter_id,
+        'filter_users': filter_users,
+        'pagination_base': pagination_base,
+    }
+    return render(request, 'im/stok_user_activity.html', {'params': params})
 
 
 def stok_im_sync_log(request):

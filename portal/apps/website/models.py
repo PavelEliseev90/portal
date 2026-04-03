@@ -80,6 +80,16 @@ class ImProduct(models.Model):
 
 class ImProductPhoto(models.Model):
     """Локальное фото товара, синхронизированное из 1С."""
+    UPLOAD_1C_NA = 'na'
+    UPLOAD_1C_PENDING = 'pending'
+    UPLOAD_1C_SYNCED = 'synced'
+    UPLOAD_1C_FAILED = 'failed'
+    UPLOAD_1C_STATUS_CHOICES = [
+        (UPLOAD_1C_NA, 'Не требуется (из 1С)'),
+        (UPLOAD_1C_PENDING, 'В очереди на отправку в 1С'),
+        (UPLOAD_1C_SYNCED, 'Отправлено в 1С'),
+        (UPLOAD_1C_FAILED, 'Ошибка отправки в 1С'),
+    ]
     product = models.ForeignKey(
         ImProduct,
         on_delete=models.CASCADE,
@@ -90,6 +100,13 @@ class ImProductPhoto(models.Model):
     file = models.ImageField('Файл', upload_to='im_product_photos/%Y/%m/', blank=True, null=True)
     sort_order = models.PositiveIntegerField('Порядок', default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    upload_1c_status = models.CharField(
+        'Отправка в 1С',
+        max_length=16,
+        choices=UPLOAD_1C_STATUS_CHOICES,
+        default=UPLOAD_1C_NA,
+        db_index=True,
+    )
 
     class Meta:
         verbose_name = 'Фото товара IM'
@@ -99,6 +116,54 @@ class ImProductPhoto(models.Model):
 
     def __str__(self):
         return f'{self.product.nomenclature_code} — {self.source_url[:50]}'
+
+
+class ImProductUserActivity(models.Model):
+    """Журнал действий пользователей по карточкам товаров IM-стока (отчёты, детализация)."""
+    ACTION_OPEN = 'open_card'
+    ACTION_PHOTO_UPLOAD = 'photo_upload'
+    ACTION_PHOTO_DELETE = 'photo_delete'
+    ACTION_CHOICES = [
+        (ACTION_OPEN, 'Открытие карточки'),
+        (ACTION_PHOTO_UPLOAD, 'Загрузка фото'),
+        (ACTION_PHOTO_DELETE, 'Удаление фото'),
+    ]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='im_product_activities',
+        verbose_name='Пользователь',
+    )
+    product = models.ForeignKey(
+        ImProduct,
+        on_delete=models.CASCADE,
+        related_name='user_activities',
+        verbose_name='Товар',
+    )
+    action = models.CharField('Действие', max_length=32, choices=ACTION_CHOICES, db_index=True)
+    photo = models.ForeignKey(
+        ImProductPhoto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='activity_logs',
+        verbose_name='Фото',
+    )
+    created_at = models.DateTimeField('Когда', auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'imProductUserActivity'
+        verbose_name = 'Активность по карточке IM'
+        verbose_name_plural = 'Активность по карточкам IM'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['product', 'created_at']),
+            models.Index(fields=['action', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.get_action_display()} — {self.product.nomenclature_code} — {self.created_at:%Y-%m-%d %H:%M}'
 
 
 class ImSyncLog(models.Model):
