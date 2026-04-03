@@ -393,14 +393,85 @@ def discount_get_complectations(request):
         return JsonResponse({'complectations': []})
 
 
+def _redirect_discount_km(request):
+    """Сохраняет query-строку фильтров после POST."""
+    rq = request.POST.get('return_query', '').strip()
+    url = reverse('prices_car:discount_km')
+    if rq:
+        return redirect('%s?%s' % (url, rq))
+    return redirect(url)
+
+
+def _parse_iso_date(s):
+    s = (s or '').strip()
+    if not s:
+        return None
+    try:
+        return date.fromisoformat(s)
+    except ValueError:
+        return None
+
+
 @login_required
 def discount_km_page(request):
     """Управление дисконтом Км: процент изменения минимального Км по бренду/модели/модификации/комплектации/году, срок в рамках месяца."""
     discount_edit = None
     brands = PriceCarBrand.objects.only('id', 'name').order_by('name')
-    items = PriceCarKmDiscount.objects.select_related(
+    today = timezone.now().date()
+
+    get_params = request.GET.copy()
+    get_params.pop('edit', None)
+    filter_query = get_params.urlencode()
+
+    qs = PriceCarKmDiscount.objects.select_related(
         'brand', 'model', 'model__mark', 'modification', 'complectation'
-    ).order_by('-date_from', 'brand')
+    )
+
+    f_brand = request.GET.get('f_brand', '').strip()
+    if f_brand:
+        try:
+            qs = qs.filter(brand_id=int(f_brand))
+        except ValueError:
+            pass
+
+    df_min = _parse_iso_date(request.GET.get('df_min'))
+    df_max = _parse_iso_date(request.GET.get('df_max'))
+    if df_min:
+        qs = qs.filter(date_from__gte=df_min)
+    if df_max:
+        qs = qs.filter(date_from__lte=df_max)
+
+    dt_min = _parse_iso_date(request.GET.get('dt_min'))
+    dt_max = _parse_iso_date(request.GET.get('dt_max'))
+    if dt_min:
+        qs = qs.filter(date_to__gte=dt_min)
+    if dt_max:
+        qs = qs.filter(date_to__lte=dt_max)
+
+    pct_min_str = request.GET.get('pct_min', '').strip()
+    pct_max_str = request.GET.get('pct_max', '').strip()
+    if pct_min_str:
+        try:
+            qs = qs.filter(discount_percent__gte=float(pct_min_str.replace(',', '.')))
+        except ValueError:
+            pass
+    if pct_max_str:
+        try:
+            qs = qs.filter(discount_percent__lte=float(pct_max_str.replace(',', '.')))
+        except ValueError:
+            pass
+
+    items = qs.order_by('-date_from', 'brand')
+
+    filtr = {
+        'f_brand': f_brand,
+        'df_min': request.GET.get('df_min', '').strip(),
+        'df_max': request.GET.get('df_max', '').strip(),
+        'dt_min': request.GET.get('dt_min', '').strip(),
+        'dt_max': request.GET.get('dt_max', '').strip(),
+        'pct_min': pct_min_str,
+        'pct_max': pct_max_str,
+    }
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -410,30 +481,30 @@ def discount_km_page(request):
                 obj = get_object_or_404(PriceCarKmDiscount, pk=pk)
                 obj.delete()
                 messages.success(request, 'Запись удалена.')
-            return redirect('prices_car:discount_km')
+            return _redirect_discount_km(request)
 
         if action in ('add', 'edit'):
             pk = request.POST.get('id') if action == 'edit' else None
             brand_id = request.POST.get('brand')
             if not brand_id:
                 messages.error(request, 'Укажите бренд.')
-                return redirect('prices_car:discount_km')
+                return _redirect_discount_km(request)
             try:
                 discount_percent = float(request.POST.get('discount_percent', '0').replace(',', '.'))
             except ValueError:
                 messages.error(request, 'Неверное значение процента.')
-                return redirect('prices_car:discount_km')
+                return _redirect_discount_km(request)
             date_from_str = request.POST.get('date_from', '').strip()
             date_to_str = request.POST.get('date_to', '').strip()
             if not date_from_str or not date_to_str:
                 messages.error(request, 'Укажите срок действия (с и по).')
-                return redirect('prices_car:discount_km')
+                return _redirect_discount_km(request)
             try:
                 date_from = date.fromisoformat(date_from_str)
                 date_to = date.fromisoformat(date_to_str)
             except ValueError:
                 messages.error(request, 'Неверный формат даты (нужен ГГГГ-ММ-ДД).')
-                return redirect('prices_car:discount_km')
+                return _redirect_discount_km(request)
 
             model_id = request.POST.get('model') or None
             modification_id = request.POST.get('modification') or None
@@ -468,7 +539,7 @@ def discount_km_page(request):
             try:
                 obj.save()
                 messages.success(request, 'Запись сохранена.')
-                return redirect('prices_car:discount_km')
+                return _redirect_discount_km(request)
             except ValidationError as e:
                 if hasattr(e, 'message_dict'):
                     for field, msgs in e.message_dict.items():
@@ -489,5 +560,8 @@ def discount_km_page(request):
             'brands': brands,
             'items': items,
             'discount_edit': discount_edit,
+            'today': today,
+            'filter_query': filter_query,
+            'filtr': filtr,
         },
     })
