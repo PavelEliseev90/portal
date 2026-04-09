@@ -6240,6 +6240,8 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             percent_ss = percent_ss * -1
                                                 
         price = zna 
+        
+        
         # повышенный износ / такси
         if estimation.iznos and estimation.taxi:
             price_new  = price - (price * 40 / 100)
