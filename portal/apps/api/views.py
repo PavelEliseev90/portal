@@ -3895,7 +3895,7 @@ def get_worksheet(worksheet):
     
     rlk_object.dataTime             = worksheet['Date']
     rlk_object.nomer                = worksheet['Number']
-    rlk_object.clientName           = worksheet['ClientName']
+    rlk_object.clientName           = worksheet['ClientName'][:250]
     rlk_object.staff                = get_staff(worksheet['Staff'])
     
     if 'DateEnd' in worksheet:

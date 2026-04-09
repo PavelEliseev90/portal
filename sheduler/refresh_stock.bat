@@ -1,0 +1,1 @@
+python D:\kors_group\portal\manage.py process_tasks --queue stock --duration 100

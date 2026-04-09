@@ -11,6 +11,9 @@ from django.db import models
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
+import requests
+
+url_alfa = 'http://k01srv1c05/ralfa01/hs/mb/?type='
 
 
 def add_statistic(report, add, delite, filtr):
@@ -268,6 +271,128 @@ def Stock_refresh(request):
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 
+def stock_get_refresh():
+    
+    url_get = url_alfa + 'stock' 
+    
+    response = requests.get(
+        url_get,
+        auth=("reglament", "aliluj24"),
+        timeout=180,
+    )
+    
+    if response.status_code == 200:
+        data = json.loads(response.text)
+        
+        data_info   = json.loads(data['stock'])
+        data        = data_info['Data']
+        
+        Stock.objects.all().delete()
+    
+        for item in data:
+            new_record = Stock()
+            for key, value in item.items():
+                if len(str(value)) > 0:
+                    new_record.__setattr__(key , value)
+            new_record.save()
+        
+   
+def cumulative_get_refresh(date_start, date_end):
+    
+    if date_start == None:
+        date_start = DT.datetime.now().replace(day=1, hour = 1, minute=1, second=1)
+
+    if date_end == None:
+        date_end = DT.datetime.now()
+    url_get = url_alfa + 'cumulative' + '&date_start=' + date_start.isoformat(timespec="milliseconds").replace("+00:00", "Z") + '&date_end=' + date_end.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    
+    response = requests.get(
+        url_get,
+        auth=("reglament", "aliluj24"),
+        timeout=180,
+    )
+
+    if response.status_code == 200:
+        data = json.loads(response.text)
+        count_delite = Cumulative.objects.filter(DataProdazhi__range = [date_start, date_end]).count()
+        if count_delite > 0:
+            Cumulative.objects.filter(DataProdazhi__range = [date_start, date_end]).delete()
+        
+        data_info   = json.loads(data['cumulative'])
+        data        = data_info['Data']
+        
+        # Получаем информацию о полях модели
+        model_fields = {f.name: f for f in Cumulative._meta.get_fields() if hasattr(f, 'name')}
+
+        for item in data:
+            new_record = Cumulative()
+            for key, value in item.items():
+                # Проверяем, существует ли поле в модели
+                if key not in model_fields:
+                    continue
+                
+                field = model_fields[key]
+                
+                # Пропускаем пустые значения
+                if value is None or value == '':
+                    continue
+                
+                # Обработка DateTimeField
+                if isinstance(field, models.DateTimeField):
+                    try:
+                        # Если значение уже datetime объект
+                        if isinstance(value, DT.datetime):
+                            setattr(new_record, key, value)
+                        # Если значение строка, пытаемся распарсить
+                        elif isinstance(value, str):
+                            if len(value) > 0:
+                                # Пробуем разные форматы дат
+                                try:
+                                    parsed_date = DT.datetime.fromisoformat(value.replace('Z', '+00:00'))
+                                except:
+                                    try:
+                                        parsed_date = DT.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                                    except:
+                                        try:
+                                            parsed_date = DT.datetime.strptime(value, '%Y-%m-%d')
+                                        except:
+                                            continue
+                                setattr(new_record, key, parsed_date)
+                    except Exception as e:
+                        continue
+                # Обработка DateField
+                elif isinstance(field, models.DateField):
+                    try:
+                        if isinstance(value, DT.date):
+                            setattr(new_record, key, value)
+                        elif isinstance(value, DT.datetime):
+                            setattr(new_record, key, value.date())
+                        elif isinstance(value, str) and len(value) > 0:
+                            try:
+                                parsed_date = DT.datetime.strptime(value, '%Y-%m-%d').date()
+                                setattr(new_record, key, parsed_date)
+                            except:
+                                continue
+                    except:
+                        continue
+                # Обработка остальных полей
+                else:
+                    try:
+                        # Проверяем, что значение не пустое
+                        if isinstance(value, str) and len(value) > 0:
+                            setattr(new_record, key, value)
+                        elif not isinstance(value, str) and value is not None:
+                            setattr(new_record, key, value)
+                    except:
+                        continue
+            
+            try:
+                new_record.save()
+            except Exception as e:
+                # Пропускаем записи с ошибками
+                continue
+        
+    
 @csrf_exempt
 def Cumulative_refresh(request):
     body_unicode    = request.body.decode()
@@ -360,6 +485,7 @@ def Cumulative_refresh(request):
     }
 
     return JsonResponse(to_json, status=status.HTTP_200_OK)
+
 
 def stock_list(request):
     if not request.user.is_authenticated or not request.user.profiles.korsavto_settings: 

@@ -10601,6 +10601,9 @@ def sb_lo(request):
     
 
 def test(request):
+    
+    # from powerbi.views import cumulative_get_refresh
+    # cumulative_get_refresh(None, None)
     # from register.models import add_swap, RegSwapKors
     # if request.method == "POST":
     #     datas = request.POST.get('exampleFormControlTextarea1').split('\r\n')
@@ -10894,7 +10897,7 @@ def test(request):
             s = 1 
     '''
 
-    refresh_avtoteka_vin()
+    #refresh_avtoteka_vin()
     
     
     # estimations = RegInteractivOcenka.objects.exclude(start_estimation__lte = DT.date(2025, 12, 1)).values('rlk__id').order_by('-start_estimation')

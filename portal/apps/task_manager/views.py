@@ -176,6 +176,9 @@ def send_matrix_auction():
 def add_task():
     s=1
     
+    #start_cumulative(schedule = 600, repeat = 86400, verbose_name = "Получение кумулятива альфа")
+    #start_stock(schedule = 600, repeat = 86400, verbose_name = "Получение стока альфа")
+    
     #start_refresh_signal(schedule = 60, repeat = 86400, verbose_name = "Получение данных сигнала")
     #start_refresh_estimation_cars_organization(schedule = 60, repeat = 86400, verbose_name = "Получение оценок по автомобилям на складе")
     #start_get_info_max(schedule = 60, repeat = 120, verbose_name = "Анализ склада / продаж Автохаб по интерактивной оценке")
@@ -220,6 +223,27 @@ async def hello_ws_rlk_eco(text):
         await websocket.send(text)
         response = await websocket.recv()
         s= 1
+
+
+####
+###
+##
+# Обновление кумулятивной маржи из альфа 
+@background(queue='cumulative')
+def start_cumulative():
+    from powerbi.views import cumulative_get_refresh
+    date_start  = DT.datetime.now().replace(day=1, hour = 0, minute=1, second=1)
+    date_end    = DT.datetime.now()
+    cumulative_get_refresh(date_start, date_end)
+        
+####
+###
+##
+# Обновление стока из альфа 
+@background(queue='stock')
+def start_stock():
+    from powerbi.views import stock_get_refresh
+    stock_get_refresh()
 
 
 ####
