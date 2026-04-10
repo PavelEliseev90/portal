@@ -11,7 +11,7 @@
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
         <h2 class="mb-2">Индексы КМ по этапам</h2>
-        <p class="text-muted mb-4">Укажите индекс КМ по этапу установки цены </p>
+        <p class="text-muted mb-4">Последние установленные индексы по этапу УС и период (месяц). Через иконку можно внести или обновить индекс за выбранный месяц.</p>
 
         {% if messages %}
         <div class="mb-3">
@@ -24,63 +24,44 @@
         </div>
         {% endif %}
 
-        <!--
-        <div class="portal-panel mb-4">
-            <h5 class="mb-3">Добавить или изменить</h5>
-            <form method="post" action="{% url 'prices_car:stage_km' %}" class="row g-3 align-items-end">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add">
-                <div class="col-12 col-md-4">
-                    <label class="form-label">Этап УС</label>
-                    <select name="stage" class="form-select" required>
-                        <option value="">— Выберите этап —</option>
-                        {% for s in params.stages %}
-                        <option value="{{ s.id }}">{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
-                    {% if not params.stages %}<small class="text-muted">Этапы установки цен настраиваются в справочниках (refs).</small>{% endif %}
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Месяц (ГГГГ-ММ)</label>
-                    <input type="month" name="month" class="form-control" required placeholder="2025-02">
-                </div>
-                <div class="col-12 col-md-2">
-                    <label class="form-label">Индекс КМ</label>
-                    <input type="number" name="km_index" class="form-control" value="0" step="0.01" min="0" placeholder="0.00">
-                </div>
-                <div class="col-12 col-md-2">
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-            <p class="small text-muted mt-2">Для одной и той же пары «этап УС + месяц» повторная отправка обновит значение индекса.</p>
-        </div>
-        -->
-
-        <div class="row">
-            <div class="col-12 col-sm-3">
-                <div class="portal-panel">
-                    <h5 class="mb-3 text-muted">Тест - прайс</h5>
-                    <h4 class="mb-3">- -- </h4>
+        <div class="row g-3 mb-4">
+            {% for block in params.stage_blocks %}
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="portal-panel h-100 position-relative">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <h5 class="mb-0 text-muted">{{ block.title }}</h5>
+                        {% if block.stage_id %}
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary border-0 p-1"
+                                title="Изменить индекс КМ"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalStageKm"
+                                data-stage-id="{{ block.stage_id }}"
+                                data-stage-label="{{ block.title }}"
+                                data-latest-km="{% if block.latest %}{{ block.latest.km_index }}{% endif %}"
+                                data-stage-name-ref="{{ block.stage.name|default:'' }}">
+                            <span class="icon-mbri-edit" aria-hidden="true"></span>
+                        </button>
+                        {% else %}
+                        <span class="text-warning small" title="Нет этапа в справочнике с подходящим названием">—</span>
+                        {% endif %}
+                    </div>
+                    {% if block.stage_id %}
+                        {% if block.latest %}
+                        <h4 class="mb-1">{{ block.latest.km_index }}</h4>
+                        <p class="small text-muted mb-0">Период: {{ block.latest.month|date:"Y-m" }}</p>
+                        {% else %}
+                        <h4 class="mb-1 text-muted">—</h4>
+                        <p class="small text-muted mb-0">Индекс ещё не задавался</p>
+                        {% endif %}
+                        <p class="small text-secondary mb-0 mt-1" style="font-size: 0.75rem;">Этап: {{ block.stage.name }}</p>
+                    {% else %}
+                        <h4 class="mb-1 text-muted">—</h4>
+                        <p class="small text-warning mb-0">Добавьте этап в справочник (название должно содержать ключевые слова для «{{ block.title }}»).</p>
+                    {% endif %}
                 </div>
             </div>
-            <div class="col-12 col-sm-3">
-                <div class="portal-panel">
-                    <h5 class="mb-3 text-muted">РДО</h5>
-                    <h4 class="mb-3">- -- </h4>
-                </div>
-            </div>
-            <div class="col-12 col-sm-3">
-                <div class="portal-panel">
-                    <h5 class="mb-3 text-muted">Коррекция</h5>
-                    <h4 class="mb-3">- -- </h4>
-                </div>
-            </div>
-            <div class="col-12 col-sm-3">
-                <div class="portal-panel">
-                    <h5 class="mb-3 text-muted">ТХТ</h5>
-                    <h4 class="mb-3">- -- </h4>
-                </div>
-            </div>
+            {% endfor %}
         </div>
 
         <div class="portal-panel">
@@ -91,7 +72,7 @@
                         <tr>
                             <th>Этап УС</th>
                             <th>Месяц</th>
-                            <th>Индекс КМ</th>                            
+                            <th>Индекс КМ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,17 +80,101 @@
                         <tr>
                             <td>{{ item.stage.name }}</td>
                             <td>{{ item.month|date:"Y-m" }}</td>
-                            <td>{{ item.km_index }}</td>                            
+                            <td>{{ item.km_index }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Нет записей. Добавьте первую выше.</td>
+                            <td colspan="3" class="text-center text-muted py-4">Нет записей. Внесите индекс через карточку этапа выше.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% if params.page_obj.has_other_pages %}
+            <nav class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2" aria-label="Страницы истории">
+                <p class="small text-muted mb-0">
+                    Стр. {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}
+                    (всего {{ params.page_obj.paginator.count }})
+                </p>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if params.page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}">Назад</a>
+                    </li>
+                    {% endif %}
+                    {% if params.page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ params.page_obj.next_page_number }}">Вперёд</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalStageKm" tabindex="-1" aria-labelledby="modalStageKmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'prices_car:stage_km' %}" id="formStageKmModal">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="stage" id="modalStageKmStage" value="">
+                <input type="hidden" name="return_page" id="modalStageKmReturnPage" value="{{ request.GET.page|default:1 }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalStageKmLabel">Индекс КМ по этапу</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3" id="modalStageKmSubtitle"></p>
+                    <div class="mb-3">
+                        <label class="form-label">Месяц (период) <span class="text-danger">*</span></label>
+                        <input type="month" name="month" id="modalStageKmMonth" class="form-control" required value="{{ params.default_month }}">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Индекс КМ <span class="text-danger">*</span></label>
+                        <input type="number" name="km_index" id="modalStageKmIndex" class="form-control" value="0" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">Для пары «этап + месяц» повторное сохранение обновит значение.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var modal = document.getElementById('modalStageKm');
+    if (!modal) return;
+    var elStage = document.getElementById('modalStageKmStage');
+    var elMonth = document.getElementById('modalStageKmMonth');
+    var elIndex = document.getElementById('modalStageKmIndex');
+    var elSub = document.getElementById('modalStageKmSubtitle');
+    var elTitle = document.getElementById('modalStageKmLabel');
+    var defaultMonth = '{{ params.default_month }}';
+
+    modal.addEventListener('show.bs.modal', function (ev) {
+        var btn = ev.relatedTarget;
+        if (!btn || !btn.getAttribute) return;
+        var sid = btn.getAttribute('data-stage-id');
+        var label = btn.getAttribute('data-stage-label') || '';
+        var nameRef = btn.getAttribute('data-stage-name-ref') || '';
+        var latestKm = btn.getAttribute('data-latest-km');
+        elStage.value = sid || '';
+        elTitle.textContent = 'Индекс КМ: ' + label;
+        elSub.textContent = nameRef ? ('Справочник: ' + nameRef) : '';
+        elMonth.value = defaultMonth;
+        if (latestKm !== null && latestKm !== undefined && latestKm !== '') {
+            elIndex.value = latestKm;
+        } else {
+            elIndex.value = '0';
+        }
+    });
+})();
+</script>
 {% endblock %}
