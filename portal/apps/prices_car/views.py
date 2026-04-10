@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 
 from refs.models import AutoruMark, AutoruModel, RefStagePrice
@@ -282,11 +283,69 @@ def settings_page(request):
     })
 
 
+def _match_ref_stage_for_block(stages_list, block_key):
+    """Сопоставляет этап УС из справочника с одним из фиксированных блоков на странице."""
+    for s in stages_list:
+        n = (s.name or '').strip().lower()
+        if block_key == 'test_price':
+            if ('тест' in n and 'прайс' in n) or n in ('тест - прайс', 'тест-прайс'):
+                return s
+        elif block_key == 'rdo':
+            if n == 'рдо' or n.startswith('рдо '):
+                return s
+        elif block_key == 'correction':
+            if 'коррекц' in n:
+                return s
+        elif block_key == 'txt':
+            if 'тхт' in n:
+                return s
+    return None
+
+
+def _stage_km_blocks(stages_queryset):
+    """Четыре карточки: последний индекс по этапу и период (месяц)."""
+    stages_list = list(stages_queryset)
+    specs = (
+        ('test_price', 'Тест - прайс'),
+        ('rdo', 'РДО'),
+        ('correction', 'Коррекция'),
+        ('txt', 'ТХТ'),
+    )
+    out = []
+    for key, title in specs:
+        stage = _match_ref_stage_for_block(stages_list, key)
+        latest = None
+        if stage:
+            latest = (
+                PriceCarStageKM.objects.filter(stage=stage)
+                .select_related('stage')
+                .order_by('-month')
+                .first()
+            )
+        out.append({
+            'key': key,
+            'title': title,
+            'stage': stage,
+            'stage_id': stage.id if stage else None,
+            'latest': latest,
+        })
+    return out
+
+
 @login_required
 def stage_km_page(request):
     """Индексы Км по этапам УС: этап установки цены + месяц + значение индекса."""
     stages = RefStagePrice.objects.order_by('name')
-    items = PriceCarStageKM.objects.select_related('stage').order_by('-month', 'stage')
+    items_qs = PriceCarStageKM.objects.select_related('stage').order_by('-month', 'stage')
+
+    paginator = Paginator(items_qs, 10)
+    page_number = request.GET.get('page') or 1
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -296,6 +355,10 @@ def stage_km_page(request):
                 obj = get_object_or_404(PriceCarStageKM, pk=pk)
                 obj.delete()
                 messages.success(request, 'Запись удалена.')
+            rp = request.POST.get('return_page', '').strip()
+            url = reverse('prices_car:stage_km')
+            if rp.isdigit():
+                return redirect('%s?page=%s' % (url, rp))
             return redirect('prices_car:stage_km')
 
         if action == 'add':
@@ -334,12 +397,22 @@ def stage_km_page(request):
                 messages.success(request, 'Запись добавлена.')
             else:
                 messages.success(request, 'Запись обновлена.')
+            rp = request.POST.get('return_page', '').strip()
+            url = reverse('prices_car:stage_km')
+            if rp.isdigit():
+                return redirect('%s?page=%s' % (url, rp))
             return redirect('prices_car:stage_km')
+
+    today = timezone.now().date()
+    default_month = date(today.year, today.month, 1).strftime('%Y-%m')
 
     return render(request, 'prices_car/stage_km.html', {
         'params': {
             'stages': stages,
-            'items': items,
+            'items': page_obj,
+            'page_obj': page_obj,
+            'stage_blocks': _stage_km_blocks(stages),
+            'default_month': default_month,
         },
     })
 
