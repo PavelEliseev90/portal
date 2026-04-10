@@ -11,7 +11,7 @@
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
         <h2 class="mb-2">Индексы КМ по этапам</h2>
-        <p class="text-muted mb-4">Укажите индекс КМ (кумулятивная маржа) по этапу установки цены (УС) на выбранный месяц.</p>
+        <p class="text-muted mb-4">Укажите индекс КМ по этапу установки цены </p>
 
         {% if messages %}
         <div class="mb-3">
@@ -24,6 +24,7 @@
         </div>
         {% endif %}
 
+        <!--
         <div class="portal-panel mb-4">
             <h5 class="mb-3">Добавить или изменить</h5>
             <form method="post" action="{% url 'prices_car:stage_km' %}" class="row g-3 align-items-end">
@@ -53,17 +54,44 @@
             </form>
             <p class="small text-muted mt-2">Для одной и той же пары «этап УС + месяц» повторная отправка обновит значение индекса.</p>
         </div>
+        -->
+
+        <div class="row">
+            <div class="col-12 col-sm-3">
+                <div class="portal-panel">
+                    <h5 class="mb-3 text-muted">Тест - прайс</h5>
+                    <h4 class="mb-3">- -- </h4>
+                </div>
+            </div>
+            <div class="col-12 col-sm-3">
+                <div class="portal-panel">
+                    <h5 class="mb-3 text-muted">РДО</h5>
+                    <h4 class="mb-3">- -- </h4>
+                </div>
+            </div>
+            <div class="col-12 col-sm-3">
+                <div class="portal-panel">
+                    <h5 class="mb-3 text-muted">Коррекция</h5>
+                    <h4 class="mb-3">- -- </h4>
+                </div>
+            </div>
+            <div class="col-12 col-sm-3">
+                <div class="portal-panel">
+                    <h5 class="mb-3 text-muted">ТХТ</h5>
+                    <h4 class="mb-3">- -- </h4>
+                </div>
+            </div>
+        </div>
 
         <div class="portal-panel">
-            <h5 class="mb-3">Текущие настройки</h5>
+            <h5 class="mb-3">История индексов</h5>
             <div class="table-responsive">
-                <table class="table table-sm table-striped table-hover mb-0">
+                <table class="table table-sm table-hover mb-0">
                     <thead>
                         <tr>
                             <th>Этап УС</th>
                             <th>Месяц</th>
-                            <th>Индекс КМ</th>
-                            <th></th>
+                            <th>Индекс КМ</th>                            
                         </tr>
                     </thead>
                     <tbody>
@@ -71,15 +99,7 @@
                         <tr>
                             <td>{{ item.stage.name }}</td>
                             <td>{{ item.month|date:"Y-m" }}</td>
-                            <td>{{ item.km_index }}</td>
-                            <td>
-                                <form method="post" action="{% url 'prices_car:stage_km' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="{{ item.pk }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
-                                </form>
-                            </td>
+                            <td>{{ item.km_index }}</td>                            
                         </tr>
                         {% empty %}
                         <tr>

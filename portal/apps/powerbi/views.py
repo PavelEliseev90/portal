@@ -273,7 +273,7 @@ def Stock_refresh(request):
 
 def stock_get_refresh():
     
-    url_get = url_alfa + 'stock' 
+    url_get = url_alfa + 'stok' 
     
     response = requests.get(
         url_get,
@@ -284,8 +284,8 @@ def stock_get_refresh():
     if response.status_code == 200:
         data = json.loads(response.text)
         
-        data_info   = json.loads(data['stock'])
-        data        = data_info['Data']
+        data_info   = json.loads(data['stok'])
+        data        = data_info
         
         Stock.objects.all().delete()
     
