@@ -10602,6 +10602,9 @@ def sb_lo(request):
 
 def test(request):
     
+    from powerbi.views import stock_get_refresh
+    stock_get_refresh()
+
     # from powerbi.views import cumulative_get_refresh
     # cumulative_get_refresh(None, None)
     # from register.models import add_swap, RegSwapKors

@@ -82,12 +82,7 @@
             gap: 0.5rem;
         }
 
-        .auction-toolbar .btn-auction-primary:hover,
-        .auction-toolbar .btn-auction-primary:focus {
-            background: #d66a14;
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
+       
 
         .auction-toolbar .toolbar-right {
             display: flex;
@@ -289,13 +284,7 @@
             transform-origin: center;
         }
 
-        .auction-help-close .btn-close::before {
-            transform: translate(-50%, -50%) rotate(45deg);
-        }
-
-        .auction-help-close .btn-close::after {
-            transform: translate(-50%, -50%) rotate(-45deg);
-        }
+        
 
         .auction-help-close:hover .btn-close::before,
         .auction-help-close:hover .btn-close::after {
@@ -430,11 +419,10 @@
             background: #ffffff;
             border: 1px solid rgba(0, 0, 0, 0.08);
             box-shadow: 0 18px 32px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            
         }
 
         .auction-help-card:hover {
-            transform: translateY(-6px);
             box-shadow: 0 30px 48px rgba(245, 130, 32, 0.12);
             border-color: rgba(245, 130, 32, 0.35);
         }
@@ -578,11 +566,11 @@
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        
         }
 
         .auction-lot-card:hover {
-            transform: translateY(-4px);
+       
             box-shadow: 0 24px 50px rgba(0, 0, 0, 0.08);
         }
 
@@ -1440,6 +1428,104 @@
 
 <div class="auction-divider"></div>
 
+<div class="row g-1"></div>
+{% if params.paginator.object_list %}
+        <div class="col-12">
+            {% for object in params.paginator.object_list %}
+            <div class="auction-lot-card">
+                    <div class="auction-lot-header">
+                            <div class="auction-lot-title">
+                                    <span class="text-uppercase text-muted small">Лот № {{object.pk_auction|default:object.pk}}</span>
+                            </div>
+                            {% if object.status == None %}
+                                    <span class="auction-status accent"><span class="icon-tag"></span> подготавливается</span>
+                            {% else %}
+                                    <span class="auction-status"><span class="icon-tag"></span> {{object.status}}</span>
+                            {% endif %}
+                    </div>
+                    <div class="auction-meta-list">
+                            <div class="auction-meta-item">
+                                    <span class="icon-wrapper"><span class="icon-mbri-plus"></span></span>
+                                    {{object.dataTime}}
+                            </div>
+                            <div class="auction-meta-item">
+                                    <span class="icon-wrapper"><span class="icon-mbri-play"></span></span>
+                                    {{object.dateStart}}
+                            </div>
+                            
+                            <div class="auction-meta-item">
+                                    <span class="icon-wrapper"><span class="icon-mbri-pin"></span></span>
+                                    {{object.store.name}}
+                            </div>
+                            <div class="auction-meta-item">
+                                    <span class="icon-wrapper"><span class="icon-truck"></span></span>
+                                    {{object.count_cars}}
+                            </div>
+                            <div class="auction-meta-item">
+                                    <span class="icon-wrapper"><span class="icon-mbri-credit-card"></span></span>
+                                    {{object.start_price|floatformat:"2g"}} ₽
+                            </div>
+                    </div>
+                    <div class="auction-lot-footer">
+                            <div class="auction-owner">
+                                    <span class="icon-mbri-user me-2"></span>{{object.user.last_name}} {{object.user.first_name}}
+                            </div>
+                            <a class="auction-link" href="{{object.uid}}/">
+                                    <span class="icon-mbri-preview"></span>
+                                    Посмотреть
+                            </a>
+                    </div>
+            </div>
+    {% endfor %}
+        </div>
+                
+    
+{% else %}
+        <div class="auction-empty-state">
+                По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
+        </div>
+{% endif %}
+<div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
+	
+	<div class="col-auto align-items-center align-self-center justify-content-center">
+        <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+
+                        {% if params.paginator.has_previous %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+                                </li>
+                        {% endif %}
+
+                        {% for p in params.paginator.paginator.page_range %}
+                                {% if params.paginator.number == p %}
+                                        <li class="page-num mbr-section-btn disabled">
+                                                <a class="btn btn-secondary display-7">
+                                                        <b>{{p}}</b>
+                                                </a>
+                                        </li>
+                                {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+                                        <li class="page-num mbr-section-btn">
+                                                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                                        </li>
+                                {% endif %}
+                        {% endfor %}
+
+                        {% if params.paginator.has_next %}
+                                <li class="page-num mbr-section-btn">
+                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+                                </li>
+                        {% endif %}
+
+                </ul>
+        </nav>
+</div>
+</div>
+
+
+</div>
+
+<!--
 {% if params.paginator.object_list %}
         <div class="auction-lots">
                 {% for object in params.paginator.object_list %}
@@ -1495,45 +1581,7 @@
                 По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
         </div>
 {% endif %}
-
-<div class="auction-divider"></div>
-
-<div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
-	
-	<div class="col-auto align-items-center align-self-center justify-content-center">
-        <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
-
-                        {% if params.paginator.has_previous %}
-                                <li class="page-num mbr-section-btn">
-                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-                                </li>
-                        {% endif %}
-
-                        {% for p in params.paginator.paginator.page_range %}
-                                {% if params.paginator.number == p %}
-                                        <li class="page-num mbr-section-btn disabled">
-                                                <a class="btn btn-secondary display-7">
-                                                        <b>{{p}}</b>
-                                                </a>
-                                        </li>
-                                {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-                                        <li class="page-num mbr-section-btn">
-                                                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-                                        </li>
-                                {% endif %}
-                        {% endfor %}
-
-                        {% if params.paginator.has_next %}
-                                <li class="page-num mbr-section-btn">
-                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-                                </li>
-                        {% endif %}
-
-                </ul>
-        </nav>
-</div>
-</div>
+-->
 
 
 </div>
