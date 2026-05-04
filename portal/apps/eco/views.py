@@ -3656,7 +3656,7 @@ def doc(request, id):
     interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = rlk)
     #estimation, created  = RegInteractivOcenka.objects.get_or_create(rlk = rlk)
     
-    estimation = interactiv_rlk.estimation 
+    estimation  = interactiv_rlk.estimation 
     if estimation == None:
         return HttpResponseRedirect('/estimations/' + str(id) + '/')
     
@@ -3673,6 +3673,12 @@ def doc(request, id):
         'request'       : request,
         }
         return render(request, 'errors/403.html', {'params': params})
+    
+    version     = 3
+    try:
+        version = estimation.v
+    except:
+        version     = 3
 
     warning_list = list()
     rlk_estimations = RegInteractivOcenkaRLK.objects.filter(estimation = estimation) 
@@ -3969,6 +3975,13 @@ def doc(request, id):
         if page == 8:
             estimation_history = estimation_lo_history(estimation) 
         if page == 14:
+            refresh = request.GET.get('refresh_data', '')
+            if refresh != '':
+                if refresh == 'avtoteka':
+                    int_ind = request.GET.get('avtoteka_id', '')
+                    from task_manager.views import refresh_avtoteka_data
+                    refresh_avtoteka_data(estimation.id)
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
         if page == 9:
@@ -4699,11 +4712,12 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())    
 
         return HttpResponseRedirect(request.build_absolute_uri())  
-    return render(request, 'lo/lo_v3.html', {'params': params})  
-    if estimation.v > 1:
-        return render(request, 'lo/lo_v' + str(estimation.v) + '.html', {'params': params})             
+    
+    #return render(request, 'lo/lo_v3.html', {'params': params})  
+    if version > 1:
+        return render(request, 'lo/lo_v' + str(version) + '.html', {'params': params})             
     else:
-        return render(request, 'lo/lo.html', {'params': params}) 
+        return render(request, 'lo/lo_v3.html', {'params': params})  
 
 
 def save_recovery_estimations(interactiv_rlk, reg_interactiv_ocenka):
@@ -4813,7 +4827,14 @@ def list_expenses(estimation):
 def body_estimation(estimation):
     
     array_info  = list()
-    polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
+
+    if estimation.v > 3:
+        polys = RegInfoBody.objects.exclude(side__in=['салон', 'cалон в1 1', 'cалон в1 2', 'cалон в1 3' ]).order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    else:
+        polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+
+    #polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
+    
     for poly in polys:
         dict_elem = dict()
         dict_elem['name']           = poly['body_elem_name']
@@ -5025,7 +5046,11 @@ def body_estimation(estimation):
 def salon_estimation(estimation):
     
     array_info  = list()
-    polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    if estimation.v > 3:
+        polys = RegInfoBody.objects.filter(side__in=['cалон в1 1', 'cалон в1 2', 'cалон в1 3' ]).order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    else:
+        polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+
     for poly in polys:
         dict_elem = dict()
         dict_elem['name']           = poly['body_elem_name']
@@ -5050,7 +5075,15 @@ def salon_estimation(estimation):
     
     for file in files:
         
-        salons_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон').order_by('-body_elem_name')
+        type_osmotr = 'салон'
+        if file.type_file == 'array_images_osmotr_salon_v1_1':
+            type_osmotr = 'cалон в1 1'
+        elif file.type_file == 'array_images_osmotr_salon_v1_2':
+            type_osmotr = 'cалон в1 2'
+        elif file.type_file == 'array_images_osmotr_salon_v1_2':
+            type_osmotr = 'cалон в1 3'
+
+        salons_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = type_osmotr).order_by('-body_elem_name')
 
         point = Point(file.cor_x , file.cor_y)
         for salon in salons_info:
@@ -5128,7 +5161,14 @@ def salon_estimation(estimation):
 def body_estimation_cd(cd):
     
     array_info  = list()
-    polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
+    
+    if cd.estimation.v > 3:
+        polys = RegInfoBody.objects.exclude(side__in=['салон', 'cалон в1 1', 'cалон в1 2', 'cалон в1 3' ]).order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    else:
+        polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+
+    #polys = RegInfoBody.objects.exclude(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('body_elem_name')
+    
     for poly in polys:
         dict_elem = dict()
         dict_elem['name']           = poly['body_elem_name']
@@ -5340,7 +5380,12 @@ def body_estimation_cd(cd):
 def salon_estimation_cd(cd):
     
     array_info  = list()
-    polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    if cd.estimation.v > 3:
+        polys = RegInfoBody.objects.filter(side__in=['cалон в1 1', 'cалон в1 2', 'cалон в1 3' ]).order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+    else:
+        polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
+
+    #polys = RegInfoBody.objects.filter(side = 'салон').order_by('body_elem_name').values('body_elem_name').distinct().order_by('-body_elem_name')
     for poly in polys:
         dict_elem = dict()
         dict_elem['name']           = poly['body_elem_name']
@@ -6403,6 +6448,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
 
         if estimation.page_salon != None:
             # Химчистка +
+            if estimation.page_salon.ceiling_int == 1:
+                work = RegPodgotovkaWork.objects.get(pk = 145) 
+                diff = work.price_kors 
+                dop = {
+                    'name'      : work.name_group + " / " +  work.name,
+                    'quantity'  : work.normo,
+                    'amount_pod': work.price_podrad,   
+                    'amount'    : diff
+                }
+                list_work_podgotovka.append(dop)  
+                amount_podgotovka = amount_podgotovka + diff
+            # Химчистка +
             if estimation.page_salon.cleaning_int == 1:
                 work = RegPodgotovkaWork.objects.get(pk = 117) 
                 diff = work.price_kors 
@@ -7337,7 +7394,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     }
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum 
-            elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0:
+            elif info['name'].find('сиденье') > 0 or info['name'].find('сидение') > 0 or info['name'].find('сиденья') > 0:
                 if info['pereshiv'] > 0:
                     diff_sum    = 0
                     work        = RegPodgotovkaWork.objects.get(pk = 134)
@@ -7664,6 +7721,38 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         amount_mcu = amount_mcu + diff_sum
                     elif info['name'] ==  'капот':
                         amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'капот').last()
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 143)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'стекло заднее':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'стекло заднее').last()
+                        diff_sum    = 0
+                        work        = RegPodgotovkaWork.objects.get(pk = 143)
+                        if amount_data != None:
+                            diff_sum    = amount_data.amount
+                        else:
+                            diff_sum    = work.price_podrad * 2
+                        dop = {
+                            'name'      : work.name_group + ' / ' +  work.name + '',
+                            'quantity'  : 1,
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
+                        }
+                        list_work_mcu.append(dop)
+                        amount_mcu = amount_mcu + diff_sum
+                    elif info['name'] ==  'стекло заднее':
+                        amount_data = BodyRefReplace.objects.filter(body_group__body_types = body).filter(zg = zg_data).filter(element = 'стекло заднее').last()
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 143)
                         if amount_data != None:
@@ -8080,9 +8169,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 estimation_price_do_kd = 1000 
             
             difference_sum = 0
-            if estimation.page_soglasovanie != None:
-                if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-                    difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+            if interactiv_rlk.page_soglasovanie != None:
+                if interactiv_rlk.page_soglasovanie.price_after_kd > 0 and interactiv_rlk.page_soglasovanie.price_after_kd > estimation_price:
+                    difference_sum = interactiv_rlk.page_soglasovanie.price_after_kd - estimation_price 
             
             estimation_price = estimation_price + difference_sum
         
@@ -8095,9 +8184,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 estimation_price_do_kd = 1000 
             
             difference_sum = 0
-            if estimation.page_soglasovanie != None:
-                if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-                    difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price
+            if interactiv_rlk.page_soglasovanie != None:
+                if interactiv_rlk.page_soglasovanie.price_after_kd > 0 and interactiv_rlk.page_soglasovanie.price_after_kd > estimation_price:
+                    difference_sum = interactiv_rlk.page_soglasovanie.price_after_kd - estimation_price
 
         #cna_expenses = zna + difference_sum - amount_sum
         cna_expenses = zna - amount_sum - autodex
@@ -8120,9 +8209,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         
 
         difference_sum = 0
-        if estimation.page_soglasovanie != None:
-            if estimation.page_soglasovanie.price_after_kd > 0 and estimation.page_soglasovanie.price_after_kd > estimation_price:
-                difference_sum = estimation.page_soglasovanie.price_after_kd - estimation_price 
+        if interactiv_rlk.page_soglasovanie != None:
+            if interactiv_rlk.page_soglasovanie.price_after_kd > 0 and interactiv_rlk.page_soglasovanie.price_after_kd > estimation_price:
+                difference_sum = interactiv_rlk.page_soglasovanie.price_after_kd - estimation_price 
         if difference_sum > 0:
             estimation_price_to_bcp = estimation_price + difference_sum
         else:
@@ -8172,26 +8261,26 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         try:
             if type_calculation == 'custom':
                 s = 1
-                estimation.page_soglasovanie.amount_podgotovka  = amount_podgotovka
-                estimation.page_soglasovanie.amount_ss          = amount_ss
-                estimation.page_soglasovanie.amount_mcu         = amount_mcu
-                estimation.page_soglasovanie.amount_recovery    = amount_podgotovka + amount_ss + amount_mcu
-                estimation.page_soglasovanie.save()
+                interactiv_rlk.page_soglasovanie.amount_podgotovka  = amount_podgotovka
+                interactiv_rlk.page_soglasovanie.amount_ss          = amount_ss
+                interactiv_rlk.page_soglasovanie.amount_mcu         = amount_mcu
+                interactiv_rlk.page_soglasovanie.amount_recovery    = amount_podgotovka + amount_ss + amount_mcu
+                interactiv_rlk.page_soglasovanie.save()
             if type_calculation == 'kors':
-                estimation.page_soglasovanie.price_auto_1       = estimation_price
-                estimation.page_soglasovanie.price_auto_bcp_1   = cna_expenses
-                estimation.page_soglasovanie.price_zna_1        = zna
-                estimation.page_soglasovanie.save()
+                interactiv_rlk.page_soglasovanie.price_auto_1       = estimation_price
+                interactiv_rlk.page_soglasovanie.price_auto_bcp_1   = cna_expenses
+                interactiv_rlk.page_soglasovanie.price_zna_1        = zna
+                interactiv_rlk.page_soglasovanie.save()
             elif type_calculation == 'autohub':
-                estimation.page_soglasovanie.price_auto_2         = estimation_price
-                estimation.page_soglasovanie.price_auto_bcp_2     = cna_expenses
-                estimation.page_soglasovanie.price_zna_2          = zna
-                estimation.page_soglasovanie.save()
+                interactiv_rlk.page_soglasovanie.price_auto_2         = estimation_price
+                interactiv_rlk.page_soglasovanie.price_auto_bcp_2     = cna_expenses
+                interactiv_rlk.page_soglasovanie.price_zna_2          = zna
+                interactiv_rlk.page_soglasovanie.save()
             elif type_calculation == 'avito':
-                estimation.page_soglasovanie.price_auto_3         = estimation_price
-                estimation.page_soglasovanie.price_auto_bcp_3     = cna_expenses
-                estimation.page_soglasovanie.price_zna_3          = zna
-                estimation.page_soglasovanie.save()
+                interactiv_rlk.page_soglasovanie.price_auto_3         = estimation_price
+                interactiv_rlk.page_soglasovanie.price_auto_bcp_3     = cna_expenses
+                interactiv_rlk.page_soglasovanie.price_zna_3          = zna
+                interactiv_rlk.page_soglasovanie.save()
         except:
             s= 1   
 
@@ -10983,6 +11072,7 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
 
 def eco_efficiency_analysis_new(request):
     
@@ -13998,6 +14088,158 @@ def tradein_funnel_analytics_detail(request):
     
     return render(request, 'lo/tradein_funnel_analytics_detail.html', {'params': params})
 # УДАЛЕНО: функция tradein_funnel_analytics_rejected больше не используется, заменена на tradein_funnel_rejected
+
+def tradein_funnel_analytics_rejected(request):
+    """Анализ не принятых автомобилей в воронке Trade-In"""
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
+    # Парсим параметры фильтров (аналогично tradein_funnel_analytics)
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = default_end.replace(day=1, hour=1, minute=0, second=0, microsecond=0)
+    
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    
+    # Вариант отчета
+    report_type = _get_int(request.GET.get('report_type', 1)) or 1
+    
+    # Фильтры - множественный выбор
+    unit_source_ids = _parse_multiple_ints(request.GET.get('unit_source_ids', ''))
+    unit_ids = _parse_multiple_ints(request.GET.get('unit_ids', ''))
+    city_ids = _parse_multiple_ints(request.GET.get('city_ids', ''))
+    type_reception_ids = _parse_multiple_ints(request.GET.get('type_reception_ids', ''))
+    brands_str = request.GET.get('brands', '').strip()
+    brand_list = [b.strip() for b in brands_str.split(',') if b.strip()] if brands_str else []
+    
+    # Обратная совместимость с одиночными фильтрами
+    unit_source_id = _get_int(request.GET.get('unit_source_id'))
+    unit_id = _get_int(request.GET.get('unit_id'))
+    city_id = _get_int(request.GET.get('city_id'))
+    type_reception_id = _get_int(request.GET.get('type_reception_id'))
+    brand = request.GET.get('brand', '').strip()
+    
+    if unit_source_id and unit_source_id not in unit_source_ids:
+        unit_source_ids.append(unit_source_id)
+    if unit_id and unit_id not in unit_ids:
+        unit_ids.append(unit_id)
+    if city_id and city_id not in city_ids:
+        city_ids.append(city_id)
+    if type_reception_id and type_reception_id not in type_reception_ids:
+        type_reception_ids.append(type_reception_id)
+    if brand and brand not in brand_list:
+        brand_list.append(brand)
+    
+    # Базовый QuerySet с фильтрами
+    base_qs = TradeInFunnel.objects.all()
+    
+    # Применяем фильтры
+    if unit_source_ids:
+        base_qs = base_qs.filter(unit_source_id__in=unit_source_ids)
+    if unit_ids:
+        base_qs = base_qs.filter(unit_id__in=unit_ids)
+    if city_ids:
+        base_qs = base_qs.filter(city_id__in=city_ids)
+    if type_reception_ids:
+        base_qs = base_qs.filter(type_reception_id__in=type_reception_ids)
+    if brand_list:
+        brand_q = Q()
+        for b in brand_list:
+            brand_q |= Q(brand__icontains=b)
+        base_qs = base_qs.filter(brand_q)
+    
+    # Определяем QuerySet в зависимости от варианта отчета
+    if report_type == 1:
+        qs = base_qs.filter(
+            Q(date_rlk__gte=date_start, date_rlk__lte=date_end) |
+            Q(date_before_success__gte=date_start, date_before_success__lte=date_end) |
+            Q(date_remote_success__gte=date_start, date_remote_success__lte=date_end) |
+            Q(date_after_success__gte=date_start, date_after_success__lte=date_end) |
+            Q(date_reception_success__gte=date_start, date_reception_success__lte=date_end)
+        )
+    elif report_type == 2:
+        qs = base_qs.filter(
+            date_rlk__gte=date_start,
+            date_rlk__lte=date_end
+        )
+    else:  # report_type == 3
+        qs = base_qs.filter(
+            date_reception_success__gte=date_start,
+            date_reception_success__lte=date_end
+        )
+    
+    # Дата для исключения некорректных дат (1.1.1)
+    date_invalid = DT.date(1, 1, 1)
+    
+    # Вспомогательные Q-объекты для проверки валидных дат
+    valid_date_before = Q(date_before_success__isnull=False) & ~Q(date_before_success=date_invalid)
+    valid_date_remote = Q(date_remote_success__isnull=False) & ~Q(date_remote_success=date_invalid)
+    valid_date_after = Q(date_after_success__isnull=False) & ~Q(date_after_success=date_invalid)
+    valid_date_reception = Q(date_reception_success__isnull=False) & ~Q(date_reception_success=date_invalid)
+    valid_date_rlk = Q(date_rlk__isnull=False) & ~Q(date_rlk=date_invalid)
+    
+    # Подсчитываем не принятых на разных этапах
+    # Не дошли до КД / Дистанционной оценки
+    rejected_before = qs.filter(valid_date_rlk).exclude(
+        valid_date_before | valid_date_remote
+    ).count()
+    
+    # Не дошли до после КД
+    rejected_after = qs.filter(
+        valid_date_before | valid_date_remote
+    ).exclude(valid_date_after).count()
+    
+    # Не приняты
+    rejected_reception = qs.filter(valid_date_after).exclude(valid_date_reception).count()
+    
+    # Общее количество для расчета процентов
+    total_rlk = qs.filter(valid_date_rlk).count()
+    total_before = qs.filter(valid_date_before | valid_date_remote).count()
+    total_after = qs.filter(valid_date_after).count()
+    
+    # Проценты
+    rejected_before_pct = (rejected_before / total_rlk * 100) if total_rlk > 0 else 0
+    rejected_after_pct = (rejected_after / total_before * 100) if total_before > 0 else 0
+    rejected_reception_pct = (rejected_reception / total_after * 100) if total_after > 0 else 0
+    
+    params = {
+        'type': 'eco_funnel',
+        'nav_selected': 4,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'report_type': report_type,
+        },
+        'rejected_stats': {
+            'before': {
+                'count': rejected_before,
+                'percent': rejected_before_pct,
+                'total': total_rlk,
+            },
+            'after': {
+                'count': rejected_after,
+                'percent': rejected_after_pct,
+                'total': total_before,
+            },
+            'reception': {
+                'count': rejected_reception,
+                'percent': rejected_reception_pct,
+                'total': total_after,
+            },
+        },
+    }
+    
+    return render(request, 'lo/tradein_funnel_analytics_rejected.html', {'params': params})
 
 
 #История изменений (сначала новые)

@@ -456,6 +456,8 @@ def refresh_new_cars(request):
     
     list_cars_id = list()
 
+    RefCarsOrganization.objects.filter(unit = unit).filter(quantity__gt = 0).update(quantity = 0)
+
     for car in cars_json:
 
         uin          = car.get('Uin', '').upper()
@@ -485,7 +487,7 @@ def refresh_new_cars(request):
         #car_object.mark             = car['Mark']
         #car_object.model            = car['Model']
         #car_object.modification     = car['Modification']
-        #car_object.color            = car['Color']
+        car_object.color            = car['Color']
         #car_object.run              = car['Run']
         #car_object.plate_number     = car['Plate_number']
         car_object.cost_price       = car['Cost_price']
@@ -494,7 +496,7 @@ def refresh_new_cars(request):
         car_object.price            = car['Price']
         car_object.quantity         = 1
         #car_object.lo_link              = car['Lo_link']
-        #car_object.lo_link_date         = car['Lo_link_date']
+        car_object.lo_link_date         = DT.datetime.strptime(car['Lo_link_date'], '%Y-%m-%dT%H:%M:%S')
         #car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
         #car_object.lo_uin               = car.get('Lo_uin', '').upper()
         #car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
@@ -543,6 +545,8 @@ def refresh_new_cars(request):
         #car_object.description_op           = car['Description_op']
 
         car_object.save()
+        car_object.refresh_data()
+
 
         # if 'Prices_list' in car:
         #     #RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()

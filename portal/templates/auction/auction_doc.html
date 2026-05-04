@@ -902,7 +902,7 @@
 							<div class="col-12 col-lg-4">
 									<div class="mb-3">
 											<label for="dateStart" class="form-label">Дата начала аукциона</label>
-											<input type="datetime-local" class="form-control" id="dateStart" name="dateStart" {% if params.auction.dateStart == None  %} min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% else %} min="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% endif %}  {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+											<input type="datetime-local" class="form-control" id="dateStart" name="dateStart" min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>
 									</div>
 									<div class="mb-3">
 											<label for="store" class="form-label">Стоянка</label>
@@ -927,537 +927,555 @@
 							</div>
 					</div>
 	
-					<div class="doc-divider"></div>
+					<div class="doc-divider">
+
+					</div>
 					<div class="d-flex flex-wrap gap-3">
 							<span class="doc-tag"><span class="icon-mbri-plus"></span> Создан: {{params.auction.dataTime}}</span>
 							<span class="doc-tag"><span class="icon-mbri-user"></span> Ответственный: {{params.auction.user.profiles.eco_name}}</span>
 					</div>
 	
-					<div class="doc-divider"></div>
-					<div class="doc-actions {% if params.auction.winner_price > 0 %}d-none{% endif %}">
-							<button type="submit" class="btn btn-auction-primary" id="save" name="save"><span class="icon-mbri-save"></span> Сохранить</button>
-							<button type="submit" name="send" id="send" class="btn btn-auction-primary"><span class="icon-mbri-play"></span> Отправить</button>
-							<button type="submit"  name="update" id="update" class="btn btn-auction-primary"><span class="icon-mbri-update"></span> Обновить информацию</button>
+					<div class="doc-divider">
+
 					</div>
+					
+					<div class="doc-actions {% if params.auction.winner_price > 0 %}d-none{% endif %} align-items-center align-self-center">
+						<button type="submit" class="btn btn-auction-primary" id="save" name="save"><span class="icon-mbri-save"></span> Сохранить</button>
+						
+						{% if params.sends %}
+							<button type="submit" name="send" id="send" class="btn btn-auction-primary"><span class="icon-mbri-play"></span> Отправить</button>
+						{% endif %}
+						
+						<a href="{{request.path}}auction_doc_refresh/" class="btn btn-auction-primary"><span class="icon-mbri-update"></span> Обновить информацию</a>
+						
+						{% if params.sends == False %}
+							<label class="fs-6 fw-bold">Внимание! Отправка лотов не доступна с 10:00 и до 14:00.</label>
+						{% endif %}
+
+					</div>
+
 			</div>
 	
 	{% if params.auction.winner_price > 0 %}
-			<div class="doc-success-card">
-					<div class="d-flex flex-wrap justify-content-between gap-3">
-							<div>
-									<div class="text-uppercase fw-semibold small text-success">Победитель аукциона</div>
-									<div class="fs-5 fw-semibold">{{params.auction.winner_name}}</div>
-									<div class="text-muted">{{params.auction.winner_phone}}</div>
-									<div class="text-muted">{{params.auction.winner_email}}</div>
-							</div>
-							<div class="text-end">
-									<div class="text-uppercase small text-muted fw-semibold">Выигрышная цена</div>
-									<div class="winner-price">{{params.auction.winner_price|floatformat:"2g"}} ₽</div>
-							</div>
-					</div>
-			</div>
-			{% endif %}
+		<div class="doc-success-card">
+				<div class="d-flex flex-wrap justify-content-between gap-3">
+						<div>
+								<div class="text-uppercase fw-semibold small text-success">Победитель аукциона</div>
+								<div class="fs-5 fw-semibold">{{params.auction.winner_name}}</div>
+								<div class="text-muted">{{params.auction.winner_phone}}</div>
+								<div class="text-muted">{{params.auction.winner_email}}</div>
+						</div>
+						<div class="text-end">
+								<div class="text-uppercase small text-muted fw-semibold">Выигрышная цена</div>
+								<div class="winner-price">{{params.auction.winner_price|floatformat:"2g"}} ₽</div>
+						</div>
+				</div>
+		</div>
+	{% endif %}
 	
 	{% if params.auction.rejection_reason != '' and params.auction.winner_price == 0 %}
-			<div class="doc-warning-card">
-					<div class="d-flex flex-column gap-2">
-							<div class="text-uppercase fw-semibold small">Лот отклонен модератором</div>
-							<div class="fs-5">{{params.auction.rejection_reason}}</div>
-					</div>
+		<div class="doc-warning-card">
+			<div class="d-flex flex-column gap-2">
+				<div class="text-uppercase fw-semibold small">Лот отклонен модератором</div>
+				<div class="fs-5">{{params.auction.rejection_reason}}</div>
 			</div>
-			{% endif %}
+		</div>
+	{% endif %}
 
+	<div class="doc-card">
+		<div class="doc-card-body">
 	
-	
-			<div class="doc-card">
-                <div class="doc-card-body">
-			
-					<div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
-						<div>
-								<div class="doc-section-title"><span class="icon-truck me-2"></span>Автомобили</div>
-								<p class="text-muted mb-0">Сводка по автомобилям, участвующим в лоте</p>
-						</div>
-						<span class="doc-tag"><span class="icon-mbri-numbered-list"></span> Всего: <span id="total_cars_count">{{params.auction.cars|length}}</span></span>
+			<div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
+				<div>
+						<div class="doc-section-title"><span class="icon-truck me-2"></span>Автомобили</div>
+						<p class="text-muted mb-0">Сводка по автомобилям, участвующим в лоте</p>
 				</div>
-			
-				<div class="" id="cars">
+				<span class="doc-tag"><span class="icon-mbri-numbered-list"></span> Всего: <span id="total_cars_count">{{params.auction.cars|length}}</span></span>
+		</div>
+	
+		<div class="" id="cars">
 
-					{% if params.auction.cars %}
+			{% if params.auction.cars %}
 
 
 
-					{% for structure in params.auction.cars %}
+			{% for structure in params.auction.cars %}
 
-					<div class="doc-car-card" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}">
-							<div class="doc-car-layout">
-									<div class="doc-car-photo">
-											<img src="{{structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
-									</div>
-									<div class="doc-car-info">
-											<p><strong>Марка:</strong> {{structure.car.modification_autoru.model.mark}}</p>
-											<p><strong>Модель:</strong> {{structure.car.modification_autoru.model}}</p>
-											<p><strong>Модификация:</strong> {{structure.car.modification_autoru}}</p>
-											<p><strong>Год выпуска:</strong> {{structure.car.year}} г.</p>
-											<p><strong>Пробег:</strong> {{structure.car.run|floatformat:"0g"}} км</p>
-									</div>
-									<div>
-											<div class="doc-car-meta">
-													<div class="meta-item">Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽</div>
-													<div class="meta-item">Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽</div>
-													<div class="meta-item">БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽</div>
-													<div class="meta-item" style="background: rgba(23, 107, 18, 0.1); color: #176b12; border-color: rgba(23, 107, 18, 0.15);">Продажа: {{structure.car.price|floatformat:"2g"}} ₽</div>
-											</div>
+			<div class="doc-car-card" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}">
+					<div class="doc-car-layout">
+							<div class="doc-car-photo">
+									<img src="{{structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
+							</div>
+							<div class="doc-car-info">
+									<p><strong>Марка:</strong> {{structure.car.modification_autoru.model.mark}}</p>
+									<p><strong>Модель:</strong> {{structure.car.modification_autoru.model}}</p>
+									<p><strong>Модификация:</strong> {{structure.car.modification_autoru}}</p>
+									<p><strong>Год выпуска:</strong> {{structure.car.year}} г.</p>
+									<p><strong>Пробег:</strong> {{structure.car.run|floatformat:"0g"}} км</p>
+							</div>
+							<div>
+									<div class="doc-car-meta">
+											<div class="meta-item">Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽</div>
+											<div class="meta-item">Затраты: {{structure.car.outlay|floatformat:"2g"}} ₽</div>
+											<div class="meta-item">БЦП: {{structure.car.bcp|floatformat:"2g"}} ₽</div>
+											<div class="meta-item" style="background: rgba(23, 107, 18, 0.1); color: #176b12; border-color: rgba(23, 107, 18, 0.15);">Продажа: {{structure.car.price|floatformat:"2g"}} ₽</div>
 									</div>
 							</div>
+					</div>
 
-							<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
-									{% if structure.success %}
-											<span class="doc-status-badge success"><span class="icon-mbri-success"></span>Данные проверены</span>
+					<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
+							{% if structure.success %}
+									<span class="doc-status-badge success"><span class="icon-mbri-success"></span>Данные проверены</span>
+							{% else %}
+									<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>
+							{% endif %}
+
+							<div style="display: flex; gap: 0.75rem;">
+								<label class="doc-edit-link" id="edit_car_info_{{structure.car.slug}}"><span class="icon-mbri-edit"></span> Редактировать</label>
+								{% if not params.auction.status %}
+									<button type="button" class="btn btn-sm btn-outline-danger" style="border-radius: 0.5rem;" onclick="delete_car('{{structure.car.slug}}')" title="Удалить"><span class="icon-mbri-trash"></span></button>
+								{% endif %}
+							</div>
+					</div>
+
+			</div>
+
+				<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
+				<input hidden id="cars_list_data_price_{{structure.car.slug}}" value="{{structure.car.price}}">
+				<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
+				<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
+				
+			<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
+				
+				<div class="modal-dialog modal-xl modal-dialog-scrollable">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="rlkLabel">
+								<span class="icon-truck"></span>
+								{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} &#8226; {{structure.car.year}} &#8226; {{structure.car.vin}}
+							</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+					<div class="modal-body">
+						
+						<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+							<span class="doc-tag">
+								<span class="icon-mbri-star"></span>
+								{{structure.car.type_sale.name}}
+							</span>
+							<span class="doc-tag">
+								<span class="icon-mbri-features"></span>
+								{{structure.car.type_reception.name}}
+							</span>
+						</div>
+
+						<div class="modal-info-grid">
+							
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-setting2"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Модификация</div>
+									<div class="info-value" id="info_car_modification_value">{{structure.car.modification_autoru.name}}</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-cd"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Пробег</div>
+									<div class="info-value" id="info_car_run_value">{{structure.car.run|floatformat:"0g"}} км</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-credit-card"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Текущая цена</div>
+									<div class="info-value" id="info_car_price_value">{{structure.car.price|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-calendar"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Дней на складе</div>
+									<div class="info-value" id="info_car_days_in_stok_value">{{structure.car.days_in_stok}} д.</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-flag"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Статус</div>
+									<div class="info-value" id="info_car_status_name_value">{{structure.car.status}}</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-delivery"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Этап</div>
+									<div class="info-value" id="info_car_stage_price_value">{{structure.car.stage_price}}</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-cash"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Себестоимость</div>
+									<div class="info-value" id="info_car_cost_price_value">{{structure.car.cost_price|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-cash"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">Расходы</div>
+									<div class="info-value" id="info_car_outlay_value">{{structure.car.outlay|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+
+							<div class="modal-info-item">
+								<div class="icon-wrapper">
+									<span class="icon-mbri-delivery"></span>
+								</div>
+								<div class="info-content">
+									<div class="info-label">БЦП</div>
+									<div class="info-value" id="info_car_bcp_value">{{structure.car.bcp|floatformat:"2g"}} ₽</div>
+								</div>
+							</div>
+						
+						</div>
+						
+						<div class="modal-divider"></div>
+
+						<div class="modal-section">
+							<div class="row g-3">
+								<div class="col-12 col-md-6">
+									<label for="" class="form-label">Комментарий для отдела подготовки</label>
+									{% if structure.podgotovka != '' or structure.success %}
+										<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
 									{% else %}
-											<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>
+										<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
+									{% endif %}
+								</div>
+								<div class="col-12 col-md-6">
+									<label for="" class="form-label">Комментарий для отдела продаж</label>
+									{% if structure.op != '' or structure.success %}
+										<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.op}}</textarea>
+									{% else %}
+										<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.car.description_op}}</textarea>
+									{% endif %}
+								</div>
+							</div>
+						</div>
+			
+						<div class="modal-divider"></div>
+						
+						<div class="row">
+							<div class="col-auto">
+								<input type="checkbox" class="form-check-input" disabled>
+								<label class="">Не будет выгружена на аукцион</label>		
+							</div>
+							<div class="col-auto">
+								<input type="checkbox" class="form-check-input" checked disabled>
+								<label class="">Будет выгружена на аукцион</label>		
+							</div>
+							<div class="col-auto">
+								<input type="checkbox" class="form-check-input check_glav" checked disabled>
+								<label class="">Главная фотография</label>		
+							</div>
+							<div class="col-auto">
+								<input type="checkbox" class="form-check-input check_glav bg-secondary" disabled>
+								<label class="">Нажмите что бы установить главной</label>		
+							</div>
+						</div>
+						<label class="">Добавленные файлы будут отображены после сохранения документа аукцион и автоматически помечены к выгрузке на аукцион</label>	
+
+						<div class="modal-divider"></div>
+						
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-preview"></span>
+								Внешний вид
+							</div>
+						<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_vnesh">
+									{% for obj in structure.car.get_files %}
+										{% if obj != '/media/nophoto.png' %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
+											</div>
+											<div class="row-auto">
+												<div class="col-12">
+													<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]' %} checked {% else %}  {% if obj.file.url in structure.files_car %} checked {% endif %} {% endif %} value="{{obj.file.url}}">
+												</div>
+												<div class="col-12">
+													<input type="checkbox" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}"  {% if structure.files_glav == obj.file.url %} checked {% endif %} value="{{obj.file.url}}">		
+												</div>														
+											</div>														
+										{% endif %}
+									{% endfor %}
+									{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
+										{% if obj != '' %}
+											<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+												<img src="{{obj}}" src1="{{obj}}">												
+											</div>		
+											<div class="row-auto">
+												<div class="col-12">
+													<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
+												</div>
+												<div class="col-12">
+													<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %}   value="{{obj}}">
+												</div>														
+											</div>
+										{% endif %}
+									{% endfor %}
+									{% for obj in structure.info_car_vnesh %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>	
+										<div class="row-auto">
+											<div class="col-12">
+												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
+											</div>
+											<div class="col-12">
+												<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %} value="{{obj}}">
+											</div>														
+										</div>
+									{% endfor %}	
+								</div>
+								<input type="file" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+							</div>
+						</div>
+
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-drag-n-drop2"></span>
+								Салон
+							</div>
+							<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
+									{% for obj in structure.info_car_auction_data.int_ocenka_url_salon_all %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>									
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_salon{{forloop.counter}}" id="{{structure.car.slug}}_photo_salon{{forloop.counter}}"  {% if structure.files_salon  == '' or structure.files_salon  == '[]' %} checked {% else %}  {% if obj in structure.files_salon %} checked {% endif %} {% endif %} value="{{obj}}">																																	
+									{% endfor %}
+									{% for obj in structure.info_car_salon %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>	
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_salon2{{forloop.counter}}" id="{{structure.car.slug}}_photo_salon2{{forloop.counter}}"  {% if structure.files_salon  == '' or structure.files_salon  == '[]' %} checked {% else %}  {% if obj in structure.files_salon %} checked {% endif %} {% endif %} value="{{obj}}">																															
+									{% endfor %}										
+								</div>
+								<input type="file" id="images_salon_{{structure.car.slug}}" name="images_salon_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+							</div>
+						</div>
+			
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-layers"></span>
+								Схема ЛКП и салона
+							</div>
+						<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
+									{% if structure.info_car_auction_data.int_ocenka_url_pered != None and structure.info_car_auction_data.int_ocenka_url_pered != '' %}
+										<div class="gallery-item" id="foto_body1" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_pered}}" src1="{{structure.info_car_auction_data.int_ocenka_url_pered}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema1" id="{{structure.car.slug}}_photo_shema1"  {% if structure.files_shema  == ''  or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_pered in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_pered}}">																															
+										<div class="gallery-item" id="foto_body2" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_right}}" src1="{{structure.info_car_auction_data.int_ocenka_url_right}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema2" id="{{structure.car.slug}}_photo_shema2"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_right in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_right}}">																															
+										<div class="gallery-item" id="foto_body3" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_zad}}" src1="{{structure.info_car_auction_data.int_ocenka_url_zad}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema3" id="{{structure.car.slug}}_photo_shema3"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_zad in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_zad}}">																															
+										<div class="gallery-item" id="foto_body4" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_left}}" src1="{{structure.info_car_auction_data.int_ocenka_url_left}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema4" id="{{structure.car.slug}}_photo_shema4"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_left in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_left}}">																															
+										<div class="gallery-item" id="foto_body5" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_up}}" src1="{{structure.info_car_auction_data.int_ocenka_url_up}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema5" id="{{structure.car.slug}}_photo_shema5"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_up in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_up}}">																															
+										<div class="gallery-item" id="foto_body6" data-index="1">
+											<img src="{{structure.info_car_auction_data.int_ocenka_url_salon}}" src1="{{structure.info_car_auction_data.int_ocenka_url_salon}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema6" id="{{structure.car.slug}}_photo_shema6"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_salon in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_salon}}">																															
 									{% endif %}
 
-									<div style="display: flex; gap: 0.75rem;">
-										<label class="doc-edit-link" id="edit_car_info_{{structure.car.slug}}"><span class="icon-mbri-edit"></span> Редактировать</label>
-										{% if not params.auction.status %}
-											<button type="button" class="btn btn-sm btn-outline-danger" style="border-radius: 0.5rem;" onclick="delete_car('{{structure.car.slug}}')" title="Удалить"><span class="icon-mbri-trash"></span></button>
-										{% endif %}
-									</div>
-							</div>
-
-					</div>
-
-						<input hidden id="cars_list_data_cost_price_{{structure.car.slug}}" value="{{structure.car.cost_price}}">
-						<input hidden id="cars_list_data_price_{{structure.car.slug}}" value="{{structure.car.price}}">
-						<input hidden id="cars_list_data_outlay_{{structure.car.slug}}" value="{{structure.car.outlay}}">
-						<input hidden name="cars_list_data_slug_{{structure.car.slug}}" value="{{structure.car.slug}}">
-						
-					<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
-						
-						<div class="modal-dialog modal-xl modal-dialog-scrollable">
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title" id="rlkLabel">
-										<span class="icon-truck"></span>
-										{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} &#8226; {{structure.car.year}} &#8226; {{structure.car.vin}}
-									</h5>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-								</div>
-							<div class="modal-body">
-								
-								<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-									<span class="doc-tag">
-										<span class="icon-mbri-star"></span>
-										{{structure.car.type_sale.name}}
-									</span>
-									<span class="doc-tag">
-										<span class="icon-mbri-features"></span>
-										{{structure.car.type_reception.name}}
-									</span>
-								</div>
-
-								<div class="modal-info-grid">
-									
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-setting2"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Модификация</div>
-											<div class="info-value" id="info_car_modification_value">{{structure.car.modification_autoru.name}}</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-cd"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Пробег</div>
-											<div class="info-value" id="info_car_run_value">{{structure.car.run|floatformat:"0g"}} км</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-credit-card"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Текущая цена</div>
-											<div class="info-value" id="info_car_price_value">{{structure.car.price|floatformat:"2g"}} ₽</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-calendar"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Дней на складе</div>
-											<div class="info-value" id="info_car_days_in_stok_value">{{structure.car.days_in_stok}} д.</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-flag"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Статус</div>
-											<div class="info-value" id="info_car_status_name_value">{{structure.car.status}}</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-delivery"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Этап</div>
-											<div class="info-value" id="info_car_stage_price_value">{{structure.car.stage_price}}</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-cash"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Себестоимость</div>
-											<div class="info-value" id="info_car_cost_price_value">{{structure.car.cost_price|floatformat:"2g"}} ₽</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-cash"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">Расходы</div>
-											<div class="info-value" id="info_car_outlay_value">{{structure.car.outlay|floatformat:"2g"}} ₽</div>
-										</div>
-									</div>
-
-									<div class="modal-info-item">
-										<div class="icon-wrapper">
-											<span class="icon-mbri-delivery"></span>
-										</div>
-										<div class="info-content">
-											<div class="info-label">БЦП</div>
-											<div class="info-value" id="info_car_bcp_value">{{structure.car.bcp|floatformat:"2g"}} ₽</div>
-										</div>
-									</div>
-								
-								</div>
-								
-								<div class="modal-divider"></div>
-
-								<div class="modal-section">
-									<div class="row g-3">
-										<div class="col-12 col-md-6">
-											<label for="" class="form-label">Комментарий для отдела подготовки</label>
-											{% if structure.podgotovka != '' or structure.success %}
-												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.podgotovka}}</textarea>
-											{% else %}
-												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="10">{{structure.car.description_podgotovka}}</textarea>
-											{% endif %}
-										</div>
-										<div class="col-12 col-md-6">
-											<label for="" class="form-label">Комментарий для отдела продаж</label>
-											{% if structure.op != '' or structure.success %}
-												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.op}}</textarea>
-											{% else %}
-												<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="10">{{structure.car.description_op}}</textarea>
-											{% endif %}
-										</div>
-									</div>
-								</div>
-					
-								<div class="modal-divider"></div>
-								
-								<div class="row">
-									<div class="col-auto">
-										<input type="checkbox" class="form-check-input" disabled>
-										<label class="">Не будет выгружена на аукцион</label>		
-									</div>
-									<div class="col-auto">
-										<input type="checkbox" class="form-check-input" checked disabled>
-										<label class="">Будет выгружена на аукцион</label>		
-									</div>
-									<div class="col-auto">
-										<input type="checkbox" class="form-check-input check_glav" checked disabled>
-										<label class="">Главная фотография</label>		
-									</div>
-									<div class="col-auto">
-										<input type="checkbox" class="form-check-input check_glav bg-secondary" disabled>
-										<label class="">Нажмите что бы установить главной</label>		
-									</div>
-								</div>
-								<label class="">Добавленные файлы будут отображены после сохранения документа аукцион и автоматически помечены к выгрузке на аукцион</label>	
-
-								<div class="modal-divider"></div>
-								
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-preview"></span>
-										Внешний вид
-									</div>
-								<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_vnesh">
-											{% for obj in structure.car.get_files %}
-												{% if obj != '/media/nophoto.png' %}
-													<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-														<img src="{{obj.file.url}}" src1="{{obj.file.url}}">												
-													</div>
-													<div class="row-auto">
-														<div class="col-12">
-															<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]' %} checked {% else %}  {% if obj.file.url in structure.files_car %} checked {% endif %} {% endif %} value="{{obj.file.url}}">
-														</div>
-														<div class="col-12">
-															<input type="checkbox" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav{{forloop.counter}}"  {% if structure.files_glav == obj.file.url %} checked {% endif %} value="{{obj.file.url}}">		
-														</div>														
-													</div>														
-												{% endif %}
-											{% endfor %}
-											{% for obj in structure.info_car_auction_data.int_ocenka_url_vnesh %}
-												{% if obj != '' %}
-													<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-														<img src="{{obj}}" src1="{{obj}}">												
-													</div>		
-													<div class="row-auto">
-														<div class="col-12">
-															<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh9{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
-														</div>
-														<div class="col-12">
-															<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %}   value="{{obj}}">
-														</div>														
-													</div>
-												{% endif %}
-											{% endfor %}
-											{% for obj in structure.info_car_vnesh %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<div class="row-auto">
-													<div class="col-12">
-														<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh19{{forloop.counter}}"  {% if structure.files_car  == '' or structure.files_car  == '[]'  %} checked {% else %}  {% if obj in structure.files_car %} checked {% endif %} {% endif %} value="{{obj}}">
-													</div>
-													<div class="col-12">
-														<input type="checkbox" aria-label="Главная" class="form-check-input check_glav bg-secondary" name="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" id="{{structure.car.slug}}_photo_vnesh_glav9{{forloop.counter}}" {% if structure.files_glav == obj %} checked {% endif %} value="{{obj}}">
-													</div>														
-												</div>
-											{% endfor %}	
-										</div>
-										<input type="file" id="images_car_{{structure.car.slug}}" name="images_car_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									</div>
-								</div>
-
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-drag-n-drop2"></span>
-										Салон
-									</div>
-									<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_salon">
-											{% for obj in structure.info_car_auction_data.int_ocenka_url_salon_all %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>									
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_salon{{forloop.counter}}" id="{{structure.car.slug}}_photo_salon{{forloop.counter}}"  {% if structure.files_salon  == '' or structure.files_salon  == '[]' %} checked {% else %}  {% if obj in structure.files_salon %} checked {% endif %} {% endif %} value="{{obj}}">																																	
-											{% endfor %}
-											{% for obj in structure.info_car_salon %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_salon2{{forloop.counter}}" id="{{structure.car.slug}}_photo_salon2{{forloop.counter}}"  {% if structure.files_salon  == '' or structure.files_salon  == '[]' %} checked {% else %}  {% if obj in structure.files_salon %} checked {% endif %} {% endif %} value="{{obj}}">																															
-											{% endfor %}										
-										</div>
-										<input type="file" id="images_salon_{{structure.car.slug}}" name="images_salon_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									</div>
-								</div>
-					
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-layers"></span>
-										Схема ЛКП и салона
-									</div>
-								<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_int_body">
-											<div class="gallery-item" id="foto_body1" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_pered}}" src1="{{structure.info_car_auction_data.int_ocenka_url_pered}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema1" id="{{structure.car.slug}}_photo_shema1"  {% if structure.files_shema  == ''  or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_pered in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_pered}}">																															
-											<div class="gallery-item" id="foto_body2" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_right}}" src1="{{structure.info_car_auction_data.int_ocenka_url_right}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema2" id="{{structure.car.slug}}_photo_shema2"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_right in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_right}}">																															
-											<div class="gallery-item" id="foto_body3" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_zad}}" src1="{{structure.info_car_auction_data.int_ocenka_url_zad}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema3" id="{{structure.car.slug}}_photo_shema3"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_zad in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_zad}}">																															
-											<div class="gallery-item" id="foto_body4" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_left}}" src1="{{structure.info_car_auction_data.int_ocenka_url_left}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema4" id="{{structure.car.slug}}_photo_shema4"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_left in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_left}}">																															
-											<div class="gallery-item" id="foto_body5" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_up}}" src1="{{structure.info_car_auction_data.int_ocenka_url_up}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema5" id="{{structure.car.slug}}_photo_shema5"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_up in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_up}}">																															
-											<div class="gallery-item" id="foto_body6" data-index="1">
-												<img src="{{structure.info_car_auction_data.int_ocenka_url_salon}}" src1="{{structure.info_car_auction_data.int_ocenka_url_salon}}">												
-											</div>
-											<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema6" id="{{structure.car.slug}}_photo_shema6"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if structure.info_car_auction_data.int_ocenka_url_salon in structure.files_shema %} checked {% endif %} {% endif %} value="{{structure.info_car_auction_data.int_ocenka_url_salon}}">																															
-											{% for obj in structure.info_car_shema %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema1{{forloop.counter}}" id="{{structure.car.slug}}_photo_shema1{{forloop.counter}}"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if obj in structure.files_shema %} checked {% endif %} {% endif %} value="{{obj}}">																															
-											{% endfor %}
-										</div>
-										<input type="file" id="images_shema_{{structure.car.slug}}" name="images_shema_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									</div>
-								</div>
-
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-alert"></span>
-										Повреждения
-									</div>
-									<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
-											{% for obj in structure.info_car_auction_data.int_ocenka_url_damage %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_damage{{forloop.counter}}" id="{{structure.car.slug}}_photo_damage{{forloop.counter}}"  {% if structure.files_damages  == '' or structure.files_damages  == '[]' %} checked {% else %}  {% if obj in structure.files_damages %} checked {% endif %} {% endif %} value="{{obj}}">																															
-											{% endfor %}
-											{% for obj in structure.info_car_damages %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_damage15{{forloop.counter}}" id="{{structure.car.slug}}_photo_damage15{{forloop.counter}}"  {% if structure.files_damages  == '' or structure.files_damages  == '[]' %} checked {% else %}  {% if obj in structure.files_damages %} checked {% endif %} {% endif %} value="{{obj}}">																															
-											{% endfor %}											
-										</div>
-										<input type="file" id="images_damages_{{structure.car.slug}}" name="images_damages_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									</div>
-								</div>
-
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-update"></span>
-										Колеса
-									</div>
-									<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_wheels">
-											{% for obj in structure.info_car_auction_data.int_ocenka_url_wheel %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_{{forloop.counter}}" id="photo_kolesa_{{forloop.counter}}"  {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																																	
-											{% endfor %}
-											{% for obj in structure.info_car_wheels %}
-												<div class="gallery-item" id="foto_body5{{foorlloop.counter}}" data-index="5{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_15{{forloop.counter}}" id="photo_kolesa_15{{forloop.counter}}" {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																					
-											{% endfor %}
-										</div>
-										<input type="file" id="images_wheels_{{structure.car.slug}}" name="images_wheels_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
-									</div>
-								</div>
-
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-setting2"></span>
-										Диагностика
-									</div>
-									<div class="modal-gallery">
-										<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_diagnostic">
-											{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
-												<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
-													<img src="{{obj}}" src1="{{obj}}">												
-												</div>	
-												<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_diagnostic_{{forloop.counter}}" id="photo_diagnostic_{{forloop.counter}}"  {% if structure.files_diagnostic  == '' or structure.files_diagnostic  == '[]' %} checked {% else %}  {% if obj in structure.files_diagnostic %} checked {% endif %} {% endif %} value="{{obj}}">										
-											{% endfor %}										
-										</div>
-									</div>
-								</div>
-
-								<div class="modal-section">
-									<div class="row g-3">
-										<div class="col-12 col-md-6">
-											<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">
-												<span class="icon-mbri-setting2"></span> Работы по автомобилю
-											</label>
-											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_works" rows="10">{{structure.works}}</textarea>
+									{% for obj in structure.info_car_shema %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
 										</div>	
-										<div class="col-12 col-md-6">
-											<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">
-												<span class="icon-mbri-features"></span> Диагностика
-											</label>
-											<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
-										</div>			
-									</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_shema1{{forloop.counter}}" id="{{structure.car.slug}}_photo_shema1{{forloop.counter}}"  {% if structure.files_shema  == '' or structure.files_shema  == '[]' %} checked {% else %}  {% if obj in structure.files_shema %} checked {% endif %} {% endif %} value="{{obj}}">																															
+									{% endfor %}
+
 								</div>
-
-								<div class="modal-divider"></div>
-
-								<div class="modal-section">
-									<div class="modal-section-title">
-										<span class="icon-mbri-link"></span>
-										Автотека
-									</div>
-									<div class="modal-radio-group">
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
-										<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_vbtn-radio1"><span class="icon-mbri-unlink"></span> Не показывать</label>
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
-										<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_vbtn-radio2"><span class="icon-mbri-link"></span> Показывать</label>
-									</div>
-								</div>
-
-								<div class="modal-divider"></div>
-								
-								<div class="modal-confirmation-box">
-									<div class="confirmation-text">
-										<span class="icon-mbri-success"></span>
-										Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона
-									</div>
-									<div class="modal-radio-group">
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.success == False %} checked {% endif %} value="false">
-										<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_success_radio1"> <span class="icon-mbri-close"></span> Нет</label>
-										<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio2" autocomplete="off" {% if structure.success == True %} checked {% endif %} value="true">
-										<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_success_radio2"> <span class="icon-mbri-success"></span> Да </label>
-									</div>
-								</div>
-
+								<input type="file" id="images_shema_{{structure.car.slug}}" name="images_shema_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
 							</div>
-
-							<div class="modal-footer">
-								<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal">
-									<span class="icon-mbri-close"></span> Закрыть
-								</button>
-							</div>
-
 						</div>
+
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-alert"></span>
+								Повреждения
+							</div>
+							<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_damage">
+									{% for obj in structure.info_car_auction_data.int_ocenka_url_damage %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>	
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_damage{{forloop.counter}}" id="{{structure.car.slug}}_photo_damage{{forloop.counter}}"  {% if structure.files_damages  == '' or structure.files_damages  == '[]' %} checked {% else %}  {% if obj in structure.files_damages %} checked {% endif %} {% endif %} value="{{obj}}">																															
+									{% endfor %}
+									{% for obj in structure.info_car_damages %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>	
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_damage15{{forloop.counter}}" id="{{structure.car.slug}}_photo_damage15{{forloop.counter}}"  {% if structure.files_damages  == '' or structure.files_damages  == '[]' %} checked {% else %}  {% if obj in structure.files_damages %} checked {% endif %} {% endif %} value="{{obj}}">																															
+									{% endfor %}											
+								</div>
+								<input type="file" id="images_damages_{{structure.car.slug}}" name="images_damages_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+							</div>
+						</div>
+
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-update"></span>
+								Колеса
+							</div>
+							<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_wheels">
+									{% for obj in structure.info_car_auction_data.int_ocenka_url_wheel %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_{{forloop.counter}}" id="photo_kolesa_{{forloop.counter}}"  {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																																	
+									{% endfor %}
+									{% for obj in structure.info_car_wheels %}
+										<div class="gallery-item" id="foto_body5{{foorlloop.counter}}" data-index="5{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_kolesa_15{{forloop.counter}}" id="photo_kolesa_15{{forloop.counter}}" {% if structure.files_kolesa  == '' or structure.files_kolesa  == '[]' %} checked {% else %}  {% if obj in structure.files_kolesa %} checked {% endif %} {% endif %} value="{{obj}}">																					
+									{% endfor %}
+								</div>
+								<input type="file" id="images_wheels_{{structure.car.slug}}" name="images_wheels_{{structure.car.slug}}" accept="image/*;capture=camera" multiple/>
+							</div>
+						</div>
+
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-setting2"></span>
+								Диагностика
+							</div>
+							<div class="modal-gallery">
+								<div class="gallery-container {% if request.user_agent.is_pc %} gallery-pc-slider {% else %} gallery-mobile-slider {% endif %}" id="info_car_photos_diagnostic">
+									{% for obj in structure.info_car_auction_data.int_ocenka_url_diagnostic %}
+										<div class="gallery-item" id="foto_body{{foorlloop.counter}}" data-index="{{forloop.counter}}">
+											<img src="{{obj}}" src1="{{obj}}">												
+										</div>	
+										<input type="checkbox" class="form-check-input" name="{{structure.car.slug}}_photo_diagnostic_{{forloop.counter}}" id="photo_diagnostic_{{forloop.counter}}"  {% if structure.files_diagnostic  == '' or structure.files_diagnostic  == '[]' %} checked {% else %}  {% if obj in structure.files_diagnostic %} checked {% endif %} {% endif %} value="{{obj}}">										
+									{% endfor %}										
+								</div>
+							</div>
+						</div>
+
+						<div class="modal-section">
+							<div class="row g-3">
+								<div class="col-12 col-md-6">
+									<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_works" id="cars_list_data_slug_{{structure.car.slug}}_works">
+										<span class="icon-mbri-setting2"></span> Работы по автомобилю
+									</label>
+									<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_works" rows="10">{{structure.works}}</textarea>
+								</div>	
+								<div class="col-12 col-md-6">
+									<label class="form-label" name="cars_list_data_slug_{{structure.car.slug}}_diagnostika" id="cars_list_data_slug_{{structure.car.slug}}_diagnostika">
+										<span class="icon-mbri-features"></span> Диагностика
+									</label>
+									<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_diagnostika" rows="10">{{structure.diagnostic}}</textarea>
+								</div>			
+							</div>
+						</div>
+
+						<div class="modal-divider"></div>
+
+						<div class="modal-section">
+							<div class="modal-section-title">
+								<span class="icon-mbri-link"></span>
+								Автотека
+							</div>
+							<div class="modal-radio-group">
+								<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio1" autocomplete="off"  {% if structure.autoteka_prev == False %} checked {% endif %} value="false">
+								<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_vbtn-radio1"><span class="icon-mbri-unlink"></span> Не показывать</label>
+								<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_autoteka_prev" id="cars_list_data_{{structure.car.slug}}_vbtn-radio2" autocomplete="off" {% if structure.autoteka_prev == True %} checked {% endif %} value="true">
+								<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_vbtn-radio2"><span class="icon-mbri-link"></span> Показывать</label>
+							</div>
+						</div>
+
+						<div class="modal-divider"></div>
+						
+						<div class="modal-confirmation-box">
+							<div class="confirmation-text">
+								<span class="icon-mbri-success"></span>
+								Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона
+							</div>
+							<div class="modal-radio-group">
+								<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.success == False %} checked {% endif %} value="false">
+								<label class="btn btn-outline-danger" for="cars_list_data_{{structure.car.slug}}_success_radio1"> <span class="icon-mbri-close"></span> Нет</label>
+								<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio2" autocomplete="off" {% if structure.success == True %} checked {% endif %} value="true">
+								<label class="btn btn-outline-success" for="cars_list_data_{{structure.car.slug}}_success_radio2"> <span class="icon-mbri-success"></span> Да </label>
+							</div>
 						</div>
 
 					</div>
 
+					<div class="modal-footer">
+						<button type="button" class="btn btn-auction-outline" data-bs-dismiss="modal">
+							<span class="icon-mbri-close"></span> Закрыть
+						</button>
 					</div>
 
-					{% endfor %}
-					{% else %}
-					<div class="doc-empty">Автомобили ещё не добавлены. Используйте кнопку ниже, чтобы добавить транспорт.</div>
-					{% endif %}
+				</div>
+				</div>
 
 			</div>
 
-				<div class="doc-divider"></div>
-				{% if not params.auction.status %}
-					<button type="button" class="btn btn-auction-outline {% if params.auction.winner_price > 0 %} d-none {% endif %}" id="add_cars"> <span class="icon-mbri-plus"></span> Добавить автомобиль</button>
-				{% endif %}
-            </div>
-        </div>
+			</div>
+
+			{% endfor %}
+			{% else %}
+			<div class="doc-empty">Автомобили ещё не добавлены. Используйте кнопку ниже, чтобы добавить транспорт.</div>
+			{% endif %}
+
+	</div>
+
+		<div class="doc-divider"></div>
+		{% if not params.auction.status %}
+			<button type="button" class="btn btn-auction-outline {% if params.auction.winner_price > 0 %} d-none {% endif %}" id="add_cars"> <span class="icon-mbri-plus"></span> Добавить автомобиль</button>
+		{% endif %}
+	</div>
+
+</div>
 
 </form>
 

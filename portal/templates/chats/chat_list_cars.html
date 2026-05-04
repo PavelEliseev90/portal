@@ -52,8 +52,8 @@
                         formattedDate = dateList.toLocaleDateString() + ' ' + dateList.toLocaleTimeString();
                     }
                     var href = (obj.name && obj.name.indexOf('/') === 0) ? obj.name : ('/cars/' + (obj.slug ? obj.slug.replace(/^car_/, '') : '') + '/');
-                    var html = '<a href="' + href + '" class="text-dark text-decoration-none" style="padding:0rem;">';
-                    html += '<div class="item-chat-message col-12"><div class="item-chat-body">';
+                    var html = '<a href="' + href + '" class="text-dark text-decoration-none" style="padding:0rem 0rem 0.2rem 0rem;">';
+                    html += '<div class="item-chat-message-cars col-12"><div class="item-chat-body">';
                     html += '<div class="item-content-chat"><label class="item-subtitle">' + unit + '<br>' + mark + ' ' + model + ' ' + modification + '<br>' + vin + '</label><hr></div>';
                     html += '<p class="item-time-chat">' + content + ' </p><p class="text-muted" style="margin:0rem;"> ' + obj.user_name + ' / ' + formattedDate + '</p>';
                     html += '</div></div></a>';

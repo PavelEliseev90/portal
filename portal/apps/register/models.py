@@ -209,6 +209,7 @@ class RegEstimationsSettings(models.Model):
     name                    = models.CharField("Наименование", null=True, blank=True, max_length=512)
     
     cleaning_int            = models.IntegerField('Требуеться химчистка',                   default=0, null=True, blank=True)       #'// 
+    ceiling_int             = models.IntegerField('Требуеться перетяжка потолка ',          default=0, null=False, blank=True)
     damage_kpp_int          = models.IntegerField('Повреждения рычага кпп',                 default=0, null=True, blank=True)       #'// 
     damage_wheel_int        = models.IntegerField('Повреждения / затертый руль',            default=0, null=True, blank=True)       #'// 
     damage_pedal_int        = models.IntegerField('Повреждения / затертые педали',          default=0, null=True, blank=True)       #'// 
@@ -1958,6 +1959,9 @@ class RegInteractivOcenkaRemote(ChangeloggableMixin, models.Model):
     run                 = models.IntegerField('Пробег', default=0, null=True, blank=True)
     
     cleaning_int            = models.IntegerField('Требуеться химчистка',                   default=10, null=True, blank=True)       #'// 0 - не требуется 1 - требуется 2 - "" 3 - нет действия'
+    ceiling_int             = models.IntegerField('Требуеться перетяжка потолка ', default=10, null=False, blank=True)
+    seat_int                = models.IntegerField('Третий ряд сидений ', default=10, null=False, blank=True)
+    
     damage_kpp_int          = models.IntegerField('Повреждения рычага кпп',                 default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_wheel_int        = models.IntegerField('Повреждения / затертый руль',            default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_pedal_int        = models.IntegerField('Повреждения / затертые педали',          default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
@@ -2072,15 +2076,16 @@ class RegInteractivOcenkaSalon(ChangeloggableMixin, models.Model):
     run_confirmed_comment   = models.CharField('Пробег подтвержден комментарий', max_length=250, default='', null=True, blank=True)
     
     cleaning_int            = models.IntegerField('Требуеться химчистка',                   default=10, null=True, blank=True)       #'// 0 - не требуется 1 - требуется 2 - "" 3 - нет действия'
+    ceiling_int             = models.IntegerField('Требуеться перетяжка потолка ', default=10, null=False, blank=True)
+    seat_int                = models.IntegerField('Третий ряд сидений ', default=10, null=False, blank=True)
     damage_kpp_int          = models.IntegerField('Повреждения рычага кпп',                 default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_wheel_int        = models.IntegerField('Повреждения / затертый руль',            default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_pedal_int        = models.IntegerField('Повреждения / затертые педали',          default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_door_int         = models.IntegerField('Повреждения / затертые карты дверей',    default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     damage_seat_int         = models.IntegerField('Повреждения / затертые сиденья',         default=10, null=True, blank=True)       #'// 0 - нет 1 - да 2 - "" 3 - нет действия'
     
-    type_salon_int         = models.IntegerField('Тип салона',         default=10, null=True, blank=True)       #'// 0 - нет 1 - ткань 2 - кожа 3 - кожа'
-
-
+    type_salon_int         = models.IntegerField('Тип салона',  default=10, null=True, blank=True)       #'// 0 - нет 1 - ткань 2 - кожа 3 - кожа'
+    
     def __str__(self):
         return "{} / {}".format(self.start_estimation, self.end_estimation)
 
@@ -2272,7 +2277,6 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
         verbose_name = "Данные интерактивной оценки страница тест - драйв"
         verbose_name_plural = "Данные интерактивной оценки страницы тест - драйва"
 post_save.connect(journal_save_handler, sender=RegInteractivOcenkaTestDrive)
-
 
 # Справочник диагностики для интерактивной оценки
 class DiagnosticReferenceCategory(models.Model):
@@ -2648,7 +2652,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
     slug                    = models.SlugField(max_length=512, null=True, blank=True)
     
-    v                       = models.IntegerField('Версия интерактивной оценки', default=3, null=True, blank=True)
+    v                       = models.IntegerField('Версия интерактивной оценки', default=4, null=True, blank=True)
     
     rama                    = models.BooleanField("Рамный", default = False, null=True, blank=True) 
 
@@ -3002,6 +3006,24 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         if fotos.count() > 0:
             return fotos[0].get_absolute_url()    
         return '/media_dop/salon_capture/salon.png'
+
+    def fotos_salon_capture_v1_1(self):
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'osmotr_salon_v1_1')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/salon_capture/salon_1.png'
+
+    def fotos_salon_capture_v1_2(self):
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'osmotr_salon_v1_2')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/salon_capture/salon_2.png'
+    
+    def fotos_salon_capture_v1_3(self):
+        fotos   = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'osmotr_salon_v1_3')
+        if fotos.count() > 0:
+            return fotos[0].get_absolute_url()    
+        return '/media_dop/salon_capture/salon_3.png'
     
     def fotos_vnesh_pered_count(self):
         return RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'vnesh_car_osmotr_pered').count()
@@ -3221,26 +3243,10 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
     def get_bcp(self):
         bcp = 0
-        if self.page_soglasovanie != None:
-            if self.page_soglasovanie.price_auto_bcp_1 > 0:
-                bcp = self.page_soglasovanie.price_auto_bcp_1
-            elif self.page_soglasovanie.price_auto_bcp_2 > 0:
-                bcp = self.page_soglasovanie.price_auto_bcp_2
-            elif self.page_soglasovanie.price_auto_bcp_3 > 0:
-                bcp = self.page_soglasovanie.price_auto_bcp_3
-         
         return bcp
 
     def get_zna(self):
         zna = 0
-        if self.page_soglasovanie != None:
-            if self.page_soglasovanie.price_zna_1 > 0:
-                zna = self.page_soglasovanie.price_zna_1
-            elif self.page_soglasovanie.price_zna_2 > 0:
-                zna = self.page_soglasovanie.price_zna_2
-            elif self.page_soglasovanie.price_zna_3 > 0:
-                zna = self.page_soglasovanie.price_zna_3
-         
         return zna
 
     def save(self, *args, **kwargs):
@@ -3758,6 +3764,36 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         verbose_name = "Данные интерактивной оценки рабочего листа"
         verbose_name_plural = "данные интерактивных оценок рабочего листа"
 
+#Страница История ценнообразования
+class RegInteractivOcenkaPrice(models.Model):
+    date                = models.DateTimeField('Дата', blank=True, null=True)
+    price_calculation   = models.CharField("Тип", max_length=150, default='', null=True, blank=True)
+    page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
+    user                = models.ForeignKey(RefStaff, related_name="history_user", on_delete=models.SET_NULL, null=True, verbose_name="Автор")
+    
+    text_json           = models.TextField("Текст", blank=True, null=True)
+    
+    amount_podgotovka   = models.FloatField('Затраты на подготовку', default=0.00, null=True, blank=True)
+    amount_ss           = models.FloatField('Затраты на слесарный ремонт', default=0.00, null=True, blank=True)
+    amount_mcu          = models.FloatField('Затраты на кузовной ремонт', default=0.00, null=True, blank=True)
+    amount_recovery     = models.FloatField('Затраты на восстановительный ремонт', default=0.00, null=True, blank=True)
+    cna_expenses        = models.FloatField('cna_expenses', default=0.00, null=True, blank=True)
+    zna                 = models.FloatField('ЦНА', default=0.00, null=True, blank=True)
+    zg                  = models.CharField("ЦГ", max_length=150, default='', null=True, blank=True)
+    kf                  = models.CharField("КФ", max_length=150, default='', null=True, blank=True)
+    estimation_price            = models.FloatField('Цена выкупа', default=0.00, null=True, blank=True) 
+    estimation_price_do_kd      = models.FloatField('Цена выкупа до кд', default=0.00, null=True, blank=True) 
+    
+    comment   = models.CharField("Комментарий", max_length=1500, default='', null=True, blank=True)
+    
+    def __str__(self):
+        return "{} / {} / {}".format(self.date, self.price_calculation, self.user)
+
+    class Meta:
+        db_table = 'regInteractivOcenkaPrice'
+        verbose_name = "История ценнообразования интерактивной оценки"
+        verbose_name_plural = "История ценнообразования интерактивной оценки"
+
 
 # ========== Контрольная диагностика (слепки входа + результат для сравнения) ==========
 
@@ -3930,6 +3966,8 @@ class RegControlDiagnosticSalon(models.Model):
     run_respond = models.IntegerField('Пробег соответствует состоянию', default=10, null=True, blank=True)
     run_confirmed_comment = models.CharField('Пробег подтвержден комментарий', max_length=250, default='', null=True, blank=True)
     cleaning_int = models.IntegerField('Требуеться химчистка', default=10, null=True, blank=True)
+    ceiling_int = models.IntegerField('Требуеться перетяжка потолка ', default=10, null=False, blank=True)
+    seat_int    = models.IntegerField('Третий ряд сидений ', default=10, null=False, blank=True)
     damage_kpp_int = models.IntegerField('Повреждения рычага кпп', default=10, null=True, blank=True)
     damage_wheel_int = models.IntegerField('Повреждения / затертый руль', default=10, null=True, blank=True)
     damage_pedal_int = models.IntegerField('Повреждения / затертые педали', default=10, null=True, blank=True)
@@ -4306,6 +4344,15 @@ class RegRegInteractivOcenkaTaskFiles(models.Model):
         
         return ""
     
+    def get_thumbnail_url(self):
+        """URL миниатюры (400×300), если есть; иначе — оригинал."""
+        try:
+            if self.file_mini and self.file_mini.name:
+                return self.file_mini.url.replace('/media/', '/media_dop/')
+        except Exception:
+            pass
+        return self.get_absolute_url()
+    
     def is_video(self):
         list_world_name = self.file.name.lower().split('.')
         format = list_world_name[-1]
@@ -4349,7 +4396,7 @@ class RegInfoBody(models.Model):
     type_body       = models.CharField("Тип кузова", max_length=512, default='', blank=True)
     side            = models.CharField("Сторона", max_length=512, default='', blank=True)
     body_element    = models.CharField("Элемент", max_length=512, default='', blank=True)
-    polygon         = models.CharField("Полигон", max_length=512, default='', blank=True)
+    polygon         = models.CharField("Полигон", max_length=5120, default='', blank=True)
     body_elem_name  = models.CharField("Элемент наименование", max_length=512, default='', blank=True)
     
     def __str__(self):

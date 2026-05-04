@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карточка автомобиля</title>
+</head>
+<body style="margin:0;padding:0;background-color:#ecf0f1;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#ecf0f1;border-collapse:collapse;">
+  <tr>
+    <td align="center" style="padding:0;">
+
+      <!-- Шапка с логотипом и ссылкой -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;border-collapse:collapse;background-color:#000000;">
+        <tr>
+          <td width="300" style="padding:20px 10px;color:#ffffff;font-size:24px;line-height:30px;">
+            АХ КорсГрупп автомобильный холдинг
+          </td>
+          <td width="300" align="right" style="padding:20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <a href="https://ah.kors-group.com" target="_blank"
+                     style="font-size:14px;color:#ffffff;text-decoration:none;background:#6c757d;border:1px solid #ffffff;padding:12px 20px;display:inline-block;border-radius:4px;font-weight:bold;">
+                    Портал
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Основная карточка -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;border-collapse:collapse;background-color:#6c757d;">
+        <tr>
+          <td align="center" style="padding:40px 30px 20px 30px;color:#ffffff;font-size:28px;line-height:34px;">
+            Карточка автомобиля
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 50px 20px 50px;color:#ffffff;font-size:14px;line-height:24px;">
+            {{comment}}
+          </td>
+        </tr>
+        
+        <tr>
+          <td style="padding:20px 50px;color:#ffffff;">
+            <div style="font-size:24px;line-height:30px;padding-bottom:20px;">{{car_name}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Подразделение</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{unit_name}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Марка</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_mark}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Модель</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_model}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Модификация</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_modification}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Комплектация</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_complectation}}</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Год выпуска</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_year}} г.в.</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Пробег</div>
+            <div style="font-size:18px;line-height:26px;padding-bottom:12px;">{{car_run}} км.</div>
+            <div style="font-size:14px;color:#d0d0d0;line-height:22px;">Цена</div>
+            <div style="font-size:28px;line-height:34px;padding-bottom:20px;">{{car_price}} ₽</div>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:10px 30px 40px 30px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center">
+                  <a href="{{car_link}}" target="_blank"
+                     style="font-size:16px;color:#ffffff;text-decoration:none;background:#0088ff;border:1px solid #0088ff;padding:14px 28px;display:inline-block;border-radius:4px;font-weight:bold;text-align:center;">
+                    Открыть карточку автомобиля
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+</body>
+</html>

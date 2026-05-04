@@ -469,12 +469,17 @@ def loging(request):
     result = ''
     next = request.GET.get('next', '')
     data = ''
-
+    
+    if request.user.is_authenticated:
+        if len(next) > 0:
+            return HttpResponseRedirect(next) 
+        return HttpResponseRedirect('/')
+    
     if request.method == "POST":
 	
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
-        if request.META['SERVER_NAME'] == '127.0.0.1':
+        if request.META['SERVER_NAME'] != '127.0.0.11':
             if len(error) == 0:
                 login       = request.POST.get("login", '')
                 password    = request.POST.get("password", '')
@@ -2001,7 +2006,13 @@ def board_monitoring_eco(request):
     
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
- 
+    
+    if request.GET.get('avtoteka_id', '') != '':
+        int_ind = request.GET.get('avtoteka_id', '')
+        from task_manager.views import refresh_avtoteka_data
+        refresh_avtoteka_data(int_ind)
+        return HttpResponseRedirect('/monitorings_eco/')
+
     info_refresh_catalogs = RegInfoRefreshCatalog.objects.values('site').annotate(max_date = Max('date')).order_by('-site')
 
     modifications           = AutoruModification.objects.all().order_by('-pk')
@@ -5002,7 +5013,7 @@ def _stok_im_from_db(request):
     """Загрузка стока из БД с фильтрами и дашбордом."""
     from website.models import ImProduct, ImProductPhoto
 
-    qs = ImProduct.objects.prefetch_related('photos').all()
+    qs = ImProduct.objects.filter(quantity_balance__gt = 0).prefetch_related('photos').all()
     filtr = request.GET
 
     name = filtr.get('name', '').strip()
@@ -5096,8 +5107,8 @@ def stok_im_dashboard(request):
     has_db_data = ImProduct.objects.exists()
     dashboard = None
     if has_db_data:
-        total = ImProduct.objects.count()
-        all_agg = ImProduct.objects.aggregate(
+        total = ImProduct.objects.filter(quantity_balance__gt = 0).count()
+        all_agg = ImProduct.objects.filter(quantity_balance__gt = 0).aggregate(
             total_sum=Sum(
                 ExpressionWrapper(
                     Coalesce(F('price_value'), 0) * F('quantity_balance'),
@@ -5110,12 +5121,12 @@ def stok_im_dashboard(request):
         total_quantity = all_agg['total_quantity'] or 0
         total_percent = 100.0
 
-        qs_no_photo = ImProduct.objects.filter(photo_count=0)
-        qs_no_price = ImProduct.objects.filter(Q(price_value__isnull=True) | Q(price_value=0))
-        qs_not_uploaded = ImProduct.objects.filter(
+        qs_no_photo = ImProduct.objects.filter(quantity_balance__gt = 0).filter(photo_count=0)
+        qs_no_price = ImProduct.objects.filter(quantity_balance__gt = 0).filter(Q(price_value__isnull=True) | Q(price_value=0))
+        qs_not_uploaded = ImProduct.objects.filter(quantity_balance__gt = 0).filter(
             Q(avito_id='') | Q(status_text__icontains='Выгружено')
         )
-        qs_no_category = ImProduct.objects.filter(
+        qs_no_category = ImProduct.objects.filter(quantity_balance__gt = 0).filter(
             Q(category_avito='') | Q(category_avito__isnull=True)
         )
 
@@ -8333,6 +8344,9 @@ def settings_body_ref_replace(request):
         'капот',
         'бампер передний',
         'порог',
+        'стекло боковое переднее',
+        'стекло боковое заднее',
+        'стекло заднее',
     ])
 
     def _norm(s):
@@ -9952,6 +9966,16 @@ def auction_list(request):
     
     return render(request, "auction/auction_list.html", {'params': params})
 
+
+@login_required
+def auction_doc_refresh(request, slug_auction):
+    try:
+        auction = Auction.objects.get(uid = slug_auction)
+        refresh_auction(auction)
+    except:
+        s = 1 
+    return HttpResponseRedirect('/auction/' + str(auction.uid) + '/')    
+
 @login_required
 def auction_doc(request, slug_auction):
     
@@ -9960,6 +9984,9 @@ def auction_doc(request, slug_auction):
     new     = False
     user    = request.user
     answer  = ''
+    sends   = False
+    if DT.datetime.now().hour < 11 or DT.datetime.now().hour >= 14:
+        sends = True
 
     if slug_auction == 'new_lots':
         auction = Auction()
@@ -10117,14 +10144,18 @@ def auction_doc(request, slug_auction):
         AuctionStructure.objects.filter(auction = auction).exclude(car__in = cars).delete()
 
         if 'send' in request.POST:
-            if AuctionStructure.objects.filter(auction = auction).filter(car = car).filter(success = False).count() > 0:
-                error = 'Не все автомобили проверены, отправка не возможна. Проверьте автомобили и информацию о них.'
+            if sends == False:
+                error = 'Отправка не возможна в период с 10:00 до 14:00. Подготовьте лоты к отправке, проверьте автомобили. И отправьте лоты на аукцион в указаный промежуток доступности.'
             else:
-                send_auction(auction)
-                return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
+                if AuctionStructure.objects.filter(auction = auction).filter(car = car).filter(success = False).count() > 0:
+                    error = 'Не все автомобили проверены, отправка не возможна. Проверьте автомобили и информацию о них.'
+                else:
+                    send_auction(auction)
+                    return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
      
     params = {
         'type'          : 'auction',
+        'sends'         : sends,
         'auction'       : auction,
         'new'           : new,
         'user'          : user,
@@ -10134,6 +10165,7 @@ def auction_doc(request, slug_auction):
     }
     
     return render(request, "auction/auction_doc.html", {'params': params})
+
 
 def dowload_files_auction(structure, list_files, type_file):
     files = list()
@@ -10181,6 +10213,7 @@ def auction_doc_get_cars(request):
         car['url'] = get_url_image(car['slug'])
     
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
 
 def auction_doc_get_cars_info(request, slug):
     
@@ -10247,6 +10280,7 @@ def auction_doc_get_cars_info(request, slug):
                 car['work']  = car['work']  + inf_work['name'] + '/n'
 
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
 
 def list_work(int_ocenka):
     work_podgotovka = list()
@@ -10601,9 +10635,20 @@ def sb_lo(request):
     
 
 def test(request):
+
+    from task_manager.views import refresh_list_auction_status
+    refresh_list_auction_status()
     
-    from powerbi.views import stock_get_refresh
-    stock_get_refresh()
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
+
+    # refresh_avtoteka_vin()
+
+    # from powerbi.views import stock_get_refresh
+    # stock_get_refresh()
 
     # from powerbi.views import cumulative_get_refresh
     # cumulative_get_refresh(None, None)
@@ -10874,11 +10919,7 @@ def test(request):
     #     us.is_staff = True
     #     us.save()
 
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    
 
     #refresh_avtoteka_vin()
 

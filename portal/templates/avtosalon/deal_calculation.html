@@ -1,22 +1,65 @@
 {% extends 'base_web.html' %}
 {% load static %}
 
-{% block title %} - Калькулятор сделки {% endblock %}
+{% block title %} - Калькуляция автомобиля {{params.car.vin}} - {{params.calc.number}} {% endblock %}
 
 {% block content %}
 <style>
+  /* Метрические карточки */
+.metric-card-portal {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  height: 100%;
+}
+
+.metric-card-portal h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8ea1ba;
+  
+}
+
+.metric-card-portal .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #002a5a;
+  
+}
+
+.metric-card-portal .sub {
+  color: #6c7a92;
+  font-size: 0.85rem;
+}
+
+/* Вариант метрической карточки (для car_new_price_edit) */
+.metric-card-label-portal {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  font-weight: 600;
+}
+
+.metric-card-value-portal {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: #002a5a;
+}
+
   .deal-calculation-page {
-    padding: 1.5rem;
+    padding: 0.5rem;
     background: #f4f7fb;
     min-height: 100vh;
   }
 
   .deal-section {
     background: #fff;
-    border-radius: 1.25rem;
-    padding: 1.5rem;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
     box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
   }
 
   .deal-section-title {
@@ -171,6 +214,22 @@
     color: #6c7a92;
   }
 
+  .btn-calculate-sm {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: #fff;
+    border: none;
+    padding: 0.25rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-calculate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+  }
+
   .btn-calculate {
     background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
     color: #fff;
@@ -191,301 +250,449 @@
 <div class="deal-calculation-page">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1 style="font-size: 2rem; font-weight: 600; color: #002a5a; margin: 0;">Калькулятор сделки</h1>
+      <h1 style="font-size: 2rem; font-weight: 600; color: #002a5a; margin: 0;">Калькуляция автомобиля {{params.car.vin}} - {{params.calc.number}}</h1>
       <p style="color: #6c7a92; margin: 0.5rem 0 0 0;">Расчет стоимости сделки по продаже автомобиля</p>
     </div>
   </div>
 
-  <form method="get" id="calculationForm">
+  <div class="modal fade" id="rlk_info" aria-hidden="true" data-bs-target="#rlk_info" data-bs-toggle="modal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+      <div class="modal-header">
+        
+        
+        <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Подготовка автомобиля</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        
+
+        <div class="metric-card-portal align-items-center">
+          <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Комментарий администратора </div>
+          <div class="metric-card-value-portal"> • {{params.calc.rlk.commentAdministrator}}</div>
+        </div>
+        <br>
+        <div class="metric-card-portal align-items-center">
+          <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Комментарий менеджера </div>
+          <div class="metric-card-value-portal"> • {{params.calc.rlk.commentManager}}</div>
+        </div>
+
+        <div class="table-responsive-sm">
+          <table class="table table-sm table-striped table-hover">
+            <tbody> 
+              {% for event in params.calc.rlk.events %}
+                <tr class="align-middle"> 
+                  <td class="align-middle">{{event.dataTime}}</td>
+                  <td class="align-middle">{{event.dataTimeEvent}}</td>
+                  <td class="align-middle">{{event.contacType}}</td>
+                  <td class="align-middle">{{event.comment}}</td>
+                  <td class="align-middle">{{event.contacType}}</td>
+                  <td class="align-middle">{{event.staff}}</td>
+                  <td class="align-middle">{{event.status}}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    
+    {% csrf_token %}
+
     <div class="row">
       <!-- Левая колонка - Выбор данных -->
       <div class="col-lg-8">
         <!-- Блок 1: Выбор нового автомобиля -->
+        
         <div class="deal-section">
-          <h3 class="deal-section-title">1. Новый автомобиль</h3>
-          {% if params.selected_car == None %}
-          <div class="mb-3">
-            <label class="deal-section-subtitle">Выберите автомобиль из диспозиции:</label>
-            <input type="text" class="form-control mb-2" id="carSearch" placeholder="Поиск по названию, VIN, марке, модели..." autocomplete="off" onkeyup="filterCars()">
-            <select name="car" class="form-select-search" id="carSelect" size="10" onchange="this.form.submit()" style="display: none;">
-              <option value="">-- Выберите автомобиль --</option>
-              {% for car in params.cars_list %}
-                <option value="{{ car.slug }}" data-name="{{ car.name|lower }}" data-vin="{{ car.vin|lower }}" 
-                        {% if params.selected_car and params.selected_car.slug == car.slug %}selected{% endif %}>
-                  {{ car.name }} - {{ car.price|floatformat:"0g" }} ₽
-                  {% if car.modification_autoru %}
-                    ({{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }})
-                  {% endif %}
-                </option>
-              {% endfor %}
-            </select>
-            <div id="carSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; display: none; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
-              {% for car in params.cars_list %}
-                <a href="?car={{ car.slug }}{% if params.selected_estimation %}&estimation_id={{ params.selected_estimation.id }}{% endif %}{% if params.use_estimation_in_payment %}&use_estimation_in_payment=1{% endif %}{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
-                   class="list-group-item list-group-item-action car-option" 
-                   data-name="{{ car.name|lower }}" 
-                   data-vin="{{ car.vin|lower }}"
-                   {% if params.selected_car and params.selected_car.slug == car.slug %}style="background: #f0f7ff;"{% endif %}>
-                  <div class="d-flex justify-content-between">
-                    <div>
-                      <strong>{{ car.name }}</strong>
-                      {% if car.modification_autoru %}
-                        <br><small class="text-muted">{{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}</small>
-                      {% endif %}
-                      {% if car.vin %}<br><small class="text-muted">VIN: {{ car.vin }}</small>{% endif %}
-                    </div>
-                    <div class="text-end">
-                      <strong class="text-primary">{{ car.price|floatformat:"0g" }} ₽</strong>
-                    </div>
-                  </div>
-                </a>
-              {% endfor %}
+          <h3 class="deal-section-title">Рабочий лист - {{params.calc.rlk.nomer}} от {{params.calc.rlk.dataTime}} </h3>
+          <div class="row g-1">
+            
+            <div class="col-12 col-sm-3 metric-card-portal align-items-center">
+              <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Подразделение </div>
+              <div class="metric-card-value-portal text-nowrap text-truncate"> • {{params.calc.rlk.unit.name}}</div>
             </div>
-          </div>
-          {% endif %}
-          {% if params.selected_car %}
-            <div class="car-card selected">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <h4 style="margin: 0 0 0.5rem 0; color: #002a5a;">{{ params.selected_car.name }}</h4>
-                  <p style="margin: 0; color: #6c7a92; font-size: 0.9rem;">
-                    {% if params.selected_car.modification_autoru %}
-                      {{ params.selected_car.modification_autoru.model.mark.name }} {{ params.selected_car.modification_autoru.model.name }}
-                    {% endif %}
-                    {% if params.selected_car.complectation_autoru %}
-                      • {{ params.selected_car.complectation_autoru.name }} 
-                    {% endif %}
-                    {% if params.selected_car.year %} • {{ params.selected_car.year }} г.{% endif %}
-                    {% if params.selected_car.run %} • Пробег: {{ params.selected_car.run|floatformat:"0g" }} км{% endif %}
-                  </p>
+
+            <div class="col-12 col-sm-3 metric-card-portal align-items-center" >
+              <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Вид контакта </div>
+              <div class="metric-card-value-portal text-nowrap text-truncate"> • {{params.calc.rlk.contacType}}</div>
+            </div>
+            <div class="col-12 col-sm-3 metric-card-portal align-items-center" >
+              <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Клиент </div>
+              <div class="metric-card-value-portal text-nowrap text-truncate"> • {{params.calc.rlk.clientName}}</div>
+            </div>
+            <div class="col-12 col-sm-3 metric-card-portal align-items-center" >
+              <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Менеджер </div>
+              <div class="metric-card-value-portal text-nowrap text-truncate"> • {{params.calc.rlk.staff}}</div>
+            </div>
+        
+          </div> 
+
+          <br>
+          
+          <div class="row g-1">
+              {% for rl_tradein in params.calc.rlk.rlk_trade_in %}
+                <div class="col-12 cols-sm-auto">
+                  <button class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ Trade-in {{rl_tradein.nomer}} {{rl_tradein.dataTime}} {{rl_tradein.estimation_status}} </button> 
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 1.5rem; font-weight: 700; color: #4a90e2;">
-                    {{ params.selected_car.price|floatformat:"0g" }} ₽
-                  </div>
-                  <a href="{% url 'avtosalon:slug' params.selected_car.slug %}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
-                    Открыть карточку
-                  </a>
-                </div>
+              {% endfor %}
+
+              {% if params.calc.rlk.rlk_trade_in|length == 0 %}
+              <div class="col-12 cols-sm-auto">
+                <button class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ Trade-in - Нет </button> 
               </div>
-            </div>
-          {% else %}
-            <div class="placeholder-text">
-              Выберите автомобиль из списка выше
-            </div>
-          {% endif %}
-        </div>
+              {% endif %}   
 
-        <!-- Блок 2: Акции (заглушка) -->
-        <!-- TODO: Реализовать выбор акций на автомобиль
-             - Создать модель для акций (CarPromotion)
-             - Добавить связь с RefCarsOrganization
-             - Реализовать расчет скидки по акциям
-             - Добавить возможность применения нескольких акций одновременно
-             - Учесть условия применения акций (даты, модели, подразделения и т.д.)
-        -->
-        <div class="deal-section">
-          <h3 class="deal-section-title">2. Акции на автомобиль</h3>
-          <div class="coming-soon">
-            <p style="margin: 0; font-size: 1rem;">Функционал будет реализован позже</p>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #8ea1ba;">
-              Здесь будет выбор доступных акций на выбранный автомобиль с автоматическим расчетом скидки
-            </p>
+            <div class="col-12 cols-sm-auto">
+              <button class="btn-calculate-sm" type="button" data-bs-target="#rlk_info" data-bs-toggle="modal" ><span class="icon-doc"></span> Подробнее</button>
+            </div>
+
           </div>
+
+          
+         
         </div>
 
-        <!-- Блок 3: Интерактивная оценка в счет -->
         <div class="deal-section">
-          <h3 class="deal-section-title">3. Интерактивная оценка в счет сдаваемого автомобиля</h3>
-          <div class="mb-3">
-            <div class="form-check mb-3">
-              <input class="form-check-input" type="checkbox" name="use_estimation_in_payment" value="1" id="useEstimationCheck" 
-                     {% if params.use_estimation_in_payment %}checked{% endif %} onchange="this.form.submit()">
-              <label class="form-check-label" for="useEstimationCheck">
-                Использовать интерактивную оценку в счет сдаваемого автомобиля
-              </label>
+          <h3 class="deal-section-title">Автомобиль</h3>
+          <div class="row align-items-center">
+            
+            <div class="col-12 col-sm-1 align-items-center align-self-center">
+              <img class="item-img-mini" src="{{params.car.logo}}" style="height: 40px; width: auto;">
+            </div>
+
+            <div class="col-12 col-sm-5 align-items-center">
+              <div class="car-info-item">{{params.car.modification_autoru.model.mark.name}} • {{params.car.modification_autoru.model}} • {{params.car.modification_autoru}} • {{params.car.complectation_autoru}}</div>
+              <div class="car-info-item">{{params.car.vin}} • {{params.car.year}} г.в. • {{params.car.run|floatformat:"0g"}} км.</div>    
             </div>
             
-            {% if params.use_estimation_in_payment %}
-              <label class="deal-section-subtitle">Выберите интерактивную оценку:</label>
-              <input type="text" class="form-control mb-2" id="estimationSearch" placeholder="Поиск по номеру РЛК, подразделению..." autocomplete="off" onkeyup="filterEstimations()">
-              <div id="estimationSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
-                {% for estimation in params.estimations_list %}
-                  <a href="?{% if params.selected_car %}car={{ params.selected_car.slug }}&{% endif %}estimation_id={{ estimation.id }}&use_estimation_in_payment=1{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
-                     class="list-group-item list-group-item-action estimation-option"
-                     data-rlk="{{ estimation.rlk.nomer|default:''|lower }}"
-                     data-unit="{% if estimation.rlk.unit_dc %}{{ estimation.rlk.unit_dc.name|lower }}{% elif estimation.rlk.unit %}{{ estimation.rlk.unit.name|lower }}{% endif %}"
-                     {% if params.selected_estimation and params.selected_estimation.id == estimation.id %}style="background: #f0f7ff;"{% endif %}>
-                    <div class="d-flex justify-content-between">
-                      <div>
-                        <strong>РЛК №{{ estimation.rlk.nomer|default:"-" }}</strong>
-                        <br><small class="text-muted">
-                          {% if estimation.rlk.unit_dc %}{{ estimation.rlk.unit_dc.name }}{% elif estimation.rlk.unit %}{{ estimation.rlk.unit.name }}{% endif %}
-                          {% if estimation.start_estimation %} • {{ estimation.start_estimation|date:"d.m.Y H:i" }}{% endif %}
-                        </small>
-                      </div>
-                    </div>
-                  </a>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-          
-          {% if params.selected_estimation %}
-            <div class="estimation-card selected">
-              <div class="d-flex justify-content-between align-items-start">
-                <div>
-                  <h4 style="margin: 0 0 0.5rem 0; color: #002a5a;">
-                    РЛК №{{ params.selected_estimation.rlk.nomer|default:"-" }}
-                  </h4>
-                  <p style="margin: 0; color: #6c7a92; font-size: 0.9rem;">
-                    {% if params.selected_estimation.rlk.unit_dc %}
-                      {{ params.selected_estimation.rlk.unit_dc.name }}
-                    {% elif params.selected_estimation.rlk.unit %}
-                      {{ params.selected_estimation.rlk.unit.name }}
-                    {% endif %}
-                    {% if params.selected_estimation.start_estimation %}
-                      • {{ params.selected_estimation.start_estimation|date:"d.m.Y H:i" }}
-                    {% endif %}
-                  </p>
+            <div class="col-12 col-sm-3">
+              <div class="metric-card-portal">
+                <div class="metric-card-label-portal"><span class="icon-mbri-cash"></span> Себестоимость (+ДОП)</div>
+                <div class="metric-card-value-portal">{{params.car_price_and_dop|floatformat:"2g"}} ₽</div>
+              </div>               
+            </div>
+
+            <div class="col-12 col-sm-3">
+              <div class="row g-1">
+                <div class="col-auto btn-calculate-sm w-100">
+                  <a class="text-white" href="/cars/{{params.car.slug}}/price/?tab=avto"><span class="icon-mbri-credit-card"></span> Ценообразование</a>
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">
-                    {{ params.estimation_price|floatformat:"0g" }} ₽
-                  </div>
-                  <a href="/eco/{{ params.selected_estimation.rlk.id }}/" target="_blank" class="btn btn-sm btn-outline-success mt-2">
-                    Открыть оценку
-                  </a>
+                <div class="col-auto  btn-calculate-sm w-100">
+                  <a class="text-white" href="/cars/{{params.car.slug}}/"><span class="icon-truck"></span> Автомобиль</a>
                 </div>
               </div>
             </div>
-          {% elif params.use_estimation_in_payment %}
-            <div class="placeholder-text">
-              Выберите интерактивную оценку из списка выше
-            </div>
-          {% endif %}
+
+          </div>             
+
         </div>
 
-        <!-- Блок 4: БУ комплект колес (заглушка) -->
-        <!-- TODO: Реализовать выбор БУ комплекта колес
-             - Создать модель для БУ колес (UsedWheelsSet)
-             - Добавить связь с RefCarsOrganization или отдельную таблицу
-             - Реализовать выбор комплекта (размер, сезонность, состояние)
-             - Добавить расчет стоимости БУ колес
-             - Учесть возможность обмена (зачет стоимости старых колес)
-        -->
         <div class="deal-section">
-          <h3 class="deal-section-title">4. БУ комплект колес</h3>
-          <div class="coming-soon">
-            <p style="margin: 0; font-size: 1rem;">Функционал будет реализован позже</p>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #8ea1ba;">
-              Здесь будет выбор БУ комплекта колес с возможностью обмена и расчета стоимости
-            </p>
-          </div>
+          <h3 class="deal-section-title">Примененные акции</h3>
+          
+            {% for action in params.actions %}
+              <div class="row g-1 bg-danger bg-opacity-10 bg-gradient" style="margin: 0.2rem; border-radius: 0.5rem;">
+                <div class="col-12 col-sm-5">
+                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Наименование </div>
+                  <div class="metric-card-value-portal"> • {{action.name}}</div>
+                </div>
+                <div class="col-12 col-sm-3">
+                  <div class="metric-card-label-portal  "><span class="icon-mbri-credit-card"></span> от цены продажи </div>
+                  <div class="metric-card-value-portal  "> • {{action.amount_sale|floatformat:"2g"}} ₽</div>
+                </div>
+                <div class="col-12 col-sm-2">
+                  <div class="metric-card-label-portal  "><span class="icon-mbri-credit-card"></span> Компенсация </div>
+                  <div class="metric-card-value-portal  "> • {{action.amount_comp|floatformat:"2g"}} ₽</div>
+                </div>
+                <div class="col-12 col-sm-2">
+                  <div class="metric-card-label-portal  "><span class="icon-mbri-credit-card"></span> Итого </div>
+                  <div class="metric-card-value-portal  "> • {{action.amount|floatformat:"2g"}} ₽</div>
+                </div>
+              </div>
+            {% endfor %}
+       
         </div>
 
-        <!-- Блок 5: ОПФУ услуги -->
-        <!-- TODO: Улучшить блок ОПФУ услуг
-             - Добавить поиск по услугам
-             - Добавить категории услуг (группировка)
-             - Реализовать расчет стоимости каждой услуги (цена из RefService или отдельная таблица)
-             - Добавить возможность указания количества для каждой услуги
-             - Добавить возможность применения скидок на услуги
-             - Показывать итоговую стоимость выбранных услуг
-             - Добавить возможность сохранения "пакетов услуг"
-        -->
         <div class="deal-section">
-          <h3 class="deal-section-title">5. ОПФУ услуги</h3>
-          <div class="mb-3">
-            <label class="deal-section-subtitle">Выберите услуги:</label>
-            <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Поиск по названию услуги..." autocomplete="off" onkeyup="filterServices()">
-            <div id="servicesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e7ef; border-radius: 0.5rem; padding: 0.5rem;">
-              {% for service in params.opfu_services %}
-                <div class="service-checkbox service-item" data-name="{{ service.name|lower }}">
-                  <input type="checkbox" name="opfu_services" value="{{ service.id }}" id="service_{{ service.id }}"
-                         {% if service in params.selected_opfu_services %}checked{% endif %} onchange="this.form.submit()">
-                  <label for="service_{{ service.id }}" style="margin-left: 0.5rem; cursor: pointer;">
-                    {{ service.name }}
-                    {% if service.article %}<span style="color: #8ea1ba; font-size: 0.85rem;">({{ service.article }})</span>{% endif %}
-                  </label>
+          <h6 class="deal-section-title">Расчетные данные - КВП • {{params.calc.kvp|floatformat:"2g"}} ₽</h6>
+          <input type="number" hidden class="form-control" id="car_price_and_dop" name="car_price_and_dop" placeholder="0" value="{{params.car_price_and_dop}}" autocomplete="off" >                 
+          <input type="number" hidden class="form-control" id="calc_price" name="calc_price" placeholder="0" value="{{params.car_price_and_dop}}" autocomplete="off" >                 
+          
+         
+
+          <div class="row g-1 h-100">
+            <div class="col-12 col-sm-4 " >
+              <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
+                <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВП </div>
+                <div class="metric-card-value-portal"> • {{params.calc.kvp|floatformat:"2g"}} ₽</div>
+              </div>
+              
+            </div>
+            {% for detail in params.calc.detail %}
+              <div class="col-12 col-sm-4 " >
+                <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
+                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
+                  <div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
                 </div>
-              {% empty %}
-                <div class="placeholder-text">
-                  Нет доступных услуг
-                </div>
-              {% endfor %}
+                
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="row g-1 d-none">
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-calendar"></span> Скидка ДЦ</div>											
+                <input type="number" class="form-control" id="custom_discount" name="custom_discount" placeholder="0" value="{{params.calc.discount}}" autocomplete="off" >                 
+              </div>                         
+            </div>
+            
+            <div class="row g-1 d-none">
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-calendar"></span> ОПФУ</div>											
+                <input type="number" class="form-control" id="custom_opfu" name="custom_opfu" placeholder="0" value="{{params.calc.custom_opfu}}" autocomplete="off" >                 
+              </div>
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-truck"></span> Trade-in</div>											
+                <input type="number" class="form-control" id="custom_tradein" name="custom_tradein" placeholder="0" value="{{params.calc.custom_tradein}}" autocomplete="off" >                 
+              </div>
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-cd"></span> Шины</div>										
+                <input type="number" class="form-control" id="custom_wheels" name="custom_wheels" placeholder="0" value="{{params.calc.custom_wheels}}" autocomplete="off" >                 
+              </div>                  
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-edit"></span> Гос. рег.</div>										
+                <input type="number" class="form-control" id="custom_grz" name="custom_grz" placeholder="0" value="{{params.calc.custom_grz}}" autocomplete="off" >                 
+              </div> 
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-setting"></span> Работы</div>										
+                <input type="number" class="form-control" id="custom_work" name="custom_work" placeholder="0" value="{{params.calc.custom_work}}" autocomplete="off" >                 
+              </div> 
+              <div class="col-12 col-sm-2 metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-shopping-bag"></span> Запчасти</div>										
+                <input type="number" class="form-control" id="custom_product" name="custom_product" placeholder="0" value="{{params.calc.custom_product}}" autocomplete="off" >                 
+              </div>                  
+            </div>
+            
+            <div class=" metric-card d-none">
+              <div class="metric-card-label"><span class="icon-mbri-edit"></span> Комментарий</div>										
+              <input type="text" class="form-control" id="comment" name="comment" placeholder="-" value="{{params.calc.comment}}" autocomplete="off" >                 
+            </div> 
+            
+            
+            <div class="mt-3 d-none">
+              <button type="submit" class="btn btn-calculate w-100">
+                Сохранить калькуляцию
+              </button>
+            </div>
+
+        </div>
+
+        {% if params.calc.user != None %}
+          <div class="deal-section">
+            <h6 class="deal-section-title">Автор</h6>
+            <div class="col-auto align-items-center">
+              <div class="car-info-item"> • {{params.calc.user.profiles.eco_name}} </div>
+              <div class="car-info-item"> • {{params.calc.date}} </div>    
             </div>
           </div>
-          
-          {% if params.selected_opfu_services %}
-            <div class="mt-3">
-              <h5 style="color: #002a5a; margin-bottom: 0.5rem;">Выбранные услуги:</h5>
-              <div class="d-flex flex-wrap gap-2">
-                {% for service in params.selected_opfu_services %}
-                  <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
-                    {{ service.name }}
-                  </span>
-                {% endfor %}
-              </div>
+        {% endif %}
+
+        {% if params.calc.user != None %}
+          <div class="deal-section">
+            <h6 class="deal-section-title">Согласование</h6>
+            <div class="col-auto align-items-center">
+              <div class="car-info-item"> • {{params.calc.user.profiles.eco_name}} </div>
+              <div class="car-info-item"> • {{params.calc.date}} </div>    
             </div>
-          {% endif %}
-        </div>
+          </div>
+        {% endif %}
+
       </div>
 
       <!-- Правая колонка - Итоги -->
       <div class="col-lg-4">
+        <div id='km_result' class="deal-section bg-danger bg-opacity-75 text-white">
+          
+          <h3 class="deal-section-title text-white">Минимальный КМ (правило)</h3>
+          
+          <div class="price-item">
+
+            <div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.brand_km.brand}}</div>	
+            {% if params.cumulative_data.type_km == 1 %}
+              <div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic.km_min_automatic|floatformat:"2g"}} ₽</div>	
+            {% elif params.cumulative_data.type_km == 2 %}
+              <div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>	
+            {% elif params.cumulative_data.type_km == 3 %}
+              <div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
+            {% endif %}		
+          </div>
+
+        </div>
+
         <div class="deal-section">
           <h3 class="deal-section-title">Итоги калькуляции</h3>
-          
+         
           <div class="price-item">
             <span class="price-item-label">Цена автомобиля:</span>
-            <span class="price-item-value">{{ params.car_price|floatformat:"0g" }} ₽</span>
+            <span class="price-item-value">{{params.car.price|floatformat:"2g"}}</span>
           </div>
           
-          {% if params.use_estimation_in_payment and params.estimation_price > 0 %}
+          <div class="price-item d-none">
+            <span class="price-item-label">Оценка в счет (вычет):</span>
+            <span class="price-item-value negative">-{{ params.estimation_price|floatformat:"0g" }} ₽</span>
+          </div>
+          <div class="price-item">
+            <span class="price-item-label">Себестоимость:</span>
+            <span class="price-item-value negative">-{{ params.car.cost_price|floatformat:"0g" }} ₽</span>
+          </div>
+          <div class="price-item">
+            <span class="price-item-label">Допоборудование:</span>
+            <span class="price-item-value negative">-{{ params.dop|floatformat:"2g" }} ₽</span>
+          </div>
+
+          <div class="price-item">
+            <span class="price-item-label">Акции:</span>
+            <span class="price-item-value {% if params.action_sum < 0%}negative{% else %} positive{% endif %}">{{ params.action_sum|floatformat:"2g" }} ₽</span>
+          </div>
+
+          {% for detail in params.calc.detail %}
             <div class="price-item">
-              <span class="price-item-label">Оценка в счет (вычет):</span>
-              <span class="price-item-value negative">-{{ params.estimation_price|floatformat:"0g" }} ₽</span>
+              <span class="price-item-label">{{detail.detail_type.name}}:</span>
+              <span class="price-item-value positive">+{{detail.vp|floatformat:"2g"}} ₽</span>
             </div>
-          {% endif %}
-          
+          {% endfor %}
+
+          <!--
           <div class="price-item">
             <span class="price-item-label">Акции (скидка):</span>
-            <span class="price-item-value negative">-{{ params.promotions_discount|floatformat:"0g" }} ₽</span>
+            <span class="price-item-value negative" id="discount">-{{ params.promotions_discount|floatformat:"0g" }} ₽</span>
+          </div>
+
+          {}
+          <div class="price-item">
+            <span class="price-item-label">Trade-in:</span>
+            <span class="price-item-value positive" id="tradein"> {{ params.promotions_discount|floatformat:"0g" }} ₽</span>
+          </div>
+
+          <div class="price-item">
+            <span class="price-item-label">Шины:</span>
+            <span class="price-item-value positive" id="wheels">{{ params.bu_wheels_price|floatformat:"0g" }} ₽</span>
           </div>
           
           <div class="price-item">
-            <span class="price-item-label">БУ комплект колес:</span>
-            <span class="price-item-value negative">-{{ params.bu_wheels_price|floatformat:"0g" }} ₽</span>
+            <span class="price-item-label">Гос. рег.:</span>
+            <span class="price-item-value positive" id="grz">{{ params.bu_wheels_price|floatformat:"0g" }} ₽</span>
           </div>
-          
+
           <div class="price-item">
-            <span class="price-item-label">ОПФУ услуги:</span>
-            <span class="price-item-value positive">+{{ params.opfu_services_total|floatformat:"0g" }} ₽</span>
+            <span class="price-item-label">ОПФУ:</span>
+            <span class="price-item-value positive" id="opfu">{{ params.opfu_services_total|floatformat:"0g" }} ₽</span>
           </div>
-          
+          -->
+
           <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
             <div class="total-card">
-              <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого к оплате:</p>
-              <h2>{{ params.total_amount|floatformat:"0g" }} ₽</h2>
+              <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого по сделке:</p>
+              <h2 id="itog">{{ params.total_amount|floatformat:"0g" }} ₽</h2>
+              <br>
+              <h5 id="itog_km">{{ params.total_amount|floatformat:"0g" }} ₽</h5>
             </div>
           </div>
           
+        
+          
           <div class="mt-3">
-            <button type="button" class="btn btn-calculate w-100" onclick="saveCalculation()">
-              Сохранить калькуляцию
+            <button type="submit" name="send" class="btn btn-calculate w-100">
+              Согласовать
             </button>
           </div>
+
         </div>
       </div>
     </div>
   </form>
+
 </div>
 
 <script>
+
+  let price = {{params.car.price}};
+  let cost  = {{params.car.cost_price}};
+  
+  var min_km = {{params.cumulative_data.automatic.km_min_automatic|floatformat:"0" }};
+  var kvp = {{params.calc.kvp}};	
+
+  document.addEventListener('readystatechange', () => {    
+    if (document.readyState == 'complete') calculate_data();
+  });
+
+  $('#custom_discount').on('input', function() {
+    calculate_data();
+  });
+
+  $('#custom_opfu').on('input', function() {
+    calculate_data();
+  });
+
+  $('#custom_tradein').on('input', function() {
+    calculate_data();
+  });
+
+  $('#custom_wheels').on('input', function() {
+    calculate_data();
+  });
+
+  $('#custom_grz').on('input', function() {
+    calculate_data();
+  });
+  
+
+  function calculate_data(){
+    
+  
+    var discount = $('#custom_discount').val();
+    var opfu    = $('#custom_opfu').val();
+    var tradein = $('#custom_tradein').val();
+    var wheels = $('#custom_wheels').val();
+    var grz   = $('#custom_grz').val();
+
+    var discount_ 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(discount,);
+    var opfu_ 		    = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(opfu,);
+    var tradein_      = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(tradein,);
+    var wheels_       = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(wheels,);
+    var grz_          = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(grz,);
+
+    $('#discount').text(discount_);
+    $('#opfu').text(opfu_);
+    $('#tradein').text(tradein_);
+    $('#wheels').text(wheels_);
+    $('#grz').text(grz_);
+
+    var itog = price  ; 
+    var itog_km = price - cost - parseInt(discount, 10) + parseInt(opfu, 10) + parseInt(tradein_, 10) + parseInt(wheels_, 10) + parseInt(grz_, 10)  ; 
+    
+    if (min_km > kvp){
+      $('#km_result').addClass('bg-danger');
+      $('#km_result').removeClass('bg-success');
+    } else {
+      $('#km_result').removeClass('bg-danger');
+      $('#km_result').addClass('bg-success');
+    };
+
+    $('#itog').text(new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(itog,) + ' ₽');
+    $('#itog_km').text('КМ расчетный ' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(kvp,) + ' ₽');
+
+  }
+
   function saveCalculation() {
-    // Здесь будет логика сохранения калькуляции
-    alert('Функция сохранения калькуляции будет реализована позже');
+   
   }
 
   // Поиск по автомобилям
@@ -558,5 +765,6 @@
     }
   });
 </script>
+
 {% endblock %}
 

@@ -656,6 +656,11 @@ def estimation_rlk(request, rlk_id):
             
             reg_interactiv_ocenka_salon.run_confirmed           = 'run_confirmed' in request.POST
 
+            if 'ceiling_int' in request.POST:
+                reg_interactiv_ocenka_salon.ceiling_int = int(request.POST.get('ceiling_int', '0')) 
+            
+            if 'seat_int' in request.POST:
+                reg_interactiv_ocenka_salon.seat_int = int(request.POST.get('seat_int', '0')) 
 
             reg_interactiv_ocenka_salon.hand_brake      = int(request.POST.get('hand_brake', '3'))
             reg_interactiv_ocenka_salon.conductor       = int(request.POST.get('conductor', '3'))
@@ -736,6 +741,21 @@ def estimation_rlk(request, rlk_id):
             if "page_osmotr_salon" in request.POST:
                 reg_interactiv_ocenka_salon.save()
                 url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr_salon/page_osmotr_salon/'
+                return HttpResponseRedirect(url)
+            
+            if "page_osmotr_salon_v1_1" in request.POST:
+                reg_interactiv_ocenka_salon.save()
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr_salon/page_osmotr_salon_v1_1/'
+                return HttpResponseRedirect(url)
+            
+            if "page_osmotr_salon_v1_2" in request.POST:
+                reg_interactiv_ocenka_salon.save()
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr_salon/page_osmotr_salon_v1_2/'
+                return HttpResponseRedirect(url)
+           
+            if "page_osmotr_salon_v1_3" in request.POST:
+                reg_interactiv_ocenka_salon.save()
+                url = '/estimations/' + str(interactiv_rlk.estimation.pk) + '/' + str(interactiv_rlk.rlk.pk) + '/osmotr_salon/page_osmotr_salon_v1_3/'
                 return HttpResponseRedirect(url)
             
             if "page" in request.POST:
@@ -1543,7 +1563,7 @@ def estimation_rlk(request, rlk_id):
         'vin_trade_in'                  : object.vin_trade_in if hasattr(object, 'vin_trade_in') else ''
     }
     
-    if reg_interactiv_ocenka.modification == None or reg_interactiv_ocenka.year == None or reg_interactiv_ocenka.year < 1950:
+    if (reg_interactiv_ocenka.modification == None and reg_interactiv_ocenka.modification_name == '') or reg_interactiv_ocenka.year == None or reg_interactiv_ocenka.year < 1950:
         return HttpResponseRedirect(request.path_info + 'start/')
         #return render(request, 'estimation/estimation.html', {'params': params}) 
     
@@ -1799,14 +1819,64 @@ def estimation_start(request, rlk_id):
                         reg_interactiv_ocenka_salon.save()
                 except:
                     pass
-            
+                        
+            try:
+                
+                if 'custom_year' in request.POST:
+                    if request.POST['custom_year'] != '0':
+                        try:
+                            reg_interactiv_ocenka.year = int(request.POST['custom_year'])
+                        except:
+                            pass
+
+                        if 'custom_mark' in request.POST:
+                            try:
+                                reg_interactiv_ocenka.mark_name = request.POST['custom_mark']
+                            except:
+                                pass
+
+                        if 'custom_model' in request.POST:
+                            try:
+                                reg_interactiv_ocenka.model_name = request.POST['custom_model']
+                            except:
+                                pass
+
+                        if 'custom_modification' in request.POST:
+                            try:
+                                reg_interactiv_ocenka.modification_name = request.POST['custom_modification']
+                            except:
+                                pass
+                        
+
+                        if 'custom_body_config' in request.POST:
+                            pk_custom_body_config = request.POST['custom_body_config']
+                            if pk_custom_body_config != None and pk_custom_body_config != '':
+                                reg_interactiv_ocenka.type_body = RefTypeBody.objects.get(pk = pk_custom_body_config)
+
+                        if 'custom_engine_config' in request.POST:
+                            pk_custom_engine_config = request.POST['custom_engine_config']
+                            if pk_custom_engine_config != None and pk_custom_engine_config != '':
+                                reg_interactiv_ocenka.type_engine = RefTypeEngine.objects.get(pk = pk_custom_engine_config)    
+
+                        if 'custom_kpp_config' in request.POST:
+                            pk_custom_kpp_config = request.POST['custom_kpp_config']
+                            if pk_custom_kpp_config != None and pk_custom_kpp_config != '':
+                                reg_interactiv_ocenka.type_gear = RefTypeKpp.objects.get(pk = pk_custom_kpp_config) 
+
+                        if 'custom_type_drive' in request.POST:
+                            reg_interactiv_ocenka.type_drive = request.POST['custom_type_drive'] 
+
+                                       
+            except:
+                s = 1
+
             reg_interactiv_ocenka.save()
         
         # Перенаправление на следующую страницу
         return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
     
     if request.method == 'GET':
-        if not reg_interactiv_ocenka.modification == None:
+        if (not reg_interactiv_ocenka.modification == None or reg_interactiv_ocenka.modification_name != '') and reg_interactiv_ocenka.year > 1950 :
             return HttpResponseRedirect('/estimations/' + str(rlk_id) + '/')
     
     # Получаем все марки
@@ -2243,22 +2313,45 @@ def osmotr_salon(request, rlk_id, type, rl_id):
         
         type_file   = 'osmotr_salon'
         return_page = request.POST.get('return_page', '')
-
+        dop_name = ''
         if type == 'page_osmotr_salon':
-            url_base_64 = request.POST.get('url_image')
-            url_base = url_base_64.split(',')[1].encode()
-            file_name = 'osmotr_salon_' + str(reg_interactiv_ocenka.id) +'.jpg'
-            decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
-            type_file = 'osmotr_salon'
-            new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
-            new_estimation_files.name           = file_name
-            new_estimation_files.type_file      = type_file
-            new_estimation_files.file           = decoded_data_1
-            new_estimation_files.user           = request.user
-            new_estimation_files.save()
-            type_file = 'array_images_osmotr_salon'
+            dop_name            = 'v0_0'
+            type_name           = 'осмотр салона автомобиля'
+            type_file           = 'osmotr_salon'
+            type_files          = 'array_images_osmotr_salon'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон')
+        elif type == 'page_osmotr_salon_v1_1':
+            dop_name            = 'v1_1'
+            type_name           = 'осмотр салона автомобиля (первый ряд)'
+            type_file           = 'osmotr_salon_v1_1'
+            type_files          = 'array_images_osmotr_salon_v1_1'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 1')
+        elif type == 'page_osmotr_salon_v1_2':
+            dop_name            = 'v1_2'
+            type_name           = 'осмотр салона автомобиля (второй ряд)'
+            type_file           = 'osmotr_salon_v1_2'
+            type_files           = 'array_images_osmotr_salon_v1_2'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 2')
+        elif type == 'page_osmotr_salon_v1_3':
+            dop_name            = 'v1_3'
+            type_name           = 'осмотр салона автомобиля (третий ряд)'
+            type_file           = 'osmotr_salon_v1_3'
+            type_files          = 'array_images_osmotr_salon_v1_3'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 3')
+
+        url_base_64 = request.POST.get('url_image')
+        url_base = url_base_64.split(',')[1].encode()
+        file_name = 'osmotr_salon_' + dop_name + '_' + str(reg_interactiv_ocenka.id) +'.jpg'
+        decoded_data_1 = ContentFile(base64.b64decode(url_base), name = file_name)
+        
+        new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file)
+        new_estimation_files.name           = file_name
+        new_estimation_files.type_file      = type_file
+        new_estimation_files.file           = decoded_data_1
+        new_estimation_files.user           = request.user
+        new_estimation_files.save()
             
-        RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_file).delete()
+        RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_files).delete()
 
         for key in request.POST.keys():
             
@@ -2273,7 +2366,7 @@ def osmotr_salon(request, rlk_id, type, rl_id):
 
                 s = datetime.strptime(photo_date_, '%d-%m-%Y %H:%M')
 
-                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_file, type_point = photo_type_, text = photo_text_, cor_x = photo_x_, cor_y = photo_y_)
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = type_files, type_point = photo_type_, text = photo_text_, cor_x = photo_x_, cor_y = photo_y_)
                 new_estimation_files.name           = photo_name_
                 new_estimation_files.text           = photo_text_
                 new_estimation_files.type_point     = photo_type_
@@ -2290,7 +2383,7 @@ def osmotr_salon(request, rlk_id, type, rl_id):
                 new_estimation_files.save()
 
         if return_page == 'eco':
-            interatictiv = RegInteractivOcenkaRLK.objects.get(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
+            interatictiv = RegInteractivOcenkaRLK.objects.filter(rlk__id = rl_id, estimation = reg_interactiv_ocenka).first()
             save_recovery_estimations(interatictiv, reg_interactiv_ocenka)
             return HttpResponseRedirect('/eco/' + rl_id + '/?page=21')    
         return HttpResponseRedirect('/estimations/' + rl_id + '/?page=2')
@@ -2300,7 +2393,18 @@ def osmotr_salon(request, rlk_id, type, rl_id):
             type_name           = 'осмотр салона автомобиля'
             type_file           = 'array_images_osmotr_salon'
             salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'салон')
-        
+        elif type == 'page_osmotr_salon_v1_1':
+            type_name           = 'осмотр салона автомобиля (первый ряд)'
+            type_file           = 'array_images_osmotr_salon_v1_1'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 1')
+        elif type == 'page_osmotr_salon_v1_2':
+            type_name           = 'осмотр салона автомобиля (второй ряд)'
+            type_file           = 'array_images_osmotr_salon_v1_2'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 2')
+        elif type == 'page_osmotr_salon_v1_3':
+            type_name           = 'осмотр салона автомобиля (третий ряд)'
+            type_file           = 'array_images_osmotr_salon_v1_3'
+            salons_info         = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'cалон в1 3')
         files_data = RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_file).order_by('date')
         for files in files_data:
             tol             = False

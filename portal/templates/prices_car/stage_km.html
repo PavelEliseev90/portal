@@ -11,7 +11,7 @@
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
         <h2 class="mb-2">Индексы КМ по этапам</h2>
-        <p class="text-muted mb-4">Последние установленные индексы по этапу УС и период (месяц). Через иконку можно внести или обновить индекс за выбранный месяц.</p>
+        <p class="text-muted mb-4">Последние установленные индексы по этапу УС.</p>
 
         {% if messages %}
         <div class="mb-3">
@@ -24,10 +24,10 @@
         </div>
         {% endif %}
 
-        <div class="row g-3 mb-4">
+        <div class="row g-1 mb-4">
             {% for block in params.stage_blocks %}
             <div class="col-12 col-sm-6 col-xl-3">
-                <div class="portal-panel h-100 position-relative">
+                <div class="portal-panel position-relative">
                     <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                         <h5 class="mb-0 text-muted">{{ block.title }}</h5>
                         {% if block.stage_id %}
@@ -48,13 +48,13 @@
                     </div>
                     {% if block.stage_id %}
                         {% if block.latest %}
-                        <h4 class="mb-1">{{ block.latest.km_index }}</h4>
-                        <p class="small text-muted mb-0">Период: {{ block.latest.month|date:"Y-m" }}</p>
+                            <h4 class="mb-1">{{ block.latest.km_index }}</h4>
+                            <p class="small text-muted mb-0">с: {{ block.latest.month|date:"d-m-Y" }}</p>
                         {% else %}
-                        <h4 class="mb-1 text-muted">—</h4>
-                        <p class="small text-muted mb-0">Индекс ещё не задавался</p>
+                            <h4 class="mb-1 text-muted">—</h4>
+                            <p class="small text-muted mb-0">Индекс ещё не задавался</p>
                         {% endif %}
-                        <p class="small text-secondary mb-0 mt-1" style="font-size: 0.75rem;">Этап: {{ block.stage.name }}</p>
+                        
                     {% else %}
                         <h4 class="mb-1 text-muted">—</h4>
                         <p class="small text-warning mb-0">Добавьте этап в справочник (название должно содержать ключевые слова для «{{ block.title }}»).</p>
@@ -64,8 +64,8 @@
             {% endfor %}
         </div>
 
-        <div class="portal-panel">
-            <h5 class="mb-3">История индексов</h5>
+        <div class="portal-panel no-padding">
+            <h5 class="mb-3 padding-title">История индексов</h5>
             <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
                     <thead>

@@ -72,6 +72,19 @@
 
                 <label class="fs-6" style="padding: 0.3rem;"> <span class="icon-mbri-touch"></span> Нажмите на изображение и выберите вариант отметки, после этого можно сохранить</label>    
 
+                <div class="row g-1 mb-2 align-items-center">
+                  <div class="col-sm-auto">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn_highlight_body_zones" title="Залить полигоны элементов кузова разными цветами с подписями">
+                      <span class="icon-mbri-image-gallery"></span> Зоны кузова
+                    </button>
+                  </div>
+                  <div class="col-sm-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_hide_body_zones" title="Убрать подсветку зон (вернуть только фото и отметки)">
+                      <span class="icon-mbri-close"></span> Скрыть зоны
+                    </button>
+                  </div>
+                </div>
+
                 <div class="row g-1" id="rlks_trade_in" style="width: 100%; ">
                   <div style="display: flex; text-align: start; margin-bottom: 1em;">
                     <div class='row g-1 entries flex-nowrap overflow-auto' id="">
@@ -466,6 +479,13 @@
                 img                 = document.getElementById("photo_1");
                 
                 refresh_image();
+
+                $("#btn_highlight_body_zones").click(function () {
+                  highlightAllBodyZones();
+                });
+                $("#btn_hide_body_zones").click(function () {
+                  refresh_image();
+                });
 
               });
 
@@ -1006,6 +1026,64 @@
                   $("#button_t_text").html(tol_text); 
                 }
                 
+              }
+
+              var ZONE_BODY_COLORS = [
+                'rgba(255, 99, 132, 0.38)', 'rgba(54, 162, 235, 0.38)', 'rgba(255, 206, 86, 0.42)',
+                'rgba(75, 192, 192, 0.38)', 'rgba(153, 102, 255, 0.38)', 'rgba(255, 159, 64, 0.38)',
+                'rgba(199, 199, 199, 0.45)', 'rgba(83, 102, 255, 0.35)', 'rgba(255, 99, 71, 0.35)',
+                'rgba(60, 179, 113, 0.35)'
+              ];
+
+              function polygonCentroidBody(xs, ys) {
+                var n = Math.min(xs.length, ys.length);
+                if (n === 0) { return [0, 0]; }
+                var sx = 0, sy = 0;
+                for (var k = 0; k < n; k++) {
+                  sx += Number(xs[k]);
+                  sy += Number(ys[k]);
+                }
+                return [sx / n, sy / n];
+              }
+
+              function truncateBodyLabel(text, maxLen) {
+                if (!text) { return ''; }
+                if (text.length <= maxLen) { return text; }
+                return text.slice(0, maxLen - 1) + '…';
+              }
+
+              function highlightAllBodyZones() {
+                if (!elements_body || elements_body.length === 0) {
+                  return;
+                }
+                refresh_image();
+                var canvas = document.getElementById("canvas");
+                if (!canvas) { return; }
+                var ctx = canvas.getContext("2d");
+
+                for (var i = 0; i < elements_body.length; i++) {
+                  var el = elements_body[i];
+                  if (!el) { continue; }
+                  var xs = el.coor_x;
+                  var ys = el.coor_y;
+                  if (!xs || !ys || xs.length < 3 || ys.length < 3) { continue; }
+
+                  var color = ZONE_BODY_COLORS[i % ZONE_BODY_COLORS.length];
+                  fillPolygon(xs, ys, color);
+
+                  var c = polygonCentroidBody(xs, ys);
+                  var label = truncateBodyLabel(String(el.name || ''), 42);
+                  if (!label) { continue; }
+
+                  ctx.font = 'bold 11px Arial';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.lineWidth = 3;
+                  ctx.strokeStyle = '#ffffff';
+                  ctx.strokeText(label, c[0], c[1]);
+                  ctx.fillStyle = '#1a1a1a';
+                  ctx.fillText(label, c[0], c[1]);
+                }
               }
 
               function info_body(x, y){

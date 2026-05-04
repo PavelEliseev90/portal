@@ -72,7 +72,19 @@
 
                 <div class="card bg-success bg-opacity-10">
                   <div class="card-body">
-                    <label class="fs-6" style="padding: 0.3rem;"> <span class="icon-mbri-touch"></span> Нажмите на изображение и выберите вариант отметки, после этого можно сохранить</label>    
+                    <label class="fs-6" style="padding: 0.3rem;"> <span class="icon-mbri-touch"></span> Нажмите на изображение и выберите вариант отметки, после этого можно сохранить</label>
+                    <div class="row g-1 mb-0 mt-2 align-items-center">
+                      <div class="col-sm-auto">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn_highlight_salon_zones" title="Залить полигоны элементов салона разными цветами с подписями">
+                          <span class="icon-mbri-image-gallery"></span> Зоны салона
+                        </button>
+                      </div>
+                      <div class="col-sm-auto">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_hide_salon_zones" title="Убрать подсветку зон (вернуть только фото и отметки)">
+                          <span class="icon-mbri-close"></span> Скрыть зоны
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <br>
@@ -80,10 +92,21 @@
                   <div style="display: flex; text-align: start; margin-bottom: 1em;">
                     <div class='row g-1 entries flex-nowrap overflow-auto' id="">
                       <div class="col-sm-auto" id="stock">
-                        
-                          <canvas name="canvas" id="canvas" width="341" height="701" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon.png"></canvas>
+                          
+                        {% if params.type == 'page_osmotr_salon' %}
+                          <canvas name="canvas" id="canvas" width="341" height="705" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon.png"></canvas>
                           <img hidden id="photo_1" src="/media_dop/salon_capture/salon.png">
-                    
+                        {% elif params.type == 'page_osmotr_salon_v1_1' %}
+                          <canvas name="canvas" id="canvas" width="705" height="341" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon_1.png"></canvas>
+                          <img hidden id="photo_1" src="/media_dop/salon_capture/salon_1.png">
+                        {% elif params.type == 'page_osmotr_salon_v1_2' %}
+                          <canvas name="canvas" id="canvas" width="705" height="341" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon_2.png"></canvas>
+                          <img hidden id="photo_1" src="/media_dop/salon_capture/salon_2.png">
+                        {% elif params.type == 'page_osmotr_salon_v1_3' %}
+                          <canvas name="canvas" id="canvas" width="705" height="341" style="cursor:crosshair; background:url(/media_dop/salon_capture/salon_3.png"></canvas>
+                          <img hidden id="photo_1" src="/media_dop/salon_capture/salon_3.png">
+                        {% endif %}
+                          
                       </div>
                     </div>         
                   </div>     
@@ -189,6 +212,11 @@
               var array     = new Array();
               var new_image = true;
               
+              {% if params.type == 'page_osmotr_salon' %}
+                var max_w = 250; 
+              {% else %}
+                var max_w = 600;
+              {% endif %}
               var x         = 0;
               var y         = 0;
               var type      = '';
@@ -220,6 +248,13 @@
                 img                 = document.getElementById("photo_1");
                 
                 refresh_image();
+
+                $("#btn_highlight_salon_zones").click(function () {
+                  highlightAllSalonZones();
+                });
+                $("#btn_hide_salon_zones").click(function () {
+                  refresh_image();
+                });
 
               });
 
@@ -420,7 +455,7 @@
                     start = start + 87;
                   };
                   
-                  if (start > 250){
+                  if (start > max_w){
                     start = 1;
                     hei   = 50;
                   }
@@ -434,10 +469,19 @@
                   ctx.strokeStyle = 'black';
                   ctx.font = '14px Arial';
                   ctx.lineWidth = 5;
-                  ctx.strokeText(date_str, 5, 695);
+                  if (max_w > 250){
+                    ctx.strokeText(date_str, 5, 330);
+                  } else {
+                    ctx.strokeText(date_str, 5, 695);
+                  };
+                  
                   ctx.lineWidth = 3;
                   ctx.fillStyle = 'white';
-                  ctx.fillText(date_str, 5, 695);
+                  if (max_w > 250){
+                    ctx.fillText(date_str, 5, 330);
+                  } else {
+                    ctx.fillText(date_str, 5, 695);
+                  }
                   
                   let image_data_url = document.querySelector("#canvas").toDataURL();            
                   $("#url_image").val(image_data_url);
@@ -536,6 +580,64 @@
                   $("#button_t_text").html(tol_text); 
                 }
                 
+              }
+
+              var ZONE_SALON_COLORS = [
+                'rgba(255, 99, 132, 0.38)', 'rgba(54, 162, 235, 0.38)', 'rgba(255, 206, 86, 0.42)',
+                'rgba(75, 192, 192, 0.38)', 'rgba(153, 102, 255, 0.38)', 'rgba(255, 159, 64, 0.38)',
+                'rgba(199, 199, 199, 0.45)', 'rgba(83, 102, 255, 0.35)', 'rgba(255, 99, 71, 0.35)',
+                'rgba(60, 179, 113, 0.35)'
+              ];
+
+              function polygonCentroidSalon(xs, ys) {
+                var n = Math.min(xs.length, ys.length);
+                if (n === 0) { return [0, 0]; }
+                var sx = 0, sy = 0;
+                for (var k = 0; k < n; k++) {
+                  sx += Number(xs[k]);
+                  sy += Number(ys[k]);
+                }
+                return [sx / n, sy / n];
+              }
+
+              function truncateSalonLabel(text, maxLen) {
+                if (!text) { return ''; }
+                if (text.length <= maxLen) { return text; }
+                return text.slice(0, maxLen - 1) + '…';
+              }
+
+              function highlightAllSalonZones() {
+                if (!elements_salon || elements_salon.length === 0) {
+                  return;
+                }
+                refresh_image();
+                var canvas = document.getElementById("canvas");
+                if (!canvas) { return; }
+                var ctx = canvas.getContext("2d");
+
+                for (var i = 0; i < elements_salon.length; i++) {
+                  var el = elements_salon[i];
+                  if (!el) { continue; }
+                  var xs = el.coor_x;
+                  var ys = el.coor_y;
+                  if (!xs || !ys || xs.length < 3 || ys.length < 3) { continue; }
+
+                  var color = ZONE_SALON_COLORS[i % ZONE_SALON_COLORS.length];
+                  fillPolygon(xs, ys, color);
+
+                  var c = polygonCentroidSalon(xs, ys);
+                  var label = truncateSalonLabel(String(el.name || ''), 42);
+                  if (!label) { continue; }
+
+                  ctx.font = 'bold 11px Arial';
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.lineWidth = 3;
+                  ctx.strokeStyle = '#ffffff';
+                  ctx.strokeText(label, c[0], c[1]);
+                  ctx.fillStyle = '#1a1a1a';
+                  ctx.fillText(label, c[0], c[1]);
+                }
               }
 
               function info_body(x, y){

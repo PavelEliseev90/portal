@@ -1,0 +1,575 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Калькулятор сделки {% endblock %}
+
+{% block content %}
+<style>
+  .deal-calculation-page {
+    padding: 1.5rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+  }
+
+  .deal-section {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .deal-section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #002a5a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e0e7ef;
+  }
+
+  .deal-section-subtitle {
+    font-size: 0.95rem;
+    color: #6c7a92;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .car-card {
+    border: 2px solid #e0e7ef;
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .car-card:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.1);
+  }
+
+  .car-card.selected {
+    border-color: #4a90e2;
+    background: #f0f7ff;
+  }
+
+  .estimation-card {
+    border: 2px solid #e0e7ef;
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .estimation-card:hover {
+    border-color: #4a90e2;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.1);
+  }
+
+  .estimation-card.selected {
+    border-color: #4a90e2;
+    background: #f0f7ff;
+  }
+
+  .total-card {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: #fff;
+    border-radius: 1.25rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 25px 45px rgba(74, 144, 226, 0.2);
+  }
+
+  .total-card h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .total-card p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+  }
+
+  .price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e0e7ef;
+  }
+
+  .price-item:last-child {
+    border-bottom: none;
+  }
+
+  .price-item-label {
+    color: #6c7a92;
+    font-size: 0.95rem;
+  }
+
+  .price-item-value {
+    font-weight: 600;
+    color: #002a5a;
+    font-size: 1.1rem;
+  }
+
+  .price-item-value.negative {
+    color: #dc2626;
+  }
+
+  .price-item-value.positive {
+    color: #10b981;
+  }
+
+  .form-select-search {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e7ef;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .form-select-search:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  }
+
+  .service-checkbox {
+    padding: 0.75rem;
+    border: 1px solid #e0e7ef;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .service-checkbox:hover {
+    background: #f8f9fa;
+    border-color: #4a90e2;
+  }
+
+  .service-checkbox input[type="checkbox"]:checked + label {
+    color: #4a90e2;
+    font-weight: 600;
+  }
+
+  .placeholder-text {
+    color: #8ea1ba;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .coming-soon {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: #6c7a92;
+  }
+
+  .btn-calculate {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-calculate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+  }
+</style>
+
+<div class="deal-calculation-page">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 600; color: #002a5a; margin: 0;">Калькулятор сделки</h1>
+      <p style="color: #6c7a92; margin: 0.5rem 0 0 0;">Расчет стоимости сделки по продаже автомобиля</p>
+    </div>
+  </div>
+
+  <form method="get" id="calculationForm">
+    <div class="row">
+      <!-- Левая колонка - Выбор данных -->
+      <div class="col-lg-8">
+        <!-- Блок 1: Выбор нового автомобиля -->
+        <div class="deal-section">
+          <h3 class="deal-section-title">1. Новый автомобиль</h3>
+          {% if params.selected_car == None %}
+          <div class="mb-3">
+            <label class="deal-section-subtitle">Выберите автомобиль из диспозиции:</label>
+            <input type="text" class="form-control mb-2" id="carSearch" placeholder="Поиск по названию, VIN, марке, модели..." autocomplete="off" onkeyup="filterCars()">
+            <select name="car" class="form-select-search" id="carSelect" size="10" onchange="this.form.submit()" style="display: none;">
+              <option value="">-- Выберите автомобиль --</option>
+              {% for car in params.cars_list %}
+                <option value="{{ car.slug }}" data-name="{{ car.name|lower }}" data-vin="{{ car.vin|lower }}" 
+                        {% if params.selected_car and params.selected_car.slug == car.slug %}selected{% endif %}>
+                  {{ car.name }} - {{ car.price|floatformat:"0g" }} ₽
+                  {% if car.modification_autoru %}
+                    ({{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }})
+                  {% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <div id="carSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; display: none; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
+              {% for car in params.cars_list %}
+                <a href="?car={{ car.slug }}{% if params.selected_estimation %}&estimation_id={{ params.selected_estimation.id }}{% endif %}{% if params.use_estimation_in_payment %}&use_estimation_in_payment=1{% endif %}{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
+                   class="list-group-item list-group-item-action car-option" 
+                   data-name="{{ car.name|lower }}" 
+                   data-vin="{{ car.vin|lower }}"
+                   {% if params.selected_car and params.selected_car.slug == car.slug %}style="background: #f0f7ff;"{% endif %}>
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <strong>{{ car.name }}</strong>
+                      {% if car.modification_autoru %}
+                        <br><small class="text-muted">{{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}</small>
+                      {% endif %}
+                      {% if car.vin %}<br><small class="text-muted">VIN: {{ car.vin }}</small>{% endif %}
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">{{ car.price|floatformat:"0g" }} ₽</strong>
+                    </div>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if params.selected_car %}
+            <div class="car-card selected">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h4 style="margin: 0 0 0.5rem 0; color: #002a5a;">{{ params.selected_car.name }}</h4>
+                  <p style="margin: 0; color: #6c7a92; font-size: 0.9rem;">
+                    {% if params.selected_car.modification_autoru %}
+                      {{ params.selected_car.modification_autoru.model.mark.name }} {{ params.selected_car.modification_autoru.model.name }}
+                    {% endif %}
+                    {% if params.selected_car.complectation_autoru %}
+                      • {{ params.selected_car.complectation_autoru.name }} 
+                    {% endif %}
+                    {% if params.selected_car.year %} • {{ params.selected_car.year }} г.{% endif %}
+                    {% if params.selected_car.run %} • Пробег: {{ params.selected_car.run|floatformat:"0g" }} км{% endif %}
+                  </p>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 1.5rem; font-weight: 700; color: #4a90e2;">
+                    {{ params.selected_car.price|floatformat:"0g" }} ₽
+                  </div>
+                  <a href="{% url 'avtosalon:slug' params.selected_car.slug %}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                    Открыть карточку
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="placeholder-text">
+              Выберите автомобиль из списка выше
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Блок 2: Акции (заглушка) -->
+        <!-- TODO: Реализовать выбор акций на автомобиль
+             - Создать модель для акций (CarPromotion)
+             - Добавить связь с RefCarsOrganization
+             - Реализовать расчет скидки по акциям
+             - Добавить возможность применения нескольких акций одновременно
+             - Учесть условия применения акций (даты, модели, подразделения и т.д.)
+        -->
+        <div class="deal-section">
+          <h3 class="deal-section-title">2. Акции на автомобиль</h3>
+          <div class="coming-soon">
+            <p style="margin: 0; font-size: 1rem;">Функционал будет реализован позже</p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #8ea1ba;">
+              Здесь будет выбор доступных акций на выбранный автомобиль с автоматическим расчетом скидки
+            </p>
+          </div>
+        </div>
+
+        <!-- Блок 3: Интерактивная оценка в счет -->
+        <div class="deal-section">
+          <h3 class="deal-section-title">3. Интерактивная оценка в счет сдаваемого автомобиля</h3>
+          <div class="mb-3">
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" name="use_estimation_in_payment" value="1" id="useEstimationCheck" 
+                     {% if params.use_estimation_in_payment %}checked{% endif %} onchange="this.form.submit()">
+              <label class="form-check-label" for="useEstimationCheck">
+                Использовать интерактивную оценку в счет сдаваемого автомобиля
+              </label>
+            </div>
+            
+            {% if params.use_estimation_in_payment %}
+              <label class="deal-section-subtitle">Выберите интерактивную оценку:</label>
+              <input type="text" class="form-control mb-2" id="estimationSearch" placeholder="Поиск по номеру РЛК, подразделению..." autocomplete="off" onkeyup="filterEstimations()">
+              <div id="estimationSelectDropdown" class="list-group position-relative" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e7ef; border-radius: 0.5rem;">
+                {% for estimation in params.estimations_list %}
+                  <a href="?{% if params.selected_car %}car={{ params.selected_car.slug }}&{% endif %}estimation_id={{ estimation.id }}&use_estimation_in_payment=1{% for sid in params.selected_opfu_ids %}&opfu_services={{ sid }}{% endfor %}" 
+                     class="list-group-item list-group-item-action estimation-option"
+                     data-rlk="{{ estimation.rlk.nomer|default:''|lower }}"
+                     data-unit="{% if estimation.rlk.unit_dc %}{{ estimation.rlk.unit_dc.name|lower }}{% elif estimation.rlk.unit %}{{ estimation.rlk.unit.name|lower }}{% endif %}"
+                     {% if params.selected_estimation and params.selected_estimation.id == estimation.id %}style="background: #f0f7ff;"{% endif %}>
+                    <div class="d-flex justify-content-between">
+                      <div>
+                        <strong>РЛК №{{ estimation.rlk.nomer|default:"-" }}</strong>
+                        <br><small class="text-muted">
+                          {% if estimation.rlk.unit_dc %}{{ estimation.rlk.unit_dc.name }}{% elif estimation.rlk.unit %}{{ estimation.rlk.unit.name }}{% endif %}
+                          {% if estimation.start_estimation %} • {{ estimation.start_estimation|date:"d.m.Y H:i" }}{% endif %}
+                        </small>
+                      </div>
+                    </div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+          
+          {% if params.selected_estimation %}
+            <div class="estimation-card selected">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h4 style="margin: 0 0 0.5rem 0; color: #002a5a;">
+                    РЛК №{{ params.selected_estimation.rlk.nomer|default:"-" }}
+                  </h4>
+                  <p style="margin: 0; color: #6c7a92; font-size: 0.9rem;">
+                    {% if params.selected_estimation.rlk.unit_dc %}
+                      {{ params.selected_estimation.rlk.unit_dc.name }}
+                    {% elif params.selected_estimation.rlk.unit %}
+                      {{ params.selected_estimation.rlk.unit.name }}
+                    {% endif %}
+                    {% if params.selected_estimation.start_estimation %}
+                      • {{ params.selected_estimation.start_estimation|date:"d.m.Y H:i" }}
+                    {% endif %}
+                  </p>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">
+                    {{ params.estimation_price|floatformat:"0g" }} ₽
+                  </div>
+                  <a href="/eco/{{ params.selected_estimation.rlk.id }}/" target="_blank" class="btn btn-sm btn-outline-success mt-2">
+                    Открыть оценку
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% elif params.use_estimation_in_payment %}
+            <div class="placeholder-text">
+              Выберите интерактивную оценку из списка выше
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Блок 4: БУ комплект колес (заглушка) -->
+        <!-- TODO: Реализовать выбор БУ комплекта колес
+             - Создать модель для БУ колес (UsedWheelsSet)
+             - Добавить связь с RefCarsOrganization или отдельную таблицу
+             - Реализовать выбор комплекта (размер, сезонность, состояние)
+             - Добавить расчет стоимости БУ колес
+             - Учесть возможность обмена (зачет стоимости старых колес)
+        -->
+        <div class="deal-section">
+          <h3 class="deal-section-title">4. БУ комплект колес</h3>
+          <div class="coming-soon">
+            <p style="margin: 0; font-size: 1rem;">Функционал будет реализован позже</p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #8ea1ba;">
+              Здесь будет выбор БУ комплекта колес с возможностью обмена и расчета стоимости
+            </p>
+          </div>
+        </div>
+
+        <!-- Блок 5: ОПФУ услуги -->
+        <!-- TODO: Улучшить блок ОПФУ услуг
+             - Добавить поиск по услугам
+             - Добавить категории услуг (группировка)
+             - Реализовать расчет стоимости каждой услуги (цена из RefService или отдельная таблица)
+             - Добавить возможность указания количества для каждой услуги
+             - Добавить возможность применения скидок на услуги
+             - Показывать итоговую стоимость выбранных услуг
+             - Добавить возможность сохранения "пакетов услуг"
+        -->
+        <div class="deal-section">
+          <h3 class="deal-section-title">5. ОПФУ услуги</h3>
+          <div class="mb-3">
+            <label class="deal-section-subtitle">Выберите услуги:</label>
+            <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Поиск по названию услуги..." autocomplete="off" onkeyup="filterServices()">
+            <div id="servicesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e7ef; border-radius: 0.5rem; padding: 0.5rem;">
+              {% for service in params.opfu_services %}
+                <div class="service-checkbox service-item" data-name="{{ service.name|lower }}">
+                  <input type="checkbox" name="opfu_services" value="{{ service.id }}" id="service_{{ service.id }}"
+                         {% if service in params.selected_opfu_services %}checked{% endif %} onchange="this.form.submit()">
+                  <label for="service_{{ service.id }}" style="margin-left: 0.5rem; cursor: pointer;">
+                    {{ service.name }}
+                    {% if service.article %}<span style="color: #8ea1ba; font-size: 0.85rem;">({{ service.article }})</span>{% endif %}
+                  </label>
+                </div>
+              {% empty %}
+                <div class="placeholder-text">
+                  Нет доступных услуг
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          {% if params.selected_opfu_services %}
+            <div class="mt-3">
+              <h5 style="color: #002a5a; margin-bottom: 0.5rem;">Выбранные услуги:</h5>
+              <div class="d-flex flex-wrap gap-2">
+                {% for service in params.selected_opfu_services %}
+                  <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+                    {{ service.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Правая колонка - Итоги -->
+      <div class="col-lg-4">
+        <div class="deal-section">
+          
+          <h3 class="deal-section-title">Минимальный КМ</h3>
+          
+          <div class="price-item">
+            <span class="price-item-label">{{}}:</span>
+            <span class="price-item-value">{{ params.car_price|floatformat:"0g" }} ₽</span>
+          </div>
+
+        </div>
+
+        <div class="deal-section">
+          <h3 class="deal-section-title">Итоги калькуляции</h3>
+          
+          <div class="price-item">
+            <span class="price-item-label">Цена автомобиля:</span>
+            <span class="price-item-value">{{ params.car_price|floatformat:"0g" }} ₽</span>
+          </div>
+          
+          {% if params.use_estimation_in_payment and params.estimation_price > 0 %}
+            <div class="price-item">
+              <span class="price-item-label">Оценка в счет (вычет):</span>
+              <span class="price-item-value negative">-{{ params.estimation_price|floatformat:"0g" }} ₽</span>
+            </div>
+          {% endif %}
+          
+          <div class="price-item">
+            <span class="price-item-label">Акции (скидка):</span>
+            <span class="price-item-value negative">-{{ params.promotions_discount|floatformat:"0g" }} ₽</span>
+          </div>
+          
+          <div class="price-item">
+            <span class="price-item-label">БУ комплект колес:</span>
+            <span class="price-item-value negative">-{{ params.bu_wheels_price|floatformat:"0g" }} ₽</span>
+          </div>
+          
+          <div class="price-item">
+            <span class="price-item-label">ОПФУ услуги:</span>
+            <span class="price-item-value positive">+{{ params.opfu_services_total|floatformat:"0g" }} ₽</span>
+          </div>
+          
+          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
+            <div class="total-card">
+              <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого к оплате:</p>
+              <h2>{{ params.total_amount|floatformat:"0g" }} ₽</h2>
+            </div>
+          </div>
+          
+          <div class="mt-3">
+            <button type="button" class="btn btn-calculate w-100" onclick="saveCalculation()">
+              Сохранить калькуляцию
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+</div>
+
+<script>
+  function saveCalculation() {
+    // Здесь будет логика сохранения калькуляции
+    alert('Функция сохранения калькуляции будет реализована позже');
+  }
+
+  // Поиск по автомобилям
+  function filterCars() {
+    const searchTerm = document.getElementById('carSearch').value.toLowerCase();
+    const options = document.querySelectorAll('.car-option');
+    const select = document.getElementById('carSelect');
+    const dropdown = document.getElementById('carSelectDropdown');
+    
+    if (searchTerm.length > 0) {
+      select.style.display = 'none';
+      dropdown.style.display = 'block';
+      
+      options.forEach(option => {
+        const name = option.getAttribute('data-name') || '';
+        const vin = option.getAttribute('data-vin') || '';
+        if (name.includes(searchTerm) || vin.includes(searchTerm)) {
+          option.style.display = '';
+        } else {
+          option.style.display = 'none';
+        }
+      });
+    } else {
+      select.style.display = 'block';
+      dropdown.style.display = 'none';
+    }
+  }
+
+  // Поиск по оценкам
+  function filterEstimations() {
+    const searchTerm = document.getElementById('estimationSearch').value.toLowerCase();
+    const options = document.querySelectorAll('.estimation-option');
+    
+    options.forEach(option => {
+      const rlk = option.getAttribute('data-rlk') || '';
+      const unit = option.getAttribute('data-unit') || '';
+      if (rlk.includes(searchTerm) || unit.includes(searchTerm)) {
+        option.style.display = '';
+      } else {
+        option.style.display = 'none';
+      }
+    });
+  }
+
+  // Поиск по услугам
+  function filterServices() {
+    const searchTerm = document.getElementById('serviceSearch').value.toLowerCase();
+    const items = document.querySelectorAll('.service-item');
+    
+    items.forEach(item => {
+      const name = item.getAttribute('data-name') || '';
+      if (name.includes(searchTerm)) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  // Показываем dropdown при клике на поле поиска автомобилей
+  document.addEventListener('DOMContentLoaded', function() {
+    const carSearch = document.getElementById('carSearch');
+    if (carSearch) {
+      carSearch.addEventListener('focus', function() {
+        if (this.value.length > 0 || document.getElementById('carSelectDropdown').children.length > 0) {
+          document.getElementById('carSelectDropdown').style.display = 'block';
+          document.getElementById('carSelect').style.display = 'none';
+        }
+      });
+    }
+  });
+</script>
+
+{% endblock %}
+

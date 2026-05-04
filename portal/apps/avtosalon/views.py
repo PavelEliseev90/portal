@@ -5,7 +5,7 @@ from django.contrib.auth import login as dj_login
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password, check_password
 from refs.models import AutoruComplectation, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefTypeDrive
-from refs.models import RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
+from refs.models import RefCarsOrganizationAction, RefStagePrice, RefTypeSaleCarsOrganization, RefStatusCarsOrganization, RefTypeDrive, RefTypeBody, RefTypeKpp, RefUnit, RefCity, RefSpecificationData, RefEventCarsOrganization, RefAvito, RefCarsOrganizationFiles, RefCarsOrganization, AutoruModification, AutoruComplectation, AutoruModel, AutoruMark, AutoruModificationSpecifications
 from api.views_avtosalon import add_statistic_cars_organization
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
@@ -37,6 +37,8 @@ from profiles.models import Profiles
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.crypto import get_random_string
+from prices_car.models import EmailPushCar, CarCalculations
+
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
 
@@ -1243,6 +1245,7 @@ def specifications(request, slug):
     return render(request, "avtosalon/car_new_specifications.html", {'params': params})
 
 
+@login_required
 def price_edit(request, slug):
     
     car     = RefCarsOrganization.objects.filter(slug = slug)[0]
@@ -1363,16 +1366,59 @@ def price_edit(request, slug):
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
 
 
+@login_required
 def price(request, slug):
+    
     car = RefCarsOrganization.objects.filter(slug=slug).select_related(
         'unit', 'complectation_autoru', 'modification_autoru',
         'modification_autoru__model', 'modification_autoru__model__mark',
     ).first()
     if not car:
         raise Http404
-
+    
+    dop_car_info = {}
     chat, created = Chat.objects.get_or_create(name=car.slug, slug='car_' + str(car.slug))
+    user = request.user 
 
+    if 'del_u' in request.GET:
+        uusr = User.objects.get(id = request.GET.get('del_u'))
+        car.access_user.remove(uusr)
+        car.save()
+        return HttpResponseRedirect(request.path_info)
+    
+    if 'add_u' in request.GET:
+                
+        uusr = User.objects.get(id = request.GET.get('add_u'))
+        car.access_user.add(uusr)
+        car.save()
+    
+        new_message               = EmailPushCar()
+        new_message.car           = car
+        new_message.user          = uusr
+        new_message.email         = uusr.email
+        new_message.comment       = 'Вы добавлены к информации по ценнообразованию.'
+        new_message.price         = True
+        new_message.save()
+
+        return HttpResponseRedirect(request.path_info)
+    
+    if request.method == 'POST':
+        
+        if 'min_km' in request.POST:
+            min_km = int(request.POST.get('min_km', '0'))
+            car.min_km = min_km
+            car.min_km_user = user
+            car.min_km_date = datetime.now()
+
+            car.save(update_fields =['min_km', 'min_km_user', 'min_km_date'])
+            if min_km != 0:
+                send_web_socket_message(group = 'car_' + str(car.slug), chat = chat, user = user, text='Установлен минимальный км - ' + str(min_km), estimation_id='')
+            else:
+                send_web_socket_message(group = 'car_' + str(car.slug), chat = chat, user = user, text='Отключен ручной минимальный км', estimation_id='')
+            return HttpResponseRedirect(request.get_full_path())            
+    
+    current_tab = request.GET.get('tab', 'avto')
+    
     finance = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
     marketing = 0
     avtohubs_list = Avtohub.objects.filter(vin=car.vin).filter(date__range=[car.lo_link_date, car.date_refresh]).order_by('-date')
@@ -1395,9 +1441,12 @@ def price(request, slug):
     now = timezone.now()
     first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_end = first_day_this_month - timedelta(seconds=1)
-    last_month_start = last_month_end.replace(day=1)
+    last_month_start = last_month_end.replace(day=1, hour=1, minute=1, second=0)
+    last_month_end = now
 
     analytics = {
+        'last_month_start'  : last_month_start,
+        'last_month_end'    : last_month_end,
         'count_in_unit': 0,
         'count_all_dc': 0,
         'unit_sales_count': 0,
@@ -1419,20 +1468,76 @@ def price(request, slug):
 
     from powerbi.models import Cumulative
     from django.db.models.functions import TruncDate
-
+    
+    sale_type          = int(request.GET.get('sale_type', '0'))
+    
     q_cumulative = Cumulative.objects.filter(
         DataProdazhi__gte=last_month_start,
         DataProdazhi__lte=last_month_end,
+        SebestoimostPoDokumentu__gt = 0
     )
     if car.unit and car.unit.name:
         q_unit = q_cumulative.filter(PodrazdelenieDTs__icontains=car.unit.name)
+        
+        if sale_type == 1:
+            model_list = AutoruModification.objects.filter(model = car.modification_autoru.model).values_list('idSite', flat=True)
+            q_unit = q_unit.filter(IDModifikatsii__in = model_list)
+        elif sale_type == 2: 
+            q_unit = q_unit.filter(IDModifikatsii = car.modification_autoru.idSite)
+        elif sale_type == 3:
+            q_unit = q_unit.filter(IdKomplektatsii = car.complectation_autoru.idSite)
+
         analytics['unit_sales_count'] = q_unit.count()
+        q_unit = q_unit.annotate(
+            cum = Sum('SummaMarzhiBezNDS') + Sum('VPOPFU') + Sum('SummaTreydInPoPlanu') + Sum('ValovayaPribylZChShiny') + Sum('SummaRabot') + Sum('ValovayaPribylZCh') + Sum('SummaGosreg')
+        )
         analytics['cumulative_detail'] = list(
             q_unit.order_by('-DataProdazhi')[:100].values(
                 'DataProdazhi', 'Marka', 'Model', 'Modifikatsiya', 'VIN',
-                'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs', 'TipProdazhi',
+                'VyruchkaZaAvto', 'KolichestvoAvto', 'PodrazdelenieDTs', 
+                'TipProdazhi', 'SummaMarzhiBezNDS', 'VPOPFU', 'SummaTreydInPoPlanu',
+                'ValovayaPribylZChShiny', 'SummaRabot', 'ValovayaPribylZCh', 'SummaGosreg', 'cum'  
             )
         )
+
+        analytics['cumulative_sum_detail'] = q_unit.aggregate(
+                sum_SummaMarzhiBezNDS = Sum("SummaMarzhiBezNDS"),
+                sum_VPOPFU = Sum("VPOPFU"),
+                sum_SummaTreydInPoPlanu = Sum("SummaTreydInPoPlanu"),
+                sum_ValovayaPribylZChShiny = Sum("ValovayaPribylZChShiny"),
+                sum_SummaRabot = Sum("SummaRabot"),
+                sum_ValovayaPribylZCh = Sum("ValovayaPribylZCh"),
+                sum_SummaGosreg = Sum("SummaGosreg"),
+                sum_count = Count("VIN"),   
+            )
+        
+        analytics['cumulative_sum'] = analytics['cumulative_sum_detail']['sum_SummaMarzhiBezNDS'] + analytics['cumulative_sum_detail']['sum_VPOPFU'] + analytics['cumulative_sum_detail']['sum_SummaTreydInPoPlanu'] + analytics['cumulative_sum_detail']['sum_ValovayaPribylZChShiny'] + analytics['cumulative_sum_detail']['sum_SummaRabot'] + analytics['cumulative_sum_detail']['sum_ValovayaPribylZCh'] + analytics['cumulative_sum_detail']['sum_SummaGosreg']
+        
+        if analytics['cumulative_sum_detail']['sum_count'] > 0: 
+            analytics['udelka'] = analytics['cumulative_sum'] / analytics['cumulative_sum_detail']['sum_count']  
+            analytics['udelka_count']  = analytics['cumulative_sum_detail']['sum_count']
+        
+        js_data = {
+            'sum_SummaMarzhiBezNDS' : analytics['cumulative_sum_detail']['sum_SummaMarzhiBezNDS'] / analytics['cumulative_sum'] * 100,
+            'sum_VPOPFU' : analytics['cumulative_sum_detail']['sum_VPOPFU'] / analytics['cumulative_sum'] * 100,
+            'sum_SummaTreydInPoPlanu' : analytics['cumulative_sum_detail']['sum_SummaTreydInPoPlanu'] / analytics['cumulative_sum'] * 100,
+            'sum_ValovayaPribylZChShiny' : analytics['cumulative_sum_detail']['sum_ValovayaPribylZChShiny'] / analytics['cumulative_sum'] * 100, 
+            'sum_SummaRabot' : analytics['cumulative_sum_detail']['sum_SummaRabot'] / analytics['cumulative_sum'] * 100, 
+            'sum_ValovayaPribylZCh' : analytics['cumulative_sum_detail']['sum_ValovayaPribylZCh'] / analytics['cumulative_sum'] * 100, 
+            'sum_SummaGosreg' : analytics['cumulative_sum_detail']['sum_SummaGosreg'] / analytics['cumulative_sum'] * 100, 
+        }
+        js_data_udelka = {
+            'udelka_SummaMarzhiBezNDS' : analytics['cumulative_sum_detail']['sum_SummaMarzhiBezNDS'] / analytics['cumulative_sum_detail']['sum_count'],
+            'udelka_VPOPFU' : analytics['cumulative_sum_detail']['sum_VPOPFU'] / analytics['cumulative_sum_detail']['sum_count'],
+            'udelka_SummaTreydInPoPlanu' : analytics['cumulative_sum_detail']['sum_SummaTreydInPoPlanu'] / analytics['cumulative_sum_detail']['sum_count'],
+            'udelka_ValovayaPribylZChShiny' : analytics['cumulative_sum_detail']['sum_ValovayaPribylZChShiny'] / analytics['cumulative_sum_detail']['sum_count'], 
+            'udelka_SummaRabot' : analytics['cumulative_sum_detail']['sum_SummaRabot'] / analytics['cumulative_sum_detail']['sum_count'], 
+            'udelka_ValovayaPribylZCh' : analytics['cumulative_sum_detail']['sum_ValovayaPribylZCh'] / analytics['cumulative_sum_detail']['sum_count'], 
+            'udelka_SummaGosreg' : analytics['cumulative_sum_detail']['sum_SummaGosreg'] / analytics['cumulative_sum_detail']['sum_count'], 
+        }
+        analytics['cumulative_sum_detail_percent']  = js_data
+        analytics['cumulative_sum_detail_udelka']   = js_data_udelka
+
         # Продажи по дням для графика
         sales_by_day_qs = q_unit.annotate(
             day=TruncDate('DataProdazhi')
@@ -1463,12 +1568,15 @@ def price(request, slug):
     # Заказ-наряды с типом ремонта «допоборудование» (RefTypeRepair.dop=True)
     from documents.models import DocZN
     zn_list = []
+    info_dop = None
     if car.vin:
-        zn_list = list(
-            DocZN.objects.filter(cars__vin=car.vin, typeRemont__dop=True)
-            .select_related('typeRemont', 'readyStatus', 'unit')
-            .order_by('-dataTime')[:200]
-        )
+        zn_list = DocZN.objects.filter(cars__vin=car.vin, typeRemont__dop=True).select_related('typeRemont', 'readyStatus', 'unit').order_by('-dataTime')[:200]
+        
+        info_dop = zn_list.aggregate(
+                count=Count("id"),
+                sum_amount=Sum("amount")  
+            )
+        dop_car_info['aggretgate_dop_zn'] = info_dop
 
     # Аналитика по ГК (все подразделения организации)
     analytics_gk = {
@@ -1510,57 +1618,73 @@ def price(request, slug):
                 )
             )
 
-    current_tab = request.GET.get('tab', 'avto')
     list_price = list(RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')[:50])
 
     # Склад: остатки по модели (текущее подразделение или все подразделения)
-    warehouse_current = []
-    warehouse_all = []
-    warehouse_scope = request.GET.get('warehouse', 'current')
+    sclad = list()
+    warehouse_scope     = ''
+    sclad_type          = int(request.GET.get('sclad_type', '1'))
     if car.modification_autoru_id and car.modification_autoru.model_id:
-        model_id = car.modification_autoru.model_id
-        warehouse_current = list(
-            RefCarsOrganization.objects.filter(
-                unit_id=car.unit_id,
-                modification_autoru__model_id=model_id,
-                quantity__gt=0,
-            )
-            .select_related('unit', 'modification_autoru', 'complectation_autoru')
-            .order_by('name')[:500]
-        )
-        warehouse_all = list(
-            RefCarsOrganization.objects.filter(
-                modification_autoru__model_id=model_id,
-                quantity__gt=0,
-            )
-            .select_related('unit', 'modification_autoru', 'complectation_autoru')
-            .order_by('unit__name', 'name')[:500]
-        )
+        
+        model_id            = car.modification_autoru.model_id
+        warehouse_scope     = request.GET.get('warehouse_scope') 
+        
+        if warehouse_scope != None and warehouse_scope == 'all':
+            sclad = RefCarsOrganization.objects.filter(
+                    quantity__gt=0,
+                ).select_related('unit', 'modification_autoru', 'complectation_autoru').order_by('name')
+        else:
+            sclad = RefCarsOrganization.objects.filter(
+                    unit_id =car.unit_id,
+                    quantity__gt=0,
+                ).select_related('unit', 'modification_autoru', 'complectation_autoru').order_by('name')
 
+        if sclad_type == 1:
+            sclad = sclad.filter(modification_autoru__model = car.modification_autoru.model)
+        elif sclad_type == 2: 
+            sclad = sclad.filter(modification_autoru = car.modification_autoru)
+        elif sclad_type == 3:
+            sclad = sclad.filter(complectation_autoru = car.complectation_autoru)
+         
     # Объекты для шаблона (страница price не загружает полные данные оценки/сделок)
     from types import SimpleNamespace
     estimation_empty = SimpleNamespace(tasks=[])
     interactiv_rlk_empty = SimpleNamespace(estimation=estimation_empty)
 
+    car_analitics   = car.unit_info()
+    sale_info       = car.sale_info()
+    cumulative_data = car.cumulative_data()
+
+    car_price_and_dop = car.cost_price
+    if info_dop != None and info_dop['sum_amount'] != None:
+         car_price_and_dop = car_price_and_dop + info_dop['sum_amount']
+
+    calcs = CarCalculations.objects.filter(car = car)
     params = {
-        'object': car,
-        'chat': chat,
-        'messages': chat.get_last_messages(),
-        'selected': selected,
-        'avtohubs': avtohubs,
-        'finance': finance,
-        'marketing': marketing,
-        'user': request.user,
-        'analytics': analytics,
-        'analytics_gk': analytics_gk,
+        'object'    : car,
+        'chat'      : chat,
+        'calcs'     : calcs,
+        'warehouse_scope'       : warehouse_scope,
+        'sclad_type'            : sclad_type,
+        'sale_type'             : sale_type,
+        'car_price_and_dop' : car_price_and_dop,
+        'sale_info' : sale_info,
+        'car_analitics' : car_analitics,
+        'cumulative_data'   : cumulative_data,
+        'messages'      : chat.get_last_messages(),
+        'selected'      : selected,
+        'avtohubs'      : avtohubs,
+        'finance'       : finance,
+        'marketing'     : marketing,
+        'user'          : request.user,
+        'analytics'     : analytics,
+        'analytics_gk'  : analytics_gk,
         'last_month_start': last_month_start,
         'last_month_end': last_month_end,
         'zn_list': zn_list,
         'current_tab': current_tab,
         'list_price': list_price,
-        'warehouse_current': warehouse_current,
-        'warehouse_all': warehouse_all,
-        'warehouse_scope': warehouse_scope,
+        'sclad': sclad,
         'car_tasks': list(
             RegCarsOrganizationTask.objects.filter(car=car)
             .select_related('staff_created', 'staff_assignee')
@@ -1576,11 +1700,41 @@ def price(request, slug):
         'calc_express': [],
         'calc_autohub': [],
         'calc_1C': [],
+        'dop_car_info'   : dop_car_info,
         'base_template': 'base_web.html' if (request.user.is_authenticated and request.user.is_staff) else 'base_web_customer.html',
     }
 
     return render(request, "avtosalon/car_new_price.html", {'params': params})
 
+
+def access_user(request, slug):
+    search = request.GET.get('search', '')
+    users = list()
+    if id != '' and search != '':
+        car = RefCarsOrganization.objects.filter(slug=slug).first()
+        users = User.objects.exclude(pk__in = car.access_user.all().values_list('id')).exclude(email = '').exclude(first_name = '').filter(is_active = True).filter(is_staff = True)
+        if search != '':
+            users = users.filter(Q(profiles__eco_name__icontains = search) | Q(email__icontains = search))    
+            users = list(users.order_by('last_name', 'first_name').values('profiles__eco_name', 'last_name', 'first_name', 'id', 'email'))
+    return JsonResponse(users, safe=False, status=status.HTTP_200_OK)
+
+
+def send_web_socket_message(group, chat, user, text, estimation_id):
+    from task_manager.views import send_message_socket
+    message_json = {
+            'chat_id'       : str(chat.pk),
+            'name'          : str(user),
+            'chat'          : group,
+            'message'       : text,
+            'username'      : str(user),
+            'last_name'     : user.last_name,
+            'first_name'    : user.first_name,
+            'psevdo_name'   : user.profiles.eco_name,
+            'eco'           : user.profiles.eco,
+            'estimation_id' : estimation_id
+        }    
+    
+    send_message_socket(message = message_json)
 
 @login_required
 def photos_edit(request, slug):
@@ -2517,9 +2671,7 @@ def info_js(request, slug):
 
 @login_required
 def deal_calculation(request):
-    """
-    Калькулятор сделки автомобиля
-    """
+    
     try:
         from analytics.models import TradeInFunnel
     except ImportError:
@@ -2531,8 +2683,233 @@ def deal_calculation(request):
         'request': request,
     }
     
+    # cumulative_data = car.cumulative_data()
     # Получаем выбранный автомобиль из диспозиции
-    car_slug = request.GET.get('car', '')
+    
+    car_slug        = request.GET.get('car', '')
+    calculation     = request.GET.get('calculation', '')
+    calculation_id  = ''
+    if calculation == '':
+        calculation_id = calculation
+    else:
+        calculation_id = None
+
+    car = RefCarsOrganization.objects.get(slug=car_slug)
+
+    if request.method == 'POST':
+
+        new_object =  CarCalculations()
+        new_object.car = car
+        new_object.user = request.user
+        new_object.comment = request.POST.get('comment', '')
+
+        new_object.discount        = int(request.POST.get('custom_discount', '0'))
+        new_object.price           = int(request.POST.get('car_price_and_dop', '0'))
+        new_object.custom_opfu     = int(request.POST.get('custom_opfu', '0'))
+        new_object.custom_tradein  = int(request.POST.get('custom_tradein', '0'))
+        new_object.custom_wheels   = int(request.POST.get('custom_wheels', '0'))
+        new_object.custom_grz      = int(request.POST.get('custom_grz', '0'))
+        new_object.custom_work     = int(request.POST.get('custom_work', '0'))
+        new_object.custom_product  = int(request.POST.get('custom_product', '0'))
+        new_object.save()
+        
+        return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')        
+
+    from documents.models import DocZN
+    zn_list = []
+    info_dop = None
+    if car.vin:
+        zn_list = DocZN.objects.filter(cars__vin=car.vin, typeRemont__dop=True).select_related('typeRemont', 'readyStatus', 'unit').order_by('-dataTime')[:200]
+        
+        info_dop = zn_list.aggregate(
+                count=Count("id"),
+                sum_amount=Sum("amount")  
+            )
+        
+    car_price_and_dop = car.cost_price
+    if info_dop != None and info_dop['sum_amount'] != None:
+         car_price_and_dop = car_price_and_dop + info_dop['sum_amount']
+
+    # Расчет итоговой суммы
+    total_amount = 0
+    car_price = 0
+    promotions_discount = 0
+    bu_wheels_price = 0
+    opfu_services_total = 0
+    
+    selected_opfu_ids = request.GET.getlist('opfu_services')
+    if not selected_opfu_ids:
+        selected_opfu_ids = []
+    selected_opfu_services = []
+    if selected_opfu_ids:
+        selected_opfu_services = RefService.objects.filter(id__in=selected_opfu_ids)
+        # Здесь можно добавить расчет стоимости услуг
+        # Пока просто добавляем заглушку
+        opfu_services_total = len(selected_opfu_services) * 1000  # Заглушка
+    
+    total_amount += opfu_services_total
+    total_amount -= promotions_discount
+    total_amount -= bu_wheels_price
+    
+    params.update({
+        'car': car,
+        'car_price_and_dop' :  car_price_and_dop,
+        'cumulative_data' : car.cumulative_data(),
+        'selected_opfu_services': selected_opfu_services,
+        'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
+        'car_price': car_price,
+        'promotions_discount': promotions_discount,
+        'bu_wheels_price': bu_wheels_price,
+        'opfu_services_total': opfu_services_total,
+        'total_amount': total_amount
+    })
+    
+    return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+@login_required
+def deal_calculation_doc(request, id):
+    
+    try:
+        from analytics.models import TradeInFunnel
+    except ImportError:
+        TradeInFunnel = None
+    
+    params = {
+        'type': 'deal_calculation',
+        'nav_selected': 4,
+        'request': request,
+    }
+    
+    calc    = CarCalculations.objects.get(pk = id) 
+    car     = calc.car
+    if request.method == 'POST':
+        new_object =  calc
+        
+        if 'send' in request.POST:
+            for uusr in car.access_user.all():
+                if uusr.email != '':
+                    new_message              = EmailPushCar()
+                    new_message.car           = car
+                    new_message.user          = uusr
+                    new_message.email         = uusr.email
+                    new_message.comment       = 'Согласование расчета продажи автомобиля'
+                    new_message.price         = False
+                    new_message.calc         = calc
+                    new_message.save()
+            
+        new_object.car = car
+        new_object.user = request.user
+        new_object.comment = request.POST.get('comment', '')
+
+        new_object.discount        = int(request.POST.get('custom_discount', '0'))
+        new_object.price           = int(request.POST.get('car_price_and_dop', '0'))
+        new_object.custom_opfu     = int(request.POST.get('custom_opfu', '0'))
+        new_object.custom_tradein  = int(request.POST.get('custom_tradein', '0'))
+        new_object.custom_wheels   = int(request.POST.get('custom_wheels', '0'))
+        new_object.custom_grz      = int(request.POST.get('custom_grz', '0'))
+        new_object.custom_work     = int(request.POST.get('custom_work', '0'))
+        new_object.custom_product  = int(request.POST.get('custom_product', '0'))
+        new_object.save()
+        
+        return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')  
+    
+    from documents.models import DocZN
+    zn_list = []
+    info_dop = None
+    dop = 0
+    if car.vin:
+        zn_list = DocZN.objects.filter(cars__vin=car.vin, typeRemont__dop=True).select_related('typeRemont', 'readyStatus', 'unit').order_by('-dataTime')[:200]
+        
+        info_dop = zn_list.aggregate(
+                count=Count("id"),
+                sum_amount=Sum("amount")  
+            )
+        
+    car_price_and_dop = car.cost_price
+    if info_dop != None and info_dop['sum_amount'] != None:
+         car_price_and_dop = car_price_and_dop + info_dop['sum_amount']
+         dop = info_dop['sum_amount']
+
+    
+    # Расчет итоговой суммы
+    total_amount = 0
+    car_price = 0
+    promotions_discount = 0
+    bu_wheels_price = 0
+    opfu_services_total = 0
+    
+    selected_opfu_ids = request.GET.getlist('opfu_services')
+    if not selected_opfu_ids:
+        selected_opfu_ids = []
+    selected_opfu_services = []
+    if selected_opfu_ids:
+        selected_opfu_services = RefService.objects.filter(id__in=selected_opfu_ids)
+        # Здесь можно добавить расчет стоимости услуг
+        # Пока просто добавляем заглушку
+        opfu_services_total = len(selected_opfu_services) * 1000  # Заглушка
+    
+    total_amount += opfu_services_total
+    total_amount -= promotions_discount
+    total_amount -= bu_wheels_price
+    actions = RefCarsOrganizationAction.objects.filter(car = car)
+    
+    action_sum = RefCarsOrganizationAction.objects.filter(car = car).aggregate(
+                sum_amount=Sum("amount")  
+            )['sum_amount']
+    
+    params.update({
+        'car'               : car,
+        'calc'              : calc,
+        'dop'               : dop,
+        'car_price_and_dop' : car_price_and_dop,
+        'actions'           : actions,
+        'action_sum'        : action_sum,
+        'cumulative_data' : car.cumulative_data(),
+        'selected_opfu_services': selected_opfu_services,
+        'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
+        'car_price': car_price,
+        'promotions_discount': promotions_discount,
+        'bu_wheels_price': bu_wheels_price,
+        'opfu_services_total': opfu_services_total,
+        'total_amount': total_amount
+    })
+    
+    return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+@login_required
+def deal_calculation_old(request):
+    
+    try:
+        from analytics.models import TradeInFunnel
+    except ImportError:
+        TradeInFunnel = None
+    
+    params = {
+        'type': 'deal_calculation',
+        'nav_selected': 4,
+        'request': request,
+    }
+    
+    # cumulative_data = car.cumulative_data()
+    # Получаем выбранный автомобиль из диспозиции
+    
+    car_slug        = request.GET.get('car', '')
+    calculation     = request.GET.get('calculation', '')
+    calculation_id  = ''
+    if calculation == '':
+        calculation_id = calculation
+    else:
+        calculation_id = None
+
+    car = RefCarsOrganization.objects.select_related(
+                'modification_autoru__model__mark',
+                'status',
+                'unit',
+                'store'
+            ).get(slug=car_slug).last()
+
     selected_car = None
     if car_slug:
         try:
@@ -2651,6 +3028,7 @@ def deal_calculation(request):
     })
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
 
 
 # ========== Директор ГК: склад и чаты по автомобилям ==========

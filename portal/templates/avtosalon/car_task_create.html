@@ -6,70 +6,91 @@
 {% block title_navbar %} - Создание задачи {% endblock %}
 
 {% block content %}
-<div class="docs-zn-page">
+<div class="portal-page">
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="mb-0">Создание задачи</h2>
-        <p class="text-muted mb-0">Автомобиль: <a href="/cars/{{ params.car.slug }}/" target="_blank">{{ params.car.name|default:params.car.vin }}</a></p>
+        
       </div>
       <a href="{% url 'avtosalon:car_tasks_list_by_car' params.car.id %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
         <span class="icon-mbri-arrow-prev"></span> Назад
       </a>
     </div>
 
-    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
-      <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
-        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
-          <span class="icon-mbri-edit"></span> Новая задача
-        </h5>
-      </div>
-      <div class="card-body">
-        <form method="post">
-          {% csrf_token %}
-          <div class="mb-3">
-            <div class="form-floating">
-              <input type="text" class="form-control" id="title" name="title" placeholder="Название задачи" required style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-              <label for="title">Название задачи</label>
+    <div class="portal-panel">
+      <div class="row align-items-center">
+        
+        <div class="col-12 col-sm-auto align-items-center align-self-center">
+          <img class="item-img-mini" src="{{params.car.logo}}" style="height: 40px; width: auto;">
+        </div>
+
+        <div class="col-12 col-sm-auto align-items-center">
+          <div class="car-info-item">{{params.car.organization.name}}</div>
+          <div class="car-info-item">{{params.car.unit.name}} </div>    
+        </div>
+
+        <div class="col-12 col-sm-auto align-items-center">
+          <div class="car-info-item">{{params.car.modification_autoru.model.mark.name}} • {{params.car.modification_autoru.model}} • {{params.car.modification_autoru}} • {{params.car.complectation_autoru}}</div>
+          <div class="car-info-item">{{params.car.vin}} • {{params.car.year}} г.в. • {{params.car.run|floatformat:"0g"}} км.</div>    
+        </div>
+        
+        <div class="col-12 col-sm-2">
+          <div class="row g-1">
+            <div class="col-auto btn btn-primary bg-gradient w-100">
+              <a class="text-white" href="/cars/{{params.car.slug}}/price/?tab=avto"><span class="icon-mbri-credit-card"></span> Ценообразование</a>
+            </div>
+            <div class="col-auto btn  btn-primary bg-gradient w-100">
+              <a class="text-white" href="/cars/{{params.car.slug}}/"><span class="icon-truck"></span> Автомобиль</a>
             </div>
           </div>
-          <div class="mb-3">
-            <div class="form-floating">
-              <textarea class="form-control" id="description" name="description" placeholder="Описание задачи" style="height: 150px; border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);"></textarea>
-              <label for="description">Описание задачи</label>
-            </div>
-          </div>
-          <div class="mb-3">
-            <div class="form-floating">
-              <select class="form-select" id="assignee" name="assignee" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-                <option value="">Не назначен</option>
-                {% for user in params.users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
-                {% endfor %}
-              </select>
-              <label for="assignee">Исполнитель</label>
-            </div>
-          </div>
-          <div class="d-flex justify-content-end gap-2">
-            <a href="{% url 'avtosalon:car_tasks_list_by_car' params.car.id %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
-              Отмена
-            </a>
-            <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
-              <span class="icon-mbri-success"></span> Создать задачу
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+
+      </div>             
+
     </div>
+
+    <div class="portal-panel">
+      
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <div class="form-floating">
+            <input type="text" class="form-control" id="title" name="title" placeholder="Название задачи" required style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+            <label for="title">Название задачи</label>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="form-floating">
+            <textarea class="form-control" id="description" name="description" placeholder="Описание задачи" style="height: 150px; border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);"></textarea>
+            <label for="description">Описание задачи</label>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="form-floating">
+            <select class="form-select" id="assignee" name="assignee" style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <option value="">Не назначен</option>
+              {% for user in params.users %}
+              <option value="{{ user.id }}">{{ user.username }}</option>
+              {% endfor %}
+            </select>
+            <label for="assignee">Исполнитель</label>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'avtosalon:car_tasks_list_by_car' params.car.id %}" class="btn btn-outline-secondary" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+            Отмена
+          </a>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border: none; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); border-radius: 0.75rem; padding: 0.6rem 1.5rem;">
+            <span class="icon-mbri-success"></span> Создать задачу
+          </button>
+        </div>
+      </form>
+            
+    </div>
+
   </div>
 </div>
 
-<style>
-.docs-zn-page {
-  background: #f4f7fb;
-  min-height: 100vh;
-  padding: 1.5rem 0;
-}
-</style>
 {% endblock %}
 

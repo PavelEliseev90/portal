@@ -5,48 +5,133 @@
 {% block title_navbar %} — Ценообразование новых {% endblock %}
 
 {% block content %}
-<div class="portal-page">
-    <div class="container-fluid py-4">
-        <h2 class="mb-2">Управление ценообразованием новых</h2>
-        <p class="text-muted mb-4">Настройки брендов и значений км по брендам на месяц.</p>
 
-        <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="portal-panel h-100">
-                    <h5 class="mb-3">Директор ГК</h5>
+
+<div class="portal-page">
+    
+    <div class="container-fluid py-4">
+        
+        <h2 class="mb-2">Управление ценообразованием новых автомобилей</h2>
+        <p class="text-muted mb-4"></p>
+
+        <div class="row g-1">
+            <div class="col-12">
+                <div class="portal-panel h-100  margin">
+                    <h5 class="mb-3">Директор</h5>
                     <p class="text-muted small mb-3">Склад и аналитика: все автомобили в наличии, фильтры, задачи, мин. КМ, чаты.</p>
-                    <a href="{% url 'prices_car:director' %}" class="btn btn-primary bg-gradient">Перейти</a>
-                </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="portal-panel h-100">
-                    <h5 class="mb-3">Бренды</h5>
-                    <p class="text-muted small mb-3">Настройка брендов: привязка марок Автору и списка моделей, входящих в бренд.</p>
-                    <a href="{% url 'prices_car:brands' %}" class="btn btn-primary bg-gradient">Перейти</a>
-                </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="portal-panel h-100">
-                    <h5 class="mb-3">Управление КМ</h5>
-                    <p class="text-muted small mb-3">Значения КМ по бренду на месяц.</p>
-                    <a href="{% url 'prices_car:settings' %}" class="btn btn-primary bg-gradient">Перейти</a>
-                </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="portal-panel h-100">
-                    <h5 class="mb-3">Индексы КМ по этапам</h5>
-                    <p class="text-muted small mb-3">Индекс КМ по этапу установки цены на месяц.</p>
-                    <a href="{% url 'prices_car:stage_km' %}" class="btn btn-primary bg-gradient">Перейти</a>
-                </div>
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="portal-panel h-100">
-                    <h5 class="mb-3">Управление дисконтом КМ</h5>
-                    <p class="text-muted small mb-3">Процент изменения минимального КМ по бренду, модели, модификации, комплектации, году. Срок действия в рамках одного месяца.</p>
-                    <a href="{% url 'prices_car:discount_km' %}" class="btn btn-primary bg-gradient">Перейти</a>
+                    <div class="row g-2">
+
+                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                            
+                            <a href="{% url 'prices_car:director' %}" class="text-dark"> 
+                                <span class="icon-truck"></span>
+                                Склад
+                            </a>    
+
+                        </div>
+                        
+                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                            
+                            <a href="{% url 'prices_car:director' %}" class="text-dark"> 
+                                <span class="icon-mbri-bulleted-list"></span>
+                                Коммерческие предложения (калькуляции)
+                            </a>    
+
+                        </div>
+
+                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                            
+                            <a href="{% url 'prices_car:director' %}" class="text-dark"> 
+                                <span class="icon-doc"></span>
+                                Соглашения
+                            </a>    
+
+                        </div>
+
+                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                            
+                            <a href="/cars/tasks/" class="text-dark"> 
+                                <span class="icon-mbri-layers"></span>
+                                Задачи
+                            </a>    
+
+                        </div>
+
+                    </div>
+                   
                 </div>
             </div>
         </div>
+
+        <br>
+
+        <div class="row g-1">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="portal-panel h-100 position-relative margin">
+                    <a href="{% url 'prices_car:settings' %}" class="stretched-link text-dark" aria-label="Перейти к брендам">
+                        <div class="row h-100 position-relative" style="z-index: 1;">
+                            <div class="col-2 align-self-center">
+                                <span class="fs-4 icon-mbri-bulleted-list"></span>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-3">Управление КМ</h5>
+                                <p class="text-muted small mb-3">Значения КМ по бренду на месяц.</p>
+                        
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="portal-panel h-100 position-relative margin">
+                    <a href="{% url 'prices_car:brands' %}" class="stretched-link text-dark" aria-label="Перейти к брендам">
+                        <div class="row h-100 position-relative" style="z-index: 1;">
+                            <div class="col-2 align-self-center">
+                                <span class="fs-4 icon-mbri-home"></span>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-3">Бренды</h5>
+                                <p class="text-muted small mb-3">Настройка брендов: привязка марок Автору и списка моделей, входящих в бренд.</p>
+                        
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>            
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="portal-panel h-100 position-relative margin">
+                    <a href="{% url 'prices_car:stage_km' %}" class="stretched-link text-dark" aria-label="Перейти к брендам">
+                        <div class="row h-100 position-relative" style="z-index: 1;">
+                            <div class="col-2 align-self-center">
+                                <span class="fs-4 icon-mbri-numbered-list"></span>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-3">Индексы КМ по этапам</h5>
+                                <p class="text-muted small mb-3">Индекс КМ по этапу установки цены.</p>
+                        
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="portal-panel h-100 position-relative margin">
+                    <a href="{% url 'prices_car:discount_km' %}" class="stretched-link text-dark" aria-label="Перейти к брендам">
+                        <div class="row h-100 position-relative" style="z-index: 1;">
+                            <div class="col-2 align-self-center">
+                                <span class="fs-4 icon-mbri-credit-card"></span>
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-3">Управление дисконтом КМ</h5>
+                                <p class="text-muted small mb-3">Изменение минимального КМ по бренду, модели, модификации, комплектации, году.</p>
+                        
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>        
+        </div>
     </div>
+
 </div>
 {% endblock %}

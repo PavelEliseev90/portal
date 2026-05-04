@@ -124,8 +124,8 @@ class RegInteractivOcenkaSalonAdmin(admin.ModelAdmin):
 
 @admin.register(RegRegInteractivOcenkaFiles)
 class RegRegInteractivOcenkaFilesAdmin(admin.ModelAdmin):
-    list_display    = ('estimation', 'name', 'type_file', 'file_number', 'user', )
-    raw_id_fields   = ('estimation',) 
+    list_display    = ('estimation', 'name', 'type_file', 'file_number', 'user', 'date', )
+    raw_id_fields   = ('estimation', 'user') 
     search_fields   = ('estimation__vin',)
 
 @admin.register(RegInteractivOcenkaDocument)
@@ -155,7 +155,7 @@ class RegInteractivOcenkaAdmin(admin.ModelAdmin):
     list_display    = ('rlk', 'start_estimation', 'end_estimation', 'vin', 'year', 'staff', 'kors_start_store', 'hub_start', 'avtoteka_preview', 'avtoteka_task', 'avtoteka_web', 'avtoteka_car_autodex', 'dtp_red', 'taxi', 'carsharing',)
     raw_id_fields   = ('rlk', 'complectation', 'modification_avito', 'complectation_avito', 'modification', 'page_documents', 'page_salon','staff', 'staff_eco_1', 'staff_eco_2', 'page_documents', 'page_salon', 'page_vnesh', 'page_complectnost', 'page_kolesa', 'page_test_drive', 'page_proverki', 'page_soglasovanie', 'page_remote',)
     list_filter     = ('start_estimation', 'dtp_red', 'taxi', 'carsharing', ) 
-    search_fields   = ('vin', )
+    search_fields   = ('vin', 'rlk__pk' )
 
 
 @admin.register(RegViewsCarsOrganization)

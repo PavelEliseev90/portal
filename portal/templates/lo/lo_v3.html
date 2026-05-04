@@ -7818,6 +7818,11 @@
                                   
                                   <div class="kors-btn-group-wrapper-simple">
                                     <div class="kors-btn-group-compact" role="group" aria-label="Стапель">
+                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio0_stapele" value="0" {% if params.estimation.page_test_drive.stapele_type == 0 %} checked {% endif %}>
+                                      <label class="btn btn-outline-success" for="inlineRadio0_stapele" style="height: 90px;">
+                                        <div>Не требуется</div>
+                                        <small style="font-size: 0.7rem; opacity: 0.8;">Все ок</small>
+                                      </label>
                                       <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio1_stapele" value="1" {% if params.estimation.page_test_drive.stapele_type == 1 %} checked {% endif %}>
                                       <label class="btn btn-outline-warning" for="inlineRadio1_stapele" style="height: 90px;">
                                         <div>Легкий</div>
@@ -24237,6 +24242,10 @@
         
         // Определяем минимальное количество часов и стоимость в зависимости от типа
         let minHours, baseCost;
+        if (stapeleType === '0') {
+          minHours = 0;
+          baseCost = 0;
+        }
         if (stapeleType === '1') {
           minHours = 12;
           baseCost = 3000;
