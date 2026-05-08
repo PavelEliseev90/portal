@@ -9444,6 +9444,77 @@
                         
                           <div class="portal-panel bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
                             <div class="">
+                                <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve" aria-expanded="false" aria-controls="collapse_reserve"> <b> &nbsp; Калькуляция сделки (Коммерческое предложение) новых</b></label>  
+                                <div class="collapse" id="collapse_reserve">
+                                
+                                  {% for calculation in params.calcs %}
+
+                                    <div class="" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+                                      <div class="row g-3">
+                                        
+                                        <div class="col-4 col-sm-auto align-self-center">
+                                          <a href="/cars/deal/calculation/{{calculation.id}}/"> 
+                                            <span class="fs-4  icon-mbri-edit">
+                                            </span>
+                                          </a>
+                                        </div>
+                                        
+                                        <div class="col-4 col-sm-2">
+                                          <div class="metric-card-label-portal">Дата</div>
+                                          <div class="metric-card-value-portal"> {{calculation.date|date:"d.m.Y"}}</div>												
+                                        </div>
+
+                                        <div class="col-4 col-sm-2">
+                                          <div class="metric-card-label-portal">Номер</div>
+                                          <div class="metric-card-value-portal"> {{calculation.number}}</div>												
+                                        </div>
+                                        
+                                        <div class="col-6 col-sm-2">
+                                          <div class="metric-card-label-portal">Себестоимость </div>
+                                          <div class="metric-card-value-portal text-nowrap">{{params.car_price_and_dop|floatformat:"2g"}} ₽</div>												
+                                        </div>
+                                        
+                                        <div class="col-6 col-sm-2">
+                                          <div class="metric-card-label-portal">Продажа </div>
+                                          <div class="metric-card-value-portal text-nowrap">{{calculation.amount|floatformat:"2g"}} ₽</div>												
+                                        </div>
+
+                                        <div class="col-12 col-sm-2">
+
+                                          <div class="metric-card-label-portal">КВП </div>
+                                          <div class="metric-card-value-portal text-nowrap">{{calculation.kvp|floatformat:"2g"}} ₽</div>
+                                          
+                                        </div>
+
+                                      </div>
+                                      <br>
+                                      <div class="row g-1">
+                                        {% for detail in calculation.detail %}
+                                          <div class="col-auto" style="margin: 0.2rem; border-radius: 0.5rem;">
+                                            <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
+                                            <div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
+                                          </div>
+                                        {% endfor %}
+                                      </div>
+                                    </div>
+                                    <hr>
+                                  
+                                  {% endfor %}
+                                  
+                                </div>
+                            </div>
+                          </div>
+                      
+                      </div>
+
+                    </div>
+
+                    <div class="row g-1">
+                      
+                      <div class="col-12 col-sm-12">
+                        
+                          <div class="portal-panel bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                            <div class="">
                                 <label class="fs-6" data-bs-toggle="collapse" data-bs-target="#collapse_reserve" aria-expanded="false" aria-controls="collapse_reserve"> <b> &nbsp; Движение документа в резерве</b></label>  
                                 <div class="collapse" id="collapse_reserve">
                                 

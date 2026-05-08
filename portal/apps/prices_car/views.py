@@ -11,7 +11,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 
 from refs.models import AutoruMark, AutoruModel, RefStagePrice
-from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM
+from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations
 
 
 def _prev_month_first(month_date: date) -> date:
@@ -636,5 +636,26 @@ def discount_km_page(request):
             'today': today,
             'filter_query': filter_query,
             'filtr': filtr,
+        },
+    })
+
+
+@login_required
+def calculations_list(request):
+    
+    objects = CarCalculations.objects.all()
+    paginator = Paginator(objects, 25)
+    page_number = request.GET.get('page') or 1
+   
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'prices_car/calculations_list.html', {
+        'params': {
+            'objects': page_obj
         },
     })

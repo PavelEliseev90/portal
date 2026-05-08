@@ -339,7 +339,7 @@
           <div class="row g-1">
               {% for rl_tradein in params.calc.rlk.rlk_trade_in %}
                 <div class="col-12 cols-sm-auto">
-                  <button class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ Trade-in {{rl_tradein.nomer}} {{rl_tradein.dataTime}} {{rl_tradein.estimation_status}} </button> 
+                  <a href="/eco/{{rl_tradein.pk}}/" target="_blank" class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ Trade-in {{rl_tradein.nomer}} {{rl_tradein.dataTime}} - {{rl_tradein.estimation_status}} </a> 
                 </div>
               {% endfor %}
 

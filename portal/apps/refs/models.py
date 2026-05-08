@@ -2127,14 +2127,23 @@ class RefCarsOrganization(models.Model):
         
         if self.modification_autoru != None:
             data_infocars_mark = RefCarsOrganization.objects.filter(modification_autoru__model__mark = self.modification_autoru.model.mark).filter(is_new = True).exclude(quantity = 0).exclude(price = 0).aggregate(Sum('price'), Count('id'))
-            km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
-            km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
-            km_min_automatic            = self.price * km_brand_automatic_stage / 100
+            if data_infocars_mark['price__sum'] != None and data_infocars_mark['id__count'] > 0:                
+                km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
+                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
+            else:
+                km_brand_automatic          = info['brand_km'].km
+                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                if km_min_automatic == 0:
+                    km_min_automatic = km_brand_automatic
+                description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " " + '{:,}'.format(km_min_automatic).replace(',', ' ') +  " руб."
             automatic = {
                 'km_brand_automatic_percent'        : km_brand_automatic,
                 'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
                 'km_min_automatic'                  : km_min_automatic,
-                'km_description'                    : "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
+                'km_description'                    : description
             }
             info['automatic'] = automatic
             type_km = 1
@@ -2162,6 +2171,8 @@ class RefCarsOrganization(models.Model):
             km_brand_automatic = km_sale / (cum_aggregate / cum_count) * 100
             km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
             km_min_automatic_2            = self.price * km_brand_automatic_stage / 100
+            if km_min_automatic_2 == 0:
+                km_min_automatic_2 = km_sale
             automatic = {
                 'km_brand_automatic_percent'        : km_brand_automatic,
                 'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,

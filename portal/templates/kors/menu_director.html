@@ -294,10 +294,14 @@
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🛠️</div>
         <div>Подготовка</div>
       </a>
+      
+      {% if request.user.profiles.estimation_settings %}
       <a href="/settings/" class="quick-action-btn">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚙️</div>
         <div>Настройки</div>
       </a>
+      {% endif %}
+
     </div>
   </div>
 
@@ -361,18 +365,7 @@
           <span class="action-btn-text">Отгрузки</span>
           <span class="action-btn-arrow">→</span>
         </a>
-        <!--
-        <a href="/korsavto/sales_funnel/" class="action-btn">
-          <span class="action-btn-icon">📈</span>
-          <span class="action-btn-text">Воронка продаж</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        -->
-        <a href="{% url 'avtosalon:deal_calculation' %}" class="action-btn">
-          <span class="action-btn-icon">🧮</span>
-          <span class="action-btn-text">Расчет сделки</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
+       
         
       </div>
     </div>
@@ -443,23 +436,25 @@
       </div>
     </div>
 
-    <!-- Настройки новых автомобилей -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <div class="section-card-icon">🚗</div>
-        <h3 class="section-card-title">Настройки новых автомобилей</h3>
+    {% if request.user.profiles.price_car_new_settings %}
+      <!-- Настройки новых автомобилей -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-icon">🚗</div>
+          <h3 class="section-card-title">Настройки новых автомобилей</h3>
+        </div>
+        <p class="section-card-description">
+          Правила минимального КМ и индексы по брендам и этапам УС
+        </p>
+        <div class="action-buttons">
+          <a href="/prices_car/" class="action-btn">
+            <span class="action-btn-icon">⚙️</span>
+            <span class="action-btn-text">Ценообразование новых АМ</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+        </div>
       </div>
-      <p class="section-card-description">
-        Правила минимального КМ и индексы по брендам и этапам УС
-      </p>
-      <div class="action-buttons">
-        <a href="/prices_car/" class="action-btn">
-          <span class="action-btn-icon">⚙️</span>
-          <span class="action-btn-text">Ценообразование новых АМ</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-      </div>
-    </div>
+    {% endif %}
 
     <!-- Подготовка автомобилей -->
     <div class="section-card">
@@ -492,7 +487,7 @@
         </a>
       </div>
     </div>
-
+    {% if request.user.profiles.price_car_new_settings %}
     <!-- Выгрузки и классифайды -->
     <div class="section-card">
       <div class="section-card-header">
@@ -515,7 +510,9 @@
         </a>
       </div>
     </div>
+    {% endif %}
 
+    {% if request.user.profiles.price_car_new %}
     <!-- Аналитика и отчеты -->
     <div class="section-card">
       <div class="section-card-header">
@@ -558,9 +555,10 @@
         </a>
       </div>
     </div>
+    {% endif %}
 
     <!-- Аналитика -->
-    {% if request.user.profiles.korsavto_settings %}
+    {% if request.user.profiles.price_car_new %}
       
       <div class="section-card">
         <div class="section-card-header">
@@ -585,33 +583,36 @@
       </div>
     {% endif %}
 
-    <!-- Настройки и управление -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <div class="section-card-icon">⚙️</div>
-        <h3 class="section-card-title">Настройки и управление</h3>
+    {% if request.user.profiles.estimation_settings %}
+      <!-- Настройки и управление -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-icon">⚙️</div>
+          <h3 class="section-card-title">Настройки и управление</h3>
+        </div>
+        <p class="section-card-description">
+          Центр настроек, справочники, конфигурация процессов
+        </p>
+        <div class="action-buttons">
+          <a href="/settings/" class="action-btn">
+            <span class="action-btn-icon">🔧</span>
+            <span class="action-btn-text">Центр настроек</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+          <a href="/settings/settings_unit_groups/" class="action-btn">
+            <span class="action-btn-icon">🏢</span>
+            <span class="action-btn-text">Группы подразделений</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+          <a href="/settings/settings_diagnostic_reference/" class="action-btn">
+            <span class="action-btn-icon">🔍</span>
+            <span class="action-btn-text">Справочник диагностики</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+        </div>
       </div>
-      <p class="section-card-description">
-        Центр настроек, справочники, конфигурация процессов
-      </p>
-      <div class="action-buttons">
-        <a href="/settings/" class="action-btn">
-          <span class="action-btn-icon">🔧</span>
-          <span class="action-btn-text">Центр настроек</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="/settings/settings_unit_groups/" class="action-btn">
-          <span class="action-btn-icon">🏢</span>
-          <span class="action-btn-text">Группы подразделений</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="/settings/settings_diagnostic_reference/" class="action-btn">
-          <span class="action-btn-icon">🔍</span>
-          <span class="action-btn-text">Справочник диагностики</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-      </div>
-    </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

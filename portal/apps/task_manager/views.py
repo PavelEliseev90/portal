@@ -1114,8 +1114,9 @@ def refresh_list_auction_status():
     
     for lot in lots_list:
         from refs.models import Auction
-        auction = Auction.objects.get(uid = lot)
-        refresh_auction(auction)
+        if lot != '':
+            auction = Auction.objects.get(uid = lot)
+            refresh_auction(auction)
 
 def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):

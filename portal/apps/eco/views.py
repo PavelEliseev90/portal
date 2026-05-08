@@ -3713,6 +3713,7 @@ def doc(request, id):
     balance                 = None
     balance_unit            = None
     expenses                = list()
+    calcs                   = None
     
     body            = body_estimation(estimation=estimation)
     salon           = salon_estimation(estimation=estimation)
@@ -3870,7 +3871,9 @@ def doc(request, id):
             price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
             
             if page == 20:
-                
+                from prices_car.models import CarCalculations
+                calcs = CarCalculations.objects.filter(rlk__uin__in = DocRLK.objects.filter(uin__in = DocRLK.objects.filter(uin = interactiv_rlk.rlk.uin).values_list('footing__uin', flat=True).exclude(footing__uin = None)).filter(eco = False).values_list('uin', flat=True))
+
                 if lo != None and lo.agreement_number != '':
                     query_balance_unit = RegEstimationBalanceUnit.objects.filter(unit = lo.agreement_unit).filter(date__gte = balance_date_start).filter(date__lte = balance_date_end).aggregate(Sum('amount'))
                     if query_balance_unit['amount__sum'] == None:
@@ -4087,7 +4090,7 @@ def doc(request, id):
                 'expenses'              : expenses,
                 'selected'              : selected,
                 'control_diagnostics'   : estimation.control_diagnostics.all(),
-
+                'calcs'                 : calcs
             }
     
     elif request.method == "POST":

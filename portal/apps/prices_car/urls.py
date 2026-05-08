@@ -6,6 +6,7 @@ app_name = 'prices_car'
 urlpatterns = [
     path('', views.index, name='index'),
     path('director/', views.director_dashboard, name='director'),
+    path('calculations_list/', views.calculations_list, name='calculations_list'),
     path('brands/', views.brands_list, name='brands'),
     path('brands/get_models/', views.brands_get_models, name='brands_get_models'),
     path('settings/', views.settings_page, name='settings'),

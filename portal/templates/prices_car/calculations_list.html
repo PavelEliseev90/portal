@@ -1,0 +1,101 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Калькуляции автомобилей {% endblock %}
+{% block title_navbar %} — Калькуляции автомобилей {% endblock %}
+
+{% block content %}
+
+<div class="portal-page">
+    <div class="container-fluid py-3">
+        <p class="mb-2">
+            <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← На главную</a>
+        </p>
+        <h2 class="mb-2">Калькуляции автомобилей (коммерческие предложения)</h2>
+        <p class="text-muted mb-4">Детальные расчеты продажи автомобилей в рамках рабочих листов.</p>
+
+        <div class="portal-panel">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h5 class="mb-0">Фильтр</h5>
+                
+            </div>
+           
+        </div>
+
+        <div class="portal-panel">
+           <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Дата</th>
+                            <th>Номер</th>
+                            <th>Подразделение</th>
+                            <th>Автомобиль</th>
+                            <th>VIN</th>
+                            <th>Рабочий лист</th>
+                            <th>Клиент</th>
+                            <th>Автор</th>
+                            <th>КВ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in params.objects %}
+                        <tr>
+                            <td><a href="/cars/deal/calculation/{{item.pk}}/" class="text-dark"><span class="icon-doc"></span></a></td>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.number }}</td>
+                            <td>{{ item.unit.name }}</td>
+                            <td>{{ item.car.name }}</td>
+                            <td>{{ item.car.vin }}</td>
+                            <td>{{ item.rlk.nomer }}</td>
+                            <td>{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}</td>
+                            <td>{{ item.author.name }}</td>
+                            <td class="text-end">{{item.kvp|floatformat:"2g"}} ₽</td>
+                            
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Нет записей. Проверьте фильтр.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if params.objects.paginator.num_pages > 1 %}
+                <nav aria-label="Навигация по страницам">
+                    <ul class="pagination">
+                    {% if params.objects.has_previous %}
+                        <li class="page-item">
+                        <a class="page-link" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
+                        </li>
+                    {% endif %}
+
+                    {% for p in params.objects.paginator.page_range %}
+                        {% if params.objects.number == p %}
+                        <li class="page-item active">
+                            <span class="page-link">{{p}}</span>
+                        </li>
+                        {% elif p >= params.objects.number|add:-2 and p <= params.objects.number|add:2 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% url_replace page=p %}">{{p}}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if params.objects.has_next %}
+                        <li class="page-item">
+                        <a class="page-link" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
+                        </li>
+                    {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

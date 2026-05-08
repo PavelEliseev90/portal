@@ -30,7 +30,15 @@ class Profiles(models.Model):
     korsavto_auction        = models.BooleanField("Сотрудник аукциона", default = False)
 
     user_sb                 = models.BooleanField("Сотрудник службы безопасности", default = False)
-
+    
+    price_car_new           = models.BooleanField("Ценообразование новых", default = False)
+    price_car_bu            = models.BooleanField("Ценообразование бу", default = False)
+    price_car_new_settings  = models.BooleanField("Ценообразование новых настройки", default = False)
+    price_car_bu_settings   = models.BooleanField("Ценообразование новых настройки", default = False)
+    estimation_settings     = models.BooleanField("Настройки интерактивных оценок", default = False)
+    estimation_report       = models.BooleanField("Отчеты по интерактивным оценкам", default = False)
+    eco_report              = models.BooleanField("Отчеты по аналитикам", default = False)
+    
     # Один вход с одного устройства: разрешённый session_key (обновляется при логине)
     current_session_key     = models.CharField(
         "Разрешённый ключ сессии (один вход)",

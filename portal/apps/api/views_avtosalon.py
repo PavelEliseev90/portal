@@ -535,7 +535,8 @@ def refresh_new_cars(request):
         id_complectation = car['ID_complectation']
         try:
             if int(id_complectation) > 0:
-                car_object.complectation_autoru = AutoruComplectation.objects.get(idSite = int(id_complectation))
+                
+                car_object.complectation_autoru = AutoruComplectation.objects.get(modification = car_object.modification_autoru, idSite = int(id_complectation))
         except:
             s=1
         #car_object.engine_power         = car['Engine_power']

@@ -262,7 +262,7 @@ class AutoruModificationAdmin(admin.ModelAdmin):
 class AutoruComplectationAdmin(admin.ModelAdmin):
     list_display    = ('modification', 'name', 'idSite')
     list_filter     = ('modification__model__mark', 'modification__model', 'idSite')
-    search_fields   = ('name', 'modification__name', 'modification__model__name')
+    search_fields   = ('name', 'modification__name', 'modification__model__name', 'idSite',)
     raw_id_fields   = ('modification',)
     list_select_related = ('modification', 'modification__model', 'modification__model__mark')
 
