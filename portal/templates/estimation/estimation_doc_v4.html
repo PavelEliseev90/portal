@@ -1772,7 +1772,42 @@
 
                     <h6><span class="icon-mbri-image-slider"></span> Осмотр ЛКП и повреждений автомобиля</h6>
 
-                    
+                    <div class="row g-1">
+                      <div class="col-sm-12">
+                        <div class="kors-btn-group-wrapper">
+                          <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с проекцией">
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="type_color_int" 
+                                   id="type_color_int-radio1" 
+                                   autocomplete="off" 
+                                   {% if params.estimation.page_vnesh.type_color_int == 1 %} checked {% endif %} 
+                                   value="1" 
+                                   required>
+                            <label class="btn btn-outline-success" for="type_color_int-radio1">Обычный</label>
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="type_color_int" 
+                                   id="type_color_int-radio2" 
+                                   autocomplete="off" 
+                                   {% if params.estimation.page_vnesh.type_color_int == 2 %} checked {% endif %} 
+                                   value="2" 
+                                   required>
+                            <label class="btn btn-outline-success" for="type_color_int-radio2">Перламутр</label>
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="type_color_int" 
+                                   id="type_color_int-radio3" 
+                                   autocomplete="off" 
+                                   {% if params.estimation.page_vnesh.type_color_int == 3 %} checked {% endif %} 
+                                   value="3" 
+                                   required>
+                            <label class="btn btn-outline-success" for="type_color_int-radio3">Под прибор</label>
+                          </div>
+                          <label class="fs-6" for="check_engine">Тип окраса деталей в случае необходимости</label>
+                        </div>
+                      </div>
+                    </div>
                        
                     <div class="row g-1">
                       
@@ -2327,6 +2362,34 @@
                                 <label class="btn btn-outline-success" for="windshield_heat_int-radio2">Да</label>
                               </div>
                               <label class="fs-6" for="check_engine">Лобовое стекло с подогревом</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="row g-2">
+                          <div class="col-sm-12">
+                            <div class="kors-btn-group-wrapper">
+                              <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с проекцией">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_projection_int" 
+                                       id="windshield_projection_int-radio1" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_projection_int == 0 %} checked {% endif %} 
+                                       value="0" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_projection_int-radio1">Нет</label>
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_projection_int" 
+                                       id="windshield_projection_int-radio2" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_projection_int == 1 %} checked {% endif %} 
+                                       value="1" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_projection_int-radio2">Да</label>
+                              </div>
+                              <label class="fs-6" for="check_engine">Лобовое стекло с проекцией</label>
                             </div>
                           </div>
                         </div>

@@ -794,6 +794,8 @@ def estimation_rlk(request, rlk_id):
 
             reg_interactiv_ocenka_vnesh.check_vin_int           = int(request.POST.get('check_vin_int', '3'))
             reg_interactiv_ocenka_vnesh.check_engine_int        = int(request.POST.get('check_engine_int', '3'))
+            reg_interactiv_ocenka_vnesh.windshield_projection_int = int(request.POST.get('windshield_projection_int', '3'))
+            reg_interactiv_ocenka_vnesh.type_color_int          = int(request.POST.get('type_color_int', '0'))
             reg_interactiv_ocenka_vnesh.windshield_heat_int     = int(request.POST.get('windshield_heat_int', '3'))
             reg_interactiv_ocenka_vnesh.windshield_error_int    = int(request.POST.get('windshield_error_int', '3'))
             reg_interactiv_ocenka_vnesh.light_error_int         = int(request.POST.get('light_error_int', '3'))

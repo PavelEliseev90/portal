@@ -90,6 +90,8 @@
     </div>
 </div>
 
+
+
 <div class="portal-page">
 	
 	{% if request.user.is_authenticated %}
@@ -127,27 +129,17 @@
 			
 	</div>
 
-	<!-- <ul class="nav nav-tabs mb-3" role="tablist">
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'avto' %}active{% endif %}" href="?tab=avto">Автомобиль</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'zn' %}active{% endif %}" href="?tab=zn">Заказ-наряды (доп.) - {{params.dop_car_info.aggretgate_dop_zn.count}}</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'analytics_unit' %}active{% endif %}" href="?tab=analytics_unit">Аналитика по подразделению</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'analytics_gk' %}active{% endif %}" href="?tab=analytics_gk">Аналитика по ГК</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'sklad' %}active{% endif %}" href="?tab=sklad">Склад</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'tasks' %}active{% endif %}" href="?tab=tasks">Задачи</a>
-		</li>
-	</ul> -->
-
+	{% if params.object.modification_autoru == None %}
+		<div class="portal-panel bg-danger bg-gradient bg-opacity-50 text-white">
+			<div class="metric-card-label text-white"><span class="icon-mbri-alert"></span> Нет информации по модификации автомобиля, данные собраны не полностью</div>
+		</div>
+	{% endif %}
+	
+	{% if params.object.complectation_autoru == None %}
+		<div class="portal-panel bg-danger bg-gradient bg-opacity-50 text-white">
+			<div class="metric-card-label text-white"><span class="icon-mbri-alert"></span> Нет информации по комплектации автомобиля, данные собраны не полностью</div>
+		</div>
+	{% endif %}
 
 	<div class="tab-content">
 		
@@ -1058,6 +1050,7 @@
 							<span class="icon-mbri-home"></span>Текущая модификация
 						</a>  
 					</div>
+					{% if params.object.complectation_autoru != None %}
 					<div class="col-auto">
 						<div class="mb-3">
 							<a class="btn btn-sm {% if params.sale_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
@@ -1066,7 +1059,7 @@
 							</a>							     
 						</div>
 					</div>
-
+					{% endif %}
 																			 
 					<!--
 					<div class="col-auto">
@@ -1295,14 +1288,16 @@
 							</a>
 						</div>
 					</div>
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sclad_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=3">
-								<span class="icon-mbri-home"></span>Текущая комплектация
-							</a>
+					{% if params.object.complectation_autoru != None %}
+						<div class="col-auto">
+							<div class="mb-3">
+								<a class="btn btn-sm {% if params.sclad_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+								href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=3">
+									<span class="icon-mbri-home"></span>Текущая комплектация
+								</a>
+							</div>
 						</div>
-					</div>
+					{% endif %}
 				</div>
 				
 				{% if params.sclad %}

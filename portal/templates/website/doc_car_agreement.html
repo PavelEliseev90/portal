@@ -7,625 +7,336 @@
 {% block title_navbar %} - соглашение о покупке ам №{{params.object.nomer}} от {{params.object.dataTime}} {% endblock %}
     
 {% block content %}
- 	
-<div class="row g-1">
+<style>
+	.metric-card-portal {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  height: 100%;
+}
 
-	<div class="col-12 col-sm-5">
-		<div class="card" style="background-color: rgba(255,255,255,0.7);">
-			<div class="card-body">
-				<h6><span class="icon-mbri-info"></span> Данные документа</h6>
-              	<hr style="width: 75%;">
+.metric-card-portal h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8ea1ba;
+  
+}
 
-				<label class="fs-5 text-start fw-normal">
-					№ {{params.object.nomer}} <br> от {{params.object.dataTime}} 
-				</label><br>
-			
-				<label class="fs-6 text-start fw-normal">
-					Подразделение: 
-				</label> 
-				<br>
-				<label class="fs-5 text-start fw-normal">
-					<span class="icon-mbri-minus text-dark">{{params.object.unit.name}}</span>
-				</label>
-				
-				<br>
-				<label class="fs-6 text-start fw-normal">
-					Клиент: 
-				</label> <br>
-				<label class="fs-5 text-start fw-normal">
-					<span class="icon-mbri-minus text-dark">{{params.object.client.name}}</span><br>
-				</label>
-			</div>
-		</div>
+.metric-card-portal .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #002a5a;
+  
+}
 
-		<br>
+.metric-card-portal .sub {
+  color: #6c7a92;
+  font-size: 0.85rem;
+}
 
-		<div class="card" style="background-color: rgba(255,255,255,0.7);">
-			<div class="card-body">
-				
-				<h6><span class="icon-mbri-info"></span> Выполнение ценового правила {{params.object.check_date_time}}</h6>
-              	
-				<hr style="width: 75%;">
+/* Вариант метрической карточки (для car_new_price_edit) */
+.metric-card-label-portal {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  font-weight: 600;
+}
 
-				<div class="row g-1">
-					
-					<div class="col-12 col-sm-12">
-						<div class="table-responsive table-responsive-sm">
-							<table class="table-sm table-fit">
-								<tr>
-									<td>
-										<label class="fs-5">Цена продажи</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.amount|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="text-success">
-									<td>
-										<label class="fs-5">Затраты</label>
-									</td>
-									<td class="text-center">
-																
-									</td>
-									<td class="text-end">
-										
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">Себестоимость</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cost_price|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">Расходы на АМ</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.outlay|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="text-success">
-									<td>
-										<label class="fs-5">Скидки</label>
-									</td>
-									<td class="text-center">
-																
-									</td>
-									<td class="text-end">
-										
-									</td>
-								</tr>
-								<tr>
-								<td>
-									<label class="fs-5">Скидка торг</label>
-								</td>
-								<td class="text-center">
-									&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-								</td>
-								<td class="text-end">
-									<label class="fs-5">{{params.object.discountAmountTorg|floatformat:"2g"}} &#8381;</label>
-								</td>
-								</tr>
-								
-								<tr>
-									<td>
-										<label class="fs-5">Скидка TradeIN</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.discountAmountTradeIN|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								
-								<tr class="text-success">
-									<td>
-										<label class="fs-5">КВ расчетные</label>
-									</td>
-									<td class="text-center">
-																
-									</td>
-									<td class="text-end">
-										
-									</td>
-								</tr>
-		
-								<tr>
-									<td>
-										<label class="fs-5">Колеса</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.bu_wheels_est|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">КСО</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.kso_est|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-		
-								<tr class="text-success">
-									<td>
-										<label class="fs-5">КВ факт</label>
-									</td>
-									<td class="text-center">
-																
-									</td>
-									<td class="text-end">
-										
-									</td>
-								</tr>
-		
-								<tr>
-									<td>
-										<label class="fs-5">Колеса</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.bu_wheels_actual|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">КСО</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.kso_actual|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="text-success">
-									<td>
-										<label class="fs-5">Данные КМ</label>
-									</td>
-									<td class="text-center">
-																
-									</td>
-									<td class="text-end">
-										
-									</td>
-								</tr>
-		
-								<tr>
-									<td>
-										<label class="fs-5">Расчетный</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cm_est|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">Минимальный</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cm_min|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label class="fs-5">Целевой</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cm_goal|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="fw-bold bg-opacity-10 bg-success">
-									<td>
-										<label class="fs-5">Железо</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cum|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="fw-bold bg-opacity-10 bg-success">
-									<td>
-										<label class="fs-5">Опцион</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.opcion|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-								<tr class="fw-bold bg-opacity-25 bg-success">
-									<td>
-										<label class="fs-5">Факт</label>
-									</td>
-									<td class="text-center">
-										&nbsp;<span class="icon-mbri-minus"></span>&nbsp;						
-									</td>
-									<td class="text-end">
-										<label class="fs-5">{{params.object.cm_actual|floatformat:"2g"}} &#8381;</label>
-									</td>
-								</tr>
-		
-								
-							</table>
-						</div>
-					</div>
-
-					{% if params.object.check_text != '' %}
-						<div class="col-12 col-sm-6">
-							<hr style="width: 75%;" class="hidesite">
-							<div class="row g-1">
-								<div class="col">
-									{% if params.object.check_estimated %}						
-										<div class="card bg-success  text-white bg-opacity-75">
-											<div class="card-body">
-												<label class="fs-6"> <span class="icon-mbri-success"></span> Расчетный </label>
-											</div>
-										</div>							
-									{% else %}
-										<div class="card bg-danger  text-white bg-opacity-75">
-											<div class="card-body">
-												<label class="fs-6"> <span class="icon-mbri-close"></span> Расчетный </label>
-											</div>
-										</div>
-									{% endif %}
-								</div>
-										
-								<div class="col">
-									{% if params.object.check_actual %}						
-										<div class="card bg-success text-white bg-opacity-75">
-											<div class="card-body">
-												<label class="fs-6"> <span class="icon-mbri-success"></span> Фактический </label>
-											</div>
-										</div>							
-									{% else %}
-										<div class="card bg-danger text-white bg-opacity-75">
-											<div class="card-body">
-												<label class="fs-6"> <span class="icon-mbri-close"></span> Фактический </label>
-											</div>
-										</div>
-									{% endif %}
-								</div>
-							</div>
-
-							<hr style="width: 75%;" class="hidesite">
-
-							<Label class="fs-6">{{params.object.check_text|linebreaksbr}}</Label>
-							
-							<hr style="width: 75%;">
-							
-						</div>
-					{% endif %}
-
-				</div>
-				 
-			</div>
-		</div>
-			  
+.metric-card-value-portal {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: #002a5a;
+}
+</style>
+<div class="portal-page">
+	<div class="portal-header">
+	  <h2>Соглашение о покупке автомобиля</h2>
+	  <p>№ {{params.object.nomer}} от {{params.object.dataTime}} </p>
 	</div>
 
-	<div class="col">
+	<div class="portal-panel">
+		<div class="row g-1">
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/cars/{{params.object.lo_slug}}/"><span class="icon-truck"></span> Автомобиль</a>
+			</div>
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_rlk/{{params.object.rlk.pk}}/"><span class="icon-doc"></span> Рабочий лист ОП</a>
+			</div>
+			{% if params.object.estimation != None %}
+				<div class="col-auto">
+					<a class="btn btn-primary bg-gradient bg-opacity-50" href="/eco/{{params.object.lo.rlk_id}}/"><span class="icon-mbri-delivery"></span> Интерактивная оценка</a>
+				</div>
+			{% endif %}
+			{% if params.object.estimation != None %}
+				<div class="col-auto">
+					<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_car_shipment/{{params.object.sp_id}}/"><span class="icon-mbri-shopping-bag"></span> Отгрузка автомобиля</a>
+				</div>
+			{% endif %}
+			{% if request.user.profiles.korsavto_settings %}
+				<div class="col-auto">
+					<a class="btn btn-primary bg-gradient bg-opacity-50" href="/cars/{{params.object.lo_slug}}/price_edit/"><span class="icon-mbri-setting"></span> Управление ценообразованием</a>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-info"></span> Данные документа</h6>
 
 		<div class="row g-1">
-			
-			<div class="col-12 col-sm-3 text-center" >
-				<a href="/cars/{{params.object.lo_slug}}/" class="text-dark">
-					<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-						<span class="icon-mbri-home fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Автомобиль<br>
+			<div class="col-12">
+				<div class="row g-1">
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Организация</div>
+						<div class="metric-card-value-portal">{{params.object.organization.name}}</div>
 					</div>
-				</a>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Подразделение</div>
+						<div class="metric-card-value-portal">{{params.object.unit.name}}</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Клиент</div>
+						<div class="metric-card-value-portal">{{params.object.client.name}}</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Менеджер</div>
+						<div class="metric-card-value-portal">{{params.object.staff.name}}</div>
+					</div>
+				</div>																								
 			</div>
-			
-			<div class="col-12 col-sm-3 text-center" >
-				<a href="/docs_rlk/{{params.object.rlk.pk}}/" class="text-dark">
-					<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-						<span class="icon-mbri-edit fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Рабочий<br>лист ОП
-					</div>
-				</a>
-			</div>
-			
-			{% if params.object.estimation != None %}
-				<div class="col-12 col-sm-3 text-center">
-					<a href="/eco/{{params.object.lo.rlk_id}}/" class="text-dark">
-						<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-							<span class="icon-mbri-delivery fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Интерактивная<br>оценка
-						</div>
-					</a>
-				</div>
-			{% else %}
-				<div class="col-12 col-sm-3 text-center" style="opacity: 0.5;"  >
-					<a href="" class="text-dark">
-						<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-							<span class="icon-mbri-delivery fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Интерактивная<br>оценка
-						</div>
-					</a>
-				</div>
-			{% endif %}
-			
-			{% if params.object.estimation != None %}
-				<div class="col-12 col-sm-3 text-center" >
-					<a href="/docs_car_shipment/{{params.object.sp_id}}/" class="text-dark">
-						<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-							<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Отгрузка<br>автомобиля
-						</div>
-					</a>
-				</div>
-			{% else %}
-				<div class="col-12 col-sm-3 text-center" >
-					<a href="" class="text-dark">
-						<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-							<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Отгрузка<br>автомобиля
-						</div>
-					</a>
-				</div>
-			{% endif %}
-			
-		</div>
-
-		<br>
-
-		<div class="card " style="background-color: rgba(255,255,255,0.7);">
-		
-			<div class="card-body text-dark">
-				
-				<h6><span class="icon-mbri-info"></span> Автомобиль</h6>
-				<hr style="width: 75%;">
-				
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_mark}}">
-						<br>
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_model}}">	
-						<br>
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_modification}}">	
-					</div>
-					
-					<div class="col-sm">
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_year}}">	
-						<br>
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_run|floatformat:"0g"}} км.">	
-						<br>
-						<input class="form-control text-dark fs-5" type="text" placeholder="" aria-label="" value="{{params.object.lo_color}}">					
-					</div>
-
-				</div>
-
-				<hr>
-				<div class="row g-2">
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5 " id="lo_unit" name="lo_unit" value="{{params.object.lo_unit}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Подразделение</label>
-						</div>	
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_store" name="lo_store" value="{{params.object.lo_store}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Стоянка</label>
-						</div>	
-					</div>
-					
-					<div class="col-sm ">
-						<div class="form-floating mb-3  border-dark">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_is_new" name="lo_is_new" value="{% if params.object.lo_is_new %} Новый {% else %} С пробегом {% endif %}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Тип</label>
-						</div>	
-					</div>
-				</div>
-
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5 " id="type_reception" name="type_reception" value="{{params.object.lo_type_reception}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Тип приема автомобиля</label>
-						</div>	
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="status" name="status" value="{% if params.object.lo_quantity == 0 %} Продан {% else %} {{params.object.lo_status}} {% endif %}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Статус автомобиля</label>
-						</div>	
-					</div>
-					
-					<div class="col-sm ">
-						<div class="form-floating mb-3  border-dark">
-							<input type="text" class="form-control  text-dark fs-5" id="type_sale" name="type_sale" value="{{params.object.lo_type_sale}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Тип продажи автомобиля</label>
-						</div>	
-					</div>
-					
-				</div> 
-
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="vin" name="vin" value="{{params.object.lo_vin|capfirst}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">VIN</label>
-						</div>	
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="vin" name="vin" value="{{params.object.lo_vin2|capfirst}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">VIN 2</label>
-						</div>	
-					</div>
-					
-					<div class="col-sm ">
-						<div class="form-floating mb-3  border-dark">
-							<input type="text" class="form-control  text-dark fs-5" id="plate_number" name="plate_number" value="{{params.object.lo_plate_number|capfirst}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Регистрационный знак</label>
-						</div>	
-					</div>
-					
-				</div> 
-
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="days_in_stok" name="days_in_stok" value="{{params.object.lo_days_in_stok}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Дней на складе</label>
-						</div>	
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="outlay" name="outlay" value="{{params.object.outlay|floatformat:"2g"}} &#8381;" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Расходы на АМ</label>
-						</div>	
-					</div>
-					
-					<div class="col-sm ">
-						<div class="form-floating mb-3  border-dark">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_link_number" name="lo_link_number" value="{{params.object.lo_number}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Лист оценки</label>
-						</div>	
-					</div>
-					
-				</div>
-				<div class="row g-2">
-					<div class="col-sm ">
-					<div class="mb-3">
-						<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела подготовки</label>
-						<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.lo_description_podgotovka}}</textarea>
-						</div>
-					</div>
-						<div class="col-sm ">
-						<div class="mb-3">
-						<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела продаж</label>
-						<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.lo_description_op}}</textarea>
-						</div>
-					</div>
-				</div> 
-
-			</div>	
-
-		</div>
-
-		<div class="start_block"> </div>
-		
-		<div class="card start_block" style="background-color: rgba(255,255,255,0.7);">
-		
-			<div class="card-body text-dark">
-				
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_evaluation" name="lo_evaluation" value="{{params.object.lo_evaluation}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Дней до следующего этапа</label>
-						</div>	
-					</div>
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_group_price" name="lo_group_price" value="{{params.object.lo_group_price}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Ценовая группа</label>
-						</div>							
-					</div>
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_stageprice" name="lo_stageprice" value="{{params.object.lo_stageprice}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Этап установки цены</label>
-						</div>							
-					</div>					
-
-				</div> 
-
-				
-
-				<div class="row g-2">
-					
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_rating" name="lo_rating" value="{{params.object.lo_rating}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Привлекательность</label>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_days_next_stage" name="lo_days_next_stage" value="{{params.object.lo_days_next_stage}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Дней до следующего этапа</label>
-						</div>	
-					</div>
-
-					<div class="col-sm">
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control  text-dark fs-5" id="lo_task" name="lo_task" value="{{params.object.lo_task}}" placeholder="" readonly autocomplete="off">
-							<label for="floatingInput">Задач по автомобилю</label>
-						</div>	
-					</div>
-					
-				</div> 
-
-				{% if request.user.profiles.korsavto_settings %}
-							
-					<div class="row">
-						<div class="col-4 col-sm-auto text-center" >
-							<a href="/cars/{{params.object.lo_slug}}/price_edit/" class="text-dark">
-								<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%;">
-									<span class="icon-mbri-key fs-4"></span> <div class="hr_kors btn_block" style="height: 0.2rem;"> </div> Управление<br>ценообразованием
-								</div>
-							</a>
-						</div>
-					</div>
-
-				{% endif %}
-
-			</div>	
-
-		</div>
-
+		</div>	
 
 	</div>
 
+	<div class="portal-panel">
+		
+		<h6 class="mb-3"><span class="icon-truck"></span> Автомобиль</h6>
+
+		<div class="row g-1">
+			<div class="col-12">
+				<div class="row g-1">
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Марка модель модификация</div>
+						<div class="metric-card-value-portal">{{params.object.lo_mark}} {{params.object.lo_model}} {{params.object.lo_modification}}</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> VIN</div>
+						<div class="metric-card-value-portal">{{params.object.lo_vin}}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Год выпуска</div>
+						<div class="metric-card-value-portal">{{params.object.lo_year}}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Пробег</div>
+						<div class="metric-card-value-portal">{{params.object.lo_run|floatformat:"0g"}} км.</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Цвет</div>
+						<div class="metric-card-value-portal">{{params.object.lo_color|capfirst}}</div>
+					</div>
+				</div>																								
+			</div>
+		</div>	
+		
+		<br>
+		
+		<div class="row g-1">
+			<div class="col-12">
+				<div class="row g-1">
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Дней на складе</div>
+						<div class="metric-card-value-portal">{{params.object.lo_days_in_stok}} д.</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Тип приема</div>
+						<div class="metric-card-value-portal">{{params.object.lo_type_reception}}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Тип продажи</div>
+						<div class="metric-card-value-portal">{{params.object.lo_type_sale}}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Регистрационный знак</div>
+						<div class="metric-card-value-portal">{{params.object.lo_plate_number|capfirst}}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Статус</div>
+						<div class="metric-card-value-portal">{% if params.object.lo_quantity == 0 %} Продан {% else %} {{params.object.lo_status}} {% endif %}</div>
+					</div>
+					<div class="col-12 col-sm-2">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Тип</div>
+						<div class="metric-card-value-portal">{% if params.object.lo_is_new %} Новый {% else %} С пробегом {% endif %}</div>
+					</div>
+				</div>				
+			</div>
+			<br>
+			<div class="row g-2">
+				<div class="col-12 col-sm-6">
+				<div class="mb-3">
+					<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела подготовки</label>
+					<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.lo_description_podgotovka}}</textarea>
+					</div>
+				</div>
+					<div class="col-12 col-sm-6">
+					<div class="mb-3">
+					<label for="exampleFormControlTextarea1" class="form-label">Комментарий для отдела продаж</label>
+					<textarea class="form-control" id="exampleFormControlTextarea1" rows="5" readonly>{{params.object.lo_description_op}}</textarea>
+					</div>
+				</div>
+			</div>
+		</div>	
+
+	</div>
+
+	<div class="portal-panel">
+		
+		<h6 class="mb-3"><span class="icon-truck"></span> Выполнение ценового правила - {{params.object.check_date_time}}</h6>
+
+		<div class="row g-1">
+			<div class="col-12 col-sm-6">
+				<div class="row g-3">
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Вариант УЦ</div>
+						<div class="metric-card-value-portal">{{params.object.lo_evaluation}}</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Ценовая группа</div>
+						<div class="metric-card-value-portal">{{params.object.lo_group_price}}</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Этап УЦ</div>
+						<div class="metric-card-value-portal">{{params.object.lo_stageprice}}</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Привлекательность</div>
+						<div class="metric-card-value-portal">{{params.object.lo_rating}}</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Дней до следующего этапа</div>
+						<div class="metric-card-value-portal">{{params.object.lo_days_next_stage}}</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Задач</div>
+						<div class="metric-card-value-portal">{{params.object.lo_task}}</div>
+					</div>					
+				</div>
+				
+				<br>
+				
+				<div class="row g-3">
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Цена продажи</div>
+						<div class="metric-card-value-portal">{{params.object.amount|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Себестоимость</div>
+						<div class="metric-card-value-portal">{{params.object.cost_price|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Расходы на АМ</div>
+						<div class="metric-card-value-portal">{{params.object.outlay|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Скидка торг</div>
+						<div class="metric-card-value-portal">{{params.object.discountAmountTorg|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Скидка Trade-IN</div>
+						<div class="metric-card-value-portal">{{params.object.discountAmountTradeIN|floatformat:"2g"}} &#8381;</div>
+					</div>
+				</div>
+				<br>
+				<div class="row g-3">
+					
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВ расчетные колеса</div>
+						<div class="metric-card-value-portal">{{params.object.bu_wheels_est|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВ расчетные КСО</div>
+						<div class="metric-card-value-portal">{{params.object.kso_est|floatformat:"2g"}} &#8381;</div>
+					</div>
+					
+				</div>
+
+				<br>
+				<div class="row g-3">
+					
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВ факт колеса</div>
+						<div class="metric-card-value-portal">{{params.object.bu_wheels_actual|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВ факт КСО</div>
+						<div class="metric-card-value-portal">{{params.object.kso_actual|floatformat:"2g"}} &#8381;</div>
+					</div>
+					
+					
+				</div>
+
+				<br>
+				<div class="row g-3">
+					
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Расчетный КМ</div>
+						<div class="metric-card-value-portal">{{params.object.cm_est|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Минимальный КМ</div>
+						<div class="metric-card-value-portal">{{params.object.cm_min|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Целевой КМ</div>
+						<div class="metric-card-value-portal">{{params.object.cm_goal|floatformat:"2g"}} &#8381;</div>
+					</div>
+
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Железо</div>
+						<div class="metric-card-value-portal">{{params.object.cum|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Опцион</div>
+						<div class="metric-card-value-portal">{{params.object.opcion|floatformat:"2g"}} &#8381;</div>
+					</div>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Фактический КМ</div>
+						<div class="metric-card-value-portal">{{params.object.cm_actual|floatformat:"2g"}} &#8381;</div>
+					</div>
+					
+				</div>
+
+			</div>
+			<div class="col-12 col-sm-6">
+				<div class="mb-3">
+					<textarea class="form-control" id="exampleFormControlTextarea1" rows="10" readonly>{{params.object.check_text}}</textarea>
+				</div>
+				<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Расчетный</div>
+				<div class="metric-card-value-portal">
+					{% if params.object.check_estimated %} 
+						<span class="icon-mbri-success text-success"> Выполнен</span> 
+					{% else %} 
+						<span class="icon-mbri-close text-danger">Не выполнен</span>
+					{% endif %} 
+				</div>
+				<br>
+				<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Фактический</div>
+				<div class="metric-card-value-portal">
+					{% if params.object.check_actual %} 
+						<span class="icon-mbri-success text-success"> Выполнен</span> 
+					{% else %} 
+						<span class="icon-mbri-close text-danger">Не выполнен</span>
+					{% endif %}
+				</div>
+			</div>
+		</div>	
+		
+
+	</div>
 
 </div>
-
-
-
-	
 
 
 <script language="JavaScript">

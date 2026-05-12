@@ -3708,6 +3708,34 @@
                         <div class="row g-1">
                           <div class="col-sm-12">
                             <div class="kors-btn-group-wrapper">
+                              <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с проекцией">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_projection_int" 
+                                       id="windshield_projection_int-radio1" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_projection_int == 0 %} checked {% endif %} 
+                                       value="0" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_projection_int-radio1">Нет</label>
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_projection_int" 
+                                       id="windshield_projection_int-radio2" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_projection_int == 1 %} checked {% endif %} 
+                                       value="1" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_projection_int-radio2">Да</label>
+                              </div>
+                              <label class="fs-6" for="check_engine">Лобовое стекло с проекцией</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="row g-1">
+                          <div class="col-sm-12">
+                            <div class="kors-btn-group-wrapper">
                               <div class="kors-btn-group-compact" role="group" aria-label="Проверка VIN номера и номера ДВС">
                                 <input type="radio" class="btn-check" name="check_vin_int" id="check_vin_int-radio1" autocomplete="off" {% if params.estimation.page_vnesh.check_vin_int == 1 %} checked {% endif %} value="1" required>
                                 <label class="btn btn-outline-success" for="check_vin_int-radio1">В порядке</label>
@@ -3829,6 +3857,42 @@
                         <span class="icon-mbri-image-slider"></span> Осмотр ЛКП и повреждений автомобиля
                       </h6>
                       
+                      <div class="row g-1">
+                        <div class="col-sm-12">
+                          <div class="kors-btn-group-wrapper">
+                            <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с проекцией">
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="type_color_int" 
+                                     id="type_color_int-radio1" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_vnesh.type_color_int == 1 %} checked {% endif %} 
+                                     value="1" 
+                                     required>
+                              <label class="btn btn-outline-success" for="type_color_int-radio1">Обычный</label>
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="type_color_int" 
+                                     id="type_color_int-radio2" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_vnesh.type_color_int == 2 %} checked {% endif %} 
+                                     value="2" 
+                                     required>
+                              <label class="btn btn-outline-success" for="type_color_int-radio2">Перламутр</label>
+                              <input type="radio" 
+                                     class="btn-check" 
+                                     name="type_color_int" 
+                                     id="type_color_int-radio3" 
+                                     autocomplete="off" 
+                                     {% if params.estimation.page_vnesh.type_color_int == 3 %} checked {% endif %} 
+                                     value="3" 
+                                     required>
+                              <label class="btn btn-outline-success" for="type_color_int-radio3">Под прибор</label>
+                            </div>
+                            <label class="fs-6" for="check_engine">Тип окраса деталей в случае необходимости</label>
+                          </div>
+                        </div>
+                      </div>
 
                       <div class="row g-1">
                   
@@ -6180,9 +6244,11 @@
                     {% for cd in params.control_diagnostics %}
                     <div class="d-flex align-items-center mb-1 flex-wrap gap-1">
                       <a href="{% url 'eco:control_diagnostic_comparison' params.rlk.id cd.id %}" class="btn btn-link btn-sm text-decoration-none p-0 me-2" target="_blank">
-                        КД от {{ cd.created_at|date:"d.m.Y H:i" }}{% if cd.author %} — {{ cd.author.last_name }} {{ cd.author.first_name }}{% endif %}
+                        КД от {{ cd.created_at|date:"d.m.Y H:i" }}{% if cd.author %} — {{ cd.author.profiles.eco_name }} {% endif %}
                       </a>
-                      <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id cd.id %}" class="btn btn-outline-secondary btn-sm" target="_blank">Редактировать</a>
+                      {% if request.user == cd.author %}
+                        <a href="{% url 'eco:control_diagnostic_edit' params.rlk.id cd.id %}" class="btn btn-outline-secondary btn-sm" target="_blank">Редактировать</a>
+                      {% endif %}
                     </div>
                     {% endfor %}
                   </div>

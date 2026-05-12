@@ -2120,7 +2120,9 @@ class RegInteractivOcenkaVnesh(ChangeloggableMixin, models.Model):
     oil_error_int           = models.IntegerField('Следы подтекания масла', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
     water_error_int         = models.IntegerField('Следы подтекания охлаждающей жидкости', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
 
-    windshield_heat_int    = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True) #'// 1 - есть обогрев
+    windshield_heat_int             = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True) #'// 1 - есть обогрев
+    windshield_projection_int       = models.IntegerField('Лобовое стекло с проекцией', default=10, null=True, blank=True) #'// 1 - есть проекция
+    type_color_int                  = models.IntegerField('Тип окраса повреждений', default=10, null=True, blank=True) #'// 1 - обычный окрас 2 - перламутр 3 - под прибор
     
     def __str__(self):
         return "{} / {}".format(self.start_estimation, self.end_estimation)
@@ -3932,7 +3934,9 @@ class RegControlDiagnosticVnesh(models.Model):
     oil_error_int = models.IntegerField('Следы подтекания масла', default=10, null=True, blank=True)
     water_error_int = models.IntegerField('Следы подтекания охлаждающей жидкости', default=10, null=True, blank=True)
     windshield_heat_int = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True)
-
+    windshield_projection_int       = models.IntegerField('Лобовое стекло с проекцией', default=10, null=True, blank=True) #'// 1 - есть проекция
+    type_color_int                  = models.IntegerField('Тип окраса повреждений', default=10, null=True, blank=True) #'// 1 - обычный окрас 2 - перламутр 3 - под прибор
+    
     class Meta:
         db_table = 'regControlDiagnosticVnesh'
         verbose_name = 'КД: внешний осмотр'

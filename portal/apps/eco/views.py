@@ -6436,7 +6436,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     else:
                         price_diff = windshield
                         info_diff   = "Лобовое стекло"
-
+                    if estimation.page_vnesh.windshield_projection_int == 1:
+                        price_diff = price_diff + (price_diff * 0.3)
+                        info_diff = info_diff + " с проекцией"  
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -7560,7 +7562,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     else:
                         price_diff = windshield
                         info_diff   = info['name']
-
+                    if estimation.page_vnesh.windshield_projection_int == 1:
+                        price_diff = price_diff + (price_diff * 0.3)
+                        info_diff = info_diff + " с проекцией" 
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -7775,11 +7779,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 14)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum 
@@ -7787,11 +7798,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 43)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7799,11 +7817,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 9)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7811,11 +7836,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 59)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7823,11 +7855,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 46)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7835,11 +7874,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 51)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7847,11 +7893,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 4)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7859,11 +7912,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 24)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7871,11 +7931,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 28)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -7883,11 +7950,18 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         diff_sum    = 0
                         work        = RegPodgotovkaWork.objects.get(pk = 38)
                         diff_sum    = work.price_podrad
+                        name_dop    = '' 
+                        if estimation.page_vnesh.type_color_int == 2 or estimation.page_vnesh.type_color_int == 3:
+                            diff_sum = diff_sum * 2
+                            if estimation.page_vnesh.type_color_int == 2:
+                                name_dop = ' перламутр'
+                            elif estimation.page_vnesh.type_color_int == 3:
+                                name_dop = ' под прибор'
                         dop = {
-                            'name'      : work.name_group + ' / ' +  work.name,
+                            'name'      : work.name_group + ' / ' +  work.name + name_dop,
                             'quantity'  : work.normo,
-                            'amount_pod': work.price_podrad, 
-                            'amount'    : work.price_kors
+                            'amount_pod': diff_sum, 
+                            'amount'    : diff_sum
                         }
                         list_work_mcu.append(dop)
                         amount_mcu = amount_mcu + diff_sum
@@ -9224,7 +9298,9 @@ def estimations_price_calculation_cd(cd, type_calculation):
                     else:
                         price_diff = windshield
                         info_diff   = "Лобовое стекло"
-
+                    if cd.page_vnesh.windshield_projection_int == 1:
+                        price_diff = price_diff + (price_diff * 0.3)
+                        info_diff = info_diff + " с проекцией" 
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -10336,7 +10412,9 @@ def estimations_price_calculation_cd(cd, type_calculation):
                     else:
                         price_diff = windshield
                         info_diff   = info['name']
-
+                    if cd.page_vnesh.windshield_projection_int == 1:
+                        price_diff = price_diff + (price_diff * 0.3)
+                        info_diff = info_diff + " с проекцией" 
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {

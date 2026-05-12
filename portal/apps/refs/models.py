@@ -2117,84 +2117,85 @@ class RefCarsOrganization(models.Model):
         
         from prices_car.models import PriceCarStageKM, BrandKM, PriceCarBrand
         data        = PriceCarStageKM.objects.filter(stage = self.stage_price).last()
-        brand_car   = PriceCarBrand.objects.filter(marks = self.modification_autoru.model.mark).exclude(models_included = self.modification_autoru.model).last()
-        
-        if brand_car != None:
-            info['brand_km'] = BrandKM.objects.filter(brand = brand_car).order_by('month').last()
-
-        info['irc'] = data.km_index
-        km_brand_automatic = 0
-        
         if self.modification_autoru != None:
-            data_infocars_mark = RefCarsOrganization.objects.filter(modification_autoru__model__mark = self.modification_autoru.model.mark).filter(is_new = True).exclude(quantity = 0).exclude(price = 0).aggregate(Sum('price'), Count('id'))
-            if data_infocars_mark['price__sum'] != None and data_infocars_mark['id__count'] > 0:                
-                km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
-                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
-                km_min_automatic            = self.price * km_brand_automatic_stage / 100
-                description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
-            else:
-                km_brand_automatic          = info['brand_km'].km
-                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
-                km_min_automatic            = self.price * km_brand_automatic_stage / 100
-                if km_min_automatic == 0:
-                    km_min_automatic = km_brand_automatic
-                description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " " + '{:,}'.format(km_min_automatic).replace(',', ' ') +  " руб."
-            automatic = {
-                'km_brand_automatic_percent'        : km_brand_automatic,
-                'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
-                'km_min_automatic'                  : km_min_automatic,
-                'km_description'                    : description
-            }
-            info['automatic'] = automatic
-            type_km = 1
-        if self.modification_autoru != None:
-            from powerbi.models import Cumulative
-            dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
-            dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
-            cum_korrection  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(Marka = self.modification_autoru.model.mark.name.upper()).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
-            cum_count       = cum_korrection.count()
-            cum_aggregate   = 0 
-            cum_sum         = 0 
-            for cum_info in cum_korrection:
-                SummaRabot              = 0 if cum_info.SummaRabot == None else float(cum_info.SummaRabot)
-                ValovayaPribylZChShiny  = 0 if cum_info.ValovayaPribylZChShiny == None else float(cum_info.ValovayaPribylZChShiny)
-                ValovayaPribylZCh       = 0 if cum_info.ValovayaPribylZCh == None else float(cum_info.ValovayaPribylZCh)
-                SummaTreydInPoPlanu     = 0 if cum_info.SummaTreydInPoPlanu == None else float(cum_info.SummaTreydInPoPlanu)
-                VPOPFU                  = 0 if cum_info.VPOPFU == None else float(cum_info.VPOPFU)
-                SummaMarzhiBezNDS       = 0 if cum_info.SummaMarzhiBezNDS == None else float(cum_info.SummaMarzhiBezNDS)
-                SummaGosreg             = 0 if cum_info.SummaGosreg == None else float(cum_info.SummaGosreg)
-                cum_data = SummaRabot + ValovayaPribylZChShiny + ValovayaPribylZCh + SummaTreydInPoPlanu + VPOPFU + SummaMarzhiBezNDS + SummaGosreg
-                cum_sum = cum_sum + cum_data
-                rrc = 0 if cum_info.RRTS == None else float(cum_info.RRTS)
-                cum_aggregate = cum_aggregate + rrc
-            km_sale = cum_sum / cum_count            
-            km_brand_automatic = km_sale / (cum_aggregate / cum_count) * 100
-            km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
-            km_min_automatic_2            = self.price * km_brand_automatic_stage / 100
-            if km_min_automatic_2 == 0:
-                km_min_automatic_2 = km_sale
-            automatic = {
-                'km_brand_automatic_percent'        : km_brand_automatic,
-                'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
-                'km_min_automatic'                  : km_min_automatic_2,
-                'km_description'                    : "Проанализированы продажи склада новых АМ по бренду " + self.modification_autoru.model.mark.name + " - " + str(cum_count) + " шт. на сумму РРЦ " + '{:,}'.format(cum_aggregate).replace(',', ' ') + " руб."
-            }
-            info['automatic_2'] = automatic
-            if km_min_automatic_2 > km_min_automatic:
-                type_km = 2
-        if self.min_km != 0 and self.min_km != None:
-            km_brand_automatic = self.min_km  / self.price * 100
-            custom = {
-                'km_brand_automatic_percent'        : km_brand_automatic,
-                'km_brand_automatic_stage_percent'  : km_brand_automatic,
-                'km_min_automatic'                  : self.min_km,
-                'km_description'                    : "На автомобиле установлен минимальный км " + '{:,}'.format(self.min_km).replace(',', ' ') + " руб."
-            }
-            info['custom'] = custom
+            brand_car   = PriceCarBrand.objects.filter(marks = self.modification_autoru.model.mark).exclude(models_included = self.modification_autoru.model).last()
             
-            type_km = 3
+            if brand_car != None:
+                info['brand_km'] = BrandKM.objects.filter(brand = brand_car).order_by('month').last()
 
-        info['type_km'] = type_km
+            info['irc'] = data.km_index
+            km_brand_automatic = 0
+            
+            if self.modification_autoru != None:
+                data_infocars_mark = RefCarsOrganization.objects.filter(modification_autoru__model__mark = self.modification_autoru.model.mark).filter(is_new = True).exclude(quantity = 0).exclude(price = 0).aggregate(Sum('price'), Count('id'))
+                if data_infocars_mark['price__sum'] != None and data_infocars_mark['id__count'] > 0:                
+                    km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
+                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                    description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
+                else:
+                    km_brand_automatic          = info['brand_km'].km
+                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                    if km_min_automatic == 0:
+                        km_min_automatic = km_brand_automatic
+                    description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " " + '{:,}'.format(km_min_automatic).replace(',', ' ') +  " руб."
+                automatic = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
+                    'km_min_automatic'                  : km_min_automatic,
+                    'km_description'                    : description
+                }
+                info['automatic'] = automatic
+                type_km = 1
+            if self.modification_autoru != None:
+                from powerbi.models import Cumulative
+                dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
+                dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
+                cum_korrection  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(Marka = self.modification_autoru.model.mark.name.upper()).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+                cum_count       = cum_korrection.count()
+                cum_aggregate   = 0 
+                cum_sum         = 0 
+                for cum_info in cum_korrection:
+                    SummaRabot              = 0 if cum_info.SummaRabot == None else float(cum_info.SummaRabot)
+                    ValovayaPribylZChShiny  = 0 if cum_info.ValovayaPribylZChShiny == None else float(cum_info.ValovayaPribylZChShiny)
+                    ValovayaPribylZCh       = 0 if cum_info.ValovayaPribylZCh == None else float(cum_info.ValovayaPribylZCh)
+                    SummaTreydInPoPlanu     = 0 if cum_info.SummaTreydInPoPlanu == None else float(cum_info.SummaTreydInPoPlanu)
+                    VPOPFU                  = 0 if cum_info.VPOPFU == None else float(cum_info.VPOPFU)
+                    SummaMarzhiBezNDS       = 0 if cum_info.SummaMarzhiBezNDS == None else float(cum_info.SummaMarzhiBezNDS)
+                    SummaGosreg             = 0 if cum_info.SummaGosreg == None else float(cum_info.SummaGosreg)
+                    cum_data = SummaRabot + ValovayaPribylZChShiny + ValovayaPribylZCh + SummaTreydInPoPlanu + VPOPFU + SummaMarzhiBezNDS + SummaGosreg
+                    cum_sum = cum_sum + cum_data
+                    rrc = 0 if cum_info.RRTS == None else float(cum_info.RRTS)
+                    cum_aggregate = cum_aggregate + rrc
+                km_sale = cum_sum / cum_count            
+                km_brand_automatic = km_sale / (cum_aggregate / cum_count) * 100
+                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                km_min_automatic_2            = self.price * km_brand_automatic_stage / 100
+                if km_min_automatic_2 == 0:
+                    km_min_automatic_2 = km_sale
+                automatic = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
+                    'km_min_automatic'                  : km_min_automatic_2,
+                    'km_description'                    : "Проанализированы продажи склада новых АМ по бренду " + self.modification_autoru.model.mark.name + " - " + str(cum_count) + " шт. на сумму РРЦ " + '{:,}'.format(cum_aggregate).replace(',', ' ') + " руб."
+                }
+                info['automatic_2'] = automatic
+                if km_min_automatic_2 > km_min_automatic:
+                    type_km = 2
+            if self.min_km != 0 and self.min_km != None:
+                km_brand_automatic = self.min_km  / self.price * 100
+                custom = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic,
+                    'km_min_automatic'                  : self.min_km,
+                    'km_description'                    : "На автомобиле установлен минимальный км " + '{:,}'.format(self.min_km).replace(',', ' ') + " руб."
+                }
+                info['custom'] = custom
+                
+                type_km = 3
+
+            info['type_km'] = type_km
 
         return info
 
@@ -2202,38 +2203,71 @@ class RefCarsOrganization(models.Model):
         from powerbi.models import Cumulative
         dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
         dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
-        model_list = AutoruModification.objects.filter(model = self.modification_autoru.model).values_list('idSite', flat=True)
         
-        sale_qs  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(IDModifikatsii__in = model_list).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
-        
-        sale_all_model = sale_qs.filter(PodrazdelenieDTs = self.unit.name).count()
-        sale_all_modif = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IDModifikatsii = self.modification_autoru.idSite).count()
-        sale_all_compl = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
-        
-        sale_all_model_gk = sale_qs.count()
-        sale_all_modif_gk = sale_qs.filter(IDModifikatsii = self.modification_autoru.idSite).count()
-        sale_all_compl_gk = sale_qs.filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
+        if self.modification_autoru != None:
+            model_list = AutoruModification.objects.filter(model = self.modification_autoru.model).values_list('idSite', flat=True)
+            
+            sale_qs  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(IDModifikatsii__in = model_list).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+            
+            sale_all_model = sale_qs.filter(PodrazdelenieDTs = self.unit.name).count()
+            if self.modification_autoru != None:
+                sale_all_modif = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IDModifikatsii = self.modification_autoru.idSite).count()
+            else:
+                sale_all_modif = 0
+            if self.complectation_autoru != None:
+                sale_all_compl = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
+            else:
+                sale_all_compl = 0
+                
+            sale_all_model_gk = sale_qs.count()
+            if self.modification_autoru != None:
+                sale_all_modif_gk = sale_qs.filter(IDModifikatsii = self.modification_autoru.idSite).count()
+            else:
+                sale_all_modif_gk = 0
+            if self.complectation_autoru != None:
+                sale_all_compl_gk = sale_qs.filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
+            else:
+                sale_all_compl_gk = 0
 
-        
-        info = {
-            'sale_all_model'    : sale_all_model,
-            'sale_all_modif'    : sale_all_modif,
-            'sale_all_compl'    : sale_all_compl,
-            'sale_all_model_gk'    : sale_all_model_gk,
-            'sale_all_modif_gk'    : sale_all_modif_gk,
-            'sale_all_compl_gk'    : sale_all_compl_gk,
-        }
+            info = {
+                'sale_all_model'    : sale_all_model,
+                'sale_all_modif'    : sale_all_modif,
+                'sale_all_compl'    : sale_all_compl,
+                'sale_all_model_gk'    : sale_all_model_gk,
+                'sale_all_modif_gk'    : sale_all_modif_gk,
+                'sale_all_compl_gk'    : sale_all_compl_gk,
+            }
+        else:
+            info = {
+                'sale_all_model'    : 0,
+                'sale_all_modif'    : 0,
+                'sale_all_compl'    : 0,
+                'sale_all_model_gk'    : 0,
+                'sale_all_modif_gk'    : 0,
+                'sale_all_compl_gk'    : 0,
+            } 
         
         return info
 
     def unit_info(self):
-        count_all           = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).filter(unit = self.unit).count()
-        count_all_model     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).count()
-        count_all_compl     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
-        count_all_gk        = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).count()
-        count_all_model_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).count()
-        count_all_compl_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
-        
+        if self.modification_autoru != None:
+            count_all           = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).filter(unit = self.unit).count()
+            count_all_model     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).count()
+            count_all_gk        = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).count()
+            count_all_model_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).count()
+        else:
+            count_all = 0
+            count_all_model = 0
+            count_all_gk = 0
+            count_all_model_gk = 0
+
+        if self.complectation_autoru != None:
+            count_all_compl     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
+            count_all_compl_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
+        else:
+            count_all_compl = 0
+            count_all_compl_gk = 0
+
         info = {
             'count_all'         : count_all,
             'count_all_model'   : count_all_model,
@@ -2867,6 +2901,7 @@ class RefCarsOrganization(models.Model):
                     self.name = self.name + ' ' + self.complectation_autoru.name             
         except:
             s = 1
+    
     def save(self, *args, **kwargs):
         
         self.vin = self.vin.upper()
@@ -2877,12 +2912,20 @@ class RefCarsOrganization(models.Model):
                 if lo != None:
                     self.lo = lo
 
-        if not self.slug:
+        if not self.slug or len(self.slug) < 8:
             if self.is_new == False:
                 name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
                 self.slug = slugify(name_slug.lower())
             else:
-                name_slug = str(self.lo_uin[0:5]) + self.lo_uin[15:18]
+                name_slug = ''
+                try:
+                    name_slug = transliterate(self.modification_autoru.model.mark.name).replace(' ', '_')
+                    name_slug = name_slug + '_' + transliterate(self.modification_autoru.model.name).replace(' ', '_')
+                except:
+                    s = 1
+                if name_slug != '':
+                    name_slug = name_slug + "_"
+                name_slug = name_slug + str(self.lo_uin[0:10]) + self.lo_uin[14:18]
                 self.slug = slugify(name_slug.lower())
         
         try:
