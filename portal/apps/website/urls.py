@@ -129,6 +129,7 @@ urlpatterns = [
    path('cvc/',            views.cvc),
 
    path('test/',           views.test),
+   path('dev/styleguide/', views.portal_styleguide, name='portal_styleguide'),
 
    #test 
    path('rem_zone/',      views.rem_zone),

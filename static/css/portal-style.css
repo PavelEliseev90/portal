@@ -1,5 +1,7 @@
 /* ============================================
    СТИЛЬ ПОРТАЛА - Базовые стили
+   Витрина и демо: URL /dev/styleguide/
+   Соглашения по именам и скоупу: docs/portal-ui-conventions.md
    ============================================ */
 
 /* Основная страница */
@@ -2043,4 +2045,34 @@
   .calendar-legend {
     gap: 1rem;
   }
+}
+
+/* ============================================
+   Styleguide (/dev/styleguide/) — предпросмотр без полноэкранных корней
+   ============================================ */
+
+.styleguide-nested-demo .settings-page,
+.styleguide-nested-demo .settings-vnesh-page,
+.styleguide-nested-demo .settings-diagnostic-page,
+.styleguide-nested-demo .settings-dc-page,
+.styleguide-nested-demo .matrix-page,
+.styleguide-nested-demo .sales-funnel-page,
+.styleguide-nested-demo .kpi-eco-page,
+.styleguide-nested-demo .lo-list-page,
+.styleguide-nested-demo .lo-v3-page {
+  min-height: 0;
+}
+
+.styleguide-filter-demo .filter-options {
+  display: block;
+  position: relative;
+  max-height: 160px;
+}
+
+.styleguide-fixed-relative .mobile-filter-button,
+.styleguide-fixed-relative .mobile-filters-button {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  left: auto;
 }
