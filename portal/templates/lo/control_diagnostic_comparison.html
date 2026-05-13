@@ -14,7 +14,7 @@
         <div>
           <h1 class="kors-hero__title mb-1">Сравнение: оценка и контрольная диагностика</h1>
           <p class="kors-hero__subtitle mb-0">
-            РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.last_name }} {{ params.cd.author.first_name }}{% endif %}
+            РЛК № {{ params.rlk.id }} · КД от {{ params.cd.created_at|date:"d.m.Y H:i" }}{% if params.cd.author %} · {{ params.cd.author.profiles.eco_name }}{% endif %}
           </p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
