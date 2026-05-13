@@ -911,7 +911,7 @@
 {% include 'chats/chat_list_cars.html' %}
 
 <div class="portal-page">
-    <div class="container-fluid py-3">
+    <div class="">
         {% if params.from_prices_car %}
         <p class="mb-2">
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
@@ -1043,7 +1043,7 @@
 
         <div class="mb-3  no-padding">
 
-          <div class="portal-panel">
+          <div class="portal-panel no-padding">
             <!-- Десктопная версия - Вариант 1: Горизонтальные карточки -->
             <div class="d-none d-lg-block">
               <div class="disposition-cards-horizontal">

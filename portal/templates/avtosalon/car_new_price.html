@@ -825,8 +825,8 @@
 								<div class="row g-2 mb-3">
 									<div class="col-12">
 										<h6 class="mb-2">Детализация продаж подразделения за последний месяц (Power BI Cumulative)</h6>
-										<div class="table-responsive">
-											<table class="table table-sm table-striped table-hover">
+										<div class="table-responsive portal-radius">
+											<table class="table table-sm table-striped table-hover mb-0">
 												<thead>
 													<tr>
 														<th>Дата продажи</th>
@@ -938,50 +938,50 @@
 
 					  <hr>
 					  {{doc.customerWords}}
-					  <hr>
+					  
+					  <div class="table-responsive portal-radius">
+						<table class="table table-sm table-striped table-hover mb-0">
+							<thead>
+								<tr>
+									<th scope="col">Наименование</th>
+									<th scope="col">Количество</th>
+									<th scope="col">Цена</th>
+									<th scope="col">Скидка %</th>
+									<th scope="col">Скидка</th>
+									<th scope="col">Сумма</th>
+								</tr>
+							</thead>
+							<tbody>
 
-					  <table class="table">
-						<thead>
-						  <tr>
-							<th scope="col">Наименование</th>
-							<th scope="col">Количество</th>
-							<th scope="col">Цена</th>
-							<th scope="col">Скидка %</th>
-							<th scope="col">Скидка</th>
-							<th scope="col">Сумма</th>
-						  </tr>
-						</thead>
-						<tbody class="table-group-divider">
+							{% if doc.works_count > 0 %}
+								{% for work_zn in doc.works %}
+								<tr>
+									<td>{{work_zn.work.name}}</td>
+									<td>{{work_zn.quantity}}</td>
+									<td>{{work_zn.price|floatformat:"0g"}} &#8381;</td>
+									<td>{{work_zn.discountPercentage}}</td>
+									<td>{{work_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
+									<td>{{work_zn.amountResult|floatformat:"0g"}} &#8381;</td>
+								</tr>  
+								{% endfor %}
+							{% endif %}
+							{% if doc.products_count > 0 %}
+								{% for product_zn in doc.products %}
+								<tr>
+									<td>{{product_zn.product.name}}</td>
+									<td>{{product_zn.quantity}}</td>
+									<td>{{product_zn.price|floatformat:"0g"}} &#8381;</td>
+									<td>{{product_zn.discountPercentage}}</td>
+									<td>{{product_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
+									<td>{{product_zn.amountResult|floatformat:"0g"}} &#8381;</td>
+								</tr>  
+								{% endfor %}
+							{% endif %}
 
-						  {% if doc.works_count > 0 %}
-							{% for work_zn in doc.works %}
-							  <tr>
-								<td>{{work_zn.work.name}}</td>
-								<td>{{work_zn.quantity}}</td>
-								<td>{{work_zn.price|floatformat:"0g"}} &#8381;</td>
-								<td>{{work_zn.discountPercentage}}</td>
-								<td>{{work_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
-								<td>{{work_zn.amountResult|floatformat:"0g"}} &#8381;</td>
-							  </tr>  
-							{% endfor %}
-						  {% endif %}
-						  {% if doc.products_count > 0 %}
-							{% for product_zn in doc.products %}
-							  <tr>
-								<td>{{product_zn.product.name}}</td>
-								<td>{{product_zn.quantity}}</td>
-								<td>{{product_zn.price|floatformat:"0g"}} &#8381;</td>
-								<td>{{product_zn.discountPercentage}}</td>
-								<td>{{product_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
-								<td>{{product_zn.amountResult|floatformat:"0g"}} &#8381;</td>
-							  </tr>  
-							{% endfor %}
-						  {% endif %}
-
-						</tbody>
-					  </table>
-
-					  <hr>
+							</tbody>
+						</table>
+					  </div>
+					  
 					  <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
 															  
 						<div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
@@ -1026,10 +1026,12 @@
 		</div>
 
 		<div class="tab-pane {% if params.current_tab == 'analytics_unit' %}active{% endif %}" id="tab-analytics_unit" role="tabpanel">
-			<div class="portal-panel">
-				<h6 class="mb-3">Аналитика по подразделению с {{params.analytics.last_month_start|date:"d-m-Y"}} по {{params.analytics.last_month_end|date:"d-m-Y"}}</h6>
+			<div class="portal-panel no-padding">
 				
-				<div class="row g-1">
+				<h6 class="mb-3 padding-portal">Аналитика по подразделению с {{params.analytics.last_month_start|date:"d-m-Y"}} по {{params.analytics.last_month_end|date:"d-m-Y"}}</h6>
+				
+				<div class="row g-1 padding-portal">
+					
 					<div class="col-auto">
 						<div class="mb-3">
 							<a class="btn btn-sm {% if params.sale_type < 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
@@ -1038,27 +1040,30 @@
 							</a>							     
 						</div>
 					</div>
+					
 					<div class="col-auto">
 						<a class="btn btn-sm {% if params.sale_type > 0 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
 							href="?tab=analytics_unit&sale_type=1">
 							<span class="icon-mbri-home"></span>Текущая модель
 						</a>
 					</div>
+					
 					<div class="col-auto">
 						<a class="btn btn-sm {% if params.sale_type > 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
 							href="?tab=analytics_unit&sale_type=2">
 							<span class="icon-mbri-home"></span>Текущая модификация
 						</a>  
 					</div>
+					
 					{% if params.object.complectation_autoru != None %}
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sale_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_type=3">
-								<span class="icon-mbri-home"></span>Текущая комплектация
-							</a>							     
+						<div class="col-auto">
+							<div class="mb-3">
+								<a class="btn btn-sm {% if params.sale_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+								href="?tab=analytics_unit&sale_type=3">
+									<span class="icon-mbri-home"></span>Текущая комплектация
+								</a>							     
+							</div>
 						</div>
-					</div>
 					{% endif %}
 																			 
 					<!--
@@ -1088,10 +1093,8 @@
 					</div>
 					-->
 				</div>
-				
-				<br>
 
-				<div class="row g-1">
+				<div class="row g-1 padding-portal">
 					<div class="col-sm-auto col-12">
 						<div class="metric-card">
 							<div class="metric-card-label"><span class="icon-mbri-credit-card"></span> ВП</div>
@@ -1161,8 +1164,8 @@
 				
 				{% if params.analytics %}
 					{% if params.analytics.cumulative_detail %}
-					<div class="table-responsive mb-2">
-						<table class="table table-sm table-striped table-hover">
+					<div class="table-responsive portal-radius">
+						<table class="table table-sm table-striped table-hover mb-0">
 							<thead>
 								<tr>
 									<th>Дата</th>

@@ -7,6 +7,7 @@
 {% block mestoName %}  {% endblock %}
 
 {% block content %}
+
 <div class="portal-page">
   <div class="portal-header">
     <h2>Рабочие листы</h2>
@@ -349,12 +350,12 @@
   </form>
 
   {% if params.objects.object_list %}
-    <div class="portal-panel">
-      <div class="table-responsive table-sticky">
-        <table class="table table-hover">
+    <div class="portal-panel no-padding">
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-striped table-hover mb-0">
           <thead>
             <tr>
-              <th></th>
+              <th>#</th>
               <th>Номер / Дата</th>
               <th>Подразделение</th>
               <th>Менеджер</th>
@@ -565,5 +566,6 @@
 
 
   </script>
+
 </div>
 {% endblock %}
