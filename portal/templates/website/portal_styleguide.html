@@ -1,0 +1,752 @@
+{% extends 'base_web.html' %}
+
+{% block url %}{% endblock %}
+
+{% block title %} — UI styleguide{% endblock %}
+
+{% block title_navbar %} — UI styleguide{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header">
+		<h2>UI styleguide портала</h2>
+		<p>Демонстрация классов из <code>portal-style.css</code> и соглашений по вёрстке. URL этой страницы: <code>/dev/styleguide/</code></p>
+	</div>
+
+	<div class="portal-panel" id="sg-toc">
+		<h6 class="mb-3"><span class="icon-mbri-menu"></span> Оглавление</h6>
+		<div class="row small">
+			<div class="col-md-6">
+				<ul class="mb-0">
+					<li><a href="#sg-conventions">Соглашения</a></li>
+					<li><a href="#sg-utilities">Утилиты и отступы</a></li>
+					<li><a href="#sg-page-roots">Корни страниц (*-page)</a></li>
+					<li><a href="#sg-filters-report">Фильтры отчётов</a></li>
+					<li><a href="#sg-filters-catalog">Фильтры каталога авто</a></li>
+					<li><a href="#sg-diagnostic">Диагностика</a></li>
+					<li><a href="#sg-calendar">Календарь подготовки</a></li>
+				</ul>
+			</div>
+			<div class="col-md-6">
+				<ul class="mb-0">
+					<li><a href="#sg-interactive">Интерактив панелей</a></li>
+					<li><a href="#sg-media">Галерея и карусель</a></li>
+					<li><a href="#sg-tables-mobile">Таблицы: mobile / модалка / accordion</a></li>
+					<li><a href="#sg-lo-v3">Интерактивная оценка (lo-v3)</a></li>
+					<li><a href="#sg-mobile-buttons">Мобильные кнопки фильтров</a></li>
+					<li><a href="#sg-metric-legacy">Метрики без суффикса -portal</a></li>
+					<li><a href="#sg-panel-legacy">Устаревший panel</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-conventions">
+		<h6 class="mb-3"><span class="icon-mbri-info"></span> Соглашения (имена и скоуп)</h6>
+		<p class="text-muted small mb-3">Полный текст для репозитория: файл <code>docs/portal-ui-conventions.md</code> в корне проекта.</p>
+		<ul class="small mb-0">
+			<li class="mb-2"><strong>Скоуп:</strong> весь пользовательский контент страницы — внутри <code>portal-page</code>; заголовок экрана — <code>portal-header</code>; белые секции — <code>portal-panel</code>.</li>
+			<li class="mb-2"><strong>Префикс <code>portal-</code>:</strong> общие блоки макета и метрики с суффиксом <code>-portal</code> (<code>metric-card-label-portal</code> и т.д.).</li>
+			<li class="mb-2"><strong>Наследие:</strong> <code>metric-card</code> / <code>metric-card-label</code> без суффикса — старые экраны; в новых шаблонах предпочитать вариант с <code>-portal</code>.</li>
+			<li class="mb-2"><strong>Стили:</strong> не дублировать оформление в <code>&lt;style&gt;</code> шаблонов — только <code>portal-style.css</code>, с прицелом на скоуп (<code>.portal-panel .table</code>, а не голый <code>table</code>).</li>
+			<li class="mb-2"><strong>Имена:</strong> kebab-case; предметные карточки — говорящие имена (<code>car-spec-card</code>, <code>settings-chip</code>).</li>
+			<li><strong>Bootstrap</strong> — сетка, кнопки, алерты, формы; файл портала дополняет, а не заменяет систему классов.</li>
+		</ul>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-link"></span> Навигационные крошки — <code>breadcrumb-nav</code></h6>
+		<nav class="breadcrumb-nav" aria-label="breadcrumb">
+			<a href="/">Рабочий стол</a>
+			<span class="separator">/</span>
+			<a href="#">Раздел</a>
+			<span class="separator">/</span>
+			<span class="text-secondary">Текущая страница</span>
+		</nav>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-cust-feedback"></span> Кнопки (Bootstrap + портал)</h6>
+		<div class="row g-2 mb-3">
+			<div class="col-auto"><a class="btn btn-primary bg-gradient bg-opacity-50" href="#"><span class="icon-mbri-success"></span> Primary</a></div>
+			<div class="col-auto"><button type="button" class="btn btn-outline-secondary">Outline</button></div>
+			<div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger">Small danger</button></div>
+		</div>
+		<p class="small text-muted mb-2">Действия списком — <code>action-btn</code></p>
+		<div class="row">
+			<div class="col-md-6">
+				<a href="#" class="action-btn">Первое действие</a>
+				<a href="#" class="action-btn">Второе действие</a>
+				<button type="button" class="action-btn" disabled>Отключено</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-growing-chart"></span> Метрики — <code>metric-card-portal</code> и плоский ряд <code>metric-card-label-portal</code> / <code>metric-card-value-portal</code></h6>
+		<div class="row g-2 mb-4">
+			<div class="col-md-4">
+				<div class="metric-card-portal">
+					<h4>Выкупы за месяц</h4>
+					<div class="value">128</div>
+					<div class="sub">+12% к прошлому периоду</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="metric-card-portal">
+					<h4>Средний чек</h4>
+					<div class="value">1&nbsp;240&nbsp;000 ₽</div>
+					<div class="sub">Демо-данные</div>
+				</div>
+			</div>
+		</div>
+		<p class="small text-muted mb-2">Плоские поля (как на договоре о покупке)</p>
+		<div class="row g-2">
+			<div class="col-6 col-md-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Организация</div>
+				<div class="metric-card-value-portal">ООО «Демо Авто»</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Клиент</div>
+				<div class="metric-card-value-portal">Иванов И.И.</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<div class="metric-card-label-portal">VIN</div>
+				<div class="metric-card-value-portal">XTA00000000000000</div>
+			</div>
+		</div>
+		<hr class="my-4">
+		<p class="small text-muted mb-2">Наследие — <code>metric-card</code> (постепенно заменять на вариант выше)</p>
+		<div class="row g-2">
+			<div class="col-md-4">
+				<div class="metric-card">
+					<h4>Статус</h4>
+					<div class="value">Legacy</div>
+					<div class="sub">Тот же паттерн, другое имя блока</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-alert"></span> Алерты Bootstrap (внутри панели)</h6>
+		<div class="alert alert-success" role="alert">Успешное действие — демо.</div>
+		<div class="alert alert-warning" role="alert">Предупреждение — демо.</div>
+		<div class="alert alert-danger mb-0" role="alert">Ошибка — демо.</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-edit2"></span> Формы внутри <code>portal-panel</code></h6>
+		<div class="row g-3">
+			<div class="col-md-6">
+				<label class="form-label" for="sg-demo-select">Город</label>
+				<select class="form-select" id="sg-demo-select">
+					<option>Москва</option>
+					<option>Санкт-Петербург</option>
+				</select>
+			</div>
+			<div class="col-md-6">
+				<label class="form-label" for="sg-demo-input">Комментарий</label>
+				<input type="text" class="form-control" id="sg-demo-input" placeholder="Демо поле">
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-pages"></span> Таблица — стили <code>.portal-panel .table</code>, при необходимости <code>table-sticky</code></h6>
+		<div class="table-responsive">
+			<table class="table table-sticky">
+				<thead>
+					<tr>
+						<th>Документ</th>
+						<th>Дата</th>
+						<th class="text-end">Сумма</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>РЛК № 100</td>
+						<td>12.05.2026</td>
+						<td class="text-end">850&nbsp;000 ₽</td>
+					</tr>
+					<tr>
+						<td>РЛК № 101</td>
+						<td>11.05.2026</td>
+						<td class="text-end diff-positive">+15&nbsp;000 ₽</td>
+					</tr>
+					<tr>
+						<td>РЛК № 102</td>
+						<td>10.05.2026</td>
+						<td class="text-end diff-negative">−8&nbsp;000 ₽</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<p class="small text-muted mt-2 mb-0"><code>cost-table</code> — пример компактной таблицы затрат</p>
+		<div class="table-responsive mt-2">
+			<table class="table cost-table">
+				<thead>
+					<tr><th>Статья</th><th class="text-end">Сумма</th></tr>
+				</thead>
+				<tbody>
+					<tr><td>Ремонт</td><td class="text-end">120&nbsp;000 ₽</td></tr>
+					<tr><td>Логистика</td><td class="text-end">35&nbsp;000 ₽</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-sale"></span> Бейджи и пагинация</h6>
+		<p>
+			<span class="cost-badge"><span class="icon-mbri-pin"></span> В пути</span>
+			<span class="badge-cost ms-2">Итого: 2&nbsp;450&nbsp;000 ₽</span>
+		</p>
+		<nav class="mt-3" aria-label="Демо пагинации">
+			<ul class="pagination">
+				<li class="page-item disabled"><span class="page-link">Назад</span></li>
+				<li class="page-item active"><a class="page-link" href="#">1</a></li>
+				<li class="page-item"><a class="page-link" href="#">2</a></li>
+				<li class="page-item"><a class="page-link" href="#">3</a></li>
+			</ul>
+		</nav>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-dashboard"></span> Статус и цены — <code>status-card</code>, <code>car-price-block</code></h6>
+		<div class="row g-3">
+			<div class="col-md-4">
+				<div class="status-card">
+					<label>Активные сделки</label>
+					<label>24</label>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<div class="car-price-block">
+					<div class="car-price-value">3&nbsp;190&nbsp;000 ₽</div>
+					<div>Рекомендованная розница (демо)</div>
+				</div>
+			</div>
+		</div>
+		<div class="row g-2 mt-1">
+			<div class="col-md-4"><span class="price-status-success">Статус: успех</span></div>
+			<div class="col-md-4"><span class="price-status-warning">Статус: внимание</span></div>
+			<div class="col-md-4"><span class="price-status-danger">Статус: риск</span></div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-truck"></span> Карточки авто и дилера</h6>
+		<div class="row g-3">
+			<div class="col-md-6">
+				<div class="car-spec-card">
+					<div class="car-spec-label">Пробег</div>
+					<div class="car-spec-value">42&nbsp;500 км</div>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="car-info-card">
+					<div class="car-info-item"><strong>VIN:</strong> XTA00000000000000</div>
+					<div class="car-info-item"><strong>Год:</strong> 2023</div>
+				</div>
+			</div>
+		</div>
+		<div class="dealer-info-card mt-3">
+			<h5>Дилерский блок</h5>
+			<p class="small mb-3 opacity-75">Демо текста для <code>dealer-info-card</code>.</p>
+			<a href="#" class="dealer-action-btn">Действие дилера</a>
+		</div>
+		<div class="related-car-card mt-3">
+			<img src="/static/images/car_interior_top_down_photo.png" alt="" class="item-img_up">
+			<div class="p-3">
+				<strong>Связанное авто</strong>
+				<div class="text-muted small">Класс <code>related-car-card</code></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-sites"></span> Каталог и расчёт — <code>mark-card</code>, <code>car-card</code>, <code>calc-card</code></h6>
+		<div class="row g-3 mb-3">
+			<div class="col-md-6">
+				<a href="#" class="mark-card" onclick="return false;">
+					<img src="/static/images/mbri-home.svg" alt="" class="mark-card-logo">
+					<div class="mark-card-info">
+						<div class="mark-card-name">Марка демо</div>
+						<div class="mark-card-count">128 автомобилей</div>
+					</div>
+				</a>
+			</div>
+			<div class="col-md-6">
+				<div class="car-card">
+					<img src="/static/images/car_interior_top_down_photo.png" alt="" class="car-card-image">
+					<div class="car-card-body">
+						<div class="car-card-header">
+							<img src="/static/images/mbri-home.svg" alt="" class="car-card-logo">
+							<div class="car-card-location"><span class="icon-mbri-pin"></span> Москва</div>
+						</div>
+						<div class="car-card-title">Demo Model 2.0 AT</div>
+						<div class="car-card-price">2&nbsp;100&nbsp;000 ₽</div>
+						<div class="car-card-specs">Полный привод · Бензин · 2022</div>
+						<div class="car-card-meta"><span>Код 001</span><span>Новый</span></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="calc-card">
+			<div class="calc-card-label">Себестоимость</div>
+			<div class="calc-card-value">1&nbsp;890&nbsp;000 ₽</div>
+			<div class="calc-card-sub">Последний пересчёт: сегодня</div>
+			<a href="#" class="calc-card-link">Подробнее →</a>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-setting"></span> Настройки — <code>settings-panel</code>, <code>settings-chip</code>, боковая колонка <code>portal-sidebar</code></h6>
+		<div class="row g-3">
+			<div class="col-lg-3">
+				<div class="portal-sidebar">
+					<button type="button" class="btn btn-outline-primary active">Вкладка A</button>
+					<button type="button" class="btn btn-outline-primary">Вкладка B</button>
+					<button type="button" class="btn btn-outline-primary">Вкладка C</button>
+				</div>
+			</div>
+			<div class="col-lg-9">
+				<div class="settings-panel">
+					<h3>Блок настроек (демо)</h3>
+					<p class="text-muted small">Класс <code>settings-panel</code> — визуально близок к <code>portal-panel</code>, используется на экранах настроек.</p>
+					<a href="#" class="settings-chip"><span class="icon-mbri-success"></span> Активный фильтр</a>
+					<a href="#" class="settings-chip ms-2">Ещё чип</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-bulleted-list"></span> Характеристики — <code>spec-group-card</code>, <code>complectation-card</code></h6>
+		<div class="spec-group-card">
+			<div class="spec-group-label">Группа параметров</div>
+			<div class="spec-item">
+				<span class="spec-item-label">Двигатель</span>
+				<span class="spec-item-value">2.0 TSI</span>
+			</div>
+			<div class="spec-item">
+				<span class="spec-item-label">КПП</span>
+				<span class="spec-item-value">Робот</span>
+			</div>
+		</div>
+		<div class="complectation-card mt-3">
+			<div class="complectation-item">Климат-контроль</div>
+			<div class="complectation-item">Круиз-контроль</div>
+			<div class="complectation-item">Обогрев руля</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-utilities">
+		<h6 class="mb-3"><span class="icon-mbri-responsive"></span> Утилиты отступов</h6>
+		<p class="small text-muted mb-3">Редкие вспомогательные классы; по возможности предпочитайте утилиты Bootstrap (<code>m-*</code>, <code>p-*</code>).</p>
+		<div class="row g-3">
+			<div class="col-md-6">
+				<p class="small mb-2"><code>portal-margin</code></p>
+				<div class="border rounded bg-light p-1">
+					<div class="portal-margin bg-white rounded border p-2 small">Блок с внешним margin 1rem</div>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<p class="small mb-2"><code>no-padding</code>, <code>padding-title</code>, <code>margin</code>, <code>margin-bottom</code></p>
+				<div class="border rounded">
+					<div class="padding-title bg-white small">Секция с <code>padding-title</code></div>
+				</div>
+				<p class="small text-muted mt-2 mb-0">Классы <code>margin</code> / <code>margin-bottom</code> в CSS обнуляют отступ — используйте точечно на старых экранах.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-page-roots">
+		<h6 class="mb-3"><span class="icon-mbri-laptop"></span> Корни страниц (<code>*-page</code>) и заголовки</h6>
+		<p class="small text-muted mb-3">На реальных экранах классы вроде <code>settings-page</code>, <code>matrix-page</code> обычно лежат в корне <code>content</code> и дают фон + <code>min-height: 100vh</code>. Здесь показан сжатый предпросмотр (см. <code>.styleguide-nested-demo</code> в <code>portal-style.css</code>).</p>
+		<div class="styleguide-nested-demo border rounded-3 p-2 mb-3 bg-light">
+			<div class="settings-page mb-3">
+				<div class="settings-header">
+					<h2 class="h5 mb-1">settings-page + settings-header</h2>
+					<p class="small text-muted mb-2">Подзаголовок экрана настроек.</p>
+				</div>
+				<div class="settings-panel mb-0">
+					<h3 class="h6">settings-panel</h3>
+					<p class="small mb-0">Блок секции внутри корня.</p>
+				</div>
+			</div>
+			<div class="matrix-page mb-3">
+				<div class="matrix-header">
+					<h2 class="h5 mb-1">matrix-page + matrix-header</h2>
+					<p class="small text-muted mb-2">Заголовок матрицы / отчёта.</p>
+				</div>
+				<div class="matrix-panel mb-2">
+					<h3 class="h6">matrix-panel</h3>
+					<p class="small mb-0">Тело отчёта.</p>
+				</div>
+				<div class="matrix-actions d-flex flex-wrap gap-2">
+					<button type="button" class="btn btn-primary btn-sm">matrix-actions</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm">Вторичное</button>
+				</div>
+			</div>
+			<div class="kpi-eco-page mb-3">
+				<div class="kpi-eco-header">
+					<h2 class="h5 mb-1">kpi-eco-page</h2>
+					<p class="small text-muted mb-2">KPI / Эко.</p>
+				</div>
+				<div class="settings-panel mb-0">
+					<h3 class="h6">Панель показателей</h3>
+					<p class="small mb-0">Демо.</p>
+				</div>
+			</div>
+			<div class="sales-funnel-page mb-3">
+				<div class="sales-funnel-header">
+					<h2 class="h5 mb-1">sales-funnel-page</h2>
+					<p class="small text-muted mb-2">Воронка продаж.</p>
+				</div>
+				<div class="matrix-panel mb-0">
+					<p class="small mb-0">Контент воронки.</p>
+				</div>
+			</div>
+			<div class="lo-list-page mb-3">
+				<div class="lo-list-header">
+					<h2 class="h5 mb-1">lo-list-page</h2>
+					<p class="small text-muted mb-2">Списки ЛО.</p>
+				</div>
+				<div class="settings-panel mb-0">
+					<p class="small mb-0">Фрагмент списка.</p>
+				</div>
+			</div>
+			<div class="settings-vnesh-page mb-3">
+				<div class="settings-vnesh-header">
+					<h2 class="h5 mb-1">settings-vnesh-page</h2>
+					<p class="small text-muted mb-2">Внешняя политика / справочники.</p>
+				</div>
+				<div class="settings-vnesh-panel mb-0">
+					<h3 class="h6">settings-vnesh-panel</h3>
+					<p class="small mb-0">Демо.</p>
+				</div>
+			</div>
+			<div class="settings-diagnostic-page mb-3">
+				<div class="settings-diagnostic-header">
+					<h2 class="h5 mb-1">settings-diagnostic-page</h2>
+					<p class="small text-muted mb-2">Настройки диагностики.</p>
+				</div>
+				<div class="settings-diagnostic-panel mb-0">
+					<h3 class="h6">settings-diagnostic-panel</h3>
+					<p class="small mb-0">Внутри — таблицы и аккордеоны по продакшен-шаблонам.</p>
+				</div>
+			</div>
+			<div class="settings-dc-page mb-0">
+				<div class="settings-dc-header d-flex flex-wrap justify-content-between gap-2">
+					<div>
+						<h2 class="h5 mb-1">settings-dc-page</h2>
+						<p class="small text-muted mb-0">КорсАвто / подразделения.</p>
+					</div>
+				</div>
+				<div class="settings-dc-panel mb-0 mt-2">
+					<h3 class="h6">settings-dc-panel</h3>
+					<p class="small mb-0">Демо.</p>
+				</div>
+			</div>
+		</div>
+		<p class="small text-muted mb-0"><code>pricing-report-header</code> стилизован в одном блоке с заголовками настроек — используйте ту же пару <code>h2</code> + <code>p</code>, класс задайте по экрану отчёта.</p>
+	</div>
+
+	<div class="portal-panel" id="sg-filters-report">
+		<h6 class="mb-3"><span class="icon-mbri-setting"></span> Фильтры отчётов и списков</h6>
+		<p class="small text-muted mb-3">Общая сетка для <code>settings-dc-filter</code>, <code>kpi-filter</code>, <code>lo-filter</code>, <code>pricing-filter</code>, <code>sales-filter</code> — одинаковые подписи полей и скругления контролов.</p>
+		<form class="settings-dc-filter mb-4" action="#" method="get">
+			<div class="row g-3 align-items-end">
+				<div class="col-md-4">
+					<label class="form-label">Месяц</label>
+					<input type="month" class="form-control" value="2026-05">
+				</div>
+				<div class="col-md-4">
+					<label class="form-label">Подразделение</label>
+					<select class="form-select"><option>Все</option><option>Демо</option></select>
+				</div>
+				<div class="col-md-4">
+					<button type="button" class="btn btn-primary"><span class="icon-mbri-play"></span> Применить</button>
+				</div>
+			</div>
+		</form>
+		<form class="kpi-filter mb-0" action="#" method="get">
+			<div class="row g-3 align-items-end">
+				<div class="col-md-6">
+					<label class="form-label">Период KPI</label>
+					<select class="form-select"><option>Квартал</option></select>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">Поиск</label>
+					<input type="search" class="form-control" placeholder="Демо">
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="portal-panel" id="sg-filters-catalog">
+		<h6 class="mb-3"><span class="icon-mbri-search"></span> Фильтры каталога автомобилей</h6>
+		<p class="small text-muted mb-3">Блок <code>cars-filter-panel</code> и сетка <code>filter-*</code>. Список опций по умолчанию скрыт (выпадающее меню); для гайда включён класс <code>styleguide-filter-demo</code> на панели.</p>
+		<div class="cars-filter-panel styleguide-filter-demo">
+			<div class="filter-group">
+				<label class="form-label">Марка</label>
+				<div class="filter-dropdown">
+					<div class="filter-search">
+						<input type="search" placeholder="Поиск марки" aria-label="Поиск марки">
+						<span class="search-icon icon-mbri-search"></span>
+					</div>
+					<div class="filter-options">
+						<label class="filter-option"><input type="checkbox"> <span class="filter-text">Марка А</span></label>
+						<label class="filter-option"><input type="checkbox"> <span class="filter-text">Марка Б</span></label>
+					</div>
+				</div>
+			</div>
+			<div class="filter-group">
+				<label class="form-label">Цена, ₽</label>
+				<div class="filter-range">
+					<div class="filter-range-group">
+						<input type="text" inputmode="numeric" placeholder="от" aria-label="Цена от">
+						<label>₽</label>
+					</div>
+					<div class="filter-range-group">
+						<input type="text" inputmode="numeric" placeholder="до" aria-label="Цена до">
+						<label>₽</label>
+					</div>
+				</div>
+			</div>
+			<div class="filter-group mb-0">
+				<label class="form-label">VIN</label>
+				<div class="filter-input-single">
+					<input type="text" placeholder="Полный или частичный VIN">
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-diagnostic">
+		<h6 class="mb-3"><span class="icon-mbri-help"></span> Карточки параметров диагностики</h6>
+		<p class="small text-muted mb-3"><code>diagnostic-params-grid</code>, <code>diagnostic-param-card</code>, секции и поля.</p>
+		<div class="diagnostic-params-grid">
+			<div class="diagnostic-param-card">
+				<div class="diagnostic-param-card-title">Раздел АКПП</div>
+				<div class="diagnostic-param-section">
+					<div class="diagnostic-param-section-title warning">Внимание</div>
+					<div class="diagnostic-param-fields">
+						<div class="form-floating">
+							<input type="text" class="form-control" id="sg-diag-1" placeholder=" " value="Демо">
+							<label for="sg-diag-1">Параметр 1</label>
+						</div>
+						<div class="form-floating">
+							<input type="text" class="form-control" id="sg-diag-2" placeholder=" ">
+							<label for="sg-diag-2">Параметр 2</label>
+						</div>
+					</div>
+				</div>
+				<div class="diagnostic-param-section">
+					<div class="diagnostic-param-section-title danger">Критично</div>
+					<div class="diagnostic-param-fields">
+						<div class="form-floating">
+							<input type="text" class="form-control" id="sg-diag-3" placeholder=" ">
+							<label for="sg-diag-3">Замечание</label>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="diagnostic-param-card">
+				<div class="diagnostic-param-card-title">Раздел ДВС</div>
+				<p class="small text-muted mb-0">Вторая карточка в сетке.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-calendar">
+		<h6 class="mb-3"><span class="icon-mbri-calendar"></span> Календарь подготовки автомобиля</h6>
+		<p class="small text-muted mb-3">Сетка <code>calendar-grid</code>, ячейки <code>calendar-day</code>, события <code>schedule-item</code> с модификаторами приоритета и статуса.</p>
+		<div class="calendar-grid mb-3">
+			<div class="calendar-day-header">Пн</div>
+			<div class="calendar-day-header">Вт</div>
+			<div class="calendar-day-header">Ср</div>
+			<div class="calendar-day-header">Чт</div>
+			<div class="calendar-day-header">Пт</div>
+			<div class="calendar-day-header">Сб</div>
+			<div class="calendar-day-header">Вс</div>
+			<div class="calendar-day">
+				<div class="day-number">12</div>
+				<div class="schedule-item">Забор</div>
+				<div class="schedule-item priority-high">Срочно</div>
+			</div>
+			<div class="calendar-day today">
+				<div class="day-number">13</div>
+				<div class="schedule-item priority-urgent">Демонтаж</div>
+			</div>
+			<div class="calendar-day">
+				<div class="day-number">14</div>
+				<div class="schedule-item status-in_progress">В работе</div>
+			</div>
+			<div class="calendar-day weekend">
+				<div class="day-number">15</div>
+				<div class="schedule-item">Выходной слот</div>
+			</div>
+			<div class="calendar-day"></div>
+			<div class="calendar-day"></div>
+			<div class="calendar-day weekend"></div>
+		</div>
+		<div class="calendar-legend">
+			<div class="legend-item"><span class="legend-color" style="background:#3498db;"></span> Обычное</div>
+			<div class="legend-item"><span class="legend-color" style="background:#e74c3c;"></span> priority-high</div>
+			<div class="legend-item"><span class="legend-color" style="background:#c0392b;"></span> priority-urgent</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-interactive">
+		<h6 class="mb-3"><span class="icon-mbri-cursor-click"></span> Кликабельная панель (<code>portal-panel[data-bs-toggle]</code>)</h6>
+		<p class="small text-muted mb-3">Ховер и «приподнимание» задаются в CSS для панелей с раскрытием контента.</p>
+		<div class="portal-panel mb-2" data-bs-toggle="collapse" data-bs-target="#sgCollapseDemo" aria-expanded="false" role="button" tabindex="0">
+			<h6 class="mb-1">Нажмите, чтобы развернуть</h6>
+			<p class="small text-muted mb-0">Используется на экранах со сворачиваемыми блоками.</p>
+		</div>
+		<div id="sgCollapseDemo" class="collapse portal-panel">
+			<p class="small mb-0">Скрытый блок под панелью (демо Bootstrap Collapse).</p>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-media">
+		<h6 class="mb-3"><span class="icon-mbri-photo"></span> Галерея задач и карусель трейд-ина</h6>
+		<p class="small text-muted mb-3"><code>gallery-item-task</code>, <code>carousel-item.background_images</code> (фото с полями и скруглением).</p>
+		<div class="row g-3">
+			<div class="col-md-6">
+				<div class="gallery-item-task">
+					<img src="/static/images/car_interior_top_down_photo.png" alt="Демо галереи">
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div id="sgCarouselTradein" class="carousel slide">
+					<div class="carousel-inner rounded">
+						<div class="carousel-item active background_images">
+							<img src="/static/images/driver_seat_full_inspection_photo.png" alt="Карусель">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-tables-mobile">
+		<h6 class="mb-3"><span class="icon-mbri-responsive"></span> Таблицы на узком экране и в модалке</h6>
+		<ul class="small text-muted">
+			<li><strong><code>table-mobile-cards</code></strong> — при ширине &lt; 768px строки превращаются в карточки; для ячеек задавайте <code>data-label</code>.</li>
+			<li><strong><code>portal-modal .table</code></strong> — те же правила внутри модального окна с классом <code>portal-modal</code> на корне (проверьте в режиме телефона).</li>
+			<li><strong><code>accordion-body .table</code></strong> — раскладка для таблиц внутри аккордеона Bootstrap.</li>
+		</ul>
+		<div class="table-responsive mb-3">
+			<table class="table table-mobile-cards">
+				<thead>
+					<tr>
+						<th>Заголовок строки</th>
+						<th>Колонка A</th>
+						<th>Колонка B</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong>Сделка 1</strong></td>
+						<td data-label="Колонка A">Значение A</td>
+						<td data-label="Колонка B">Значение B</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="portal-modal border rounded p-3 mb-3 bg-white">
+			<p class="small fw-semibold mb-2">Демо-обёртка <code>portal-modal</code></p>
+			<div class="table-responsive">
+				<table class="table mb-0">
+					<thead><tr><th>Поле</th><th>Значение</th></tr></thead>
+					<tbody>
+						<tr><td>VIN</td><td>XTA00000000000000</td></tr>
+						<tr><td>Клиент</td><td>Демо</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="accordion" id="sgAccordionTable">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="sgAccHead">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sgAccCollapse" aria-expanded="false" aria-controls="sgAccCollapse">
+						Таблица внутри accordion-body
+					</button>
+				</h2>
+				<div id="sgAccCollapse" class="accordion-collapse collapse" aria-labelledby="sgAccHead" data-bs-parent="#sgAccordionTable">
+					<div class="accordion-body">
+						<div class="table-responsive">
+							<table class="table mb-0">
+								<thead><tr><th>Столбец</th><th data-label="Значение">Значение</th></tr></thead>
+								<tbody>
+									<tr><td>Пример</td><td data-label="Значение">Текст</td></tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-lo-v3">
+		<h6 class="mb-3"><span class="icon-mbri-mobile"></span> Интерактивная оценка — <code>lo-v3-page</code></h6>
+		<p class="small text-muted mb-3">Корень экрана, боковая <code>portal-sidebar</code>, на мобильных — отступы <code>mobile-nav-spacer</code> / <code>mobile-nav-select</code> (см. CSS). Ниже — фрагмент раскладки.</p>
+		<div class="styleguide-nested-demo border rounded-3 p-2 mb-3 bg-light">
+			<div class="lo-v3-page">
+				<div class="row g-2">
+					<div class="col-md-4">
+						<div class="portal-sidebar">
+							<button type="button" class="btn btn-outline-primary active">Шаг 1</button>
+							<button type="button" class="btn btn-outline-primary">Шаг 2</button>
+						</div>
+					</div>
+					<div class="col-md-8">
+						<div class="portal-panel mb-0">
+							<p class="small mb-0">Область шага оценки.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<p class="small text-muted mb-0">Дополнительно: <code>mobile-status-field</code>, липкая боковая колонка <code>portal-sidebar#position-sticky</code> — подключайте по макету страницы оценки.</p>
+	</div>
+
+	<div class="portal-panel" id="sg-mobile-buttons">
+		<h6 class="mb-3"><span class="icon-mbri-touch"></span> Плавающие кнопки фильтров (мобильные)</h6>
+		<p class="small text-muted mb-3">В продакшене <code>mobile-filter-button</code> и <code>mobile-filters-button</code> закреплены у края экрана; здесь включён класс <code>styleguide-fixed-relative</code>, чтобы не перекрывать гайд.</p>
+		<div class="styleguide-fixed-relative border rounded p-3 mb-0">
+			<button type="button" class="mobile-filter-button">Фильтры каталога <span class="filters-count">3</span></button>
+			<button type="button" class="mobile-filters-button ms-2">Фильтры <span class="filters-count">1</span></button>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-metric-legacy">
+		<h6 class="mb-3"><span class="icon-mbri-database"></span> Наследие — <code>metric-card-label</code> / <code>metric-card-value</code></h6>
+		<p class="small text-muted mb-3">Плоская пара без суффикса <code>-portal</code>; для новых экранов используйте <code>metric-card-label-portal</code> / <code>metric-card-value-portal</code>.</p>
+		<div class="row g-2">
+			<div class="col-6 col-md-3">
+				<div class="metric-card-label">Старый стиль подписи</div>
+				<div class="metric-card-value">Значение</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<div class="metric-card-label">Цена</div>
+				<div class="metric-card-value">1&nbsp;100&nbsp;000 ₽</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel" id="sg-panel-legacy">
+		<h6 class="mb-3"><span class="icon-mbri-responsive"></span> Устаревший корень <code>panel</code> (без префикса portal)</h6>
+		<p class="small text-muted">Используется на части экранов; для новых экранов предпочтительно <code>portal-panel</code>.</p>
+		<div class="panel">
+			<h3>Заголовок панели</h3>
+			<p class="mb-0 small">Контент внутри <code>.panel</code>.</p>
+		</div>
+	</div>
+</div>
+{% endblock %}

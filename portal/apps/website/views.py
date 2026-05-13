@@ -11145,3 +11145,12 @@ def main_menu(request):
 def director_menu(request):
     """Панель управления автосалоном для директора"""
     return render(request, 'kors/menu_director.html')
+
+
+@login_required
+def portal_styleguide(request):
+    """Демо-компоненты и соглашения по portal-style.css (для разработчиков)."""
+    params = {
+        'type': 'styleguide',
+    }
+    return render(request, 'website/portal_styleguide.html', {'params': params})
