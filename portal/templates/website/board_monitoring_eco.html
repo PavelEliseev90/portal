@@ -391,7 +391,7 @@
         <div class="metric-value">{{params.autoteka_count_1}}</div>
         <div class="metric-label">previews</div>
         {% for avtoteka_1 in params.autoteka_1 %}
-          {{avtoteka_1.vin}} <br>
+           <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}} {{avtoteka_1.modification.model.mark.name}} {{avtoteka_1.modification.model.name}} {{avtoteka_1.modification.name}}</a> <br>
         {% endfor %}
 
       </div>
@@ -403,7 +403,7 @@
         <div class="metric-value">{{params.autoteka_count_2}}</div>
         <div class="metric-label">task</div>
         {% for avtoteka_1 in params.autoteka_2 %}
-          {{avtoteka_1.vin}} <br>
+          <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}}</a> <br>
         {% endfor %}
       </div>
     </div>
@@ -414,7 +414,7 @@
         <div class="metric-value">{{params.autoteka_count_3}}</div>
         <div class="metric-label">report</div>
         {% for avtoteka_1 in params.autoteka_3 %}
-          {{avtoteka_1.vin}} <br>
+          <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}}</a> <br>
         {% endfor %}
       </div>
     </div>

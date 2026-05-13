@@ -5,10 +5,14 @@
 /* Основная страница */
 .portal-page {
   padding: 0.25rem 0.5rem 1rem;
-  background: #f4f7fb;
+  background: #f4f7fb95;
   min-height: 100vh;
+  border-radius: 1.2rem;
 }
 
+.portal-margin{
+  margin: 1rem;
+}
 /* Заголовок страницы */
 .portal-header h2 {
   font-size: 1.6rem;
@@ -68,6 +72,52 @@
 }
 
 /* Метрические карточки */
+.metric-card-portal {
+  background: #fff;
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid rgba(0, 42, 90, 0.08);
+  box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+  height: 100%;
+}
+
+.metric-card-portal h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8ea1ba;
+  margin-bottom: 0.4rem;
+}
+
+.metric-card-portal .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #002a5a;
+  margin-bottom: 0.25rem;
+}
+
+.metric-card-portal .sub {
+  color: #6c7a92;
+  font-size: 0.85rem;
+}
+
+/* Вариант метрической карточки (для car_new_price_edit) */
+.metric-card-label-portal {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.metric-card-value-portal {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: #002a5a;
+}
+
+/* Метрические карточки */
 .metric-card {
   background: #fff;
   border-radius: 1.2rem;
@@ -108,7 +158,7 @@
 }
 
 .metric-card-value {
-  font-size: 1.5rem;
+  font-size: 1.0rem;
   font-weight: 700;
   color: #002a5a;
 }
@@ -145,7 +195,6 @@
 
 .panel .table thead th,
 .portal-panel .table thead th {
-  background-color: #f8f9fc;
   color: #002a5a;
   font-weight: 600;
   font-size: 0.85rem;
@@ -176,6 +225,22 @@
 .diff-positive {
   color: #0f9d58;
   font-weight: 600;
+}
+
+.no-padding{
+  padding: 0rem;
+}
+
+.padding-title{
+  padding: 1.2rem;
+}
+
+.margin{
+  margin: 0rem;
+}
+
+.margin-bottom{
+  margin-bottom: 0rem;
 }
 
 .diff-negative {

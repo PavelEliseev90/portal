@@ -67,113 +67,112 @@
     </div>
 
     <!-- Таблица задач -->
-    <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
-              <tr>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Автомобиль</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Задача</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Статус</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Создал</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Исполнитель</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Дата создания</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Комментарии</th>
-                <th style="border: none; padding: 1rem; font-weight: 600;">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for task in params.page_obj %}
-              <tr>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <a href="/cars/{{ task.car.slug }}/" target="_blank" style="color: #00509d; text-decoration: none;">
-                    {{ task.car.name|default:task.car.vin }}
-                  </a>
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <div style="font-weight: 500; color: #002a5a;">{{ task.title|default:"Без названия" }}</div>
-                  {% if task.description %}
-                  <small class="text-muted">{{ task.description|truncatewords:10 }}</small>
-                  {% endif %}
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  {% if task.status == 'new' %}
-                    <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Новый</span>
-                  {% elif task.status == 'in_progress' %}
-                    <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">В работе</span>
-                  {% elif task.status == 'completed' %}
-                    <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Выполнена</span>
-                  {% endif %}
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <span style="color: #6c7a92;">{{ task.staff_created.username|default:"—" }}</span>
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <span style="color: #6c7a92;">{{ task.staff_assignee.username|default:"Не назначен" }}</span>
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <div style="font-weight: 500; color: #002a5a;">{{ task.date_created|date:"d.m.Y H:i" }}</div>
-                </td>
-                <td style="padding: 1rem; vertical-align: middle; text-align: center;">
-                  <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{ task.comments_count|default:0 }}</span>
-                </td>
-                <td style="padding: 1rem; vertical-align: middle;">
-                  <a href="{% url 'avtosalon:car_task_detail' task.id %}" class="btn btn-sm btn-outline-primary" style="border-radius: 0.5rem; padding: 0.4rem 0.8rem;">
-                    <span class="icon-mbri-eye"></span> Открыть
-                  </a>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="8" class="text-center py-5" style="color: #6c7a92;">
-                  <div class="mb-3">
-                    <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
-                  </div>
-                  <p class="mb-0">Задачи не найдены</p>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div class="portal-panel no-padding">
+      <div class="table-responsive" style="margin: 0rem; padding: 0rem; border-radius: 1.2rem;">
+        <table class="table table-hover mb-0">
+          <thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+            <tr>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Автомобиль</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Задача</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Статус</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Создал</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Исполнитель</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Дата создания</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Комментарии</th>
+              <th class="text-white" style="border: none; padding: 1rem; font-weight: 600;">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in params.page_obj %}
+            <tr>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <a href="/cars/{{ task.car.slug }}/" target="_blank" style="color: #00509d; text-decoration: none;">
+                  {{ task.car.name|default:task.car.vin }}
+                </a>
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <div style="font-weight: 500; color: #002a5a;">{{ task.title|default:"Без названия" }}</div>
+                {% if task.description %}
+                <small class="text-muted">{{ task.description|truncatewords:10 }}</small>
+                {% endif %}
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                {% if task.status == 'new' %}
+                  <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Новый</span>
+                {% elif task.status == 'in_progress' %}
+                  <span class="badge bg-info" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">В работе</span>
+                {% elif task.status == 'completed' %}
+                  <span class="badge" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; padding: 0.4rem 0.8rem; border-radius: 0.5rem;">Выполнена</span>
+                {% endif %}
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <span style="color: #6c7a92;">{{ task.staff_created.username|default:"—" }}</span>
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <span style="color: #6c7a92;">{{ task.staff_assignee.username|default:"Не назначен" }}</span>
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <div style="font-weight: 500; color: #002a5a;">{{ task.date_created|date:"d.m.Y H:i" }}</div>
+              </td>
+              <td style="padding: 1rem; vertical-align: middle; text-align: center;">
+                <span class="badge bg-secondary" style="padding: 0.4rem 0.8rem; border-radius: 0.5rem;">{{ task.comments_count|default:0 }}</span>
+              </td>
+              <td style="padding: 1rem; vertical-align: middle;">
+                <a href="{% url 'avtosalon:car_task_detail' task.id %}" class="btn btn-sm btn-outline-primary" style="border-radius: 0.5rem; padding: 0.4rem 0.8rem;">
+                  <span class="icon-mbri-eye"></span> Открыть
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-5" style="color: #6c7a92;">
+                <div class="mb-3">
+                  <span class="icon-mbri-file" style="font-size: 3rem; opacity: 0.3;"></span>
+                </div>
+                <p class="mb-0">Задачи не найдены</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-    </div>
-
-    <!-- Пагинация -->
-    {% if params.page_obj.has_other_pages %}
-    <nav aria-label="Навигация по страницам" class="mt-4">
-      <ul class="pagination justify-content-center">
-        {% if params.page_obj.has_previous %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-            <span class="icon-mbri-arrow-prev"></span>
-          </a>
-        </li>
-        {% endif %}
-        
-        {% for num in params.page_obj.paginator.page_range %}
-          {% if params.page_obj.number == num %}
-          <li class="page-item active">
-            <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ num }}</span>
-          </li>
-          {% elif num > params.page_obj.number|add:'-3' and num < params.page_obj.number|add:'3' %}
+  
+      <!-- Пагинация -->
+      {% if params.page_obj.has_other_pages %}
+      <nav aria-label="Навигация по страницам" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if params.page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ num }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ num }}</a>
+            <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <span class="icon-mbri-arrow-prev"></span>
+            </a>
           </li>
           {% endif %}
-        {% endfor %}
-        
-        {% if params.page_obj.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-            <span class="icon-mbri-arrow-next"></span>
-          </a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-    {% endif %}
+          
+          {% for num in params.page_obj.paginator.page_range %}
+            {% if params.page_obj.number == num %}
+            <li class="page-item active">
+              <span class="page-link" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none; border-radius: 0.5rem; margin: 0 0.25rem;">{{ num }}</span>
+            </li>
+            {% elif num > params.page_obj.number|add:'-3' and num < params.page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">{{ num }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if params.page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.filters.status %}&status={{ params.filters.status }}{% endif %}{% if params.filters.assignee %}&assignee={{ params.filters.assignee }}{% endif %}{% if params.filters.unit %}&unit={{ params.filters.unit }}{% endif %}" style="border-radius: 0.5rem; margin: 0 0.25rem; border: 1px solid rgba(0, 42, 90, 0.15);">
+              <span class="icon-mbri-arrow-next"></span>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+    
   </div>
 </div>
 

@@ -31,6 +31,7 @@ urlpatterns = [
    path('task/<int:task_id>/file/upload/',   views.car_task_file_upload, name='car_task_file_upload'),
    path('task/file/<int:file_id>/delete/',   views.car_task_file_delete, name='car_task_file_delete'),
    
+   path('deal/calculation/<int:id>/',        views.deal_calculation_doc, name='deal_calculation_doc'),
    path('deal/calculation/',                 views.deal_calculation, name='deal_calculation'),
    path('<slug:slug>/sms/send-code/',        views.car_sms_send_code, name='car_sms_send_code'),
    path('<slug:slug>/sms/verify-code/',      views.car_sms_verify_code, name='car_sms_verify_code'),
@@ -41,6 +42,7 @@ urlpatterns = [
    path('<slug>/photos_edit/',               views.photos_edit, name='photos_edit'),
    path('<slug>/costs_edit/',                views.costs_edit, name='costs_edit'),
    path('<slug>/info_js/',                   views.info_js, name='slug'),
+   path('<slug>/access_user/',               views.access_user, name='slug'),
    path('<slug>/',                           views.car, name='slug'),
    
    # Витрина склада

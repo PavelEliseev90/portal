@@ -13,12 +13,89 @@
 
 {% block content %}
 
+<style>
+	.metric-card-portal {
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  height: 100%;
+}
+
+.metric-card-portal h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #8ea1ba;
+  
+}
+
+.metric-card-portal .value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #002a5a;
+  
+}
+
+.metric-card-portal .sub {
+  color: #6c7a92;
+  font-size: 0.85rem;
+}
+
+/* Вариант метрической карточки (для car_new_price_edit) */
+.metric-card-label-portal {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8ea1ba;
+  font-weight: 600;
+}
+
+.metric-card-value-portal {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: #002a5a;
+}
+</style>
+
 {% include 'chats/chat_car.html' %}
+
+<div class="modal fade" id="modal_min_km" tabindex="-1" aria-labelledby="modal_min_kmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{request.get_full_path}}" id="formStageKmModal">
+                
+				{% csrf_token %}
+
+                <input type="hidden" name="action" value="edit_km">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalStageKmLabel">Минимальный КМ </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Автомобиль</p>
+					<p class="text-muted mb-3">{{params.object.search_fields}}</p>
+                    <div class="mb-0">
+                        <label class="form-label h5">Минимальный КМ<span class="text-danger"></span></label>
+                        <input type="number" name="min_km" id="min_km" class="form-control" value="{{params.object.min_km}}" step="0.01" placeholder="0.00">
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">Для перехода на автоматический расчет км установите минимальный км = 0</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-refresh"></span> Отмена</button>
+                    <button type="submit" class="btn btn-primary bg-gradient"> <span class="icon-mbri-save"></span> Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 
 <div class="portal-page">
 	
 	{% if request.user.is_authenticated %}
-		<div class="breadcrumb-nav">
+		<div class="breadcrumb-nav" style="margin-bottom: 0.5rem;">
 			<div class="d-flex flex-wrap align-items-center">
 				<a href="/cars/">На главную</a>
 				<span class="separator">/</span>
@@ -26,781 +103,778 @@
 				<span class="separator">/</span>
 				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
 				<span class="separator">/</span>
-				<a href="/cars/{{params.object.slug}}">{{params.object.name}}</a>
+				<a href="/cars/{{params.object.slug}}"> {{params.object.modification_autoru.model.mark.name}} • {{params.object.modification_autoru.model.name}} • {{params.object.modification_autoru.name}} • {{params.object.complectation_autoru.name}} • {{params.object.vin}} • {{params.object.year}} </a>
 			</div>
 		</div>
 	{% endif %}
 
-	<ul class="nav nav-tabs mb-3" role="tablist">
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'avto' %}active{% endif %}" href="?tab=avto">Автомобиль</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'zn' %}active{% endif %}" href="?tab=zn">Заказ-наряды (доп.)</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'analytics_unit' %}active{% endif %}" href="?tab=analytics_unit">Аналитика по подразделению</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'analytics_gk' %}active{% endif %}" href="?tab=analytics_gk">Аналитика по ГК</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'sklad' %}active{% endif %}" href="?tab=sklad">Склад</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link {% if params.current_tab == 'tasks' %}active{% endif %}" href="?tab=tasks">Задачи</a>
-		</li>
-	</ul>
+	<div class="portal-panel">
+		<div class="row g-1"> 
+			<div class="col-12 col-sm-auto">
+				<a class="btn btn_block btn-{% if params.current_tab == 'avto' %}light {% else %}info {% endif %} bg-gradient" href="?tab=avto"><span class="icon-truck"></span> Автомобиль</a>
+			</div>
+			<div class="col-12 col-sm-auto">
+				<a class="btn btn_block btn-{% if params.current_tab == 'zn' %}light {% else %}info {% endif %} bg-gradient" href="?tab=zn"><span class="icon-doc"></span> Заказ-наряды (доп.) - {{params.dop_car_info.aggretgate_dop_zn.count}}</a>
+			</div>
+			<div class="col-12 col-sm-auto">
+				<a class="btn btn_block btn-{% if params.current_tab == 'sklad' %}light {% else %}info {% endif %}" href="?tab=sklad"><span class="icon-mbri-home"></span> Склад</a>				
+			</div>
+			<div class="col-12 col-sm-auto">
+				<a class="btn btn_block btn-{% if params.current_tab == 'analytics_unit' %}light {% else %}info {% endif %}" href="?tab=analytics_unit"><span class="icon-mbri-credit-card"></span>Продажи</a>				
+			</div>
+			<div class="col-12 col-sm-auto">
+				<a class="btn btn_block btn-{% if params.current_tab == 'tasks' %}light {% else %}info {% endif %}" href="?tab=tasks"><span class="icon-mbri-calendar"></span>Задачи</a>				
+			</div>
+		</div>
+			
+	</div>
+
+	{% if params.object.modification_autoru == None %}
+		<div class="portal-panel bg-danger bg-gradient bg-opacity-50 text-white">
+			<div class="metric-card-label text-white"><span class="icon-mbri-alert"></span> Нет информации по модификации автомобиля, данные собраны не полностью</div>
+		</div>
+	{% endif %}
+	
+	{% if params.object.complectation_autoru == None %}
+		<div class="portal-panel bg-danger bg-gradient bg-opacity-50 text-white">
+			<div class="metric-card-label text-white"><span class="icon-mbri-alert"></span> Нет информации по комплектации автомобиля, данные собраны не полностью</div>
+		</div>
+	{% endif %}
 
 	<div class="tab-content">
+		
 		<div class="tab-pane {% if params.current_tab == 'avto' %}active{% endif %}" id="tab-avto" role="tabpanel">
-	<div class="row g-3">
-		
-		<div class="col-sm-12 col-md-3 col-lg-3">
-			<div class="portal-panel">
+			
+			<div class="row g-1">
 				
-				{% with photos=params.object.get_files %}
-					{% if photos|length > 0 %}
-						{% with first_photo=photos|first %}
-							<img src="{% if first_photo.file_mini %}{{ first_photo.file.url }}{% else %}{{ first_photo }}{% endif %}" alt="{{params.object.name}}" style="width: 100%; border-radius: 0.85rem; margin-bottom: 1rem;">
-						{% endwith %}
-					{% endif %}
-				{% endwith %}
-
-				<div class="car-info-card">
-					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 40px; width: auto; margin-bottom: 0.75rem;">
-					<div class="car-info-item">{{params.object.modification_autoru.model.mark.name}}</div>
-					<div class="car-info-item">{{params.object.modification_autoru.model}}</div>
-					<div class="car-info-item">{{params.object.modification_autoru}}</div>
-					<div class="car-info-item">{{params.object.complectation_autoru}}</div>
-					<div class="car-info-item">{{params.object.vin}}</div>
-					<div class="car-info-item">{{params.object.year}} г.в.</div>
-					<div class="car-info-item">{{params.object.run|floatformat:"0g"}} км.</div>
-				</div>
-			</div>
-
-			<div class="portal-panel">
-				<div class="modal fade" id="price_history" tabindex="-1" aria-labelledby="price_history" aria-hidden="true">
-					<div class="modal-dialog modal-dialog-scrollable">
-						<div class="modal-content">
-							<div class="modal-header">
-								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-							</div>
-							<div class="modal-body">
-								<div class="row g-2">
-									{% for price in params.list_price %}
-										<div class="col-12">
-											<div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fc; border-radius: 0.5rem;">
-												<span>{{price.date}}</span>
-												<span class="fw-bold">{{price.price|floatformat:"2g"}} ₽</span>
-											</div>
-										</div>
-									{% endfor %}
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<a class="action-btn" data-bs-toggle="modal" data-bs-target="#price_history">
-					<span class="icon-mbri-bulleted-list"></span> История цен - {{params.list_price|length}}
-				</a>
-
-				{% if params.interactiv != None %}
-					<a href="/eco/{{params.interactiv.rlk.id}}/" class="action-btn"><span class="icon-params"></span> Оценка</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-params"></span> Оценка</button>
-				{% endif %}
-
-				{% if params.agreement != None %}
-					<a href="/docs_car_agreement/{{params.agreement.id}}/" class="action-btn"><span class="icon-doc"></span> Соглашение</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-doc"></span> Соглашение</button>
-				{% endif %}
-
-				{% if params.agreement != None and params.shipment != None %}
-					<a href="/docs_car_shipment/{{params.shipment.id}}/" class="action-btn"><span class="icon-key"></span> Отгрузка</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-key"></span> Отгрузка</button>
-				{% endif %}
-			</div>
-		</div>
-
-		<div class="col-sm-12 col-md-9 col-lg-9">
-			<div class="portal-panel">
-					<div class="row">
-
-					<div class="col">
-						<div class="row g-2 mb-3">
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" value="{{params.object.unit.name}}" readonly>
-									<label>Подразделение</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" value="{{params.object.type_reception}}" readonly>
-									<label>Тип приема автомобиля</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" value="{% if params.object.quantity == 0 %}Продан{% else %}{{params.object.status}}{% endif %}" readonly>
-									<label>Статус автомобиля</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" value="{{params.object.type_sale.name}}" readonly>
-									<label>Продажа</label>
-								</div>
-							</div>
-						</div>
-
-						<div class="row g-2 mb-3">
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" style="background: #fff3cd;" value="{{params.object.cost_price|floatformat:"2g"}} ₽" readonly>
-									<label>Себестоимость</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" style="background: #f8d7da;" value="{{params.object.outlay|floatformat:"2g"}} ₽" readonly>
-									<label>Расходы на АМ (факт)</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" style="background: #f8d7da;" value="{{params.object.bcp|floatformat:"2g"}} ₽" readonly>
-									<label>БЦП</label>
-								</div>
-							</div>
-							<div class="col-sm">
-								<div class="form-floating">
-									<input type="text" class="form-control text-dark" style="background: #d1e7dd;" value="{{params.object.price|floatformat:"2g"}} ₽" readonly>
-									<label>Цена</label>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<a href="/cars/deal/calculation/?car={{params.object.slug}}">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-calendar"></span> Калькулятор сделки</div>
-							<div class="metric-card-value"> открыть</div>
-						</div>
-						</a>
-					</div>
-				</div>
-
-				<div class="row g-2 mb-3">
-					
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-calendar"></span> Доп. оборудование</div>
-							<div class="metric-card-value"> - руб.</div>
-						</div>
-					</div>
-				</div>
-				<div class="row g-2 mb-3">
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-calendar"></span> На складе</div>
-							<div class="metric-card-value">{{params.object.days_in_stok}} д.</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-money"></span> Финансирование</div>
-							<div class="metric-card-value">{{params.finance|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-money"></span> Реклама</div>
-							<div class="metric-card-value">{{params.marketing|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-				</div>
-
-				{% if params.analytics %}
-				<div class="row g-2 mb-3">
-					<div class="col-12">
-						<h6 class="mb-2"><span class="icon-mbri-info"></span> Аналитика</h6>
-					</div>
-					<div class="col-12 col-sm-6 col-md">
-						<div class="metric-card">
-							<div class="metric-card-label">ДЦ</div>
-							<div class="metric-card-value">{{ params.analytics.count_in_unit }}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-6 col-md">
-						<div class="metric-card">
-							<div class="metric-card-label">ГК </div>
-							<div class="metric-card-value">{{ params.analytics.count_all_dc }}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-6 col-md">
-						<div class="metric-card">
-							<div class="metric-card-label">Продажи подразделения за последний месяц</div>
-							<div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-6 col-md">
-						<div class="metric-card">
-							<div class="metric-card-label">Продажи модели за последний месяц</div>
-							<div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div>
-						</div>
-					</div>
-				</div>
-				{% if params.analytics.sales_by_day %}
-				<div class="row g-2 mb-3">
-					<div class="col-12">
-						<h6 class="mb-2">Продажи подразделения по дням (последний месяц)</h6>
-						<canvas id="salesByDayChart" height="120" style="max-width: 100%;"></canvas>
-						<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-						<script>
-						(function() {
-							var data = {{ params.analytics.sales_by_day_json|safe }};
-							if (!Array.isArray(data)) data = [];
-							var labels = data.map(function(d) { return d.date; });
-							var counts = data.map(function(d) { return d.count; });
-							var ctx = document.getElementById('salesByDayChart');
-							if (ctx && typeof Chart !== 'undefined') {
-								new Chart(ctx, {
-									type: 'bar',
-									data: {
-										labels: labels,
-										datasets: [{
-											label: 'Продаж',
-											data: counts,
-											backgroundColor: 'rgba(0, 42, 90, 0.6)',
-											borderColor: 'rgba(0, 42, 90, 1)',
-											borderWidth: 1
-										}]
-									},
-									options: {
-										responsive: true,
-										plugins: { legend: { display: false } },
-										scales: {
-											y: { beginAtZero: true, ticks: { stepSize: 1 } },
-											x: { maxRotation: 45, minRotation: 45 }
-										}
-									}
-								});
-							}
-						})();
-						</script>
-					</div>
-				</div>
-				{% endif %}
-				{% if params.analytics.cumulative_detail %}
-				<div class="row g-2 mb-3">
-					<div class="col-12">
-						<h6 class="mb-2">Детализация продаж подразделения за последний месяц (Power BI Cumulative)</h6>
-						<div class="table-responsive">
-							<table class="table table-sm table-striped table-hover">
-								<thead>
-									<tr>
-										<th>Дата продажи</th>
-										<th>Марка</th>
-										<th>Модель</th>
-										<th>Модификация</th>
-										<th>Тип продажи</th>
-										<th>VIN</th>
-										<th>Выручка</th>
-										<th>Подразделение</th>
-									</tr>
-								</thead>
-								<tbody>
-									{% for row in params.analytics.cumulative_detail %}
-									<tr>
-										<td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td>
-										<td>{{ row.Marka|default:"—" }}</td>
-										<td>{{ row.Model|default:"—" }}</td>
-										<td>{{ row.Modifikatsiya|default:"—" }}</td>
-										<td>{{ row.TipProdazhi|default:"—" }}</td>
-										<td>{{ row.VIN|default:"—" }}</td>
-										<td>{{ row.VyruchkaZaAvto|default:"—" }}</td>
-										<td>{{ row.PodrazdelenieDTs|default:"—" }}</td>
-									</tr>
-									{% endfor %}
-								</tbody>
-							</table>
-						</div>
-						<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm mt-2" target="_blank">Открыть полный список в Power BI</a>
-					</div>
-				</div>
-				{% endif %}
-				{% endif %}
-
-				<div class="portal-panel">
-					<div class="">
-					  <h6><span class="icon-mbri-cust-feedback"></span> Задачи по автомобилю 
-						<button style="padding: 5px 10px;" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#exampleModalAddTask" data-bs-whatever="@mdo">
-							<span class="icon-mbri-plus" ></span> 
-						</button>
-					  </h6>
-					  
-					  <div class="table-responsive-sm">
-						<table class="table table-sm table-striped table-hover">
-						  <tbody>
-		  
-							{% for task in params.interactiv_rlk.estimation.tasks %}
-							
-							  <tr class="align-middle" data-bs-toggle="modal" data-bs-target="#exampleModalTask{{forloop.counter}}">
-								<td class="align-middle"><span class="icon-mbri-play"></span></td>
-								<td class="align-middle">
-								  {% if task.date_close == None %}
-									Новая
-								  {% else %}
-									Выполненная
-								  {% endif %}
-								</td>
-								<td class="align-middle">{{task.date_open}}</td>
-								<td class="align-middle">{{task.comment_task}}</td>
-								<td class="align-middle">{{task.page_title}}</td>
-								<td class="align-middle">{{task.files_all_count}}</td>
-							  </tr>
-							
-							  
-							{% endfor %}
-		  
-						  </tbody>
-						</table>
-					  </div>
-	
-					  {% for task in params.estimation.tasks %}
-						<div class="modal fade" id="exampleModalTask{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable modal-xl">
-							<div class="modal-content">
-							<div class="modal-header">
-								
-								<label class="fs-6 fw-bold">Задание</label>
-								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-								<hr>
-		
-							</div>
-							
-								<div class="modal-body">
-								
-								<form method="post" enctype="multipart/form-data">
-		
-									{% csrf_token %}
-		
-									<input hidden id="task_edit" name="task_edit" value="{{task.id}}">
-		
-									<div class="form-floating">
-									<input class="form-control form-control-sm" type="text" id="" name="" value="{{task.date_open}}" readonly>
-									<label for="floatingInput">Дата</label>
-									</div>
-									<br>
-									<div class="form-floating">
-									<input class="form-control form-control-sm" type="text" id="task_comment{{task.id}}" name="task_comment{{task.id}}" value="{{task.comment_task}}" readonly>
-									<label for="floatingInput">Задание</label>
-									</div>
-									
-									<hr class="my-3">
-		
-									<div class="form-floating">
-									<input class="form-control form-control-sm" type="text" id="" name="" value="{{task.date_close|default_if_none:"-"}}" readonly>
-									<label for="floatingInput">Дата выполнения</label>
-									</div>
-		
-									<br>
-		
-									<div class="form-floating">
-									<input class="form-control form-control-sm" type="text" id="comment_success" name="comment_success" value="{{task.comment_success}}" required>
-									<label for="floatingInput">Комментарий выполнения</label>
-									</div>
-		
-									<br>
-		
-									{% if task.date_close == None %}
-		
-									<input type="file" class="form-control" id="images_task" name="images_task" accept="image/*;capture=camera" multiple/>
-							
-									<hr class="my-3">
-		
-									<div class="row g-3">
-										
-										<div class="col-sm">
-										<button class="btn btn-outline-danger" type="submit" name="cancel" value="cancel"> <span class="icon-mbri-close" ></span> Отменить</button>  
-										</div>
-		
-										<div class="col-sm">
-										<button class="btn btn-outline-success btn_block" type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>  
-										</div>
-		
-									</div>
-		
-									{% else %}
-		
-									<hr class="my-3">
-		
-									{% if task.files_all|length %}
+				<div class="col-sm-12 col-md-3 col-lg-3">
+					<div class="portal-panel">
 						
-										<div class="row g-1 gallery-container">
-											{% for img in task.files_all %}
-										
-											<div class="col-sm-3 gallery-item-task{{task.id}}" onclick="visible_foto('gallery-item-task{{task.id}}', {{forloop.counter}})" data-index="{{forloop.counter}}">
-												
-												<img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_absolute_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
-												
-											</div>
-		
+						
+
+						<div class="car-info-card">
+							<img class="item-img-mini" src="{{params.object.logo}}" style="height: 40px; width: auto; margin-bottom: 0.75rem;">
+							<div class="car-info-item">{{params.object.modification_autoru.model.mark.name}}</div>
+							<div class="car-info-item">{{params.object.modification_autoru.model}}</div>
+							<div class="car-info-item">{{params.object.modification_autoru}}</div>
+							<div class="car-info-item">{{params.object.complectation_autoru}}</div>
+							<div class="car-info-item">{{params.object.vin}}</div>
+							<div class="car-info-item">{{params.object.year}} г.в.</div>
+							<div class="car-info-item">{{params.object.run|floatformat:"0g"}} км.</div>
+						</div>
+
+					</div>
+
+					<div class="portal-panel">
+						
+						<div class="modal fade" id="price_history" tabindex="-1" aria-labelledby="price_history" aria-hidden="true">
+							<div class="modal-dialog modal-dialog-scrollable">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									<div class="modal-body">
+										<div class="row g-2">
+											{% for price in params.list_price %}
+												<div class="col-12">
+													<div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fc; border-radius: 0.5rem;">
+														<span>{{price.date}}</span>
+														<span class="fw-bold">{{price.price|floatformat:"2g"}} ₽</span>
+													</div>
+												</div>
 											{% endfor %}
 										</div>
-													
-									{% endif %}
-		
-									{% endif %}
-		
-								</form>
-		
-								</div>
-							</div>
-							</div>
-						</div>
-					  {% endfor %}
-	
-					  <div class="modal fade" id="exampleModalAddTask" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-						<div class="modal-dialog modal-dialog-scrollable modal-xl">
-						  <div class="modal-content">
-						  <div class="modal-header">
-							<h6><span class="icon-mbri-cust-feedback"></span> Новая задача по осмотру </h6>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						  </div>
-						  
-							<div class="modal-body">
-	
-							  <form method="post" name="save_new_task">
-								
-								{% csrf_token %}
-	
-								<div class="form-floating">
-								  <input class="form-control form-control-sm" type="text" id="save_new_task_text" name="save_new_task_text" value="" >
-								  <label for="floatingInput">Задание</label>
-								</div>
-			  
-								<hr class="my-3">
-								
-								<button type="submit" class="btn btn-outline-success"> <span class="icon-mbri-play"></span> Сохранить</button>
-								
-							  </form>
-	
-							</div>
-						  </div>
-						</div>
-					  </div>
-	
-					</div>
-				  </div>
-
-				<hr class="my-4">
-
-				<div class="row g-3 mb-3">
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-params"></span> Калькулятор</div>
-							{% for car_estimation in params.calculations %}
-								{% if forloop.first %}
-									<div class="calc-card-value {% if car_estimation.percent <= 0.3 %}price-status-success{% elif car_estimation.percent <= 0.6 %}price-status-warning{% else %}price-status-danger{% endif %}">
-										{{car_estimation.avg_price|floatformat:"2g"}} ₽
 									</div>
-									<div class="calc-card-sub">{{car_estimation.avg_days}} д. / {{car_estimation.position}} / {{car_estimation.total}}</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="row g-1">
+							<div class="col-auto">
+								<a class="action-btn" data-bs-toggle="modal" data-bs-target="#price_history">
+									<span class="icon-mbri-bulleted-list"></span> История цен - {{params.list_price|length}}
+								</a>
+							</div>
+							<div class="col-auto">
+								{% if params.interactiv != None %}
+									<a href="/eco/{{params.interactiv.rlk.id}}/" class="action-btn"><span class="icon-params"></span> Оценка</a>
+								{% else %}
+									<button class="action-btn" disabled><span class="icon-params"></span> Оценка</button>
 								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calculation"><span class="icon-calendar"></span> история</a>
+							</div>
+							<div class="col-auto">
+								{% if params.agreement != None %}
+									<a href="/docs_car_agreement/{{params.agreement.id}}/" class="action-btn"><span class="icon-doc"></span> Соглашение</a>
+								{% else %}
+									<button class="action-btn" disabled><span class="icon-doc"></span> Соглашение</button>
+								{% endif %}
+							</div>
+							<div class="col-auto">
+								{% if params.agreement != None and params.shipment != None %}
+									<a href="/docs_car_shipment/{{params.shipment.id}}/" class="action-btn"><span class="icon-key"></span> Отгрузка</a>
+								{% else %}
+									<button class="action-btn" disabled><span class="icon-key"></span> Отгрузка</button>
+								{% endif %}
+							</div>
 						</div>
 
-						<div class="modal fade" id="calculation" tabindex="-1" aria-labelledby="calculation" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+
+					<div class="portal-panel">
+                        <div class="">
+                          <h6><span class="icon-mbri-users"></span> Участники 
+                            <button id="show_modal_users" style="padding: 5px 10px;" class="btn btn-sm btn-outline-dark">
+                              <span class="icon-mbri-edit2" ></span> 
+                            </button>
+                          </h6>
+                          
+                        
+                          {% for access_user in params.object.access_user.all %}
+                            <button style="padding: 5px 10px; margin: 0.2rem;" class="btn btn-outline-secondary">
+                              {% if access_user.profiles.eco_name != '' %} {{access_user.profiles.eco_name}} {% else %} {{access_user.last_name}} {{access_user.first_name}} {% endif %}
+							  <a href="{{request.path}}?del_u={{access_user.id}}"><span class="icon-mbri-close"></span> </a>
+                            </button>
+                          {% endfor %}
+                      
+                          <div class="modal fade" id="exampleModalUsers" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-scrollable modal-xl">
+                              <div class="modal-content">
+                              <div class="modal-header">
+                                <div class="row g-1 w-100">
+                                  <div class="col-10">
+                                    <input class="form-control" type="text" id="filter_user" name="filter_user" value="" placeholder="Ввведите ФИО или email сотрудника">                      
+                                  </div>
+                                  <div class="col-1">
+                                    <button class="btn btn-outline-success" id="search_staff_access"><span class="icon-mbri-search"></span> </button>
+                                  </div>
+                                </div>
+                                
+                                <hr>
+        
+                              </div>
+                              
+                                <div class="modal-body">
+        
+                                  <ul id="myUL" style="margin: 0rem; padding: 0rem;">
+                                    
+                            
+                                  </ul>
+                                  
+                                  <script>
+
+                                    $("#show_modal_users").click(function(e){
+                                      
+                                      document.querySelector('#myUL').innerHTML = '';
+                                      
+                                      $('#exampleModalUsers').modal('show');
+
+                                    });
+
+                                    $("#search_staff_access").click(function(e){
+                                      
+                                      document.querySelector('#myUL').innerHTML = '';
+                                      
+                                      var innerHTML = '';
+                                      var search_staff_access_value = $("#filter_user").val();
+
+                                      if (search_staff_access_value == ''){
+                                        document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + 'Заполните строку поиска.';
+                                      } else {
+                                        $.get( "/cars/{{params.object.slug}}/access_user/?search=" + search_staff_access_value , function( data, status ) { 
+                                          let i = data.length;
+                                            var puth = '{{request.path}}';
+                                            for (s = 0; s < i; s++) { 
+                                              
+                                              var object = data[s];
+
+                                              var html = ''
+                                              
+                                              html += '<li style="margin-bottom: 0.2rem; padding: 0.3rem;" class="btn text-start container-fluid btn-outline-secondary">';
+                                              html += '  <a href="' + puth  + '?add_u=' + object['id'] + '" class="text-dark" >';
+                                              html += '  <div class="row g-1">';
+                                              html += '  <div class="col-1 align-self-center">';
+                                              html += '<span class="icon-mbri-plus"></span>';
+                                              html += '</div>';
+                                              html += '<div class="col-11">';
+                                              html +=  object.profiles__eco_name;
+                                              html += '';
+                                              html += '<br>';
+                                              html += object.email;
+                                              html += '';
+                                              html += '</div>';
+                                              html += '</div>';
+                                              html += '</a>';
+                                              html += '</li>  ';
+
+                                              document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + html;
+
+                                            };
+                                            if (i == 0){
+                                              document.querySelector('#myUL').innerHTML = document.querySelector('#myUL').innerHTML + 'Нечего не найдено. Уточните поиск.';
+                                            }
+                                        });
+                                      };                                  
+                                    });                                
+
+                                  </script>
+        
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+        
+                        </div>
+                    </div>
+
+				</div>
+
+				<div class="col-sm-12 col-md-9 col-lg-9">
+					<div class="portal-panel">
+
+						<div class="row g-1">
+							<div class="col-12 col-sm-6">
+								<div class="row g-1">
+									<div class="col-12">
+										<div class="metric-card">
+											<div class="metric-card-label"><span class="icon-mbri-home"></span> Организация</div>
+											<div class="metric-card-value">{{params.object.organization.name}}</div>
+										</div>
 									</div>
-									<div class="modal-body">
+									<div class="col-12">
+										<div class="metric-card">
+											<div class="metric-card-label"><span class="icon-mbri-home"></span> Подразделение</div>
+											<div class="metric-card-value">{{params.object.unit.name}}</div>
+										</div>
+									</div>
+									<div class="row g-1">
+										<div class="col-4">
+											<div class="metric-card">
+												<div class="metric-card-label"><span class="icon-mbri-home"></span> ЦГ</div>
+												<div class="metric-card-value">{{params.object.group_price.name|default:"-"}}</div>
+											</div>
+										</div>
+										<div class="col-4">
+											<div class="metric-card">
+												<div class="metric-card-label"><span class="icon-mbri-home"></span> Этап</div>
+												<div class="metric-card-value">{{params.object.stage_price.name|default:"-"}}</div>
+											</div>
+										</div>
+										<div class="col-4">
+											<div class="metric-card">
+												<div class="metric-card-label"><span class="icon-mbri-home"></span> На складе</div>
+												<div class="metric-card-value">{{params.object.days_in_stok}} д.</div>
+											</div>
+										</div>
+									</div>
+								</div>																								
+							</div>
+							<div class="col-12 col-sm-6">
+								<div class="row g-1">
+									<div class="col-12">
+										<div class="metric-card">
+											<div class="metric-card-label"><span class="icon-mbri-cash"></span> Себестоимость (+ДОП)</div>
+											<div class="metric-card-value">{{params.car_price_and_dop|floatformat:"2g"}} ₽</div>
+										</div>										
+									</div>
+									<div class="col-12">
+										<div class="metric-card">
+											<div class="metric-card-label"><span class="icon-mbri-setting"></span> Доп. оборудование</div>
+											<div class="metric-card-value">{{params.dop_car_info.aggretgate_dop_zn.sum_amount|floatformat:"2g"|default:"0"}} ₽</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div class="row g-1">
+											<div class="col-6">
+												<div class="metric-card">
+													<div class="metric-card-label"><span class="icon-calendar"></span> РРЦ импортера</div>
+													<div class="metric-card-value">{{params.object.price|floatformat:"2g"}} ₽</div>
+												</div>
+											</div>
+											<div class="col-6">
+												<div class="metric-card">
+													<div class="metric-card-label"><span class="icon-calendar"></span> Текущая цена</div>
+													<div class="metric-card-value">{{params.object.price|floatformat:"2g"}} ₽</div>
+												</div>
+											</div>		
+										</div>
+										
+									</div>
+								</div>																
+							</div>
+						</div>												
+
+						<br>
+
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-calendar"></span> Ценовое правило КМ c {{params.cumulative_data.brand_km.month}}</div>	
+							
+							<div class="row g-1">
+								<div class="col-12 col-sm-6">
+									<div class="bg-primary bg-opacity-50" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.brand_km.brand}}</div>																
+									</div> 								
+								</div>
+								<div class="col-12 col-sm-6">
+									<div class="bg-primary bg-opacity-50" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										{% if params.cumulative_data.type_km == 1 %}
+											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic.km_min_automatic|floatformat:"2g"}} ₽</div>	
+										{% elif params.cumulative_data.type_km == 2 %}
+											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>	
+										{% elif params.cumulative_data.type_km == 3 %}
+											<div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
+										{% endif %}																										
+									</div> 								
+								</div>
+								<!--
+								<div class="col-12 col-sm-4">
+									<div class="bg-primary bg-opacity-50" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label text-white"><span class="icon-calendar"></span> ИРЦ этапа</div>
+										<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.irc|floatformat:"2g"}} </div>																	
+									</div> 								
+								</div>
+								-->
+							</div>		
+
+						</div>
+
+						<br>
+						<div class="metric-card">
+							<div class="row g-1 align-items-center">
+								
+								<div class="col-12 col-sm-6 align-self-center">
+									<div class="{% if params.cumulative_data.type_km == 4 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-gradient bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Специальное условие продажи ГК</div>
+										<div class="metric-card-value"> • --- --- ₽</div>		
+									</div>					
+								</div>
+
+								{% if params.object.min_km > 0 %}
+									<div class="col-12 col-sm-6 align-self-center">
+										<div class="{% if params.cumulative_data.type_km == 3 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-gradient bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+											<div class="row">
+												<div class="col">
+													<div class="metric-card-label"><span class="icon-calendar"></span> Минимальный КМ </div>
+													<div class="metric-card-value"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>		
+												</div>
+												<div class="col-auto align-self-center">
+													<span class="fs-4 text-white icon-mbri-edit" 
+														data-bs-toggle="modal"
+														data-bs-target="#modal_min_km">
+													</span>
+												</div>
+											</div>											
+										</div>					
+									</div>	
+								{% else %}
+									<div class="col-12 col-sm-6">
+										<div class="{% if params.cumulative_data.type_km == 3 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-gradient bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+											<div class="row">
+												<div class="col">
+													<div class="metric-card-label"><span class="icon-calendar"></span> Минимальный КМ  </div>
+													<div class="metric-card-value"> • --- --- ₽</div>		
+												</div>
+												<div class="col-auto align-self-center">
+													<span class="fs-4 text-white icon-mbri-edit" 
+														data-bs-toggle="modal"
+														data-bs-target="#modal_min_km">
+													</span>
+												</div>
+											</div>		
+										</div>					
+									</div>							
+								{% endif %}
+
+							</div>	
+							
+						</div>
+						
+						
+
+						<br>
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-calendar"></span> Калькуляции</div>
+							{% if params.calcs|length > 0 %}
+
+								
+
+								{% for calculation in params.calcs %}
+
+									<div class="" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="row g-3">
+											
+											<div class="col-4 col-sm-auto align-self-center">
+												<a href="/cars/deal/calculation/{{calculation.id}}/"> 
+													<span class="fs-4  icon-mbri-edit">
+													</span>
+												</a>
+											</div>
+											
+											<div class="col-4 col-sm-2">
+												<div class="metric-card-label-portal">Дата</div>
+												<div class="metric-card-value-portal"> {{calculation.date|date:"d.m.Y"}}</div>												
+											</div>
+
+											<div class="col-4 col-sm-2">
+												<div class="metric-card-label-portal">Номер</div>
+												<div class="metric-card-value-portal"> {{calculation.number}}</div>												
+											</div>
+											
+											<div class="col-6 col-sm-2">
+												<div class="metric-card-label-portal">Себестоимость </div>
+												<div class="metric-card-value-portal text-nowrap">{{params.car_price_and_dop|floatformat:"2g"}} ₽</div>												
+											</div>
+											
+											<div class="col-6 col-sm-2">
+												<div class="metric-card-label-portal">Продажа </div>
+												<div class="metric-card-value-portal text-nowrap">{{calculation.amount|floatformat:"2g"}} ₽</div>												
+											</div>
+
+											<div class="col-12 col-sm-2">
+
+												<div class="metric-card-label-portal">КВП </div>
+												<div class="metric-card-value-portal text-nowrap">{{calculation.kvp|floatformat:"2g"}} ₽</div>
+												 
+											</div>
+
+										</div>
+										<br>
+										<div class="row g-1">
+											{% for detail in calculation.detail %}
+												<div class="col-auto" style="margin: 0.2rem; border-radius: 0.5rem;">
+													<div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
+													<div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
+												</div>
+											{% endfor %}
+										</div>
+									</div>
+									<hr>
+								
+								{% endfor %}
+
+							{% else %}
+
+								<div class="row g-3">
+									<div class="col-12">
+										<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+											<div class="metric-card-value"> • Пока нет созданных калькуляций</div>																	
+										</div>
+									</div>
+								</div>
+							
+							{% endif %}
+							<!--
+							<br>
+							<a href="/cars/deal/calculation/?car={{params.object.slug}}" style="padding: 5px 10px;" class="btn btn-secondary bg-gradient btn-sm">
+								<span class="icon-mbri-plus"> Создать расчет </span> 
+							</a>
+							-->
+						</div>
+
+						<br>
+
+						<div class="metric-card">
+							<div class="row g-1 align-items-center">
+								<div class="col-12 col-sm-4 align-self-center">
+									<div style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Динамический КМ</div>
+										
+										{% if params.cumulative_data.type_km == 1 %}
+										• Авто • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic.km_min_automatic|floatformat:"2g"}} ₽</div>	
+										{% elif params.cumulative_data.type_km == 2 %}
+										• Авто+ • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>	
+										{% elif params.cumulative_data.type_km == 3 %}
+										• Ручной • <div class="metric-card-value fs-5"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
+										{% endif %}
+										
+									</div> 
+								</div>
+								
+								<div class="col-12 col-sm-4 align-self-center">
+									<div class="{% if params.cumulative_data.type_km == 1 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-opacity-10 bg-gradient" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Авто </div>
+										<div class="metric-card-value"> • {{params.cumulative_data.automatic.km_min_automatic|floatformat:"2g"|default:"--- ---"}} ₽</div>							
+									</div>
+								</div>
+
+								<div class="col-12 col-sm-4 align-self-center ">
+									<div class="{% if params.cumulative_data.type_km == 2 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-opacity-10 bg-gradient" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Авто+</div>
+										<div class="metric-card-value"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"|default:"--- ---"}} ₽</div>							
+									</div>
+								</div>
+
+							</div>	
+
+							<hr>
+
+							<div class="metric-card-value fs-7"> 
+								{% if params.cumulative_data.type_km == 1 %}
+									<div class="metric-card-value fs-6"> • Авто • {{params.cumulative_data.automatic.km_description}} </div>	
+								{% elif params.cumulative_data.type_km == 2 %}
+									<div class="metric-card-value fs-6"> • Авто+ • {{params.cumulative_data.automatic_2.km_description}} </div>	
+								{% elif params.cumulative_data.type_km == 3 %}
+									<div class="metric-card-value fs-6"> • Ручной • {{params.cumulative_data.custom.km_description}} </div>							
+								{% endif %}
+							</div>
+						</div>
+						<!--
+						<br>
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-calendar"></span> Отладочные данные (будут убраны после вычитки)</div>
+							<div class="row g-3">
+								<div class="col-12 col-sm-6 fs-7 h-100">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Авто </div>
+										<div class="metric-card-value"> • РДО • {{params.cumulative_data.automatic.km_brand_automatic_percent|floatformat:"2g"}} %</div>							
+										<div class="metric-card-value"> • ЭТАП • {{params.cumulative_data.automatic.km_brand_automatic_stage_percent|floatformat:"2g"}} %</div>
+										<div class="metric-card-value"> • КМ • {{params.cumulative_data.automatic.km_min_automatic|floatformat:"2g"}} ₽</div>		
+										<div class="metric-card-value fs-8"> • {{params.cumulative_data.automatic.km_description}} </div>							
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 fs-7 h-100">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> Авто+ </div>
+										<div class="metric-card-value"> • РДО • {{params.cumulative_data.automatic_2.km_brand_automatic_percent|floatformat:"2g"}} %</div>							
+										<div class="metric-card-value"> • ЭТАП • {{params.cumulative_data.automatic_2.km_brand_automatic_stage_percent|floatformat:"2g"}} %</div>
+										<div class="metric-card-value"> • КМ • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>		
+										<div class="metric-card-value fs-8"> • {{params.cumulative_data.automatic_2.km_description}} </div>								
+									</div>
+								</div>
+								
+							</div>
+						</div>
+						-->
+						<br>
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-calendar"></span> Подразделение сводка</div>
+									
+							<div class="row g-1">
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ДЦ (модель)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all}} шт.</div>							
+									</div>
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ДЦ (модиф.)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all_model}} шт.</div>	
+									</div>						
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ДЦ (компл.)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all_compl}} шт.</div>							
+									</div>
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> sale (модель)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_model}} шт.</div>	
+									</div>						
+								</div>
+
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> sale (мод.)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_modif}} шт.</div>
+									</div>							
+								</div>
+
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> sale (компл.)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_compl}} шт.</div>
+									</div>							
+								</div>
+
+							</div>							
+						</div>
+
+						<br>
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-calendar"></span> ГК сводка</div>
+							<div class="row g-1">
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК (модель)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all_gk}} шт.</div>							
+									</div>
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК (модиф.)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all_model_gk}} шт.</div>	
+									</div>						
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК (компл.)</div>
+										<div class="metric-card-value"> • {{params.car_analitics.count_all_compl_gk}} шт.</div>							
+									</div>
+								</div>
+								
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК sale (мод.)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_model_gk}} шт.</div>	
+									</div>						
+								</div>
+
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК sale (мод.)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_modif_gk}} шт.</div>
+									</div>							
+								</div>
+
+								<div class="col-12 col-sm-2">
+									<div class="bg-secondary bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> ГК sale (компл.)</div>
+										<div class="metric-card-value"> • {{params.sale_info.sale_all_compl_gk}} шт.</div>
+									</div>							
+								</div>
+
+							</div>							
+						</div>
+
+
+						{% if params.analytics1 %}
+							
+							<div class="row g-2 mb-3">
+								<div class="col-12">
+									<h6 class="mb-2"><span class="icon-mbri-info"></span> Аналитика</h6>
+								</div>
+								<div class="col-12 col-sm-6 col-md">
+									<div class="metric-card">
+										<div class="metric-card-label">ДЦ</div>
+										<div class="metric-card-value">{{ params.analytics.count_in_unit }}</div>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md">
+									<div class="metric-card">
+										<div class="metric-card-label">ГК </div>
+										<div class="metric-card-value">{{ params.analytics.count_all_dc }}</div>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md">
+									<div class="metric-card">
+										<div class="metric-card-label">Продажи подразделения за последний месяц</div>
+										<div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md">
+									<div class="metric-card">
+										<div class="metric-card-label">Продажи модели за последний месяц</div>
+										<div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div>
+									</div>
+								</div>
+							</div>
+
+							{% if params.analytics.sales_by_day %}
+								<div class="row g-2 mb-3">
+									<div class="col-12">
+										<h6 class="mb-2">Продажи подразделения по дням (последний месяц)</h6>
+										<canvas id="salesByDayChart" height="120" style="max-width: 100%;"></canvas>
+										<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+										<script>
+										(function() {
+											var data = {{ params.analytics.sales_by_day_json|safe }};
+											if (!Array.isArray(data)) data = [];
+											var labels = data.map(function(d) { return d.date; });
+											var counts = data.map(function(d) { return d.count; });
+											var ctx = document.getElementById('salesByDayChart');
+											if (ctx && typeof Chart !== 'undefined') {
+												new Chart(ctx, {
+													type: 'bar',
+													data: {
+														labels: labels,
+														datasets: [{
+															label: 'Продаж',
+															data: counts,
+															backgroundColor: 'rgba(0, 42, 90, 0.6)',
+															borderColor: 'rgba(0, 42, 90, 1)',
+															borderWidth: 1
+														}]
+													},
+													options: {
+														responsive: true,
+														plugins: { legend: { display: false } },
+														scales: {
+															y: { beginAtZero: true, ticks: { stepSize: 1 } },
+															x: { maxRotation: 45, minRotation: 45 }
+														}
+													}
+												});
+											}
+										})();
+										</script>
+									</div>
+								</div>
+							{% endif %}
+
+							{% if params.analytics.cumulative_detail %}
+								<div class="row g-2 mb-3">
+									<div class="col-12">
+										<h6 class="mb-2">Детализация продаж подразделения за последний месяц (Power BI Cumulative)</h6>
 										<div class="table-responsive">
-											<table class="table table-sm">
+											<table class="table table-sm table-striped table-hover">
 												<thead>
 													<tr>
-														<th>Дата</th>
-														<th>Цена</th>
-														<th>Дней</th>
-														<th>Позиция</th>
+														<th>Дата продажи</th>
+														<th>Марка</th>
+														<th>Модель</th>
+														<th>Модификация</th>
+														<th>Тип продажи</th>
+														<th>VIN</th>
+														<th>Выручка</th>
+														<th>Подразделение</th>
 													</tr>
 												</thead>
 												<tbody>
-													{% for car_estimation in params.calculations %}
-														<tr class="{% if car_estimation.percent <= 0.3 %}table-success{% elif car_estimation.percent <= 0.6 %}table-warning{% else %}table-danger{% endif %}">
-															<td>{{car_estimation.date|date:"d.m.Y"}}</td>
-															<td>{{car_estimation.avg_price|floatformat:"2g"}} ₽</td>
-															<td>{{car_estimation.avg_days}} д.</td>
-															<td>{{car_estimation.position}} / {{car_estimation.total}}</td>
-														</tr>
+													{% for row in params.analytics.cumulative_detail %}
+													<tr>
+														<td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td>
+														<td>{{ row.Marka|default:"—" }}</td>
+														<td>{{ row.Model|default:"—" }}</td>
+														<td>{{ row.Modifikatsiya|default:"—" }}</td>
+														<td>{{ row.TipProdazhi|default:"—" }}</td>
+														<td>{{ row.VIN|default:"—" }}</td>
+														<td>{{ row.VyruchkaZaAvto|default:"—" }}</td>
+														<td>{{ row.PodrazdelenieDTs|default:"—" }}</td>
+													</tr>
 													{% endfor %}
 												</tbody>
 											</table>
 										</div>
+										<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm mt-2" target="_blank">Открыть полный список в Power BI</a>
 									</div>
 								</div>
-							</div>
-						</div>
+							{% endif %}
+
+						{% endif %}
+
 					</div>
 
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-globe"></span> Автохаб</div>
-							{% for avtohub in params.avtohubs %}
-								{% if forloop.first %}
-									<div class="calc-card-value {% if avtohub.percent <= 0.3 %}price-status-success{% elif avtohub.percent <= 0.6 %}price-status-warning{% else %}price-status-danger{% endif %}">
-										{{avtohub.avgMarketPrice|floatformat:"2g"}} ₽
-									</div>
-									<div class="calc-card-sub">{{avtohub.averageDaysInSale}} д. / {{avtohub.vRatingPosition}} / {{avtohub.numberOfCompetitors}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#avtohub"><span class="icon-calendar"></span> история</a>
-						</div>
+					
 
-						<div class="modal fade" id="avtohub" tabindex="-1" aria-labelledby="avtohub" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										<div class="table-responsive">
-											<table class="table table-sm">
-												<thead>
-													<tr>
-														<th>Дата</th>
-														<th class="text-end">Цена</th>
-														<th class="text-end">Дней</th>
-														<th class="text-end">Позиция</th>
-													</tr>
-												</thead>
-												<tbody>
-													{% for avtohub in params.avtohubs %}
-														<tr class="{% if avtohub.percent <= 0.3 %}table-success{% elif avtohub.percent <= 0.6 %}table-warning{% else %}table-danger{% endif %}">
-															<td>{{avtohub.date|date:"d.m.Y"}}</td>
-															<td class="text-end">{{avtohub.avgMarketPrice|floatformat:"2g"}} ₽</td>
-															<td class="text-end">{{avtohub.averageDaysInSale}} д.</td>
-															<td class="text-end">{{avtohub.vRatingPosition}} / {{avtohub.numberOfCompetitors}}</td>
-														</tr>
-													{% endfor %}
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
 				</div>
 
-				<hr class="my-4">
-
-				<form method="post">
-					{% csrf_token %}
-					<div class="row g-2 mb-3">
-						<div class="col-sm">
-							<div class="form-floating">
-								<input type="text" class="form-control text-dark" id="min_km" name="min_km" value="{{params.1C.MinKM}}" autocomplete="off">
-								<label for="min_km">Минимальный КМ</label>
-							</div>
-						</div>
-						<div class="col-sm">
-							<div class="form-floating">
-								<input type="text" class="form-control text-dark" id="percent_ss" name="percent_ss" value="{{params.1C.PercentSS}}" autocomplete="off">
-								<label for="percent_ss">Процент наценки СС</label>
-							</div>
-						</div>
-						<div class="col-sm-auto">
-							<button class="btn btn-success h-100" type="submit" style="padding: 0.75rem 1.5rem;">
-								<span class="icon-mbri-play"></span> Сохранить
-							</button>
-						</div>
-					</div>
-				</form>
-
-				<hr class="my-4">
-
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="unit_group_id" name="unit_group_id" disabled>
-								<option></option>
-								{% for evaluation in params.selected.evaluations %}
-									<option value="{{evaluation.id}}" {% if params.object.evaluation.id == evaluation.id %}selected{% endif %}>{{evaluation.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="unit_group_id">Вариант управления ценой</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="groupprices_id" name="groupprices_id" disabled>
-								<option></option>
-								{% for groupprice in params.selected.groupprices %}
-									<option value="{{groupprice.id}}" {% if params.object.group_price.id == groupprice.id %}selected{% endif %}>{{groupprice.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="groupprices_id">Ценовая группа</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="stageprices_id" name="stageprices_id" disabled>
-								<option></option>
-								{% for stageprice in params.selected.stageprices %}
-									<option value="{{stageprice.id}}" {% if params.object.stage_price.id == stageprice.id %}selected{% endif %}>{{stageprice.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="stageprices_id">Этап установки цены</label>
-						</div>
-					</div>
-				</div>
-
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="ratings_id" name="ratings_id" disabled>
-								<option></option>
-								{% for rating in params.selected.ratings %}
-									<option value="{{rating.id}}" {% if params.object.rating.id == rating.id %}selected{% endif %}>{{rating.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="ratings_id">Привлекательность</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.days_next_stage}}" readonly>
-							<label>Дней до следующего этапа</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.task}}" readonly>
-							<label>Задач по автомобилю</label>
-						</div>
-					</div>
-				</div>
-
-				<div class="row g-3">
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-params"></span> Экспресс</div>
-							{% for calc_expres in params.calc_express %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_expres.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_expres.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_expres"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_expres" tabindex="-1" aria-labelledby="calc_expres" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_expres in params.calc_express %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_expres.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_expres.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-globe"></span> Автохаб</div>
-							{% for calc_autohub in params.calc_autohub %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_autohub.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_autohub.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_autohub"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_autohub" tabindex="-1" aria-labelledby="calc_autohub" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_autohub in params.calc_autohub %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_autohub.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_autohub.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-database"></span> 1С</div>
-							{% for calc_1C in params.calc_1C %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_1C.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_1C.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_1C"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_1C" tabindex="-1" aria-labelledby="calc_1C" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_1C in params.calc_1C %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_1C.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_1C.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
 			</div>
-		</div>
-
-	</div>
 		</div>
 
 		<div class="tab-pane {% if params.current_tab == 'zn' %}active{% endif %}" id="tab-zn" role="tabpanel">
-			<div class="portal-panel">
-				<h6 class="mb-3">Заказ-наряды (допоборудование, RefTypeRepair.dop = True)</h6>
+			<div class="portal-panel no-padding">
 				{% if params.zn_list %}
-				<div class="table-responsive">
+				<div class="table-responsive" style="margin: 0rem; padding: 0rem; border-radius: 1.2rem;">
 					<table class="table table-sm table-striped table-hover">
 						<thead>
 							<tr>
@@ -814,7 +888,7 @@
 						</thead>
 						<tbody>
 							{% for zn in params.zn_list %}
-							<tr>
+							<tr data-bs-toggle="modal" data-bs-target="#example_repair_{{zn.pk}}">
 								<td>{{ zn.nomer|default:"—" }}</td>
 								<td>{{ zn.dataTime|date:"d.m.Y H:i"|default:"—" }}</td>
 								<td>{{ zn.typeRemont.name|default:"—" }}</td>
@@ -830,27 +904,322 @@
 				<p class="text-muted">Нет заказ-нарядов с типом «допоборудование» по этому автомобилю.</p>
 				{% endif %}
 			</div>
+
+			{% for doc in params.zn_list %}
+				<div class="modal fade" id="example_repair_{{doc.pk}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-scrollable modal-xl">
+				  <div class="modal-content">
+					<div class="modal-header">
+					  Заказ - наряд №{{doc.nomer}} от {{doc.dataTime}} 
+					</div>
+					
+					<div class="modal-body">
+
+					  <div class="row" style="padding: 0.2em;">
+						<div class="col-sm">
+						  {{doc.dataTime}}
+						</div>
+						<div class="col-sm">
+						  {{doc.nomer}}
+						</div>
+						<div class="col-sm">
+						  {{doc.unit.name}}
+						</div>
+						<div class="col-sm">
+						  {{doc.typeRemont}}
+						</div>
+						<div class="col-sm">
+						  {{doc.cars_grz_board}}
+						</div>
+						<div class="col-sm">
+						  {{doc.run|floatformat:"0g"}} км.
+						</div>
+					  </div>
+
+					  <hr>
+					  {{doc.customerWords}}
+					  <hr>
+
+					  <table class="table">
+						<thead>
+						  <tr>
+							<th scope="col">Наименование</th>
+							<th scope="col">Количество</th>
+							<th scope="col">Цена</th>
+							<th scope="col">Скидка %</th>
+							<th scope="col">Скидка</th>
+							<th scope="col">Сумма</th>
+						  </tr>
+						</thead>
+						<tbody class="table-group-divider">
+
+						  {% if doc.works_count > 0 %}
+							{% for work_zn in doc.works %}
+							  <tr>
+								<td>{{work_zn.work.name}}</td>
+								<td>{{work_zn.quantity}}</td>
+								<td>{{work_zn.price|floatformat:"0g"}} &#8381;</td>
+								<td>{{work_zn.discountPercentage}}</td>
+								<td>{{work_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
+								<td>{{work_zn.amountResult|floatformat:"0g"}} &#8381;</td>
+							  </tr>  
+							{% endfor %}
+						  {% endif %}
+						  {% if doc.products_count > 0 %}
+							{% for product_zn in doc.products %}
+							  <tr>
+								<td>{{product_zn.product.name}}</td>
+								<td>{{product_zn.quantity}}</td>
+								<td>{{product_zn.price|floatformat:"0g"}} &#8381;</td>
+								<td>{{product_zn.discountPercentage}}</td>
+								<td>{{product_zn.discountAmount|floatformat:"0g"}}  &#8381;</td>
+								<td>{{product_zn.amountResult|floatformat:"0g"}} &#8381;</td>
+							  </tr>  
+							{% endfor %}
+						  {% endif %}
+
+						</tbody>
+					  </table>
+
+					  <hr>
+					  <div class="row g-1 align-items-center" style="margin-bottom: 0.2em; margin-top: 0.2em;">
+															  
+						<div class="col-auto text-center" style="border-radius: 0 0.2em 0.2em 0;">
+						  
+							<label class="fs-6 text-center" style="padding: 0.2em;">  
+								<table>
+									<tbody>
+										<tr>
+											<td><span class="icon-mbri-shopping-bag">Товары</td>
+											<td> &nbsp;-&nbsp; </td>
+											<td class="text-end">{{doc.products_amount|floatformat:"2g"}} &#8381;</td>
+										</tr>
+										<tr>
+											<td><span class="icon-mbri-setting3">Работы</td>
+											<td> &nbsp;-&nbsp; </td>
+											<td class="text-end">{{doc.works_amount|floatformat:"2g"}} &#8381;</td>
+										</tr>
+									</tbody>
+								</table>
+								
+							</label>
+							
+						</div>
+
+						<div class="col">
+						  
+						</div>
+
+						<div class="col-auto text-end bg-success bg-opacity-75" style="border-radius: 0.2em 0.2em 0.2em 0.2em;">
+							<label class="fs-2 text-white" style="padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
+						</div>
+
+					</div>
+					
+
+					</div>
+
+				  </div>
+				</div>
+			  	</div>
+			{% endfor %} 
 		</div>
 
 		<div class="tab-pane {% if params.current_tab == 'analytics_unit' %}active{% endif %}" id="tab-analytics_unit" role="tabpanel">
 			<div class="portal-panel">
-				<h6 class="mb-3">Аналитика по подразделению (последний месяц)</h6>
-				{% if params.analytics %}
-				<div class="row g-2 mb-3">
-					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">В этом ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_in_unit }}</div></div></div>
-					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">По всем ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_all_dc }}</div></div></div>
-					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи подразделения за последний месяц</div><div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div></div></div>
-					<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи модели за последний месяц</div><div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div></div></div>
+				<h6 class="mb-3">Аналитика по подразделению с {{params.analytics.last_month_start|date:"d-m-Y"}} по {{params.analytics.last_month_end|date:"d-m-Y"}}</h6>
+				
+				<div class="row g-1">
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sale_type < 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_type=0">
+								<span class="icon-mbri-home"></span>Все модели
+							</a>							     
+						</div>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-sm {% if params.sale_type > 0 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							href="?tab=analytics_unit&sale_type=1">
+							<span class="icon-mbri-home"></span>Текущая модель
+						</a>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-sm {% if params.sale_type > 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							href="?tab=analytics_unit&sale_type=2">
+							<span class="icon-mbri-home"></span>Текущая модификация
+						</a>  
+					</div>
+					{% if params.object.complectation_autoru != None %}
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sale_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_type=3">
+								<span class="icon-mbri-home"></span>Текущая комплектация
+							</a>							     
+						</div>
+					</div>
+					{% endif %}
+																			 
+					<!--
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sale_modification != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_modification=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
+								<span class="icon-mbri-add-submenu"></span> Все модификации
+							</a>
+							<a class="btn btn-sm {% if params.sale_modification == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_modification=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
+								<span class="icon-mbri-home"></span>Текущая модификация
+							</a>
+						</div>
+					</div>
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sale_complectation != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_complectation=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
+								<span class="icon-mbri-add-submenu"></span> Все комплектации
+							</a>
+							<a class="btn btn-sm {% if params.sale_complectation == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=analytics_unit&sale_complectation=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
+								<span class="icon-mbri-home"></span>Текущая комплектация
+							</a>    
+						</div>
+					</div>
+					-->
 				</div>
-				{% if params.analytics.sales_by_day %}
-				<div class="row g-2 mb-3"><div class="col-12"><h6 class="mb-2">Продажи по дням</h6><canvas id="salesByDayChartUnit" height="120" style="max-width: 100%;"></canvas></div></div>
-				<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-				<script>(function(){var data={{ params.analytics.sales_by_day_json|safe }};var labels=(data||[]).map(function(d){return d.date;});var counts=(data||[]).map(function(d){return d.count;});var ctx=document.getElementById('salesByDayChartUnit');if(ctx&&typeof Chart!=='undefined')new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Продаж',data:counts,backgroundColor:'rgba(0,42,90,0.6)',borderColor:'rgba(0,42,90,1)',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{maxRotation:45,minRotation:45}}}});})();</script>
-				{% endif %}
-				{% if params.analytics.cumulative_detail %}
-				<div class="table-responsive mb-2"><table class="table table-sm table-striped table-hover"><thead><tr><th>Дата</th><th>Марка</th><th>Модель</th><th>Модификация</th><th>Тип продажи</th><th>VIN</th><th>Выручка</th><th>Подразделение</th></tr></thead><tbody>{% for row in params.analytics.cumulative_detail %}<tr><td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td><td>{{ row.Marka|default:"—" }}</td><td>{{ row.Model|default:"—" }}</td><td>{{ row.Modifikatsiya|default:"—" }}</td><td>{{ row.TipProdazhi|default:"—" }}</td><td>{{ row.VIN|default:"—" }}</td><td>{{ row.VyruchkaZaAvto|default:"—" }}</td><td>{{ row.PodrazdelenieDTs|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>
-				<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm" target="_blank">Открыть полный список в Power BI</a>
-				{% endif %}
+				
+				<br>
+
+				<div class="row g-1">
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-credit-card"></span> ВП</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.udelka > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.udelka|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.udelka_count > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.udelka_count|floatformat:"0g" }} шт.</div>
+						</div>
+					</div>
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-credit-card"></span> Маржа без НДС</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_SummaMarzhiBezNDS|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_SummaMarzhiBezNDS|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_SummaMarzhiBezNDS|floatformat:"2g" }} %</div>							
+						</div>
+					</div>
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-calendar"></span> ОПФУ</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_VPOPFU|floatformat:"2g" }} ₽</div>							
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_VPOPFU|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_VPOPFU|floatformat:"2g" }} %</div>
+						</div>
+					</div>
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-truck"></span> Trade-in</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_SummaTreydInPoPlanu|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_SummaTreydInPoPlanu|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_SummaTreydInPoPlanu|floatformat:"2g" }} %</div>
+						</div>
+					</div>	
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-cd"></span> ВП шины</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_ValovayaPribylZChShiny|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_ValovayaPribylZChShiny|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_ValovayaPribylZChShiny|floatformat:"2g" }} %</div>							
+						</div>
+					</div>
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-setting"></span> Работы</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_SummaRabot|floatformat:"2g" }} ₽</div>							
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_SummaRabot|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_SummaRabot|floatformat:"2g" }} %</div>
+						</div>
+					</div>	
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-shopping-bag"></span> ВП запчасти</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_ValovayaPribylZCh|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_ValovayaPribylZCh|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_ValovayaPribylZCh|floatformat:"2g" }} %</div>							
+						</div>
+					</div>
+					<div class="col-sm-auto col-12">
+						<div class="metric-card">
+							<div class="metric-card-label"><span class="icon-mbri-edit"></span> Гос. регистрации</div>
+							<div class="metric-card-value text-end fs-5 {% if params.analytics.cumulative_sum_detail.sum_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail.sum_SummaGosreg|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-6 {% if params.analytics.cumulative_sum_detail_udelka.udelka_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_udelka.udelka_SummaGosreg|floatformat:"2g" }} ₽</div>
+							<div class="metric-card-value text-end fs-7 {% if params.analytics.cumulative_sum_detail_percent.sum_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ params.analytics.cumulative_sum_detail_percent.sum_SummaGosreg|floatformat:"2g" }} %</div>							
+						</div>
+					</div>
+				</div>
+				<br>
+				
+				{% if params.analytics %}
+					{% if params.analytics.cumulative_detail %}
+					<div class="table-responsive mb-2">
+						<table class="table table-sm table-striped table-hover">
+							<thead>
+								<tr>
+									<th>Дата</th>
+									<th>Марка</th>
+									<th>Модель</th>
+									<th>Модификация</th>
+									<th>Тип продажи</th>
+									<th>VIN</th>
+									<th>Подразделение</th>
+									<th>Выручка</th>
+									<th>КМ</th>
+									<th>Маржа без НДС</th>
+									<th>ОПФУ</th>
+									<th>TRADE-IN</th>
+									<th>Гос. рег.</th>
+									<th>Работы</th>
+									<th>Запчасти</th>
+									<th>Шины</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for row in params.analytics.cumulative_detail %}
+								<tr>
+									<td>{{ row.DataProdazhi|date:"d.m.Y H:i"|default:"—" }}</td>
+									<td>{{ row.Marka|default:"—" }}</td><td>{{ row.Model|default:"—" }}</td>
+									<td>{{ row.Modifikatsiya|default:"—" }}</td>
+									<td>{{ row.TipProdazhi|default:"—" }}</td>
+									<td>{{ row.VIN|default:"—" }}</td>
+									<td>{{ row.PodrazdelenieDTs|default:"—" }}</td>
+									<td class="text-end">{{ row.VyruchkaZaAvto|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.cum|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.SummaMarzhiBezNDS|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.VPOPFU|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.SummaTreydInPoPlanu|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.SummaGosreg|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.SummaRabot|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.ValovayaPribylZCh|floatformat:"2g"|default:"—" }}</td>
+									<td class="text-end">{{ row.ValovayaPribylZChShiny|floatformat:"2g"|default:"—" }}</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+					<a href="{% url 'powerbi:cumulative_list' %}?podrazdelenie={{ params.object.unit.name|urlencode }}&data_prodazhi_start={{ params.last_month_start|date:'Y-m-d' }}&data_prodazhi_end={{ params.last_month_end|date:'Y-m-d' }}" class="btn btn-outline-primary btn-sm" target="_blank">Открыть полный список</a>
+					{% endif %}
+					<div class="row g-2 mb-3">
+						<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">В этом ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_in_unit }}</div></div></div>
+						<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">По всем ДЦ (комплектация, остаток &gt; 0)</div><div class="metric-card-value">{{ params.analytics.count_all_dc }}</div></div></div>
+						<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи подразделения за последний месяц</div><div class="metric-card-value">{{ params.analytics.unit_sales_count }}</div></div></div>
+						<div class="col-12 col-sm-6 col-md"><div class="metric-card"><div class="metric-card-label">Продажи модели за последний месяц</div><div class="metric-card-value">{{ params.analytics.complectation_sales_count }}</div></div></div>
+					</div>
+					{% if params.analytics.sales_by_day %}
+					<div class="row g-2 mb-3"><div class="col-12"><h6 class="mb-2">Продажи по дням</h6><canvas id="salesByDayChartUnit" height="120" style="max-width: 100%;"></canvas></div></div>
+					<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+					<script>(function(){var data={{ params.analytics.sales_by_day_json|safe }};var labels=(data||[]).map(function(d){return d.date;});var counts=(data||[]).map(function(d){return d.count;});var ctx=document.getElementById('salesByDayChartUnit');if(ctx&&typeof Chart!=='undefined')new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Продаж',data:counts,backgroundColor:'rgba(0,42,90,0.6)',borderColor:'rgba(0,42,90,1)',borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{maxRotation:45,minRotation:45}}}});})();</script>
+					{% endif %}
+				
 				{% else %}<p class="text-muted">Нет данных.</p>{% endif %}
 			</div>
 		</div>
@@ -876,35 +1245,89 @@
 		</div>
 
 		<div class="tab-pane {% if params.current_tab == 'sklad' %}active{% endif %}" id="tab-sklad" role="tabpanel">
-			<div class="portal-panel">
-				<h6 class="mb-3">Остатки по модели {{ params.object.modification_autoru.model.mark.name|default:"" }} {{ params.object.modification_autoru.model.name|default:"" }}</h6>
-				<div class="mb-3">
-					<a class="btn btn-sm {% if params.warehouse_scope == 'current' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?tab=sklad&warehouse=current">Текущее подразделение</a>
-					<a class="btn btn-sm {% if params.warehouse_scope == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?tab=sklad&warehouse=all">Все подразделения</a>
+			<div class="portal-panel no-padding">
+				<h6 class="mb-3 padding-title">Остатки по модели {{ params.object.modification_autoru.model.mark.name|default:"" }} {{ params.object.modification_autoru.model.name|default:"" }} {{ params.object.complectation_autoru.name|default:"" }}</h6>
+				
+				<div class="row" style="padding-left: 0.5rem;">
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.warehouse_scope == 'all' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=sklad&warehouse_scope=all{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
+								<span class="icon-mbri-add-submenu"></span> Все подразделения
+							</a>
+							<a class="btn btn-sm {% if params.warehouse_scope != 'all' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=sklad&warehouse_scope=current{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
+								<span class="icon-mbri-home"></span>Текущее подразделение
+							</a>							
+						</div>
+					</div>
+					
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sclad_type < 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=0">
+							 <span class="icon-mbri-add-submenu"></span> Все модели
+						 </a>
+						</div>
+					</div>
+
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sclad_type > 0 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=1">
+							 <span class="icon-mbri-add-submenu"></span> Текущая модель
+						 </a>
+						</div>
+					</div>
+
+					<div class="col-auto">
+						<div class="mb-3">
+							<a class="btn btn-sm {% if params.sclad_type > 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+							   href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=2">
+								<span class="icon-mbri-home"></span>Текущая модификация
+							</a>
+						</div>
+					</div>
+					{% if params.object.complectation_autoru != None %}
+						<div class="col-auto">
+							<div class="mb-3">
+								<a class="btn btn-sm {% if params.sclad_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+								href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=3">
+									<span class="icon-mbri-home"></span>Текущая комплектация
+								</a>
+							</div>
+						</div>
+					{% endif %}
 				</div>
-				{% if params.warehouse_scope == 'all' %}
-					{% if params.warehouse_all %}
-					<div class="table-responsive">
+				
+				{% if params.sclad %}
+					<div class="table-responsive" style="margin: 0rem; padding: 0rem; border-radius: 1.2rem;">
 						<table class="table table-sm table-striped table-hover">
 							<thead>
 								<tr>
 									<th>Подразделение</th>
-									<th>Наименование</th>
+									<th>Марка, модель</th>
+									<th>Модификация</th>
 									<th>Комплектация</th>
 									<th>VIN</th>
-									<th>Остаток</th>
+									<th>Состояние</th>
+									<th>На складе</th>
+									<th>Себестоимость</th>
 									<th>Цена</th>
 									<th></th>
 								</tr>
 							</thead>
 							<tbody>
-								{% for item in params.warehouse_all %}
+								{% for item in params.sclad %}
 								<tr>
 									<td>{{ item.unit.name|default:"—" }}</td>
-									<td>{{ item.name|default:"—" }}</td>
-									<td>{{ item.complectation_autoru|default:"—" }}</td>
+									<td>{{ item.modification_autoru.model.mark.name|default:"—" }} {{ item.modification_autoru.model.name|default:"—" }}</td>
+									<td>{{ item.modification_autoru.name|default:"—" }}</td>
+									<td>{{ item.complectation_autoru.name|default:"—" }}</td>
 									<td>{{ item.vin|default:"—" }}</td>
-									<td>{{ item.quantity|default:0 }}</td>
+									<td>{% if item.is_new %} Новый {% else %} С пробегом {% endif %} </td>
+									<td>{{ item.days_in_stok|default:0 }} д.</td>
+									<td>{{ item.cost_price|floatformat:"2g"|default:"—" }} ₽</td>
 									<td>{{ item.price|floatformat:"2g"|default:"—" }} ₽</td>
 									<td><a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn btn-outline-secondary btn-sm">Карточка</a></td>
 								</tr>
@@ -912,48 +1335,17 @@
 							</tbody>
 						</table>
 					</div>
-					{% else %}
-					<p class="text-muted">Нет остатков по этой модели.</p>
-					{% endif %}
 				{% else %}
-					{% if params.warehouse_current %}
-					<div class="table-responsive">
-						<table class="table table-sm table-striped table-hover">
-							<thead>
-								<tr>
-									<th>Наименование</th>
-									<th>Комплектация</th>
-									<th>VIN</th>
-									<th>Остаток</th>
-									<th>Цена</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody>
-								{% for item in params.warehouse_current %}
-								<tr>
-									<td>{{ item.name|default:"—" }}</td>
-									<td>{{ item.complectation_autoru|default:"—" }}</td>
-									<td>{{ item.vin|default:"—" }}</td>
-									<td>{{ item.quantity|default:0 }}</td>
-									<td>{{ item.price|floatformat:"2g"|default:"—" }} ₽</td>
-									<td><a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn btn-outline-secondary btn-sm">Карточка</a></td>
-								</tr>
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-					{% else %}
-					<p class="text-muted">В текущем подразделении нет остатков по этой модели.</p>
-					{% endif %}
+					<p class="text-muted">Нет остатков по этой модели.</p>
 				{% endif %}
+				
 			</div>
 		</div>
 
 		<div class="tab-pane {% if params.current_tab == 'tasks' %}active{% endif %}" id="tab-tasks" role="tabpanel">
 			<div class="portal-panel">
 				<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-					<h6 class="mb-0">Задачи по автомобилю (RegCarsOrganizationTask)</h6>
+					<h6 class="mb-0">Задачи по автомобилю</h6>
 					<a href="{% url 'avtosalon:car_task_create' params.object.id %}" class="btn btn-primary btn-sm">
 						<span class="icon-mbri-plus"></span> Создать задачу
 					</a>
@@ -1002,6 +1394,8 @@
 				{% endif %}
 			</div>
 		</div>
+
 	</div>
+
 </div>
 {% endblock %}

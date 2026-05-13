@@ -91,7 +91,9 @@ class Command(BaseCommand):
                 log.save()
                 self.stderr.write(self.style.ERROR(log.error_message))
                 return
-
+            
+            ImProduct.objects.filter(quantity_balance__gt = 0).update(quantity_balance = 0)
+            
             data = resp.json()
             items = data if isinstance(data, list) else data.get('items', data.get('answer', data.get('objects', [])))
             if not isinstance(items, list):

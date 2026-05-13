@@ -104,7 +104,7 @@ urlpatterns = [
    path('v1/get_image_change/',                 views_avtosalon.get_image_change),
    path('v1/post_image_change/',                views_avtosalon.post_image_change),
 
-
+   path('automatic_bcp_estimation/',    views.automatic_bcp_estimation), 
    path('create_personal_data/',    views.create_personal_data),
    path('info_personal_data/',      views.info_personal_data),
    
@@ -134,8 +134,8 @@ urlpatterns = [
    path('refresh_opros/',           views.refresh_opros),
   
    #Работа с расширениями заказ - наряда (Тизер)
-   path('recomendations_exchange/',      views.recomendations_exchange),
-   
+   path('recomendations_exchange/',       views.recomendations_exchange),
+   path('calculation_car/',               views.calculation_car),
    # Конвертация аудио файлов с диктофона так как там уйня полная
 
    path('post_recordeds_voice_audio_portative_programm',       views.post_recordeds_voice_audio_portative_programm),

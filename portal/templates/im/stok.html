@@ -246,7 +246,7 @@
     
     <!-- Заголовок с фильтром -->
     <div class="stok-header">
-      <h2 class="stok-header-title">Список товаров</h2>
+      <h2 class="stok-header-title">Список товаров (в наличии)</h2>
       <div class="stok-header-info">
         <a href="{% url 'website:stok_im' %}" class="btn btn-outline-secondary btn-sm" style="border-radius: 0.75rem;">
           <span class="icon-mbri-left"></span> На дашборд
@@ -262,6 +262,33 @@
           {% endif %}
         </button>
       </div>
+      {% if params.page_obj and params.page_obj.paginator.num_pages > 1 %}
+        
+          <nav aria-label="Пагинация" class="d-flex justify-content-center">
+            <ul class="pagination flex-wrap" style="gap: 0.25rem; margin-top: 0.2rem;">
+              {% if params.page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}" style="border-radius: 0.75rem;">« Назад</a>
+              </li>
+              {% endif %}
+              {% for item in params.page_range_display %}
+                {% if item.0 == 'ellipsis' %}
+                <li class="page-item disabled"><span class="page-link" style="border-radius: 0.75rem;">…</span></li>
+                {% elif item.1 == params.page_obj.number %}
+                <li class="page-item active"><span class="page-link" style="border-radius: 0.75rem;">{{ item.1 }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ item.1 }}" style="border-radius: 0.75rem;">{{ item.1 }}</a></li>
+                {% endif %}
+              {% endfor %}
+              {% if params.page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}" style="border-radius: 0.75rem;">Вперёд »</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        
+        {% endif %}
     </div>
 
     <!-- Модальное окно фильтра -->

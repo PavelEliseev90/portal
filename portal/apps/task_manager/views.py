@@ -175,7 +175,7 @@ def send_matrix_auction():
 
 def add_task():
     s=1
-    
+    #start_send_push_car(schedule = 60, repeat = 60, verbose_name = "Оповещения по автомобилям")
     #start_cumulative(schedule = 600, repeat = 86400, verbose_name = "Получение кумулятива альфа")
     #start_stock(schedule = 600, repeat = 86400, verbose_name = "Получение стока альфа")
     
@@ -1096,10 +1096,28 @@ def get_name_re(name, ind):
     return name_new.replace('_', ' ').strip()
 
 
+
 ####
 ###
 ##
 # Функции отправки/обновления данных портала аукциона
+def refresh_list_auction_status():
+    lots_list = list()
+    r   = requests.get(url_auction_kors_portal + '/api/swap/get/', auth=('Admin_auction', 'Audi80b4'))
+    if r.status_code == 200:
+        data = json.loads(r.text)
+        swap_list = data['swap_list']
+        for swap in swap_list:
+            lot_uin = swap['lot_uin']['search']
+            if not lot_uin in lots_list:
+                lots_list.append(lot_uin)
+    
+    for lot in lots_list:
+        from refs.models import Auction
+        if lot != '':
+            auction = Auction.objects.get(uid = lot)
+            refresh_auction(auction)
+
 def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
@@ -1298,24 +1316,27 @@ def info_car_auction(slug):
         if car['int_ocenka_id'] != None and car['int_ocenka_id'] != '': 
             estimationrlk  = RegInteractivOcenkaRLK.objects.get(id = car['int_ocenka_id'])
             estimation = estimationrlk.estimation 
-            diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
+            if estimationrlk.page_soglasovanie != None:
+                diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
+            else:
+                diagnostika = ''
 
-        car['int_ocenka_url_vnesh']     = get_url_int(estimation.id, 'vnesh_car_all')
-        car['int_ocenka_url_damage']    = get_url_int(estimation.id, 'damage')
-        
-        car['int_ocenka_url_diagnostic']    = get_url_int(estimation.id, 'diagnostic')
-        car['int_ocenka_url_wheel']         = get_url_int(estimation.id, 'wheel')
-        car['int_ocenka_url_salon_all']     = get_url_int(estimation.id, 'salon')
+            car['int_ocenka_url_vnesh']     = get_url_int(estimation.id, 'vnesh_car_all')
+            car['int_ocenka_url_damage']    = get_url_int(estimation.id, 'damage')
+            
+            car['int_ocenka_url_diagnostic']    = get_url_int(estimation.id, 'diagnostic')
+            car['int_ocenka_url_wheel']         = get_url_int(estimation.id, 'wheel')
+            car['int_ocenka_url_salon_all']     = get_url_int(estimation.id, 'salon')
 
-        car['int_ocenka_diagnostika']   = diagnostika
-        car['int_ocenka_work']          = list_work(estimation.id)
+            car['int_ocenka_diagnostika']   = diagnostika
+            car['int_ocenka_work']          = list_work(estimation.id)
 
-        car['int_ocenka_url_salon'] = get_url_image_salon(estimation.id, 'osmotr_salon')
-        car['int_ocenka_url_pered'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pered')
-        car['int_ocenka_url_zad']   = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_zad')
-        car['int_ocenka_url_up']    = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_up')
-        car['int_ocenka_url_right'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pass')
-        car['int_ocenka_url_left']  = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_vod')
+            car['int_ocenka_url_salon'] = get_url_image_salon(estimation.id, 'osmotr_salon')
+            car['int_ocenka_url_pered'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pered')
+            car['int_ocenka_url_zad']   = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_zad')
+            car['int_ocenka_url_up']    = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_up')
+            car['int_ocenka_url_right'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pass')
+            car['int_ocenka_url_left']  = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_vod')
     
     return car
 
@@ -1650,6 +1671,125 @@ def refresh_estimation_cars_organization_run():
 @background(queue='refresh_avtoteka')
 def start_refresh_avtoteka_vin():
     refresh_avtoteka_vin()
+
+def refresh_avtoteka_data(interactiv_ocenka_id):
+    token = ''
+    header = {
+        'X-Request-ID' : "4a68aa75-d369-4fcf-bb94-1863ffd704f5"
+    }
+    token = get_token_avtoteka()
+    header['Authorization'] = f"Bearer {token}"
+    object_estimation = RegInteractivOcenka.objects.get(pk = interactiv_ocenka_id)
+    if object_estimation.avtoteka_preview == None or object_estimation.avtoteka_preview == '':
+        task_id = 0
+        url = 'https://pro.autoteka.ru/autoteka/v1/previews' 
+        header['Authorization'] = f"Bearer {token}"
+        id = {
+            "vin": object_estimation.vin
+        }
+        response = requests.post(url, headers=header, json=id)
+
+        if response.status_code == 200:
+        
+            data_prev   = json.loads(response.text)
+            task_id     = data_prev['result']['preview']['previewId']
+            object_estimation.avtoteka_preview = str(task_id)
+            object_estimation.save(update_fields=['avtoteka_preview'])
+    elif object_estimation.avtoteka_task == None and object_estimation.avtoteka_task != '':
+        url_prev = 'https://pro.autoteka.ru/autoteka/v1/previews/' + str(object_estimation.avtoteka_preview)                        
+        response_prev = requests.get(url_prev, headers=header)
+        
+        if response_prev.status_code == 200:
+            
+            status_prev = json.loads(response_prev.text)['result']['preview']['status']
+            
+            if status_prev == 'success':
+                js               = {'previewId': object_estimation.avtoteka_preview}
+                url_report_id    = 'https://pro.autoteka.ru/autoteka/v1/reports'
+                status_report   = ''
+                
+                response_report = requests.post(url_report_id, headers=header, json=js)
+                if response_report.status_code == 200:
+                    reportId        = json.loads(response_report.text)['result']['report']['reportId']
+                    object_estimation.avtoteka_task = str(reportId)
+                    object_estimation.save(update_fields=['avtoteka_task'])
+            elif status_prev == 'NotFound':
+                object_estimation.avtoteka_task = '-'
+                object_estimation.save(update_fields=['avtoteka_task'])                
+    elif object_estimation.avtoteka_task != None and object_estimation.avtoteka_task != '-':
+        status_report = ''
+        if token != '':
+            url_report = 'https://pro.autoteka.ru/autoteka/v1/reports/' + str(object_estimation.avtoteka_task)
+            count_response = 0
+            while status_report != 'success' and count_response < 5:
+                response_report_data =  requests.get(url_report, headers=header)
+                count_response = count_response + 1 
+                if response_report_data.status_code == 200:
+                    status_report = json.loads(response_report_data.text)['result']['report']['status']
+                    if status_report == 'success':
+                        status      = status_report
+                        status_prev = status_report
+                        object_estimation.avtoteka_data = response_report_data.text
+                        response_report_json = json.loads(response_report_data.text)
+                        object_estimation.avtoteka_web = response_report_json['result']['report']['webLink']
+                        object_estimation.avtoteka_pdf = response_report_json['result']['report']['pdfLink'] 
+                        try:
+                            json_autoteka = json.loads(response_report_data.text)['result']['report']['data']
+                            object_estimation.count_dtp                     = len(json_autoteka['accidents']['crashesHistory'])
+                            
+                            sum_audex = 0
+                            for service_info in json_autoteka['eventsOthersHistory']:
+                                if service_info.get('type') == 'repairCalculation':
+                                    try:
+                                        description = service_info.get('description').split('RUR')
+                                        sum_new     = float(description[0].replace('Расчет стоимости ремонта:', '').replace('RUR','').strip())
+                                        sum_audex   = max(sum_audex, sum_new)
+                                    except:
+                                        s = 1
+                                    
+                            for crash in json_autoteka['accidents']['crashesHistory']:
+                                for damage in crash.get('damageTypes'):
+                                    if damage.get('type') == 'red':
+                                        object_estimation.dtp_red = True    
+                            
+                            if json_autoteka['taxiData'].get('events', '') != None and len(json_autoteka['taxiData'].get('events', '')) > 0:
+                                object_estimation.taxi = True
+                            else:
+                                object_estimation.taxi = False
+
+                            if json_autoteka['carsharingData'].get('events', '') != None and len(json_autoteka['carsharingData'].get('events', '')) > 0:
+                                object_estimation.carsharing = True
+                            else:
+                                object_estimation.carsharing = False
+                                
+                            object_estimation.avtoteka_car_autodex = sum_audex 
+
+                            price                                               = json_autoteka.get('avitoPriceValuation') 
+                            object_estimation.avito_price_avg_market_price      = price.get('avgMarketPrice')
+                            object_estimation.avito_price_avg_condition         = price.get('avgPriceWithCondition')
+                            object_estimation.avito_price_market_min            = price.get('marketNormalPriceRange').get('min')
+                            object_estimation.avito_price_market_max            = price.get('marketNormalPriceRange').get('max')
+                            object_estimation.avito_price_min                   = price.get('minPrice')
+                            object_estimation.avito_price_max                   = price.get('maxPrice')
+                        except:
+                            s = 1
+                        object_estimation.save(update_fields = [
+                                                    'avtoteka_data',
+                                                    'avtoteka_web',
+                                                    'avtoteka_pdf',
+                                                    'count_dtp',
+                                                    'dtp_red',
+                                                    'taxi',
+                                                    'carsharing',
+                                                    'avtoteka_car_autodex',
+                                                    'avito_price_avg_market_price',
+                                                    'avito_price_avg_condition',
+                                                    'avito_price_market_min',
+                                                    'avito_price_market_max',
+                                                    'avito_price_min',
+                                                    'avito_price_max',
+                                                ])                 
+
 
 def refresh_avtoteka_vin():
     
@@ -2316,6 +2456,128 @@ def get_ref_object(model, name):
        return ref_object
     else:
        return ModelB.objects.filter(name = name)[0] 
+
+
+####
+###
+##
+# Отправка почты по карточкам автомобилей 
+@background(queue='send_push_car')
+def start_send_push_car():
+    send_push_car()
+
+def send_push_car():
+
+    from prices_car.models import EmailPushCar
+    push_users = EmailPushCar.objects.exclude(send = True).exclude(user__email = '').order_by('date')
+    
+    for push_user in push_users:
+        
+        try:
+            
+            if push_user.car != None and push_user.price:
+                
+                emails      = re.sub(' ', '', push_user.email)
+                to_emails   = emails.split(';')
+                
+                # plaintext   = get_template('email_car_price.txt')
+                htmly       = get_template('email_car_price.html')
+                
+                car         = push_user.car
+
+                car_name = '' + car.modification_autoru.model.mark.name + ' ' + car.modification_autoru.model.name + ', ' + car.vin.upper()
+                
+                comment         = push_user.comment
+                unit_name       = car.unit.name
+                car_mark        = car.modification_autoru.model.mark.name 
+                car_model       = car.modification_autoru.model.name 
+                car_modification    = car.modification_autoru.name
+                car_complectation   = car.complectation_autoru.name
+                car_year            = car.year
+                car_run             = '{:,}'.format(car.run).replace(',', ' ')
+                car_price           = '{:,}'.format(car.price).replace(',', ' ')
+                car_photo_url       = 'https://ah.kors-group.com' + car.get_photo_mini()
+                car_link            = 'https://ah.kors-group.com/cars/' + str(push_user.car.slug) + '/price/'
+
+                d = ({
+                        'car_name'      : car_name,
+                        'comment'       : comment, 
+                        'unit_name'     : unit_name, 
+                        'car_mark'      : car_mark, 
+                        'car_model'     : car_model,
+                        'car_modification'  : car_modification,
+                        'car_complectation' : car_complectation,
+                        'car_year'          : car_year,
+                        'car_run'           : car_run,
+                        'car_price'         : car_price,
+                        'car_photo_url'     : car_photo_url,
+                        'car_link'          : car_link,
+                    })
+
+                subject, from_email, to = 'Карточка автомобиля - ' + car_name, settings.EMAIL_HOST_USER_INFO, to_emails
+                
+                # text_content = plaintext.render(d)
+                html_content = htmly.render(d)
+                
+                msg = EmailMultiAlternatives(subject, html_content, settings.EMAIL_HOST_USER_INFO, to_emails)
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+
+                push_user.send = True
+                push_user.save()
+            elif push_user.car != None and push_user.calc != None:
+                
+                emails      = re.sub(' ', '', push_user.email)
+                to_emails   = emails.split(';')
+                
+                # plaintext   = get_template('email_car_price.txt')
+                htmly       = get_template('email_car_price_calc.html')
+                
+                car         = push_user.car
+
+                car_name = '' + car.modification_autoru.model.mark.name + ' ' + car.modification_autoru.model.name + ', ' + car.vin.upper()
+                
+                comment         = push_user.comment
+                unit_name       = car.unit.name
+                car_mark        = car.modification_autoru.model.mark.name 
+                car_model       = car.modification_autoru.model.name 
+                car_modification    = car.modification_autoru.name
+                car_complectation   = car.complectation_autoru.name
+                car_year            = car.year
+                car_run             = '{:,}'.format(car.run).replace(',', ' ')
+                car_price           = '{:,}'.format(car.price).replace(',', ' ')
+                car_photo_url       = 'https://ah.kors-group.com' + car.get_photo_mini()
+                car_link            = 'https://ah.kors-group.com/cars/deal/calculation/' + str(push_user.calc.id) + '/'
+
+                d = ({
+                        'car_name'      : car_name,
+                        'comment'       : comment, 
+                        'unit_name'     : unit_name, 
+                        'car_mark'      : car_mark, 
+                        'car_model'     : car_model,
+                        'car_modification'  : car_modification,
+                        'car_complectation' : car_complectation,
+                        'car_year'          : car_year,
+                        'car_run'           : car_run,
+                        'car_price'         : car_price,
+                        'car_photo_url'     : car_photo_url,
+                        'car_link'          : car_link,
+                    })
+
+                subject, from_email, to = 'Калькуляция автомобиля - ' + car_name, settings.EMAIL_HOST_USER_INFO, to_emails
+                
+                # text_content = plaintext.render(d)
+                html_content = htmly.render(d)
+                
+                msg = EmailMultiAlternatives(subject, html_content, settings.EMAIL_HOST_USER_INFO, to_emails)
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+
+                push_user.send = True
+                push_user.save()
+        except Exception as e:
+            stt =  str(e)
+    
 
 
 ####

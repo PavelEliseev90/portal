@@ -11,6 +11,7 @@ urlpatterns = [
     path('funnel/analytics/',                   views.tradein_funnel_analytics,         name='tradein_funnel_analytics'),
     path('funnel/analytics/detail/',            views.tradein_funnel_analytics_detail,  name='tradein_funnel_analytics_detail'),
     path('funnel/analytics/export/',            views.tradein_funnel_analytics_export,  name='tradein_funnel_analytics_export'),
+    path('funnel/rejected_1/',                  views.tradein_funnel_analytics_rejected, name='tradein_funnel_analytics_rejected'),
     path('funnel/rejected/',                    views.tradein_funnel_rejected, name='tradein_funnel_rejected'),
     path('funnel/export/',                      views.tradein_funnel_export, name='tradein_funnel_export'),
     path('funnel/analytics/analysts/',         views.eco_analysts_performance, name='eco_analysts_performance'),

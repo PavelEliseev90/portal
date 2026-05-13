@@ -12,6 +12,43 @@
 {% block head %}
     {{ block.super }}
     <style>
+
+.kors-brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 1rem;
+    }
+
+    .doc-car-photo {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: var(--auction-light);
+            width: 180px;
+            height: 135px;
+        }
+
+        @media (max-width: 991px) {
+            .doc-car-photo {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+        }
+
+        .doc-car-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         :root {
             --auction-accent: #F58220;
             --auction-dark: #000000;
@@ -842,7 +879,7 @@
     
 {% block content %}
 
-<div class="auction-page">
+<div class="portal-page">
 
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
@@ -1084,266 +1121,9 @@
             </button>
     </div>
 </div>
-<!--
 
-<form method="get" id="filtersForm">
-	<div class="pc-filters-container d-none d-md-block">
-		<div class="pc-filters-header">
-			<div class="d-flex justify-content-between align-items-center">
-				<h5 class="pc-filters-title">
-					<span class="icon-mbri-setting me-2"></span>
-					Фильтры поиска
-				</h5>
-				<button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleFilters()">
-					<span class="icon-mbri-down me-2"></span>Показать
-				</button>
-			</div>
-		</div>
-		
-		<div class="pc-filters-content" style="display: none;">
-			<div class="pc-filters-row">
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Город</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_city" placeholder="Поиск по городу">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="city_options">
-							{% for city in params.selected.citys %}
-								{% if city.city__name|length > 0 %}
-									<label class="pc-filter-option" id="city_select_{{city.city__name}}">
-										<input type="checkbox" name="city[]" value="{{city.city}}" id="city_filtr_{{city.city}}" 
-											{% if city.city in params.filtr.filter_city %} checked {% endif %}>
-										<span class="pc-filter-text">{{city.city__name}}</span>
-									</label>
-								{% endif %}
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Марка</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_marks" placeholder="Поиск по марке">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="marks_options">
-							{% for mark in params.selected.marks %}
-								<label class="pc-filter-option" id="marks_select_{{mark.name}}">
-									<input type="checkbox" name="mark[]" value="{{mark.pk}}" id="mark_filtr_{{mark.pk}}" 
-										{% if mark.pk|join:"" in params.filtr.filter_mark %} checked {% endif %}>
-									<span class="pc-filter-text">{{mark.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Коробка передач</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_gear" placeholder="Поиск по коробке передач">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="gear_options">
-							{% for gear in params.selected.gears %}
-								<label class="pc-filter-option" id="gear_select_{{gear.name}}">
-									<input type="checkbox" name="gear[]" value="{{gear.pk}}" id="gear_filtr_{{gear.pk}}" 
-										{% if gear.pk|join:"" in params.filtr.filter_gear %} checked {% endif %}>
-									<span class="pc-filter-text">{{gear.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Кузов</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_body" placeholder="Поиск по кузову">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="body_options">
-							{% for body in params.selected.bodys %}
-								<label class="pc-filter-option" id="body_select_{{body.name}}">
-									<input type="checkbox" name="body[]" value="{{body.pk}}" id="body_filtr_{{body.pk}}" 
-										{% if body.pk|join:"" in params.filtr.filter_body %} checked {% endif %}>
-									<span class="pc-filter-text">{{body.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="pc-filters-row">
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Привод</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_drives" placeholder="Поиск по приводу">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="drives_options">
-							{% for drive in params.selected.drives %}
-								{% if drive.name|length > 0 %}
-									<label class="pc-filter-option" id="drive_select_{{drive.name}}">
-										<input type="checkbox" name="drive[]" value="{{drive.pk}}" id="drive_filtr_{{drive.pk}}" 
-											{% if drive.pk|join:"" in params.filtr.filter_drive %} checked {% endif %}>
-										<span class="pc-filter-text">{{drive.name}}</span>
-									</label>
-								{% endif %}
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Год выпуска</label>
-					<div class="pc-filter-range">
-						<div class="pc-filter-range-inputs">
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="year_start" name="year_start" 
-									value="{{params.filtr.year_start}}" placeholder="1950" min="1950" max="2025">
-								<label class="pc-filter-range-label">от</label>
-							</div>
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="year_end" name="year_end" 
-									value="{{params.filtr.year_end}}" placeholder="2025" min="1950" max="2025">
-								<label class="pc-filter-range-label">до</label>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Пробег</label>
-					<div class="pc-filter-range">
-						<div class="pc-filter-range-inputs">
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="run_start" name="run_start" 
-									value="{{params.filtr.run_start}}" placeholder="0" min="0" max="1000000">
-								<label class="pc-filter-range-label">от</label>
-							</div>
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="run_end" name="run_end" 
-									value="{{params.filtr.run_end}}" placeholder="500000" min="0" max="1000000">
-								<label class="pc-filter-range-label">до</label>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Цена</label>
-					<div class="pc-filter-range">
-						<div class="pc-filter-range-inputs">
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="price_start" name="price_start" 
-									value="{{params.filtr.price_start}}" placeholder="0" min="0" max="10000000">
-								<label class="pc-filter-range-label">от</label>
-							</div>
-							<div class="pc-filter-range-group">
-								<input type="number" class="pc-filter-range-input" id="price_end" name="price_end" 
-									value="{{params.filtr.price_end}}" placeholder="10000000" min="0" max="10000000">
-								<label class="pc-filter-range-label">до</label>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{% if request.user.is_authenticated %}
-			<div class="pc-filters-row">
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">VIN</label>
-					<div class="pc-filter-input-single">
-						<input type="text" class="pc-filter-input" id="vin" name="vin" 
-							value="{{params.filtr.vin}}" placeholder="Введите VIN номер">
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Статус</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_status" placeholder="Поиск по статусу">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="status_options">
-							{% for status in params.selected.statuses %}
-								<label class="pc-filter-option" id="status_select_{{status.name}}">
-									<input type="checkbox" name="status[]" value="{{status.pk}}" id="status_filtr_{{status.pk}}" 
-										{% if status.pk|join:"" in params.filtr.filter_status %} checked {% endif %}>
-									<span class="pc-filter-text">{{status.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Этап УС</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_stage_price" placeholder="Поиск по этапу УС">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="stage_price_options">
-							{% for stage_price in params.selected.stage_prices %}
-								<label class="pc-filter-option" id="stage_price_select_{{stage_price.name}}">
-									<input type="checkbox" name="stage_price[]" value="{{stage_price.pk}}" id="stages_price_filtr_{{stage_price.pk}}" 
-										{% if stage_price.pk|join:"" in params.filtr.filter_stage_price %} checked {% endif %}>
-									<span class="pc-filter-text">{{stage_price.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-
-				<div class="pc-filter-group">
-					<label class="pc-filter-label">Вид продажи</label>
-					<div class="pc-filter-dropdown">
-						<div class="pc-filter-search">
-							<input type="text" class="pc-filter-input" id="search_type_sale" placeholder="Поиск по виду продажи">
-							<span class="pc-filter-icon icon-mbri-search"></span>
-						</div>
-						<div class="pc-filter-options" id="type_sale_options">
-							{% for type_sale in params.selected.type_sales %}
-								<label class="pc-filter-option" id="type_sale_select_{{type_sale.name}}">
-									<input type="checkbox" name="type_sale[]" value="{{type_sale.pk}}" id="type_sale_filtr_{{type_sale.pk}}" 
-										{% if type_sale.pk|join:"" in params.filtr.filter_type_sale %} checked {% endif %}>
-									<span class="pc-filter-text">{{type_sale.name}}</span>
-								</label>
-							{% endfor %}
-						</div>
-					</div>
-				</div>
-			</div>
-			{% endif %}
-		</div>
-
-		<div class="pc-filters-footer">
-			<div class="pc-filters-actions">
-				<a href="new_lots/" class="btn btn-outline-secondary">
-					<span class="icon-mbri-play me-2"></span>Новый лот аукциона
-				</a>
-				<button type="submit" class="btn btn-primary">
-					<span class="icon-mbri-search me-2"></span>Показать
-				</button>
-			</div>
-		</div>
-	</div>
-</form>
--->
-
-<div class="auction-header">
-    <h1 class="section-title">Аукционы автомобилей</h1>
+<div class="portal-panel">
+    <h1 class="">Аукционы автомобилей</h1>
     <button type="button" class="auction-help-button" data-bs-toggle="modal" data-bs-target="#auctionHelpModal" aria-label="Справка">
         ?
     </button>
@@ -1426,163 +1206,153 @@
     </div>
 </div>
 
+<label class="fs-6 fw-bold">Внимание! Отправка лотов не доступна с 10:00 и до 14:00.</label>
+
 <div class="auction-divider"></div>
 
-<div class="row g-1"></div>
-{% if params.paginator.object_list %}
+<div class="row g-3"></div>
+   
+    {% if params.paginator.object_list %}
         <div class="col-12">
             {% for object in params.paginator.object_list %}
-            <div class="auction-lot-card">
-                    <div class="auction-lot-header">
-                            <div class="auction-lot-title">
-                                    <span class="text-uppercase text-muted small">Лот № {{object.pk_auction|default:object.pk}}</span>
+            <div class="portal-panel" style="margin: 0.2rem;">
+                <div class="card-body">
+                    <div class="row g-1">
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-info text-nowrap">
+                                <span class="icon-doc"></span> Лот № {{object.pk_auction|default:object.pk}}
                             </div>
-                            {% if object.status == None %}
-                                    <span class="auction-status accent"><span class="icon-tag"></span> подготавливается</span>
-                            {% else %}
-                                    <span class="auction-status"><span class="icon-tag"></span> {{object.status}}</span>
-                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill {% if object.status.id == 3 %} bg-success text-white {% else %} bg-secondary bg-opacity-25{% endif %}  text-nowrap">
+                                <span class="icon-doc"></span> Статус <span class="icon-mbri-minus"></span> {% if object.status == None %}
+                                    подготавливается
+                                {% else %}
+                                    {{object.status}}
+                                {% endif %} 
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
+                                <span class="icon-clock"></span> Начало <span class="icon-mbri-minus"></span> {{object.dateStart}}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
+                                <span class="icon-mbri-home"></span> Стоянка <span class="icon-mbri-minus"></span> {{object.store.name}}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
+                                <span class="icon-mbri-user"></span> Автор <span class="icon-mbri-minus"></span> {{object.user.last_name}} {{object.user.first_name}}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
+                                <span class="icon-mbri-credit-card"></span> Цена <span class="icon-mbri-minus"></span> {{object.start_price|floatformat:"2g"}} ₽
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
+                                <span class="icon-mbri-credit-card"></span> Автомобилей <span class="icon-mbri-minus"></span> {{object.count_cars}} шт.
+                            </div>
+                        </div>
+                        
                     </div>
-                    <div class="auction-meta-list">
-                            <div class="auction-meta-item">
-                                    <span class="icon-wrapper"><span class="icon-mbri-plus"></span></span>
-                                    {{object.dataTime}}
-                            </div>
-                            <div class="auction-meta-item">
-                                    <span class="icon-wrapper"><span class="icon-mbri-play"></span></span>
-                                    {{object.dateStart}}
-                            </div>
-                            
-                            <div class="auction-meta-item">
-                                    <span class="icon-wrapper"><span class="icon-mbri-pin"></span></span>
-                                    {{object.store.name}}
-                            </div>
-                            <div class="auction-meta-item">
-                                    <span class="icon-wrapper"><span class="icon-truck"></span></span>
-                                    {{object.count_cars}}
-                            </div>
-                            <div class="auction-meta-item">
-                                    <span class="icon-wrapper"><span class="icon-mbri-credit-card"></span></span>
-                                    {{object.start_price|floatformat:"2g"}} ₽
-                            </div>
-                    </div>
-                    <div class="auction-lot-footer">
-                            <div class="auction-owner">
-                                    <span class="icon-mbri-user me-2"></span>{{object.user.last_name}} {{object.user.first_name}}
-                            </div>
-                            <a class="auction-link" href="{{object.uid}}/">
-                                    <span class="icon-mbri-preview"></span>
-                                    Посмотреть
-                            </a>
-                    </div>
-            </div>
-    {% endfor %}
-        </div>
-                
-    
-{% else %}
-        <div class="auction-empty-state">
-                По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
-        </div>
-{% endif %}
-<div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
-	
-	<div class="col-auto align-items-center align-self-center justify-content-center">
-        <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
 
-                        {% if params.paginator.has_previous %}
-                                <li class="page-num mbr-section-btn">
-                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-                                </li>
-                        {% endif %}
-
-                        {% for p in params.paginator.paginator.page_range %}
-                                {% if params.paginator.number == p %}
-                                        <li class="page-num mbr-section-btn disabled">
-                                                <a class="btn btn-secondary display-7">
-                                                        <b>{{p}}</b>
-                                                </a>
-                                        </li>
-                                {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-                                        <li class="page-num mbr-section-btn">
-                                                <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-                                        </li>
-                                {% endif %}
+                    <div class="row g-1">
+                        
+                        {% for car_structure in object.cars %}
+                            <div class="col-auto">
+                                <div class="row bg-gradient bg-info bg-opacity-25" style="margin: 0.2rem; padding: 0rem; border-radius: 0.7rem;">
+                                    <div class="col-auto" style="padding: 0rem">
+                                        <div class="doc-car-photo">
+                                            <img src="{{car_structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
+                                        </div>                                                    
+                                    </div>
+                                    <div class="col fs-6 ">
+                                        {{car_structure.car.vin|upper}}<br> 
+                                    {{car_structure.car.name}}<br>
+                                    {{car_structure.car.year}} г.в.<br>
+                                    {{car_structure.car.run|floatformat:"0g"}} км.<br>
+                                    {{car_structure.car.plate_number|upper}} <br>                           
+                                    </div>
+                                </div>
+                            </div>   
                         {% endfor %}
 
-                        {% if params.paginator.has_next %}
-                                <li class="page-num mbr-section-btn">
-                                        <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-                                </li>
+                        {% if object.winner_name != '' %}
+                            <div class="col-auto">
+                                <div class="row bg-gradient bg-success bg-opacity-25" style="margin: 0.2rem; padding: 0rem; border-radius: 0.7rem;">
+                                    <div class="col fs-6">
+                                        Победитель аукциона<br> 
+                                        {{object.winner_name}}<br>
+                                        {{object.winner_phone}} / {{object.winner_email}}<br>
+                                        Выигрышная цена<br> 
+                                        {{object.winner_price|floatformat:"2g"}} ₽                                                               
+                                    </div>
+                                </div>
+                            </div>                            
                         {% endif %}
+                                             
+                    </div>                    
 
-                </ul>
-        </nav>
-</div>
-</div>
+                    <br>
 
-
-</div>
-
-<!--
-{% if params.paginator.object_list %}
-        <div class="auction-lots">
-                {% for object in params.paginator.object_list %}
-                        <div class="auction-lot-card">
-                                <div class="auction-lot-header">
-                                        <div class="auction-lot-title">
-                                                <span class="text-uppercase text-muted small">Лот № {{object.pk_auction|default:object.pk}}</span>
-                                                <h3>{{object.name|default:"Аукционный лот"}}</h3>
-                                        </div>
-                                        {% if object.status == None %}
-                                                <span class="auction-status accent"><span class="icon-tag"></span> подготавливается</span>
-                                        {% else %}
-                                                <span class="auction-status"><span class="icon-tag"></span> {{object.status}}</span>
-                                        {% endif %}
-                                </div>
-                                <div class="auction-meta-list">
-                                        <div class="auction-meta-item">
-                                                <span class="icon-wrapper"><span class="icon-mbri-plus"></span></span>
-                                                {{object.dataTime}}
-                                        </div>
-                                        <div class="auction-meta-item">
-                                                <span class="icon-wrapper"><span class="icon-mbri-play"></span></span>
-                                                {{object.dateStart}}
-                                        </div>
-                                        
-                                        <div class="auction-meta-item">
-                                                <span class="icon-wrapper"><span class="icon-mbri-pin"></span></span>
-                                                {{object.store.name}}
-                                        </div>
-                                        <div class="auction-meta-item">
-                                                <span class="icon-wrapper"><span class="icon-truck"></span></span>
-                                                {{object.count_cars}}
-                                        </div>
-                                        <div class="auction-meta-item">
-                                                <span class="icon-wrapper"><span class="icon-mbri-credit-card"></span></span>
-                                                {{object.start_price|floatformat:"2g"}} ₽
-                                        </div>
-                                </div>
-                                <div class="auction-lot-footer">
-                                        <div class="auction-owner">
-                                                <span class="icon-mbri-user me-2"></span>{{object.user.last_name}} {{object.user.first_name}}
-                                        </div>
-                                        <a class="auction-link" href="{{object.uid}}/">
-                                                <span class="icon-mbri-preview"></span>
-                                                Посмотреть
-                                        </a>
-                                </div>
-                        </div>
-                {% endfor %}
-        </div>
-{% else %}
+                    <a class="text-dark" href="{{object.uid}}/">
+                        <span class="icon-mbri-preview"></span>
+                        Посмотреть
+                    </a>
+                    
+                </div>
+            </div>
+           
+        {% endfor %}
+        </div>           
+    {% else %}
         <div class="auction-empty-state">
                 По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
         </div>
-{% endif %}
--->
+    {% endif %}
 
+    <div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
+        
+        <div class="col-auto align-items-center align-self-center justify-content-center">
+            <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-center">
+
+                            {% if params.paginator.has_previous %}
+                                    <li class="page-num mbr-section-btn">
+                                            <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
+                                    </li>
+                            {% endif %}
+
+                            {% for p in params.paginator.paginator.page_range %}
+                                    {% if params.paginator.number == p %}
+                                            <li class="page-num mbr-section-btn disabled">
+                                                    <a class="btn btn-secondary display-7">
+                                                            <b>{{p}}</b>
+                                                    </a>
+                                            </li>
+                                    {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
+                                            <li class="page-num mbr-section-btn">
+                                                    <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
+                                            </li>
+                                    {% endif %}
+                            {% endfor %}
+
+                            {% if params.paginator.has_next %}
+                                    <li class="page-num mbr-section-btn">
+                                            <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
+                                    </li>
+                            {% endif %}
+
+                    </ul>
+            </nav>
+    </div>
+    </div>
+
+</div>
 
 </div>
 

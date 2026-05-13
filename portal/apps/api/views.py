@@ -30,7 +30,7 @@ from urllib.parse import unquote
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
-from refs.models import RefTypeEvaluationCarsOrganization, RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
+from refs.models import RefCarsOrganizationAction, RefTypeEvaluationCarsOrganization, RefService, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail, RefCarsOrganization, RefReasonArchiveRLK, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefTypeDisk, RefDiaDisk, RefEtDisk, RefPsdDisk, RefFilial, RefSpecificationData, RefSpecification, AutoruModification, AutoruModificationSpecifications, AutoruComplectation, RefStore, RefStagePrice, RefGroupPrice, RefExchangeCars, RefTypeExchange, RefIb, RefTypeItemRepair, AutoruMark, AutoruModel, AutoruComplectation, AutoruModification, RefOrganization, RefUnit, RefCustomer, RefCity, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefTypeCategoryCustomer, RefTypeCategoryNegative, RefSMSStatusBase, RefSMSStatusBase
 from documents.models import DocServices, DocServiceItem, DocZNServicesKA, DocZNPerformersKA, DocZNProductKA, DocZNWorkKA, DocZNKA, DocCarAgreement, DocLO, DocZN, DocZNPerformers, DocZNProductCustomer, DocZNRecomendation, DocZNProduct, DocZNWork, DocCarShipment, DocRLK, DocRLKEvents, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DoсRecomendationWork, DoсRecomendationProduct, DoсRecomendationMCU, SurveysOP, SurveysOP_tematics, SurveysOP_questions, ResourcePlanning, DocServiceRequest, DocSMS
 import datetime as DT
 from recognition.models import Records_voice_recorder, Records_voice_recorder_queue
@@ -57,6 +57,147 @@ from django.views.decorators.csrf import csrf_exempt
 from dateutil.relativedelta import relativedelta
 from requests.auth import HTTPBasicAuth
 from avtosalon.models import AvtohubModifications
+from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail
+
+
+@api_view(['POST'])
+def calculation_car(request):
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode)
+    unit_object     = get_unit(data["Car"]["Unit"])
+    car_object      = get_car_object(data["Car"], unit_object)
+    rlk_object      = get_worksheet(data["Rlk"])
+    uin             = data['Uin'] 
+    calculation_object, created = CarCalculations.objects.filter(uin = uin).get_or_create(uin = uin)
+
+    calculation_object.rlk = rlk_object
+    calculation_object.car = car_object
+    calculation_object.unit = unit_object
+    calculation_object.date = DT.datetime.strptime(data['Date'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_success = DT.datetime.strptime(data['Date_success'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_refresh = DT.datetime.strptime(data['Date_refresh'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.number = data['Number']
+    calculation_object.rejection    = data['Rejection']
+    calculation_object.author       = get_staff(data['Author'])
+    calculation_object.staff        = get_staff(data['Staff'])
+    calculation_object.kvp          = data['Kvp']
+    calculation_object.amount       = data['Amount']
+    calculation_object.save()
+
+    CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
+
+    list_detail = data['Detail']
+
+    for detail_info in list_detail:
+        type_detail, created = CarCalculationsTypeDetail.objects.filter(name = detail_info['Type']).get_or_create(name = detail_info['Type'])
+        new_cal_detail = CarCalculationsDetail()
+        new_cal_detail.calculation = calculation_object
+        new_cal_detail.detail_type  = type_detail
+        new_cal_detail.success      = detail_info['Success']
+        new_cal_detail.amount       = detail_info['Amount']
+        new_cal_detail.vp           = detail_info['Vp']
+        new_cal_detail.pocazatel    = detail_info['Pocazatel']
+        new_cal_detail.amount_k     = detail_info['Amount_k']
+        new_cal_detail.save()
+    
+    RefCarsOrganizationAction.objects.filter(car = car_object).delete()
+
+    list_action = data['Action']
+    for action_info in list_action:
+        new_action_detail = RefCarsOrganizationAction()
+        new_action_detail.car       = car_object
+        new_action_detail.name      = action_info['Name']
+        new_action_detail.comment   = action_info['Comment']
+        new_action_detail.amount_sale = action_info['Amount_sale']
+        new_action_detail.amount_comp = action_info['Amount_comp']        
+        new_action_detail.save()
+
+    to_json = {
+        'answer'     : calculation_object.pk,
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+    
+    
+def get_car_object(car, unit):
+        
+    uin          = car.get('Uin', '').upper()
+
+    car_object, created = RefCarsOrganization.objects.filter(Q(lo_uin = uin) 
+                                                            and Q(is_new = True)).get_or_create(
+                                                                lo_uin = uin,
+                                                                is_new = True)
+    car_object.date_refresh     = datetime.now()    
+    car_object.organization     = get_organization(car['Organization'])    
+    car_object.unit             = unit
+    #car_object.store            = get_store(car['Store'])
+    car_object.is_new           = True
+    car_object.vin              = car.get('Vin', '').upper()
+    #car_object.vin2             = car['Vin2']
+    #car_object.name             = car['Name']
+    car_object.year             = car['Year']
+    #car_object.mark             = car['Mark']
+    #car_object.model            = car['Model']
+    #car_object.modification     = car['Modification']
+    car_object.color            = car['Color']
+    #car_object.run              = car['Run']
+    #car_object.plate_number     = car['Plate_number']
+    car_object.cost_price       = car['Cost_price']
+    #car_object.outlay           = car['Outlay']
+    #car_object.days_in_stok     = DT.datetime.strptime(car['Days_in_stok'], '%Y-%m-%dT%H:%M:%S').date()
+    car_object.price            = car['Price']
+    car_object.quantity         = 1
+    #car_object.lo_link              = car['Lo_link']
+    car_object.lo_link_date         = DT.datetime.strptime(car['Lo_link_date'], '%Y-%m-%dT%H:%M:%S')
+    #car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
+    #car_object.lo_uin               = car.get('Lo_uin', '').upper()
+    #car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
+    #car_object.stage_price          = get_stage_price(car['Stage_price'])
+    #car_object.group_price          = get_group_price(car['Group_price'])
+    #car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
+    #car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
+    #car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
+    #car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
+    #car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
+    
+    #car_object.owners               = car['Owners']
+    #car_object.keys                 = car['Keys']
+    #car_object.task                 = car['Task']  
+    #car_object.reserve              = car['Reserve']             
+
+    #car_object.days_next_stage      = car['Days_next_stage']
+    #car_object.link_avtoteka_web    = car['Link_avtoteka_web']
+    #car_object.link_avtoteka_pdf    = car['Link_avtoteka_pdf']
+    #car_object.bcp                  = car['BCP']
+    
+    #id_avito = car['ID_avitoru']
+    #try:
+    #    if id_avito > 0:
+    #        car_object.modification_avito = RefAvito.objects.get(avito_id = id_avito)
+    #except:
+    #    s=1
+        
+    id_avtoru = car['ID_autoru']
+    try:
+        if int(id_avtoru) > 0:
+            car_object.modification_autoru = AutoruModification.objects.get(idSite = int(id_avtoru))
+    except:
+        s=1
+
+    id_complectation = car['ID_complectation']
+    try:
+        if int(id_complectation) > 0:
+            car_object.complectation_autoru = AutoruComplectation.objects.get(idSite = int(id_complectation))
+    except:
+        s=1
+    #car_object.engine_power         = car['Engine_power']
+    #car_object.engine_volume        = car['Engine_volume']
+
+    #car_object.description_podgotovka   = car['Description_podgotovka']
+    #car_object.description_op           = car['Description_op']
+
+    car_object.save()
+    return car_object
 
 @api_view(['POST'])
 def calculate_car(request):
@@ -478,7 +619,6 @@ def calculate_car(request):
 
     return JsonResponse(to_json, status=status.HTTP_200_OK) 
 
-
 @api_view(['GET'])
 def get_estimation_bcp(request):
     
@@ -513,7 +653,7 @@ def get_info_estimation_vin(request):
     
     if vin != '':
         date_start = DT.datetime.now() - DT.timedelta(days=14)
-        infos = RegInteractivOcenkaRLK.objects.filter(estimation__vin = vin, 
+        infos = RegInteractivOcenkaRLK.objects.filter(estimation__year__gt = 0, estimation__vin = vin, 
                                        estimation__start_estimation__gte =  date_start)
         
         exclude_rlk = request.GET.get('exclude_rlk', '')
@@ -966,6 +1106,7 @@ def info_brand_article_emex_list(request):
     
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
+
 @api_view(['GET', 'POST'])
 def info_brand_article_emex_list_provider(request):
     
@@ -1193,6 +1334,37 @@ def index(request):
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+def automatic_bcp_estimation(request):
+    to_json = {}
+    
+    uin_rlk = request.GET.get('uin', '')
+    
+    zna = 0
+    bcp = 0
+    price_after_kd = 0
+
+    if uin_rlk != '':
+        from register.models import RegInteractivOcenkaRLK
+        datas = RegInteractivOcenkaRLK.objects.filter(rlk__uin = uin_rlk).filter(Q(page_soglasovanie__price_auto_bcp_1__gt = 0) | Q(page_soglasovanie__price_auto_bcp_2__gt = 0) | Q(page_soglasovanie__price_auto_bcp_3__gt = 0))
+        for data in datas:
+            if data.page_soglasovanie != None:
+                price_after_kd = data.page_soglasovanie.price_after_kd
+                if data.page_soglasovanie.price_auto_bcp_1 > 0:
+                    bcp = data.page_soglasovanie.price_auto_bcp_1
+                    zna = data.page_soglasovanie.price_zna_1
+                elif data.page_soglasovanie.price_auto_bcp_2 > 0:
+                    bcp = data.page_soglasovanie.price_auto_bcp_2
+                    zna = data.page_soglasovanie.price_zna_2
+                elif data.page_soglasovanie.price_auto_bcp_3 > 0:
+                    bcp = data.page_soglasovanie.price_auto_bcp_3
+                    zna = data.page_soglasovanie.price_zna_3
+    
+    to_json['price_after_kd'] = price_after_kd
+    to_json['bcp'] = bcp
+    to_json['zna'] = zna    
+    to_json['status'] = 'ok'
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
 ######
 #####
 ####

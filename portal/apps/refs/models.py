@@ -2067,6 +2067,8 @@ class RefCarsOrganization(models.Model):
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=5120, default='')
     run                     = models.IntegerField("Пробег", null=True, default=0, blank=True)
     min_km                  = models.IntegerField("Минимальный КМ (для новых АМ)", null=True, blank=True)
+    min_km_user             = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, verbose_name='Минимальный КМ (для новых АМ) автор')
+    min_km_date             = models.DateTimeField("Минимальный КМ (для новых АМ) дата", null=True, blank=True)
     
     quantity                = models.IntegerField("Остаток", blank=True, default=0)
     bcp                     = models.IntegerField("БЦП", blank=True, default=0)
@@ -2100,6 +2102,282 @@ class RefCarsOrganization(models.Model):
     link_avtoteka_pdf       = models.CharField("Ссылка на автотеку пдф", blank=True, max_length=1024, default='')
 
     days_next_stage         = models.IntegerField("Дней до следующего этапа", blank=True, default=0)
+    
+    access_user             = models.ManyToManyField(User, related_name='access_user_car', verbose_name='Пользователь', blank=True)
+    
+    def cumulative_data(self):
+        
+        info = {}
+        type_km = 0
+        km_min_automatic    = 0
+        km_min_automatic_2  = 0
+        km_min_custom       = 0
+
+        #self.refresh_data()
+        
+        from prices_car.models import PriceCarStageKM, BrandKM, PriceCarBrand
+        data        = PriceCarStageKM.objects.filter(stage = self.stage_price).last()
+        if self.modification_autoru != None:
+            brand_car   = PriceCarBrand.objects.filter(marks = self.modification_autoru.model.mark).exclude(models_included = self.modification_autoru.model).last()
+            
+            if brand_car != None:
+                info['brand_km'] = BrandKM.objects.filter(brand = brand_car).order_by('month').last()
+
+            info['irc'] = data.km_index
+            km_brand_automatic = 0
+            
+            if self.modification_autoru != None:
+                data_infocars_mark = RefCarsOrganization.objects.filter(modification_autoru__model__mark = self.modification_autoru.model.mark).filter(is_new = True).exclude(quantity = 0).exclude(price = 0).aggregate(Sum('price'), Count('id'))
+                if data_infocars_mark['price__sum'] != None and data_infocars_mark['id__count'] > 0:                
+                    km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
+                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                    description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
+                else:
+                    km_brand_automatic          = info['brand_km'].km
+                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_min_automatic            = self.price * km_brand_automatic_stage / 100
+                    if km_min_automatic == 0:
+                        km_min_automatic = km_brand_automatic
+                    description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " " + '{:,}'.format(km_min_automatic).replace(',', ' ') +  " руб."
+                automatic = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
+                    'km_min_automatic'                  : km_min_automatic,
+                    'km_description'                    : description
+                }
+                info['automatic'] = automatic
+                type_km = 1
+            if self.modification_autoru != None:
+                from powerbi.models import Cumulative
+                dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
+                dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
+                cum_korrection  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(Marka = self.modification_autoru.model.mark.name.upper()).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+                cum_count       = cum_korrection.count()
+                cum_aggregate   = 0 
+                cum_sum         = 0 
+                for cum_info in cum_korrection:
+                    SummaRabot              = 0 if cum_info.SummaRabot == None else float(cum_info.SummaRabot)
+                    ValovayaPribylZChShiny  = 0 if cum_info.ValovayaPribylZChShiny == None else float(cum_info.ValovayaPribylZChShiny)
+                    ValovayaPribylZCh       = 0 if cum_info.ValovayaPribylZCh == None else float(cum_info.ValovayaPribylZCh)
+                    SummaTreydInPoPlanu     = 0 if cum_info.SummaTreydInPoPlanu == None else float(cum_info.SummaTreydInPoPlanu)
+                    VPOPFU                  = 0 if cum_info.VPOPFU == None else float(cum_info.VPOPFU)
+                    SummaMarzhiBezNDS       = 0 if cum_info.SummaMarzhiBezNDS == None else float(cum_info.SummaMarzhiBezNDS)
+                    SummaGosreg             = 0 if cum_info.SummaGosreg == None else float(cum_info.SummaGosreg)
+                    cum_data = SummaRabot + ValovayaPribylZChShiny + ValovayaPribylZCh + SummaTreydInPoPlanu + VPOPFU + SummaMarzhiBezNDS + SummaGosreg
+                    cum_sum = cum_sum + cum_data
+                    rrc = 0 if cum_info.RRTS == None else float(cum_info.RRTS)
+                    cum_aggregate = cum_aggregate + rrc
+                km_sale = cum_sum / cum_count            
+                km_brand_automatic = km_sale / (cum_aggregate / cum_count) * 100
+                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                km_min_automatic_2            = self.price * km_brand_automatic_stage / 100
+                if km_min_automatic_2 == 0:
+                    km_min_automatic_2 = km_sale
+                automatic = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic_stage,
+                    'km_min_automatic'                  : km_min_automatic_2,
+                    'km_description'                    : "Проанализированы продажи склада новых АМ по бренду " + self.modification_autoru.model.mark.name + " - " + str(cum_count) + " шт. на сумму РРЦ " + '{:,}'.format(cum_aggregate).replace(',', ' ') + " руб."
+                }
+                info['automatic_2'] = automatic
+                if km_min_automatic_2 > km_min_automatic:
+                    type_km = 2
+            if self.min_km != 0 and self.min_km != None:
+                km_brand_automatic = self.min_km  / self.price * 100
+                custom = {
+                    'km_brand_automatic_percent'        : km_brand_automatic,
+                    'km_brand_automatic_stage_percent'  : km_brand_automatic,
+                    'km_min_automatic'                  : self.min_km,
+                    'km_description'                    : "На автомобиле установлен минимальный км " + '{:,}'.format(self.min_km).replace(',', ' ') + " руб."
+                }
+                info['custom'] = custom
+                
+                type_km = 3
+
+            info['type_km'] = type_km
+
+        return info
+
+    def sale_info(self):
+        from powerbi.models import Cumulative
+        dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
+        dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
+        
+        if self.modification_autoru != None:
+            model_list = AutoruModification.objects.filter(model = self.modification_autoru.model).values_list('idSite', flat=True)
+            
+            sale_qs  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(IDModifikatsii__in = model_list).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+            
+            sale_all_model = sale_qs.filter(PodrazdelenieDTs = self.unit.name).count()
+            if self.modification_autoru != None:
+                sale_all_modif = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IDModifikatsii = self.modification_autoru.idSite).count()
+            else:
+                sale_all_modif = 0
+            if self.complectation_autoru != None:
+                sale_all_compl = sale_qs.filter(PodrazdelenieDTs = self.unit.name).filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
+            else:
+                sale_all_compl = 0
+                
+            sale_all_model_gk = sale_qs.count()
+            if self.modification_autoru != None:
+                sale_all_modif_gk = sale_qs.filter(IDModifikatsii = self.modification_autoru.idSite).count()
+            else:
+                sale_all_modif_gk = 0
+            if self.complectation_autoru != None:
+                sale_all_compl_gk = sale_qs.filter(IdKomplektatsii = self.complectation_autoru.idSite).count()
+            else:
+                sale_all_compl_gk = 0
+
+            info = {
+                'sale_all_model'    : sale_all_model,
+                'sale_all_modif'    : sale_all_modif,
+                'sale_all_compl'    : sale_all_compl,
+                'sale_all_model_gk'    : sale_all_model_gk,
+                'sale_all_modif_gk'    : sale_all_modif_gk,
+                'sale_all_compl_gk'    : sale_all_compl_gk,
+            }
+        else:
+            info = {
+                'sale_all_model'    : 0,
+                'sale_all_modif'    : 0,
+                'sale_all_compl'    : 0,
+                'sale_all_model_gk'    : 0,
+                'sale_all_modif_gk'    : 0,
+                'sale_all_compl_gk'    : 0,
+            } 
+        
+        return info
+
+    def unit_info(self):
+        if self.modification_autoru != None:
+            count_all           = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).filter(unit = self.unit).count()
+            count_all_model     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).count()
+            count_all_gk        = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru__model = self.modification_autoru.model).count()
+            count_all_model_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).count()
+        else:
+            count_all = 0
+            count_all_model = 0
+            count_all_gk = 0
+            count_all_model_gk = 0
+
+        if self.complectation_autoru != None:
+            count_all_compl     = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(unit = self.unit).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
+            count_all_compl_gk  = RefCarsOrganization.objects.exclude(quantity = 0).filter(is_new = True).filter(modification_autoru = self.modification_autoru).filter(complectation_autoru = self.complectation_autoru).count()
+        else:
+            count_all_compl = 0
+            count_all_compl_gk = 0
+
+        info = {
+            'count_all'         : count_all,
+            'count_all_model'   : count_all_model,
+            'count_all_compl'   : count_all_compl,
+            'count_all_gk'         : count_all_gk,
+            'count_all_model_gk'   : count_all_model_gk,
+            'count_all_compl_gk'   : count_all_compl_gk
+            }
+
+        return info
+    
+    def refresh_data(self):
+        now = datetime.now()
+        delta = now - self.lo_link_date 
+        days = delta.days
+        self.days_in_stok = days
+        zg = None
+        cost_price = self.cost_price
+        if cost_price > 0:
+            if cost_price < 200000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 7)
+                if days < 3:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 14:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 24:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 400000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 1)
+                if days < 4:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 25:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 34:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 700000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 6)
+                if days < 5:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 30:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 39:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 1200000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 2)
+                if days < 5:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 36:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 49:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 2000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 3)
+                if days < 7:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 41:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 54:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 3000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 4)
+                if days < 10:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 45:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 59:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 5000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 11)
+                if days < 12:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 55:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 69:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            else:
+                self.group_price    = RefGroupPrice.objects.get(pk = 12)
+                if days < 12:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 55:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 69:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+        else:
+            self.group_price    = None
+        self.save()
+        return days
+
+    def doc_zn_dop_amount_and_count(self):
+        from documents.models import DocZN
+        return DocZN.objects.filter(cars__vin = self.vin).aggregate(
+                count=Count("id"),
+                sum_amount=Sum("amount"),  
+            )
 
     def estimations_car_organizaton(self):
         from register.models import RegEstimationRefCarsOrganizations
@@ -2498,7 +2776,7 @@ class RefCarsOrganization(models.Model):
             else:
                 photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).count()
                 if photos_count > 0:
-                    return RefCarsOrganizationFiles.objects.filter(сars_organization = self)[0].file_bak.url
+                    return RefCarsOrganizationFiles.objects.filter(сars_organization = self)[0].file.url
         except:
             return '/media/nophoto.png'
         return '/media/nophoto.png'
@@ -2526,7 +2804,104 @@ class RefCarsOrganization(models.Model):
             s = 1
         return '/media/images/kg.png'
     
-
+    def update(self):
+        now = datetime.now()
+        delta = now - self.lo_link_date 
+        days = delta.days
+        self.days_in_stok = days
+        zg = None
+        cost_price = self.cost_price
+        if cost_price > 0:
+            if cost_price < 200000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 7)
+                if days < 3:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 14:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 24:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 400000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 1)
+                if days < 4:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 25:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 34:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 700000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 6)
+                if days < 5:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 30:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 39:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 1200000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 2)
+                if days < 5:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 36:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 49:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 2000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 3)
+                if days < 7:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 41:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 54:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 3000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 4)
+                if days < 10:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 45:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 59:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            elif cost_price < 5000000:
+                self.group_price    = RefGroupPrice.objects.get(pk = 11)
+                if days < 12:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 55:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 69:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+            else:
+                self.group_price    = RefGroupPrice.objects.get(pk = 12)
+                if days < 12:
+                    self.stage_price = RefStagePrice.objects.get(pk = 4)
+                elif days < 55:
+                    self.stage_price = RefStagePrice.objects.get(pk = 2)
+                elif days < 69:
+                    self.stage_price = RefStagePrice.objects.get(pk = 3)
+                else:
+                    self.stage_price = RefStagePrice.objects.get(pk = 1)
+        else:
+            self.group_price    = None 
+        try:
+            if self.name == '':
+                self.name = '' + self.modification_autoru.model.mark.name + ' ' + self.modification_autoru.model.name + ' ' + self.modification_autoru.model.name
+                if self.complectation_autoru != None:
+                    self.name = self.name + ' ' + self.complectation_autoru.name             
+        except:
+            s = 1
+    
     def save(self, *args, **kwargs):
         
         self.vin = self.vin.upper()
@@ -2537,12 +2912,20 @@ class RefCarsOrganization(models.Model):
                 if lo != None:
                     self.lo = lo
 
-        if not self.slug:
+        if not self.slug or len(self.slug) < 8:
             if self.is_new == False:
                 name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
                 self.slug = slugify(name_slug.lower())
             else:
-                name_slug = str(self.lo_uin[0:5]) + self.lo_uin[15:18]
+                name_slug = ''
+                try:
+                    name_slug = transliterate(self.modification_autoru.model.mark.name).replace(' ', '_')
+                    name_slug = name_slug + '_' + transliterate(self.modification_autoru.model.name).replace(' ', '_')
+                except:
+                    s = 1
+                if name_slug != '':
+                    name_slug = name_slug + "_"
+                name_slug = name_slug + str(self.lo_uin[0:10]) + self.lo_uin[14:18]
                 self.slug = slugify(name_slug.lower())
         
         try:
@@ -2581,6 +2964,9 @@ class RefCarsOrganization(models.Model):
         if not self.qr:
             self.qr = ContentFile(get_qrcode(self.slug), name=self.slug)
 
+        if self.is_new:
+            self.update()
+
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -2599,6 +2985,29 @@ class RefCarsOrganization(models.Model):
         verbose_name_plural = "Автомобили организации"
         unique_together = ('vin', 'lo_uin', 'lo_link_number',)
 
+class RefCarsOrganizationAction(models.Model):
+    car         = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль")
+    name        = models.CharField("Наименование", max_length=512, default='', blank=True)
+    comment     = models.CharField("Комментарий", max_length=512, default='', blank=True)
+    amount_sale = models.IntegerField("Корректировка", default=0, null=True, blank=True)
+    amount_comp = models.IntegerField("Возмещение", default=0, null=True, blank=True)
+    amount      = models.IntegerField("Итого", default=0, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        
+        self.amount = self.amount_sale + self.amount_comp
+
+        super().save(*args, **kwargs)
+    
+
+    class Meta:
+        db_table = 'refCarsOrganizationAction'
+        verbose_name = "Акции на автомобиль"
+        verbose_name_plural = "Акции на автомобиль"
+        ordering = ['name',]
 
 class RefCarsOrganizationFiles(models.Model):
     сars_organization     = models.ForeignKey(RefCarsOrganization, on_delete=models.PROTECT, null=True, verbose_name="Автомобиль")

@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM
+from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM
+
+@admin.register(CarCalculations)
+class CarCalculationsAdmin(admin.ModelAdmin):
+    list_display = ('date', 'number', 'car', 'amount', 'unit', 'price', 'comment',)
+    list_filter = ('unit', )
+    raw_id_fields = ('rlk', 'unit', 'staff', 'author', 'user', 'car', )
+    search_fields = ('rlk__nomer',)
+    ordering = ('-date',)
 
 
 @admin.register(PriceCarKmDiscount)

@@ -56,7 +56,7 @@ z-index: 1030;">
                                     
                                 </label>
                                 <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold">
-                                    В чате пока нет сообщений. Напишите мы обязательно ответим.
+                                    В чате пока нет сообщений.
                                 </h6>
                             </div>     
                         </div>
@@ -78,9 +78,24 @@ z-index: 1030;">
                 <input type='hidden' class="form-control" name="username" id="username" value="{{params.user.id}}">
                 <input type='hidden' class="form-control" name="room_id" id="room_id" value="{{params.chat.id}}">
                 
-                <div class="input-group  form-control bg-primary" style="padding: 0rem;">
-                    <textarea class="form-control" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
-                    <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                <style>
+                    #chat-emoji-wrap emoji-picker {
+                        width: 100%;
+                        max-width: 100%;
+                        height: min(55vh, 380px);
+                        --num-columns: 8;
+                    }
+                </style>
+
+                <div class="position-relative w-100">
+                    <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0rem;">
+                        <textarea class="form-control border-end-0" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
+                        <button type="button" class="btn btn-outline-secondary bg-white px-2" id="chat-emoji-btn" title="Эмодзи" aria-expanded="false" aria-controls="chat-emoji-wrap">😀</button>
+                        <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
+                    </div>
+                    <div id="chat-emoji-wrap" class="d-none border rounded bg-white shadow-sm mt-1" style="position: absolute; bottom: 100%; left: 0; right: 0; z-index: 1060; overflow: hidden;">
+                        <emoji-picker id="chat-emoji-picker"></emoji-picker>
+                    </div>
                 </div>
     
             </form>
@@ -277,4 +292,53 @@ z-index: 1030;">
         } 
     }
 
+</script>
+
+
+<script type="module">
+    import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+
+    function insertAtCursor(textarea, text) {
+        const el = textarea;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const val = el.value;
+        el.value = val.slice(0, start) + text + val.slice(end);
+        const pos = start + text.length;
+        el.selectionStart = el.selectionEnd = pos;
+        el.focus();
+    }
+
+    const btn = document.getElementById('chat-emoji-btn');
+    const wrap = document.getElementById('chat-emoji-wrap');
+    const picker = document.getElementById('chat-emoji-picker');
+    const ta = document.getElementById('message');
+
+    if (btn && wrap && picker && ta) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const open = wrap.classList.toggle('d-none');
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        });
+
+        picker.addEventListener('emoji-click', function (e) {
+            var u = e.detail && e.detail.unicode;
+            if (!u && e.detail && e.detail.emoji) {
+                u = e.detail.emoji.unicode || e.detail.emoji;
+            }
+            if (typeof u === 'string') {
+                insertAtCursor(ta, u);
+            }
+            wrap.classList.add('d-none');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (wrap.classList.contains('d-none')) return;
+            if (wrap.contains(e.target) || btn.contains(e.target)) return;
+            wrap.classList.add('d-none');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    }
 </script>

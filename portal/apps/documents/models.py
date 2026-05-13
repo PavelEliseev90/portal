@@ -468,6 +468,9 @@ class DocRLK(models.Model):
     vin_trade_in                = models.CharField('VIN трейд ин', blank=True, default='', null=True, max_length=17)
     estimation_id               = models.IntegerField('ИД оценки', default=0, blank=True, null=False)
 
+    def rlk_trade_in(self):
+        return DocRLK.objects.filter(uin__in = DocRLK.objects.filter(footing = self).values_list('uin', flat=True)).filter(eco = True)
+
     def rating_sms_opros(self):
         count_opros = DocOprosCarShipment.objects.filter(shipment__rlk = self).count()
         if count_opros > 0:
