@@ -11,7 +11,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
-from refs.models import AutoruMark, AutoruModel, RefStagePrice
+from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations
 
 
@@ -644,6 +644,18 @@ def discount_km_page(request):
 @login_required
 def calculations_list(request):
     
+    select_units = RefUnit.objects.filter(buauto=False).order_by('name')
+
+    date_start = (request.GET.get('date_start') or '').strip()
+    date_end = (request.GET.get('date_end') or '').strip()
+    vin = (request.GET.get('vin') or '').strip()
+    unit_ids = []
+    for raw in request.GET.getlist('unit_ids'):
+        if str(raw).isdigit():
+            unit_ids.append(int(raw))
+    agreement_filters = set(request.GET.getlist('agreement_filter'))
+    shipment_filters = set(request.GET.getlist('shipment_filter'))
+
     agreement_qs = (
         DocCarAgreement.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
         .order_by('-dataTime')
@@ -652,19 +664,43 @@ def calculations_list(request):
         DocCarShipment.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
         .order_by('-dataTime')
     )
-    objects = (
-        CarCalculations.objects.select_related('rlk', 'unit', 'car', 'author', 'staff')
-        .annotate(
-            agreement_pk=Subquery(agreement_qs.values('pk')[:1]),
-            agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
-            shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
-            shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
-        )
-        .order_by('-date')
+    objects = CarCalculations.objects.select_related('rlk', 'unit', 'car', 'author', 'staff').annotate(
+        agreement_pk=Subquery(agreement_qs.values('pk')[:1]),
+        agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
+        shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
+        shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
     )
+
+    if date_start:
+        try:
+            objects = objects.filter(date__date__gte=date.fromisoformat(date_start))
+        except ValueError:
+            pass
+    if date_end:
+        try:
+            objects = objects.filter(date__date__lte=date.fromisoformat(date_end))
+        except ValueError:
+            pass
+    if vin:
+        objects = objects.filter(car__vin__icontains=vin)
+    if unit_ids:
+        objects = objects.filter(unit_id__in=unit_ids)
+
+    if agreement_filters == {'yes'}:
+        objects = objects.filter(agreement_pk__isnull=False)
+    elif agreement_filters == {'no'}:
+        objects = objects.filter(agreement_pk__isnull=True)
+
+    if shipment_filters == {'yes'}:
+        objects = objects.filter(shipment_pk__isnull=False)
+    elif shipment_filters == {'no'}:
+        objects = objects.filter(shipment_pk__isnull=True)
+
+    objects = objects.order_by('-date')
+
     paginator = Paginator(objects, 25)
     page_number = request.GET.get('page') or 1
-   
+
     try:
         page_obj = paginator.page(page_number)
     except PageNotAnInteger:
@@ -672,8 +708,19 @@ def calculations_list(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
+    filtr = {
+        'date_start': date_start,
+        'date_end': date_end,
+        'vin': vin,
+        'filter_unit': unit_ids,
+        'agreement_filter': list(agreement_filters),
+        'shipment_filter': list(shipment_filters),
+    }
+
     return render(request, 'prices_car/calculations_list.html', {
         'params': {
-            'objects': page_obj
+            'objects': page_obj,
+            'filtr': filtr,
+            'select_units': select_units,
         },
     })

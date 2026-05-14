@@ -15,98 +15,82 @@
         <p class="text-muted mb-4">Детальные расчеты продажи автомобилей в рамках рабочих листов.</p>
 
         <div class="portal-panel">
-           
-            <h6 class="mb-0 padding-title" > <span class="icon-mbri-setting"> Фильтр</h6>
-            
-            <div class="row g-1 padding-title">
-                <div class="col-sm-2">
-                    <div class="metric-card-label-portal">Дата начала</div>
-                    <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}">
-                </div>
-                
-                <div class="col-sm-2">
-                    <div class="metric-card-label-portal">Дата окончания</div>
-                    <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
-                </div>
+            <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
 
-                <div class="col-sm-2">
-                    <div class="metric-card-label-portal">VIN</div>
-                    <input type="date" class="form-control" name="vin" value="{{ params.filtr.vin|date:'Y-m-d' }}">
-                </div>
-                
-                <div class="col-sm">
-                    <div class="metric-card-label-portal">Подразделения</div>
-                    <div class="position-relative">
-                        <input type="text" class="form-control" id="unitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
-                        <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
-                        {% for unit in params.select_units %}
-                            <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
-                            <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}" 
-                                {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
-                            {{ unit.name }}
-                            </label>
-                        {% endfor %}
+            <form method="get" action="">
+                <div class="row g-3 padding-title">
+                    <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Дата начала</div>
+                        <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start }}">
+                    </div>
+                    <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Дата окончания</div>
+                        <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end }}">
+                    </div>
+                    <div class="col-sm-12 col-md-2">
+                        <div class="metric-card-label-portal">VIN</div>
+                        <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+                    </div>
+
+                    <div class="col-sm-12 col-md-4">
+                        <div class="metric-card-label-portal">Подразделения</div>
+                        <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto; background: #fff;">
+                            {% for unit in params.select_units %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="unit_ids" value="{{ unit.pk }}" id="unit_{{ unit.pk }}"
+                                    {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
+                                <label class="form-check-label" for="unit_{{ unit.pk }}">{{ unit.name }}</label>
+                            </div>
+                            {% empty %}
+                            <span class="text-muted small">Нет подразделений</span>
+                            {% endfor %}
                         </div>
                     </div>
-                    <div id="selectedUnits" class="mt-2">
 
-                    </div>
-                </div>
-
-                <div class="col-sm-2">
-                    <div class="metric-card-label-portal">Соглашение</div>
-                    <div class="position-relative">
-                        <input type="text" class="form-control" id="agreementSearch" placeholder="Наличие соглашения..." autocomplete="off">
-                        <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
-                        {% for unit in params.select_units %}
-                            <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
-                            <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}" 
-                                {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
-                            {{ unit.name }}
-                            </label>
-                        {% endfor %}
+                    <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Соглашение</div>
+                        <div class="border rounded p-2 bg-white">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="agreement_filter" value="yes" id="agr_yes"
+                                    {% if 'yes' in params.filtr.agreement_filter %}checked{% endif %}>
+                                <label class="form-check-label" for="agr_yes">Да</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="agreement_filter" value="no" id="agr_no"
+                                    {% if 'no' in params.filtr.agreement_filter %}checked{% endif %}>
+                                <label class="form-check-label" for="agr_no">Нет</label>
+                            </div>
                         </div>
+                        <div class="small text-muted mt-1">Оба варианта — без фильтра по соглашению</div>
                     </div>
-                    <div id="selectedUnits" class="mt-2">
 
-                    </div>
-                </div>
-
-                <div class="col-sm-2">
-                    <div class="metric-card-label-portal">Отгрузка</div>
-                    <div class="position-relative">
-                        <input type="text" class="form-control" id="shipmentSearch" placeholder="Наличие отгрузки..." autocomplete="off">
-                        <div class="list-group position-absolute w-100 mt-1" id="unitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
-                        {% for unit in params.select_units %}
-                            <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
-                            <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}" 
-                                {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
-                            {{ unit.name }}
-                            </label>
-                        {% endfor %}
+                    <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Отгрузка</div>
+                        <div class="border rounded p-2 bg-white">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="shipment_filter" value="yes" id="shp_yes"
+                                    {% if 'yes' in params.filtr.shipment_filter %}checked{% endif %}>
+                                <label class="form-check-label" for="shp_yes">Да</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="shipment_filter" value="no" id="shp_no"
+                                    {% if 'no' in params.filtr.shipment_filter %}checked{% endif %}>
+                                <label class="form-check-label" for="shp_no">Нет</label>
+                            </div>
                         </div>
-                    </div>
-                    <div id="selectedUnits" class="mt-2">
-
+                        <div class="small text-muted mt-1">Оба варианта — без фильтра по отгрузке</div>
                     </div>
                 </div>
-        
-                <div class="col-sm-auto">
-                
-                </div>
-            </div>
 
-            <div class="row g-1">
-                <div class="col-auto">
-                    <a class="btn-calculate-sm" href="{{ request.path }}"> <span class="icon-mbri-play"></span> Применить</a>
+                <div class="row g-2 padding-title pb-3">
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-sm"><span class="icon-mbri-play"></span> Применить</button>
+                    </div>
+                    <div class="col-auto">
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+                    </div>
                 </div>
-                <div class="col-auto">
-                    <a class="btn-calculate-secondary-sm" href="{{ request.path }}"> <span class="icon-mbri-close"></span> Сбросить фильтры</a>
-                </div>
-                
-            </div>
-            
-           
+            </form>
         </div>
 
         <div class="portal-panel no-padding">
@@ -121,7 +105,6 @@
                             <th>Рабочий лист</th>
                             <th>Автомобиль</th>
                             <th>VIN</th>
-                            <th>Рабочий лист</th>
                             <th>Клиент</th>
                             <th>Автор</th>
                             <th>КВ</th>
@@ -132,23 +115,34 @@
                     <tbody>
                         {% for item in params.objects %}
                         <tr>
-                            <td><a href="/cars/deal/calculation/{{item.pk}}/" class="text-dark"><span class="icon-doc"></span></a></td>
+                            <td><a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark"><span class="icon-doc"></span></a></td>
                             <td>{{ item.date }}</td>
                             <td>{{ item.number }}</td>
-                            <td>{{ item.unit.name }}</td>
-                            <td>{{ item.rlk.nomer }}</td>
-                            <td>{{ item.car.name }}</td>
-                            <td>{{ item.car.vin }}</td>
-                            <td>{{ item.rlk.nomer }}</td>
-                            <td>{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}</td>
+                            <td>{{ item.unit.name|default:"—" }}</td>
+                            <td>{% if item.rlk %}{{ item.rlk.nomer }}{% else %}—{% endif %}</td>
+                            <td>{{ item.car.name|default:"—" }}</td>
+                            <td>{{ item.car.vin|default:"—" }}</td>
+                            <td>{% if item.rlk %}{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}{% else %}—{% endif %}</td>
                             <td>{{ item.author.name }}</td>
-                            <td class="text-end text-nowrap">{{item.kvp|floatformat:"2g"}} ₽</td>
-                            <td>{{ item.agreement_nomer|default:"-"}}</td>
-                            <td>{{ item.shipment_nomer|default:"-"}}</td>                            
+                            <td class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
+                            <td>
+                                {% if item.agreement_pk %}
+                                    <a href="/docs_car_agreement/{{ item.agreement_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.agreement_nomer|default:"—" }}</a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.shipment_pk %}
+                                    <a href="/docs_car_shipment/{{ item.shipment_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.shipment_nomer|default:"—" }}</a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Нет записей. Проверьте фильтр.</td>
+                            <td colspan="12" class="text-center text-muted py-4">Нет записей. Проверьте фильтр.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -156,8 +150,8 @@
             </div>
 
             {% if params.objects.paginator.num_pages > 1 %}
-                <nav aria-label="Навигация по страницам">
-                    <ul class="pagination">
+                <nav aria-label="Навигация по страницам" class="p-3">
+                    <ul class="pagination mb-0">
                     {% if params.objects.has_previous %}
                         <li class="page-item">
                         <a class="page-link" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
@@ -167,11 +161,11 @@
                     {% for p in params.objects.paginator.page_range %}
                         {% if params.objects.number == p %}
                         <li class="page-item active">
-                            <span class="page-link">{{p}}</span>
+                            <span class="page-link">{{ p }}</span>
                         </li>
                         {% elif p >= params.objects.number|add:-2 and p <= params.objects.number|add:2 %}
                         <li class="page-item">
-                            <a class="page-link" href="?{% url_replace page=p %}">{{p}}</a>
+                            <a class="page-link" href="?{% url_replace page=p %}">{{ p }}</a>
                         </li>
                         {% endif %}
                     {% endfor %}
