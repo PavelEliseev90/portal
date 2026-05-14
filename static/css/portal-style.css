@@ -225,6 +225,17 @@
     transition: all 0.3s ease;
   }
 
+  .btn-calculate-success-sm {
+    background: linear-gradient(135deg, #00b427 0%, #009921 100%);
+    color: #fff;
+    border: none;
+    padding: 0.25rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
   .btn-calculate:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
@@ -931,7 +942,7 @@
                 }
             }
             body {
-                font-size: .875rem;
+                font-size: .875rem !important;
             }
 
             :root {
@@ -1499,9 +1510,9 @@
             }
 
             .navbar-brand {
-                padding-top: .75rem;
-                padding-bottom: .75rem;
-                font-size: 1rem;
+                padding-top: .75rem !important;;
+                padding-bottom: .75rem !important;;
+                font-size: 1rem !important;;
             
             }
 

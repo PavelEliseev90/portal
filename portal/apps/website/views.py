@@ -5627,6 +5627,8 @@ def rlks_trade_in(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
+    docs = docs.exclude(type__id = 9).exclude(type__id = 4)
+
     subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     
@@ -5706,7 +5708,8 @@ def rlks_trade_in(request):
         'date_end_lo'       : date_end_lo,
         'status_id'         : status_id,
         'unit_name'         : filtr_unit_name,
-        'vin'               : filtr_vin
+        'vin'               : filtr_vin,
+        'filter_custom'     : custom
     }
 
     selected = {
@@ -5816,6 +5819,8 @@ def rlks_trade_in_export(request):
     else:
         docs            = DocRLK.objects.filter(type__id = 2).filter(unit_dc__buauto = True) | DocRLK.objects.filter(type__id = 7).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 1).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(type__id = 19).filter(eco = True).order_by('-dataTime') | DocRLK.objects.filter(eco = True).order_by('-dataTime') 
     
+    docs = docs.exclude(type__id = 9).exclude(type__id = 4)
+
     subquery        = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     subquery_lo     = DocLO.objects.filter(rlk__id = OuterRef(name='id'))
     

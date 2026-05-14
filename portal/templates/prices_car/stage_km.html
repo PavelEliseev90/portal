@@ -66,7 +66,7 @@
 
         <div class="portal-panel no-padding">
             <h5 class="mb-3 padding-title">История индексов</h5>
-            <div class="table-responsive">
+            <div class="table-responsive portal-radius">
                 <table class="table table-sm table-hover mb-0">
                     <thead>
                         <tr>
@@ -78,9 +78,9 @@
                     <tbody>
                         {% for item in params.items %}
                         <tr>
-                            <td>{{ item.stage.name }}</td>
-                            <td>{{ item.month|date:"Y-m" }}</td>
-                            <td>{{ item.km_index }}</td>
+                            <td data-label="Этап УС">{{ item.stage.name }}</td>
+                            <td data-label="Месяц">{{ item.month|date:"Y-m" }}</td>
+                            <td data-label="Индекс КМ">{{ item.km_index }}</td>
                         </tr>
                         {% empty %}
                         <tr>

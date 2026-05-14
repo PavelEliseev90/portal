@@ -9,7 +9,7 @@
 
 <div class="portal-page">
     
-    <div class="container-fluid py-4">
+    <div class="">
         
         <h2 class="mb-2">Управление ценообразованием новых автомобилей</h2>
         <p class="text-muted mb-4"></p>
@@ -21,36 +21,36 @@
                     <p class="text-muted small mb-3">Склад и аналитика: все автомобили в наличии, фильтры, задачи, мин. КМ, чаты.</p>
                     <div class="row g-2">
 
-                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                        <div class="col-auto">
                             
-                            <a href="{% url 'prices_car:director' %}" class="text-dark"> 
+                            <a href="{% url 'prices_car:director' %}" class="btn-calculate-sm"> 
                                 <span class="icon-truck"></span>
                                 Склад
                             </a>    
 
                         </div>
                         
-                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                        <div class="col-auto">
                             
-                            <a href="{% url 'prices_car:calculations_list' %}" class="text-dark"> 
+                            <a href="{% url 'prices_car:calculations_list' %}" class="btn-calculate-sm"> 
                                 <span class="icon-mbri-bulleted-list"></span>
-                                Коммерческие предложения (калькуляции)
+                                Калькуляции
                             </a>    
 
                         </div>
 
-                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                        <div class="col-auto">
                             
-                            <a href="{% url 'prices_car:director' %}" class="text-dark"> 
+                            <a href="/docs_car_agreement/" class="btn-calculate-sm"> 
                                 <span class="icon-doc"></span>
                                 Соглашения
                             </a>    
 
                         </div>
 
-                        <div class="col-auto btn bg-success bg-gradient bg-opacity-25 text-white" style="margin: 0.2rem;">
+                        <div class="col-auto">
                             
-                            <a href="/cars/tasks/" class="text-dark"> 
+                            <a href="/cars/tasks/" class="btn-calculate-sm"> 
                                 <span class="icon-mbri-layers"></span>
                                 Задачи
                             </a>    

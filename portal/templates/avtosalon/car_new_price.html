@@ -13,49 +13,6 @@
 
 {% block content %}
 
-<style>
-	.metric-card-portal {
-  background: #fff;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  height: 100%;
-}
-
-.metric-card-portal h4 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #8ea1ba;
-  
-}
-
-.metric-card-portal .value {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #002a5a;
-  
-}
-
-.metric-card-portal .sub {
-  color: #6c7a92;
-  font-size: 0.85rem;
-}
-
-/* Вариант метрической карточки (для car_new_price_edit) */
-.metric-card-label-portal {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #8ea1ba;
-  font-weight: 600;
-}
-
-.metric-card-value-portal {
-  font-size: 1.0rem;
-  font-weight: 700;
-  color: #002a5a;
-}
-</style>
 
 {% include 'chats/chat_car.html' %}
 
@@ -82,15 +39,13 @@
                     <p class="small text-muted mt-2 mb-0">Для перехода на автоматический расчет км установите минимальный км = 0</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"> <span class="icon-mbri-refresh"></span> Отмена</button>
-                    <button type="submit" class="btn btn-primary bg-gradient"> <span class="icon-mbri-save"></span> Сохранить</button>
+                    <button type="button" class="btn-calculate-secondary-sm" data-bs-dismiss="modal"> <span class="icon-mbri-refresh"></span> Отмена</button>
+                    <button type="submit" class="btn-calculate-success-sm"> <span class="icon-mbri-save"></span> Сохранить</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-
 
 <div class="portal-page">
 	
@@ -109,21 +64,21 @@
 	{% endif %}
 
 	<div class="portal-panel">
-		<div class="row g-1"> 
+		<div class="row g-2"> 
 			<div class="col-12 col-sm-auto">
-				<a class="btn btn_block btn-{% if params.current_tab == 'avto' %}light {% else %}info {% endif %} bg-gradient" href="?tab=avto"><span class="icon-truck"></span> Автомобиль</a>
+				<a class="{% if params.current_tab == 'avto' %} btn-calculate-success-sm {% else %}btn-calculate-sm {% endif %}" href="?tab=avto"><span class="icon-truck"></span> Автомобиль</a>
 			</div>
 			<div class="col-12 col-sm-auto">
-				<a class="btn btn_block btn-{% if params.current_tab == 'zn' %}light {% else %}info {% endif %} bg-gradient" href="?tab=zn"><span class="icon-doc"></span> Заказ-наряды (доп.) - {{params.dop_car_info.aggretgate_dop_zn.count}}</a>
+				<a class="{% if params.current_tab == 'zn' %}btn-calculate-success-sm {% else %}btn-calculate-sm {% endif %}" href="?tab=zn"><span class="icon-doc"></span> Заказ-наряды (доп.) - {{params.dop_car_info.aggretgate_dop_zn.count}}</a>
 			</div>
 			<div class="col-12 col-sm-auto">
-				<a class="btn btn_block btn-{% if params.current_tab == 'sklad' %}light {% else %}info {% endif %}" href="?tab=sklad"><span class="icon-mbri-home"></span> Склад</a>				
+				<a class="{% if params.current_tab == 'sklad' %}btn-calculate-success-sm {% else %}btn-calculate-sm {% endif %}" href="?tab=sklad"><span class="icon-mbri-home"></span> Склад</a>				
 			</div>
 			<div class="col-12 col-sm-auto">
-				<a class="btn btn_block btn-{% if params.current_tab == 'analytics_unit' %}light {% else %}info {% endif %}" href="?tab=analytics_unit"><span class="icon-mbri-credit-card"></span>Продажи</a>				
+				<a class="{% if params.current_tab == 'analytics_unit' %}btn-calculate-success-sm {% else %}btn-calculate-sm {% endif %}" href="?tab=analytics_unit"><span class="icon-mbri-credit-card"></span>Продажи</a>				
 			</div>
 			<div class="col-12 col-sm-auto">
-				<a class="btn btn_block btn-{% if params.current_tab == 'tasks' %}light {% else %}info {% endif %}" href="?tab=tasks"><span class="icon-mbri-calendar"></span>Задачи</a>				
+				<a class="{% if params.current_tab == 'tasks' %}btn-calculate-success-sm {% else %}btn-calculate-sm {% endif %}" href="?tab=tasks"><span class="icon-mbri-calendar"></span>Задачи</a>				
 			</div>
 		</div>
 			
@@ -458,7 +413,7 @@
 													<div class="metric-card-value"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>		
 												</div>
 												<div class="col-auto align-self-center">
-													<span class="fs-4 text-white icon-mbri-edit" 
+													<span class="fs-4 text-dark  icon-mbri-edit" 
 														data-bs-toggle="modal"
 														data-bs-target="#modal_min_km">
 													</span>
@@ -475,7 +430,7 @@
 													<div class="metric-card-value"> • --- --- ₽</div>		
 												</div>
 												<div class="col-auto align-self-center">
-													<span class="fs-4 text-white icon-mbri-edit" 
+													<span class="fs-4 text-dark  icon-mbri-edit" 
 														data-bs-toggle="modal"
 														data-bs-target="#modal_min_km">
 													</span>
@@ -915,28 +870,32 @@
 					
 					<div class="modal-body">
 
-					  <div class="row" style="padding: 0.2em;">
-						<div class="col-sm">
-						  {{doc.dataTime}}
+					  <div class="row g-1" style="padding: 0.2em;">
+						<div class="col-12 col-sm-2">
+							<div class="metric-card-label">Дата</div>
+							<div class="metric-card-value">{{doc.dataTime}}</div>						  
 						</div>
-						<div class="col-sm">
-						  {{doc.nomer}}
+						<div class="col-12 col-sm-2">
+							<div class="metric-card-label">Номер</div>
+							<div class="metric-card-value">{{doc.nomer}}</div>						  
 						</div>
-						<div class="col-sm">
-						  {{doc.unit.name}}
+						<div class="col-12 col-sm-2">
+							<div class="metric-card-label">Статус</div>
+							<div class="metric-card-value">{{doc.readyStatus}}</div>						  
 						</div>
-						<div class="col-sm">
-						  {{doc.typeRemont}}
+						<div class="col-12 col-sm-3">
+							<div class="metric-card-label">Подразделение</div>
+							<div class="metric-card-value">{{doc.unit.name}}</div>							  
 						</div>
-						<div class="col-sm">
-						  {{doc.cars_grz_board}}
+						<div class="col-12 col-sm-3">
+							<div class="metric-card-label">Вид ремонта</div>
+							<div class="metric-card-value">{{doc.typeRemont}}</div>							  
 						</div>
-						<div class="col-sm">
-						  {{doc.run|floatformat:"0g"}} км.
-						</div>
+						
 					  </div>
 
 					  <hr>
+
 					  {{doc.customerWords}}
 					  
 					  <div class="table-responsive portal-radius">
@@ -1030,69 +989,76 @@
 				
 				<h6 class="mb-3 padding-portal">Аналитика по подразделению с {{params.analytics.last_month_start|date:"d-m-Y"}} по {{params.analytics.last_month_end|date:"d-m-Y"}}</h6>
 				
-				<div class="row g-1 padding-portal">
-					
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sale_type < 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_type=0">
-								<span class="icon-mbri-home"></span>Все модели
-							</a>							     
-						</div>
-					</div>
-					
-					<div class="col-auto">
-						<a class="btn btn-sm {% if params.sale_type > 0 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							href="?tab=analytics_unit&sale_type=1">
-							<span class="icon-mbri-home"></span>Текущая модель
-						</a>
-					</div>
-					
-					<div class="col-auto">
-						<a class="btn btn-sm {% if params.sale_type > 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							href="?tab=analytics_unit&sale_type=2">
-							<span class="icon-mbri-home"></span>Текущая модификация
-						</a>  
-					</div>
-					
-					{% if params.object.complectation_autoru != None %}
-						<div class="col-auto">
-							<div class="mb-3">
-								<a class="btn btn-sm {% if params.sale_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-								href="?tab=analytics_unit&sale_type=3">
-									<span class="icon-mbri-home"></span>Текущая комплектация
-								</a>							     
+				<div class="padding-portal">
+					<div class="metric-card">
+						<div class="metric-card-label">Вариант просмотра продаж</div>
+						<div class="row g-1">
+						
+							<div class="col-auto">
+								<div class="mb-3">
+									<a class="{% if params.sale_type < 1 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+									   href="?tab=analytics_unit&sale_type=0">
+										<span class="icon-mbri-home"></span>Все модели
+									</a>							     
+								</div>
 							</div>
-						</div>
-					{% endif %}
-																			 
-					<!--
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sale_modification != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_modification=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
-								<span class="icon-mbri-add-submenu"></span> Все модификации
-							</a>
-							<a class="btn btn-sm {% if params.sale_modification == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_modification=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
-								<span class="icon-mbri-home"></span>Текущая модификация
-							</a>
+							
+							<div class="col-auto">
+								<a class="{% if params.sale_type > 0 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+									href="?tab=analytics_unit&sale_type=1">
+									<span class="icon-mbri-home"></span>Текущая модель
+								</a>
+							</div>
+							
+							<div class="col-auto">
+								<a class="{% if params.sale_type > 1 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+									href="?tab=analytics_unit&sale_type=2">
+									<span class="icon-mbri-home"></span>Текущая модификация
+								</a>  
+							</div>
+							
+							{% if params.object.complectation_autoru != None %}
+								<div class="col-auto">
+									<div class="mb-3">
+										<a class="{% if params.sale_type > 2 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=analytics_unit&sale_type=3">
+											<span class="icon-mbri-home"></span>Текущая комплектация
+										</a>							     
+									</div>
+								</div>
+							{% endif %}
+																					 
+							<!--
+							<div class="col-auto">
+								<div class="mb-3">
+									<a class="btn btn-sm {% if params.sale_modification != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+									   href="?tab=analytics_unit&sale_modification=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
+										<span class="icon-mbri-add-submenu"></span> Все модификации
+									</a>
+									<a class="btn btn-sm {% if params.sale_modification == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+									   href="?tab=analytics_unit&sale_modification=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_complectation %}&sale_complectation={{ params.sale_complectation }}{% endif %}">
+										<span class="icon-mbri-home"></span>Текущая модификация
+									</a>
+								</div>
+							</div>
+							<div class="col-auto">
+								<div class="mb-3">
+									<a class="btn btn-sm {% if params.sale_complectation != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+									   href="?tab=analytics_unit&sale_complectation=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
+										<span class="icon-mbri-add-submenu"></span> Все комплектации
+									</a>
+									<a class="btn btn-sm {% if params.sale_complectation == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
+									   href="?tab=analytics_unit&sale_complectation=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
+										<span class="icon-mbri-home"></span>Текущая комплектация
+									</a>    
+								</div>
+							</div>
+							-->
 						</div>
 					</div>
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sale_complectation != 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_complectation=all{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
-								<span class="icon-mbri-add-submenu"></span> Все комплектации
-							</a>
-							<a class="btn btn-sm {% if params.sale_complectation == 'current' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=analytics_unit&sale_complectation=current{% if params.sale_model %}&sale_model={{ params.sale_model }}{% endif %}{% if params.sale_modification %}&sale_modification={{ params.sale_modification }}{% endif %}">
-								<span class="icon-mbri-home"></span>Текущая комплектация
-							</a>    
-						</div>
-					</div>
-					-->
 				</div>
+				
+				
 
 				<div class="row g-1 padding-portal">
 					<div class="col-sm-auto col-12">
@@ -1249,60 +1215,75 @@
 
 		<div class="tab-pane {% if params.current_tab == 'sklad' %}active{% endif %}" id="tab-sklad" role="tabpanel">
 			<div class="portal-panel no-padding">
+				
 				<h6 class="mb-3 padding-title">Остатки по модели {{ params.object.modification_autoru.model.mark.name|default:"" }} {{ params.object.modification_autoru.model.name|default:"" }} {{ params.object.complectation_autoru.name|default:"" }}</h6>
 				
-				<div class="row" style="padding-left: 0.5rem;">
+				<div class="row g-1 padding-portal" >
 					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.warehouse_scope == 'all' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=sklad&warehouse_scope=all{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
-								<span class="icon-mbri-add-submenu"></span> Все подразделения
-							</a>
-							<a class="btn btn-sm {% if params.warehouse_scope != 'all' %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=sklad&warehouse_scope=current{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
-								<span class="icon-mbri-home"></span>Текущее подразделение
-							</a>							
-						</div>
-					</div>
-					
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sclad_type < 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=0">
-							 <span class="icon-mbri-add-submenu"></span> Все модели
-						 </a>
-						</div>
-					</div>
-
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sclad_type > 0 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=1">
-							 <span class="icon-mbri-add-submenu"></span> Текущая модель
-						 </a>
-						</div>
-					</div>
-
-					<div class="col-auto">
-						<div class="mb-3">
-							<a class="btn btn-sm {% if params.sclad_type > 1 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-							   href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=2">
-								<span class="icon-mbri-home"></span>Текущая модификация
-							</a>
-						</div>
-					</div>
-					{% if params.object.complectation_autoru != None %}
-						<div class="col-auto">
-							<div class="mb-3">
-								<a class="btn btn-sm {% if params.sclad_type > 2 %}btn-info bg-gradient{% else %}btn-outline-info{% endif %}"
-								href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=3">
-									<span class="icon-mbri-home"></span>Текущая комплектация
-								</a>
+						<div class="metric-card">
+							<div class="metric-card-label"> Подразделение ДЦ</div>
+							<div class="row g-1">
+								<div class="col-auto">
+									<a class="{% if params.warehouse_scope == 'all' %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=sklad&warehouse_scope=all{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
+										<span class="icon-mbri-add-submenu"></span> Все подразделения
+									</a>
+								</div>
+								<div class="col-auto">
+									<a class="{% if params.warehouse_scope != 'all' %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=sklad&warehouse_scope=current{% if params.sclad_type %}&sclad_type={{ params.sclad_type }}{% endif %}">
+										<span class="icon-mbri-home"></span>Текущее подразделение
+									 </a>	
+								</div>
 							</div>
 						</div>
-					{% endif %}
+						
+					</div>
+					<div class="col-auto">
+						<div class="metric-card">
+							<div class="metric-card-label"> Вариант просмотра склада</div>
+							<div class="row g-1">
+								<div class="col-auto">
+									<div class="mb-3">
+										<a class="{% if params.sclad_type < 1 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=0">
+										<span class="icon-mbri-add-submenu"></span> Все модели
+									</a>
+									</div>
+								</div>
+			
+								<div class="col-auto">
+									<div class="mb-3">
+										<a class="{% if params.sclad_type > 0 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=1">
+										<span class="icon-mbri-add-submenu"></span> Текущая модель
+									</a>
+									</div>
+								</div>
+			
+								<div class="col-auto">
+									<div class="mb-3">
+										<a class="{% if params.sclad_type > 1 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+										href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=2">
+											<span class="icon-mbri-home"></span>Текущая модификация
+										</a>
+									</div>
+								</div>
+								{% if params.object.complectation_autoru != None %}
+									<div class="col-auto">
+										<div class="mb-3">
+											<a class="{% if params.sclad_type > 2 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+											href="?tab=sklad{% if params.warehouse_scope %}&warehouse_scope={{ params.warehouse_scope }}{% endif %}&sclad_type=3">
+												<span class="icon-mbri-home"></span>Текущая комплектация
+											</a>
+										</div>
+									</div>
+								{% endif %}
+							</div>
+						</div>
+					</div>
 				</div>
-				
+							
 				{% if params.sclad %}
 					<div class="table-responsive" style="margin: 0rem; padding: 0rem; border-radius: 1.2rem;">
 						<table class="table table-sm table-striped table-hover">
@@ -1322,7 +1303,7 @@
 							</thead>
 							<tbody>
 								{% for item in params.sclad %}
-								<tr>
+								<tr {% if item.vin == params.object.vin %} class="bg-success bg-opacity-50" {% endif %}>
 									<td>{{ item.unit.name|default:"—" }}</td>
 									<td>{{ item.modification_autoru.model.mark.name|default:"—" }} {{ item.modification_autoru.model.name|default:"—" }}</td>
 									<td>{{ item.modification_autoru.name|default:"—" }}</td>
@@ -1332,7 +1313,14 @@
 									<td>{{ item.days_in_stok|default:0 }} д.</td>
 									<td>{{ item.cost_price|floatformat:"2g"|default:"—" }} ₽</td>
 									<td>{{ item.price|floatformat:"2g"|default:"—" }} ₽</td>
-									<td><a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn btn-outline-secondary btn-sm">Карточка</a></td>
+									<td>
+										{% if item.vin == params.object.vin %} 
+											<a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn-calculate-sm">Выбранный</a>
+										{% else %}
+											<a href="{% url 'avtosalon:slug' item.slug %}?tab=avto" class="btn-calculate-sm">Карточка</a>
+										{% endif %}
+										
+									</td>
 								</tr>
 								{% endfor %}
 							</tbody>

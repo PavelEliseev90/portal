@@ -9,7 +9,8 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
-
+from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
+from documents.models import DocCarAgreement, DocZN, DocCarShipment
 from refs.models import AutoruMark, AutoruModel, RefStagePrice
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations
 
@@ -643,7 +644,24 @@ def discount_km_page(request):
 @login_required
 def calculations_list(request):
     
-    objects = CarCalculations.objects.all()
+    agreement_qs = (
+        DocCarAgreement.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
+        .order_by('-dataTime')
+    )
+    shipment_qs = (
+        DocCarShipment.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
+        .order_by('-dataTime')
+    )
+    objects = (
+        CarCalculations.objects.select_related('rlk', 'unit', 'car', 'author', 'staff')
+        .annotate(
+            agreement_pk=Subquery(agreement_qs.values('pk')[:1]),
+            agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
+            shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
+            shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
+        )
+        .order_by('-date')
+    )
     paginator = Paginator(objects, 25)
     page_number = request.GET.get('page') or 1
    
