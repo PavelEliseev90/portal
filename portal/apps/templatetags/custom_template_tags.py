@@ -74,9 +74,18 @@ def puth_photo_mobile_replace(context, **kwargs):
 
 @register.simple_tag(takes_context=True)
 def url_replace(context, **kwargs):
-    query = context['request'].GET.dict()
-    query.update(kwargs)
-    return urlencode(query)
+    """Сохраняет все значения GET (в т.ч. повторяющиеся ключи, например unit_ids)."""
+    request = context['request']
+    pairs = []
+    override_keys = set(kwargs.keys())
+    for key in request.GET.keys():
+        if key in override_keys:
+            continue
+        for val in request.GET.getlist(key):
+            pairs.append((key, val))
+    for k, v in kwargs.items():
+        pairs.append((k, str(v)))
+    return urlencode(pairs)
 
 
 @register.simple_tag(takes_context=True)
