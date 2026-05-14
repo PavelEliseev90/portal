@@ -650,9 +650,16 @@ def calculations_list(request):
     date_end = (request.GET.get('date_end') or '').strip()
     vin = (request.GET.get('vin') or '').strip()
     unit_ids = []
+    for raw in request.GET.getlist('unit[]'):
+        if str(raw).isdigit():
+            uid = int(raw)
+            if uid not in unit_ids:
+                unit_ids.append(uid)
     for raw in request.GET.getlist('unit_ids'):
         if str(raw).isdigit():
-            unit_ids.append(int(raw))
+            uid = int(raw)
+            if uid not in unit_ids:
+                unit_ids.append(uid)
     agreement_filters = set(request.GET.getlist('agreement_filter'))
     shipment_filters = set(request.GET.getlist('shipment_filter'))
 
