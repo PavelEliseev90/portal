@@ -194,68 +194,66 @@
 	</div>
 
 	
-	<div class="portal-panel" style="padding: 0;">
-		<div class="table-container">
-			<div class="table-responsive table-sticky">
-				<table class="table table-hover">
-					<thead>
+	<div class="portal-panel no-padding">
+		<div class="table-responsive portal-radius">
+			<table class="table table-sm table-striped table-hover mb-0">
+				<thead>
+					<tr>
+						<th class="text-white">#</th>
+						<th class="text-white">Номер / Дата</th>
+						<th class="text-white">Подразделение</th>
+						<th class="text-white">Клиент</th>
+						<th class="text-white">Автомобиль</th>
+						<th class="text-white">VIN</th>
+						<th class="text-white">Расчетный КМ</th>
+						<th class="text-white">Фактический КМ</th>
+						<th class="text-white">Цена</th>
+					</tr>
+					</thead>	
+					<tbody>
+					{% if params.paginator.object_list %}
+						{% for doc in params.paginator.object_list %}
 						<tr>
-						  <th class="text-white">#</th>
-						  <th class="text-white">Номер / Дата</th>
-						  <th class="text-white">Подразделение</th>
-						  <th class="text-white">Клиент</th>
-						  <th class="text-white">Автомобиль</th>
-						  <th class="text-white">VIN</th>
-						  <th class="text-white">Расчетный КМ</th>
-						  <th class="text-white">Фактический КМ</th>
-						  <th class="text-white">Цена</th>
+							<td data-label="Открыть">
+								<a href='{{doc.id}}/'><span class="icon-doc"></span></a>
+							</td>
+							<td data-label="Номер / Дата">
+								{{doc.dataTime}} / {{doc.nomer}}
+							</td>
+							<td data-label="Подразделение">
+								{{doc.unit.name}} 
+							</td>
+							<td data-label="Клиент">
+								{{doc.client.name|title}} 
+							</td>
+							<td data-label="Автомобиль">
+								{{doc.lo_mark}} {{doc.lo_model}} {{doc.lo_modification}}  / {{doc.lo_year}} г.в. {{doc.lo_run|floatformat:"0g"}} км. 
+							</td>
+							<td data-label="VIN">
+								{{doc.lo_vin}}  
+							</td>
+							<td data-label="Расчетный КМ">
+								{% if doc.check_estimated %} 
+									<span class="icon-mbri-success text-success"></span> 
+								{% else %} 
+									<span class="icon-mbri-close text-danger"></span>
+								{% endif %} 
+							</td>
+							<td data-label="Фактический КМ">
+								{% if doc.check_actual %} 
+									<span class="icon-mbri-success text-success"></span> 
+								{% else %} 
+									<span class="icon-mbri-close text-danger"></span>
+								{% endif %}  
+							</td>
+							<td data-label="Цена" class="text-end">
+								{{doc.amount|floatformat:"2g"}} &#8381;  
+							</td>
 						</tr>
-					  </thead>	
-					  <tbody>
-						{% if params.paginator.object_list %}
-							{% for doc in params.paginator.object_list %}
-							<tr>
-								<td data-label="Открыть">
-									<a href='{{doc.id}}/'><span class="icon-doc"></span></a>
-								</td>
-								<td data-label="Номер / Дата">
-									{{doc.dataTime}} / {{doc.nomer}}
-								</td>
-								<td data-label="Подразделение">
-									{{doc.unit.name}} 
-								</td>
-								<td data-label="Клиент">
-									{{doc.client.name|title}} 
-								</td>
-								<td data-label="Автомобиль">
-									{{doc.lo_mark}} {{doc.lo_model}} {{doc.lo_modification}}  / {{doc.lo_year}} г.в. {{doc.lo_run|floatformat:"0g"}} км. 
-								</td>
-								<td data-label="VIN">
-									{{doc.lo_vin}}  
-								</td>
-								<td data-label="Расчетный КМ">
-									{% if doc.check_estimated %} 
-										<span class="icon-mbri-success text-success"></span> 
-									{% else %} 
-										<span class="icon-mbri-close text-danger"></span>
-									{% endif %} 
-								</td>
-								<td data-label="Фактический КМ">
-									{% if doc.check_actual %} 
-										<span class="icon-mbri-success text-success"></span> 
-									{% else %} 
-										<span class="icon-mbri-close text-danger"></span>
-									{% endif %}  
-								</td>
-								<td data-label="Цена" class="text-end">
-									{{doc.amount|floatformat:"2g"}} &#8381;  
-								</td>
-							</tr>
-							{% endfor %}
-						{% endif %}
-					  </tbody>
-				</table>
-			</div>
+						{% endfor %}
+					{% endif %}
+					</tbody>
+			</table>			
 		</div>
 
 		<div class="row g-1" style="padding: 1rem;">
