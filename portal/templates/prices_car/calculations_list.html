@@ -17,77 +17,89 @@
         <div class="portal-panel">
             <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
 
-            <form method="get" action="">
-                <div class="row g-3 padding-title">
+            <form method="get" action="" id="calcListFilters">
+                <div class="row g-3 align-items-end padding-title">
                     <div class="col-sm-6 col-md-2">
-                        <div class="metric-card-label-portal">Дата начала</div>
+                        <label class="form-label text-muted small mb-1">Дата начала</label>
                         <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start }}">
                     </div>
                     <div class="col-sm-6 col-md-2">
-                        <div class="metric-card-label-portal">Дата окончания</div>
+                        <label class="form-label text-muted small mb-1">Дата окончания</label>
                         <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end }}">
                     </div>
                     <div class="col-sm-12 col-md-2">
-                        <div class="metric-card-label-portal">VIN</div>
+                        <label class="form-label text-muted small mb-1">VIN</label>
                         <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
                     </div>
 
-                    <div class="col-sm-12 col-md-4">
-                        <div class="metric-card-label-portal">Подразделения</div>
-                        <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto; background: #fff;">
-                            {% for unit in params.select_units %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="unit_ids" value="{{ unit.pk }}" id="unit_{{ unit.pk }}"
-                                    {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
-                                <label class="form-check-label" for="unit_{{ unit.pk }}">{{ unit.name }}</label>
+                    <div class="col-sm-12 col-md">
+                        <label class="form-label text-uppercase text-muted small">Подразделения</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcUnitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                {% for unit in params.select_units %}
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}"
+                                        {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
+                                    {{ unit.name }}
+                                </label>
+                                {% empty %}
+                                <span class="list-group-item text-muted small">Нет подразделений</span>
+                                {% endfor %}
                             </div>
-                            {% empty %}
-                            <span class="text-muted small">Нет подразделений</span>
-                            {% endfor %}
                         </div>
+                        <div id="calcSelectedUnits" class="mt-2"></div>
                     </div>
 
                     <div class="col-sm-6 col-md-2">
-                        <div class="metric-card-label-portal">Соглашение</div>
-                        <div class="border rounded p-2 bg-white">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="agreement_filter" value="yes" id="agr_yes"
-                                    {% if 'yes' in params.filtr.agreement_filter %}checked{% endif %}>
-                                <label class="form-check-label" for="agr_yes">Да</label>
-                            </div>
-                            <div class="form-check mb-0">
-                                <input class="form-check-input" type="checkbox" name="agreement_filter" value="no" id="agr_no"
-                                    {% if 'no' in params.filtr.agreement_filter %}checked{% endif %}>
-                                <label class="form-check-label" for="agr_no">Нет</label>
+                        <label class="form-label text-uppercase text-muted small">Соглашение</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcAgrSearch" placeholder="Да / Нет..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcAgrDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="agreement_filter" value="yes"
+                                        {% if 'yes' in params.filtr.agreement_filter %}checked{% endif %}>
+                                    Да
+                                </label>
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="agreement_filter" value="no"
+                                        {% if 'no' in params.filtr.agreement_filter %}checked{% endif %}>
+                                    Нет
+                                </label>
                             </div>
                         </div>
-                        <div class="small text-muted mt-1">Оба варианта — без фильтра по соглашению</div>
+                        <div id="calcSelectedAgr" class="mt-2"></div>
+                        <div class="small text-muted mt-1">Оба — без фильтра</div>
                     </div>
 
                     <div class="col-sm-6 col-md-2">
-                        <div class="metric-card-label-portal">Отгрузка</div>
-                        <div class="border rounded p-2 bg-white">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="shipment_filter" value="yes" id="shp_yes"
-                                    {% if 'yes' in params.filtr.shipment_filter %}checked{% endif %}>
-                                <label class="form-check-label" for="shp_yes">Да</label>
-                            </div>
-                            <div class="form-check mb-0">
-                                <input class="form-check-input" type="checkbox" name="shipment_filter" value="no" id="shp_no"
-                                    {% if 'no' in params.filtr.shipment_filter %}checked{% endif %}>
-                                <label class="form-check-label" for="shp_no">Нет</label>
+                        <label class="form-label text-uppercase text-muted small">Отгрузка</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcShpSearch" placeholder="Да / Нет..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcShpDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="shipment_filter" value="yes"
+                                        {% if 'yes' in params.filtr.shipment_filter %}checked{% endif %}>
+                                    Да
+                                </label>
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="shipment_filter" value="no"
+                                        {% if 'no' in params.filtr.shipment_filter %}checked{% endif %}>
+                                    Нет
+                                </label>
                             </div>
                         </div>
-                        <div class="small text-muted mt-1">Оба варианта — без фильтра по отгрузке</div>
+                        <div id="calcSelectedShp" class="mt-2"></div>
+                        <div class="small text-muted mt-1">Оба — без фильтра</div>
                     </div>
                 </div>
 
                 <div class="row g-2 padding-title pb-3">
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-primary btn-sm"><span class="icon-mbri-play"></span> Применить</button>
+                        <button type="submit" class="btn btn-success bg-gradient btn-sm"><span class="icon-mbri-play"></span> Применить</button>
                     </div>
                     <div class="col-auto">
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+                        <a class="btn btn-secondary bg-gradient btn-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
                     </div>
                 </div>
             </form>
@@ -116,23 +128,23 @@
                         {% for item in params.objects %}
                         <tr>
                             <td><a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark"><span class="icon-doc"></span></a></td>
-                            <td>{{ item.date }}</td>
-                            <td>{{ item.number }}</td>
-                            <td>{{ item.unit.name|default:"—" }}</td>
-                            <td>{% if item.rlk %}{{ item.rlk.nomer }}{% else %}—{% endif %}</td>
-                            <td>{{ item.car.name|default:"—" }}</td>
-                            <td>{{ item.car.vin|default:"—" }}</td>
-                            <td>{% if item.rlk %}{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}{% else %}—{% endif %}</td>
-                            <td>{{ item.author.name }}</td>
-                            <td class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
-                            <td>
+                            <td data-label="Дата">{{ item.date }}</td>
+                            <td data-label="Номер">{{ item.number }}</td>
+                            <td data-label="Подразделение">{{ item.unit.name|default:"—" }}</td>
+                            <td data-label="Рабочий лист">{% if item.rlk %}{{ item.rlk.nomer }}{% else %}—{% endif %}</td>
+                            <td data-label="Автомобиль">{{ item.car.name|default:"—" }}</td>
+                            <td data-label="VIN">{{ item.car.vin|default:"—" }}</td>
+                            <td data-label="Клиент">{% if item.rlk %}{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}{% else %}—{% endif %}</td>
+                            <td data-label="Автор">{{ item.author.name|default:"—" }}</td>
+                            <td data-label="КВ" class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
+                            <td data-label="Соглашение" class="text-nowrap">
                                 {% if item.agreement_pk %}
                                     <a href="/docs_car_agreement/{{ item.agreement_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.agreement_nomer|default:"—" }}</a>
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-label="Отгрузка" class="text-nowrap">
                                 {% if item.shipment_pk %}
                                     <a href="/docs_car_shipment/{{ item.shipment_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.shipment_nomer|default:"—" }}</a>
                                 {% else %}
@@ -183,5 +195,94 @@
 
     </div>
 </div>
+
+<script>
+(function() {
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function initMultiCheckboxFilter(searchId, dropdownId, selectedId) {
+    var searchInput = document.getElementById(searchId);
+    var dropdown = document.getElementById(dropdownId);
+    var selectedDiv = document.getElementById(selectedId);
+    if (!searchInput || !dropdown || !selectedDiv) return;
+
+    function updateSelected() {
+      var checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+      selectedDiv.innerHTML = '';
+      if (!checked.length) return;
+      selectedDiv.innerHTML = Array.prototype.map.call(checked, function(cb) {
+        var label = cb.closest('label');
+        var text = label ? label.textContent.trim() : '';
+        return '<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">' + escapeHtml(text) +
+          ' <button type="button" class="btn-close btn-close-white ms-1 calc-filter-remove" style="font-size: 0.65em;" data-cb-name="' + escapeHtml(cb.name) + '" data-cb-value="' + escapeHtml(cb.value) + '"></button></span>';
+      }).join('');
+    }
+
+    selectedDiv.addEventListener('click', function(e) {
+      var btn = e.target.closest('.calc-filter-remove');
+      if (!btn) return;
+      var nm = btn.getAttribute('data-cb-name');
+      var val = btn.getAttribute('data-cb-value');
+      dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(inp) {
+        if (inp.name === nm && inp.value === val) inp.checked = false;
+      });
+      updateSelected();
+    });
+
+    searchInput.addEventListener('input', function() {
+      var term = this.value.toLowerCase();
+      dropdown.querySelectorAll('label').forEach(function(item) {
+        item.style.display = item.textContent.toLowerCase().indexOf(term) !== -1 ? '' : 'none';
+      });
+    });
+
+    searchInput.addEventListener('focus', function() {
+      dropdown.style.display = 'block';
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      cb.addEventListener('change', updateSelected);
+    });
+
+    updateSelected();
+  }
+
+  function initCalcListForm() {
+    var form = document.getElementById('calcListFilters');
+    if (!form) return;
+    form.addEventListener('submit', function() {
+      form.querySelectorAll('input[type="hidden"][name="unit[]"]').forEach(function(el) { el.remove(); });
+      form.querySelectorAll('input[name="unit_ids"]:checked').forEach(function(cb) {
+        var h = document.createElement('input');
+        h.type = 'hidden';
+        h.name = 'unit[]';
+        h.value = cb.value;
+        form.appendChild(h);
+      });
+    });
+  }
+
+  function run() {
+    initMultiCheckboxFilter('calcUnitSearch', 'calcUnitDropdown', 'calcSelectedUnits');
+    initMultiCheckboxFilter('calcAgrSearch', 'calcAgrDropdown', 'calcSelectedAgr');
+    initMultiCheckboxFilter('calcShpSearch', 'calcShpDropdown', 'calcSelectedShp');
+    initCalcListForm();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+</script>
 
 {% endblock %}
