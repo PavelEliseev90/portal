@@ -2711,6 +2711,9 @@ def _deal_calc_unit_month_analytics(unit):
         now.strftime('%d.%m.%Y'),
     )
 
+    vp_chart_empty = {
+        'labels': [], 'zhelezo': [], 'dop': [], 'opfu': [], 'ti': [], 'sales': [], 'totals': [],
+    }
     analytics = {
         'cumulative_sum': 0,
         'udelka': 0,
@@ -2720,6 +2723,8 @@ def _deal_calc_unit_month_analytics(unit):
         'cumulative_sum_detail_udelka': dict(zero_udelka),
         'period_label': period_label,
         'unit_name': unit.name if unit else '',
+        'vp_by_model': vp_chart_empty,
+        'vp_by_model_json': json.dumps(vp_chart_empty, ensure_ascii=False),
     }
     if not unit or not unit.name:
         return analytics
@@ -2781,6 +2786,53 @@ def _deal_calc_unit_month_analytics(unit):
             'udelka_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cnt,
             'udelka_SummaGosreg': detail['sum_SummaGosreg'] / cnt,
         }
+
+    vp_rows = list(
+        q_unit.exclude(Model__isnull=True).exclude(Model='')
+        .values('Model')
+        .annotate(
+            zhelezo=Coalesce(Sum('SummaMarzhiBezNDS'), Value(0.0), output_field=FloatField()),
+            sum_rabot=Coalesce(Sum('SummaRabot'), Value(0.0), output_field=FloatField()),
+            sum_shiny=Coalesce(Sum('ValovayaPribylZChShiny'), Value(0.0), output_field=FloatField()),
+            sum_zch=Coalesce(Sum('ValovayaPribylZCh'), Value(0.0), output_field=FloatField()),
+            sum_gosreg=Coalesce(Sum('SummaGosreg'), Value(0.0), output_field=FloatField()),
+            opfu=Coalesce(Sum('VPOPFU'), Value(0.0), output_field=FloatField()),
+            ti=Coalesce(Sum('SummaTreydInPoPlanu'), Value(0.0), output_field=FloatField()),
+            sales=Coalesce(Count('VIN'), Value(0), output_field=IntegerField()),
+        )
+    )
+    vp_items = []
+    for row in vp_rows:
+        model_name = (row['Model'] or '—').strip()
+        zhelezo = float(row['zhelezo'] or 0)
+        dop = (
+            float(row['sum_rabot'] or 0) + float(row['sum_shiny'] or 0)
+            + float(row['sum_zch'] or 0) + float(row['sum_gosreg'] or 0)
+        )
+        opfu = float(row['opfu'] or 0)
+        ti = float(row['ti'] or 0)
+        total = zhelezo + dop + opfu + ti
+        vp_items.append({
+            'label': model_name,
+            'zhelezo': zhelezo,
+            'dop': dop,
+            'opfu': opfu,
+            'ti': ti,
+            'sales': int(row['sales'] or 0),
+            'total': total,
+        })
+    vp_items.sort(key=lambda item: abs(item['total']), reverse=True)
+    vp_chart = {
+        'labels': [item['label'] for item in vp_items],
+        'zhelezo': [item['zhelezo'] for item in vp_items],
+        'dop': [item['dop'] for item in vp_items],
+        'opfu': [item['opfu'] for item in vp_items],
+        'ti': [item['ti'] for item in vp_items],
+        'sales': [item['sales'] for item in vp_items],
+        'totals': [item['total'] for item in vp_items],
+    }
+    analytics['vp_by_model'] = vp_chart
+    analytics['vp_by_model_json'] = json.dumps(vp_chart, ensure_ascii=False)
 
     return analytics
 

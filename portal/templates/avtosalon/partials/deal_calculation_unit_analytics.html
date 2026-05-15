@@ -79,8 +79,73 @@
       </div>
       </div>
       </div>
+
+    <div class="col-12 mt-3">
+      <h6 class="text-muted mb-2">ВП по моделям</h6>
+      {% if params.analytics.vp_by_model.labels %}
+      <div style="position: relative; height: 360px; max-width: 100%;">
+        <canvas id="dealVpByModelChart"></canvas>
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">Нет продаж за выбранный период</p>
+      {% endif %}
+    </div>
+
   </div>
   
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+(function() {
+  var raw = '{{ params.analytics.vp_by_model_json|escapejs }}';
+  if (!raw) return;
+  var data;
+  try { data = JSON.parse(raw); } catch (e) { return; }
+  if (!data.labels || !data.labels.length) return;
+  var el = document.getElementById('dealVpByModelChart');
+  if (!el || typeof Chart === 'undefined') return;
+  function fmtK(v) {
+    if (Math.abs(v) >= 1000) return Math.round(v / 1000) + ' тыс.';
+    return String(Math.round(v));
+  }
+  new Chart(el.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [
+        { type: 'bar', label: 'Железо', data: data.zhelezo, backgroundColor: '#5bb9b4', stack: 'vp', order: 2 },
+        { type: 'bar', label: 'ДОП', data: data.dop, backgroundColor: '#6c757d', stack: 'vp', order: 2 },
+        { type: 'bar', label: 'ОПФУ', data: data.opfu, backgroundColor: '#e8836f', stack: 'vp', order: 2 },
+        { type: 'bar', label: 'ТИ', data: data.ti, backgroundColor: '#d4a84b', stack: 'vp', order: 2 },
+        { type: 'line', label: 'объем продаж [шт]', data: data.sales, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.12)', borderWidth: 2, borderDash: [4, 4], pointStyle: 'rect', pointRadius: 5, yAxisID: 'y1', order: 1 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              var v = ctx.parsed.y;
+              if (ctx.dataset.yAxisID === 'y1') return ' ' + ctx.dataset.label + ': ' + v + ' шт.';
+              return ' ' + ctx.dataset.label + ': ' + (v || 0).toLocaleString('ru-RU') + ' ₽';
+            },
+          },
+        },
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 45, minRotation: 0 } },
+        y: { stacked: true, title: { display: true, text: 'ВП, ₽' }, ticks: { callback: function(v) { return fmtK(v); } } },
+        y1: { position: 'right', beginAtZero: true, title: { display: true, text: 'шт.' }, grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } },
+      },
+    },
+  });
+})();
+</script>
 {% endif %}
+
