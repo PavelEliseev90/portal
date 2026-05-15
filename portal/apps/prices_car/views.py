@@ -644,7 +644,7 @@ def discount_km_page(request):
 @login_required
 def calculations_list(request):
     
-    select_units = RefUnit.objects.filter(buauto=False).order_by('name')
+    select_units = RefUnit.objects.filter(buauto=False, ib__active = True).order_by('name')
 
     date_start = (request.GET.get('date_start') or '').strip()
     date_end = (request.GET.get('date_end') or '').strip()

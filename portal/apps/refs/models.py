@@ -2152,7 +2152,7 @@ class RefCarsOrganization(models.Model):
                 from powerbi.models import Cumulative
                 dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
                 dt_start = dt_start.replace(day = 1, hour = 0, second = 1)
-                cum_korrection  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(Marka = self.modification_autoru.model.mark.name.upper()).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+                cum_korrection  = Cumulative.objects.filter(TipProdazhi = 'Розница').filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(Marka = self.modification_autoru.model.mark.name.upper()).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
                 cum_count       = cum_korrection.count()
                 cum_aggregate   = 0 
                 cum_sum         = 0 
@@ -2207,7 +2207,7 @@ class RefCarsOrganization(models.Model):
         if self.modification_autoru != None:
             model_list = AutoruModification.objects.filter(model = self.modification_autoru.model).values_list('idSite', flat=True)
             
-            sale_qs  = Cumulative.objects.filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(IDModifikatsii__in = model_list).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
+            sale_qs  = Cumulative.objects.filter(TipProdazhi = 'Розница').filter(DataProdazhi__gte = dt_start, DataProdazhi__lte = datetime.now()).filter(IDModifikatsii__in = model_list).filter(ListOtsenkiVIN = None).exclude(RRTS = '0')
             
             sale_all_model = sale_qs.filter(PodrazdelenieDTs = self.unit.name).count()
             if self.modification_autoru != None:

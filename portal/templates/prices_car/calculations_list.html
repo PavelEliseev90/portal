@@ -18,22 +18,22 @@
             <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
 
             <form method="get" action="" id="calcListFilters">
-                <div class="row g-3 align-items-end padding-title">
+                <div class="row g-3 padding-title">
                     <div class="col-sm-6 col-md-2">
-                        <label class="form-label text-muted small mb-1">Дата начала</label>
+                        <div class="metric-card-label-portal">Дата начала</div>
                         <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start }}">
                     </div>
                     <div class="col-sm-6 col-md-2">
-                        <label class="form-label text-muted small mb-1">Дата окончания</label>
+                        <div class="metric-card-label-portal">Дата окончания</div>
                         <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end }}">
                     </div>
                     <div class="col-sm-12 col-md-2">
-                        <label class="form-label text-muted small mb-1">VIN</label>
+                        <div class="metric-card-label-portal">VIN</div>
                         <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
                     </div>
 
                     <div class="col-sm-12 col-md">
-                        <label class="form-label text-uppercase text-muted small">Подразделения</label>
+                        <div class="metric-card-label-portal">Подразделения</div>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="calcUnitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
                             <div class="list-group position-absolute w-100 mt-1" id="calcUnitDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="col-sm-6 col-md-2">
-                        <label class="form-label text-uppercase text-muted small">Соглашение</label>
+                        <div class="metric-card-label-portal">Соглашение</div>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="calcAgrSearch" placeholder="Да / Нет..." autocomplete="off">
                             <div class="list-group position-absolute w-100 mt-1" id="calcAgrDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
@@ -69,11 +69,10 @@
                             </div>
                         </div>
                         <div id="calcSelectedAgr" class="mt-2"></div>
-                        <div class="small text-muted mt-1">Оба — без фильтра</div>
                     </div>
 
                     <div class="col-sm-6 col-md-2">
-                        <label class="form-label text-uppercase text-muted small">Отгрузка</label>
+                        <div class="metric-card-label-portal">Отгрузка</div>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="calcShpSearch" placeholder="Да / Нет..." autocomplete="off">
                             <div class="list-group position-absolute w-100 mt-1" id="calcShpDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
@@ -89,17 +88,16 @@
                                 </label>
                             </div>
                         </div>
-                        <div id="calcSelectedShp" class="mt-2"></div>
-                        <div class="small text-muted mt-1">Оба — без фильтра</div>
+                        <div id="calcSelectedShp" class="mt-2"></div>                       
                     </div>
                 </div>
 
-                <div class="row g-2 padding-title pb-3">
+                <div class="row g-2">
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-success bg-gradient btn-sm"><span class="icon-mbri-play"></span> Применить</button>
+                        <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
                     </div>
                     <div class="col-auto">
-                        <a class="btn btn-secondary bg-gradient btn-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+                        <a class="btn-calculate-secondary-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
                     </div>
                 </div>
             </form>
