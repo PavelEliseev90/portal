@@ -2686,6 +2686,105 @@ def info_js(request, slug):
     return JsonResponse(params, safe=False, status=status.HTTP_200_OK)
 
 
+def _deal_calc_unit_month_analytics(unit):
+    """ВП по подразделению за текущий месяц (розница, Cumulative)."""
+    zero_detail = {
+        'sum_SummaMarzhiBezNDS': 0,
+        'sum_VPOPFU': 0,
+        'sum_SummaTreydInPoPlanu': 0,
+        'sum_ValovayaPribylZChShiny': 0,
+        'sum_SummaRabot': 0,
+        'sum_ValovayaPribylZCh': 0,
+        'sum_SummaGosreg': 0,
+        'sum_count': 0,
+    }
+    zero_percent = {k: 0 for k in (
+        'sum_SummaMarzhiBezNDS', 'sum_VPOPFU', 'sum_SummaTreydInPoPlanu',
+        'sum_ValovayaPribylZChShiny', 'sum_SummaRabot', 'sum_ValovayaPribylZCh', 'sum_SummaGosreg',
+    )}
+    zero_udelka = {k.replace('sum_', 'udelka_'): 0 for k in zero_percent}
+
+    now = timezone.now()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    period_label = '{} — {}'.format(
+        month_start.strftime('%d.%m.%Y'),
+        now.strftime('%d.%m.%Y'),
+    )
+
+    analytics = {
+        'cumulative_sum': 0,
+        'udelka': 0,
+        'udelka_count': 0,
+        'cumulative_sum_detail': dict(zero_detail),
+        'cumulative_sum_detail_percent': dict(zero_percent),
+        'cumulative_sum_detail_udelka': dict(zero_udelka),
+        'period_label': period_label,
+        'unit_name': unit.name if unit else '',
+    }
+    if not unit or not unit.name:
+        return analytics
+
+    from powerbi.models import Cumulative
+
+    q_unit = Cumulative.objects.filter(
+        TipProdazhi='Розница',
+        DataProdazhi__gte=month_start,
+        DataProdazhi__lte=now,
+        SebestoimostPoDokumentu__gt=0,
+        PodrazdelenieDTs__icontains=unit.name,
+    )
+
+    detail = q_unit.aggregate(
+        sum_SummaMarzhiBezNDS=Sum('SummaMarzhiBezNDS'),
+        sum_VPOPFU=Sum('VPOPFU'),
+        sum_SummaTreydInPoPlanu=Sum('SummaTreydInPoPlanu'),
+        sum_ValovayaPribylZChShiny=Sum('ValovayaPribylZChShiny'),
+        sum_SummaRabot=Sum('SummaRabot'),
+        sum_ValovayaPribylZCh=Sum('ValovayaPribylZCh'),
+        sum_SummaGosreg=Sum('SummaGosreg'),
+        sum_count=Count('VIN'),
+    )
+    for key, val in detail.items():
+        detail[key] = val or 0
+
+    cumulative_sum = (
+        detail['sum_SummaMarzhiBezNDS'] + detail['sum_VPOPFU'] + detail['sum_SummaTreydInPoPlanu']
+        + detail['sum_ValovayaPribylZChShiny'] + detail['sum_SummaRabot'] + detail['sum_ValovayaPribylZCh']
+        + detail['sum_SummaGosreg']
+    )
+    analytics['cumulative_sum_detail'] = detail
+    analytics['cumulative_sum'] = cumulative_sum
+
+    if detail['sum_count'] > 0:
+        analytics['udelka'] = cumulative_sum / detail['sum_count']
+        analytics['udelka_count'] = detail['sum_count']
+
+    if cumulative_sum > 0:
+        analytics['cumulative_sum_detail_percent'] = {
+            'sum_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cumulative_sum * 100,
+            'sum_VPOPFU': detail['sum_VPOPFU'] / cumulative_sum * 100,
+            'sum_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cumulative_sum * 100,
+            'sum_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cumulative_sum * 100,
+            'sum_SummaRabot': detail['sum_SummaRabot'] / cumulative_sum * 100,
+            'sum_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cumulative_sum * 100,
+            'sum_SummaGosreg': detail['sum_SummaGosreg'] / cumulative_sum * 100,
+        }
+
+    if detail['sum_count'] > 0:
+        cnt = detail['sum_count']
+        analytics['cumulative_sum_detail_udelka'] = {
+            'udelka_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cnt,
+            'udelka_VPOPFU': detail['sum_VPOPFU'] / cnt,
+            'udelka_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cnt,
+            'udelka_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cnt,
+            'udelka_SummaRabot': detail['sum_SummaRabot'] / cnt,
+            'udelka_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cnt,
+            'udelka_SummaGosreg': detail['sum_SummaGosreg'] / cnt,
+        }
+
+    return analytics
+
+
 def _deal_calc_stock_by_models(car, unit_id=None):
     """Новые автомобили в наличии по моделям марки текущего авто."""
     empty = {'labels': [], 'values': [], 'total': 0, 'mark_name': ''}
@@ -2932,6 +3031,9 @@ def deal_calculation_doc(request, id):
         stock_chart_unit_name = calc.unit.name
     elif car and car.unit_id:
         stock_chart_unit_name = car.unit.name
+
+    analytics_unit = calc.unit or (car.unit if car else None)
+    params_analytics = _deal_calc_unit_month_analytics(analytics_unit)
     
     params.update({
         'car'               : car,
@@ -2940,6 +3042,7 @@ def deal_calculation_doc(request, id):
         'car_price_and_dop' : car_price_and_dop,
         'actions'           : actions,
         'action_sum'        : action_sum,
+        'analytics': params_analytics,
         'stock_chart_unit': stock_chart_unit,
         'stock_chart_all': stock_chart_all,
         'stock_chart_unit_name': stock_chart_unit_name,

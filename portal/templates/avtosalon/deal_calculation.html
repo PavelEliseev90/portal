@@ -224,36 +224,6 @@
 
         </div>
 
-        {% if params.stock_chart_unit_json %}
-        <div class="deal-section">
-          <h3 class="deal-section-title">Склад новых — {{ params.stock_chart_unit.mark_name }}</h3>
-          <div class="row g-3">
-            <div class="col-12 col-md-6">
-              <p class="small text-muted mb-2">
-                {{ params.stock_chart_unit_name|default:"Подразделение" }} · в наличии: <strong>{{ params.stock_chart_unit.total }}</strong>
-              </p>
-              <div style="max-width: 320px; margin: 0 auto;">
-                <canvas id="dealStockChartUnit" height="260"></canvas>
-              </div>
-              {% if not params.stock_chart_unit.total %}
-                <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
-              {% endif %}
-            </div>
-            <div class="col-12 col-md-6">
-              <p class="small text-muted mb-2">
-                Все подразделения · в наличии: <strong>{{ params.stock_chart_all.total }}</strong>
-              </p>
-              <div style="max-width: 320px; margin: 0 auto;">
-                <canvas id="dealStockChartAll" height="260"></canvas>
-              </div>
-              {% if not params.stock_chart_all.total %}
-                <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
         <div class="deal-section">
           <h6 class="deal-section-title mb-0">
             <a class="h6  d-flex align-items-center justify-content-between text-reset text-decoration-none"
@@ -340,6 +310,55 @@
           
 
         </div>
+
+        {% if params.stock_chart_unit_json %}
+        
+        <div class="deal-section">
+          <h6 class="deal-section-title mb-0">
+            <a class="h6  d-flex align-items-center justify-content-between text-reset text-decoration-none"
+               data-bs-toggle="collapse"
+               href="#dealStokCollapse"
+               role="button"
+               aria-expanded="true"
+               aria-controls="dealStokCollapse">
+              <span>Склад <span class="text-muted"> • {{ params.stock_chart_unit.mark_name }}</span></span>
+              <span class="icon-mbri-down small opacity-75"></span>
+            </a>
+          </h6>
+
+          <div id="dealStokCollapse" class="collapse mt-3">
+            
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <p class="small text-muted mb-2">
+                  {{ params.stock_chart_unit_name|default:"Подразделение" }} · в наличии: <strong>{{ params.stock_chart_unit.total }}</strong>
+                </p>
+                <div style="max-width: 320px; margin: 0 auto;">
+                  <canvas id="dealStockChartUnit" height="260"></canvas>
+                </div>
+                {% if not params.stock_chart_unit.total %}
+                  <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
+                {% endif %}
+              </div>
+              <div class="col-12 col-md-6">
+                <p class="small text-muted mb-2">
+                  Все подразделения · в наличии: <strong>{{ params.stock_chart_all.total }}</strong>
+                </p>
+                <div style="max-width: 320px; margin: 0 auto;">
+                  <canvas id="dealStockChartAll" height="260"></canvas>
+                </div>
+                {% if not params.stock_chart_all.total %}
+                  <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
+                {% endif %}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        {% endif %}
+
+        {% include 'avtosalon/partials/deal_calculation_unit_analytics.html' %}
 
         {% if params.calc.user != None %}
           <div class="deal-section">
@@ -635,7 +654,39 @@
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              font: { size: 11 },
+              generateLabels: function(chart) {
+                const ds = chart.data.datasets[0];
+                const total = ds.data.reduce(function(a, b) { return a + b; }, 0);
+                return chart.data.labels.map(function(label, i) {
+                  const count = ds.data[i];
+                  const pct = total ? Math.round((count / total) * 100) : 0;
+                  return {
+                    text: label + ' — ' + count + ' (' + pct + '%)',
+                    fillStyle: ds.backgroundColor[i],
+                    strokeStyle: ds.backgroundColor[i],
+                    lineWidth: 0,
+                    hidden: !chart.getDataVisibility(i),
+                    index: i,
+                  };
+                });
+              },
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const v = ctx.parsed;
+                const total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                const pct = total ? Math.round((v / total) * 100) : 0;
+                return ' ' + ctx.label + ': ' + v + ' (' + pct + '%)';
+              },
+            },
+          },
         },
       },
     });
