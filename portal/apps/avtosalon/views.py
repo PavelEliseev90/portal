@@ -1369,6 +1369,13 @@ def price_edit(request, slug):
 @login_required
 def price(request, slug):
     
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
     car = RefCarsOrganization.objects.filter(slug=slug).select_related(
         'unit', 'complectation_autoru', 'modification_autoru',
         'modification_autoru__model', 'modification_autoru__model__mark',
@@ -2682,6 +2689,13 @@ def info_js(request, slug):
 @login_required
 def deal_calculation(request):
     
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
     try:
         from analytics.models import TradeInFunnel
     except ImportError:
@@ -2779,6 +2793,13 @@ def deal_calculation(request):
 
 @login_required
 def deal_calculation_doc(request, id):
+    
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
     
     try:
         from analytics.models import TradeInFunnel

@@ -2130,12 +2130,12 @@ class RefCarsOrganization(models.Model):
                 data_infocars_mark = RefCarsOrganization.objects.filter(modification_autoru__model__mark = self.modification_autoru.model.mark).filter(is_new = True).exclude(quantity = 0).exclude(price = 0).aggregate(Sum('price'), Count('id'))
                 if data_infocars_mark['price__sum'] != None and data_infocars_mark['id__count'] > 0:                
                     km_brand_automatic          = info['brand_km'].km / (data_infocars_mark['price__sum'] / data_infocars_mark['id__count'] ) * 100
-                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_brand_automatic_stage    = round(km_brand_automatic, 2) * float(data.km_index)
                     km_min_automatic            = self.price * km_brand_automatic_stage / 100
                     description                 = "Автоматический минимальный км " + self.modification_autoru.model.mark.name + " - " + str(data_infocars_mark['id__count']) + " шт. на сумму РРЦ " + '{:,}'.format(data_infocars_mark['price__sum']).replace(',', ' ')  + " руб."
                 else:
                     km_brand_automatic          = info['brand_km'].km
-                    km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                    km_brand_automatic_stage    = round(km_brand_automatic, 2) * float(data.km_index)
                     km_min_automatic            = self.price * km_brand_automatic_stage / 100
                     if km_min_automatic == 0:
                         km_min_automatic = km_brand_automatic
@@ -2168,9 +2168,9 @@ class RefCarsOrganization(models.Model):
                     cum_sum = cum_sum + cum_data
                     rrc = 0 if cum_info.RRTS == None else float(cum_info.RRTS)
                     cum_aggregate = cum_aggregate + rrc
-                km_sale = cum_sum / cum_count            
+                km_sale = round(cum_sum, 2) / cum_count            
                 km_brand_automatic = km_sale / (cum_aggregate / cum_count) * 100
-                km_brand_automatic_stage    = float(km_brand_automatic) * float(data.km_index)
+                km_brand_automatic_stage    = round(km_brand_automatic, 2) * float(data.km_index)
                 km_min_automatic_2            = self.price * km_brand_automatic_stage / 100
                 if km_min_automatic_2 == 0:
                     km_min_automatic_2 = km_sale
