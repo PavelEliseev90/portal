@@ -149,13 +149,57 @@
               </div>
             </div>
 
-          </div>             
+          </div>
+
+          <div class="row g-1">
+            <div class="col-2">
+              <div class="metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-home"></span> ЦГ</div>
+                <div class="metric-card-value">{{params.car.group_price.name|default:"-"}}</div>
+              </div>
+            </div>
+            <div class="col-2">
+              <div class="metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-home"></span> Этап</div>
+                <div class="metric-card-value">{{params.car.stage_price.name|default:"-"}}</div>
+              </div>
+            </div>
+            <div class="col-2">
+              <div class="metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-home"></span> На складе</div>
+                <div class="metric-card-value">{{params.car.days_in_stok}} д.</div>
+              </div>
+            </div>
+            <div class="col-2">
+              <div class="metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-home"></span> Себес. + ДОП</div>
+                <div class="metric-card-value">{{params.car_price_and_dop|floatformat:"2g"}} ₽</div>
+              </div>
+            </div>
+            <div class="col-2">
+              <div class="metric-card">
+                <div class="metric-card-label"><span class="icon-mbri-home"></span> РРЦ</div>
+                <div class="metric-card-value">{{params.car.price|floatformat:"2g"}} ₽</div>
+              </div>
+            </div>
+          </div>           
 
         </div>
 
         <div class="deal-section">
-          <h3 class="deal-section-title">Примененные акции</h3>
-          
+          <h6 class="deal-section-title mb-0">
+            <a class="h6  d-flex align-items-center justify-content-between text-reset text-decoration-none"
+               data-bs-toggle="collapse"
+               href="#dealActionsCollapse"
+               role="button"
+               aria-expanded="true"
+               aria-controls="dealActionsCollapse">
+              <span>Примененные акции <span class="text-muted"> • {{ params.actions|length }}</span></span>
+              <span class="icon-mbri-down small opacity-75"></span>
+            </a>
+          </h6>
+
+          <div id="dealActionsCollapse" class="collapse mt-3">
             {% for action in params.actions %}
               <div class="row g-1 bg-danger bg-opacity-10 bg-gradient" style="margin: 0.2rem; border-radius: 0.5rem;">
                 <div class="col-12 col-sm-5">
@@ -176,80 +220,124 @@
                 </div>
               </div>
             {% endfor %}
-       
+          </div>
+
         </div>
 
+        {% if params.stock_chart_unit_json %}
         <div class="deal-section">
-          <h6 class="deal-section-title">Расчетные данные - КВП • {{params.calc.kvp|floatformat:"2g"}} ₽</h6>
+          <h3 class="deal-section-title">Склад новых — {{ params.stock_chart_unit.mark_name }}</h3>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <p class="small text-muted mb-2">
+                {{ params.stock_chart_unit_name|default:"Подразделение" }} · в наличии: <strong>{{ params.stock_chart_unit.total }}</strong>
+              </p>
+              <div style="max-width: 320px; margin: 0 auto;">
+                <canvas id="dealStockChartUnit" height="260"></canvas>
+              </div>
+              {% if not params.stock_chart_unit.total %}
+                <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
+              {% endif %}
+            </div>
+            <div class="col-12 col-md-6">
+              <p class="small text-muted mb-2">
+                Все подразделения · в наличии: <strong>{{ params.stock_chart_all.total }}</strong>
+              </p>
+              <div style="max-width: 320px; margin: 0 auto;">
+                <canvas id="dealStockChartAll" height="260"></canvas>
+              </div>
+              {% if not params.stock_chart_all.total %}
+                <p class="text-muted small text-center mb-0">Нет автомобилей в наличии</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="deal-section">
+          <h6 class="deal-section-title mb-0">
+            <a class="h6  d-flex align-items-center justify-content-between text-reset text-decoration-none"
+               data-bs-toggle="collapse"
+               href="#dealKVPCollapse"
+               role="button"
+               aria-expanded="true"
+               aria-controls="dealKVPCollapse">
+              <span>Расчетные данные - КВП <span class="text-muted"> • {{params.calc.kvp|floatformat:"2g"}} ₽</span></span>
+              <span class="icon-mbri-down small opacity-75"></span>
+            </a>
+          </h6>
           <input type="number" hidden class="form-control" id="car_price_and_dop" name="car_price_and_dop" placeholder="0" value="{{params.car_price_and_dop}}" autocomplete="off" >                 
           <input type="number" hidden class="form-control" id="calc_price" name="calc_price" placeholder="0" value="{{params.car_price_and_dop}}" autocomplete="off" >                 
           
-         
-
-          <div class="row g-1 h-100">
-            <div class="col-12 col-sm-4 " >
-              <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
-                <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВП </div>
-                <div class="metric-card-value-portal"> • {{params.calc.kvp|floatformat:"2g"}} ₽</div>
-              </div>
-              
-            </div>
-            {% for detail in params.calc.detail %}
+          <div id="dealKVPCollapse" class="collapse mt-3">
+            <div class="row g-1 h-100">
               <div class="col-12 col-sm-4 " >
                 <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
-                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
-                  <div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
+                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВП </div>
+                  <div class="metric-card-value-portal"> • {{params.calc.kvp|floatformat:"2g"}} ₽</div>
                 </div>
                 
               </div>
-            {% endfor %}
-          </div>
-
-          <div class="row g-1 d-none">
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-mbri-calendar"></span> Скидка ДЦ</div>											
-                <input type="number" class="form-control" id="custom_discount" name="custom_discount" placeholder="0" value="{{params.calc.discount}}" autocomplete="off" >                 
-              </div>                         
+              {% for detail in params.calc.detail %}
+                <div class="col-12 col-sm-4 " >
+                  <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
+                    <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
+                    <div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
+                  </div>
+                  
+                </div>
+              {% endfor %}
             </div>
-            
+  
             <div class="row g-1 d-none">
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-mbri-calendar"></span> ОПФУ</div>											
-                <input type="number" class="form-control" id="custom_opfu" name="custom_opfu" placeholder="0" value="{{params.calc.custom_opfu}}" autocomplete="off" >                 
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-mbri-calendar"></span> Скидка ДЦ</div>											
+                  <input type="number" class="form-control" id="custom_discount" name="custom_discount" placeholder="0" value="{{params.calc.discount}}" autocomplete="off" >                 
+                </div>                         
               </div>
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-truck"></span> Trade-in</div>											
-                <input type="number" class="form-control" id="custom_tradein" name="custom_tradein" placeholder="0" value="{{params.calc.custom_tradein}}" autocomplete="off" >                 
+              
+              <div class="row g-1 d-none">
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-mbri-calendar"></span> ОПФУ</div>											
+                  <input type="number" class="form-control" id="custom_opfu" name="custom_opfu" placeholder="0" value="{{params.calc.custom_opfu}}" autocomplete="off" >                 
+                </div>
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-truck"></span> Trade-in</div>											
+                  <input type="number" class="form-control" id="custom_tradein" name="custom_tradein" placeholder="0" value="{{params.calc.custom_tradein}}" autocomplete="off" >                 
+                </div>
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-cd"></span> Шины</div>										
+                  <input type="number" class="form-control" id="custom_wheels" name="custom_wheels" placeholder="0" value="{{params.calc.custom_wheels}}" autocomplete="off" >                 
+                </div>                  
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-mbri-edit"></span> Гос. рег.</div>										
+                  <input type="number" class="form-control" id="custom_grz" name="custom_grz" placeholder="0" value="{{params.calc.custom_grz}}" autocomplete="off" >                 
+                </div> 
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-mbri-setting"></span> Работы</div>										
+                  <input type="number" class="form-control" id="custom_work" name="custom_work" placeholder="0" value="{{params.calc.custom_work}}" autocomplete="off" >                 
+                </div> 
+                <div class="col-12 col-sm-2 metric-card">
+                  <div class="metric-card-label"><span class="icon-mbri-shopping-bag"></span> Запчасти</div>										
+                  <input type="number" class="form-control" id="custom_product" name="custom_product" placeholder="0" value="{{params.calc.custom_product}}" autocomplete="off" >                 
+                </div>                  
               </div>
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-cd"></span> Шины</div>										
-                <input type="number" class="form-control" id="custom_wheels" name="custom_wheels" placeholder="0" value="{{params.calc.custom_wheels}}" autocomplete="off" >                 
-              </div>                  
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-mbri-edit"></span> Гос. рег.</div>										
-                <input type="number" class="form-control" id="custom_grz" name="custom_grz" placeholder="0" value="{{params.calc.custom_grz}}" autocomplete="off" >                 
+              
+              <div class=" metric-card d-none">
+                <div class="metric-card-label"><span class="icon-mbri-edit"></span> Комментарий</div>										
+                <input type="text" class="form-control" id="comment" name="comment" placeholder="-" value="{{params.calc.comment}}" autocomplete="off" >                 
               </div> 
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-mbri-setting"></span> Работы</div>										
-                <input type="number" class="form-control" id="custom_work" name="custom_work" placeholder="0" value="{{params.calc.custom_work}}" autocomplete="off" >                 
-              </div> 
-              <div class="col-12 col-sm-2 metric-card">
-                <div class="metric-card-label"><span class="icon-mbri-shopping-bag"></span> Запчасти</div>										
-                <input type="number" class="form-control" id="custom_product" name="custom_product" placeholder="0" value="{{params.calc.custom_product}}" autocomplete="off" >                 
-              </div>                  
-            </div>
-            
-            <div class=" metric-card d-none">
-              <div class="metric-card-label"><span class="icon-mbri-edit"></span> Комментарий</div>										
-              <input type="text" class="form-control" id="comment" name="comment" placeholder="-" value="{{params.calc.comment}}" autocomplete="off" >                 
-            </div> 
-            
-            
-            <div class="mt-3 d-none">
-              <button type="submit" class="btn btn-calculate w-100">
-                Сохранить калькуляцию
-              </button>
-            </div>
+              
+              
+              <div class="mt-3 d-none">
+                <button type="submit" class="btn btn-calculate w-100">
+                  Сохранить калькуляцию
+                </button>
+              </div>
+          </div>
+         
+
+          
 
         </div>
 
@@ -524,6 +612,46 @@
     }
   });
 </script>
+
+{% if params.stock_chart_unit_json %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+  const chartColors = ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#6366f1'];
+
+  function renderStockDoughnut(canvasId, chartData) {
+    const el = document.getElementById(canvasId);
+    if (!el || !chartData || !chartData.labels || !chartData.labels.length) return;
+    new Chart(el.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          data: chartData.values,
+          backgroundColor: chartColors.slice(0, chartData.labels.length),
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
+  try {
+    const unitData = JSON.parse('{{ params.stock_chart_unit_json|escapejs }}');
+    const allData = JSON.parse('{{ params.stock_chart_all_json|escapejs }}');
+    renderStockDoughnut('dealStockChartUnit', unitData);
+    renderStockDoughnut('dealStockChartAll', allData);
+  } catch (e) {
+    console.warn('deal stock charts:', e);
+  }
+})();
+</script>
+{% endif %}
 
 {% endblock %}
 

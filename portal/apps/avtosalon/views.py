@@ -2686,6 +2686,38 @@ def info_js(request, slug):
     return JsonResponse(params, safe=False, status=status.HTTP_200_OK)
 
 
+def _deal_calc_stock_by_models(car, unit_id=None):
+    """Новые автомобили в наличии по моделям марки текущего авто."""
+    empty = {'labels': [], 'values': [], 'total': 0, 'mark_name': ''}
+    if not car or not car.modification_autoru_id:
+        return empty
+    model = car.modification_autoru.model
+    if not model or not model.mark_id:
+        return empty
+
+    mark_name = model.mark.name if model.mark_id else ''
+    qs = RefCarsOrganization.objects.exclude(quantity=0).filter(
+        is_new=True,
+        modification_autoru__model__mark_id=model.mark_id,
+    )
+    if unit_id:
+        qs = qs.filter(unit_id=unit_id)
+
+    rows = list(
+        qs.values('modification_autoru__model__name')
+        .annotate(count=Count('id'))
+        .order_by('-count', 'modification_autoru__model__name')
+    )
+    labels = [(row['modification_autoru__model__name'] or '—') for row in rows]
+    values = [row['count'] for row in rows]
+    return {
+        'labels': labels,
+        'values': values,
+        'total': sum(values),
+        'mark_name': mark_name,
+    }
+
+
 @login_required
 def deal_calculation(request):
     
@@ -2812,7 +2844,10 @@ def deal_calculation_doc(request, id):
         'request': request,
     }
     
-    calc    = CarCalculations.objects.get(pk = id) 
+    calc    = CarCalculations.objects.select_related(
+        'unit', 'car', 'car__unit',
+        'car__modification_autoru', 'car__modification_autoru__model', 'car__modification_autoru__model__mark',
+    ).get(pk=id)
     car     = calc.car
     if request.method == 'POST':
         new_object =  calc
@@ -2888,6 +2923,15 @@ def deal_calculation_doc(request, id):
     action_sum = RefCarsOrganizationAction.objects.filter(car = car).aggregate(
                 sum_amount=Sum("amount")  
             )['sum_amount']
+
+    unit_id = calc.unit_id or (car.unit_id if car else None)
+    stock_chart_unit = _deal_calc_stock_by_models(car, unit_id=unit_id)
+    stock_chart_all = _deal_calc_stock_by_models(car, unit_id=None)
+    stock_chart_unit_name = ''
+    if calc.unit_id:
+        stock_chart_unit_name = calc.unit.name
+    elif car and car.unit_id:
+        stock_chart_unit_name = car.unit.name
     
     params.update({
         'car'               : car,
@@ -2896,6 +2940,11 @@ def deal_calculation_doc(request, id):
         'car_price_and_dop' : car_price_and_dop,
         'actions'           : actions,
         'action_sum'        : action_sum,
+        'stock_chart_unit': stock_chart_unit,
+        'stock_chart_all': stock_chart_all,
+        'stock_chart_unit_name': stock_chart_unit_name,
+        'stock_chart_unit_json': json.dumps(stock_chart_unit, ensure_ascii=False),
+        'stock_chart_all_json': json.dumps(stock_chart_all, ensure_ascii=False),
         'cumulative_data' : car.cumulative_data(),
         'selected_opfu_services': selected_opfu_services,
         'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
