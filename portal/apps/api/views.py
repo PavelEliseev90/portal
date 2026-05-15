@@ -3314,6 +3314,13 @@ def exchange(request):
     list_surveys            = list()
     list_resource_plannings = list()
     list_smss               = list()
+    list_calculation_cars   = list()
+
+    #Коммерческие предложения 
+    if 'CalculationCars' in data:
+        calculation_cars = data['CalculationCars']
+        if len(calculation_cars) > 0:
+            list_calculation_cars = load_calculation_cars(calculation_cars)
 
     #Сотрудники
     staffs  = data['Staffs']
@@ -3409,6 +3416,7 @@ def exchange(request):
         'Surveys'           : list_surveys,
         'ResourcePlannings' : list_resource_plannings,
         'SMSS'              : list_smss,
+        'CalculationCars'   : list_calculation_cars,
         'Answer'            : answer,
     }   
 
@@ -3574,6 +3582,21 @@ def load_cars(cars):
             answer_data.append(answer)
         except:
             error = car
+    return answer_data
+
+def load_calculation_cars(calculation_cars):
+    
+    answer_data = list()
+    for calculation_car in calculation_cars:
+        try:
+            calculation_car_object = get_calculation_car(calculation_car)
+            answer = {
+                'Uin'       : calculation_car_object.uin,
+                'Version'   : calculation_car['Version']
+            }
+            answer_data.append(answer)
+        except:
+            error = calculation_car
     return answer_data
 
 def load_сustomers(сustomers):
@@ -4869,6 +4892,59 @@ def get_filial(json_filial):
     filial.save()
 
     return filial
+
+def get_calculation_car(data):
+    
+    unit_object     = get_unit(data["Car"]["Unit"])
+    car_object      = get_car_object(data["Car"], unit_object)
+    rlk_object      = get_worksheet(data["Rlk"])
+    uin             = data['Uin'] 
+    calculation_object, created = CarCalculations.objects.filter(uin = uin).get_or_create(uin = uin)
+
+    calculation_object.rlk = rlk_object
+    calculation_object.car = car_object
+    calculation_object.unit = unit_object
+    calculation_object.date = DT.datetime.strptime(data['Date'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_success = DT.datetime.strptime(data['Date_success'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_refresh = DT.datetime.strptime(data['Date_refresh'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.number = data['Number']
+    calculation_object.rejection    = data['Rejection']
+    calculation_object.author       = get_staff(data['Author'])
+    calculation_object.staff        = get_staff(data['Staff'])
+    calculation_object.kvp          = data['Kvp']
+    calculation_object.amount       = data['Amount']
+    calculation_object.save()
+
+    CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
+
+    list_detail = data['Detail']
+
+    for detail_info in list_detail:
+        type_detail, created = CarCalculationsTypeDetail.objects.filter(name = detail_info['Type']).get_or_create(name = detail_info['Type'])
+        new_cal_detail = CarCalculationsDetail()
+        new_cal_detail.calculation = calculation_object
+        new_cal_detail.detail_type  = type_detail
+        new_cal_detail.success      = detail_info['Success']
+        new_cal_detail.amount       = detail_info['Amount']
+        new_cal_detail.vp           = detail_info['Vp']
+        new_cal_detail.pocazatel    = detail_info['Pocazatel']
+        new_cal_detail.amount_k     = detail_info['Amount_k']
+        new_cal_detail.save()
+    
+    RefCarsOrganizationAction.objects.filter(car = car_object).delete()
+
+    list_action = data['Action']
+    for action_info in list_action:
+        new_action_detail = RefCarsOrganizationAction()
+        new_action_detail.car       = car_object
+        new_action_detail.name      = action_info['Name']
+        new_action_detail.comment   = action_info['Comment']
+        new_action_detail.amount_sale = action_info['Amount_sale']
+        new_action_detail.amount_comp = action_info['Amount_comp']        
+        new_action_detail.save()
+
+    return calculation_object
+
 
 def get_сustomer(json_customer):
     

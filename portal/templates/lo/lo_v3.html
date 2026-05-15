@@ -7176,1004 +7176,953 @@
 
                   </div>
                   {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
-                      
-                  <form method="post" enctype="multipart/form-data" >
-    
-                      {% csrf_token %}
-                      
-                      <input hidden name="save_test_drive" id="save_test_drive" value="save_test_drive" type="text">
-                      
-                      <div class="portal-panel bg-primary bg-opacity-10 ">
-                        <div class="">
-                          <h6><span class="icon-mbri-bulleted-list"></span> Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД.</h6>
-                          <h6 class="text-danger">Обязательно для заполнения.</h6>
-                          <hr class="my-3">
-          
-                            <div class="">
-                      
-                              <div class="">
-                                
-                                <h6><span class="icon-mbri-info"></span> Пробная поездка (заполняется оценщиком)</h6><div class="row align-items-center align-self-center">
-                                  <div class="col-sm-auto">
-                                    <label for="no_test">Тест - драйв не производился</label>
-                                  </div>
-                                  <div class="col-sm-auto">
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="no_test" id="no_test" value="true" {% if params.estimation.page_test_drive.no_test %} checked {% endif %} aria-label="...">              
-                                    </div>
-                                  </div>
-                                  
-                                </div>
-                                <hr class="my-3">
+                  <fieldset {% if params.interactiv_rlk.status.id == 8 or params.interactiv_rlk.status.id == 10 %} disabled {% endif %}>   
+                    <form method="post" enctype="multipart/form-data" >
+      
+                        {% csrf_token %}
+                        
+                        <input hidden name="save_test_drive" id="save_test_drive" value="save_test_drive" type="text">
+                        
+                        <div class="portal-panel bg-primary bg-opacity-10 ">
+                          <div class="">
+                            <h6><span class="icon-mbri-bulleted-list"></span> Заключение специалиста отдела оценки на основании осмотра автомобиля, проведенной тестовой поездки, результата КД.</h6>
+                            <h6 class="text-danger">Обязательно для заполнения.</h6>
+                            <hr class="my-3">
             
-                                  <div class="portal-panel">
+                              <div class="">
+                        
+                                <div class="">
                                   
-                                    <div class="col">
-                                        Разгонная динамика, посторонние шумы, вибрации при движении
+                                  <h6><span class="icon-mbri-info"></span> Пробная поездка (заполняется оценщиком)</h6><div class="row align-items-center align-self-center">
+                                    <div class="col-sm-auto">
+                                      <label for="no_test">Тест - драйв не производился</label>
                                     </div>
-    
-                                    <div class="kors-btn-group-wrapper-simple">
-                                      <div class="kors-btn-group-compact" role="group" aria-label="Разгонная динамика">
-                                        <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio1_pp_dinamyc" value="1" {% if params.estimation.page_test_drive.pp_dinamyc == 1 %} checked {% endif %}>
-                                        <label class="btn btn-outline-success" for="inlineRadio1_pp_dinamyc">Норма</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio2_pp_dinamyc" value="0" {% if params.estimation.page_test_drive.pp_dinamyc == 0 %} checked {% endif %}>
-                                        <label class="btn btn-outline-danger" for="inlineRadio2_pp_dinamyc">Ремонт</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio3_pp_dinamyc" value="2" {% if params.estimation.page_test_drive.pp_dinamyc == 2 %} checked {% endif %}>
-                                        <label class="btn btn-outline-warning" for="inlineRadio3_pp_dinamyc">Диагностика</label>
+                                    <div class="col-sm-auto">
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="no_test" id="no_test" value="true" {% if params.estimation.page_test_drive.no_test %} checked {% endif %} aria-label="...">              
                                       </div>
-                                    </div>
-    
-                                  </div>
-                                  
-                                  <div class="portal-panel">
-                                  
-                                    <div class="col">
-                                      Плавность включения передач (автомобили с МКПП и АКПП, проверка CVT во всех режимах), все передачи
-                                    </div>
-    
-                                    <div class="kors-btn-group-wrapper-simple">
-                                      <div class="kors-btn-group-compact" role="group" aria-label="Плавность включения передач">
-                                        <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio1_pp_kpp" value="1" {% if params.estimation.page_test_drive.pp_kpp == 1 %} checked {% endif %}>
-                                        <label class="btn btn-outline-success" for="inlineRadio1_pp_kpp">Норма</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio2_pp_kpp" value="0" {% if params.estimation.page_test_drive.pp_kpp == 0 %} checked {% endif %}>
-                                        <label class="btn btn-outline-danger" for="inlineRadio2_pp_kpp">Ремонт</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio3_pp_kpp" value="2" {% if params.estimation.page_test_drive.pp_kpp == 2 %} checked {% endif %}>
-                                        <label class="btn btn-outline-warning" for="inlineRadio3_pp_kpp">Диагностика</label>
-                                      </div>
-                                    </div>
-    
-                                  </div>
-                                  
-                                  
-                                  <div class="portal-panel">
-                                  
-                                    <div class="col">
-                                      Увод от прямолинейного движения
-                                    </div>
-    
-                                    <div class="kors-btn-group-wrapper-simple">
-                                      <div class="kors-btn-group-compact" role="group" aria-label="Увод от прямолинейного движения">
-                                        <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio1_pp_uvod" value="1" {% if params.estimation.page_test_drive.pp_uvod == 1 %} checked {% endif %}>
-                                        <label class="btn btn-outline-success" for="inlineRadio1_pp_uvod">Норма</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio2_pp_uvod" value="0" {% if params.estimation.page_test_drive.pp_uvod == 0 %} checked {% endif %}>
-                                        <label class="btn btn-outline-danger" for="inlineRadio2_pp_uvod">Ремонт</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio3_pp_uvod" value="2" {% if params.estimation.page_test_drive.pp_uvod == 2 %} checked {% endif %}>
-                                        <label class="btn btn-outline-warning" for="inlineRadio3_pp_uvod">Диагностика</label>
-                                      </div>
-                                    </div>
-    
-                                  </div>
-                                  
-
-                                  <div class="portal-panel">
-                                  
-                                    <div class="col">
-                                      Работа измерительных приборов и указателей (исправность, корректность показаний)
-                                    </div>
-    
-                                    <div class="kors-btn-group-wrapper-simple">
-                                      <div class="kors-btn-group-compact" role="group" aria-label="Работа измерительных приборов">
-                                        <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio1_pp_pribor" value="1" {% if params.estimation.page_test_drive.pp_pribor == 1 %} checked {% endif %}>
-                                        <label class="btn btn-outline-success" for="inlineRadio1_pp_pribor">Норма</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio2_pp_pribor" value="0" {% if params.estimation.page_test_drive.pp_pribor == 0 %} checked {% endif %}>
-                                        <label class="btn btn-outline-danger" for="inlineRadio2_pp_pribor">Ремонт</label>
-                                        <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio3_pp_pribor" value="2" {% if params.estimation.page_test_drive.pp_pribor == 2 %} checked {% endif %}>
-                                        <label class="btn btn-outline-warning" for="inlineRadio3_pp_pribor">Диагностика</label>
-                                      </div>
-                                    </div>
-    
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control  text-secondary" id="comment" name="comment" value="{{params.estimation.page_test_drive.comment}}" placeholder=""  autocomplete="off">
-                                    <label for="floatingInput">Комментарий</label>
-                                  </div>	
-
-                              </div>        
-                              
-                              
-                            </div>
-     
-                            <h6><span class="icon-mbri-bulleted-list"></span> Диагностика</h6>
-                          
-                            <div class="row g-2">
-                              
-                              <div class="col-12 col-xl-6">
-                                
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Двигатель
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="engine"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Двигатель">
-                                      <input type="radio" 
-                                             class="btn-check" 
-                                             name="radio_engine" 
-                                             id="inlineRadio1_engine" 
-                                             value="1" 
-                                             {% if params.estimation.page_test_drive.engine == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_engine">Исправен</label>
-                                  
-                                      <input type="radio" 
-                                             class="btn-check" 
-                                             name="radio_engine" 
-                                             id="inlineRadio2_engine" 
-                                             value="0" 
-                                             {% if params.estimation.page_test_drive.engine == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_engine">Не исправен</label>
-                                  
-                                      <input type="radio" 
-                                             class="btn-check" 
-                                             name="radio_engine" 
-                                             id="inlineRadio3_engine" 
-                                             value="2" 
-                                             {% if params.estimation.page_test_drive.engine == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_engine">Есть замечания</label>
-                                    </div>
-                                   
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" 
-                                           class="form-control kors-form-control text-secondary" 
-                                           id="comment_engine" 
-                                           name="comment_engine" 
-                                           value="{{params.estimation.page_test_drive.comment_engine}}" 
-                                           placeholder="" 
-                                           autocomplete="off">
-                                    <label for="comment_engine">Комментарий</label>
-                                  </div>
-                                </div>
-                                    
-                                  
-
-                              </div>
-                              
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Система выпуска ОГ
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="system_og"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Система выпуска ОГ">
-                                      <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio1_system_og" value="1" {% if params.estimation.page_test_drive.system_og == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_system_og">Исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio2_system_og" value="0" {% if params.estimation.page_test_drive.system_og == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_system_og">Не исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio3_system_og" value="2" {% if params.estimation.page_test_drive.system_og == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_system_og">Есть замечания</label>
-                                    </div>
-                                  </div>
-
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_system_og" name="comment_system_og" value="{{params.estimation.page_test_drive.comment_system_og}}" placeholder="" autocomplete="off">
-                                    <label for="comment_system_og">Комментарий</label>
-                                  </div>
-                                                  
-                                </div>
-                              </div>
-    
-                            </div>
-                            
-                            <div class="row g-2">
-                              <!-- Подвеска -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Подвеска
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="suspension"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Подвеска">
-                                      <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio1_suspension" value="1" {% if params.estimation.page_test_drive.suspension == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_suspension">Исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio2_suspension" value="0" {% if params.estimation.page_test_drive.suspension == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_suspension">Не исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio3_suspension" value="2" {% if params.estimation.page_test_drive.suspension == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_suspension">Есть замечания</label>
-                                    </div>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_suspension" name="comment_suspension" value="{{params.estimation.page_test_drive.comment_suspension}}" placeholder="" autocomplete="off">
-                                    <label for="comment_suspension">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-                            
-                              <!-- Коробка передач -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Коробка передач
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="gear"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Коробка передач">
-                                      <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio1_gear" value="1" {% if params.estimation.page_test_drive.gear == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_gear">Исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio2_gear" value="0" {% if params.estimation.page_test_drive.gear == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_gear">Не исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio3_gear" value="2" {% if params.estimation.page_test_drive.gear == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_gear">Есть замечания</label>
-                                    </div>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_gear" name="comment_gear" value="{{params.estimation.page_test_drive.comment_gear}}" placeholder="" autocomplete="off">
-                                    <label for="comment_gear">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="row g-2">
-                              <!-- Подушки безопасности -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Подушки безопасности
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="airbag"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                   
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Подушки безопасности">
-                                      <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio1_airbag" value="1" {% if params.estimation.page_test_drive.airbag == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_airbag">Исправны</label>
-                                      <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio2_airbag" value="0" {% if params.estimation.page_test_drive.airbag == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_airbag">Не исправны</label>
-                                      <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio3_airbag" value="2" {% if params.estimation.page_test_drive.airbag == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_airbag">Есть замечания</label>
-                                      <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio4_airbag" value="4" {% if params.estimation.page_test_drive.airbag == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio4_airbag">Не предусмотрен</label>
-                                    </div>
-                                   
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_airbag" name="comment_airbag" value="{{params.estimation.page_test_drive.comment_airbag}}" placeholder="" autocomplete="off">
-                                    <label for="comment_airbag">Комментарий</label>
-                                  </div>
-                                  
-                                  <!-- Блок выбора конкретных проблем безопасности (показывается при "Не исправны" или "Есть замечания") -->
-                                  <div id="airbag_issues_block" class="mb-3" style="display: {% if params.estimation.page_test_drive.airbag == 0 or params.estimation.page_test_drive.airbag == 2 %}block{% else %}none{% endif %};">
-                                    <label class="form-label fw-bold">Укажите конкретные проблемы:</label>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="airbag_driver_issue" id="airbag_driver_issue" value="1" {% if params.estimation.page_test_drive.airbag_driver_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="airbag_driver_issue">Подушка водителя</label>
-                                    </div>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="airbag_passenger_issue" id="airbag_passenger_issue" value="1" {% if params.estimation.page_test_drive.airbag_passenger_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="airbag_passenger_issue">Подушка пассажира + перешив торпеды</label>
-                                    </div>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="airbag_side_issue" id="airbag_side_issue" value="1" {% if params.estimation.page_test_drive.airbag_side_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="airbag_side_issue">Боковые подушки</label>
-                                    </div>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="airbag_knee_issue" id="airbag_knee_issue" value="1" {% if params.estimation.page_test_drive.airbag_knee_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="airbag_knee_issue">Подушка коленная</label>
-                                    </div>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="seat_belt_restore_issue" id="seat_belt_restore_issue" value="1" {% if params.estimation.page_test_drive.seat_belt_restore_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="seat_belt_restore_issue">Восстановление ремней безопасности</label>
-                                    </div>
-                                    <div class="form-check">
-                                      <input class="form-check-input" type="checkbox" name="srs_block_issue" id="srs_block_issue" value="1" {% if params.estimation.page_test_drive.srs_block_issue %} checked {% endif %}>
-                                      <label class="form-check-label" for="srs_block_issue">Блок SRS</label>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            
-                              <!-- Кондиционер -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Кондиционер
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="conditioner"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Кондиционер">
-                                      <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio1_conditioner" value="1" {% if params.estimation.page_test_drive.conditioner == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_conditioner">Исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio2_conditioner" value="0" {% if params.estimation.page_test_drive.conditioner == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_conditioner">Не исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio3_conditioner" value="2" {% if params.estimation.page_test_drive.conditioner == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_conditioner">Есть замечания</label>
-                                      <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio4_conditioner" value="4" {% if params.estimation.page_test_drive.conditioner == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio4_conditioner">Не предусмотрен</label>
-                                    </div>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_conditioner" name="comment_conditioner" value="{{params.estimation.page_test_drive.comment_conditioner}}" placeholder="" autocomplete="off">
-                                    <label for="comment_conditioner">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="row g-2">
-                              <!-- Турбокомпрессор -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Турбокомпрессор
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="turbo"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Турбокомпрессор">
-                                      <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio1_turbo" value="1" {% if params.estimation.page_test_drive.turbo == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_turbo">Исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio2_turbo" value="0" {% if params.estimation.page_test_drive.turbo == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_turbo">Не исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio3_turbo" value="2" {% if params.estimation.page_test_drive.turbo == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_turbo">Есть замечания</label>
-                                      <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio4_turbo" value="4" {% if params.estimation.page_test_drive.turbo == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio4_turbo">Не предусмотрен</label>
                                     </div>
                                     
                                   </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_turbo" name="comment_turbo" value="{{params.estimation.page_test_drive.comment_turbo}}" placeholder="" autocomplete="off">
-                                    <label for="comment_turbo">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-                            
-                              <!-- Рулевое управление -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Рулевое управление
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="wheel"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Рулевое управление">
-                                      <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio1_wheel" value="1" {% if params.estimation.page_test_drive.wheel == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_wheel">Исправно</label>
-                                      <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio2_wheel" value="0" {% if params.estimation.page_test_drive.wheel == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_wheel">Не исправно</label>
-                                      <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio3_wheel" value="2" {% if params.estimation.page_test_drive.wheel == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_wheel">Есть замечания</label>
-                                    </div>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_wheel" name="comment_wheel" value="{{params.estimation.page_test_drive.comment_wheel}}" placeholder="" autocomplete="off">
-                                    <label for="comment_wheel">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="row g-2">
-                              <!-- Полный привод -->
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Полный привод
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="drive"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Полный привод">
-                                      <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio1_drive" value="1" {% if params.estimation.page_test_drive.drive == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_drive">Исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio2_drive" value="0" {% if params.estimation.page_test_drive.drive == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_drive">Не исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio3_drive" value="2" {% if params.estimation.page_test_drive.drive == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_drive">Есть замечания</label>
-                                      <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio4_drive" value="4" {% if params.estimation.page_test_drive.drive == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio4_drive">Не предусмотрен</label>
-                                    </div>
-                                    <label class="fs-6" for="radio_drive">Полный привод</label>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_drive" name="comment_drive" value="{{params.estimation.page_test_drive.comment_drive}}" placeholder="" autocomplete="off">
-                                    <label for="comment_drive">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Тормозная система
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="brake"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Тормозная система">
-                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio1_brake" value="1" {% if params.estimation.page_test_drive.brake == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_brake">Исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio2_brake" value="0" {% if params.estimation.page_test_drive.brake == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_brake">Не исправна</label>
-                                      <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio3_brake" value="2" {% if params.estimation.page_test_drive.brake == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_brake">Есть замечания</label>
-                                    </div>
-                                    <label class="fs-6" for="radio_brake">Тормозная система</label>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_brake" name="comment_brake" value="{{params.estimation.page_test_drive.comment_brake}}" placeholder="" autocomplete="off">
-                                    <label for="comment_brake">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Подрамник
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="subframe"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Подрамник">
-                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio1_subframe" value="1" {% if params.estimation.page_test_drive.subframe == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_subframe">Исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio2_subframe" value="0" {% if params.estimation.page_test_drive.subframe == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_subframe">Не исправен</label>
-                                      <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio3_subframe" value="2" {% if params.estimation.page_test_drive.subframe == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_subframe">Есть замечания</label>
-                                    </div>
-                                    <label class="fs-6" for="radio_subframe">Подрамник</label>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_subframe" name="comment_subframe" value="{{params.estimation.page_test_drive.comment_subframe}}" placeholder="" autocomplete="off">
-                                    <label for="comment_subframe">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div class="col-12 col-xl-6">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> Амортизатор капота/багажника
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="hood_trunk_shock_absorber"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Амортизатор капота/багажника">
-                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio1_hood_trunk_shock_absorber" value="1" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_hood_trunk_shock_absorber">Исправны</label>
-                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio2_hood_trunk_shock_absorber" value="0" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio2_hood_trunk_shock_absorber">Не исправны</label>
-                                      <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio3_hood_trunk_shock_absorber" value="4" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 4 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio3_hood_trunk_shock_absorber">Не предусмотрены</label>
-                                    </div>
-                                    <label class="fs-6" for="radio_hood_trunk_shock_absorber">Амортизатор капота/багажника</label>
-                                  </div>
-                                  
-                                  <div class="form-floating mb-3">
-                                    <input type="text" class="form-control kors-form-control text-secondary" id="comment_hood_trunk_shock_absorber" name="comment_hood_trunk_shock_absorber" value="{{params.estimation.page_test_drive.comment_hood_trunk_shock_absorber}}" placeholder="" autocomplete="off">
-                                    <label for="comment_hood_trunk_shock_absorber">Комментарий</label>
-                                  </div>
-                                </div>
-                              </div>
-
-                            </div>
-                            
-                            <div class="row g-2">
-                              <!-- Стапель -->
-                              <div class="col-12">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-setting3"></span> Стапель
-                                  </h6>
-                                  <small class="text-muted">Выберите тип стапеля и укажите количество часов</small>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="Стапель">
-                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio0_stapele" value="0" {% if params.estimation.page_test_drive.stapele_type == 0 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio0_stapele" style="height: 90px;">
-                                        <div>Не требуется</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">Все ок</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio1_stapele" value="1" {% if params.estimation.page_test_drive.stapele_type == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio1_stapele" style="height: 90px;">
-                                        <div>Легкий</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">3000 ₽, мин. 12 ч</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio2_stapele" value="2" {% if params.estimation.page_test_drive.stapele_type == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio2_stapele" style="height: 90px;">
-                                        <div>Средний</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">6000 ₽, мин. 12 ч</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio3_stapele" value="3" {% if params.estimation.page_test_drive.stapele_type == 3 %} checked {% endif %}>
-                                      <label class="btn btn-outline-danger" for="inlineRadio3_stapele" style="height: 90px;">
-                                        <div>Тяжелый</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">9000 ₽, мин. 14 ч</small>
-                                      </label>
-                                    </div>                                    
-                                  </div>
-                                  
-                                  <div class="row g-2 mt-2">
-                                    <div class="col-md-6">
-                                      <div class="form-floating">
-                                        <input type="number" class="form-control kors-form-control" id="stapele_hours" name="stapele_hours" 
-                                               value="{% if params.estimation.page_test_drive.stapele_hours %}{{ params.estimation.page_test_drive.stapele_hours }}{% endif %}" 
-                                               placeholder="Количество часов" min="0" step="1">
-                                        <label for="stapele_hours">Количество часов</label>
-                                      </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                      <div class="form-floating">
-                                        <input type="number" class="form-control kors-form-control" id="stapele_cost_display" 
-                                               placeholder="Стоимость" readonly style="background-color: #f8f9fa;">
-                                        <label for="stapele_cost_display">Стоимость (₽)</label>
-                                      </div>
-                                      <!-- Скрытое поле для отправки стоимости на сервер -->
-                                      <input type="hidden" id="stapele_cost" name="stapele_cost" value="{% if params.estimation.page_test_drive.stapele_cost %}{{ params.estimation.page_test_drive.stapele_cost }}{% endif %}">
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <script>
-                              (function() {
-                                // Конфигурация типов стапеля
-                                const stapeleConfig = {
-                                  1: { cost: 3000, minHours: 12 }, // Легкий
-                                  2: { cost: 6000, minHours: 12 }, // Средний
-                                  3: { cost: 9000, minHours: 14 }  // Тяжелый
-                                };
-                                
-                                // Получаем элементы
-                                const radioButtons = document.querySelectorAll('input[name="radio_stapele"]');
-                                const hoursInput = document.getElementById('stapele_hours');
-                                const costDisplay = document.getElementById('stapele_cost_display');
-                                const costHidden = document.getElementById('stapele_cost');
-                                
-                                // Функция обновления полей при выборе типа стапеля
-                                function updateStapeleFields(type) {
-                                  if (!type || !stapeleConfig[type]) {
-                                    // Если тип не выбран, очищаем поля
-                                    if (hoursInput) {
-                                      hoursInput.value = '';
-                                      hoursInput.min = '0';
-                                    }
-                                    if (costDisplay) costDisplay.value = '';
-                                    if (costHidden) costHidden.value = '';
-                                    return;
-                                  }
-                                  
-                                  const config = stapeleConfig[type];
-                                  
-                                  // Устанавливаем минимальное значение часов
-                                  if (hoursInput) {
-                                    hoursInput.min = config.minHours;
-                                  
-                                    // Если текущее значение меньше минимума, устанавливаем минимум
-                                    const currentHours = parseInt(hoursInput.value) || 0;
-                                    if (currentHours < config.minHours || !hoursInput.value) {
-                                      hoursInput.value = config.minHours;
-                                    }
-                                  }
-                                  
-                                  // Устанавливаем стоимость (только числовое значение)
-                                  if (costDisplay) {
-                                    // Устанавливаем чистое числовое значение напрямую
-                                    costDisplay.value = config.cost * hoursInput.value;
-                                  }
-                                  if (costHidden) {
-                                    costHidden.value = config.cost * hoursInput.value;
-                                  }
-                                }
-                                
-                                // Обработчик изменения radio buttons
-                                radioButtons.forEach(function(radio) {
-                                  radio.addEventListener('change', function() {
-                                    if (this.checked) {
-                                      const type = parseInt(this.value);
-                                      updateStapeleFields(type);
-                                    }
-                                  });
-                                });
-                                
-                                // Инициализация при загрузке страницы (если уже выбран тип)
-                                // Очищаем поле стоимости от возможного форматирования при загрузке
-                                if (costDisplay && costDisplay.value) {
-                                  const cleanValue = costDisplay.value.replace(/[^\d]/g, '');
-                                  if (cleanValue) {
-                                    costDisplay.value = cleanValue;
-                                  }
-                                }
-                                
-                                const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
-                                if (checkedRadio) {
-                                  const type = parseInt(checkedRadio.value);
-                                  updateStapeleFields(type);
-                                }
-                                
-                                // Обработчик изменения часов (для пересчета стоимости, если нужно)
-                                if (hoursInput) {
-                                  hoursInput.addEventListener('input', function() {
-                                    const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
-                                    if (checkedRadio) {
-                                      const type = parseInt(checkedRadio.value);
-                                      const config = stapeleConfig[type];
-                                      
-                                      // Проверяем минимальное значение
-                                      const currentHours = parseInt(this.value) || 0;
-                                      if (currentHours < config.minHours) {
-                                        this.value = config.minHours;
-                                      }
-                                    }
-                                  });
-                                }
-                              })();
-                            </script>
-                            
-                            <div class="row g-2">
-                              <!-- ТО -->
-                              <div class="col-12">
-                                <div class="portal-panel">
-                                  <h6>
-                                    <span class="icon-mbri-credit-card"></span> ТО
-                                    <button 
-                                      type="button" 
-                                      class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
-                                      data-bs-toggle="modal" 
-                                      data-bs-target="#diagnosticReferenceModal"
-                                      data-category="to"
-                                      title="Открыть справочник диагностики"
-                                      style="color: #002a5a; text-decoration: none;"
-                                    >
-                                      <i class="bi bi-info-circle"></i>
-                                    </button>
-                                  </h6>
-                                  <small class="text-muted">В случае если автомобилю требуется ТО и/или замечания и/или проблемы автомобиля устранимы в рамках технологического обслуживания можно выбрать необходимый уровень ТО</small>
-                                  
-                                  <div class="kors-btn-group-wrapper-simple">
-                                    <div class="kors-btn-group-compact" role="group" aria-label="ТО">
-                                      <input type="radio" class="btn-check" name="radio_to" id="inlineRadio1_to" value="10" {% if params.estimation.page_test_drive.to == 10 %} checked {% endif %}>
-                                      <label class="btn btn-outline-success" for="inlineRadio1_to" style="height: 90px;">
-                                        <div>Все ок</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">ТО не нужно</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_to" id="inlineRadio2_to" value="1" {% if params.estimation.page_test_drive.to == 1 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio2_to" style="height: 90px;">
-                                        <div>Minimal</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_to" id="inlineRadio3_to" value="2" {% if params.estimation.page_test_drive.to == 2 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio3_to" style="height: 90px;">
-                                        <div>Middle</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания</small>
-                                      </label>
-                                      <input type="radio" class="btn-check" name="radio_to" id="inlineRadio4_to" value="3" {% if params.estimation.page_test_drive.to == 3 %} checked {% endif %}>
-                                      <label class="btn btn-outline-warning" for="inlineRadio4_to" style="height: 90px;"> 
-                                        <div>Full</div>
-                                        <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки</small>
-                                      </label>
-                                    </div>
+                                  <hr class="my-3">
+              
+                                    <div class="portal-panel">
                                     
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <!-- Блок вывода выбранных элементов справочника диагностики для клиента -->
-                            {% if params.selected_references %}
-                              <div class="card mb-3 mt-3 diagnostic-reference-customer-info" style="border-radius: 1rem; box-shadow: 0 2px 8px rgba(0, 42, 90, 0.1);">
-                                <div class="card-header bg-primary text-white" style="border-radius: 1rem 1rem 0 0; padding: 1rem 1.5rem;">
-                                  <h5 class="mb-0">
-                                    <i class="bi bi-clipboard-check"></i> Выявленные проблемы диагностики
-                                  </h5>
-                                </div>
-                                <div class="card-body" style="padding: 1.5rem;">
-                                  {% for category_code, items in params.selected_references.items %}
-                                    {% if items %}
-                                      <div class="mb-4">
-                                        <h6 class="text-primary mb-3" style="font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 0.5rem;">
-                                          <i class="bi bi-gear"></i> 
-                                          {% if category_code == 'engine' %}Двигатель
-                                          {% elif category_code == 'gear' %}Коробка передач
-                                          {% elif category_code == 'brake' %}Тормозная система
-                                          {% elif category_code == 'suspension' %}Подвеска
-                                          {% elif category_code == 'system_og' %}Система выпуска ОГ
-                                          {% elif category_code == 'wheel' %}Рулевое управление
-                                          {% elif category_code == 'conditioner' %}Кондиционер
-                                          {% elif category_code == 'turbo' %}Турбина
-                                          {% elif category_code == 'drive' %}Полный привод
-                                          {% elif category_code == 'to' %}ТО
-                                          {% elif category_code == 'subframe' %}Подрамник
-                                          {% elif category_code == 'airbag' %}Подушка безопасности
-                                          {% else %}{{ category_code }}{% endif %}
-                                          <span class="badge bg-primary rounded-pill ms-2">{{ items|length }}</span>
-                                        </h6>
-                                        
-                                        <div class="row g-2">
-                                          {% for item in items %}
-                                            <div class="col-12 col-md-6">
-                                              <div class="card border-start border-primary border-3" style="border-radius: 0.5rem; margin-bottom: 0.5rem; transition: transform 0.2s, box-shadow 0.2s;">
-                                                <div class="card-body p-3">
-                                                  <h6 class="card-title mb-2" style="font-size: 0.95rem; font-weight: 600; color: #002a5a;">
-                                                    <i class="bi bi-exclamation-circle text-warning"></i> {{ item.title }}
-                                                  </h6>
-                                                  
-                                                  {% if item.observation_zones %}
-                                                    <div class="mb-2">
-                                                      <small class="text-muted d-block mb-1">
-                                                        <i class="bi bi-geo-alt"></i> <strong>Где наблюдается:</strong>
-                                                      </small>
-                                                      <small class="text-dark">{{ item.observation_zones|truncatewords:20 }}</small>
-                                                    </div>
-                                                  {% endif %}
-                                                  
-                                                  {% if item.possible_causes %}
-                                                    <div class="mb-2">
-                                                      <small class="text-muted d-block mb-1">
-                                                        <i class="bi bi-exclamation-triangle text-warning"></i> <strong>Возможные причины:</strong>
-                                                      </small>
-                                                      <small class="text-dark">{{ item.possible_causes|truncatewords:20 }}</small>
-                                                    </div>
-                                                  {% endif %}
-                                                  
-                                                  {% if item.consequences %}
-                                                    <div class="mb-2">
-                                                      <small class="text-danger d-block mb-1">
-                                                        <i class="bi bi-x-circle"></i> <strong>Последствия:</strong>
-                                                      </small>
-                                                      <small class="text-danger">{{ item.consequences|truncatewords:20 }}</small>
-                                                    </div>
-                                                  {% endif %}
-                                                  
-                                                  {% if item.additional_info %}
-                                                    <div class="alert alert-info mb-0 mt-2" style="padding: 0.5rem; font-size: 0.85rem;">
-                                                      <i class="bi bi-info-circle"></i> <strong>Важно:</strong> {{ item.additional_info|truncatewords:15 }}
-                                                    </div>
-                                                  {% endif %}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          {% endfor %}
+                                      <div class="col">
+                                          Разгонная динамика, посторонние шумы, вибрации при движении
+                                      </div>
+      
+                                      <div class="kors-btn-group-wrapper-simple">
+                                        <div class="kors-btn-group-compact" role="group" aria-label="Разгонная динамика">
+                                          <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio1_pp_dinamyc" value="1" {% if params.estimation.page_test_drive.pp_dinamyc == 1 %} checked {% endif %}>
+                                          <label class="btn btn-outline-success" for="inlineRadio1_pp_dinamyc">Норма</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio2_pp_dinamyc" value="0" {% if params.estimation.page_test_drive.pp_dinamyc == 0 %} checked {% endif %}>
+                                          <label class="btn btn-outline-danger" for="inlineRadio2_pp_dinamyc">Ремонт</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_dinamyc" id="inlineRadio3_pp_dinamyc" value="2" {% if params.estimation.page_test_drive.pp_dinamyc == 2 %} checked {% endif %}>
+                                          <label class="btn btn-outline-warning" for="inlineRadio3_pp_dinamyc">Диагностика</label>
                                         </div>
                                       </div>
-                                    {% endif %}
-                                  {% endfor %}
+      
+                                    </div>
+                                    
+                                    <div class="portal-panel">
+                                    
+                                      <div class="col">
+                                        Плавность включения передач (автомобили с МКПП и АКПП, проверка CVT во всех режимах), все передачи
+                                      </div>
+      
+                                      <div class="kors-btn-group-wrapper-simple">
+                                        <div class="kors-btn-group-compact" role="group" aria-label="Плавность включения передач">
+                                          <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio1_pp_kpp" value="1" {% if params.estimation.page_test_drive.pp_kpp == 1 %} checked {% endif %}>
+                                          <label class="btn btn-outline-success" for="inlineRadio1_pp_kpp">Норма</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio2_pp_kpp" value="0" {% if params.estimation.page_test_drive.pp_kpp == 0 %} checked {% endif %}>
+                                          <label class="btn btn-outline-danger" for="inlineRadio2_pp_kpp">Ремонт</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_kpp" id="inlineRadio3_pp_kpp" value="2" {% if params.estimation.page_test_drive.pp_kpp == 2 %} checked {% endif %}>
+                                          <label class="btn btn-outline-warning" for="inlineRadio3_pp_kpp">Диагностика</label>
+                                        </div>
+                                      </div>
+      
+                                    </div>
+                                    
+                                    
+                                    <div class="portal-panel">
+                                    
+                                      <div class="col">
+                                        Увод от прямолинейного движения
+                                      </div>
+      
+                                      <div class="kors-btn-group-wrapper-simple">
+                                        <div class="kors-btn-group-compact" role="group" aria-label="Увод от прямолинейного движения">
+                                          <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio1_pp_uvod" value="1" {% if params.estimation.page_test_drive.pp_uvod == 1 %} checked {% endif %}>
+                                          <label class="btn btn-outline-success" for="inlineRadio1_pp_uvod">Норма</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio2_pp_uvod" value="0" {% if params.estimation.page_test_drive.pp_uvod == 0 %} checked {% endif %}>
+                                          <label class="btn btn-outline-danger" for="inlineRadio2_pp_uvod">Ремонт</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_uvod" id="inlineRadio3_pp_uvod" value="2" {% if params.estimation.page_test_drive.pp_uvod == 2 %} checked {% endif %}>
+                                          <label class="btn btn-outline-warning" for="inlineRadio3_pp_uvod">Диагностика</label>
+                                        </div>
+                                      </div>
+      
+                                    </div>
+                                    
+
+                                    <div class="portal-panel">
+                                    
+                                      <div class="col">
+                                        Работа измерительных приборов и указателей (исправность, корректность показаний)
+                                      </div>
+      
+                                      <div class="kors-btn-group-wrapper-simple">
+                                        <div class="kors-btn-group-compact" role="group" aria-label="Работа измерительных приборов">
+                                          <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio1_pp_pribor" value="1" {% if params.estimation.page_test_drive.pp_pribor == 1 %} checked {% endif %}>
+                                          <label class="btn btn-outline-success" for="inlineRadio1_pp_pribor">Норма</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio2_pp_pribor" value="0" {% if params.estimation.page_test_drive.pp_pribor == 0 %} checked {% endif %}>
+                                          <label class="btn btn-outline-danger" for="inlineRadio2_pp_pribor">Ремонт</label>
+                                          <input type="radio" class="btn-check" name="radio_pp_pribor" id="inlineRadio3_pp_pribor" value="2" {% if params.estimation.page_test_drive.pp_pribor == 2 %} checked {% endif %}>
+                                          <label class="btn btn-outline-warning" for="inlineRadio3_pp_pribor">Диагностика</label>
+                                        </div>
+                                      </div>
+      
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control  text-secondary" id="comment" name="comment" value="{{params.estimation.page_test_drive.comment}}" placeholder=""  autocomplete="off">
+                                      <label for="floatingInput">Комментарий</label>
+                                    </div>	
+
+                                </div>        
+                                
+                                
+                              </div>
+      
+                              <h6><span class="icon-mbri-bulleted-list"></span> Диагностика</h6>
+                            
+                              <div class="row g-2">
+                                
+                                <div class="col-12 col-xl-6">
+                                  
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Двигатель
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="engine"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Двигатель">
+                                        <input type="radio" 
+                                              class="btn-check" 
+                                              name="radio_engine" 
+                                              id="inlineRadio1_engine" 
+                                              value="1" 
+                                              {% if params.estimation.page_test_drive.engine == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_engine">Исправен</label>
+                                    
+                                        <input type="radio" 
+                                              class="btn-check" 
+                                              name="radio_engine" 
+                                              id="inlineRadio2_engine" 
+                                              value="0" 
+                                              {% if params.estimation.page_test_drive.engine == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_engine">Не исправен</label>
+                                    
+                                        <input type="radio" 
+                                              class="btn-check" 
+                                              name="radio_engine" 
+                                              id="inlineRadio3_engine" 
+                                              value="2" 
+                                              {% if params.estimation.page_test_drive.engine == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_engine">Есть замечания</label>
+                                      </div>
+                                    
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" 
+                                            class="form-control kors-form-control text-secondary" 
+                                            id="comment_engine" 
+                                            name="comment_engine" 
+                                            value="{{params.estimation.page_test_drive.comment_engine}}" 
+                                            placeholder="" 
+                                            autocomplete="off">
+                                      <label for="comment_engine">Комментарий</label>
+                                    </div>
+                                  </div>
+                                      
+                                    
+
+                                </div>
+                                
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Система выпуска ОГ
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="system_og"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Система выпуска ОГ">
+                                        <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio1_system_og" value="1" {% if params.estimation.page_test_drive.system_og == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_system_og">Исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio2_system_og" value="0" {% if params.estimation.page_test_drive.system_og == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_system_og">Не исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_system_og" id="inlineRadio3_system_og" value="2" {% if params.estimation.page_test_drive.system_og == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_system_og">Есть замечания</label>
+                                      </div>
+                                    </div>
+
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_system_og" name="comment_system_og" value="{{params.estimation.page_test_drive.comment_system_og}}" placeholder="" autocomplete="off">
+                                      <label for="comment_system_og">Комментарий</label>
+                                    </div>
+                                                    
+                                  </div>
+                                </div>
+      
+                              </div>
+                              
+                              <div class="row g-2">
+                                <!-- Подвеска -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Подвеска
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="suspension"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Подвеска">
+                                        <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio1_suspension" value="1" {% if params.estimation.page_test_drive.suspension == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_suspension">Исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio2_suspension" value="0" {% if params.estimation.page_test_drive.suspension == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_suspension">Не исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_suspension" id="inlineRadio3_suspension" value="2" {% if params.estimation.page_test_drive.suspension == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_suspension">Есть замечания</label>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_suspension" name="comment_suspension" value="{{params.estimation.page_test_drive.comment_suspension}}" placeholder="" autocomplete="off">
+                                      <label for="comment_suspension">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              
+                                <!-- Коробка передач -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Коробка передач
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="gear"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Коробка передач">
+                                        <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio1_gear" value="1" {% if params.estimation.page_test_drive.gear == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_gear">Исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio2_gear" value="0" {% if params.estimation.page_test_drive.gear == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_gear">Не исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_gear" id="inlineRadio3_gear" value="2" {% if params.estimation.page_test_drive.gear == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_gear">Есть замечания</label>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_gear" name="comment_gear" value="{{params.estimation.page_test_drive.comment_gear}}" placeholder="" autocomplete="off">
+                                      <label for="comment_gear">Комментарий</label>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <style>
-                                .diagnostic-reference-customer-info .card:hover {
-                                  transform: translateY(-2px);
-                                  box-shadow: 0 4px 12px rgba(0, 42, 90, 0.15) !important;
-                                }
-                              </style>
-                            {% endif %}
-    
-                           
-                                {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
-                                  
-                                    {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}
+                              
+                              <div class="row g-2">
+                                <!-- Подушки безопасности -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Подушки безопасности
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="airbag"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
                                     
-                                        
-                                          <div class="form-floating">
-                                            <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.interactiv_rlk.page_soglasovanie.comment_diagnostica}}</textarea>
-                                            <label for="floatingInput">Диагностика (без дополнительной информации по стоимости согласования)</label>                                          
-                                          </div>
-              
-                                          <br>                                                      
-              
-                                    {% endif %}
                                     
-                                    <div class="portal-panel">
-                                    <h6><span class="icon-mbri-image-slider"></span> Фотографии диагностики</h6>
-                                    <br>
-                                    {% if params.estimation.get_files_diagnostic_count > 0 %}
-                                
-                                      <div class="row g-1 gallery-container">
-                                        {% for img in params.estimation.get_files_diagnostic %}
-                                      
-                                          <div class="col-sm-3 gallery-item-diagnostic" onclick="visible_foto('gallery-item-diagnostic', {{forloop.counter}})" data-index="{{forloop.counter}}">
-                                            
-                                            <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
-                                            
-                                          </div>
-                
-                                        {% endfor %}
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Подушки безопасности">
+                                        <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio1_airbag" value="1" {% if params.estimation.page_test_drive.airbag == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_airbag">Исправны</label>
+                                        <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio2_airbag" value="0" {% if params.estimation.page_test_drive.airbag == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_airbag">Не исправны</label>
+                                        <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio3_airbag" value="2" {% if params.estimation.page_test_drive.airbag == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_airbag">Есть замечания</label>
+                                        <input type="radio" class="btn-check" name="radio_airbag" id="inlineRadio4_airbag" value="4" {% if params.estimation.page_test_drive.airbag == 4 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio4_airbag">Не предусмотрен</label>
                                       </div>
-                                      
-                                      <br>
                                     
-                                    {% endif %}
-                                    <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_diagnistic" name="file_diagnistic" type="file" multiple>
-
                                     </div>
                                     
-                                    <div class="portal-panel">
-                                      <h6><span class="icon-mbri-image-slider"></span> Фотографии c эндоскопа</h6>
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_airbag" name="comment_airbag" value="{{params.estimation.page_test_drive.comment_airbag}}" placeholder="" autocomplete="off">
+                                      <label for="comment_airbag">Комментарий</label>
+                                    </div>
+                                    
+                                    <!-- Блок выбора конкретных проблем безопасности (показывается при "Не исправны" или "Есть замечания") -->
+                                    <div id="airbag_issues_block" class="mb-3" style="display: {% if params.estimation.page_test_drive.airbag == 0 or params.estimation.page_test_drive.airbag == 2 %}block{% else %}none{% endif %};">
+                                      <label class="form-label fw-bold">Укажите конкретные проблемы:</label>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="airbag_driver_issue" id="airbag_driver_issue" value="1" {% if params.estimation.page_test_drive.airbag_driver_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="airbag_driver_issue">Подушка водителя</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="airbag_passenger_issue" id="airbag_passenger_issue" value="1" {% if params.estimation.page_test_drive.airbag_passenger_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="airbag_passenger_issue">Подушка пассажира + перешив торпеды</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="airbag_side_issue" id="airbag_side_issue" value="1" {% if params.estimation.page_test_drive.airbag_side_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="airbag_side_issue">Боковые подушки</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="airbag_knee_issue" id="airbag_knee_issue" value="1" {% if params.estimation.page_test_drive.airbag_knee_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="airbag_knee_issue">Подушка коленная</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="seat_belt_restore_issue" id="seat_belt_restore_issue" value="1" {% if params.estimation.page_test_drive.seat_belt_restore_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="seat_belt_restore_issue">Восстановление ремней безопасности</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="srs_block_issue" id="srs_block_issue" value="1" {% if params.estimation.page_test_drive.srs_block_issue %} checked {% endif %}>
+                                        <label class="form-check-label" for="srs_block_issue">Блок SRS</label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              
+                                <!-- Кондиционер -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Кондиционер
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="conditioner"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Кондиционер">
+                                        <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio1_conditioner" value="1" {% if params.estimation.page_test_drive.conditioner == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_conditioner">Исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio2_conditioner" value="0" {% if params.estimation.page_test_drive.conditioner == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_conditioner">Не исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio3_conditioner" value="2" {% if params.estimation.page_test_drive.conditioner == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_conditioner">Есть замечания</label>
+                                        <input type="radio" class="btn-check" name="radio_conditioner" id="inlineRadio4_conditioner" value="4" {% if params.estimation.page_test_drive.conditioner == 4 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio4_conditioner">Не предусмотрен</label>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_conditioner" name="comment_conditioner" value="{{params.estimation.page_test_drive.comment_conditioner}}" placeholder="" autocomplete="off">
+                                      <label for="comment_conditioner">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div class="row g-2">
+                                <!-- Турбокомпрессор -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Турбокомпрессор
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="turbo"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Турбокомпрессор">
+                                        <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio1_turbo" value="1" {% if params.estimation.page_test_drive.turbo == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_turbo">Исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio2_turbo" value="0" {% if params.estimation.page_test_drive.turbo == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_turbo">Не исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio3_turbo" value="2" {% if params.estimation.page_test_drive.turbo == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_turbo">Есть замечания</label>
+                                        <input type="radio" class="btn-check" name="radio_turbo" id="inlineRadio4_turbo" value="4" {% if params.estimation.page_test_drive.turbo == 4 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio4_turbo">Не предусмотрен</label>
+                                      </div>
                                       
-                                      <br>
-                                      {% if params.estimation.get_files_endoscop_count > 0 %}                                
-                                        <div class="row g-1 gallery-container">
-                                          {% for img in params.estimation.get_files_endoscop %}
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_turbo" name="comment_turbo" value="{{params.estimation.page_test_drive.comment_turbo}}" placeholder="" autocomplete="off">
+                                      <label for="comment_turbo">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              
+                                <!-- Рулевое управление -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Рулевое управление
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="wheel"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Рулевое управление">
+                                        <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio1_wheel" value="1" {% if params.estimation.page_test_drive.wheel == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_wheel">Исправно</label>
+                                        <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio2_wheel" value="0" {% if params.estimation.page_test_drive.wheel == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_wheel">Не исправно</label>
+                                        <input type="radio" class="btn-check" name="radio_wheel" id="inlineRadio3_wheel" value="2" {% if params.estimation.page_test_drive.wheel == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_wheel">Есть замечания</label>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_wheel" name="comment_wheel" value="{{params.estimation.page_test_drive.comment_wheel}}" placeholder="" autocomplete="off">
+                                      <label for="comment_wheel">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div class="row g-2">
+                                <!-- Полный привод -->
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Полный привод
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="drive"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Полный привод">
+                                        <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio1_drive" value="1" {% if params.estimation.page_test_drive.drive == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_drive">Исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio2_drive" value="0" {% if params.estimation.page_test_drive.drive == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_drive">Не исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio3_drive" value="2" {% if params.estimation.page_test_drive.drive == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_drive">Есть замечания</label>
+                                        <input type="radio" class="btn-check" name="radio_drive" id="inlineRadio4_drive" value="4" {% if params.estimation.page_test_drive.drive == 4 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio4_drive">Не предусмотрен</label>
+                                      </div>
+                                      <label class="fs-6" for="radio_drive">Полный привод</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_drive" name="comment_drive" value="{{params.estimation.page_test_drive.comment_drive}}" placeholder="" autocomplete="off">
+                                      <label for="comment_drive">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Тормозная система
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="brake"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Тормозная система">
+                                        <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio1_brake" value="1" {% if params.estimation.page_test_drive.brake == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_brake">Исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio2_brake" value="0" {% if params.estimation.page_test_drive.brake == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_brake">Не исправна</label>
+                                        <input type="radio" class="btn-check" name="radio_brake" id="inlineRadio3_brake" value="2" {% if params.estimation.page_test_drive.brake == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_brake">Есть замечания</label>
+                                      </div>
+                                      <label class="fs-6" for="radio_brake">Тормозная система</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_brake" name="comment_brake" value="{{params.estimation.page_test_drive.comment_brake}}" placeholder="" autocomplete="off">
+                                      <label for="comment_brake">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Подрамник
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="subframe"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Подрамник">
+                                        <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio1_subframe" value="1" {% if params.estimation.page_test_drive.subframe == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_subframe">Исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio2_subframe" value="0" {% if params.estimation.page_test_drive.subframe == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_subframe">Не исправен</label>
+                                        <input type="radio" class="btn-check" name="radio_subframe" id="inlineRadio3_subframe" value="2" {% if params.estimation.page_test_drive.subframe == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_subframe">Есть замечания</label>
+                                      </div>
+                                      <label class="fs-6" for="radio_subframe">Подрамник</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_subframe" name="comment_subframe" value="{{params.estimation.page_test_drive.comment_subframe}}" placeholder="" autocomplete="off">
+                                      <label for="comment_subframe">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div class="col-12 col-xl-6">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> Амортизатор капота/багажника
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="hood_trunk_shock_absorber"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Амортизатор капота/багажника">
+                                        <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio1_hood_trunk_shock_absorber" value="1" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_hood_trunk_shock_absorber">Исправны</label>
+                                        <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio2_hood_trunk_shock_absorber" value="0" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio2_hood_trunk_shock_absorber">Не исправны</label>
+                                        <input type="radio" class="btn-check" name="radio_hood_trunk_shock_absorber" id="inlineRadio3_hood_trunk_shock_absorber" value="4" {% if params.estimation.page_test_drive.hood_trunk_shock_absorber == 4 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio3_hood_trunk_shock_absorber">Не предусмотрены</label>
+                                      </div>
+                                      <label class="fs-6" for="radio_hood_trunk_shock_absorber">Амортизатор капота/багажника</label>
+                                    </div>
+                                    
+                                    <div class="form-floating mb-3">
+                                      <input type="text" class="form-control kors-form-control text-secondary" id="comment_hood_trunk_shock_absorber" name="comment_hood_trunk_shock_absorber" value="{{params.estimation.page_test_drive.comment_hood_trunk_shock_absorber}}" placeholder="" autocomplete="off">
+                                      <label for="comment_hood_trunk_shock_absorber">Комментарий</label>
+                                    </div>
+                                  </div>
+                                </div>
+
+                              </div>
+                              
+                              <div class="row g-2">
+                                <!-- Стапель -->
+                                <div class="col-12">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-setting3"></span> Стапель
+                                    </h6>
+                                    <small class="text-muted">Выберите тип стапеля и укажите количество часов</small>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="Стапель">
+                                        <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio0_stapele" value="0" {% if params.estimation.page_test_drive.stapele_type == 0 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio0_stapele" style="height: 90px;">
+                                          <div>Не требуется</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">Все ок</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio1_stapele" value="1" {% if params.estimation.page_test_drive.stapele_type == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio1_stapele" style="height: 90px;">
+                                          <div>Легкий</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">3000 ₽, мин. 12 ч</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio2_stapele" value="2" {% if params.estimation.page_test_drive.stapele_type == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio2_stapele" style="height: 90px;">
+                                          <div>Средний</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">6000 ₽, мин. 12 ч</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_stapele" id="inlineRadio3_stapele" value="3" {% if params.estimation.page_test_drive.stapele_type == 3 %} checked {% endif %}>
+                                        <label class="btn btn-outline-danger" for="inlineRadio3_stapele" style="height: 90px;">
+                                          <div>Тяжелый</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">9000 ₽, мин. 14 ч</small>
+                                        </label>
+                                      </div>                                    
+                                    </div>
+                                    
+                                    <div class="row g-2 mt-2">
+                                      <div class="col-md-6">
+                                        <div class="form-floating">
+                                          <input type="number" class="form-control kors-form-control" id="stapele_hours" name="stapele_hours" 
+                                                value="{% if params.estimation.page_test_drive.stapele_hours %}{{ params.estimation.page_test_drive.stapele_hours }}{% endif %}" 
+                                                placeholder="Количество часов" min="0" step="1">
+                                          <label for="stapele_hours">Количество часов</label>
+                                        </div>
+                                      </div>
+                                      <div class="col-md-6">
+                                        <div class="form-floating">
+                                          <input type="number" class="form-control kors-form-control" id="stapele_cost_display" 
+                                                placeholder="Стоимость" readonly style="background-color: #f8f9fa;">
+                                          <label for="stapele_cost_display">Стоимость (₽)</label>
+                                        </div>
+                                        <!-- Скрытое поле для отправки стоимости на сервер -->
+                                        <input type="hidden" id="stapele_cost" name="stapele_cost" value="{% if params.estimation.page_test_drive.stapele_cost %}{{ params.estimation.page_test_drive.stapele_cost }}{% endif %}">
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <script>
+                                (function() {
+                                  // Конфигурация типов стапеля
+                                  const stapeleConfig = {
+                                    1: { cost: 3000, minHours: 12 }, // Легкий
+                                    2: { cost: 6000, minHours: 12 }, // Средний
+                                    3: { cost: 9000, minHours: 14 }  // Тяжелый
+                                  };
+                                  
+                                  // Получаем элементы
+                                  const radioButtons = document.querySelectorAll('input[name="radio_stapele"]');
+                                  const hoursInput = document.getElementById('stapele_hours');
+                                  const costDisplay = document.getElementById('stapele_cost_display');
+                                  const costHidden = document.getElementById('stapele_cost');
+                                  
+                                  // Функция обновления полей при выборе типа стапеля
+                                  function updateStapeleFields(type) {
+                                    if (!type || !stapeleConfig[type]) {
+                                      // Если тип не выбран, очищаем поля
+                                      if (hoursInput) {
+                                        hoursInput.value = '';
+                                        hoursInput.min = '0';
+                                      }
+                                      if (costDisplay) costDisplay.value = '';
+                                      if (costHidden) costHidden.value = '';
+                                      return;
+                                    }
+                                    
+                                    const config = stapeleConfig[type];
+                                    
+                                    // Устанавливаем минимальное значение часов
+                                    if (hoursInput) {
+                                      hoursInput.min = config.minHours;
+                                    
+                                      // Если текущее значение меньше минимума, устанавливаем минимум
+                                      const currentHours = parseInt(hoursInput.value) || 0;
+                                      if (currentHours < config.minHours || !hoursInput.value) {
+                                        hoursInput.value = config.minHours;
+                                      }
+                                    }
+                                    
+                                    // Устанавливаем стоимость (только числовое значение)
+                                    if (costDisplay) {
+                                      // Устанавливаем чистое числовое значение напрямую
+                                      costDisplay.value = config.cost * hoursInput.value;
+                                    }
+                                    if (costHidden) {
+                                      costHidden.value = config.cost * hoursInput.value;
+                                    }
+                                  }
+                                  
+                                  // Обработчик изменения radio buttons
+                                  radioButtons.forEach(function(radio) {
+                                    radio.addEventListener('change', function() {
+                                      if (this.checked) {
+                                        const type = parseInt(this.value);
+                                        updateStapeleFields(type);
+                                      }
+                                    });
+                                  });
+                                  
+                                  // Инициализация при загрузке страницы (если уже выбран тип)
+                                  // Очищаем поле стоимости от возможного форматирования при загрузке
+                                  if (costDisplay && costDisplay.value) {
+                                    const cleanValue = costDisplay.value.replace(/[^\d]/g, '');
+                                    if (cleanValue) {
+                                      costDisplay.value = cleanValue;
+                                    }
+                                  }
+                                  
+                                  const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
+                                  if (checkedRadio) {
+                                    const type = parseInt(checkedRadio.value);
+                                    updateStapeleFields(type);
+                                  }
+                                  
+                                  // Обработчик изменения часов (для пересчета стоимости, если нужно)
+                                  if (hoursInput) {
+                                    hoursInput.addEventListener('input', function() {
+                                      const checkedRadio = document.querySelector('input[name="radio_stapele"]:checked');
+                                      if (checkedRadio) {
+                                        const type = parseInt(checkedRadio.value);
+                                        const config = stapeleConfig[type];
                                         
-                                            <div class="col-sm-3 gallery-item-endoscop" onclick="visible_foto('gallery-item-endoscop', {{forloop.counter}})" data-index="{{forloop.counter}}">
-                                              
-                                              <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
-                                              
-                                            </div>
-                  
-                                          {% endfor %}
-                                        </div>                                      
-                                        <br>                                    
+                                        // Проверяем минимальное значение
+                                        const currentHours = parseInt(this.value) || 0;
+                                        if (currentHours < config.minHours) {
+                                          this.value = config.minHours;
+                                        }
+                                      }
+                                    });
+                                  }
+                                })();
+                              </script>
+                              
+                              <div class="row g-2">
+                                <!-- ТО -->
+                                <div class="col-12">
+                                  <div class="portal-panel">
+                                    <h6>
+                                      <span class="icon-mbri-credit-card"></span> ТО
+                                      <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-link p-0 ms-2 diagnostic-reference-icon" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#diagnosticReferenceModal"
+                                        data-category="to"
+                                        title="Открыть справочник диагностики"
+                                        style="color: #002a5a; text-decoration: none;"
+                                      >
+                                        <i class="bi bi-info-circle"></i>
+                                      </button>
+                                    </h6>
+                                    <small class="text-muted">В случае если автомобилю требуется ТО и/или замечания и/или проблемы автомобиля устранимы в рамках технологического обслуживания можно выбрать необходимый уровень ТО</small>
+                                    
+                                    <div class="kors-btn-group-wrapper-simple">
+                                      <div class="kors-btn-group-compact" role="group" aria-label="ТО">
+                                        <input type="radio" class="btn-check" name="radio_to" id="inlineRadio1_to" value="10" {% if params.estimation.page_test_drive.to == 10 %} checked {% endif %}>
+                                        <label class="btn btn-outline-success" for="inlineRadio1_to" style="height: 90px;">
+                                          <div>Все ок</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">ТО не нужно</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_to" id="inlineRadio2_to" value="1" {% if params.estimation.page_test_drive.to == 1 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio2_to" style="height: 90px;">
+                                          <div>Minimal</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_to" id="inlineRadio3_to" value="2" {% if params.estimation.page_test_drive.to == 2 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio3_to" style="height: 90px;">
+                                          <div>Middle</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="radio_to" id="inlineRadio4_to" value="3" {% if params.estimation.page_test_drive.to == 3 %} checked {% endif %}>
+                                        <label class="btn btn-outline-warning" for="inlineRadio4_to" style="height: 90px;"> 
+                                          <div>Full</div>
+                                          <small style="font-size: 0.7rem; opacity: 0.8;">масло, масляный фильтр, воздушный фильтр, салонный фильтр, свечи зажигания, тормозные колодки</small>
+                                        </label>
+                                      </div>
+                                      
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <!-- Блок вывода выбранных элементов справочника диагностики для клиента -->
+                              {% if params.selected_references %}
+                                <div class="card mb-3 mt-3 diagnostic-reference-customer-info" style="border-radius: 1rem; box-shadow: 0 2px 8px rgba(0, 42, 90, 0.1);">
+                                  <div class="card-header bg-primary text-white" style="border-radius: 1rem 1rem 0 0; padding: 1rem 1.5rem;">
+                                    <h5 class="mb-0">
+                                      <i class="bi bi-clipboard-check"></i> Выявленные проблемы диагностики
+                                    </h5>
+                                  </div>
+                                  <div class="card-body" style="padding: 1.5rem;">
+                                    {% for category_code, items in params.selected_references.items %}
+                                      {% if items %}
+                                        <div class="mb-4">
+                                          <h6 class="text-primary mb-3" style="font-weight: 600; border-bottom: 2px solid #e9ecef; padding-bottom: 0.5rem;">
+                                            <i class="bi bi-gear"></i> 
+                                            {% if category_code == 'engine' %}Двигатель
+                                            {% elif category_code == 'gear' %}Коробка передач
+                                            {% elif category_code == 'brake' %}Тормозная система
+                                            {% elif category_code == 'suspension' %}Подвеска
+                                            {% elif category_code == 'system_og' %}Система выпуска ОГ
+                                            {% elif category_code == 'wheel' %}Рулевое управление
+                                            {% elif category_code == 'conditioner' %}Кондиционер
+                                            {% elif category_code == 'turbo' %}Турбина
+                                            {% elif category_code == 'drive' %}Полный привод
+                                            {% elif category_code == 'to' %}ТО
+                                            {% elif category_code == 'subframe' %}Подрамник
+                                            {% elif category_code == 'airbag' %}Подушка безопасности
+                                            {% else %}{{ category_code }}{% endif %}
+                                            <span class="badge bg-primary rounded-pill ms-2">{{ items|length }}</span>
+                                          </h6>
+                                          
+                                          <div class="row g-2">
+                                            {% for item in items %}
+                                              <div class="col-12 col-md-6">
+                                                <div class="card border-start border-primary border-3" style="border-radius: 0.5rem; margin-bottom: 0.5rem; transition: transform 0.2s, box-shadow 0.2s;">
+                                                  <div class="card-body p-3">
+                                                    <h6 class="card-title mb-2" style="font-size: 0.95rem; font-weight: 600; color: #002a5a;">
+                                                      <i class="bi bi-exclamation-circle text-warning"></i> {{ item.title }}
+                                                    </h6>
+                                                    
+                                                    {% if item.observation_zones %}
+                                                      <div class="mb-2">
+                                                        <small class="text-muted d-block mb-1">
+                                                          <i class="bi bi-geo-alt"></i> <strong>Где наблюдается:</strong>
+                                                        </small>
+                                                        <small class="text-dark">{{ item.observation_zones|truncatewords:20 }}</small>
+                                                      </div>
+                                                    {% endif %}
+                                                    
+                                                    {% if item.possible_causes %}
+                                                      <div class="mb-2">
+                                                        <small class="text-muted d-block mb-1">
+                                                          <i class="bi bi-exclamation-triangle text-warning"></i> <strong>Возможные причины:</strong>
+                                                        </small>
+                                                        <small class="text-dark">{{ item.possible_causes|truncatewords:20 }}</small>
+                                                      </div>
+                                                    {% endif %}
+                                                    
+                                                    {% if item.consequences %}
+                                                      <div class="mb-2">
+                                                        <small class="text-danger d-block mb-1">
+                                                          <i class="bi bi-x-circle"></i> <strong>Последствия:</strong>
+                                                        </small>
+                                                        <small class="text-danger">{{ item.consequences|truncatewords:20 }}</small>
+                                                      </div>
+                                                    {% endif %}
+                                                    
+                                                    {% if item.additional_info %}
+                                                      <div class="alert alert-info mb-0 mt-2" style="padding: 0.5rem; font-size: 0.85rem;">
+                                                        <i class="bi bi-info-circle"></i> <strong>Важно:</strong> {{ item.additional_info|truncatewords:15 }}
+                                                      </div>
+                                                    {% endif %}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            {% endfor %}
+                                          </div>
+                                        </div>
                                       {% endif %}
-                                      <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_endoscop" name="file_endoscop" type="file" multiple>
+                                    {% endfor %}
+                                  </div>
+                                </div>
+                                <style>
+                                  .diagnostic-reference-customer-info .card:hover {
+                                    transform: translateY(-2px);
+                                    box-shadow: 0 4px 12px rgba(0, 42, 90, 0.15) !important;
+                                  }
+                                </style>
+                              {% endif %}
+      
+                            
+                                  {% if params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
+                                    
+                                      {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}
+                                      
+                                          
+                                            <div class="form-floating">
+                                              <textarea style="min-height: 150px;" class="form-control" id="comment_diagnostica" name="comment_diagnostica" rows="12">{{params.interactiv_rlk.page_soglasovanie.comment_diagnostica}}</textarea>
+                                              <label for="floatingInput">Диагностика (без дополнительной информации по стоимости согласования)</label>                                          
+                                            </div>
+                
+                                            <br>                                                      
+                
+                                      {% endif %}
+                                      
+                                      <div class="portal-panel">
+                                      <h6><span class="icon-mbri-image-slider"></span> Фотографии диагностики</h6>
                                       <br>
-
-                                      <div class="form-floating">
-                                        <textarea class="form-control" id="comment_no_endoscop" name="comment_no_endoscop" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_endoscop}}</textarea>
-                                        <label for="floatingInput">В случае отстутствия фото с эндоскопа указать причину</label>                                          
-                                      </div>
-                                    </div>
-
-                                    <div class="portal-panel">
-                                      <h6><span class="icon-mbri-image-slider"></span> Фотографии сканера</h6>
-                                      <br>
-                                      {% if params.estimation.get_files_scaner_count > 0 %}
+                                      {% if params.estimation.get_files_diagnostic_count > 0 %}
                                   
                                         <div class="row g-1 gallery-container">
-                                          {% for img in params.estimation.get_files_scaner %}
+                                          {% for img in params.estimation.get_files_diagnostic %}
                                         
-                                            <div class="col-sm-3 gallery-item-scaner" onclick="visible_foto('gallery-item-scaner', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                            <div class="col-sm-3 gallery-item-diagnostic" onclick="visible_foto('gallery-item-diagnostic', {{forloop.counter}})" data-index="{{forloop.counter}}">
                                               
                                               <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                               
@@ -8185,136 +8134,187 @@
                                         <br>
                                       
                                       {% endif %}
-                                      <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_scaner" name="file_scaner" type="file" multiple>
+                                      <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_diagnistic" name="file_diagnistic" type="file" multiple>
+
+                                      </div>
                                       
-                                      <br>
-                                      <div class="form-floating">
-                                        <textarea class="form-control" id="comment_no_scaner" name="comment_no_scaner" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_scaner}}</textarea>
-                                        <label for="floatingInput">В случае отстутствия фото со сканера указать причину</label>                                          
-                                      </div>
-                                  </div>
-                                    
-                                  <div class="portal-panel">
-                                    <h6><span class="icon-mbri-image-slider"></span> Проверьте все ли дефекты днища отмечены на схеме, при необходимости актуализируйте информацию</h6>
-                                    <br>
-                                    <div class="row">
-                                      <div class="col-sm gallery-item-up-one fixOverlayDiv" onclick="visible_foto('gallery-item-pol-one', 0)" data-index="0">
-                                        <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_pol}}" src1="{{params.estimation.fotos_vnesh_pol}}"> 
-                                        <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/estimations/{{params.estimation.pk}}/{{params.interactiv_rlk.rlk.id}}/osmotr/pol/?return=eco" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                                                        
-                                      </div>
-                                      <div class="col-sm">
-                                        <div style="object-fit: fill; border-radius: 10px; height: 320px;" id="JsonArrayArrayImagesPol" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
-                                                        
-                                          <div class="carousel-indicators">
-                                            {% for img in params.estimation.fotos_array_images_pol %}
-                                              <button type="button" data-bs-target="#JsonArrayArrayImagesPol" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
-                                              
-                                            {% endfor %}
-                                          </div>
+                                      <div class="portal-panel">
+                                        <h6><span class="icon-mbri-image-slider"></span> Фотографии c эндоскопа</h6>
+                                        
+                                        <br>
+                                        {% if params.estimation.get_files_endoscop_count > 0 %}                                
+                                          <div class="row g-1 gallery-container">
+                                            {% for img in params.estimation.get_files_endoscop %}
                                           
-                                          <div class="carousel-inner">
-                                            
-                                            {% for img in params.estimation.fotos_array_images_pol %}
-                                            
-                                              <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pol" onclick="visible_foto('gallery-item-pol', {{forloop.counter}})" data-index="{{forloop.counter}}">
-                                                <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
-                                                  <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
-                                                    {% if img.kraska %}
-                                                      <h6>Показание толщиномера - {{img.text}}</h6>
-                                                    {% else %}
-                                                      <h6>{{img.text}}</h6>
-                                                    {% endif %}
-                                                  </div>
+                                              <div class="col-sm-3 gallery-item-endoscop" onclick="visible_foto('gallery-item-endoscop', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                                
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
                                                 
                                               </div>
-                          
+                    
                                             {% endfor %}
-                                            
-                                          </div>
-                          
-                                          {% for img in params.estimation.fotos_array_images_pol %}
-                                            
-                                              <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesUP"  data-bs-slide="prev">
-                                              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                              <span class="visually-hidden">Предыдущий</span>
-                                              </button>
-                                              <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesUP"  data-bs-slide="next">
-                                              <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                              <span class="visually-hidden">Следующий</span>
-                                              </button>
-                                            
-                                          {% endfor %}
-                          
+                                          </div>                                      
+                                          <br>                                    
+                                        {% endif %}
+                                        <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_endoscop" name="file_endoscop" type="file" multiple>
+                                        <br>
+
+                                        <div class="form-floating">
+                                          <textarea class="form-control" id="comment_no_endoscop" name="comment_no_endoscop" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_endoscop}}</textarea>
+                                          <label for="floatingInput">В случае отстутствия фото с эндоскопа указать причину</label>                                          
                                         </div>
                                       </div>
-                                    </div>
+
+                                      <div class="portal-panel">
+                                        <h6><span class="icon-mbri-image-slider"></span> Фотографии сканера</h6>
+                                        <br>
+                                        {% if params.estimation.get_files_scaner_count > 0 %}
                                     
-                                  </div>
-                                  
-
-                                    <hr>
-
-                                    <div class="portal-panel bg-opacity-50 bg-danger">
-              
-                                      <p class="">В случае согласования оценки без диагностики, напишите причину и сохраните!</p>
-        
-                                      <form method="post" enctype="multipart/form-data" >
-        
-                                        {% csrf_token %}
-        
-                                        <div class="row g-1 align-items-center">
+                                          <div class="row g-1 gallery-container">
+                                            {% for img in params.estimation.get_files_scaner %}
                                           
-                                          <div class="col-sm">
-                                            <input hidden name="save__no__diagnostic" id="save__no__diagnostic" value="save__no__diagnostic" type="text">
-                                            <div class="form-floating">
-                                              <input class="form-control form-control-sm" type="text" id="no_diagnostica_comment" name="no_diagnostica_comment" value="{{params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment}}"  {% if params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment != '' %}  {% endif %}>
-                                              <label for="floatingInput">Комментарий причины согласования без диагностики</label>
-                                            </div>
+                                              <div class="col-sm-3 gallery-item-scaner" onclick="visible_foto('gallery-item-scaner', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                                
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                                
+                                              </div>
+                    
+                                            {% endfor %}
                                           </div>
-        
-                                          {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}  
-                                            <div class="col-sm-auto">
-                                              <button class="btn btn-danger" type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>                           
-                                            </div>
-                                          {% endif %}
-        
                                           
-                                        </div>
+                                          <br>
                                         
-                                      </form>
-        
+                                        {% endif %}
+                                        <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_scaner" name="file_scaner" type="file" multiple>
+                                        
+                                        <br>
+                                        <div class="form-floating">
+                                          <textarea class="form-control" id="comment_no_scaner" name="comment_no_scaner" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_scaner}}</textarea>
+                                          <label for="floatingInput">В случае отстутствия фото со сканера указать причину</label>                                          
+                                        </div>
                                     </div>
-                                  
-                                    <hr>
-                                    
-                                {% endif %}
-                                
-                                
-                                <!-- Скрытые поля для сохранения выбранных элементов справочника диагностики -->
-                                <input type="hidden" name="selected_reference_items_engine" id="selected_reference_items_engine" value="">
-                                <input type="hidden" name="selected_reference_items_gear" id="selected_reference_items_gear" value="">
-                                <input type="hidden" name="selected_reference_items_brake" id="selected_reference_items_brake" value="">
-                                <input type="hidden" name="selected_reference_items_suspension" id="selected_reference_items_suspension" value="">
-                                <input type="hidden" name="selected_reference_items_system_og" id="selected_reference_items_system_og" value="">
-                                <input type="hidden" name="selected_reference_items_wheel" id="selected_reference_items_wheel" value="">
-                                <input type="hidden" name="selected_reference_items_conditioner" id="selected_reference_items_conditioner" value="">
-                                <input type="hidden" name="selected_reference_items_turbo" id="selected_reference_items_turbo" value="">
-                                <input type="hidden" name="selected_reference_items_drive" id="selected_reference_items_drive" value="">
-                                <input type="hidden" name="selected_reference_items_to" id="selected_reference_items_to" value="">
-                                <input type="hidden" name="selected_reference_items_subframe" id="selected_reference_items_subframe" value="">
-                                <input type="hidden" name="selected_reference_items_airbag" id="selected_reference_items_airbag" value="">
-                                                                                                                  
-                                <button class="btn btn-outline-success " type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>  
-                                
-              
+                                      
+                                    <div class="portal-panel">
+                                      <h6><span class="icon-mbri-image-slider"></span> Проверьте все ли дефекты днища отмечены на схеме, при необходимости актуализируйте информацию</h6>
+                                      <br>
+                                      <div class="row">
+                                        <div class="col-sm gallery-item-up-one fixOverlayDiv" onclick="visible_foto('gallery-item-pol-one', 0)" data-index="0">
+                                          <img class="d-block w-100" style="object-fit: fill; border-radius: 10px; height: 320px;" src="{{params.estimation.fotos_vnesh_pol}}" src1="{{params.estimation.fotos_vnesh_pol}}"> 
+                                          <div class=""><a class="btn btn-dark btn-sm OverlayText" href="/estimations/{{params.estimation.pk}}/{{params.interactiv_rlk.rlk.id}}/osmotr/pol/?return=eco" style="border-radius: 10rem;" ><span class="icon-mbri-edit2 text-dark"> </span></a></div>                                                                        
+                                        </div>
+                                        <div class="col-sm">
+                                          <div style="object-fit: fill; border-radius: 10px; height: 320px;" id="JsonArrayArrayImagesPol" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                                                          
+                                            <div class="carousel-indicators">
+                                              {% for img in params.estimation.fotos_array_images_pol %}
+                                                <button type="button" data-bs-target="#JsonArrayArrayImagesPol" data-bs-slide-to="{{forloop.counter0}}" {% if forloop.counter == 1 %} class="active" {% endif %}  aria-current="true" aria-label="{{forloop.counter}}"  style="--background: url('{{img.get_thumbnail_url}}'); ">
+                                                
+                                              {% endfor %}
+                                            </div>
+                                            
+                                            <div class="carousel-inner">
+                                              
+                                              {% for img in params.estimation.fotos_array_images_pol %}
+                                              
+                                                <div class="carousel-item background_images {% if forloop.counter == 1 %} active {% endif %} gallery-item-pol" onclick="visible_foto('gallery-item-pol', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                                  <img class="d-block w-100" style="object-fit: contain; border-radius: 10px; height: 320px; backdrop-filter: blur(10px);" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}">
+                                                    <div class="carousel-caption d-md-block bg-secondary bg-gradient" style="border-radius: 10px; opacity: 0.6;">
+                                                      {% if img.kraska %}
+                                                        <h6>Показание толщиномера - {{img.text}}</h6>
+                                                      {% else %}
+                                                        <h6>{{img.text}}</h6>
+                                                      {% endif %}
+                                                    </div>
+                                                  
+                                                </div>
                             
+                                              {% endfor %}
+                                              
+                                            </div>
+                            
+                                            {% for img in params.estimation.fotos_array_images_pol %}
+                                              
+                                                <button class="carousel-control-prev" type="button" data-bs-target="#JsonArrayArrayImagesUP"  data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Предыдущий</span>
+                                                </button>
+                                                <button class="carousel-control-next" type="button" data-bs-target="#JsonArrayArrayImagesUP"  data-bs-slide="next">
+                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Следующий</span>
+                                                </button>
+                                              
+                                            {% endfor %}
+                            
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                    </div>
+                                    
+
+                                      <hr>
+
+                                      <div class="portal-panel bg-opacity-50 bg-danger">
+                
+                                        <p class="">В случае согласования оценки без диагностики, напишите причину и сохраните!</p>
+          
+                                        <form method="post" enctype="multipart/form-data" >
+          
+                                          {% csrf_token %}
+          
+                                          <div class="row g-1 align-items-center">
+                                            
+                                            <div class="col-sm">
+                                              <input hidden name="save__no__diagnostic" id="save__no__diagnostic" value="save__no__diagnostic" type="text">
+                                              <div class="form-floating">
+                                                <input class="form-control form-control-sm" type="text" id="no_diagnostica_comment" name="no_diagnostica_comment" value="{{params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment}}"  {% if params.interactiv_rlk.page_soglasovanie.no_diagnostica_comment != '' %}  {% endif %}>
+                                                <label for="floatingInput">Комментарий причины согласования без диагностики</label>
+                                              </div>
+                                            </div>
+          
+                                            {% if not params.interactiv_rlk.page_soglasovanie.no_diagnostica %}  
+                                              <div class="col-sm-auto">
+                                                <button class="btn btn-danger" type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>                           
+                                              </div>
+                                            {% endif %}
+          
+                                            
+                                          </div>
+                                          
+                                        </form>
+          
+                                      </div>
+                                    
+                                      <hr>
+                                      
+                                  {% endif %}
+                                  
+                                  
+                                  <!-- Скрытые поля для сохранения выбранных элементов справочника диагностики -->
+                                  <input type="hidden" name="selected_reference_items_engine" id="selected_reference_items_engine" value="">
+                                  <input type="hidden" name="selected_reference_items_gear" id="selected_reference_items_gear" value="">
+                                  <input type="hidden" name="selected_reference_items_brake" id="selected_reference_items_brake" value="">
+                                  <input type="hidden" name="selected_reference_items_suspension" id="selected_reference_items_suspension" value="">
+                                  <input type="hidden" name="selected_reference_items_system_og" id="selected_reference_items_system_og" value="">
+                                  <input type="hidden" name="selected_reference_items_wheel" id="selected_reference_items_wheel" value="">
+                                  <input type="hidden" name="selected_reference_items_conditioner" id="selected_reference_items_conditioner" value="">
+                                  <input type="hidden" name="selected_reference_items_turbo" id="selected_reference_items_turbo" value="">
+                                  <input type="hidden" name="selected_reference_items_drive" id="selected_reference_items_drive" value="">
+                                  <input type="hidden" name="selected_reference_items_to" id="selected_reference_items_to" value="">
+                                  <input type="hidden" name="selected_reference_items_subframe" id="selected_reference_items_subframe" value="">
+                                  <input type="hidden" name="selected_reference_items_airbag" id="selected_reference_items_airbag" value="">
+                                                                                                                    
+                                  <button class="btn btn-outline-success " type="submit" name="save" value="close"> <span class="icon-mbri-success"></span> Сохранить</button>  
+                                  
+                
+                              
+                          </div>
                         </div>
-                      </div>
-    
-                      <br>
-                      
-                  </form>
-    
+      
+                        <br>
+                        
+                    </form>
+                  </fieldset>
                   {% endif %}
 
         

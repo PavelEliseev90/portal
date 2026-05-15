@@ -1369,6 +1369,13 @@ def price_edit(request, slug):
 @login_required
 def price(request, slug):
     
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
     car = RefCarsOrganization.objects.filter(slug=slug).select_related(
         'unit', 'complectation_autoru', 'modification_autoru',
         'modification_autoru__model', 'modification_autoru__model__mark',
@@ -1469,16 +1476,25 @@ def price(request, slug):
     from powerbi.models import Cumulative
     from django.db.models.functions import TruncDate
     
-    sale_type          = int(request.GET.get('sale_type', '0'))
-    
+    sale_type          = int(request.GET.get('sale_type', '1'))
+    sale_dc            = request.GET.get('sale_dc', 'all')
+
     q_cumulative = Cumulative.objects.filter(
+        TipProdazhi = 'Розница',
         DataProdazhi__gte=last_month_start,
         DataProdazhi__lte=last_month_end,
         SebestoimostPoDokumentu__gt = 0
     )
     if car.unit and car.unit.name:
-        q_unit = q_cumulative.filter(PodrazdelenieDTs__icontains=car.unit.name)
         
+        if sale_dc == 'all':
+            q_unit = q_cumulative
+        else:
+            q_unit = q_cumulative.filter(PodrazdelenieDTs__icontains=car.unit.name)
+        
+        if sale_type == 0:
+            model_list = AutoruModification.objects.filter(model__mark = car.modification_autoru.model.mark).values_list('idSite', flat=True)
+            q_unit = q_unit.filter(IDModifikatsii__in = model_list) 
         if sale_type == 1:
             model_list = AutoruModification.objects.filter(model = car.modification_autoru.model).values_list('idSite', flat=True)
             q_unit = q_unit.filter(IDModifikatsii__in = model_list)
@@ -1667,6 +1683,7 @@ def price(request, slug):
         'warehouse_scope'       : warehouse_scope,
         'sclad_type'            : sclad_type,
         'sale_type'             : sale_type,
+        'sale_dc'               : sale_dc,
         'car_price_and_dop' : car_price_and_dop,
         'sale_info' : sale_info,
         'car_analitics' : car_analitics,
@@ -2672,6 +2689,13 @@ def info_js(request, slug):
 @login_required
 def deal_calculation(request):
     
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+    
     try:
         from analytics.models import TradeInFunnel
     except ImportError:
@@ -2769,6 +2793,13 @@ def deal_calculation(request):
 
 @login_required
 def deal_calculation_doc(request, id):
+    
+    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+        params = {
+            'type': 'home',
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
     
     try:
         from analytics.models import TradeInFunnel

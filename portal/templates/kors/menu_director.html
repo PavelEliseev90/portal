@@ -282,10 +282,13 @@
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🚗</div>
         <div>Склад</div>
       </a>
+      {% if request.user.profiles.estimation_settings %}
       <a href="/eco/funnel/analytics/" class="quick-action-btn">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔄</div>
         <div>Воронка Trade-In</div>
       </a>
+      
+      
       <a href="{% url 'register:repricing_list' %}" class="quick-action-btn">
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💲</div>
         <div>Ценообразование</div>
@@ -294,6 +297,7 @@
         <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🛠️</div>
         <div>Подготовка</div>
       </a>
+      {% endif %}
       
       {% if request.user.profiles.estimation_settings %}
       <a href="/settings/" class="quick-action-btn">
@@ -370,6 +374,7 @@
       </div>
     </div>
 
+    {% if request.user.profiles.estimation_settings %}
     <!-- Trade-In и оценка -->
     <div class="section-card">
       <div class="section-card-header">
@@ -407,36 +412,39 @@
         </a>
       </div>
     </div>
+    {% endif %}
 
     <!-- Управление ценообразованием -->
-    <div class="section-card">
-      <div class="section-card-header">
-        <div class="section-card-icon">💲</div>
-        <h3 class="section-card-title">Ценообразование</h3>
+    {% if request.user.profiles.price_car_bu_settings %}
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-card-icon">💲</div>
+          <h3 class="section-card-title">Ценообразование</h3>
+        </div>
+        <p class="section-card-description">
+          Автоматическая переоценка, управление ценами, история изменений
+        </p>
+        <div class="action-buttons">
+          <a href="{% url 'register:repricing_list' %}" class="action-btn">
+            <span class="action-btn-icon">📊</span>
+            <span class="action-btn-text">История переоценок</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+          <a href="{% url 'register:repricing_units' %}" class="action-btn">
+            <span class="action-btn-icon">🏢</span>
+            <span class="action-btn-text">Запуск переоценки</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+          <a href="/eco/pricing-report/" class="action-btn">
+            <span class="action-btn-icon">📈</span>
+            <span class="action-btn-text">Отчет по ценообразованию</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+        </div>
       </div>
-      <p class="section-card-description">
-        Автоматическая переоценка, управление ценами, история изменений
-      </p>
-      <div class="action-buttons">
-        <a href="{% url 'register:repricing_list' %}" class="action-btn">
-          <span class="action-btn-icon">📊</span>
-          <span class="action-btn-text">История переоценок</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="{% url 'register:repricing_units' %}" class="action-btn">
-          <span class="action-btn-icon">🏢</span>
-          <span class="action-btn-text">Запуск переоценки</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-        <a href="/eco/pricing-report/" class="action-btn">
-          <span class="action-btn-icon">📈</span>
-          <span class="action-btn-text">Отчет по ценообразованию</span>
-          <span class="action-btn-arrow">→</span>
-        </a>
-      </div>
-    </div>
+    {% endif %}
 
-    {% if request.user.profiles.price_car_new_settings %}
+    {% if request.user.profiles.price_car_new %}
       <!-- Настройки новых автомобилей -->
       <div class="section-card">
         <div class="section-card-header">
@@ -512,7 +520,7 @@
     </div>
     {% endif %}
 
-    {% if request.user.profiles.price_car_new %}
+    {% if request.user.profiles.price_car_new_settings %}
     <!-- Аналитика и отчеты -->
     <div class="section-card">
       <div class="section-card-header">
@@ -558,7 +566,7 @@
     {% endif %}
 
     <!-- Аналитика -->
-    {% if request.user.profiles.price_car_new %}
+    {% if request.user.profiles.price_car_new_settings %}
       
       <div class="section-card">
         <div class="section-card-header">
