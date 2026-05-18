@@ -81,7 +81,7 @@
       </div>
 
     <div class="col-12 mt-3">
-      <h6 class="text-muted mb-2">ВП по моделям</h6>
+      <h6 class="text-muted mb-2">Средняя ВП по моделям</h6>
       {% if params.analytics.vp_by_model.labels %}
       <div style="position: relative; height: 360px; max-width: 100%;">
         <canvas id="dealVpByModelChart"></canvas>
@@ -97,6 +97,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script>
 (function() {
   var raw = '{{ params.analytics.vp_by_model_json|escapejs }}';
@@ -106,10 +107,74 @@
   if (!data.labels || !data.labels.length) return;
   var el = document.getElementById('dealVpByModelChart');
   if (!el || typeof Chart === 'undefined') return;
+
+  var BAR_DS = 4;
+
   function fmtK(v) {
     if (Math.abs(v) >= 1000) return Math.round(v / 1000) + ' тыс.';
     return String(Math.round(v));
   }
+
+  function fmtLabel(v) {
+    return Math.round(v).toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function stackTopY(chart, index) {
+    var topY = null;
+    for (var d = 0; d < BAR_DS; d++) {
+      var meta = chart.getDatasetMeta(d);
+      var bar = meta.data[index];
+      var val = chart.data.datasets[d].data[index];
+      if (!bar || val == null || val === 0) continue;
+      if (topY === null || bar.y < topY) topY = bar.y;
+    }
+    return topY;
+  }
+
+  var avgLabelPlugin = {
+    id: 'dealVpAvgLabels',
+    afterDatasetsDraw: function(chart) {
+      var ctx = chart.ctx;
+      var averages = data.averages || [];
+      var meta0 = chart.getDatasetMeta(0);
+      if (!meta0 || !meta0.data.length) return;
+      ctx.save();
+      ctx.fillStyle = '#002a5a';
+      ctx.font = '600 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      averages.forEach(function(avg, i) {
+        if (!avg) return;
+        var x = meta0.data[i].x;
+        var yTop = stackTopY(chart, i);
+        if (yTop == null) return;
+        var label = fmtLabel(avg);
+        var tw = ctx.measureText(label).width + 12;
+        var th = 18;
+        var lx = x - tw / 2;
+        var ly = yTop - th - 4;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.strokeStyle = '#dee2e6';
+        ctx.lineWidth = 1;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(lx, ly, tw, th, 4);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(lx, ly, tw, th);
+        }
+        ctx.fillStyle = '#002a5a';
+        ctx.fillText(label, x, yTop - 8);
+      });
+      ctx.restore();
+    },
+  };
+
+  if (typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+  }
+
   new Chart(el.getContext('2d'), {
     type: 'bar',
     data: {
@@ -125,25 +190,75 @@
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: { padding: { top: 36 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        datalabels: {
+          clip: false,
+          display: function(ctx) {
+            if (ctx.dataset.type === 'line') {
+              return (ctx.dataset.data[ctx.dataIndex] || 0) > 0;
+            }
+            var v = ctx.dataset.data[ctx.dataIndex];
+            return v != null && v !== 0;
+          },
+          formatter: function(value, ctx) {
+            if (ctx.dataset.type === 'line') {
+              return String(value);
+            }
+            return fmtLabel(value);
+          },
+          color: function(ctx) {
+            return ctx.dataset.type === 'line' ? '#2563eb' : '#fff';
+          },
+          font: { size: 9, weight: '600' },
+          anchor: function(ctx) {
+            return ctx.dataset.type === 'line' ? 'center' : 'center';
+          },
+          align: function(ctx) {
+            return ctx.dataset.type === 'line' ? 'top' : 'center';
+          },
+          backgroundColor: function(ctx) {
+            if (ctx.dataset.type === 'line') {
+              return 'rgba(255, 255, 255, 0.95)';
+            }
+            return 'rgba(0, 0, 0, 0.45)';
+          },
+          borderRadius: 4,
+          padding: { top: 2, bottom: 2, left: 4, right: 4 },
+        },
         tooltip: {
           callbacks: {
             label: function(ctx) {
               var v = ctx.parsed.y;
-              if (ctx.dataset.yAxisID === 'y1') return ' ' + ctx.dataset.label + ': ' + v + ' шт.';
-              return ' ' + ctx.dataset.label + ': ' + (v || 0).toLocaleString('ru-RU') + ' ₽';
+              if (ctx.dataset.yAxisID === 'y1') {
+                return ' ' + ctx.dataset.label + ': ' + v + ' шт.';
+              }
+              var i = ctx.dataIndex;
+              var sales = (data.sales && data.sales[i]) ? data.sales[i] : 0;
+              var avg = Math.round(v || 0);
+              var sum = sales > 0 ? Math.round(avg * sales) : 0;
+              return ' ' + ctx.dataset.label + ': ср. ' + avg.toLocaleString('ru-RU') + ' ₽, сумма ' + sum.toLocaleString('ru-RU') + ' ₽';
+            },
+            afterBody: function(items) {
+              if (!items.length || items[0].dataset.type === 'line') return '';
+              var i = items[0].dataIndex;
+              var total = (data.totals && data.totals[i]) ? data.totals[i] : 0;
+              var sales = (data.sales && data.sales[i]) ? data.sales[i] : 0;
+              var avg = (data.averages && data.averages[i]) ? data.averages[i] : 0;
+              return 'Средняя: ' + Math.round(avg).toLocaleString('ru-RU') + ' ₽ · Итого: ' + Math.round(total).toLocaleString('ru-RU') + ' ₽ (' + sales + ' шт.)';
             },
           },
         },
       },
       scales: {
         x: { stacked: true, ticks: { maxRotation: 45, minRotation: 0 } },
-        y: { stacked: true, title: { display: true, text: 'ВП, ₽' }, ticks: { callback: function(v) { return fmtK(v); } } },
+        y: { stacked: true, title: { display: true, text: 'Средняя ВП, ₽' }, ticks: { callback: function(v) { return fmtK(v); } } },
         y1: { position: 'right', beginAtZero: true, title: { display: true, text: 'шт.' }, grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } },
       },
     },
+    plugins: [avgLabelPlugin],
   });
 })();
 </script>

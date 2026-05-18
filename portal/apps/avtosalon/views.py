@@ -2712,7 +2712,7 @@ def _deal_calc_unit_month_analytics(unit):
     )
 
     vp_chart_empty = {
-        'labels': [], 'zhelezo': [], 'dop': [], 'opfu': [], 'ti': [], 'sales': [], 'totals': [],
+        'labels': [], 'zhelezo': [], 'dop': [], 'opfu': [], 'ti': [], 'sales': [], 'totals': [], 'averages': [],
     }
     analytics = {
         'cumulative_sum': 0,
@@ -2812,16 +2812,26 @@ def _deal_calc_unit_month_analytics(unit):
         opfu = float(row['opfu'] or 0)
         ti = float(row['ti'] or 0)
         total = zhelezo + dop + opfu + ti
+        sales_count = int(row['sales'] or 0)
+        if sales_count > 0:
+            zhelezo_avg = zhelezo / sales_count
+            dop_avg = dop / sales_count
+            opfu_avg = opfu / sales_count
+            ti_avg = ti / sales_count
+            average = total / sales_count
+        else:
+            zhelezo_avg = dop_avg = opfu_avg = ti_avg = average = 0
         vp_items.append({
             'label': model_name,
-            'zhelezo': zhelezo,
-            'dop': dop,
-            'opfu': opfu,
-            'ti': ti,
-            'sales': int(row['sales'] or 0),
+            'zhelezo': zhelezo_avg,
+            'dop': dop_avg,
+            'opfu': opfu_avg,
+            'ti': ti_avg,
+            'sales': sales_count,
             'total': total,
+            'average': average,
         })
-    vp_items.sort(key=lambda item: abs(item['total']), reverse=True)
+    vp_items.sort(key=lambda item: abs(item['average']), reverse=True)
     vp_chart = {
         'labels': [item['label'] for item in vp_items],
         'zhelezo': [item['zhelezo'] for item in vp_items],
@@ -2830,6 +2840,7 @@ def _deal_calc_unit_month_analytics(unit):
         'ti': [item['ti'] for item in vp_items],
         'sales': [item['sales'] for item in vp_items],
         'totals': [item['total'] for item in vp_items],
+        'averages': [item['average'] for item in vp_items],
     }
     analytics['vp_by_model'] = vp_chart
     analytics['vp_by_model_json'] = json.dumps(vp_chart, ensure_ascii=False)
