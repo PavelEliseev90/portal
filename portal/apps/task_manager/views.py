@@ -1218,6 +1218,7 @@ def info_car_auction(slug):
         int_ocenka_url_vnesh    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_salon_all    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_wheel        = Value('', output_field=CharField())).annotate(
+        autoteka_web                = Value('', output_field=CharField())).annotate(
         int_ocenka_url_diagnostic    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_damage   = Value('', output_field=CharField())).annotate(
         int_ocenka_url_salon    = Value('', output_field=CharField())).annotate(
@@ -1260,6 +1261,7 @@ def info_car_auction(slug):
                        'price_medium',
                        'price_significant',
                        'market_price',
+                       'autoteka_web',
                        group    = F('group_price'),
                        type_sale_name = F('type_sale__name'),
                        type_reception_name = F('type_reception__name'),
@@ -1320,6 +1322,8 @@ def info_car_auction(slug):
                 diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
             else:
                 diagnostika = ''
+            
+            car['autoteka_web']             = estimation.avtoteka_web
 
             car['int_ocenka_url_vnesh']     = get_url_int(estimation.id, 'vnesh_car_all')
             car['int_ocenka_url_damage']    = get_url_int(estimation.id, 'damage')
