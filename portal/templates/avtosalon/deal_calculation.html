@@ -101,6 +101,13 @@
                 </div>
               {% endfor %}
 
+              {% for rl_opfu in params.calc.rlk.opfu_in %}
+                <div class="col-12 col-sm-auto">
+                  <a href="/eco/{{rl_opfu.pk}}/" target="_blank" class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ ОПФУ {{rl_opfu.nomer}} {{rl_opfu.dataTime}}</a> 
+                </div>
+              {% endfor %}
+
+
               {% if params.calc.rlk.rlk_trade_in|length == 0 %}
               <div class="col-12 col-sm-auto">
                 <button class="btn-calculate-sm" type="button" ><span class="icon-doc"></span> РЛ Trade-in - Нет </button> 
