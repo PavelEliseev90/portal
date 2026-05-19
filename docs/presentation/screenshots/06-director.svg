@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect width="960" height="540" fill="#f4f6f9"/>
+  <rect x="0" y="0" width="960" height="52" fill="url(#hdr)"/>
+  <text x="20" y="33" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="600">Корс Групп · Портал</text>
+  <text x="940" y="33" fill="#dbeafe" font-family="Segoe UI, system-ui, sans-serif" font-size="12" text-anchor="end">Склад директора</text>
+<rect x="24" y="64" width="912" height="70" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="38" y="95" fill="#6b7280" font-family="Segoe UI" font-size="11">Фильтры: подразделение · марка · VIN · задачи · мин. КМ</text><rect x="24" y="150" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="180" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text><rect x="24" y="208" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="238" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text><rect x="24" y="266" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="296" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text><rect x="24" y="324" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="354" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text><rect x="24" y="382" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="412" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text><rect x="24" y="440" width="912" height="50" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="40" y="470" fill="#111827" font-family="Segoe UI" font-size="12">Toyota RAV4 · VIN ... · 45 д. на складе · КМ 172 000 ₽</text></svg>
