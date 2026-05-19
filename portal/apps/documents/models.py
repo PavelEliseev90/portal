@@ -471,6 +471,9 @@ class DocRLK(models.Model):
     def rlk_trade_in(self):
         return DocRLK.objects.filter(uin__in = DocRLK.objects.filter(footing = self).values_list('uin', flat=True)).filter(eco = True)
 
+    def opfu_in(self):
+        return DocRLK.objects.filter(uin__in = DocRLK.objects.filter(footing = self).values_list('uin', flat=True)).filter(type__id = 4)
+
     def rating_sms_opros(self):
         count_opros = DocOprosCarShipment.objects.filter(shipment__rlk = self).count()
         if count_opros > 0:

@@ -284,7 +284,6 @@ class CarCalculationsDetail(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-
         
 class EmailPushCar(models.Model):
     date                = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
