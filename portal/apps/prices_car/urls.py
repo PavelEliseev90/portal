@@ -16,4 +16,6 @@ urlpatterns = [
     path('discount_km/get_models/', views.discount_get_models, name='discount_get_models'),
     path('discount_km/get_modifications/', views.discount_get_modifications, name='discount_get_modifications'),
     path('discount_km/get_complectations/', views.discount_get_complectations, name='discount_get_complectations'),
+    path('presentation/', views.presentation_page, name='presentation'),
+    path('presentation/<path:asset>', views.presentation_asset, name='presentation_asset'),
 ]

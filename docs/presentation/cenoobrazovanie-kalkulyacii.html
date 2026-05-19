@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Презентация: ценообразование новых автомобилей и калькуляции продажи в портале Корс Групп">
+  <title>Ценообразование новых АМ и калькуляции — презентация</title>
+  <base href="/prices_car/presentation/">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-soft: #f1f5f9;
+      --text: #0f172a;
+      --text-inv: #f8fafc;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --accent: #16a34a;
+      --danger: #dc2626;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --nav-w: 280px;
+      --header-h: 56px;
+      --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg-soft);
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      background: linear-gradient(90deg, #1e40af, #2563eb);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.15);
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: clamp(0.85rem, 3vw, 1.05rem);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .btn-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,.15);
+      color: #fff;
+    }
+    .btn-top:hover { background: rgba(255,255,255,.28); }
+    .btn-menu { display: none; }
+
+    .layout {
+      display: flex;
+      padding-top: var(--header-h);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--nav-w);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      background: var(--bg);
+      color: var(--text-inv);
+      padding: 1rem 0;
+      z-index: 150;
+      transform: translateX(0);
+      transition: transform .25s ease;
+    }
+    .sidebar h2 {
+      margin: 0 1rem 0.75rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #94a3b8;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.45rem 1rem;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.88rem;
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: rgba(37, 99, 235, .2);
+      color: #fff;
+      border-left-color: var(--primary);
+    }
+    .sidebar .nav-portal a {
+      font-size: 0.8rem;
+      color: #93c5fd;
+    }
+
+    .main {
+      flex: 1;
+      margin-left: var(--nav-w);
+      padding: 1.25rem clamp(1rem, 3vw, 2.5rem) 3rem;
+      max-width: 920px;
+    }
+
+    .slide {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(1.25rem, 4vw, 2rem);
+      margin-bottom: 1.5rem;
+      scroll-margin-top: calc(var(--header-h) + 12px);
+    }
+    .slide-num {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .slide h2 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(1.25rem, 4vw, 1.65rem);
+      line-height: 1.25;
+    }
+    .slide h3 {
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1.05rem;
+    }
+    .slide p { margin: 0 0 0.75rem; color: #334155; }
+    .slide ul, .slide ol { margin: 0 0 1rem; padding-left: 1.25rem; color: #334155; }
+    .slide li { margin-bottom: 0.35rem; }
+
+    .portal-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0.25rem 0.5rem 0.25rem 0;
+      padding: 0.35rem 0.85rem;
+      background: var(--primary);
+      color: #fff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .portal-link.secondary {
+      background: #e2e8f0;
+      color: var(--text) !important;
+    }
+    .portal-link:hover { filter: brightness(1.08); }
+
+    .figure {
+      margin: 1rem 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+    .figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .figure figcaption {
+      padding: 0.65rem 1rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    table.data th, table.data td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+    }
+    table.data th { background: #f8fafc; font-weight: 600; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .card-mini {
+      padding: 0.85rem;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+    }
+    .card-mini strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
+    .card-mini span { font-size: 0.8rem; color: var(--muted); }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+    .flow span {
+      padding: 0.4rem 0.75rem;
+      background: var(--primary-light);
+      border-radius: 8px;
+      color: #1e40af;
+      font-weight: 600;
+    }
+    .flow .arrow { color: var(--muted); font-weight: 400; background: none; padding: 0; }
+
+    .alert-local {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 140;
+    }
+
+    @media (max-width: 900px) {
+      .btn-menu { display: inline-flex; }
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.open { display: block; }
+      .main { margin-left: 0; max-width: none; }
+    }
+
+    @media print {
+      .topbar, .sidebar, .overlay, .btn-menu { display: none !important; }
+      .main { margin: 0; padding: 0; max-width: none; }
+      .slide { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <h1>Ценообразование и калькуляции</h1>
+    <div class="topbar-actions">
+      <button type="button" class="btn-top btn-menu" id="btnMenu" aria-label="Меню">☰ Меню</button>
+      <a class="btn-top" href="/prices_car/" target="_blank" rel="noopener">Открыть модуль</a>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Содержание">
+      <h2>Содержание</h2>
+      <a href="#s1">1. Введение</a>
+      <a href="#s2">2. Зачем нужно</a>
+      <a href="#s3">3. Архитектура</a>
+      <a href="#s4">4. Главная /prices_car/</a>
+      <a href="#s5">5. Управление КМ</a>
+      <a href="#s6">6. Бренды и индексы</a>
+      <a href="#s7">7. Склад директора</a>
+      <a href="#s8">8. Карточка авто</a>
+      <a href="#s9">9. Продажи на карточке</a>
+      <a href="#s10">10. Реестр калькуляций</a>
+      <a href="#s11">11. Калькуляция сделки</a>
+      <a href="#s12">12. Аналитика в калькуляции</a>
+      <a href="#s13">13. Сценарий менеджера</a>
+      <a href="#s14">14. Глоссарий</a>
+      <h2>Разделы портала</h2>
+      <div class="nav-portal">
+        <a href="/prices_car/" target="_blank" rel="noopener">Ценообразование (хаб)</a>
+        <a href="/prices_car/settings/" target="_blank" rel="noopener">Управление КМ</a>
+        <a href="/prices_car/brands/" target="_blank" rel="noopener">Бренды</a>
+        <a href="/prices_car/stage_km/" target="_blank" rel="noopener">Индексы по этапам</a>
+        <a href="/prices_car/discount_km/" target="_blank" rel="noopener">Дисконт КМ</a>
+        <a href="/prices_car/director/" target="_blank" rel="noopener">Склад</a>
+        <a href="/prices_car/calculations_list/" target="_blank" rel="noopener">Калькуляции</a>
+        <a href="/cars/tasks/" target="_blank" rel="noopener">Задачи по авто</a>
+        <a href="/docs_car_agreement/" target="_blank" rel="noopener">Соглашения</a>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="alert-local" id="fileProtocolWarn">
+        Ссылки на портал работают при открытии с домена портала. Рекомендуемый адрес:
+        <strong>/prices_car/presentation/</strong>
+      </div>
+
+      <article class="slide" id="s1">
+        <span class="slide-num">Слайд 1</span>
+        <h2>Ценообразование новых автомобилей и калькуляции</h2>
+        <p>Модуль портала для контроля минимальной кумулятивной маржи (КМ) на складе новых АМ и для коммерческого расчёта сделки по рабочему листу отдела продаж.</p>
+        <div class="cards">
+          <div class="card-mini"><strong>Ценообразование</strong><span>Правила КМ, карточка каждого авто</span></div>
+          <div class="card-mini"><strong>Калькуляция</strong><span>Расчёт сделки, КВП, акции</span></div>
+          <div class="card-mini"><strong>Аналитика</strong><span>Склад, продажи, сравнение с порогом КМ</span></div>
+        </div>
+        <a class="portal-link" href="/prices_car/presentation/">Эта презентация в портале</a>
+      </article>
+
+      <article class="slide" id="s2">
+        <span class="slide-num">Слайд 2</span>
+        <h2>Зачем это нужно</h2>
+        <ul>
+          <li><strong>Единые правила маржи</strong> по брендам и этапам цены для всей сети дилерских центров.</li>
+          <li><strong>Контроль скидок</strong> — менеджер видит минимальный КМ до согласования сделки.</li>
+          <li><strong>Прозрачность экономики</strong> — КВП и детализация по статьям в калькуляции.</li>
+          <li><strong>Контекст для решения</strong> — склад по моделям и средняя ВП подразделения за месяц.</li>
+        </ul>
+        <table class="data">
+          <thead><tr><th>Роль</th><th>Право</th><th>Действия</th></tr></thead>
+          <tbody>
+            <tr><td>Директор / аналитик</td><td><code>price_car_new</code></td><td>Склад, калькуляции, карточки авто</td></tr>
+            <tr><td>Администратор настроек</td><td><code>price_car_new_settings</code></td><td>Бренды, индексы КМ по этапам</td></tr>
+            <tr><td>Менеджер ОП</td><td>доступ к авто / РЛ</td><td>Калькуляция, согласование условий</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="slide" id="s3">
+        <span class="slide-num">Слайд 3</span>
+        <h2>Как связаны разделы</h2>
+        <div class="flow">
+          <span>Настройки КМ</span>
+          <span class="arrow">→</span>
+          <span>Карточка авто</span>
+          <span class="arrow">→</span>
+          <span>Калькуляция</span>
+          <span class="arrow">→</span>
+          <span>Соглашение / отгрузка</span>
+        </div>
+        <p><strong>КМ</strong> (кумулятивная маржа) — минимальный порог маржи в рублях. Считается автоматически по складу бренда, по продажам за месяц (Power BI) или задаётся вручную на автомобиле.</p>
+        <table class="data">
+          <thead><tr><th>Тип</th><th>Источник</th><th>Когда активен</th></tr></thead>
+          <tbody>
+            <tr><td>1 — по складу</td><td>КМ бренда ÷ средняя РРЦ склада × индекс этапа</td><td>По умолчанию</td></tr>
+            <tr><td>2 — по продажам</td><td>Средняя ВП розницы за месяц по бренду</td><td>Если выше типа 1</td></tr>
+            <tr><td>3 — ручной</td><td>Поле «мин. КМ» на авто</td><td>Если задано (≠ 0)</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="slide" id="s4">
+        <span class="slide-num">Слайд 4</span>
+        <h2>Главная ценообразования</h2>
+        <p>Хаб модуля: переходы к складу, калькуляциям, настройкам КМ, брендам, индексам и дисконту.</p>
+        <figure>
+          <img src="screenshots/01-hub.svg" alt="Главная страница ценообразования новых автомобилей" width="960" height="540" loading="lazy">
+          <figcaption>Управление ценообразованием новых автомобилей — блоки «Директор» и справочники КМ.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/" target="_blank" rel="noopener">Открыть /prices_car/</a>
+        <a class="portal-link secondary" href="/prices_car/calculations_list/" target="_blank" rel="noopener">Калькуляции</a>
+        <a class="portal-link secondary" href="/prices_car/director/" target="_blank" rel="noopener">Склад</a>
+      </article>
+
+      <article class="slide" id="s5">
+        <span class="slide-num">Слайд 5</span>
+        <h2>Управление КМ по брендам</h2>
+        <p>Задаётся значение КМ (%) по каждому бренду ценообразования на выбранный месяц. Это база для автоматического расчёта минимальной маржи на карточке автомобиля.</p>
+        <figure>
+          <img src="screenshots/02-settings-km.svg" alt="Управление КМ по брендам на месяц" width="960" height="540" loading="lazy">
+          <figcaption>Таблица КМ по брендам, массовое добавление на месяц, навигация по месяцам.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/settings/" target="_blank" rel="noopener">Открыть настройки КМ</a>
+      </article>
+
+      <article class="slide" id="s6">
+        <span class="slide-num">Слайд 6</span>
+        <h2>Бренды, индексы этапов, дисконт КМ</h2>
+        <h3>Бренды</h3>
+        <p>Группировка марок Авто.ру в бренды ценообразования; можно исключить отдельные модели из бренда.</p>
+        <figure>
+          <img src="screenshots/03-brands.svg" alt="Справочник брендов" width="960" height="540" loading="lazy">
+          <figcaption>Список брендов и привязка марок.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/brands/" target="_blank" rel="noopener">Бренды</a>
+
+        <h3>Индексы КМ по этапам</h3>
+        <p>Множитель к КМ бренда для этапа установки цены (РРЦ, акция и т.д.).</p>
+        <figure>
+          <img src="screenshots/04-stage-km.svg" alt="Индексы КМ по этапам" width="960" height="540" loading="lazy">
+          <figcaption>Индекс × этап цены.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/stage_km/" target="_blank" rel="noopener">Индексы по этапам</a>
+
+        <h3>Дисконт КМ</h3>
+        <p>Пониженный минимальный КМ для связки бренд → модель → модификация → комплектация → год.</p>
+        <figure>
+          <img src="screenshots/05-discount-km.svg" alt="Управление дисконтом КМ" width="960" height="540" loading="lazy">
+          <figcaption>Исключения из общего правила КМ.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/discount_km/" target="_blank" rel="noopener">Дисконт КМ</a>
+      </article>
+
+      <article class="slide" id="s7">
+        <span class="slide-num">Слайд 7</span>
+        <h2>Склад директора</h2>
+        <p>Все новые автомобили в наличии: фильтры по подразделению, марке, VIN, задачам, мин. КМ. Переход в карточку ценообразования конкретного авто.</p>
+        <figure>
+          <img src="screenshots/06-director.svg" alt="Склад директора — список автомобилей" width="960" height="540" loading="lazy">
+          <figcaption>Обзор склада сети с контролем дней на складе и КМ.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/director/" target="_blank" rel="noopener">Открыть склад</a>
+      </article>
+
+      <article class="slide" id="s8">
+        <span class="slide-num">Слайд 8</span>
+        <h2>Карточка ценообразования автомобиля</h2>
+        <p>URL: <code>/cars/{slug}/price/</code> — вкладки: Автомобиль, ЗН (доп.), Склад, Продажи, Задачи.</p>
+        <figure>
+          <img src="screenshots/07-car-avto.svg" alt="Вкладка Автомобиль — цена и минимальный КМ" width="960" height="540" loading="lazy">
+          <figcaption>Себестоимость, РРЦ, ценовое правило КМ, список калькуляций, ручной мин. КМ.</figcaption>
+        </figure>
+        <p>Пример ссылки (подставьте slug вашего автомобиля):</p>
+        <a class="portal-link secondary" href="/cars/" target="_blank" rel="noopener">Каталог /cars/</a>
+        <p class="small" style="font-size:0.85rem;color:var(--muted)">Из склада или каталога откройте авто → «Ценообразование» или добавьте <code>/price/</code> к URL карточки.</p>
+      </article>
+
+      <article class="slide" id="s9">
+        <span class="slide-num">Слайд 9</span>
+        <h2>Вкладка «Продажи» на карточке авто</h2>
+        <p>Аналитика розничных продаж из накопительной отчётности: фильтры по ДЦ, марке, модели; карточки ВП; график по дням; таблица сделок.</p>
+        <figure>
+          <img src="screenshots/08-car-sales.svg" alt="Аналитика продаж на карточке автомобиля" width="960" height="540" loading="lazy">
+          <figcaption>Метрики ВП и динамика продаж — контекст перед согласованием скидки.</figcaption>
+        </figure>
+        <p>На той же карточке вкладка <strong>«Склад»</strong> показывает аналоги в текущем и во всех подразделениях.</p>
+      </article>
+
+      <article class="slide" id="s10">
+        <span class="slide-num">Слайд 10</span>
+        <h2>Реестр калькуляций</h2>
+        <p>Список всех коммерческих расчётов: период, VIN, подразделения (множественный выбор), наличие соглашения и отгрузки.</p>
+        <figure>
+          <img src="screenshots/09-calc-list.svg" alt="Список калькуляций автомобилей" width="960" height="540" loading="lazy">
+          <figcaption>Фильтры и таблица с КВП, ссылками на документы.</figcaption>
+        </figure>
+        <a class="portal-link" href="/prices_car/calculations_list/" target="_blank" rel="noopener">Открыть реестр</a>
+      </article>
+
+      <article class="slide" id="s11">
+        <span class="slide-num">Слайд 11</span>
+        <h2>Калькуляция одной сделки</h2>
+        <p>URL: <code>/cars/deal/calculation/{id}/</code></p>
+        <ul>
+          <li>Рабочий лист ОП: клиент, менеджер, подразделение, события РЛ</li>
+          <li>Автомобиль: VIN, себестоимость, ссылка на ценообразование</li>
+          <li>Применённые акции (сворачиваемый блок)</li>
+          <li>Расчётные данные — КВП и детализация</li>
+          <li>Справа: <strong>мин. КМ по правилу</strong> и <strong>итоги калькуляции</strong></li>
+        </ul>
+        <figure>
+          <img src="screenshots/10-deal-calc.svg" alt="Экран калькуляции автомобиля" width="960" height="540" loading="lazy">
+          <figcaption>РЛ, акции, минимальный КМ и итоговый КВП.</figcaption>
+        </figure>
+      </article>
+
+      <article class="slide" id="s12">
+        <span class="slide-num">Слайд 12</span>
+        <h2>Аналитика внутри калькуляции</h2>
+        <h3>Склад</h3>
+        <p>Две круговые диаграммы: новые АМ в наличии по моделям марки — в подразделении калькуляции и по всей сети.</p>
+        <h3>Продажи подразделения</h3>
+        <p>За текущий месяц: карточки ВП (маржа, ОПФУ, trade-in, шины, работы, запчасти, гос. рег.) и график <strong>средней ВП по моделям</strong> с сегментами:</p>
+        <ul>
+          <li><strong>Железо</strong> — маржа без НДС</li>
+          <li><strong>ДОП</strong> — работы, ЗЧ, шины, гос. рег.</li>
+          <li><strong>ОПФУ</strong> — VPOPFU</li>
+          <li><strong>ТИ</strong> — trade-in по плану</li>
+        </ul>
+        <figure>
+          <img src="screenshots/11-deal-analytics.svg" alt="Склад и средняя ВП по моделям в калькуляции" width="960" height="540" loading="lazy">
+          <figcaption>Контекст склада и средних показателей продаж ДЦ за месяц.</figcaption>
+        </figure>
+      </article>
+
+      <article class="slide" id="s13">
+        <span class="slide-num">Слайд 13</span>
+        <h2>Типовой сценарий менеджера</h2>
+        <ol>
+          <li>Рабочий лист ОП → создание / открытие <strong>калькуляции</strong> по автомобилю.</li>
+          <li>Проверка <strong>мин. КМ</strong> в правой колонке — сравнение с планируемым КВП.</li>
+          <li>Просмотр <strong>акций</strong> и корректировка условий сделки.</li>
+          <li>Оценка <strong>склада</strong> и <strong>продаж ДЦ</strong> — обоснование скидки.</li>
+          <li>При необходимости — переход в <strong>ценообразование авто</strong> для ручного КМ или истории.</li>
+          <li>Оформление <strong>соглашения</strong> и <strong>отгрузки</strong> (контроль в реестре калькуляций).</li>
+        </ol>
+        <a class="portal-link" href="/docs_car_agreement/" target="_blank" rel="noopener">Соглашения</a>
+      </article>
+
+      <article class="slide" id="s14">
+        <span class="slide-num">Слайд 14</span>
+        <h2>Глоссарий</h2>
+        <table class="data">
+          <thead><tr><th>Термин</th><th>Значение</th></tr></thead>
+          <tbody>
+            <tr><td>КМ</td><td>Минимальная кумулятивная маржа, ₽</td></tr>
+            <tr><td>КВП</td><td>Кумулятивная валовая прибыль по калькуляции сделки</td></tr>
+            <tr><td>ВП</td><td>Валовая прибыль (железо, допы, ОПФУ, ТИ…)</td></tr>
+            <tr><td>РРЦ</td><td>Рекомендованная розничная цена импортёра</td></tr>
+            <tr><td>РЛ</td><td>Рабочий лист отдела продаж</td></tr>
+            <tr><td>ДОП</td><td>Допоборудование (ЗН, работы, запчасти)</td></tr>
+            <tr><td>Этап / ЦГ</td><td>Этап установки цены (влияет на индекс КМ)</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:1.5rem;font-size:0.9rem;color:var(--muted)">
+          Презентация: модуль ценообразования портала Корс Групп.
+          Скриншоты — схематичные макеты интерфейса. Актуальный вид экранов может незначительно отличаться.
+        </p>
+      </article>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      if (location.protocol === 'file:') {
+        document.getElementById('fileProtocolWarn').style.display = 'block';
+      }
+
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('overlay');
+      var btnMenu = document.getElementById('btnMenu');
+
+      function closeMenu() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+      }
+      function openMenu() {
+        sidebar.classList.add('open');
+        overlay.classList.add('open');
+      }
+
+      if (btnMenu) {
+        btnMenu.addEventListener('click', function () {
+          sidebar.classList.contains('open') ? closeMenu() : openMenu();
+        });
+      }
+      overlay.addEventListener('click', closeMenu);
+
+      document.querySelectorAll('.sidebar a[href^="#"]').forEach(function (a) {
+        a.addEventListener('click', closeMenu);
+      });
+
+      var sections = document.querySelectorAll('.slide[id]');
+      var navLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              var id = e.target.id;
+              navLinks.forEach(function (l) {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+              });
+            }
+          });
+        }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+        sections.forEach(function (s) { obs.observe(s); });
+      }
+    })();
+  </script>
+</body>
+</html>

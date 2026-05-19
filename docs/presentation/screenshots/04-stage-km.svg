@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect width="960" height="540" fill="#f4f6f9"/>
+  <rect x="0" y="0" width="960" height="52" fill="url(#hdr)"/>
+  <text x="20" y="33" fill="#fff" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="600">Корс Групп · Портал</text>
+  <text x="940" y="33" fill="#dbeafe" font-family="Segoe UI, system-ui, sans-serif" font-size="12" text-anchor="end">Индексы КМ по этапам</text>
+<rect x="24" y="64" width="912" height="380" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><rect x="40" y="110" width="880" height="58" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="56" y="145" fill="#111827" font-family="Segoe UI" font-size="14" font-weight="600">РРЦ</text><text x="840" y="145" fill="#2563eb" font-family="Segoe UI" font-size="14" font-weight="700">× 1.00</text><rect x="40" y="182" width="880" height="58" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="56" y="217" fill="#111827" font-family="Segoe UI" font-size="14" font-weight="600">Акция</text><text x="840" y="217" fill="#2563eb" font-family="Segoe UI" font-size="14" font-weight="700">× 0.95</text><rect x="40" y="254" width="880" height="58" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="56" y="289" fill="#111827" font-family="Segoe UI" font-size="14" font-weight="600">Распродажа</text><text x="840" y="289" fill="#2563eb" font-family="Segoe UI" font-size="14" font-weight="700">× 1.10</text><rect x="40" y="326" width="880" height="58" rx="12" fill="#ffffff" stroke="#dee2e6" filter="url(#sh)"/><text x="56" y="361" fill="#111827" font-family="Segoe UI" font-size="14" font-weight="600">Спец. условие</text><text x="840" y="361" fill="#2563eb" font-family="Segoe UI" font-size="14" font-weight="700">× 0.85</text></svg>

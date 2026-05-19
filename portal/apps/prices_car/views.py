@@ -1,7 +1,9 @@
+import os
 from datetime import date
 
+from django.conf import settings
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -731,3 +733,33 @@ def calculations_list(request):
             'select_units': select_units,
         },
     })
+
+
+def _presentation_root():
+    return os.path.join(settings.BASE_DIR, 'docs', 'presentation')
+
+
+@login_required
+def presentation_page(request):
+    """HTML-презентация: ценообразование новых АМ и калькуляции."""
+    path = os.path.join(_presentation_root(), 'cenoobrazovanie-kalkulyacii.html')
+    if not os.path.isfile(path):
+        raise Http404
+    with open(path, encoding='utf-8') as f:
+        content = f.read()
+    return HttpResponse(content, content_type='text/html; charset=utf-8')
+
+
+@login_required
+def presentation_asset(request, asset):
+    """Статические файлы презентации (скриншоты)."""
+    asset = asset.replace('\\', '/').lstrip('/')
+    if '..' in asset.split('/'):
+        raise Http404
+    if not asset.startswith('screenshots/'):
+        raise Http404
+    path = os.path.join(_presentation_root(), asset)
+    if not os.path.isfile(path):
+        raise Http404
+    content_type = 'image/svg+xml' if path.endswith('.svg') else 'application/octet-stream'
+    return FileResponse(open(path, 'rb'), content_type=content_type)  # noqa: SIM115
