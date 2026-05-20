@@ -1,0 +1,140 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — КорсАвто · Command {% endblock %}
+{% block title_navbar %} — КорсАвто {% endblock %}
+
+{% block head %}
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    .asp-cmd-ribbon::after { animation: none !important; }
+  }
+  .asp-cmd-ribbon {
+    position: relative;
+    border-radius: 0 0 18px 18px;
+    padding: 1.75rem 1.5rem 2rem;
+    margin: -0.5rem -0.25rem 1.5rem;
+    background: linear-gradient(125deg, #0f172a 0%, #1e293b 35%, #172554 70%, #0c1a3a 100%);
+    color: #f8fafc;
+    overflow: hidden;
+  }
+  .asp-cmd-ribbon::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 55%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 65%);
+    animation: asp-cmd-glow 12s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes asp-cmd-glow {
+    from { opacity: 0.5; transform: translate(0, 0); }
+    to { opacity: 0.85; transform: translate(-8%, 4%); }
+  }
+  .asp-cmd-inner { position: relative; z-index: 1; }
+  .asp-cmd-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #93c5fd;
+    margin-bottom: 0.35rem;
+  }
+  .asp-cmd-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.25rem;
+    background: linear-gradient(90deg, #fff 0%, #e0e7ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .asp-cmd-sub {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    max-width: 42rem;
+    margin: 0;
+  }
+  .asp-cmd-rail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 1.25rem;
+    align-items: stretch;
+  }
+  @media (min-width: 1200px) {
+    .asp-cmd-rail { flex-wrap: nowrap; }
+  }
+  .asp-cmd-rail .asp-hub-step {
+    flex: 1 1 auto;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    text-decoration: none;
+    color: #e2e8f0 !important;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .asp-cmd-rail .asp-hub-step:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(96, 165, 250, 0.45);
+    transform: translateY(-2px);
+    color: #fff !important;
+  }
+  .asp-cmd-rail .asp-hub-num {
+    flex-shrink: 0;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.85);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  .asp-cmd-rail .text-muted { color: #94a3b8 !important; }
+  .asp-cmd-rail .asp-hub-step:hover .text-muted { color: #cbd5e1 !important; }
+
+  .asp-command-theme .portal-panel {
+    border-left: 4px solid #2563eb;
+    border-radius: 0 12px 12px 0;
+    box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06);
+  }
+  .asp-section-head h3 { font-size: 1.02rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="portal-page asp-command-theme">
+
+  {% include 'asp/partials/variant_switcher.html' %}
+
+  <div class="asp-cmd-ribbon">
+    <div class="asp-cmd-inner">
+      <div class="asp-cmd-kicker">Единая платформа</div>
+      <h2 class="asp-cmd-title">Операционный центр автосалона</h2>
+      <p class="asp-cmd-sub">Полный процесс: от машины на складе до отгрузки и контроля KPI — в стиле корпоративных command center.</p>
+      <div class="asp-cmd-rail" aria-label="Этапы процесса">
+        {% include 'asp/partials/process_steps_inner.html' %}
+      </div>
+    </div>
+  </div>
+
+  {% include 'asp/partials/hub_panels.html' %}
+
+</div>
+
+{% endblock %}

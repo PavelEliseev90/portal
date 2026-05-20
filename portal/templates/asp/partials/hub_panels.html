@@ -1,0 +1,88 @@
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-truck me-1" aria-hidden="true"></span> Склад и учёт</h3>
+    <span class="text-muted small">Наличие, распределение по ДЦ, переоценка</span>
+  </div>
+  <p class="text-muted small mb-2">Управление витриной автомобилей с пробегом: диспозиция, аналитика склада, задачи по авто, обзор директора.</p>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="{% url 'avtosalon:disposition' %}"><span class="icon-truck"></span> Диспозиция</a>
+    <a class="btn-calculate-sm" href="{% url 'avtosalon:warehouse_analysis' %}"><span class="icon-truck"></span> Аналитика склада</a>
+    <a class="btn-calculate-sm" href="{% url 'avtosalon:gk_director_dashboard' %}"><span class="icon-truck"></span> Склад директора</a>
+    <a class="btn-calculate-sm" href="{% url 'avtosalon:car_tasks_list' %}"><span class="icon-mbri-layers"></span> Задачи по авто</a>
+    <a class="btn-calculate-sm" href="{% url 'korsavto_dashboard' %}"><span class="bi bi-speedometer2"></span> Дашборд КорсАвто</a>
+    <a class="btn-calculate-sm" href="/cars/catalog/"><span class="bi bi-grid"></span> Каталог марок</a>
+  </div>
+</div>
+
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-clipboard-check me-1" aria-hidden="true"></span> Отдел оценки</h3>
+    <span class="text-muted small">Trade-in и листы оценки</span>
+  </div>
+  <p class="text-muted small mb-2">Приём авто в зачёт, онлайн-оценки, воронка и отчёты по взаимодействию с клиентом.</p>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="/eco/online/"><span class="icon-doc"></span> Онлайн-оценки</a>
+    <a class="btn-calculate-sm" href="/rlks_trade_in/"><span class="icon-doc"></span> Рабочие листы Trade-in</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:tradein_funnel' %}"><span class="bi bi-funnel"></span> Воронка оценок</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:interactive_pricing_report' %}"><span class="bi bi-graph-up"></span> Отчёт по ценообразованию</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:interactive_evaluations_report' %}"><span class="bi bi-search"></span> Интерактивный отчёт по оценкам</a>
+  </div>
+</div>
+
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-wrench-adjustable me-1" aria-hidden="true"></span> Подготовка автомобилей</h3>
+    <span class="text-muted small">От приёмки до готовности к продаже</span>
+  </div>
+  <p class="text-muted small mb-2">Планирование работ, заказ-наряды, чек-листы и контроль сроков подготовки.</p>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="{% url 'car_preparation:dashboard' %}"><span class="icon-doc"></span> Рабочий стол подготовки</a>
+    <a class="btn-calculate-sm" href="{% url 'car_preparation:list' %}"><span class="icon-doc"></span> Список подготовок</a>
+    <a class="btn-calculate-sm" href="{% url 'car_preparation:calendar' %}"><span class="bi bi-calendar3"></span> Календарь</a>
+    <a class="btn-calculate-sm" href="{% url 'car_preparation:performers_works' %}"><span class="bi bi-people"></span> Работы исполнителей</a>
+  </div>
+</div>
+
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-shop me-1" aria-hidden="true"></span> Отдел продаж</h3>
+    <span class="text-muted small">РЛ, сделки, отгрузка, внешние площадки</span>
+  </div>
+  <p class="text-muted small mb-2">Ведение клиентов, коммерческие предложения, оформление соглашений и отгрузок, калькуляции и аукцион.</p>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="/docs_rlk/"><span class="icon-doc"></span> Рабочие листы ОП</a>
+    <a class="btn-calculate-sm" href="/docs_car_agreement/"><span class="icon-doc"></span> Соглашения</a>
+    <a class="btn-calculate-sm" href="/docs_car_shipment/"><span class="icon-doc"></span> Отгрузки</a>
+    <a class="btn-calculate-sm" href="/auction/"><span class="icon-doc"></span> Аукцион</a>
+    <a class="btn-calculate-sm" href="{% url 'prices_car:calculations_list' %}"><span class="icon-mbri-bulleted-list"></span> Калькуляции (новые авто)</a>
+    <a class="btn-calculate-sm" href="{% url 'korsavto_settings' %}" title="Проверка правил по ДЦ"><span class="bi bi-shield-check"></span> Настройки и правила по ДЦ</a>
+  </div>
+  <p class="text-muted small mt-2 mb-0">Обмен расчётными данными соглашений (КВП) с 1С: <code class="small">POST/GET /api/calculated_cumulative_data/</code></p>
+</div>
+
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-graph-up-arrow me-1" aria-hidden="true"></span> Аналитика и маркетинг</h3>
+    <span class="text-muted small">Показатели сети и выгрузки</span>
+  </div>
+  <p class="text-muted small mb-2">Воронка продаж, KPI оценки, выгрузка на классифайды.</p>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="/korsavto/sales_funnel/"><span class="bi bi-funnel"></span> Воронка продаж</a>
+    <a class="btn-calculate-sm" href="/korsavto/kpi_eco/"><span class="bi bi-speedometer2"></span> KPI оценки</a>
+    <a class="btn-calculate-sm" href="{% url 'classifieds:list' %}"><span class="bi bi-cloud-upload"></span> Классифайды</a>
+    <a class="btn-calculate-sm" href="{% url 'prices_car:index' %}"><span class="bi bi-currency-exchange"></span> Ценообразование новых</a>
+  </div>
+</div>
+
+<div class="portal-panel">
+  <div class="asp-section-head">
+    <h3 class="deal-section-title"><span class="bi bi-gear me-1" aria-hidden="true"></span> Настройки</h3>
+    <span class="text-muted small">Справочники и политики КорсАвто</span>
+  </div>
+  <div class="asp-links">
+    <a class="btn-calculate-sm" href="{% url 'korsavto_settings' %}"><span class="icon-doc"></span> Настройки КорсАвто (ДЦ)</a>
+    <a class="btn-calculate-sm" href="{% url 'settings_autopricing_korsavto_units' %}"><span class="icon-doc"></span> Автоценка по подразделениям</a>
+    <a class="btn-calculate-sm" href="/settings/settings_diagnostic/"><span class="icon-doc"></span> Настройки диагностики</a>
+    <a class="btn-calculate-sm" href="/settings/settings_works/"><span class="icon-doc"></span> Нормо-часы и работы</a>
+  </div>
+</div>
