@@ -1,14 +1,12 @@
 from django.urls import path, include
 from django.views.generic import TemplateView
-from api import views, views_avtosalon, views_catalog, views_mobile_android_api_v1, views_mobile_android_api_v2
+from api import views_cars_bu, views, views_avtosalon, views_catalog, views_mobile_android_api_v1, views_mobile_android_api_v2
 from rest_framework_swagger.views import get_swagger_view
 
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.routers import DefaultRouter
-
-
 
 
 
@@ -181,5 +179,9 @@ urlpatterns = [
    path('info_articles/',                       views.get_info_article_products),
 
    path('calculate_car/',                       views.calculate_car),
+
+
+   path('calculated_cumulative_data/',                views_cars_bu.calculated_cumulative_data),
+   path('calculated_cumulative_data_create_or_edit/', views_cars_bu.calculated_cumulative_data_create_or_edit),
    
 ]
