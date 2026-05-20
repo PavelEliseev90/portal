@@ -1,0 +1,11 @@
+{# Переключатель темы: ?v=1 | 2 | 3 | 4 #}
+<div class="asp-variant-switcher d-flex flex-wrap align-items-center gap-2 mb-3 py-2 px-3 rounded-3 border bg-white bg-opacity-50">
+  <span class="text-muted small text-uppercase me-1" style="letter-spacing:0.04em;">Оформление</span>
+  <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Вариант страницы КорсАвто">
+    <a href="{% url 'asp:asp' %}?v=1" class="btn {% if params.asp_variant == '1' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Классика</a>
+    <a href="{% url 'asp:asp' %}?v=2" class="btn {% if params.asp_variant == '2' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Bento</a>
+    <a href="{% url 'asp:asp' %}?v=3" class="btn {% if params.asp_variant == '3' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Command</a>
+    <a href="{% url 'asp:asp' %}?v=4" class="btn {% if params.asp_variant == '4' %}btn-primary{% else %}btn-outline-secondary{% endif %}">22 век</a>
+  </div>
+  <span class="text-muted small ms-auto d-none d-md-inline">Можно закрепить понравившийся в избранном браузера</span>
+</div>
