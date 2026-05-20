@@ -27,13 +27,13 @@
     </section>
 
     {# Результат пересчёта #}
-    <div class="portal-panel">
+    <div class="portal-panel no-padding">
       <h6 class="d-flex align-items-center gap-2 mb-3">
         <span class="icon-mbri-credit-card"></span> Сравнение результата пересчёта
       </h6>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0">
-          <thead class="table-light">
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-striped table-hover mb-0">
+          <thead>
             <tr>
               <th>Показатель</th>
               <th class="text-end">Интерактивная оценка</th>
@@ -45,7 +45,7 @@
             {% if orig %}
             <tr>
               <td>ЦНА</td>
-              <td class="text-end">{{ param.price_estimation.zna|floatformat:"0g" }} ₽ {{param.price_estimation}}</td>
+              <td class="text-end">{{ params.price_estimation.zna|floatformat:"0g" }} ₽ {{param.price_estimation}}</td>
               <td class="text-end {% if params.price_estimation.zna != params.price_cd.zna %}table-warning{% endif %}">{{ params.price_cd.zna|floatformat:"0g" }} ₽</td>
             </tr>
             <tr>
@@ -102,6 +102,33 @@
               <td class="text-end">{{ orig.amount_recovery|floatformat:"0g" }} ₽</td>
               <td class="text-end {% if params.cd.amount_recovery != orig.price_cd.amount_sum %}table-warning{% endif %}">{{ params.price_cd.amount_sum|floatformat:"0g" }} ₽</td>
             </tr>
+            <tr>
+              <td>Расчеты детально</td>
+              <td class="text-end">
+                {% for info in params.price_estimation.list_info_price %}
+                  <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                    <div class="card-body" >
+                      <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                      <br>
+                      {{info.comment}}
+                    </div>
+                  </div>
+                {% endfor %}
+         
+
+              </td>
+              <td class="text-end">
+                {% for info in params.price_cd.list_info_price %}
+                  <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                    <div class="card-body" >
+                      <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                      <br>
+                      {{info.comment}}
+                    </div>
+                  </div>
+                {% endfor %}
+              </td>
+            </tr>
             {% else %}
             <tr><td colspan="3" class="text-muted">Нет данных согласования в интерактивной оценке.</td></tr>
             {% endif %}
@@ -117,9 +144,9 @@
       <h6 class="d-flex align-items-center gap-2 mb-3">
         <span class="icon-mbri-user"></span> Салон: сравнение параметров
       </h6>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0">
-          <thead class="table-light">
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-striped table-hover">
+          <thead>
             <tr>
               <th>Параметр</th>
               <th class="text-end">Интерактивная оценка</th>
@@ -293,9 +320,9 @@
       <h6 class="d-flex align-items-center gap-2 mb-3">
         <span class="icon-mbri-car"></span> Тест-драйв: сравнение параметров
       </h6>
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0">
-          <thead class="table-light">
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-striped table-hover">
+          <thead>
             <tr>
               <th>Параметр</th>
               <th>Интерактивная оценка</th>

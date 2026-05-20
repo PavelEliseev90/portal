@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'website.apps.WebsiteConfig',
     'prices_car.apps.PricesCarConfig',
     'prices_car_bu.apps.PricesCarBuConfig',
+    'asp.apps.AspConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',

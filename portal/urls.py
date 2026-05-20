@@ -48,8 +48,8 @@ urlpatterns = [
     path('car_preparation/',    include('car_preparation.urls')),
 
     #PowerBI
-    path('checklists/',    include('checklists.urls')),
-
+    path('checklists/',     include('checklists.urls')),
+    path('asp/',            include('asp.urls')),
     path('changelog/',      include('changelog.urls')),
 
     #Веб - сайт
