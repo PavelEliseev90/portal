@@ -1,0 +1,278 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Аукцион Авито {% endblock %}
+{% block title_navbar %} — Аукцион Авито {% endblock %}
+
+{% block head %}
+<style>
+  .aav-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 48%, #eef4fb 100%);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+  .aav-hero h2 { margin: 0 0 0.35rem; font-weight: 650; letter-spacing: -0.02em; color: #002a5a; }
+  .aav-filters .form-control,
+  .aav-filters .form-select {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0, 42, 90, 0.15);
+  }
+  .aav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .aav-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: #fff;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 12px 32px rgba(0, 23, 61, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    height: 100%;
+  }
+  .aav-card:hover {
+    color: inherit;
+    transform: translateY(-2px);
+    border-color: rgba(0, 80, 157, 0.35);
+    box-shadow: 0 16px 40px rgba(0, 42, 90, 0.12);
+  }
+  .aav-card-photo {
+    aspect-ratio: 4/3;
+    background: #e8eef5;
+    position: relative;
+    overflow: hidden;
+  }
+  .aav-card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .aav-card-photo .aav-no-photo {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8ea1ba;
+    font-size: 2.5rem;
+  }
+  .aav-card-body { padding: 0.85rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
+  .aav-card-title {
+    font-weight: 650;
+    font-size: 1rem;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+  }
+  .aav-card-meta { font-size: 0.82rem; color: #6c7a92; margin-bottom: 0.5rem; }
+  .aav-card-prices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  .aav-price-strong { font-weight: 700; color: #002a5a; font-size: 0.95rem; }
+  .aav-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(0, 80, 157, 0.1);
+    color: #00509d;
+    margin: 0 0.2rem 0.2rem 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .aav-status {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #002a5a;
+    border: 1px solid rgba(0, 42, 90, 0.12);
+  }
+  .aav-status-inprogress { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+  .aav-finish {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+  }
+  .aav-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: #6c7a92;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+
+  <div class="aav-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h2><span class="bi bi-hammer me-2" aria-hidden="true"></span>Аукцион Авито</h2>
+      <p class="text-muted small mb-0">Лоты B2B-аукциона: оценка, ставки, Автотека и рыночный коридор IMV.</p>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'asp:asp' %}">
+      <span class="bi bi-arrow-left"></span> КорсАвто
+    </a>
+  </div>
+
+  <div class="portal-panel aav-filters mb-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small text-muted mb-1">Поиск</label>
+        <input type="search" class="form-control" name="q" value="{{ params.filters.q }}"
+               placeholder="Марка, модель, лот, город…">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Статус</label>
+        <select class="form-select" name="status">
+          <option value="">Все</option>
+          {% for code, label in params.status_choices %}
+            <option value="{{ code }}" {% if params.filters.status == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Сортировка</label>
+        <select class="form-select" name="sort">
+          <option value="-finish_at" {% if params.filters.sort == '-finish_at' %}selected{% endif %}>Окончание ↓</option>
+          <option value="finish_at" {% if params.filters.sort == 'finish_at' %}selected{% endif %}>Окончание ↑</option>
+          <option value="-min_price" {% if params.filters.sort == '-min_price' %}selected{% endif %}>Цена продавца ↓</option>
+          <option value="min_price" {% if params.filters.sort == 'min_price' %}selected{% endif %}>Цена продавца ↑</option>
+          <option value="-imv_median" {% if params.filters.sort == '-imv_median' %}selected{% endif %}>IMV медиана ↓</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
+          <span class="bi bi-search"></span> Найти
+        </button>
+      </div>
+      <div class="col-md-1">
+        <a href="{% url 'auction_avito:lot_list' %}" class="btn btn-outline-secondary w-100" title="Сбросить">×</a>
+      </div>
+    </form>
+  </div>
+
+  {% if params.page_obj.paginator.count %}
+    <p class="text-muted small mb-2">
+      Найдено: <strong>{{ params.page_obj.paginator.count }}</strong>
+      {% if params.page_obj.paginator.num_pages > 1 %}
+        · стр. {{ params.page_obj.number }} из {{ params.page_obj.paginator.num_pages }}
+      {% endif %}
+    </p>
+
+    <div class="aav-grid">
+      {% for lot in params.page_obj %}
+        {% with vehicle=lot.vehicle_avito offer=lot.offers.first img=lot.images.first %}
+        <a class="aav-card" href="{% url 'auction_avito:lot_detail' lot.pk %}">
+          <div class="aav-card-photo">
+            {% if offer %}
+              <span class="aav-status {% if offer.status_code == 'inprogress' %}aav-status-inprogress{% endif %}">
+                {{ offer.status_name|default:offer.status_code|default:"—" }}
+              </span>
+            {% endif %}
+            {% if lot.finish_at %}
+              <span class="aav-finish">{{ lot.finish_at|date:"d.m H:i" }}</span>
+            {% endif %}
+            {% if img %}
+              <img src="{{ img.url_preview|default:img.url }}" alt="" loading="lazy">
+            {% else %}
+              <span class="aav-no-photo bi bi-car-front"></span>
+            {% endif %}
+          </div>
+          <div class="aav-card-body">
+            <div class="aav-card-title">
+              {% if vehicle and vehicle.brand_name %}
+                {{ vehicle.brand_name }} {{ vehicle.model_name }}
+                {% if vehicle.year %}<span class="text-muted fw-normal">· {{ vehicle.year }}</span>{% endif %}
+              {% else %}
+                Лот {{ lot.lot_id }}
+              {% endif %}
+            </div>
+            <div class="aav-card-meta">
+              {% if vehicle %}
+                {% if vehicle.mileage %}{{ vehicle.mileage|formatted_number }} км{% endif %}
+                {% if vehicle.transmission_name %} · {{ vehicle.transmission_name }}{% endif %}
+                {% if vehicle.engine_type_name %} · {{ vehicle.engine_type_name }}{% endif %}
+              {% endif %}
+              <br>
+              {% if lot.seller_place_name %}<span class="bi bi-geo-alt"></span> {{ lot.seller_place_name }}{% endif %}
+            </div>
+            {% if offer and offer.badges.all %}
+              <div class="mb-1">
+                {% for badge in offer.badges.all|slice:":3" %}
+                  <span class="aav-badge" title="{{ badge.description }}">{{ badge.title|truncatechars:28 }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <div class="aav-card-prices">
+              {% if lot.min_price %}
+                <span>Мин. <span class="aav-price-strong">{{ lot.min_price|formatted_number }} ₽</span></span>
+              {% endif %}
+              {% if offer.bid %}
+                <span>Ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
+              {% endif %}
+              {% if lot.latest_estimation_price %}
+                <span>Выкуп <strong class="text-success">{{ lot.latest_estimation_price|formatted_number }} ₽</strong></span>
+              {% endif %}
+              {% if lot.imv_median %}
+                <span class="text-muted">IMV {{ lot.imv_low|formatted_number }}–{{ lot.imv_high|formatted_number }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+        {% endwith %}
+      {% endfor %}
+    </div>
+
+    {% if params.page_obj.has_other_pages %}
+      <nav class="mt-3" aria-label="Страницы">
+        <ul class="pagination pagination-sm justify-content-center">
+          {% if params.page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&sort={{ params.filters.sort }}">←</a>
+            </li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
+          {% if params.page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&sort={{ params.filters.sort }}">→</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <div class="portal-panel aav-empty">
+      <span class="bi bi-inbox display-4 d-block mb-3 opacity-50"></span>
+      <h5 class="text-secondary">Лотов пока нет</h5>
+      <p class="small mb-0">После синхронизации с API Авито лоты появятся здесь.<br>Загрузка: <code>auction_avito.services.sync.upsert_offer_from_api</code></p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

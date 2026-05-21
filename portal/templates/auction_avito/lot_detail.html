@@ -1,0 +1,369 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Лот {{ params.lot.lot_id }} {% endblock %}
+{% block title_navbar %} — Аукцион Авито {% endblock %}
+
+{% block head %}
+<style>
+  .aav-detail-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 55%, #eef4fb 100%);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .aav-detail-hero h2 { margin: 0; font-weight: 650; color: #002a5a; font-size: 1.35rem; }
+  .aav-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+  .aav-gallery a {
+    display: block;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+  }
+  .aav-gallery img { width: 100%; height: 100%; object-fit: cover; }
+  .aav-kpi {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.65rem;
+  }
+  .aav-kpi-item {
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+  }
+  .aav-kpi-item .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8ea1ba;
+    margin-bottom: 0.15rem;
+  }
+  .aav-kpi-item .value { font-weight: 700; color: #002a5a; font-size: 1.05rem; }
+  .aav-spec-table td { padding: 0.4rem 0.5rem; font-size: 0.88rem; vertical-align: top; }
+  .aav-spec-table td:first-child { color: #8ea1ba; width: 42%; }
+  .aav-autoteka-ok { color: #16a34a; }
+  .aav-autoteka-warn { color: #ca8a04; }
+  .aav-autoteka-bad { color: #dc2626; }
+  .aav-autoteka-inc { color: #6c7a92; }
+  .aav-badge-pill {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 80, 157, 0.1);
+    color: #00509d;
+    margin: 0 0.35rem 0.35rem 0;
+  }
+  .aav-desc { white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; color: #334155; }
+  .aav-panel-title {
+    font-size: 1rem;
+    font-weight: 650;
+    color: #002a5a;
+    margin-bottom: 0.65rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+
+  <div class="aav-detail-hero d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <h2>
+        {% if params.vehicle and params.vehicle.brand_name %}
+          {{ params.vehicle.brand_name }} {{ params.vehicle.model_name }}
+          {% if params.vehicle.year %}<span class="text-muted fw-normal fs-5">· {{ params.vehicle.year }}</span>{% endif %}
+        {% else %}
+          Лот {{ params.lot.lot_id }}
+        {% endif %}
+      </h2>
+      <p class="text-muted small mb-0">
+        № {{ params.lot.lot_id }}
+        {% if params.lot.seller_place_name %} · <span class="bi bi-geo-alt"></span> {{ params.lot.seller_place_name }}{% endif %}
+        {% if params.lot.finish_at %} · до {{ params.lot.finish_at|date:"d.m.Y H:i" }}{% endif %}
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'auction_avito:lot_list' %}" class="btn btn-outline-secondary btn-sm">
+        <span class="bi bi-arrow-left"></span> К списку
+      </a>
+      {% if params.primary_offer %}
+        <span class="badge {% if params.primary_offer.status_code == 'inprogress' %}bg-success{% else %}bg-secondary{% endif %}">
+          {{ params.primary_offer.status_name|default:params.primary_offer.status_code }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-images me-1"></span> Фотографии</div>
+        {% if params.images %}
+          <div class="aav-gallery">
+            {% for image in params.images %}
+              <a href="{{ image.url }}" target="_blank" rel="noopener">
+                <img src="{{ image.url_preview|default:image.url }}" alt="Фото {{ forloop.counter }}" loading="lazy">
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted small mb-0">Фотографии не загружены.</p>
+        {% endif %}
+      </div>
+
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-card-text me-1"></span> Описание</div>
+        <div class="aav-desc">{{ params.lot.description|default:"—" }}</div>
+      </div>
+
+      {% if params.lot.equipment.all %}
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация</div>
+        <div class="row g-2">
+          {% for eq in params.lot.equipment.all %}
+            <div class="col-md-6">
+              <strong class="small d-block text-secondary">{{ eq.name }}</strong>
+              <span class="small">{{ eq.values|join:", " }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-currency-exchange me-1"></span> Цены и ставки</div>
+        <div class="aav-kpi">
+          {% if params.lot.min_price %}
+            <div class="aav-kpi-item">
+              <div class="label">Цена продавца</div>
+              <div class="value">{{ params.lot.min_price|formatted_number }} ₽</div>
+            </div>
+          {% endif %}
+          {% if params.primary_offer and params.primary_offer.bid %}
+            <div class="aav-kpi-item">
+              <div class="label">Ваша ставка</div>
+              <div class="value">{{ params.primary_offer.bid|formatted_number }} ₽</div>
+            </div>
+          {% endif %}
+          {% if params.lot.bid_l1 %}
+            <div class="aav-kpi-item">
+              <div class="label">Коридор L1–L2</div>
+              <div class="value" style="font-size:0.9rem">{{ params.lot.bid_l1|formatted_number }} – {{ params.lot.bid_l2|formatted_number }}</div>
+            </div>
+          {% endif %}
+          {% if params.lot.imv_median %}
+            <div class="aav-kpi-item">
+              <div class="label">IMV (рынок)</div>
+              <div class="value" style="font-size:0.85rem">{{ params.lot.imv_low|formatted_number }} – {{ params.lot.imv_high|formatted_number }}</div>
+              <div class="small text-muted">медиана {{ params.lot.imv_median|formatted_number }} ₽</div>
+            </div>
+          {% endif %}
+          {% if params.primary_offer and params.primary_offer.gm1_money %}
+            <div class="aav-kpi-item">
+              <div class="label">GM1</div>
+              <div class="value">{{ params.primary_offer.gm1_money|formatted_number }} ₽</div>
+              {% if params.primary_offer.gm1_percent %}
+                <div class="small text-muted">{{ params.primary_offer.gm1_percent }}%</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% if params.primary_offer %}
+          <hr class="my-2">
+          <p class="small text-muted mb-1">
+            Шаг ставки: {{ params.primary_offer.min_bid_step|formatted_number|default:"—" }} ₽
+            {% if params.primary_offer.bid_made_at %} · {{ params.primary_offer.bid_made_at|date:"d.m.Y H:i" }}{% endif %}
+          </p>
+          {% if params.primary_offer.bid_made_by_last_name %}
+            <p class="small mb-0">
+              {{ params.primary_offer.bid_made_by_last_name }}
+              {{ params.primary_offer.bid_made_by_first_name }}
+              {% if params.primary_offer.bid_made_by_email %}<span class="text-muted">({{ params.primary_offer.bid_made_by_email }})</span>{% endif %}
+            </p>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {% if params.primary_offer and params.primary_offer.badges.all or params.lot.badges.all %}
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-tags me-1"></span> Метки</div>
+        {% if params.primary_offer %}
+          {% for badge in params.primary_offer.badges.all %}
+            <span class="aav-badge-pill" title="{{ badge.description }}">{{ badge.title }}</span>
+          {% endfor %}
+        {% endif %}
+        {% for badge in params.lot.badges.all %}
+          <span class="aav-badge-pill" title="{{ badge.description }}">{{ badge.title }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if params.vehicle %}
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-car-front me-1"></span> Характеристики</div>
+        <table class="table table-sm table-borderless aav-spec-table mb-0">
+          <tbody>
+            {% if params.vehicle.modification_name %}<tr><td>Модификация</td><td>{{ params.vehicle.modification_name }}</td></tr>{% endif %}
+            {% if params.vehicle.generation_name %}<tr><td>Поколение</td><td>{{ params.vehicle.generation_name }}</td></tr>{% endif %}
+            {% if params.vehicle.configuration_name %}<tr><td>Комплектация</td><td>{{ params.vehicle.configuration_name }}</td></tr>{% endif %}
+            {% if params.vehicle.mileage %}<tr><td>Пробег</td><td>{{ params.vehicle.mileage|formatted_number }} км</td></tr>{% endif %}
+            {% if params.vehicle.body_type_name %}<tr><td>Кузов</td><td>{{ params.vehicle.body_type_name }}</td></tr>{% endif %}
+            {% if params.vehicle.engine_type_name %}<tr><td>Двигатель</td><td>{{ params.vehicle.engine_type_name }}</td></tr>{% endif %}
+            {% if params.vehicle.transmission_name %}<tr><td>КПП</td><td>{{ params.vehicle.transmission_name }}</td></tr>{% endif %}
+            {% if params.vehicle.drive_name %}<tr><td>Привод</td><td>{{ params.vehicle.drive_name }}</td></tr>{% endif %}
+            {% if params.vehicle.color_name %}<tr><td>Цвет</td><td>{{ params.vehicle.color_name }}</td></tr>{% endif %}
+            {% if params.vehicle.owners_count_name %}<tr><td>Владельцы</td><td>{{ params.vehicle.owners_count_name }}</td></tr>{% endif %}
+            {% if params.vehicle.condition_name %}<tr><td>Состояние</td><td>{{ params.vehicle.condition_name }}</td></tr>{% endif %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if params.latest_calculation or params.calculations %}
+  <div class="portal-panel mb-3">
+    <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><span class="bi bi-calculator me-1"></span> Наши расчёты выкупа</span>
+      {% if params.latest_calculation %}
+        <span class="badge bg-primary">Актуальный: {{ params.latest_calculation.estimation_price|formatted_number }} ₽</span>
+      {% endif %}
+    </div>
+    {% if params.latest_calculation %}
+      <div class="aav-kpi mb-3">
+        <div class="aav-kpi-item">
+          <div class="label">Цена выкупа</div>
+          <div class="value">{{ params.latest_calculation.estimation_price|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">ЦНА (рынок)</div>
+          <div class="value">{{ params.latest_calculation.zna|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">Маржа</div>
+          <div class="value">{{ params.latest_calculation.profit|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">Группа / kf</div>
+          <div class="value" style="font-size:0.9rem">{{ params.latest_calculation.price_group }} · {{ params.latest_calculation.kf }}</div>
+        </div>
+      </div>
+      {% if params.latest_calculation.price_steps %}
+        <p class="small text-muted mb-2">Шаги последнего расчёта ({{ params.latest_calculation.calculated_at|date:"d.m.Y H:i" }})</p>
+        <div class="table-responsive mb-2">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr><th>Этап</th><th>Цена после</th><th>Δ</th><th>Комментарий</th></tr>
+            </thead>
+            <tbody>
+              {% for step in params.latest_calculation.price_steps %}
+                <tr>
+                  <td>{{ step.name|default:"—" }}</td>
+                  <td>{{ step.price|formatted_number }} ₽</td>
+                  <td>{% if step.dif %}{{ step.dif|formatted_number }}{% else %}—{% endif %}</td>
+                  <td class="small text-muted">{{ step.comment|default:"" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if params.calculations|length > 1 %}
+      <p class="small fw-semibold text-secondary mb-2">История расчётов</p>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Дата</th>
+              <th>Выкуп</th>
+              <th>ЦНА</th>
+              <th>Маржа</th>
+              <th>minPrice</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for calc in params.calculations %}
+              <tr class="{% if params.latest_calculation and calc.pk == params.latest_calculation.pk %}table-primary{% endif %}">
+                <td>{{ calc.calculated_at|date:"d.m.Y H:i" }}</td>
+                <td><strong>{{ calc.estimation_price|formatted_number|default:"—" }}</strong></td>
+                <td>{{ calc.zna|formatted_number|default:"—" }}</td>
+                <td>{{ calc.profit|formatted_number|default:"—" }}</td>
+                <td>{{ calc.min_price|formatted_number|default:"—" }}</td>
+                <td>
+                  {% if not calc.is_success %}<span class="badge bg-danger">ошибка</span>
+                  {% elif calc.auction_risk %}<span class="badge bg-warning text-dark">риск</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if params.autoteka %}
+  <div class="portal-panel mb-3">
+    <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><span class="bi bi-shield-check me-1"></span> Автотека</span>
+      {% if params.autoteka.state_status %}
+        <span class="badge bg-light text-dark border">Статус: {{ params.autoteka.state_status }}</span>
+      {% endif %}
+    </div>
+    {% if params.autoteka_events %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Проверка</th>
+              <th>Результат</th>
+              <th style="width:6rem">Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ev in params.autoteka_events %}
+              <tr>
+                <td class="small text-muted">{{ ev.event_type }}</td>
+                <td>{{ ev.description }}</td>
+                <td>
+                  {% if ev.status == 'ok' %}<span class="aav-autoteka-ok bi bi-check-circle-fill"></span>
+                  {% elif ev.status == 'warning' %}<span class="aav-autoteka-warn bi bi-exclamation-triangle-fill"></span>
+                  {% elif ev.status == 'caution' %}<span class="aav-autoteka-bad bi bi-exclamation-circle-fill"></span>
+                  {% elif ev.status == 'incomplete' %}<span class="aav-autoteka-inc bi bi-hourglass-split"></span>
+                  {% else %}{{ ev.status }}{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted small mb-0">События отчёта не загружены.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="portal-panel">
+    <div class="aav-panel-title"><span class="bi bi-info-circle me-1"></span> Служебное</div>
+    <div class="row g-2 small text-muted">
+      <div class="col-md-3">lotOfferId: <strong class="text-dark">{% if params.primary_offer %}{{ params.primary_offer.lot_offer_id }}{% else %}—{% endif %}</strong></div>
+      <div class="col-md-3">Синхронизация: {{ params.lot.synced_at|date:"d.m.Y H:i"|default:"—" }}</div>
+      <div class="col-md-3">Окончание лота: {{ params.lot.finish_at|date:"d.m.Y H:i"|default:"—" }}</div>
+      <div class="col-md-3">Истекает: {{ params.lot.expires_at|date:"d.m.Y H:i"|default:"—" }}</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
