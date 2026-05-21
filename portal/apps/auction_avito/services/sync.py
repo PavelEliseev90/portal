@@ -16,11 +16,11 @@ from auction_avito.models import (
     AvitoBidderAccount,
     AvitoLot,
     AvitoLotAutohubVehicle,
+    AvitoLotBadge,
     AvitoLotEquipment,
     AvitoLotImage,
     AvitoLotOffer,
     AvitoLotVehicle,
-    AvitoLotBadge,
     AvitoOfferBadge,
 )
 
@@ -29,6 +29,36 @@ def _dt(value):
     if not value:
         return None
     return parse_datetime(value)
+
+
+def sync_lot_images(lot, images: list, *, replace: bool = True) -> int:
+    """
+    Сохраняет фото лота из массива API (lot.images[]).
+    replace=False — только дописывает URL-фото Авито, не трогает загруженные в портал.
+    """
+    if replace:
+        lot.images.filter(source=AvitoLotImage.SOURCE_AVITO).delete()
+    count = 0
+    base_order = lot.images.count() if not replace else 0
+    for i, img in enumerate(images or []):
+        if not img.get('url') and not img.get('urlPreview'):
+            continue
+        image_id = img.get('id')
+        if image_id is None:
+            image_id = -(base_order + i + 1)
+        AvitoLotImage.objects.update_or_create(
+            lot=lot,
+            image_id=image_id,
+            defaults={
+                'source': AvitoLotImage.SOURCE_AVITO,
+                'url': img.get('url') or '',
+                'url_preview': img.get('urlPreview') or '',
+                'file': None,
+                'sort_order': base_order + i if not replace else i,
+            },
+        )
+        count += 1
+    return count
 
 
 def _upsert_lot(lot_data: dict) -> AvitoLot:
@@ -134,16 +164,7 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or {})
 
-    # Images
-    lot.images.all().delete()
-    for i, img in enumerate(lot_data.get('images') or []):
-        AvitoLotImage.objects.create(
-            lot=lot,
-            image_id=img['id'],
-            url=img['url'],
-            url_preview=img.get('urlPreview') or '',
-            sort_order=i,
-        )
+    sync_lot_images(lot, lot_data.get('images') or [], replace=True)
 
     # Equipment
     lot.equipment.all().delete()
