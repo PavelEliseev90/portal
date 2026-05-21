@@ -204,6 +204,8 @@ def calculate_car(request):
     
     answer = ''
     auction = False
+    info = None
+    dc = None
 
     try:
         info = json.loads(request.body)
@@ -610,8 +612,35 @@ def calculate_car(request):
             'discount_torg'                 : discount_torg,
             'auction'                       : auction
         }
+
+        try:
+            from auction_avito.services.calculate import persist_auction_calculation
+            calc = persist_auction_calculation(
+                info,
+                answer,
+                unit=dc,
+                user=request.user,
+            )
+            if calc:
+                answer['avito_calculation_id'] = calc.pk
+                answer['avito_lot_id'] = calc.lot_id
+        except Exception:
+            pass
+
     except Exception as e:
         answer = str(e)
+        if isinstance(info, dict):
+            try:
+                from auction_avito.services.calculate import persist_auction_calculation
+                persist_auction_calculation(
+                    info,
+                    {},
+                    unit=dc,
+                    user=request.user,
+                    error_message=str(e),
+                )
+            except Exception:
+                pass
 
     to_json = {
         'answer'     : answer,

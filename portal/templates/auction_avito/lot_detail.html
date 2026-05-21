@@ -231,6 +231,89 @@
     </div>
   </div>
 
+  {% if params.latest_calculation or params.calculations %}
+  <div class="portal-panel mb-3">
+    <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span><span class="bi bi-calculator me-1"></span> Наши расчёты выкупа</span>
+      {% if params.latest_calculation %}
+        <span class="badge bg-primary">Актуальный: {{ params.latest_calculation.estimation_price|formatted_number }} ₽</span>
+      {% endif %}
+    </div>
+    {% if params.latest_calculation %}
+      <div class="aav-kpi mb-3">
+        <div class="aav-kpi-item">
+          <div class="label">Цена выкупа</div>
+          <div class="value">{{ params.latest_calculation.estimation_price|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">ЦНА (рынок)</div>
+          <div class="value">{{ params.latest_calculation.zna|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">Маржа</div>
+          <div class="value">{{ params.latest_calculation.profit|formatted_number }} ₽</div>
+        </div>
+        <div class="aav-kpi-item">
+          <div class="label">Группа / kf</div>
+          <div class="value" style="font-size:0.9rem">{{ params.latest_calculation.price_group }} · {{ params.latest_calculation.kf }}</div>
+        </div>
+      </div>
+      {% if params.latest_calculation.price_steps %}
+        <p class="small text-muted mb-2">Шаги последнего расчёта ({{ params.latest_calculation.calculated_at|date:"d.m.Y H:i" }})</p>
+        <div class="table-responsive mb-2">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr><th>Этап</th><th>Цена после</th><th>Δ</th><th>Комментарий</th></tr>
+            </thead>
+            <tbody>
+              {% for step in params.latest_calculation.price_steps %}
+                <tr>
+                  <td>{{ step.name|default:"—" }}</td>
+                  <td>{{ step.price|formatted_number }} ₽</td>
+                  <td>{% if step.dif %}{{ step.dif|formatted_number }}{% else %}—{% endif %}</td>
+                  <td class="small text-muted">{{ step.comment|default:"" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if params.calculations|length > 1 %}
+      <p class="small fw-semibold text-secondary mb-2">История расчётов</p>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Дата</th>
+              <th>Выкуп</th>
+              <th>ЦНА</th>
+              <th>Маржа</th>
+              <th>minPrice</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for calc in params.calculations %}
+              <tr class="{% if params.latest_calculation and calc.pk == params.latest_calculation.pk %}table-primary{% endif %}">
+                <td>{{ calc.calculated_at|date:"d.m.Y H:i" }}</td>
+                <td><strong>{{ calc.estimation_price|formatted_number|default:"—" }}</strong></td>
+                <td>{{ calc.zna|formatted_number|default:"—" }}</td>
+                <td>{{ calc.profit|formatted_number|default:"—" }}</td>
+                <td>{{ calc.min_price|formatted_number|default:"—" }}</td>
+                <td>
+                  {% if not calc.is_success %}<span class="badge bg-danger">ошибка</span>
+                  {% elif calc.auction_risk %}<span class="badge bg-warning text-dark">риск</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if params.autoteka %}
   <div class="portal-panel mb-3">
     <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">

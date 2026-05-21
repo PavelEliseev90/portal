@@ -5,6 +5,7 @@ from .models import (
     AvitoAutotekaReport,
     AvitoBidderAccount,
     AvitoBidHistory,
+    AvitoLotCalculation,
     AvitoLot,
     AvitoLotAutohubVehicle,
     AvitoLotEquipment,
@@ -66,6 +67,23 @@ class AvitoLotOfferAdmin(admin.ModelAdmin):
 @admin.register(AvitoAutotekaReport)
 class AvitoAutotekaReportAdmin(admin.ModelAdmin):
     inlines = [AvitoAutotekaEventInline]
+
+
+@admin.register(AvitoLotCalculation)
+class AvitoLotCalculationAdmin(admin.ModelAdmin):
+    list_display = (
+        'calculated_at',
+        'lot',
+        'estimation_price',
+        'zna',
+        'profit',
+        'is_success',
+        'unit',
+    )
+    list_filter = ('is_success', 'auction_risk', 'calculated_at')
+    search_fields = ('lot__lot_id',)
+    raw_id_fields = ('lot', 'offer', 'unit', 'user')
+    readonly_fields = ('calculated_at',)
 
 
 @admin.register(AvitoSyncLog)

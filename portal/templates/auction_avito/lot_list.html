@@ -235,6 +235,9 @@
               {% if offer.bid %}
                 <span>Ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
               {% endif %}
+              {% if lot.latest_estimation_price %}
+                <span>Выкуп <strong class="text-success">{{ lot.latest_estimation_price|formatted_number }} ₽</strong></span>
+              {% endif %}
               {% if lot.imv_median %}
                 <span class="text-muted">IMV {{ lot.imv_low|formatted_number }}–{{ lot.imv_high|formatted_number }}</span>
               {% endif %}

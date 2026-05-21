@@ -375,6 +375,93 @@ class AvitoBidHistory(models.Model):
         ordering = ['-recorded_at']
 
 
+# ---------------------------------------------------------------------------
+# Расчёты выкупа (история — несколько записей на один лот)
+# ---------------------------------------------------------------------------
+
+class AvitoLotCalculation(models.Model):
+    """
+    Один автоматический расчёт лота (POST /api/calculate_car/).
+    История: у лота может быть много расчётов, актуальный — последний по calculated_at.
+    """
+    lot = models.ForeignKey(
+        AvitoLot,
+        on_delete=models.CASCADE,
+        related_name='calculations',
+        verbose_name='Лот',
+    )
+    offer = models.ForeignKey(
+        AvitoLotOffer,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='calculations',
+        verbose_name='Оффер',
+    )
+    unit = models.ForeignKey(
+        'refs.RefUnit',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Подразделение (настройки расчёта)',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='avito_lot_calculations',
+        verbose_name='Пользователь',
+    )
+
+    calculated_at = models.DateTimeField('Дата расчёта', auto_now_add=True, db_index=True)
+    is_success = models.BooleanField('Успешно', default=True)
+    error_message = models.TextField('Ошибка', blank=True, default='')
+
+    min_price = models.PositiveIntegerField('minPrice (запрос)', null=True, blank=True)
+    mileage = models.PositiveIntegerField('Пробег', null=True, blank=True)
+    year = models.PositiveSmallIntegerField('Год', null=True, blank=True)
+
+    estimation_price = models.IntegerField('Цена выкупа (итог)', null=True, blank=True)
+    profit = models.IntegerField('Маржа (profit)', null=True, blank=True)
+    zna = models.IntegerField('ЦНА / avgPriceWithCorrection', null=True, blank=True)
+    avg_days_in_sale = models.PositiveSmallIntegerField('Ср. дни продажи', null=True, blank=True)
+    price_group = models.CharField('Ценовая группа (zg)', max_length=30, blank=True, default='')
+    kf = models.DecimalField('Коэф. токсичности (kf)', max_digits=8, decimal_places=2, null=True, blank=True)
+
+    price_sale = models.IntegerField('Цена продажи (sale)', null=True, blank=True)
+    price_sale_rdo = models.IntegerField('Цена продажи RDO', null=True, blank=True)
+    price_sale_kor = models.IntegerField('Цена продажи Корс', null=True, blank=True)
+    cna_expenses = models.IntegerField('cna_expenses', null=True, blank=True)
+    zachita_ot_ubitka = models.IntegerField('Защита от убытка', null=True, blank=True)
+    finance_price = models.IntegerField('Финансирование', null=True, blank=True)
+    iznos_price = models.IntegerField('Коррекция износ', null=True, blank=True)
+    discount_torg = models.IntegerField('Скидка торг', null=True, blank=True)
+
+    auction_risk = models.BooleanField('Риск аукциона (такси/пробег/…)', default=False)
+    auction_risk_note = models.CharField('Примечание по риску', max_length=500, blank=True, default='')
+
+    price_steps = models.JSONField(
+        'Шаги цены (list_info_price)',
+        default=list,
+        blank=True,
+    )
+    raw_request_json = models.JSONField('Запрос (фрагмент)', default=dict, blank=True)
+    raw_answer_json = models.JSONField('Ответ расчёта', default=dict, blank=True)
+
+    class Meta:
+        db_table = 'avitoLotCalculation'
+        verbose_name = 'Расчёт лота'
+        verbose_name_plural = 'Расчёты лотов'
+        ordering = ['-calculated_at']
+        indexes = [
+            models.Index(fields=['lot', '-calculated_at']),
+        ]
+
+    def __str__(self):
+        return f'Расчёт {self.lot_id} · {self.calculated_at:%d.%m.%Y %H:%M}'
+
+
 class AvitoSyncLog(models.Model):
     """Журнал загрузок списка offers."""
     account = models.ForeignKey(

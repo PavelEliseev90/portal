@@ -1,11 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, Q
+from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, render
 
 from auction_avito.models import (
     AvitoAutotekaEvent,
     AvitoLot,
+    AvitoLotCalculation,
     AvitoLotOffer,
 )
 
@@ -26,6 +27,10 @@ def _lot_queryset():
         Prefetch(
             'autoteka__events',
             queryset=AvitoAutotekaEvent.objects.all(),
+        ),
+        Prefetch(
+            'calculations',
+            queryset=AvitoLotCalculation.objects.select_related('unit', 'user').order_by('-calculated_at'),
         ),
     )
 
@@ -58,7 +63,15 @@ def lot_list(request):
     }
     if sort not in allowed_sort:
         sort = '-finish_at'
-    qs = qs.order_by(sort)
+
+    latest_calc = AvitoLotCalculation.objects.filter(
+        lot=OuterRef('pk'),
+        is_success=True,
+    ).order_by('-calculated_at')
+    qs = qs.annotate(
+        latest_estimation_price=Subquery(latest_calc.values('estimation_price')[:1]),
+        latest_calc_at=Subquery(latest_calc.values('calculated_at')[:1]),
+    ).order_by(sort)
 
     page_obj = Paginator(qs, 24).get_page(request.GET.get('page') or 1)
 
@@ -99,5 +112,10 @@ def lot_detail(request, pk):
         'primary_offer': primary_offer,
         'offers': lot.offers.all(),
         'images': lot.images.all(),
+        'calculations': lot.calculations.all(),
+        'latest_calculation': (
+            lot.calculations.filter(is_success=True).first()
+            or lot.calculations.first()
+        ),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
