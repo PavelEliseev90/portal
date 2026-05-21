@@ -925,6 +925,136 @@ def get_info_max_znak(interactiv_rlk, estimation_id):
         except:
             s = 1
 
+def refresh_cd_zna(cd):
+
+    estimation = cd.estimation
+
+    username        = "korsgroup@maxposter.ru"
+    password        = "pJ%[QwwqH,YxP9J-"
+    url             = "api.maxposter.ru"
+    URL_TEMPLATE    = "https://api.maxposter.ru/partners-api/express"
+    token           = 'a29yc2dyb3VwQG1heHBvc3Rlci5ydTpwSiVbUXd3cUgsWXhQOUot'
+    headers         = { 'Authorization' : 'Basic %s' % token }
+
+    year_curent = DT.datetime.now().year
+    if year_curent - estimation.year > 5:
+        year_start  = estimation.year - 1   
+        year_end    = estimation.year + 1
+    else:
+        year_start  = estimation.year - 1   
+        year_end    = estimation.year 
+
+    try:
+        
+        avtohub_modification = None
+        count_avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech).count()
+        if count_avtohub_modification == 1:
+            avtohub_modification = AvtohubModifications.objects.filter(autoruId = estimation.modification.idSiteTech)[0]    
+            if year_start < avtohub_modification.yearFrom:
+                year_start = avtohub_modification.yearFrom
+            if year_end > avtohub_modification.yearTo:
+                year_end = avtohub_modification.yearTo
+                    
+        if avtohub_modification != None:
+            brand = {
+                'id'    : avtohub_modification.brandId,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : avtohub_modification.modelId,
+                'name'  : ''
+            }
+            generation = {
+                'id'    : avtohub_modification.generationId,
+                'name'  : ''
+            }
+            modification = {
+                'id'    : avtohub_modification.id_avtohub,
+                'name'  : ''
+            }
+        else:
+            brand = {
+                'id'    : None,
+                'name'  : estimation.modification.model.mark.name.strip()
+            }
+            model = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 0)
+            }
+            generation = {
+                'id'    : None,
+                'name'  : get_name_re(estimation.modification.model.name, 1)
+            }
+            modification = {
+                'id'    : None,
+                'name'  : estimation.modification.name
+            }
+        
+        marketFilter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification,
+            'geoDistance'   : 500,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end
+        }
+        
+        salesFromDate = estimation.start_estimation - relativedelta(months=2)
+        salesFromDate = salesFromDate.replace(day=1, hour=1)
+
+        filter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification,
+            'geoDistance'   : 500,
+            'useAutoFilter' : False,
+            'yearFrom'      : year_start,
+            "yearTo"        : year_end,
+            'salesFromDate' : salesFromDate.strftime('%Y-%m-%d')
+        }
+
+        if estimation.page_salon != None:
+            vehicle = {
+                'year'      : estimation.year,
+                'mileage'   : estimation.page_salon.run,
+                'rubPrice'  : cd.price_auto_2
+            }
+        else:
+            vehicle = {
+                'year'      : estimation.year,
+                'mileage'   : estimation.page_remote.run,
+                'rubPrice'  : estimation.page_remote.price_sale
+            }
+        
+        data_info = {
+            'dealerId'          : 2107,
+            'marketFilter'      : marketFilter,
+            'filter'            : filter,
+            'vehicle'           : vehicle 
+        }
+        
+        r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
+        if r.status_code == 200:
+            
+            js_data = json.loads(r.text)
+            
+            data = js_data['data']
+            if len(data) == 1:
+                data = data[0]    
+
+            analyticsByActualSales          = data['analyticsByActualSales']
+            cd.hub_avg                      = analyticsByActualSales['avgPriceWithCorrection']
+            cd.hub_days_in_stok_avg         = analyticsByActualSales['avgDaysInSale']
+            cd.hub_start                    = DT.datetime.now()
+            cd.save()
+
+        else:
+            text = r.text
+            
+    except:
+        s = 1
 
 def get_info_max(interactiv_rlk, estimation_id):
     

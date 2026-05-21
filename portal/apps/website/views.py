@@ -10641,14 +10641,14 @@ def sb_lo(request):
 
 def test(request):
 
-    from task_manager.views import refresh_list_auction_status
-    refresh_list_auction_status()
+    # from task_manager.views import refresh_list_auction_status
+    # refresh_list_auction_status()
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     # refresh_avtoteka_vin()
 

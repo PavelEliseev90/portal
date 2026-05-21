@@ -2813,6 +2813,9 @@ CONTROL_DIAGNOSTIC_FILE_TYPES_COMPASION = frozenset([
 def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk):
     """Создаёт контрольную диагностику: копирует vnesh, salon, test_drive, файлы. Параметры КД можно редактировать, затем сравнить с исходной оценкой."""
     cd = RegControlDiagnostic(estimation=estimation, author=user)
+    cd.hub_start            = estimation.hub_start
+    cd.hub_avg              = estimation.hub_avg
+    cd.hub_days_in_stok_avg = estimation.hub_days_in_stok_avg
     cd.save()
 
     # 1. Копируем внешний осмотр
@@ -2985,7 +2988,10 @@ def control_diagnostic_comparison(request, id, cd_id):
     cd = RegControlDiagnostic.objects.filter(estimation=estimation, pk=cd_id).first()
     if not cd:
         raise Http404('Контрольная диагностика не найдена')
-
+    if 'refresh' in request.GET:
+        from task_manager.views import refresh_cd_zna 
+        refresh_cd_zna(cd)
+        return HttpResponseRedirect(request.path)
     # Файлы для сравнения (оригинал vs КД) — пары по type_file + file_number
     orig_files = list(RegRegInteractivOcenkaFiles.objects.filter(
         estimation=estimation
@@ -3011,19 +3017,16 @@ def control_diagnostic_comparison(request, id, cd_id):
     orig_test_drive = estimation.page_test_drive
     cd_test_drive = getattr(cd, 'page_test_drive_copy', None)
     
-    price_cd = estimations_price_calculation_cd(cd, 'custom')
-    if price_cd == None:
-        price_cd = estimations_price_calculation_cd(cd, 'autohub')
-        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub')
-    else:
-        price_estimation = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
+    price_cd            = estimations_price_calculation_cd(cd, 'autohub')
+    price_estimation    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom')
+    
     params = {
-        'estimation': estimation,
-        'rlk'       : rlk,
-        'cd'        : cd,
-        'price_cd'  : price_cd,
-        'price_estimation' : price_estimation,
-        'orig_soglasovanie': orig_soglasovanie,
+        'estimation'        : estimation,
+        'rlk'               : rlk,
+        'cd'                : cd,
+        'price_cd'          : price_cd,
+        'price_estimation'  : price_estimation,
+        'orig_soglasovanie' : orig_soglasovanie,
         'orig_salon'        : orig_salon,
         'cd_salon'          : cd_salon,
         'orig_test_drive'   : orig_test_drive,
@@ -8454,10 +8457,10 @@ def estimations_price_calculation_cd(cd, type_calculation):
                 zna         = estimation.hub_avg_k
             zna_type    = 'ЦНА + К'
         if type_calculation == 'autohub':
-            if estimation.hub_avg == 0 and estimation.page_remote != None:
-                zna = estimation.page_remote.hub_avg
+            if cd.hub_avg == 0 or cd.hub_avg == None:
+                zna     = estimation.hub_avg
             else:
-                zna         = estimation.hub_avg
+                zna     = cd.hub_avg
             zna_type    = 'ЦНА'
         elif type_calculation == 'avito':
             zna = estimation.avito_price_avg_market_price
@@ -9298,7 +9301,7 @@ def estimations_price_calculation_cd(cd, type_calculation):
                     else:
                         price_diff = windshield
                         info_diff   = "Лобовое стекло"
-                    if cd.page_vnesh.windshield_projection_int == 1:
+                    if cd.page_vnesh_copy.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
                         info_diff = info_diff + " с проекцией" 
                     work        = info_diff.capitalize()
@@ -10412,7 +10415,7 @@ def estimations_price_calculation_cd(cd, type_calculation):
                     else:
                         price_diff = windshield
                         info_diff   = info['name']
-                    if cd.page_vnesh.windshield_projection_int == 1:
+                    if cd.page_vnesh_copy.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
                         info_diff = info_diff + " с проекцией" 
                     work        = info_diff.capitalize()

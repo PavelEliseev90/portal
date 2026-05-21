@@ -3807,7 +3807,11 @@ class RegControlDiagnostic(models.Model):
         related_name='control_diagnostics',
         verbose_name='Оценка',
     )
-    created_at = models.DateTimeField('Время контрольной диагностики', auto_now_add=True)
+    created_at                  = models.DateTimeField('Время контрольной диагностики', auto_now_add=True)
+    hub_start                   = models.DateTimeField('Дата анализа автохаб', blank=True, null=True) 
+    hub_avg                     = models.FloatField('avgPriceWithCorrection', default=0.00, null=True, blank=True)
+    hub_days_in_stok_avg        = models.FloatField('hub_days_in_stok_avg', default=0.00, null=True, blank=True)
+    
     author = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
