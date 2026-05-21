@@ -139,26 +139,7 @@
           <span class="text-muted small">{{ params.images|length }} шт.</span>
         </div>
 
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          <form method="post" action="{% url 'auction_avito:lot_load_images' params.lot.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
-              <span class="bi bi-cloud-download"></span> Загрузить фото
-            </button>
-          </form>
-          <span class="small text-muted align-self-center">из API Авито или сохранённого JSON лота</span>
-        </div>
-
-        <form method="post" action="{% url 'auction_avito:lot_upload_images' params.lot.pk %}" enctype="multipart/form-data" class="mb-3 border rounded p-2 bg-light">
-          {% csrf_token %}
-          <label class="form-label small text-muted mb-1">Добавить с компьютера</label>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <input type="file" class="form-control form-control-sm" name="photos" accept="image/*" multiple>
-            <button type="submit" class="btn btn-sm btn-outline-secondary">
-              <span class="bi bi-upload"></span> Загрузить файлы
-            </button>
-          </div>
-        </form>
+       
 
         {% if params.images %}
           <div class="aav-gallery">
@@ -181,7 +162,7 @@
       </div>
 
       <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация (equipment)</div>
+        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация </div>
         {% if params.equipment_items %}
           <div class="row g-2">
             {% for eq in params.equipment_items %}
@@ -196,33 +177,6 @@
         {% endif %}
       </div>
 
-      <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-arrow-left-right me-1"></span> Трейд-ин (tradeIn)</div>
-        <table class="table table-sm table-borderless aav-spec-table mb-0">
-          <tbody>
-            <tr>
-              <td>Рассматривает трейд-ин</td>
-              <td>
-                {% if params.trade_in.considers is True %}<span class="text-success">Да</span>
-                {% elif params.trade_in.considers is False %}Нет
-                {% else %}<span class="text-muted">—</span>{% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td>Ищет б/у в зачёт</td>
-              <td>
-                {% if params.trade_in.looking_for_used is True %}<span class="text-success">Да</span>
-                {% elif params.trade_in.looking_for_used is False %}Нет
-                {% else %}<span class="text-muted">—</span>{% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td>Комментарий</td>
-              <td class="aav-desc" style="white-space:pre-wrap">{{ params.trade_in.comment|default:"—" }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
 
     <div class="col-lg-4">
@@ -300,14 +254,45 @@
       </div>
 
       <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-arrow-left-right me-1"></span> Трейд-ин</div>
+        <div class="table-responsive portal-radius">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <tbody>
+              <tr>
+                <td>Рассматривает трейд-ин</td>
+                <td>
+                  {% if params.trade_in.considers is True %}<span class="text-success">Да</span>
+                  {% elif params.trade_in.considers is False %}Нет
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td>Ищет б/у в зачёт</td>
+                <td>
+                  {% if params.trade_in.looking_for_used is True %}<span class="text-success">Да</span>
+                  {% elif params.trade_in.looking_for_used is False %}Нет
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td>Комментарий</td>
+                <td class="aav-desc" style="white-space:pre-wrap">{{ params.trade_in.comment|default:"—" }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+      </div>
+
+      <div class="portal-panel mb-3">
         <div class="aav-panel-title d-flex justify-content-between align-items-center">
           <span><span class="bi bi-tags me-1"></span> Метки Авито</span>
           <span class="text-muted small">{{ params.all_badges|length }} шт.</span>
         </div>
         {% if params.all_badges %}
-          <div class="table-responsive">
-            <table class="table table-sm mb-0">
-              <thead class="table-light">
+          <div class="table-responsive portal-radius">
+            <table class="table table-sm table-striped table-hover mb-0">
+              <thead>
                 <tr>
                   <th>Тип</th>
                   <th>Заголовок</th>
@@ -353,21 +338,24 @@
       {% if params.vehicle %}
       <div class="portal-panel mb-3">
         <div class="aav-panel-title"><span class="bi bi-car-front me-1"></span> Характеристики</div>
-        <table class="table table-sm table-borderless aav-spec-table mb-0">
-          <tbody>
-            {% if params.vehicle.modification_name %}<tr><td>Модификация</td><td>{{ params.vehicle.modification_name }}</td></tr>{% endif %}
-            {% if params.vehicle.generation_name %}<tr><td>Поколение</td><td>{{ params.vehicle.generation_name }}</td></tr>{% endif %}
-            {% if params.vehicle.configuration_name %}<tr><td>Комплектация</td><td>{{ params.vehicle.configuration_name }}</td></tr>{% endif %}
-            {% if params.vehicle.mileage %}<tr><td>Пробег</td><td>{{ params.vehicle.mileage|formatted_number }} км</td></tr>{% endif %}
-            {% if params.vehicle.body_type_name %}<tr><td>Кузов</td><td>{{ params.vehicle.body_type_name }}</td></tr>{% endif %}
-            {% if params.vehicle.engine_type_name %}<tr><td>Двигатель</td><td>{{ params.vehicle.engine_type_name }}</td></tr>{% endif %}
-            {% if params.vehicle.transmission_name %}<tr><td>КПП</td><td>{{ params.vehicle.transmission_name }}</td></tr>{% endif %}
-            {% if params.vehicle.drive_name %}<tr><td>Привод</td><td>{{ params.vehicle.drive_name }}</td></tr>{% endif %}
-            {% if params.vehicle.color_name %}<tr><td>Цвет</td><td>{{ params.vehicle.color_name }}</td></tr>{% endif %}
-            {% if params.vehicle.owners_count_name %}<tr><td>Владельцы</td><td>{{ params.vehicle.owners_count_name }}</td></tr>{% endif %}
-            {% if params.vehicle.condition_name %}<tr><td>Состояние</td><td>{{ params.vehicle.condition_name }}</td></tr>{% endif %}
-          </tbody>
-        </table>
+        <div class="table-responsive portal-radius">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <tbody>
+              {% if params.vehicle.modification_name %}<tr><td>Модификация</td><td>{{ params.vehicle.modification_name }}</td></tr>{% endif %}
+              {% if params.vehicle.generation_name %}<tr><td>Поколение</td><td>{{ params.vehicle.generation_name }}</td></tr>{% endif %}
+              {% if params.vehicle.configuration_name %}<tr><td>Комплектация</td><td>{{ params.vehicle.configuration_name }}</td></tr>{% endif %}
+              {% if params.vehicle.mileage %}<tr><td>Пробег</td><td>{{ params.vehicle.mileage|formatted_number }} км</td></tr>{% endif %}
+              {% if params.vehicle.body_type_name %}<tr><td>Кузов</td><td>{{ params.vehicle.body_type_name }}</td></tr>{% endif %}
+              {% if params.vehicle.engine_type_name %}<tr><td>Двигатель</td><td>{{ params.vehicle.engine_type_name }}</td></tr>{% endif %}
+              {% if params.vehicle.transmission_name %}<tr><td>КПП</td><td>{{ params.vehicle.transmission_name }}</td></tr>{% endif %}
+              {% if params.vehicle.drive_name %}<tr><td>Привод</td><td>{{ params.vehicle.drive_name }}</td></tr>{% endif %}
+              {% if params.vehicle.color_name %}<tr><td>Цвет</td><td>{{ params.vehicle.color_name }}</td></tr>{% endif %}
+              {% if params.vehicle.owners_count_name %}<tr><td>Владельцы</td><td>{{ params.vehicle.owners_count_name }}</td></tr>{% endif %}
+              {% if params.vehicle.condition_name %}<tr><td>Состояние</td><td>{{ params.vehicle.condition_name }}</td></tr>{% endif %}
+            </tbody>
+          </table>
+        </div>
+       
       </div>
       {% endif %}
     </div>
@@ -402,9 +390,9 @@
       </div>
       {% if params.latest_calculation.price_steps %}
         <p class="small text-muted mb-2">Шаги последнего расчёта ({{ params.latest_calculation.calculated_at|date:"d.m.Y H:i" }})</p>
-        <div class="table-responsive mb-2">
-          <table class="table table-sm table-hover mb-0">
-            <thead class="table-light">
+        <div class="table-responsive portal-radius">
+          <table class="table table-sm table-striped table-hover mb-0">
+            <thead >
               <tr><th>Этап</th><th>Цена после</th><th>Δ</th><th>Комментарий</th></tr>
             </thead>
             <tbody>
@@ -423,9 +411,9 @@
     {% endif %}
     {% if params.calculations|length > 1 %}
       <p class="small fw-semibold text-secondary mb-2">История расчётов</p>
-      <div class="table-responsive">
-        <table class="table table-sm mb-0">
-          <thead class="table-light">
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-striped table-hover mb-0">
+          <thead >
             <tr>
               <th>Дата</th>
               <th>Выкуп</th>
@@ -465,9 +453,9 @@
       {% endif %}
     </div>
     {% if params.autoteka_events %}
-      <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-          <thead class="table-light">
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-striped table-hover mb-0">
+          <thead >
             <tr>
               <th>Проверка</th>
               <th>Результат</th>
