@@ -180,61 +180,85 @@
         <div class="aav-desc">{{ params.lot.description|default:"—" }}</div>
       </div>
 
-      {% if params.lot.equipment.all %}
       <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация</div>
-        <div class="row g-2">
-          {% for eq in params.lot.equipment.all %}
-            <div class="col-md-6">
-              <strong class="small d-block text-secondary">{{ eq.name }}</strong>
-              <span class="small">{{ eq.values|join:", " }}</span>
-            </div>
-          {% endfor %}
-        </div>
+        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация (equipment)</div>
+        {% if params.equipment_items %}
+          <div class="row g-2">
+            {% for eq in params.equipment_items %}
+              <div class="col-md-6">
+                <strong class="small d-block text-secondary">{{ eq.name }}</strong>
+                <span class="small">{% if eq.values %}{{ eq.values|join:", " }}{% else %}—{% endif %}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted small mb-0">Нет данных. Синхронизируйте оффер или пересчитайте лот с полным <code>lot.equipment[]</code>.</p>
+        {% endif %}
       </div>
-      {% endif %}
+
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-arrow-left-right me-1"></span> Трейд-ин (tradeIn)</div>
+        <table class="table table-sm table-borderless aav-spec-table mb-0">
+          <tbody>
+            <tr>
+              <td>Рассматривает трейд-ин</td>
+              <td>
+                {% if params.trade_in.considers is True %}<span class="text-success">Да</span>
+                {% elif params.trade_in.considers is False %}Нет
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Ищет б/у в зачёт</td>
+              <td>
+                {% if params.trade_in.looking_for_used is True %}<span class="text-success">Да</span>
+                {% elif params.trade_in.looking_for_used is False %}Нет
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td>Комментарий</td>
+              <td class="aav-desc" style="white-space:pre-wrap">{{ params.trade_in.comment|default:"—" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="col-lg-4">
       <div class="portal-panel mb-3">
         <div class="aav-panel-title"><span class="bi bi-currency-exchange me-1"></span> Цены и ставки</div>
         <div class="aav-kpi">
-          {% if params.lot.min_available_bid %}
-            <div class="aav-kpi-item">
-              <div class="label">Мин. ставка</div>
-              <div class="value">{{ params.lot.min_available_bid|formatted_number }} ₽</div>
-              <div class="small text-muted">minAvailableBid</div>
-            </div>
-          {% endif %}
-          {% if params.primary_offer and params.primary_offer.min_bid_step %}
-            <div class="aav-kpi-item">
-              <div class="label">Шаг ставки</div>
-              <div class="value">{{ params.primary_offer.min_bid_step|formatted_number }} ₽</div>
-              <div class="small text-muted">minBidStep</div>
-            </div>
-          {% endif %}
-          {% if params.lot.max_available_bid %}
-            <div class="aav-kpi-item">
-              <div class="label">Макс. ставка</div>
-              <div class="value">{{ params.lot.max_available_bid|formatted_number }} ₽</div>
-            </div>
-          {% endif %}
-          {% if params.primary_offer and params.primary_offer.bid %}
+          <div class="aav-kpi-item">
+            <div class="label">Мин. ставка</div>
+            <div class="value">{% if params.prices.min_available_bid is not None %}{{ params.prices.min_available_bid|formatted_number }} ₽{% else %}—{% endif %}</div>
+            <div class="small text-muted">minAvailableBid</div>
+          </div>
+          <div class="aav-kpi-item">
+            <div class="label">Макс. ставка (доступная)</div>
+            <div class="value">{% if params.prices.max_available_bid is not None %}{{ params.prices.max_available_bid|formatted_number }} ₽{% else %}—{% endif %}</div>
+            <div class="small text-muted">maxAvailableBid</div>
+          </div>
+          <div class="aav-kpi-item">
+            <div class="label">Шаг ставки</div>
+            <div class="value">{% if params.prices.min_bid_step is not None %}{{ params.prices.min_bid_step|formatted_number }} ₽{% else %}—{% endif %}</div>
+            <div class="small text-muted">minBidStep (оффер)</div>
+          </div>
+          <div class="aav-kpi-item">
+            <div class="label">Желание продавца</div>
+            <div class="value">{% if params.prices.min_price is not None %}{{ params.prices.min_price|formatted_number }} ₽{% else %}—{% endif %}</div>
+            <div class="small text-muted">minPrice</div>
+          </div>
+          {% if params.prices.bid is not None %}
             <div class="aav-kpi-item">
               <div class="label">Ваша ставка</div>
-              <div class="value">{{ params.primary_offer.bid|formatted_number }} ₽</div>
+              <div class="value">{{ params.prices.bid|formatted_number }} ₽</div>
             </div>
-          {% elif params.lot.max_bid %}
+          {% elif params.prices.max_bid is not None %}
             <div class="aav-kpi-item">
               <div class="label">Текущая макс. ставка</div>
-              <div class="value">{{ params.lot.max_bid|formatted_number }} ₽</div>
-            </div>
-          {% endif %}
-          {% if params.lot.min_price %}
-            <div class="aav-kpi-item">
-              <div class="label">Желание продавца</div>
-              <div class="value">{{ params.lot.min_price|formatted_number }} ₽</div>
-              <div class="small text-muted">minPrice</div>
+              <div class="value">{{ params.prices.max_bid|formatted_number }} ₽</div>
+              <div class="small text-muted">maxBid</div>
             </div>
           {% endif %}
           {% if params.lot.bid_l1 %}

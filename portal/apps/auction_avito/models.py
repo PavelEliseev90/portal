@@ -84,6 +84,38 @@ class AvitoLot(models.Model):
     def __str__(self):
         return f'Лот {self.lot_id}'
 
+    def _raw(self, key, default=None):
+        return (self.raw_lot_json or {}).get(key, default)
+
+    @property
+    def display_min_available_bid(self):
+        return self.min_available_bid if self.min_available_bid is not None else self._raw('minAvailableBid')
+
+    @property
+    def display_max_available_bid(self):
+        return self.max_available_bid if self.max_available_bid is not None else self._raw('maxAvailableBid')
+
+    @property
+    def display_min_price(self):
+        return self.min_price if self.min_price is not None else self._raw('minPrice')
+
+    @property
+    def display_max_bid(self):
+        return self.max_bid if self.max_bid is not None else self._raw('maxBid')
+
+    @property
+    def has_trade_in(self):
+        if self.trade_in_considers or self.trade_in_looking_for_used:
+            return True
+        if (self.trade_in_comment or '').strip():
+            return True
+        trade = self._raw('tradeIn') or {}
+        return bool(
+            trade.get('considersTradeIn')
+            or trade.get('lookingForUsedCar')
+            or (trade.get('comment') or '').strip()
+        )
+
 
 class AvitoLotVehicle(models.Model):
     """Характеристики из lot.vehicle (каталог Авито, человекочитаемые поля)."""
@@ -368,6 +400,12 @@ class AvitoLotOffer(models.Model):
 
     def __str__(self):
         return f'Оффер {self.lot_offer_id} / лот {self.lot.lot_id}'
+
+    @property
+    def display_min_bid_step(self):
+        if self.min_bid_step is not None:
+            return self.min_bid_step
+        return (self.raw_offer_json or {}).get('minBidStep')
 
 
 class AvitoOfferBadge(models.Model):

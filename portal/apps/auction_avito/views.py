@@ -28,6 +28,60 @@ BADGE_TYPE_LABELS = {
 }
 
 
+def _coalesce_lot_value(lot, attr: str, raw_key: str):
+    val = getattr(lot, attr, None)
+    if val is not None:
+        return val
+    return (lot.raw_lot_json or {}).get(raw_key)
+
+
+def _coalesce_offer_value(offer, attr: str, raw_key: str):
+    if not offer:
+        return None
+    val = getattr(offer, attr, None)
+    if val is not None:
+        return val
+    return (offer.raw_offer_json or {}).get(raw_key)
+
+
+def _lot_price_display(lot, offer=None) -> dict:
+    return {
+        'min_available_bid': _coalesce_lot_value(lot, 'min_available_bid', 'minAvailableBid'),
+        'max_available_bid': _coalesce_lot_value(lot, 'max_available_bid', 'maxAvailableBid'),
+        'min_price': _coalesce_lot_value(lot, 'min_price', 'minPrice'),
+        'max_bid': _coalesce_lot_value(lot, 'max_bid', 'maxBid'),
+        'min_bid_step': _coalesce_offer_value(offer, 'min_bid_step', 'minBidStep'),
+        'bid': _coalesce_offer_value(offer, 'bid', 'bid') if offer else None,
+    }
+
+
+def _trade_in_display(lot) -> dict:
+    raw = (lot.raw_lot_json or {}).get('tradeIn') or {}
+    considers = lot.trade_in_considers
+    if considers is None:
+        considers = raw.get('considersTradeIn')
+    looking = lot.trade_in_looking_for_used
+    if looking is None:
+        looking = raw.get('lookingForUsedCar')
+    comment = (lot.trade_in_comment or '').strip() or (raw.get('comment') or '').strip()
+    return {
+        'considers': considers,
+        'looking_for_used': looking,
+        'comment': comment,
+        'has_any': bool(considers or looking or comment),
+    }
+
+
+def _equipment_items(lot):
+    items = list(lot.equipment.all())
+    if items:
+        return items
+    return [
+        {'name': eq.get('name') or '', 'values': eq.get('values') or []}
+        for eq in (lot.raw_lot_json or {}).get('equipment') or []
+    ]
+
+
 def _badge_filter_choices():
     types = set()
     types.update(
@@ -74,6 +128,7 @@ def lot_list(request):
     search = (request.GET.get('q') or '').strip()
     status = (request.GET.get('status') or '').strip()
     badge_type = (request.GET.get('badge') or '').strip()
+    trade_in = (request.GET.get('trade_in') or '').strip()
     sort = (request.GET.get('sort') or '-finish_at').strip()
 
     if search:
@@ -92,6 +147,17 @@ def lot_list(request):
         qs = qs.filter(
             Q(offers__badges__badge_type=badge_type)
             | Q(badges__badge_type=badge_type)
+        ).distinct()
+
+    if trade_in == 'considers':
+        qs = qs.filter(trade_in_considers=True)
+    elif trade_in == 'used':
+        qs = qs.filter(trade_in_looking_for_used=True)
+    elif trade_in == 'any':
+        qs = qs.filter(
+            Q(trade_in_considers=True)
+            | Q(trade_in_looking_for_used=True)
+            | Q(trade_in_comment__gt='')
         ).distinct()
 
     allowed_sort = {
@@ -121,9 +187,15 @@ def lot_list(request):
             'q': search,
             'status': status,
             'badge': badge_type,
+            'trade_in': trade_in,
             'sort': sort,
         },
         'badge_choices': _badge_filter_choices(),
+        'trade_in_choices': [
+            ('considers', 'Рассматривает трейд-ин'),
+            ('used', 'Ищет б/у в зачёт'),
+            ('any', 'Любой трейд-ин'),
+        ],
         'status_choices': [
             ('inprogress', 'Активен'),
             ('finished', 'Завершён'),
@@ -166,6 +238,9 @@ def lot_detail(request, pk):
         'offer_badges': offer_badges,
         'lot_badges': lot_badges,
         'badge_type_labels': BADGE_TYPE_LABELS,
+        'equipment_items': _equipment_items(lot),
+        'trade_in': _trade_in_display(lot),
+        'prices': _lot_price_display(lot, primary_offer),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
 

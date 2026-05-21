@@ -167,12 +167,21 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <label class="form-label small text-muted mb-1">Метка (badge)</label>
         <select class="form-select" name="badge">
           <option value="">Все метки</option>
           {% for code, label in params.badge_choices %}
             <option value="{{ code }}" {% if params.filters.badge == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Трейд-ин</label>
+        <select class="form-select" name="trade_in">
+          <option value="">Все</option>
+          {% for code, label in params.trade_in_choices %}
+            <option value="{{ code }}" {% if params.filters.trade_in == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
@@ -243,6 +252,7 @@
               {% endif %}
               <br>
               {% if lot.seller_place_name %}<span class="bi bi-geo-alt"></span> {{ lot.seller_place_name }}{% endif %}
+              {% if lot.has_trade_in %} · <span class="aav-badge aav-badge--trade-in">Трейд-ин</span>{% endif %}
             </div>
             <div class="aav-card-badges">
               {% for badge in offer.badges.all|slice:":4" %}
@@ -253,19 +263,22 @@
               {% endfor %}
             </div>
             <div class="aav-card-prices">
-              {% if lot.min_available_bid %}
-                <span>Мин. ставка <span class="aav-price-strong">{{ lot.min_available_bid|formatted_number }} ₽</span></span>
+              {% if lot.display_min_available_bid is not None %}
+                <span>Мин. <span class="aav-price-strong">{{ lot.display_min_available_bid|formatted_number }} ₽</span></span>
               {% endif %}
-              {% if offer and offer.min_bid_step %}
-                <span>Шаг <strong>{{ offer.min_bid_step|formatted_number }} ₽</strong></span>
+              {% if lot.display_max_available_bid is not None %}
+                <span>Макс. <strong>{{ lot.display_max_available_bid|formatted_number }} ₽</strong></span>
+              {% endif %}
+              {% if offer and offer.display_min_bid_step is not None %}
+                <span>Шаг <strong>{{ offer.display_min_bid_step|formatted_number }} ₽</strong></span>
               {% endif %}
               {% if offer.bid %}
                 <span>Ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
-              {% elif lot.max_bid %}
-                <span>Макс. ставка <strong>{{ lot.max_bid|formatted_number }} ₽</strong></span>
+              {% elif lot.display_max_bid is not None %}
+                <span>Ставка лота <strong>{{ lot.display_max_bid|formatted_number }} ₽</strong></span>
               {% endif %}
-              {% if lot.min_price %}
-                <span class="text-muted">Желание {{ lot.min_price|formatted_number }} ₽</span>
+              {% if lot.display_min_price is not None %}
+                <span class="text-muted">Желание {{ lot.display_min_price|formatted_number }} ₽</span>
               {% endif %}
               {% if lot.latest_estimation_price %}
                 <span>Выкуп <strong class="text-success">{{ lot.latest_estimation_price|formatted_number }} ₽</strong></span>
@@ -285,13 +298,13 @@
         <ul class="pagination pagination-sm justify-content-center">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&sort={{ params.filters.sort }}">←</a>
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
             </li>
           {% endif %}
           <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&sort={{ params.filters.sort }}">→</a>
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
             </li>
           {% endif %}
         </ul>

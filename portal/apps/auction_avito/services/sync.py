@@ -61,6 +61,82 @@ def sync_lot_images(lot, images: list, *, replace: bool = True) -> int:
     return count
 
 
+def sync_lot_badges(lot, badges: list | None) -> int:
+    """Бейджи уровня lot (lot.badges)."""
+    lot.badges.all().delete()
+    count = 0
+    for b in badges or []:
+        if not b.get('id'):
+            continue
+        AvitoLotBadge.objects.create(
+            lot=lot,
+            avito_badge_id=b['id'],
+            badge_type=b.get('badgeType') or '',
+            title=b.get('title') or '',
+            description=b.get('description') or '',
+            priority=b.get('priority') or 0,
+        )
+        count += 1
+    return count
+
+
+def sync_offer_badges(offer, offer_data: dict) -> int:
+    """Бейджи оффера: badges[] и badgesByStyle[]."""
+    offer.badges.all().delete()
+    count = 0
+    for b in offer_data.get('badges') or []:
+        if not b.get('id'):
+            continue
+        AvitoOfferBadge.objects.create(
+            offer=offer,
+            avito_badge_id=b['id'],
+            badge_type=b.get('badgeType') or '',
+            title=b.get('title') or '',
+            description=b.get('description') or '',
+            priority=b.get('priority') or 0,
+        )
+        count += 1
+    for group in offer_data.get('badgesByStyle') or []:
+        style = group.get('style') or ''
+        for b in group.get('badges') or []:
+            if not b.get('id'):
+                continue
+            AvitoOfferBadge.objects.create(
+                offer=offer,
+                avito_badge_id=b['id'],
+                badge_type=b.get('badgeType') or '',
+                title=b.get('title') or '',
+                description=b.get('description') or '',
+                priority=b.get('priority') or 0,
+                style=style,
+            )
+            count += 1
+    return count
+
+
+def sync_lot_equipment(lot, equipment: list | None) -> int:
+    """lot.equipment[] — группы опций."""
+    lot.equipment.all().delete()
+    count = 0
+    for eq in equipment or []:
+        AvitoLotEquipment.objects.create(
+            lot=lot,
+            name=eq.get('name') or '',
+            values=eq.get('values') or [],
+        )
+        count += 1
+    return count
+
+
+def apply_lot_related_data(lot: AvitoLot, lot_data: dict) -> dict:
+    """Фото, бейджи и комплектация лота — при каждом upsert."""
+    return {
+        'images': sync_lot_images(lot, lot_data.get('images') or [], replace=True),
+        'badges': sync_lot_badges(lot, lot_data.get('badges')),
+        'equipment': sync_lot_equipment(lot, lot_data.get('equipment')),
+    }
+
+
 def _upsert_lot(lot_data: dict) -> AvitoLot:
     lot_id = lot_data['lotId']
     imv = lot_data.get('imvMarketRange') or {}
@@ -92,6 +168,7 @@ def _upsert_lot(lot_data: dict) -> AvitoLot:
             'raw_lot_json': lot_data,
         },
     )
+    apply_lot_related_data(lot, lot_data)
     return lot
 
 
@@ -164,18 +241,6 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or {})
 
-    sync_lot_images(lot, lot_data.get('images') or [], replace=True)
-
-    # Equipment
-    lot.equipment.all().delete()
-    for eq in lot_data.get('equipment') or []:
-        AvitoLotEquipment.objects.create(
-            lot=lot,
-            name=eq.get('name') or '',
-            values=eq.get('values') or [],
-        )
-
-    # Autoteka
     autoteka = lot_data.get('autoteka') or {}
     report, _ = AvitoAutotekaReport.objects.update_or_create(
         lot=lot,
@@ -188,18 +253,6 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
             event_type=ev.get('type') or '',
             status=ev.get('status') or '',
             description=ev.get('description') or '',
-        )
-
-    # Lot badges
-    lot.badges.all().delete()
-    for b in lot_data.get('badges') or []:
-        AvitoLotBadge.objects.create(
-            lot=lot,
-            avito_badge_id=b['id'],
-            badge_type=b.get('badgeType') or '',
-            title=b.get('title') or '',
-            description=b.get('description') or '',
-            priority=b.get('priority') or 0,
         )
 
     status = offer_data.get('status') or {}
@@ -233,27 +286,6 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
         },
     )
 
-    offer.badges.all().delete()
-    for b in offer_data.get('badges') or []:
-        AvitoOfferBadge.objects.create(
-            offer=offer,
-            avito_badge_id=b['id'],
-            badge_type=b.get('badgeType') or '',
-            title=b.get('title') or '',
-            description=b.get('description') or '',
-            priority=b.get('priority') or 0,
-        )
-    for group in offer_data.get('badgesByStyle') or []:
-        style = group.get('style') or ''
-        for b in group.get('badges') or []:
-            AvitoOfferBadge.objects.create(
-                offer=offer,
-                avito_badge_id=b['id'],
-                badge_type=b.get('badgeType') or '',
-                title=b.get('title') or '',
-                description=b.get('description') or '',
-                priority=b.get('priority') or 0,
-                style=style,
-            )
+    sync_offer_badges(offer, offer_data)
 
     return offer
