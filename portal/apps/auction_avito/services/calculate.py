@@ -48,6 +48,10 @@ def _lot_payload_from_calculate_request(payload: dict, lot_id: int) -> dict:
     return {
         'lotId': lot_id,
         'minPrice': payload.get('minPrice'),
+        'minAvailableBid': payload.get('minAvailableBid'),
+        'maxAvailableBid': payload.get('maxAvailableBid'),
+        'maxBid': payload.get('maxBid'),
+        'tradeIn': payload.get('tradeIn'),
         'vehicle': payload.get('vehicle'),
         'autohubVehicle': payload.get('autohubVehicle'),
         'autoteka': payload.get('autoteka'),
@@ -56,9 +60,41 @@ def _lot_payload_from_calculate_request(payload: dict, lot_id: int) -> dict:
         'imvMarketRange': payload.get('imvMarketRange'),
         'bidGroupV2': payload.get('bidGroupV2'),
         'images': payload.get('images') or [],
+        'badges': payload.get('badges') or [],
         'equipment': payload.get('equipment') or [],
         'finishAt': payload.get('finishAt'),
         'expiresAt': payload.get('expiresAt'),
+    }
+
+
+def _offer_payload_from_calculate_request(payload: dict, lot_id: int) -> dict | None:
+    """Собирает offer для upsert_offer_from_api из тела calculate_car."""
+    lot_offer_id = payload.get('lotOfferId')
+    if not lot_offer_id:
+        return None
+    if payload.get('lot') and isinstance(payload['lot'], dict):
+        return payload
+    return {
+        'lotOfferId': lot_offer_id,
+        'lot': _lot_payload_from_calculate_request(payload, lot_id),
+        'bidderId': payload.get('bidderId'),
+        'dealerId': payload.get('dealerId'),
+        'badges': payload.get('badges') or [],
+        'badgesByStyle': payload.get('badgesByStyle') or [],
+        'status': payload.get('status') or {},
+        'bid': payload.get('bid'),
+        'bidMadeAt': payload.get('bidMadeAt'),
+        'minBidStep': payload.get('minBidStep'),
+        'saleCost': payload.get('saleCost'),
+        'presalePreparationCost': payload.get('presalePreparationCost'),
+        'gm1Money': payload.get('gm1Money'),
+        'gm1Percent': payload.get('gm1Percent'),
+        'createdAt': payload.get('createdAt'),
+        'updatedAt': payload.get('updatedAt'),
+        'hiddenBy': payload.get('hiddenBy') or [],
+        'isBuyoutOnSiteAvailable': payload.get('isBuyoutOnSiteAvailable', False),
+        'isInspectionOnSiteAvailable': payload.get('isInspectionOnSiteAvailable', False),
+        'bidMadeByUser': payload.get('bidMadeByUser') or {},
     }
 
 
@@ -77,11 +113,19 @@ def upsert_lot_from_calculate_request(payload: dict):
     account = _get_or_create_account(ids['bidder_id'], ids['dealer_id'])
     offer = None
 
-    if payload.get('lotOfferId') and payload.get('lot'):
-        offer = upsert_offer_from_api(account, payload)
+    offer_payload = _offer_payload_from_calculate_request(payload, lot_id)
+    if offer_payload:
+        offer = upsert_offer_from_api(account, offer_payload)
         return offer.lot, offer
 
     lot_data = _lot_payload_from_calculate_request(payload, lot_id)
+    if isinstance(payload.get('lot'), dict):
+        lot_block = payload['lot']
+        if lot_block.get('badges') and not lot_data.get('badges'):
+            lot_data['badges'] = lot_block['badges']
+        if lot_block.get('images') and not lot_data.get('images'):
+            lot_data['images'] = lot_block['images']
+
     lot = _upsert_lot(lot_data)
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or payload.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or payload.get('autohubVehicle') or {})
@@ -101,17 +145,7 @@ def upsert_lot_from_calculate_request(payload: dict):
                 description=ev.get('description') or '',
             )
 
-    if ids['lot_offer_id']:
-        offer, _ = AvitoLotOffer.objects.update_or_create(
-            lot_offer_id=int(ids['lot_offer_id']),
-            defaults={
-                'lot': lot,
-                'account': account,
-                'raw_offer_json': payload,
-            },
-        )
-
-    return lot, offer
+    return lot, None
 
 
 def _int_or_none(value):
