@@ -50,6 +50,7 @@ urlpatterns = [
     #PowerBI
     path('checklists/',     include('checklists.urls')),
     path('asp/',            include('asp.urls')),
+    path('auction_avito/',  include('auction_avito.urls')),
     path('changelog/',      include('changelog.urls')),
 
     #Веб - сайт
