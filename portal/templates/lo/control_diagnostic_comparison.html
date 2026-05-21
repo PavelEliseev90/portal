@@ -37,7 +37,10 @@
             <tr>
               <th>Показатель</th>
               <th class="text-end">Интерактивная оценка</th>
-              <th class="text-end">Контрольная диагностика</th>
+              <th class="text-end">
+                Контрольная диагностика 
+                <a href="?refresh=zna" class="btn-calculate-success-sm">обновить цна</a>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -45,8 +48,17 @@
             {% if orig %}
             <tr>
               <td>ЦНА</td>
-              <td class="text-end">{{ params.price_estimation.zna|floatformat:"0g" }} ₽ {{param.price_estimation}}</td>
-              <td class="text-end {% if params.price_estimation.zna != params.price_cd.zna %}table-warning{% endif %}">{{ params.price_cd.zna|floatformat:"0g" }} ₽</td>
+              <td class="text-end">
+                {{ params.price_estimation.zna|floatformat:"0g" }} ₽
+                <br>
+                на {{params.estimation.hub_start}} 
+
+              </td>
+              <td class="text-end {% if params.price_estimation.zna != params.price_cd.zna %}table-warning{% endif %}">
+                {{ params.price_cd.zna|floatformat:"0g" }} ₽
+                <br>
+                на {{params.cd.hub_start}} 
+              </td>
             </tr>
             <tr>
               <td>Прием</td>
