@@ -85,16 +85,28 @@
   .aav-badge {
     display: inline-block;
     font-size: 0.68rem;
-    padding: 0.2rem 0.45rem;
+    padding: 0.2rem 0.5rem;
     border-radius: 999px;
-    background: rgba(0, 80, 157, 0.1);
+    background: rgba(0, 80, 157, 0.12);
     color: #00509d;
-    margin: 0 0.2rem 0.2rem 0;
+    border: 1px solid rgba(0, 80, 157, 0.2);
+    margin: 0 0.2rem 0.25rem 0;
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    vertical-align: middle;
   }
+  .aav-badge--stock-score-1,
+  .aav-badge--stock-score-2 { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+  .aav-badge--sale-score-3,
+  .aav-badge--sale-score-4 { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .aav-badge--market-score-3,
+  .aav-badge--market-score-4 { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+  .aav-badge--market-score-0 { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+  .aav-badge--trade-in,
+  .aav-badge--loan { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .aav-card-badges { min-height: 1.5rem; margin-bottom: 0.35rem; }
   .aav-status {
     position: absolute;
     top: 0.5rem;
@@ -141,7 +153,7 @@
 
   <div class="portal-panel aav-filters mb-3">
     <form method="get" class="row g-2 align-items-end">
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="form-label small text-muted mb-1">Поиск</label>
         <input type="search" class="form-control" name="q" value="{{ params.filters.q }}"
                placeholder="Марка, модель, лот, город…">
@@ -156,6 +168,15 @@
         </select>
       </div>
       <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Метка (badge)</label>
+        <select class="form-select" name="badge">
+          <option value="">Все метки</option>
+          {% for code, label in params.badge_choices %}
+            <option value="{{ code }}" {% if params.filters.badge == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
         <label class="form-label small text-muted mb-1">Сортировка</label>
         <select class="form-select" name="sort">
           <option value="-finish_at" {% if params.filters.sort == '-finish_at' %}selected{% endif %}>Окончание ↓</option>
@@ -165,12 +186,14 @@
           <option value="-imv_median" {% if params.filters.sort == '-imv_median' %}selected{% endif %}>IMV медиана ↓</option>
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-1">
+        <label class="form-label small text-muted mb-1">&nbsp;</label>
         <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
-          <span class="bi bi-search"></span> Найти
+          <span class="bi bi-search"></span>
         </button>
       </div>
       <div class="col-md-1">
+        <label class="form-label small text-muted mb-1">&nbsp;</label>
         <a href="{% url 'auction_avito:lot_list' %}" class="btn btn-outline-secondary w-100" title="Сбросить">×</a>
       </div>
     </form>
@@ -197,8 +220,8 @@
             {% if lot.finish_at %}
               <span class="aav-finish">{{ lot.finish_at|date:"d.m H:i" }}</span>
             {% endif %}
-            {% if img %}
-              <img src="{{ img.url_preview|default:img.url }}" alt="" loading="lazy">
+            {% if img and img.display_url %}
+              <img src="{{ img.display_url }}" alt="" loading="lazy">
             {% else %}
               <span class="aav-no-photo bi bi-car-front"></span>
             {% endif %}
@@ -221,19 +244,28 @@
               <br>
               {% if lot.seller_place_name %}<span class="bi bi-geo-alt"></span> {{ lot.seller_place_name }}{% endif %}
             </div>
-            {% if offer and offer.badges.all %}
-              <div class="mb-1">
-                {% for badge in offer.badges.all|slice:":3" %}
-                  <span class="aav-badge" title="{{ badge.description }}">{{ badge.title|truncatechars:28 }}</span>
-                {% endfor %}
-              </div>
-            {% endif %}
+            <div class="aav-card-badges">
+              {% for badge in offer.badges.all|slice:":4" %}
+                <span class="aav-badge aav-badge--{{ badge.badge_type }}" title="{{ badge.description }}">{{ badge.title|truncatechars:32 }}</span>
+              {% endfor %}
+              {% for badge in lot.badges.all|slice:":2" %}
+                <span class="aav-badge aav-badge--{{ badge.badge_type }}" title="{{ badge.description }}">{{ badge.title|truncatechars:32 }}</span>
+              {% endfor %}
+            </div>
             <div class="aav-card-prices">
-              {% if lot.min_price %}
-                <span>Мин. <span class="aav-price-strong">{{ lot.min_price|formatted_number }} ₽</span></span>
+              {% if lot.min_available_bid %}
+                <span>Мин. ставка <span class="aav-price-strong">{{ lot.min_available_bid|formatted_number }} ₽</span></span>
+              {% endif %}
+              {% if offer and offer.min_bid_step %}
+                <span>Шаг <strong>{{ offer.min_bid_step|formatted_number }} ₽</strong></span>
               {% endif %}
               {% if offer.bid %}
                 <span>Ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
+              {% elif lot.max_bid %}
+                <span>Макс. ставка <strong>{{ lot.max_bid|formatted_number }} ₽</strong></span>
+              {% endif %}
+              {% if lot.min_price %}
+                <span class="text-muted">Желание {{ lot.min_price|formatted_number }} ₽</span>
               {% endif %}
               {% if lot.latest_estimation_price %}
                 <span>Выкуп <strong class="text-success">{{ lot.latest_estimation_price|formatted_number }} ₽</strong></span>
@@ -253,13 +285,13 @@
         <ul class="pagination pagination-sm justify-content-center">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&sort={{ params.filters.sort }}">←</a>
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&sort={{ params.filters.sort }}">←</a>
             </li>
           {% endif %}
           <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&sort={{ params.filters.sort }}">→</a>
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&sort={{ params.filters.sort }}">→</a>
             </li>
           {% endif %}
         </ul>

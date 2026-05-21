@@ -364,3 +364,8 @@ APP_LINK            = 'https://ah.kors-group.com/media/share/ah_kors_group.apk'
 
 RECAPTCHA_PUBLIC_KEY = '6LeqkkUrAAAAAPHyHXENqhEg8av-trt9dnEOU4nJ'
 RECAPTCHA_PRIVATE_KEY = '6LeqkkUrAAAAACz_q0VPFS4uKTI0G6jrosc4hTtC'
+
+# Аукцион Авито — опционально, для кнопки «Загрузить фото» с API
+# AVITO_AUCTION_OFFERS_URL = 'https://api.maxposter.ru/partners-api/.../offers'
+# AVITO_AUCTION_API_USER = 'korsgroup@maxposter.ru'
+# AVITO_AUCTION_API_PASSWORD = ''

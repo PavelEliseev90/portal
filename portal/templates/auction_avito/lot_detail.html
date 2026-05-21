@@ -54,13 +54,24 @@
   .aav-autoteka-inc { color: #6c7a92; }
   .aav-badge-pill {
     display: inline-block;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
     border-radius: 999px;
     background: rgba(0, 80, 157, 0.1);
     color: #00509d;
+    border: 1px solid rgba(0, 80, 157, 0.2);
     margin: 0 0.35rem 0.35rem 0;
   }
+  .aav-badge-pill--stock-score-1,
+  .aav-badge-pill--stock-score-2 { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+  .aav-badge-pill--sale-score-3,
+  .aav-badge-pill--sale-score-4 { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .aav-badge-pill--market-score-3,
+  .aav-badge-pill--market-score-4 { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
+  .aav-badge-pill--market-score-0 { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+  .aav-badge-pill--trade-in,
+  .aav-badge-pill--loan { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .aav-hero-badges { margin-top: 0.65rem; }
   .aav-desc { white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; color: #334155; }
   .aav-panel-title {
     font-size: 1rem;
@@ -73,6 +84,15 @@
 
 {% block content %}
 <div class="portal-page">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
 
   <div class="aav-detail-hero d-flex flex-wrap justify-content-between align-items-start gap-2">
     <div>
@@ -100,22 +120,58 @@
         </span>
       {% endif %}
     </div>
+    {% if params.all_badges %}
+      <div class="aav-hero-badges w-100">
+        {% for badge in params.all_badges %}
+          <span class="aav-badge-pill aav-badge-pill--{{ badge.badge_type }}" title="{{ badge.description }}">
+            {{ badge.title }}
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 
   <div class="row g-3">
     <div class="col-lg-8">
       <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-images me-1"></span> Фотографии</div>
+        <div class="aav-panel-title d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span><span class="bi bi-images me-1"></span> Фотографии</span>
+          <span class="text-muted small">{{ params.images|length }} шт.</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <form method="post" action="{% url 'auction_avito:lot_load_images' params.lot.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
+              <span class="bi bi-cloud-download"></span> Загрузить фото
+            </button>
+          </form>
+          <span class="small text-muted align-self-center">из API Авито или сохранённого JSON лота</span>
+        </div>
+
+        <form method="post" action="{% url 'auction_avito:lot_upload_images' params.lot.pk %}" enctype="multipart/form-data" class="mb-3 border rounded p-2 bg-light">
+          {% csrf_token %}
+          <label class="form-label small text-muted mb-1">Добавить с компьютера</label>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input type="file" class="form-control form-control-sm" name="photos" accept="image/*" multiple>
+            <button type="submit" class="btn btn-sm btn-outline-secondary">
+              <span class="bi bi-upload"></span> Загрузить файлы
+            </button>
+          </div>
+        </form>
+
         {% if params.images %}
           <div class="aav-gallery">
             {% for image in params.images %}
-              <a href="{{ image.url }}" target="_blank" rel="noopener">
-                <img src="{{ image.url_preview|default:image.url }}" alt="Фото {{ forloop.counter }}" loading="lazy">
-              </a>
+              {% if image.display_url %}
+                <a href="{% if image.url %}{{ image.url }}{% else %}{{ image.file.url }}{% endif %}" target="_blank" rel="noopener">
+                  <img src="{{ image.display_url }}" alt="Фото {{ forloop.counter }}" loading="lazy">
+                </a>
+              {% endif %}
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-muted small mb-0">Фотографии не загружены.</p>
+          <p class="text-muted small mb-0">Фотографий пока нет. Нажмите «Загрузить фото» или выберите файлы.</p>
         {% endif %}
       </div>
 
@@ -143,16 +199,42 @@
       <div class="portal-panel mb-3">
         <div class="aav-panel-title"><span class="bi bi-currency-exchange me-1"></span> Цены и ставки</div>
         <div class="aav-kpi">
-          {% if params.lot.min_price %}
+          {% if params.lot.min_available_bid %}
             <div class="aav-kpi-item">
-              <div class="label">Цена продавца</div>
-              <div class="value">{{ params.lot.min_price|formatted_number }} ₽</div>
+              <div class="label">Мин. ставка</div>
+              <div class="value">{{ params.lot.min_available_bid|formatted_number }} ₽</div>
+              <div class="small text-muted">minAvailableBid</div>
+            </div>
+          {% endif %}
+          {% if params.primary_offer and params.primary_offer.min_bid_step %}
+            <div class="aav-kpi-item">
+              <div class="label">Шаг ставки</div>
+              <div class="value">{{ params.primary_offer.min_bid_step|formatted_number }} ₽</div>
+              <div class="small text-muted">minBidStep</div>
+            </div>
+          {% endif %}
+          {% if params.lot.max_available_bid %}
+            <div class="aav-kpi-item">
+              <div class="label">Макс. ставка</div>
+              <div class="value">{{ params.lot.max_available_bid|formatted_number }} ₽</div>
             </div>
           {% endif %}
           {% if params.primary_offer and params.primary_offer.bid %}
             <div class="aav-kpi-item">
               <div class="label">Ваша ставка</div>
               <div class="value">{{ params.primary_offer.bid|formatted_number }} ₽</div>
+            </div>
+          {% elif params.lot.max_bid %}
+            <div class="aav-kpi-item">
+              <div class="label">Текущая макс. ставка</div>
+              <div class="value">{{ params.lot.max_bid|formatted_number }} ₽</div>
+            </div>
+          {% endif %}
+          {% if params.lot.min_price %}
+            <div class="aav-kpi-item">
+              <div class="label">Желание продавца</div>
+              <div class="value">{{ params.lot.min_price|formatted_number }} ₽</div>
+              <div class="small text-muted">minPrice</div>
             </div>
           {% endif %}
           {% if params.lot.bid_l1 %}
@@ -181,8 +263,7 @@
         {% if params.primary_offer %}
           <hr class="my-2">
           <p class="small text-muted mb-1">
-            Шаг ставки: {{ params.primary_offer.min_bid_step|formatted_number|default:"—" }} ₽
-            {% if params.primary_offer.bid_made_at %} · {{ params.primary_offer.bid_made_at|date:"d.m.Y H:i" }}{% endif %}
+            {% if params.primary_offer.bid_made_at %}Ставка от {{ params.primary_offer.bid_made_at|date:"d.m.Y H:i" }}{% endif %}
           </p>
           {% if params.primary_offer.bid_made_by_last_name %}
             <p class="small mb-0">
@@ -194,19 +275,56 @@
         {% endif %}
       </div>
 
-      {% if params.primary_offer and params.primary_offer.badges.all or params.lot.badges.all %}
       <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-tags me-1"></span> Метки</div>
-        {% if params.primary_offer %}
-          {% for badge in params.primary_offer.badges.all %}
-            <span class="aav-badge-pill" title="{{ badge.description }}">{{ badge.title }}</span>
-          {% endfor %}
+        <div class="aav-panel-title d-flex justify-content-between align-items-center">
+          <span><span class="bi bi-tags me-1"></span> Метки Авито</span>
+          <span class="text-muted small">{{ params.all_badges|length }} шт.</span>
+        </div>
+        {% if params.all_badges %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Тип</th>
+                  <th>Заголовок</th>
+                  <th>Описание</th>
+                  <th>Стиль</th>
+                  <th>Источник</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for badge in params.offer_badges %}
+                  <tr>
+                    <td class="small"><code>{{ badge.badge_type }}</code></td>
+                    <td>
+                      <span class="aav-badge-pill aav-badge-pill--{{ badge.badge_type }}">{{ badge.title }}</span>
+                    </td>
+                    <td class="small text-muted">{{ badge.description }}</td>
+                    <td class="small">{{ badge.style|default:"—" }}</td>
+                    <td class="small">оффер</td>
+                  </tr>
+                {% endfor %}
+                {% for badge in params.lot_badges %}
+                  <tr>
+                    <td class="small"><code>{{ badge.badge_type }}</code></td>
+                    <td>
+                      <span class="aav-badge-pill aav-badge-pill--{{ badge.badge_type }}">{{ badge.title }}</span>
+                    </td>
+                    <td class="small text-muted">{{ badge.description }}</td>
+                    <td class="small">{{ badge.style|default:"—" }}</td>
+                    <td class="small">лот</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="small text-muted mt-2 mb-0">
+            <a href="{% url 'auction_avito:lot_list' %}?badge={{ params.all_badges.0.badge_type }}">Показать лоты с похожей меткой</a>
+          </p>
+        {% else %}
+          <p class="text-muted small mb-0">Метки появятся после синхронизации оффера с API (<code>badges</code>, <code>badgesByStyle</code>).</p>
         {% endif %}
-        {% for badge in params.lot.badges.all %}
-          <span class="aav-badge-pill" title="{{ badge.description }}">{{ badge.title }}</span>
-        {% endfor %}
       </div>
-      {% endif %}
 
       {% if params.vehicle %}
       <div class="portal-panel mb-3">

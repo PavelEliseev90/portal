@@ -169,10 +169,30 @@ class AvitoLotAutohubVehicle(models.Model):
 
 
 class AvitoLotImage(models.Model):
+    SOURCE_AVITO = 'avito'
+    SOURCE_UPLOAD = 'upload'
+    SOURCE_CHOICES = [
+        (SOURCE_AVITO, 'Авито (URL)'),
+        (SOURCE_UPLOAD, 'Загрузка в портал'),
+    ]
+
     lot = models.ForeignKey(AvitoLot, on_delete=models.CASCADE, related_name='images')
     image_id = models.BigIntegerField('id фото')
-    url = models.URLField('url', max_length=2048)
+    source = models.CharField(
+        'Источник',
+        max_length=10,
+        choices=SOURCE_CHOICES,
+        default=SOURCE_AVITO,
+    )
+    url = models.URLField('url', max_length=2048, blank=True, default='')
     url_preview = models.URLField('urlPreview', max_length=2048, blank=True, default='')
+    file = models.ImageField(
+        'Файл',
+        upload_to='auction_avito/lots/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        max_length=500,
+    )
     sort_order = models.PositiveSmallIntegerField('Порядок', default=0)
 
     class Meta:
@@ -181,6 +201,12 @@ class AvitoLotImage(models.Model):
         verbose_name_plural = 'Фото лотов'
         ordering = ['sort_order', 'id']
         unique_together = [('lot', 'image_id')]
+
+    @property
+    def display_url(self):
+        if self.file:
+            return self.file.url
+        return self.url_preview or self.url or ''
 
 
 class AvitoLotEquipment(models.Model):

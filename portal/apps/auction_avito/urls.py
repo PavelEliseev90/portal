@@ -7,4 +7,6 @@ app_name = 'auction_avito'
 urlpatterns = [
     path('', views.lot_list, name='lot_list'),
     path('lots/<int:pk>/', views.lot_detail, name='lot_detail'),
+    path('lots/<int:pk>/load-images/', views.lot_load_images, name='lot_load_images'),
+    path('lots/<int:pk>/upload-images/', views.lot_upload_images, name='lot_upload_images'),
 ]
