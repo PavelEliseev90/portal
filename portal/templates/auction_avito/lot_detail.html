@@ -106,7 +106,14 @@
       </h2>
       <p class="text-muted small mb-0">
         № {{ params.lot.lot_id }}
-        {% if params.lot.seller_place_name %} · <span class="bi bi-geo-alt"></span> {{ params.lot.seller_place_name }}{% endif %}
+        {% if params.venue.name or params.venue.city %}
+          · <span class="bi bi-building"></span>
+          {% if params.venue.name %}{{ params.venue.name }}{% endif %}
+          {% if params.venue.city %} · {{ params.venue.city }}{% endif %}
+          {% if params.venue.dealer_id %} · dealerId {{ params.venue.dealer_id }}{% endif %}
+        {% elif params.lot.seller_place_name %}
+          · <span class="bi bi-geo-alt"></span> {{ params.lot.seller_place_name }}
+        {% endif %}
         {% if params.lot.finish_at %} · до {{ params.lot.finish_at|date:"d.m.Y H:i" }}{% endif %}
       </p>
     </div>
@@ -180,6 +187,31 @@
     </div>
 
     <div class="col-lg-4">
+      <div class="portal-panel mb-3">
+        <div class="aav-panel-title"><span class="bi bi-building me-1"></span> Площадка</div>
+        <table class="table table-sm table-borderless aav-spec-table mb-0">
+          <tbody>
+            <tr>
+              <td>dealerId</td>
+              <td><strong>{% if params.venue.dealer_id %}{{ params.venue.dealer_id }}{% else %}—{% endif %}</strong></td>
+            </tr>
+            <tr>
+              <td>Наименование</td>
+              <td>{{ params.venue.name|default:"—" }}</td>
+            </tr>
+            <tr>
+              <td>Город</td>
+              <td>{{ params.venue.city|default:"—" }}</td>
+            </tr>
+          </tbody>
+        </table>
+        {% if params.lot.venue_id %}
+          <p class="small text-muted mb-0 mt-2">
+            <a href="{% url 'auction_avito:lot_list' %}?venue={{ params.venue.dealer_id }}">Все лоты этой площадки</a>
+          </p>
+        {% endif %}
+      </div>
+
       <div class="portal-panel mb-3">
         <div class="aav-panel-title"><span class="bi bi-currency-exchange me-1"></span> Цены и ставки</div>
         <div class="aav-kpi">

@@ -12,6 +12,7 @@ from auction_avito.models import (
     AvitoLotCalculation,
     AvitoLotOffer,
     AvitoOfferBadge,
+    AvitoVenue,
 )
 
 # Подписи для фильтра по типу метки (badgeType из API Авито)
@@ -72,6 +73,45 @@ def _trade_in_display(lot) -> dict:
     }
 
 
+def _venue_display(lot, offer=None) -> dict:
+    """Данные площадки для списка и карточки лота."""
+    if lot.venue_id:
+        v = lot.venue
+        return {
+            'dealer_id': v.dealer_id,
+            'name': v.name,
+            'city': v.city_name,
+            'label': v.display_label,
+        }
+    dealer_id = None
+    if offer and getattr(offer, 'account', None):
+        dealer_id = offer.account.dealer_id
+    name = (lot.seller_place_name or '').strip()
+    city = ''
+    if name and ',' in name and not city:
+        city_part, _, rest = name.partition(',')
+        if rest.strip():
+            city = city_part.strip()
+            name = rest.strip()
+    label_parts = [p for p in (name, city) if p]
+    label = ' · '.join(label_parts) if label_parts else '—'
+    if dealer_id:
+        label = f'{label} (ID {dealer_id})' if label != '—' else f'ID {dealer_id}'
+    return {
+        'dealer_id': dealer_id,
+        'name': name,
+        'city': city,
+        'label': label,
+    }
+
+
+def _venue_filter_choices():
+    return [
+        (str(v.dealer_id), v.display_label)
+        for v in AvitoVenue.objects.select_related('city').order_by('city__name', 'name', 'dealer_id')
+    ]
+
+
 def _equipment_items(lot):
     items = list(lot.equipment.all())
     if items:
@@ -102,6 +142,7 @@ def _lot_queryset():
         'badges',
     ).order_by('-updated_at')
     return AvitoLot.objects.select_related(
+        'venue__city',
         'vehicle_avito',
         'vehicle_autohub',
         'autoteka',
@@ -129,6 +170,7 @@ def lot_list(request):
     status = (request.GET.get('status') or '').strip()
     badge_type = (request.GET.get('badge') or '').strip()
     trade_in = (request.GET.get('trade_in') or '').strip()
+    venue_dealer = (request.GET.get('venue') or '').strip()
     sort = (request.GET.get('sort') or '-finish_at').strip()
 
     if search:
@@ -136,9 +178,17 @@ def lot_list(request):
             Q(lot_id__icontains=search)
             | Q(description__icontains=search)
             | Q(seller_place_name__icontains=search)
+            | Q(venue__name__icontains=search)
+            | Q(venue__city__name__icontains=search)
             | Q(vehicle_avito__brand_name__icontains=search)
             | Q(vehicle_avito__model_name__icontains=search)
         )
+
+    if venue_dealer:
+        try:
+            qs = qs.filter(venue__dealer_id=int(venue_dealer))
+        except ValueError:
+            pass
 
     if status:
         qs = qs.filter(offers__status_code=status).distinct()
@@ -188,9 +238,11 @@ def lot_list(request):
             'status': status,
             'badge': badge_type,
             'trade_in': trade_in,
+            'venue': venue_dealer,
             'sort': sort,
         },
         'badge_choices': _badge_filter_choices(),
+        'venue_choices': _venue_filter_choices(),
         'trade_in_choices': [
             ('considers', 'Рассматривает трейд-ин'),
             ('used', 'Ищет б/у в зачёт'),
@@ -241,6 +293,7 @@ def lot_detail(request, pk):
         'equipment_items': _equipment_items(lot),
         'trade_in': _trade_in_display(lot),
         'prices': _lot_price_display(lot, primary_offer),
+        'venue': _venue_display(lot, primary_offer),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
 

@@ -38,6 +38,47 @@ class AvitoBidderAccount(models.Model):
         return f'bidder {self.bidder_id} / dealer {self.dealer_id}'
 
 
+class AvitoVenue(models.Model):
+    """Площадка продавца на аукционе Авито (dealerId + место)."""
+
+    dealer_id = models.PositiveIntegerField('dealerId', unique=True, db_index=True)
+    name = models.CharField('Наименование', max_length=500, blank=True, default='')
+    city = models.ForeignKey(
+        'refs.RefCity',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Город',
+        related_name='avito_venues',
+    )
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        db_table = 'avitoVenue'
+        verbose_name = 'Площадка Авито'
+        verbose_name_plural = 'Площадки Авито'
+        ordering = ['city__name', 'name', 'dealer_id']
+
+    @property
+    def city_name(self) -> str:
+        return self.city.name if self.city_id else ''
+
+    def __str__(self):
+        parts = [p for p in (self.name, self.city_name) if p]
+        label = ', '.join(parts) if parts else f'Площадка {self.dealer_id}'
+        return f'{label} (dealer {self.dealer_id})'
+
+    @property
+    def display_label(self):
+        parts = []
+        if self.name:
+            parts.append(self.name)
+        if self.city_name:
+            parts.append(self.city_name)
+        base = ' · '.join(parts) if parts else f'Площадка {self.dealer_id}'
+        return f'{base} (ID {self.dealer_id})'
+
+
 # ---------------------------------------------------------------------------
 # Лот (lot)
 # ---------------------------------------------------------------------------
@@ -46,6 +87,14 @@ class AvitoLot(models.Model):
     """Лот аукциона — стабильная сущность по lotId."""
 
     lot_id = models.BigIntegerField('lotId', unique=True, db_index=True)
+    venue = models.ForeignKey(
+        AvitoVenue,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lots',
+        verbose_name='Площадка',
+    )
     description = models.TextField('Описание объявления', blank=True, default='')
     seller_place_name = models.CharField('Место продавца', max_length=500, blank=True, default='')
 

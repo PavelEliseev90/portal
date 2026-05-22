@@ -177,6 +177,15 @@
         </select>
       </div>
       <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Площадка</label>
+        <select class="form-select" name="venue">
+          <option value="">Все площадки</option>
+          {% for dealer_id, label in params.venue_choices %}
+            <option value="{{ dealer_id }}" {% if params.filters.venue == dealer_id %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
         <label class="form-label small text-muted mb-1">Трейд-ин</label>
         <select class="form-select" name="trade_in">
           <option value="">Все</option>
@@ -251,7 +260,18 @@
                 {% if vehicle.engine_type_name %} · {{ vehicle.engine_type_name }}{% endif %}
               {% endif %}
               <br>
-              {% if lot.seller_place_name %}<span class="bi bi-geo-alt"></span> {{ lot.seller_place_name }}{% endif %}
+              {% if lot.venue %}
+                <span class="bi bi-building"></span>
+                {% if lot.venue.name %}<strong>{{ lot.venue.name }}</strong>{% endif %}
+                {% if lot.venue.city_name %} · {{ lot.venue.city_name }}{% endif %}
+                · <span class="text-muted">dealerId {{ lot.venue.dealer_id }}</span>
+              {% elif offer and offer.account %}
+                <span class="bi bi-building"></span>
+                {% if lot.seller_place_name %}{{ lot.seller_place_name }} · {% endif %}
+                <span class="text-muted">dealerId {{ offer.account.dealer_id }}</span>
+              {% elif lot.seller_place_name %}
+                <span class="bi bi-geo-alt"></span> {{ lot.seller_place_name }}
+              {% endif %}
               {% if lot.has_trade_in %} · <span class="aav-badge aav-badge--trade-in">Трейд-ин</span>{% endif %}
             </div>
             <div class="aav-card-badges">
@@ -298,13 +318,13 @@
         <ul class="pagination pagination-sm justify-content-center">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
             </li>
           {% endif %}
           <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
             </li>
           {% endif %}
         </ul>
