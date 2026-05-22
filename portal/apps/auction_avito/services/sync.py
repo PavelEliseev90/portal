@@ -15,6 +15,7 @@ from auction_avito.models import (
     AvitoAutotekaReport,
     AvitoBidderAccount,
     AvitoLot,
+    AvitoVenue,
     AvitoLotAutohubVehicle,
     AvitoLotBadge,
     AvitoLotEquipment,
@@ -23,6 +24,7 @@ from auction_avito.models import (
     AvitoLotVehicle,
     AvitoOfferBadge,
 )
+from auction_avito.services.venues import resolve_venue_from_payload, upsert_venue
 
 
 def _dt(value):
@@ -137,36 +139,40 @@ def apply_lot_related_data(lot: AvitoLot, lot_data: dict) -> dict:
     }
 
 
-def _upsert_lot(lot_data: dict) -> AvitoLot:
+def _upsert_lot(lot_data: dict, *, venue: AvitoVenue | None = None) -> AvitoLot:
     lot_id = lot_data['lotId']
     imv = lot_data.get('imvMarketRange') or {}
     bid_group = lot_data.get('bidGroupV2') or {}
     trade = lot_data.get('tradeIn') or {}
 
+    defaults = {
+        'description': lot_data.get('description') or '',
+        'seller_place_name': lot_data.get('sellerPlaceName') or '',
+        'min_price': lot_data.get('minPrice'),
+        'min_available_bid': lot_data.get('minAvailableBid'),
+        'max_available_bid': lot_data.get('maxAvailableBid'),
+        'max_bid': lot_data.get('maxBid'),
+        'bid_l1': bid_group.get('l1'),
+        'bid_l2': bid_group.get('l2'),
+        'imv_low': imv.get('low'),
+        'imv_median': imv.get('median'),
+        'imv_high': imv.get('high'),
+        'created_at': _dt(lot_data.get('createdAt')),
+        'updated_at': _dt(lot_data.get('updatedAt')),
+        'finish_at': _dt(lot_data.get('finishAt')),
+        'origin_finish_at': _dt(lot_data.get('originFinishAt')),
+        'expires_at': _dt(lot_data.get('expiresAt')),
+        'trade_in_considers': trade.get('considersTradeIn'),
+        'trade_in_looking_for_used': trade.get('lookingForUsedCar'),
+        'trade_in_comment': trade.get('comment'),
+        'raw_lot_json': lot_data,
+    }
+    if venue is not None:
+        defaults['venue'] = venue
+
     lot, _ = AvitoLot.objects.update_or_create(
         lot_id=lot_id,
-        defaults={
-            'description': lot_data.get('description') or '',
-            'seller_place_name': lot_data.get('sellerPlaceName') or '',
-            'min_price': lot_data.get('minPrice'),
-            'min_available_bid': lot_data.get('minAvailableBid'),
-            'max_available_bid': lot_data.get('maxAvailableBid'),
-            'max_bid': lot_data.get('maxBid'),
-            'bid_l1': bid_group.get('l1'),
-            'bid_l2': bid_group.get('l2'),
-            'imv_low': imv.get('low'),
-            'imv_median': imv.get('median'),
-            'imv_high': imv.get('high'),
-            'created_at': _dt(lot_data.get('createdAt')),
-            'updated_at': _dt(lot_data.get('updatedAt')),
-            'finish_at': _dt(lot_data.get('finishAt')),
-            'origin_finish_at': _dt(lot_data.get('originFinishAt')),
-            'expires_at': _dt(lot_data.get('expiresAt')),
-            'trade_in_considers': trade.get('considersTradeIn'),
-            'trade_in_looking_for_used': trade.get('lookingForUsedCar'),
-            'trade_in_comment': trade.get('comment'),
-            'raw_lot_json': lot_data,
-        },
+        defaults=defaults,
     )
     apply_lot_related_data(lot, lot_data)
     return lot
@@ -237,7 +243,14 @@ def _upsert_vehicle_autohub(lot: AvitoLot, ah: dict):
 @transaction.atomic
 def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> AvitoLotOffer:
     lot_data = offer_data['lot']
-    lot = _upsert_lot(lot_data)
+    venue = resolve_venue_from_payload(offer_data, lot_data)
+    if venue is None and account.dealer_id:
+        venue = upsert_venue({
+            'dealer_id': account.dealer_id,
+            'name': lot_data.get('sellerPlaceName') or '',
+            'city_name': '',
+        })
+    lot = _upsert_lot(lot_data, venue=venue)
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or {})
 

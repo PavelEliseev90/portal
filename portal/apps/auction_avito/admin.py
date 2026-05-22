@@ -4,6 +4,7 @@ from .models import (
     AvitoAutotekaEvent,
     AvitoAutotekaReport,
     AvitoBidderAccount,
+    AvitoVenue,
     AvitoBidHistory,
     AvitoLotCalculation,
     AvitoLot,
@@ -39,11 +40,20 @@ class AvitoBidderAccountAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
 
 
+@admin.register(AvitoVenue)
+class AvitoVenueAdmin(admin.ModelAdmin):
+    list_display = ('dealer_id', 'name', 'city', 'updated_at')
+    search_fields = ('dealer_id', 'name', 'city__name')
+    list_filter = ('city',)
+    autocomplete_fields = ('city',)
+
+
 @admin.register(AvitoLot)
 class AvitoLotAdmin(admin.ModelAdmin):
-    list_display = ('lot_id', 'seller_place_name', 'min_price', 'finish_at', 'synced_at')
-    list_filter = ('finish_at',)
-    search_fields = ('lot_id', 'description', 'seller_place_name')
+    list_display = ('lot_id', 'venue', 'seller_place_name', 'min_price', 'finish_at', 'synced_at')
+    list_filter = ('finish_at', 'venue')
+    search_fields = ('lot_id', 'description', 'seller_place_name', 'venue__name', 'venue__city__name')
+    raw_id_fields = ('venue',)
     inlines = [AvitoLotImageInline, AvitoLotEquipmentInline]
     readonly_fields = ('synced_at',)
 

@@ -16,6 +16,7 @@ from auction_avito.services.sync import (
     _upsert_vehicle_avito,
     upsert_offer_from_api,
 )
+from auction_avito.services.venues import resolve_venue_from_payload
 
 
 def _extract_ids(payload: dict) -> dict:
@@ -126,7 +127,8 @@ def upsert_lot_from_calculate_request(payload: dict):
         if lot_block.get('images') and not lot_data.get('images'):
             lot_data['images'] = lot_block['images']
 
-    lot = _upsert_lot(lot_data)
+    venue = resolve_venue_from_payload(payload, lot_data)
+    lot = _upsert_lot(lot_data, venue=venue)
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or payload.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or payload.get('autohubVehicle') or {})
 
