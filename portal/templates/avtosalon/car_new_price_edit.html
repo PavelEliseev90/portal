@@ -97,60 +97,85 @@
 
 		<div class="col-sm-12 col-md-9 col-lg-9">
 			<div class="portal-panel">
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.unit.name}}" readonly>
-							<label>Подразделение</label>
+				<div class="row g-1">
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Поступление номер</div>
+							<div class="metric-card-value-portal">{{params.object}}</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.type_reception}}" readonly>
-							<label>Тип приема автомобиля</label>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Поступление дата</div>
+							<div class="metric-card-value-portal">{{params.object}}</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{% if params.object.quantity == 0 %}Продан{% else %}{{params.object.status}}{% endif %}" readonly>
-							<label>Статус автомобиля</label>
+					<div class="col-12 col-sm-auto">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Дней на складе</div>
+							<div class="metric-card-value-portal">{{params.object.days_in_stok}} д.</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.type_sale.name}}" readonly>
-							<label>Продажа</label>
+				</div>
+			</div>
+
+			<div class="portal-panel">
+				<div class="row g-1">
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Подразделение</div>
+							<div class="metric-card-value-portal">{{params.object.unit.name}}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Тип приема</div>
+							<div class="metric-card-value-portal">{{params.object.type_reception}}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Статус</div>
+							<div class="metric-card-value-portal">{% if params.object.quantity == 0 %}Продан{% else %}{{params.object.status}}{% endif %}</div>
+						</div>
+					</div>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Продажа</div>
+							<div class="metric-card-value-portal">{{params.object.type_sale.name}}</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" style="background: #fff3cd;" value="{{params.object.cost_price|floatformat:"2g"}} ₽" readonly>
-							<label>Себестоимость</label>
+				<div class="row g-1">
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Себестоимость</div>
+							<div class="metric-card-value-portal">{{params.object.cost_price|floatformat:"2g"}} ₽</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" style="background: #f8d7da;" value="{{params.object.outlay|floatformat:"2g"}} ₽" readonly>
-							<label>Расходы на АМ (факт)</label>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Расходы на АМ (факт)</div>
+							<div class="metric-card-value-portal">{{params.object.outlay|floatformat:"2g"}} ₽</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" style="background: #f8d7da;" value="{{params.object.bcp|floatformat:"2g"}} ₽" readonly>
-							<label>БЦП</label>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">БЦП</div>
+							<div class="metric-card-value-portal text-success">{{params.object.bcp|floatformat:"2g"}} ₽</div>
 						</div>
 					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" style="background: #d1e7dd;" value="{{params.object.price|floatformat:"2g"}} ₽" readonly>
-							<label>Цена</label>
+					<div class="col-12 col-sm-3">
+						<div class="metric-card-portal">
+							<div class="metric-card-label-portal">Цена</div>
+							<div class="metric-card-value-portal text-success fw-bold">{{params.object.price|floatformat:"2g"}} ₽</div>
 						</div>
 					</div>
 				</div>
+			</div>
 
+			<div>
 				<div class="row g-2 mb-3">
 					<div class="col-12 col-sm-auto">
 						<div class="metric-card">

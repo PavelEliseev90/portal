@@ -3666,7 +3666,7 @@ def doc(request, id):
     if interactiv_rlk.status.id == 2 or interactiv_rlk.status != None and interactiv_rlk.status.id == 9 and interactiv_rlk.estimation.page_remote.end_estimation != None:  
         return HttpResponseRedirect('/estimations/' + str(id) + '/')
     
-    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not estimation.page_documents.store in request.user.profiles.korsavto_stores.all()):
+    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not interactiv_rlk.store in request.user.profiles.korsavto_stores.all()):
         
         add_log_history_open(estimation, request.user, 403)
         
@@ -4311,8 +4311,38 @@ def doc(request, id):
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica_comment = ''
                 reg_interactiv_ocenka_soglasovanie.no_diagnostica = False
 
-            reg_interactiv_ocenka_soglasovanie.comment_no_endoscop = request.POST.get('comment_no_endoscop', '')
-            reg_interactiv_ocenka_soglasovanie.comment_no_scaner = request.POST.get('comment_no_scaner', '')
+            reg_interactiv_ocenka_soglasovanie.comment_no_endoscop          = request.POST.get('comment_no_endoscop', '')
+            reg_interactiv_ocenka_soglasovanie.comment_no_scaner            = request.POST.get('comment_no_scaner', '')
+            reg_interactiv_ocenka_soglasovanie.comment_no_repair_and_check  = request.POST.get('comment_no_repair_and_check', '')
+            reg_interactiv_ocenka_soglasovanie.comment_no_gos_service       = request.POST.get('comment_no_gos_service', '')
+            
+            file_repair_and_check = request.FILES.getlist('file_repair_and_check')
+            for file_object in file_repair_and_check: 
+                name = file_object.name.lower()
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = 'repair_and_check', type_point = type_point, text = text, cor_x = x, cor_y = y, name = name)
+                new_estimation_files.file_number    = 1 
+                new_estimation_files.name           = name
+                new_estimation_files.text           = text
+                new_estimation_files.type_point     = type_point
+                new_estimation_files.cor_x          = x
+                new_estimation_files.cor_y          = y
+                new_estimation_files.file           = file_object
+                new_estimation_files.user           = request.user
+                new_estimation_files.save()
+
+            file_gos_service = request.FILES.getlist('file_gos_service')
+            for file_object in file_gos_service: 
+                name = file_object.name.lower()
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = 'gos_service', type_point = type_point, text = text, cor_x = x, cor_y = y, name = name)
+                new_estimation_files.file_number    = 1 
+                new_estimation_files.name           = name
+                new_estimation_files.text           = text
+                new_estimation_files.type_point     = type_point
+                new_estimation_files.cor_x          = x
+                new_estimation_files.cor_y          = y
+                new_estimation_files.file           = file_object
+                new_estimation_files.user           = request.user
+                new_estimation_files.save()
 
             file_scaner = request.FILES.getlist('file_scaner')
             for file_object in file_scaner: 

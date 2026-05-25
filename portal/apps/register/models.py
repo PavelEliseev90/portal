@@ -2428,10 +2428,11 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
     no_diagnostica          = models.BooleanField("Без диагностики", default = False, null=True, blank=True)
     no_diagnostica_comment  = models.CharField("Комментарий отсутствия диагностики диагностки", max_length=2048, default='', null=True, blank=True) 
     
-    comment_no_endoscop  = models.CharField("Комментарий отсутствия фото эндоскопа", max_length=2048, default='', null=True, blank=True) 
-    comment_no_scaner   = models.CharField("Комментарий отсутствия фото сканера", max_length=2048, default='', null=True, blank=True) 
-    
-    
+    comment_no_endoscop         = models.CharField("Комментарий отсутствия фото эндоскопа", max_length=2048, default='', null=True, blank=True) 
+    comment_no_scaner           = models.CharField("Комментарий отсутствия фото сканера", max_length=2048, default='', null=True, blank=True) 
+    comment_no_repair_and_check = models.CharField("Комментарий отсутствия фото заказ - наряда и/или чека", max_length=2048, default='', null=True, blank=True) 
+    comment_no_gos_service      = models.CharField("Комментарий отсутствия выписки госуслуг", max_length=2048, default='', null=True, blank=True) 
+
     amount_podgotovka       = models.FloatField('Затраты на подготовку', default=0.00, null=True, blank=True)
     amount_ss               = models.FloatField('Затраты на слесарный ремонт', default=0.00, null=True, blank=True)
     amount_mcu              = models.FloatField('Затраты на кузовной ремонт', default=0.00, null=True, blank=True)
@@ -3170,6 +3171,16 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         fotos = fotos.order_by('order', 'file_number')
         return fotos.count()
 
+    def get_files_gos_service_count(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'gos_service').order_by('file_number')
+        fotos = fotos.order_by('order', 'file_number')
+        return fotos.count()
+    
+    def get_files_gos_service(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'gos_service').order_by('file_number')
+        fotos = fotos.order_by('order', 'file_number')
+        return fotos
+    
     def get_files_scaner_count(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'scaner').order_by('file_number')
         fotos = fotos.order_by('order', 'file_number')
@@ -3177,6 +3188,16 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     
     def get_files_scaner(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'scaner').order_by('file_number')
+        fotos = fotos.order_by('order', 'file_number')
+        return fotos
+
+    def get_files_repair_and_check_count(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'repair_and_check').order_by('file_number')
+        fotos = fotos.order_by('order', 'file_number')
+        return fotos.count()
+    
+    def get_files_repair_and_check(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'repair_and_check').order_by('file_number')
         fotos = fotos.order_by('order', 'file_number')
         return fotos
     

@@ -1,92 +1,194 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} — КорсАвто: рабочее место {% endblock %}
+{% block title %} - КорсАвто главная {% endblock %}
 
-{% block title_navbar %} — КорсАвто {% endblock %}
-
-{% block head %}
-<style>
-  .asp-hero {
-    border-radius: 14px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    background: linear-gradient(135deg, #f8fafc 0%, #fff 48%, #f1f5f9 100%);
-    padding: 1.25rem 1.35rem;
-    margin-bottom: 1.25rem;
-  }
-  .asp-hero h2 { margin-bottom: 0.35rem; font-weight: 650; letter-spacing: -0.02em; }
-  .asp-process {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.5rem;
-    margin-top: 0.85rem;
-  }
-  .asp-process .asp-hub-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.55rem 0.65rem;
-    border-radius: 10px;
-    background: #fff;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    text-decoration: none;
-    color: inherit;
-    font-size: 0.82rem;
-    line-height: 1.35;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .asp-process .asp-hub-step:hover {
-    border-color: rgba(37, 99, 235, 0.45);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-    color: inherit;
-  }
-  .asp-process .asp-hub-num {
-    flex-shrink: 0;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background: #2563eb;
-    color: #fff;
-    font-size: 0.72rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .asp-section-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.65rem;
-  }
-  .asp-section-head h3 { margin: 0; font-size: 1.05rem; font-weight: 650; }
-  .asp-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-  }
-</style>
-{% endblock %}
+{% block title_navbar %} - КорсАвто главная {% endblock %}
 
 {% block content %}
 
 <div class="portal-page">
-
-  {% include 'asp/partials/variant_switcher.html' %}
-
-  <div class="asp-hero">
+  
+  <div class="portal-header">
     <h2>Автомобили с пробегом</h2>
-    <p class="text-muted small mb-0">Единая точка входа: склад, оценка, подготовка, продажи и аналитика сети дилерских центров.</p>
+    <p>Система учета и управления автомобилями с пробегом</p>    
+  </div>
 
-    <div class="asp-process" aria-label="Цепочка процесса автосалона">
-      {% include 'asp/partials/process_steps_inner.html' %}
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-truck me-1" aria-hidden="true"></span> Склад и учёт</h3>
+    
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-home"></span> Подразделения</div>
+          <div class="metric-card-value text-muted fs-8"> Управление подразделениями</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-truck"></span> Диспозиция</div>
+          <div class="metric-card-value text-muted fs-8"> Автомобили на складе</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-cash"></span> Ценообразование</div>
+          <div class="metric-card-value text-muted fs-8"> Управление ценами</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-bulleted-list"></span> Задачи</div>
+          <div class="metric-card-value text-muted fs-8"> Задачи по автомобилям</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Дашборд</div>
+          <div class="metric-card-value text-muted fs-8"> Сводка склада</div>          
+        </div>               
+      </div>
+
+    </div>
+    
+  </div>
+
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-clipboard-check me-1" aria-hidden="true"></span> Отдел оценки</h3>
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-doc"></span> Рабочие листы</div>
+          <div class="metric-card-value text-muted fs-8"> Рабочие листы Trade-in</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-cd"></span> Второй комплект колес</div>
+          <div class="metric-card-value text-muted fs-8"> Учет второго комплекта колес</div>          
+        </div>               
+      </div>
     </div>
   </div>
 
-  {% include 'asp/partials/hub_panels.html' %}
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-wrench-adjustable me-1" aria-hidden="true"></span> Подготовка автомобилей</h3>
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Рабочий стол</div>
+          <div class="metric-card-value text-muted fs-8"> Сводные данные по подготовкам</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Список подготовок</div>
+          <div class="metric-card-value text-muted fs-8"> Документы подготовки автомобилей</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Календарь</div>
+          <div class="metric-card-value text-muted fs-8"> Запланированые работы</div>          
+        </div>               
+      </div>
+      
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Работы исполнителей</div>
+          <div class="metric-card-value text-muted fs-8"> Выполняемые работы</div>          
+        </div>               
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-wrench-adjustable me-1" aria-hidden="true"></span> Маркетинг</h3>
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Выгрузки автомобилей</div>
+          <div class="metric-card-value text-muted fs-8"> История выгрузок автомобилей</div>          
+        </div>               
+      </div>
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Настройки</div>
+          <div class="metric-card-value text-muted fs-8"> Настройки выгрузки автомобилей</div>          
+        </div>               
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-shop me-1" aria-hidden="true"></span> Отдел продаж</h3>
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Рабочие листы</div>
+          <div class="metric-card-value text-muted fs-8"> Рабочие листы ОП</div>          
+        </div>               
+      </div>
+      
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Соглашения</div>
+          <div class="metric-card-value text-muted fs-8"> Соглашения о покупке АМ</div>          
+        </div>               
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Отгрузки</div>
+          <div class="metric-card-value text-muted fs-8"> Отгруки АМ</div>          
+        </div>               
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Аукцион</div>
+          <div class="metric-card-value text-muted fs-8"> Лоты КорсАвто</div>          
+        </div>               
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Расчетные данные соглашений</div>
+          <div class="metric-card-value text-muted fs-8"> Расчетные данные соглашений АМ</div>          
+        </div>               
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <div class="metric-card">
+          <div class="metric-card-value"><span class="icon-mbri-database"></span> Проверка ценовых правил соглашений</div>
+          <div class="metric-card-value text-muted fs-8"> Проверка продажи АМ по правилам</div>          
+        </div>               
+      </div>
+
+    </div>
+
+  </div>
+  
+  <div class="portal-panel">
+    <h3 class="deal-section-title">Настройки</h3>
+    
+    <div class="row g-2">
+      <div class="col-12 col-sm-auto">
+        <a class="btn-calculate-sm"><span class="icon-doc"></span> Настройки ценообразования</a>
+      </div>
+      
+      <div class="col-12 col-sm-auto">
+        <a class="btn-calculate-sm"><span class="icon-doc"></span> Настройки оценки</a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a class="btn-calculate-sm"><span class="icon-doc"></span> Настройки выгрузки</a>
+      </div>
+
+  </div>
+
 
 </div>
 
+
 {% endblock %}
+
