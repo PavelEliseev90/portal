@@ -1402,7 +1402,9 @@ def _car_avtohub_analytics(car):
 
 def _car_estimation_analytics(car):
     """История оценок калькулятора RegEstimationRefCarsOrganizations."""
-    records = list(RegEstimationRefCarsOrganizations.objects.filter(car=car).order_by('date'))
+    records = list(
+        RegEstimationRefCarsOrganizations.objects.filter(car_id=car.pk).order_by('date')
+    )
     rows = []
     labels = []
     avg_prices = []
@@ -1711,6 +1713,7 @@ def price_edit(request, slug):
         'calculations'      : calculations,
         'avtohubs'          : avtohubs,
         'avtohub_analytics' : avtohub_analytics,
+        'estimation_analytics': estimation_analytics,
         'finance'           : finance,
         'marketing'         : marketing,
         'interactiv'        : interactiv,

@@ -1425,7 +1425,7 @@
 						<span>Аналитика - {{ params.avtohub_analytics.total_count }}</span>                
 					</a>
 					<a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
-						<span>История оценок - {{ params.avtohub_analytics.estimation.count }}</span>                
+						<span>История оценок - {{ params.estimation_analytics.count }}</span>                
 					</a>
 					<a  href="?{% url_replace page=6 %}" class="kors-anchor-button" data-tab-target="6">
 						<span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               
