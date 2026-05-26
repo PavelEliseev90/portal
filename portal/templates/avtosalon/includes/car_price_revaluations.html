@@ -1,0 +1,59 @@
+{% comment %}
+  История переоценок (RegRefCarsOrganizationsPrice).
+  Ожидает: params.price_revaluations — список dict: date, price, delta (опционально)
+{% endcomment %}
+
+<div class="portal-panel">
+	<h6 class="mb-3 padding-portal">
+		<span class="icon-mbri-growing-chart me-2"></span>Переоценки
+		<span class="text-muted fw-normal ms-1">— {{ params.price_revaluations|length }}</span>
+	</h6>
+
+	{% if params.price_revaluations %}
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th scope="col" class="text-muted" style="width: 3rem;">№</th>
+						<th scope="col">Дата</th>
+						<th scope="col" class="text-end">Цена</th>
+						<th scope="col" class="text-end">Изменение</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.price_revaluations %}
+						<tr>
+							<td class="text-muted">{{ forloop.counter }}</td>
+							<td>
+								{% if row.date %}
+									{{ row.date|date:"d.m.Y H:i" }}
+								{% else %}
+									—
+								{% endif %}
+							</td>
+							<td class="text-end fw-bold">{{ row.price|floatformat:"0g" }} &#8381;</td>
+							<td class="text-end">
+								{% if row.delta is not None %}
+									{% if row.delta > 0 %}
+										<span class="text-success">+{{ row.delta|floatformat:"0g" }} &#8381;</span>
+									{% elif row.delta < 0 %}
+										<span class="text-danger">{{ row.delta|floatformat:"0g" }} &#8381;</span>
+									{% else %}
+										<span class="text-muted">0 &#8381;</span>
+									{% endif %}
+								{% else %}
+									<span class="text-muted">—</span>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% else %}
+		<div class="text-center py-5 text-muted">
+			<span class="icon-mbri-growing-chart" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem;"></span>
+			<p class="mb-0">Нет записей о переоценках</p>
+		</div>
+	{% endif %}
+</div>
