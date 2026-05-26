@@ -1245,13 +1245,172 @@ def specifications(request, slug):
     return render(request, "avtosalon/car_new_specifications.html", {'params': params})
 
 
+def _price_edit_page(request):
+    try:
+        return int(request.GET.get('page', 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _car_photos_queryset(car):
+    return RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
+
+
+def _ensure_photo_date(photo):
+    """Дата добавления фото (для загрузки через портал)."""
+    if not photo.date:
+        photo.date = timezone.now()
+
+
+def _save_car_photo(photo, update_fields=None):
+    _ensure_photo_date(photo)
+    if update_fields is not None:
+        photo.save(update_fields=update_fields)
+    else:
+        photo.save()
+
+
+def handle_car_photos_post(request, car):
+    """POST: upload / delete / set_main для фотографий автомобиля."""
+    from django.contrib import messages
+
+    action = request.POST.get('action', '')
+    if action not in ('delete', 'set_main', 'upload'):
+        return False
+
+    if action == 'delete':
+        photo_id = request.POST.get('photo_id', '')
+        try:
+            photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
+            photo.delete()
+            messages.success(request, 'Фотография успешно удалена')
+        except RefCarsOrganizationFiles.DoesNotExist:
+            messages.error(request, 'Фотография не найдена')
+
+    elif action == 'set_main':
+        photo_id = request.POST.get('photo_id', '')
+        try:
+            RefCarsOrganizationFiles.objects.filter(сars_organization=car).update(main=False)
+            photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
+            photo.main = True
+            photo.save()
+            messages.success(request, 'Главная фотография обновлена')
+        except RefCarsOrganizationFiles.DoesNotExist:
+            messages.error(request, 'Фотография не найдена')
+
+    elif action == 'upload':
+        uploaded_files = request.FILES.getlist('photos')
+        if uploaded_files:
+            uploaded_count = 0
+            errors = []
+
+            for uploaded_file in uploaded_files:
+                if not uploaded_file.content_type.startswith('image/'):
+                    continue
+
+                try:
+                    photo = RefCarsOrganizationFiles()
+                    photo.сars_organization = car
+                    photo.name = uploaded_file.name
+                    photo.file = uploaded_file
+                    photo.main = False
+                    photo.car = True
+                    photo.processed = False
+                    photo.date = timezone.now()
+                    _save_car_photo(photo)
+
+                    try:
+                        from PIL import Image
+                        from django.core.files.base import ContentFile
+                        import io
+                        import time
+
+                        if photo.file and photo.file.name:
+                            file_path = photo.file.path
+                            if not os.path.exists(file_path):
+                                time.sleep(0.1)
+                                if not os.path.exists(file_path):
+                                    raise FileNotFoundError(f"Файл {file_path} не найден после сохранения")
+
+                            img = Image.open(file_path)
+                            if img.mode in ('RGBA', 'LA', 'P'):
+                                background = Image.new('RGB', img.size, (255, 255, 255))
+                                if img.mode == 'P':
+                                    img = img.convert('RGBA')
+                                if img.mode == 'RGBA' and len(img.split()) >= 4:
+                                    background.paste(img, mask=img.split()[3])
+                                else:
+                                    background.paste(img)
+                                img = background
+                            elif img.mode not in ('RGB', 'L'):
+                                img = img.convert('RGB')
+
+                            max_size = (400, 400)
+                            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                            thumb_io = io.BytesIO()
+                            img.save(thumb_io, format='JPEG', quality=85, optimize=True)
+                            thumb_io.seek(0)
+                            base_name = os.path.basename(photo.file.name)
+                            name_without_ext, ext = os.path.splitext(base_name)
+                            mini_name = f'{name_without_ext}_mini.jpg'
+                            photo.file_mini.save(
+                                mini_name,
+                                ContentFile(thumb_io.read()),
+                                save=False
+                            )
+                            _save_car_photo(photo)
+
+                    except ImportError:
+                        if photo.file:
+                            photo.file_mini = photo.file
+                            _save_car_photo(photo)
+                        errors.append(f'Pillow не установлен, миниатюра не создана для {uploaded_file.name}')
+                    except Exception as e:
+                        if photo.file:
+                            try:
+                                photo.file_mini = photo.file
+                                _save_car_photo(photo)
+                            except Exception:
+                                pass
+                        errors.append(f'Ошибка создания миниатюры для {uploaded_file.name}: {str(e)}')
+
+                    uploaded_count += 1
+
+                except Exception as e:
+                    errors.append(f'Ошибка загрузки {uploaded_file.name}: {str(e)}')
+                    continue
+
+            if uploaded_count > 0:
+                if errors:
+                    messages.warning(request, f'Загружено фотографий: {uploaded_count}. Предупреждения: {len(errors)}')
+                else:
+                    messages.success(request, f'Загружено фотографий: {uploaded_count}')
+            else:
+                if errors:
+                    messages.error(request, f'Не удалось загрузить фотографии. Ошибки: {"; ".join(errors[:3])}')
+                else:
+                    messages.warning(request, 'Не удалось загрузить фотографии')
+
+    return True
+
+
 @login_required
 def price_edit(request, slug):
     
     car     = RefCarsOrganization.objects.filter(slug = slug)[0]
     base1C  = ''
+    page    = _price_edit_page(request)
 
     if request.method == "POST":
+        photo_action = request.POST.get('action', '')
+        if photo_action in ('delete', 'set_main', 'upload'):
+            if not request.user.profiles.korsavto_settings:
+                from django.contrib import messages
+                messages.error(request, 'Нет прав на управление фотографиями')
+                return HttpResponseRedirect(request.path + '?page=0')
+            handle_car_photos_post(request, car)
+            return HttpResponseRedirect(request.path + '?page=1')
+
         min_km      = int(request.POST.get('min_km', '0'))   
         percent_ss  = int(request.POST.get('percent_ss', '0'))
         url_post    = url_hs_kors_auto + "/car/"
@@ -1267,7 +1426,7 @@ def price_edit(request, slug):
             if response.text != '':
                 s = 1
                 
-        return HttpResponseRedirect(request.build_absolute_uri())
+        return HttpResponseRedirect(request.path + '?page=0')
         
     else:
         
@@ -1346,6 +1505,9 @@ def price_edit(request, slug):
         'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'),
     }
 
+    if page == 1 and not request.user.profiles.korsavto_settings:
+        page = 0
+
     params = {
         'object'            : car,
         'selected'          : selected,
@@ -1360,7 +1522,10 @@ def price_edit(request, slug):
         'shipment'          : shipment,
         'calc_express'      : calc_express,
         'calc_autohub'      : calc_autohub,
-        'calc_1C'           : calc_1C
+        'calc_1C'           : calc_1C,
+        'page'              : page,
+        'photos'            : _car_photos_queryset(car),
+        'can_edit_photos'   : request.user.profiles.korsavto_settings,
     }
     
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
@@ -1777,161 +1942,11 @@ def photos_edit(request, slug):
         }
         return render(request, 'errors/403.html', {'params': params})
     
-    # Обработка POST запросов
     if request.method == "POST":
-        action = request.POST.get('action', '')
-        
-        # Удаление фотографии
-        if action == 'delete':
-            photo_id = request.POST.get('photo_id', '')
-            try:
-                photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
-                photo.delete()
-                messages.success(request, 'Фотография успешно удалена')
-            except RefCarsOrganizationFiles.DoesNotExist:
-                messages.error(request, 'Фотография не найдена')
-        
-        # Установка главной фотографии
-        elif action == 'set_main':
-            photo_id = request.POST.get('photo_id', '')
-            try:
-                # Снимаем флаг главной со всех фотографий
-                RefCarsOrganizationFiles.objects.filter(сars_organization=car).update(main=False)
-                # Устанавливаем новую главную
-                photo = RefCarsOrganizationFiles.objects.get(id=photo_id, сars_organization=car)
-                photo.main = True
-                photo.save()
-                messages.success(request, 'Главная фотография обновлена')
-            except RefCarsOrganizationFiles.DoesNotExist:
-                messages.error(request, 'Фотография не найдена')
-        
-        # Загрузка новых фотографий
-        elif action == 'upload':
-            uploaded_files = request.FILES.getlist('photos')
-            if uploaded_files:
-                uploaded_count = 0
-                errors = []
-                
-                for uploaded_file in uploaded_files:
-                    # Проверка типа файла
-                    if not uploaded_file.content_type.startswith('image/'):
-                        continue
-                    
-                    try:
-                        # Создаем объект фотографии
-                        photo = RefCarsOrganizationFiles()
-                        photo.сars_organization = car
-                        photo.name = uploaded_file.name
-                        photo.file = uploaded_file
-                        photo.main = False
-                        photo.car = True
-                        photo.processed = False
-                        photo.date = datetime.now()
-                        
-                        # Сохраняем основное изображение
-                        photo.save()
-                        
-                        # Создаем миниатюру автоматически
-                        try:
-                            from PIL import Image
-                            from django.core.files.base import ContentFile
-                            import io
-                            import os
-                            
-                            # Открываем сохраненный файл
-                            if photo.file and photo.file.name:
-                                # Получаем путь к файлу
-                                file_path = photo.file.path
-                                
-                                # Проверяем существование файла на диске
-                                if not os.path.exists(file_path):
-                                    # Если файл еще не на диске, ждем немного и проверяем снова
-                                    import time
-                                    time.sleep(0.1)
-                                    if not os.path.exists(file_path):
-                                        raise FileNotFoundError(f"Файл {file_path} не найден после сохранения")
-                                
-                                # Открываем изображение с диска
-                                img = Image.open(file_path)
-                                
-                                # Конвертируем в RGB если нужно (для JPEG)
-                                original_mode = img.mode
-                                if img.mode in ('RGBA', 'LA', 'P'):
-                                    # Создаем белый фон
-                                    background = Image.new('RGB', img.size, (255, 255, 255))
-                                    if img.mode == 'P':
-                                        img = img.convert('RGBA')
-                                    # Вставляем изображение на фон с учетом альфа-канала
-                                    if img.mode == 'RGBA' and len(img.split()) >= 4:
-                                        background.paste(img, mask=img.split()[3])
-                                    else:
-                                        background.paste(img)
-                                    img = background
-                                elif img.mode not in ('RGB', 'L'):
-                                    img = img.convert('RGB')
-                                
-                                # Создаем миниатюру (максимальный размер 400x400, сохраняя пропорции)
-                                max_size = (400, 400)
-                                img.thumbnail(max_size, Image.Resampling.LANCZOS)
-                                
-                                # Сохраняем миниатюру в память
-                                thumb_io = io.BytesIO()
-                                
-                                # Всегда сохраняем миниатюру как JPEG для универсальности и меньшего размера
-                                img.save(thumb_io, format='JPEG', quality=85, optimize=True)
-                                
-                                thumb_io.seek(0)
-                                
-                                # Генерируем имя для миниатюры (всегда .jpg)
-                                base_name = os.path.basename(photo.file.name)
-                                name_without_ext, ext = os.path.splitext(base_name)
-                                mini_name = f'{name_without_ext}_mini.jpg'
-                                
-                                # Сохраняем миниатюру
-                                photo.file_mini.save(
-                                    mini_name,
-                                    ContentFile(thumb_io.read()),
-                                    save=False
-                                )
-                                photo.save()
-                                
-                        except ImportError:
-                            # Pillow не установлен - пытаемся использовать оригинал как миниатюру
-                            if photo.file:
-                                photo.file_mini = photo.file
-                                photo.save()
-                            errors.append(f'Pillow не установлен, миниатюра не создана для {uploaded_file.name}')
-                        except Exception as e:
-                            # Если не удалось создать миниатюру, используем оригинал
-                            if photo.file:
-                                try:
-                                    photo.file_mini = photo.file
-                                    photo.save()
-                                except:
-                                    pass
-                            errors.append(f'Ошибка создания миниатюры для {uploaded_file.name}: {str(e)}')
-                        
-                        uploaded_count += 1
-                        
-                    except Exception as e:
-                        errors.append(f'Ошибка загрузки {uploaded_file.name}: {str(e)}')
-                        continue
-                
-                if uploaded_count > 0:
-                    if errors:
-                        messages.warning(request, f'Загружено фотографий: {uploaded_count}. Предупреждения: {len(errors)}')
-                    else:
-                        messages.success(request, f'Загружено фотографий: {uploaded_count}')
-                else:
-                    if errors:
-                        messages.error(request, f'Не удалось загрузить фотографии. Ошибки: {"; ".join(errors[:3])}')
-                    else:
-                        messages.warning(request, 'Не удалось загрузить фотографии')
-        
-        return HttpResponseRedirect(request.build_absolute_uri())
+        if handle_car_photos_post(request, car):
+            return HttpResponseRedirect(request.build_absolute_uri())
     
-    # Получаем все фотографии автомобиля
-    photos = RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
+    photos = _car_photos_queryset(car)
     
     params = {
         'type': 'photos_edit',

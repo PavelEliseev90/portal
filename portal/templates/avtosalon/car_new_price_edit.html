@@ -1247,7 +1247,9 @@
 		  padding-bottom: 0;
 		}
 	  }
-	</style>
+</style>
+
+<div class="portal-page">
 
 	<section class="kors-hero  {% if params.rlk_estimations|length > 1 %} kors-hero-dop {% endif %}">
 				
@@ -1394,54 +1396,60 @@
 
   	</section>
 
-<div class="row">
-	<div class="col-2 text-center hidemobile">
-		<div class="sticky-top portal-sidebar" id="position-sticky">
+	<div class="row">
+		<div class="col-2 text-center hidemobile">
+			<div class="sticky-top portal-sidebar" id="position-sticky">
 
-		  <div class="col-sm">
+			<div class="col-sm">
+				
+				<section class="kors-anchor" >
+				<div class="kors-anchor-grid">
+					<a href="?{% url_replace page=0 %}" class="kors-anchor-button {% if params.page == 0 %}active{% endif %}" data-tab-target="0">
+					<span>Главная</span>                
+					</a>
+					{% if params.can_edit_photos %}
+					<a href="?{% url_replace page=1 %}" class="kors-anchor-button {% if params.page == 1 %}active{% endif %}" data-tab-target="1">
+						<span>Фотографии - {{ params.photos|length }}</span>                
+					</a>
+					{% endif %}
+					<a href="?{% url_replace page=2 %}" class="kors-anchor-button" data-tab-target="2">
+						<span>Подготовка</span>                
+					</a>
+					<a href="?{% url_replace page=3 %}" class="kors-anchor-button" data-tab-target="3">
+						<span>Задачи</span>                
+					</a>
+					<a href="?{% url_replace page=4 %}" class="kors-anchor-button" data-tab-target="4">
+						<span>Переоценки</span>                
+					</a>
+					<a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
+					<span>История оценок - {{params.tab_estimations_count|default:0}}</span>                
+					</a>
+					<a  href="?{% url_replace page=6 %}" class="kors-anchor-button" data-tab-target="6">
+					<span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               
+					</a>
+					<a href="?{% url_replace page=7 %}" class="kors-anchor-button" data-tab-target="7">
+					<span>Автотека</span>                
+					</a>
+					<a href="?{% url_replace page=8 %}" class="kors-anchor-button" data-tab-target="8">
+						<span>Склад</span>                
+					</a>
+					<a href="?{% url_replace page=9 %}" class="kors-anchor-button" data-tab-target="9">
+						<span>Продажи</span>                
+					</a>
+
+				</div>
+				</section>
+
+			</div>
 			
-			<section class="kors-anchor" >
-			  <div class="kors-anchor-grid">
-				<a href="?{% url_replace page=0 %}" class="kors-anchor-button" data-tab-target="0">
-				  <span>Главная</span>                
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-					<span>Фотографии</span>                
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-					<span>Подготовка</span>                
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-					<span>Задачи</span>                
-				  </a>
-				<a href="?{% url_replace page=0 %}" class="kors-anchor-button" data-tab-target="0">
-					<span>Переоценки</span>                
-				  </a>
-				<a href="?{% url_replace page=8 %}" class="kors-anchor-button" data-tab-target="8">
-				  <span>История оценок - {{params.tab_estimations_count|default:0}}</span>                
-				</a>
-				<a  href="?{% url_replace page=13 %}" class="kors-anchor-button" data-tab-target="13">
-				  <span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-				  <span>Автотека</span>                
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-					<span>Склад</span>                
-				</a>
-				<a href="?{% url_replace page=14 %}" class="kors-anchor-button" data-tab-target="14">
-					<span>Продажи</span>                
-				</a>
-
-			  </div>
-			</section>
-
-		  </div>
-		  
+			</div>
+		
 		</div>
-	  
-	  </div>
-	<div class="col-12 col-sm-10">
+		<div class="col-12 col-sm-10">
+
+		{% if params.page == 1 %}
+			{% include 'avtosalon/includes/car_photos_manage.html' %}
+		{% else %}
 
 		<div class="portal-panel">
 			<h6 class="mb-3 padding-portal">Информация по статусам</h6>
@@ -1551,521 +1559,9 @@
 
 		</div>
 
+		{% endif %}
+
 	</div>
 </div>
 
-<div class="portal-page">
-	{% if request.user.is_authenticated %}
-		<div class="breadcrumb-nav">
-			<div class="d-flex flex-wrap align-items-center">
-				<a href="/cars/">На главную</a>
-				<span class="separator">/</span>
-				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/">{{params.object.modification_autoru.model.mark.name|lower|capfirst}}</a>
-				<span class="separator">/</span>
-				<a href="/cars/catalog/{{params.object.modification_autoru.model.mark.nameEn}}/{{params.object.modification_autoru.model.nameEn}}">{{params.object.modification_autoru.model.nameHuman|capfirst}}</a>
-				<span class="separator">/</span>
-				<a href="/cars/{{params.object.slug}}">{{params.object.name}}</a>
-			</div>
-		</div>
-	{% endif %}
-
-	<div class="row g-3">
-		<div class="col-sm-12 col-md-3 col-lg-3">
-			<div class="portal-panel">
-				{% with photos=params.object.get_files %}
-					{% if photos|length > 0 %}
-						{% with first_photo=photos|first %}
-							<img src="{% if first_photo.file_mini %}{{ first_photo.file.url }}{% else %}{{ first_photo }}{% endif %}" alt="{{params.object.name}}" style="width: 100%; border-radius: 0.85rem; margin-bottom: 1rem;">
-						{% endwith %}
-					{% endif %}
-				{% endwith %}
-
-				<div class="car-info-card">
-					<img class="item-img-mini" src="{{params.object.logo}}" style="height: 40px; width: auto; margin-bottom: 0.75rem;">
-					<div class="car-info-item">{{params.object.modification_autoru.model.mark.name}}</div>
-					<div class="car-info-item">{{params.object.modification_autoru.model}}</div>
-					<div class="car-info-item">{{params.object.modification_autoru}}</div>
-					<div class="car-info-item">{{params.object.vin}}</div>
-					<div class="car-info-item">{{params.object.year}} г.в.</div>
-					<div class="car-info-item">{{params.object.run|floatformat:"0g"}} км.</div>
-				</div>
-			</div>
-
-			<div class="portal-panel">
-				<div class="modal fade" id="price_history" tabindex="-1" aria-labelledby="price_history" aria-hidden="true">
-					<div class="modal-dialog modal-dialog-scrollable">
-						<div class="modal-content">
-							<div class="modal-header">
-								<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-							</div>
-							<div class="modal-body">
-								<div class="row g-2">
-									{% for price in params.list_price %}
-										<div class="col-12">
-											<div class="d-flex justify-content-between align-items-center p-2" style="background: #f8f9fc; border-radius: 0.5rem;">
-												<span>{{price.date}}</span>
-												<span class="fw-bold">{{price.price|floatformat:"2g"}} ₽</span>
-											</div>
-										</div>
-									{% endfor %}
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<a class="action-btn" data-bs-toggle="modal" data-bs-target="#price_history">
-					<span class="icon-mbri-bulleted-list"></span> История цен - {{params.list_price|length}}
-				</a>
-
-				{% if params.interactiv != None %}
-					<a href="/eco/{{params.interactiv.rlk.id}}/" class="action-btn"><span class="icon-params"></span> Оценка</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-params"></span> Оценка</button>
-				{% endif %}
-
-				{% if params.agreement != None %}
-					<a href="/docs_car_agreement/{{params.agreement.id}}/" class="action-btn"><span class="icon-doc"></span> Соглашение</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-doc"></span> Соглашение</button>
-				{% endif %}
-
-				{% if params.agreement != None and params.shipment != None %}
-					<a href="/docs_car_shipment/{{params.shipment.id}}/" class="action-btn"><span class="icon-key"></span> Отгрузка</a>
-				{% else %}
-					<button class="action-btn" disabled><span class="icon-key"></span> Отгрузка</button>
-				{% endif %}
-			</div>
-		</div>
-
-		<div class="col-sm-12 col-md-9 col-lg-9">
-			<div class="portal-panel">
-				<div class="row g-1">
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Поступление номер</div>
-							<div class="metric-card-value-portal">{{params.object.lo_link_number}}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Поступление дата</div>
-							<div class="metric-card-value-portal">{{params.object.lo_link_date}}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Дней на складе</div>
-							<div class="metric-card-value-portal">{{params.object.days_in_stok}} д.</div>
-						</div>
-					</div>
-
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Статус</div>
-							<div class="metric-card-value-portal">{{params.object.status.name}}</div>
-						</div>
-					</div>
-					
-				</div>
-			</div>
-
-			<div class="portal-panel">
-				<div class="row g-1">
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Подразделение</div>
-							<div class="metric-card-value-portal">{{params.object.unit.name}}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Тип приема</div>
-							<div class="metric-card-value-portal">{{params.object.type_reception}}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Статус</div>
-							<div class="metric-card-value-portal">{% if params.object.quantity == 0 %}Продан{% else %}{{params.object.status}}{% endif %}</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Продажа</div>
-							<div class="metric-card-value-portal">{{params.object.type_sale.name}}</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="row g-1">
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Себестоимость</div>
-							<div class="metric-card-value-portal">{{params.object.cost_price|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Расходы на АМ (факт)</div>
-							<div class="metric-card-value-portal">{{params.object.outlay|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">БЦП</div>
-							<div class="metric-card-value-portal text-success">{{params.object.bcp|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Цена</div>
-							<div class="metric-card-value-portal text-success fw-bold">{{params.object.price|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="portal-panel">
-				<div class="row g-1">
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Ценовая группа</div>
-							<div class="metric-card-value-portal fw-bold">{{params.object.group_price.name}}</div>
-						</div>
-					</div>
-
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Вариант управления</div>
-							<div class="metric-card-value-portal fw-bold">{{params.object.evaluation.name}}</div>
-						</div>
-					</div>
-
-					<div class="col-12 col-sm-3">
-						<div class="metric-card-portal">
-							<div class="metric-card-label-portal">Этап управления</div>
-							<div class="metric-card-value-portal fw-bold">{{params.object.stage_price.name}}</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div>
-				<div class="row g-2 mb-3">
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-calendar"></span> На складе</div>
-							<div class="metric-card-value">{{params.object.days_in_stok}} д.</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-money"></span> Финансирование</div>
-							<div class="metric-card-value">{{params.finance|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-					<div class="col-12 col-sm-auto">
-						<div class="metric-card">
-							<div class="metric-card-label"><span class="icon-money"></span> Реклама</div>
-							<div class="metric-card-value">{{params.marketing|floatformat:"2g"}} ₽</div>
-						</div>
-					</div>
-				</div>
-
-				<hr class="my-4">
-
-				<div class="row g-3 mb-3">
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-params"></span> Калькулятор</div>
-							{% for car_estimation in params.calculations %}
-								{% if forloop.first %}
-									<div class="calc-card-value {% if car_estimation.percent <= 0.3 %}price-status-success{% elif car_estimation.percent <= 0.6 %}price-status-warning{% else %}price-status-danger{% endif %}">
-										{{car_estimation.avg_price|floatformat:"2g"}} ₽
-									</div>
-									<div class="calc-card-sub">{{car_estimation.avg_days}} д. / {{car_estimation.position}} / {{car_estimation.total}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calculation"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calculation" tabindex="-1" aria-labelledby="calculation" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										<div class="table-responsive">
-											<table class="table table-sm">
-												<thead>
-													<tr>
-														<th>Дата</th>
-														<th>Цена</th>
-														<th>Дней</th>
-														<th>Позиция</th>
-													</tr>
-												</thead>
-												<tbody>
-													{% for car_estimation in params.calculations %}
-														<tr class="{% if car_estimation.percent <= 0.3 %}table-success{% elif car_estimation.percent <= 0.6 %}table-warning{% else %}table-danger{% endif %}">
-															<td>{{car_estimation.date|date:"d.m.Y"}}</td>
-															<td>{{car_estimation.avg_price|floatformat:"2g"}} ₽</td>
-															<td>{{car_estimation.avg_days}} д.</td>
-															<td>{{car_estimation.position}} / {{car_estimation.total}}</td>
-														</tr>
-													{% endfor %}
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-globe"></span> Автохаб</div>
-							{% for avtohub in params.avtohubs %}
-								{% if forloop.first %}
-									<div class="calc-card-value {% if avtohub.percent <= 0.3 %}price-status-success{% elif avtohub.percent <= 0.6 %}price-status-warning{% else %}price-status-danger{% endif %}">
-										{{avtohub.avgMarketPrice|floatformat:"2g"}} ₽
-									</div>
-									<div class="calc-card-sub">{{avtohub.averageDaysInSale}} д. / {{avtohub.vRatingPosition}} / {{avtohub.numberOfCompetitors}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#avtohub"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="avtohub" tabindex="-1" aria-labelledby="avtohub" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										<div class="table-responsive">
-											<table class="table table-sm">
-												<thead>
-													<tr>
-														<th>Дата</th>
-														<th class="text-end">Цена</th>
-														<th class="text-end">Дней</th>
-														<th class="text-end">Позиция</th>
-													</tr>
-												</thead>
-												<tbody>
-													{% for avtohub in params.avtohubs %}
-														<tr class="{% if avtohub.percent <= 0.3 %}table-success{% elif avtohub.percent <= 0.6 %}table-warning{% else %}table-danger{% endif %}">
-															<td>{{avtohub.date|date:"d.m.Y"}}</td>
-															<td class="text-end">{{avtohub.avgMarketPrice|floatformat:"2g"}} ₽</td>
-															<td class="text-end">{{avtohub.averageDaysInSale}} д.</td>
-															<td class="text-end">{{avtohub.vRatingPosition}} / {{avtohub.numberOfCompetitors}}</td>
-														</tr>
-													{% endfor %}
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<hr class="my-4">
-
-				<form method="post">
-					{% csrf_token %}
-					<div class="row g-2 mb-3">
-						<div class="col-sm">
-							<div class="form-floating">
-								<input type="text" class="form-control text-dark" id="min_km" name="min_km" value="{{params.1C.MinKM}}" autocomplete="off">
-								<label for="min_km">Минимальный КМ</label>
-							</div>
-						</div>
-						<div class="col-sm">
-							<div class="form-floating">
-								<input type="text" class="form-control text-dark" id="percent_ss" name="percent_ss" value="{{params.1C.PercentSS}}" autocomplete="off">
-								<label for="percent_ss">Процент наценки СС</label>
-							</div>
-						</div>
-						<div class="col-sm-auto">
-							<button class="btn btn-success h-100" type="submit" style="padding: 0.75rem 1.5rem;">
-								<span class="icon-mbri-play"></span> Сохранить
-							</button>
-						</div>
-					</div>
-				</form>
-
-				<hr class="my-4">
-
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="unit_group_id" name="unit_group_id" disabled>
-								<option></option>
-								{% for evaluation in params.selected.evaluations %}
-									<option value="{{evaluation.id}}" {% if params.object.evaluation.id == evaluation.id %}selected{% endif %}>{{evaluation.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="unit_group_id">Вариант управления ценой</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="groupprices_id" name="groupprices_id" disabled>
-								<option></option>
-								{% for groupprice in params.selected.groupprices %}
-									<option value="{{groupprice.id}}" {% if params.object.group_price.id == groupprice.id %}selected{% endif %}>{{groupprice.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="groupprices_id">Ценовая группа</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="stageprices_id" name="stageprices_id" disabled>
-								<option></option>
-								{% for stageprice in params.selected.stageprices %}
-									<option value="{{stageprice.id}}" {% if params.object.stage_price.id == stageprice.id %}selected{% endif %}>{{stageprice.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="stageprices_id">Этап установки цены</label>
-						</div>
-					</div>
-				</div>
-
-				<div class="row g-2 mb-3">
-					<div class="col-sm">
-						<div class="form-floating">
-							<select class="form-select bg-white" id="ratings_id" name="ratings_id" disabled>
-								<option></option>
-								{% for rating in params.selected.ratings %}
-									<option value="{{rating.id}}" {% if params.object.rating.id == rating.id %}selected{% endif %}>{{rating.name}}</option>
-								{% endfor %}
-							</select>
-							<label for="ratings_id">Привлекательность</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.days_next_stage}}" readonly>
-							<label>Дней до следующего этапа</label>
-						</div>
-					</div>
-					<div class="col-sm">
-						<div class="form-floating">
-							<input type="text" class="form-control text-dark" value="{{params.object.task}}" readonly>
-							<label>Задач по автомобилю</label>
-						</div>
-					</div>
-				</div>
-
-				<div class="row g-3">
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-params"></span> Экспресс</div>
-							{% for calc_expres in params.calc_express %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_expres.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_expres.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_expres"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_expres" tabindex="-1" aria-labelledby="calc_expres" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_expres in params.calc_express %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_expres.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_expres.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-globe"></span> Автохаб</div>
-							{% for calc_autohub in params.calc_autohub %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_autohub.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_autohub.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_autohub"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_autohub" tabindex="-1" aria-labelledby="calc_autohub" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_autohub in params.calc_autohub %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_autohub.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_autohub.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-sm">
-						<div class="calc-card">
-							<div class="calc-card-label"><span class="icon-mbri-database"></span> 1С</div>
-							{% for calc_1C in params.calc_1C %}
-								{% if forloop.first %}
-									<div class="calc-card-value">{{calc_1C.price|floatformat:"2g"}} ₽</div>
-									<div class="calc-card-sub">{{calc_1C.rule}}</div>
-								{% endif %}
-							{% endfor %}
-							<a class="calc-card-link" data-bs-toggle="modal" data-bs-target="#calc_1C"><span class="icon-calendar"></span> история</a>
-						</div>
-
-						<div class="modal fade" id="calc_1C" tabindex="-1" aria-labelledby="calc_1C" aria-hidden="true">
-							<div class="modal-dialog modal-dialog-scrollable">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title"><span class="icon-mbri-home"></span> {{params.object.name}}</h5>
-										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-									</div>
-									<div class="modal-body">
-										{% for calc_1C in params.calc_1C %}
-											<div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-												<div class="fw-bold fs-5 mb-1">{{calc_1C.price|floatformat:"2g"}} ₽</div>
-												<div class="text-muted">{{calc_1C.rule}}</div>
-											</div>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
 {% endblock %}
