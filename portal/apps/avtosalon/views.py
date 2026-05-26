@@ -1256,6 +1256,118 @@ def _car_photos_queryset(car):
     return RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
 
 
+def _car_avtohub_analytics(car):
+    """Сводка и ряды Avtohub для вкладки «Аналитика»."""
+    qs = Avtohub.objects.filter(vin=car.vin)
+    if car.lo_link_date and car.date_refresh:
+        qs = qs.filter(date__range=[car.lo_link_date, car.date_refresh])
+    records = list(qs.order_by('date'))
+
+    rows = []
+    labels = []
+    avg_market_prices = []
+    avtohub_prices = []
+    attractiveness = []
+    days_in_sale = []
+    advertising = []
+    views_avito = []
+    views_autoru = []
+    views_drom = []
+    competitors = []
+    marketing = 0
+
+    for ah in records:
+        pct = 0
+        if ah.numberOfCompetitors > 0:
+            pct = round(100 * ah.vRatingPosition / ah.numberOfCompetitors, 1)
+        marketing = round(max(marketing, ah.totalAdvertisingCost or 0), 2)
+
+        rows.append({
+            'date': ah.date,
+            'price': ah.price,
+            'avg_market_price': ah.avgMarketPrice,
+            'imv': ah.imv,
+            'v_rating_position': ah.vRatingPosition,
+            'number_of_competitors': ah.numberOfCompetitors,
+            'attractiveness_pct': pct,
+            'average_days_in_sale': ah.averageDaysInSale,
+            'days_in_sale': ah.daysInSale,
+            'total_advertising_cost': ah.totalAdvertisingCost,
+            'avito_views': ah.avitoViews,
+            'autoru_views': ah.autoruViews,
+            'drom_views': ah.dromViews,
+            'calls': ah.callsCounts_uniqueTotal,
+            'actual_market_sales': ah.actualMarketSales,
+        })
+        labels.append(ah.date.strftime('%d.%m.%y') if ah.date else '—')
+        avg_market_prices.append(ah.avgMarketPrice or 0)
+        avtohub_prices.append(ah.price or 0)
+        attractiveness.append(pct)
+        days_in_sale.append(ah.averageDaysInSale or 0)
+        advertising.append(round(ah.totalAdvertisingCost or 0))
+        views_avito.append(ah.avitoViews or 0)
+        views_autoru.append(ah.autoruViews or 0)
+        views_drom.append(ah.dromViews or 0)
+        competitors.append(ah.numberOfCompetitors or 0)
+
+    latest = records[-1] if records else None
+    price_vs_market = None
+    if latest and latest.avgMarketPrice:
+        price_vs_market = (car.price or 0) - latest.avgMarketPrice
+
+    chart_data = {
+        'labels': labels,
+        'avg_market_price': avg_market_prices,
+        'car_price': car.price or 0,
+        'avtohub_price': avtohub_prices,
+        'attractiveness': attractiveness,
+        'days_in_sale': days_in_sale,
+        'advertising': advertising,
+        'views_avito': views_avito,
+        'views_autoru': views_autoru,
+        'views_drom': views_drom,
+        'competitors': competitors,
+    }
+
+    return {
+        'count': len(rows),
+        'rows': list(reversed(rows)),
+        'summary': {
+            'latest_date': latest.date if latest else None,
+            'avg_market_price': latest.avgMarketPrice if latest else None,
+            'car_price': car.price,
+            'price_vs_market': price_vs_market,
+            'position': latest.vRatingPosition if latest else None,
+            'competitors': latest.numberOfCompetitors if latest else None,
+            'attractiveness_pct': rows[-1]['attractiveness_pct'] if rows else None,
+            'average_days_in_sale': latest.averageDaysInSale if latest else None,
+            'marketing': marketing,
+            'total_views': (
+                (latest.avitoViews or 0) + (latest.autoruViews or 0) + (latest.dromViews or 0)
+            ) if latest else 0,
+        },
+        'chart_json': json.dumps(chart_data, ensure_ascii=False),
+        'period_from': car.lo_link_date,
+        'period_to': car.date_refresh,
+    }
+
+
+def _car_price_revaluations(car):
+    """История цен RegRefCarsOrganizationsPrice для таблицы переоценок."""
+    prices = list(RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date'))
+    rows = []
+    for index, item in enumerate(prices):
+        delta = None
+        if index + 1 < len(prices):
+            delta = item.price - prices[index + 1].price
+        rows.append({
+            'date': item.date,
+            'price': item.price,
+            'delta': delta,
+        })
+    return rows
+
+
 def _ensure_photo_date(photo):
     """Дата добавления фото (для загрузки через портал)."""
     if not photo.date:
@@ -1438,7 +1550,8 @@ def price_edit(request, slug):
             if response.text != '':
                 base1C = json.loads(response.text)
 
-    list_price = RegRefCarsOrganizationsPrice.objects.filter(car = car).order_by('-date')
+    price_revaluations = _car_price_revaluations(car)
+    list_price = RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')
     
     calculations_list    = RegEstimationRefCarsOrganizations.objects.filter(car = car).order_by('-date')    
     calculations = list()
@@ -1471,27 +1584,10 @@ def price_edit(request, slug):
         if DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk).count() > 0:
             shipment = DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk)[0] 
 
-    finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2) 
-    marketing   = 0  
-    avtohubs_list = Avtohub.objects.filter(vin = car.vin).filter(date__range = [car.lo_link_date, car.date_refresh]).order_by('-date') 
-    avtohubs      = list()
-    for avtohub in avtohubs_list:
-        percent = 0 
-
-        marketing = round(max(marketing, avtohub.totalAdvertisingCost), 2)
-        
-        if avtohub.numberOfCompetitors > 0:
-            percent = avtohub.vRatingPosition / avtohub.numberOfCompetitors
-        
-        data_avtohub = {
-            'date'                  : avtohub.date,
-            'avgMarketPrice'        : avtohub.avgMarketPrice,
-            'averageDaysInSale'     : avtohub.averageDaysInSale,
-            'vRatingPosition'       : avtohub.vRatingPosition,
-            'numberOfCompetitors'   : avtohub.numberOfCompetitors,
-            'percent'               : percent 
-        }
-        avtohubs.append(data_avtohub)
+    finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
+    avtohub_analytics = _car_avtohub_analytics(car)
+    marketing   = avtohub_analytics['summary']['marketing']
+    avtohubs    = avtohub_analytics['rows']
 
     calc_express    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 7).order_by('-date')
     calc_autohub    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 1).order_by('-date')
@@ -1512,9 +1608,11 @@ def price_edit(request, slug):
         'object'            : car,
         'selected'          : selected,
         'list_price'        : list_price,
+        'price_revaluations': price_revaluations,
         '1C'                : base1C,
         'calculations'      : calculations,
         'avtohubs'          : avtohubs,
+        'avtohub_analytics' : avtohub_analytics,
         'finance'           : finance,
         'marketing'         : marketing,
         'interactiv'        : interactiv,
