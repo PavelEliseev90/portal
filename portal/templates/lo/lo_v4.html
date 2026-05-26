@@ -2517,6 +2517,63 @@
                 </div>
               </div>
 
+              {% for rlk_op in params.rlk_op %}
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Рабочий лист ОП
+                </h6>
+
+                <div class="row g-1">
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.dataTime}}">
+                      <label for="floatingInput">Дата</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.nomer}}">
+                      <label for="floatingInput">Номер</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.staff__name}}">
+                      <label for="floatingInput">Менеджер</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-6">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.commentAdministrator}}">
+                      <label for="floatingInput">Комментарий администратора</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-6">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.commentManager}}">
+                      <label for="floatingInput">Комментарий менеджера</label>
+                    </div>
+              
+                  </div>
+
+                </div>
+
+              </div>
+              {% endfor %}
+
               <div class="portal-panel">
                 
                 <h6 class="d-flex align-items-center gap-2 mb-3">
@@ -3190,7 +3247,7 @@
 
                       <div class="form-floating">
                         <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{params.estimation.page_salon.run_confirmed_comment}}">
-                        <label for="floatingInput">Комментарий к пробегу</label>
+                    <label for="floatingInput">Комментарий к пробегу</label>
                       </div>
         
                     </div>
@@ -8552,7 +8609,60 @@
                                         </div>
                                         
                                       </div>
+
+                                      <div class="portal-panel">
+                                        <h6><span class="icon-mbri-image-slider"></span> Оплата диагностики ( чек и заказ наряд )</h6>
+                                        
+                                        <br>
+                                        {% if params.estimation.get_files_repair_and_check_count > 0 %}                                
+                                          <div class="row g-1 gallery-container">
+                                            {% for img in params.estimation.get_files_repair_and_check %}
+                                          
+                                              <div class="col-sm-3 gallery-item-repair_and_check" onclick="visible_foto('gallery-item-repair_and_check', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                                
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                                
+                                              </div>
+                    
+                                            {% endfor %}
+                                          </div>                                      
+                                          <br>                                    
+                                        {% endif %}
+                                        <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_repair_and_check" name="file_repair_and_check" type="file" multiple>
+                                        <br>
+
+                                        <div class="form-floating">
+                                          <textarea class="form-control" id="comment_no_repair_and_check" name="comment_no_repair_and_check" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_repair_and_check}}</textarea>
+                                          <label for="floatingInput">В случае отстутствия заказ - наряда или чека указать причину</label>                                          
+                                        </div>
+                                      </div>
                                       
+                                      <div class="portal-panel">
+                                        <h6><span class="icon-mbri-image-slider"></span> Выписка из Гос. Услуг</h6>
+                                        
+                                        <br>
+                                        {% if params.estimation.get_files_gos_service_count > 0 %}                                
+                                          <div class="row g-1 gallery-container">
+                                            {% for img in params.estimation.get_files_gos_service %}
+                                          
+                                              <div class="col-sm-3 gallery-item-gos_service" onclick="visible_foto('gallery-item-gos_service', {{forloop.counter}})" data-index="{{forloop.counter}}">
+                                                
+                                                <img class="d-block w-100" style="object-fit: cover; border-radius: 10px; height: 300px;" src="{{img.get_thumbnail_url}}" src1="{{img.get_absolute_url}}" data-index="{{forloop.counter}}">
+                                                
+                                              </div>
+                    
+                                            {% endfor %}
+                                          </div>                                      
+                                          <br>                                    
+                                        {% endif %}
+                                        <input class="form-control" accept="image/png, image/gif, image/jpeg;capture=camera"  id="file_gos_service" name="file_gos_service" type="file" multiple>
+                                        <br>
+
+                                        <div class="form-floating">
+                                          <textarea class="form-control" id="comment_no_gos_service" name="comment_no_gos_service" rows="1">{{params.interactiv_rlk.page_soglasovanie.comment_no_gos_service}}</textarea>
+                                          <label for="floatingInput">В случае отстутствия выписки с гос. услуг указать причину</label>                                          
+                                        </div>
+                                      </div>
 
                                         <hr>
 

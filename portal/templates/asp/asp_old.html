@@ -1,0 +1,92 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — КорсАвто: рабочее место {% endblock %}
+
+{% block title_navbar %} — КорсАвто {% endblock %}
+
+{% block head %}
+<style>
+  .asp-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 48%, #f1f5f9 100%);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+  .asp-hero h2 { margin-bottom: 0.35rem; font-weight: 650; letter-spacing: -0.02em; }
+  .asp-process {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+  .asp-process .asp-hub-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .asp-process .asp-hub-step:hover {
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    color: inherit;
+  }
+  .asp-process .asp-hub-num {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .asp-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+  }
+  .asp-section-head h3 { margin: 0; font-size: 1.05rem; font-weight: 650; }
+  .asp-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="portal-page">
+
+  {% include 'asp/partials/variant_switcher.html' %}
+
+  <div class="asp-hero">
+    <h2>Автомобили с пробегом</h2>
+    <p class="text-muted small mb-0">Единая точка входа: склад, оценка, подготовка, продажи и аналитика сети дилерских центров.</p>
+
+    <div class="asp-process" aria-label="Цепочка процесса автосалона">
+      {% include 'asp/partials/process_steps_inner.html' %}
+    </div>
+  </div>
+
+  {% include 'asp/partials/hub_panels.html' %}
+
+</div>
+
+{% endblock %}
