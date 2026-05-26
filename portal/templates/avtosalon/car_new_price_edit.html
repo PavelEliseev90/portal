@@ -1409,7 +1409,7 @@
 					</a>
 					{% if params.can_edit_photos %}
 					<a href="?{% url_replace page=1 %}" class="kors-anchor-button {% if params.page == 1 %}active{% endif %}" data-tab-target="1">
-						<span>Фотографии - {{ params.photos|length }}</span>                
+						<span>Фотографии - {{ params.tab_counts.photos }}</span>                
 					</a>
 					{% endif %}
 					<a href="?{% url_replace page=2 %}" class="kors-anchor-button" data-tab-target="2">
@@ -1419,13 +1419,13 @@
 						<span>Задачи</span>                
 					</a>
 					<a href="?{% url_replace page=4 %}" class="kors-anchor-button {% if params.page == 4 %}active{% endif %}" data-tab-target="4">
-						<span>Переоценки - {{ params.price_revaluations|length }}</span>                
+						<span>Переоценки - {{ params.tab_counts.price_revaluations }}</span>                
 					</a>
 					<a href="?{% url_replace page=10 %}" class="kors-anchor-button {% if params.page == 10 %}active{% endif %}" data-tab-target="10">
-						<span>Аналитика - {{ params.avtohub_analytics.total_count }}</span>                
+						<span>Аналитика - {{ params.tab_counts.analytics_total }}</span>                
 					</a>
 					<a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
-						<span>История оценок - {{ params.estimation_analytics.count }}</span>                
+						<span>История оценок - {{ params.tab_counts.estimation }}</span>                
 					</a>
 					<a  href="?{% url_replace page=6 %}" class="kors-anchor-button" data-tab-target="6">
 						<span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               

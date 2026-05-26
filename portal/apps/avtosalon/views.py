@@ -1256,6 +1256,29 @@ def _car_photos_queryset(car):
     return RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
 
 
+def _car_avtohub_queryset(car):
+    """Queryset Avtohub с тем же фильтром периода, что и в аналитике."""
+    qs = Avtohub.objects.filter(vin=car.vin)
+    if car.lo_link_date and car.date_refresh:
+        in_range = qs.filter(date__range=[car.lo_link_date, car.date_refresh])
+        if in_range.exists():
+            qs = in_range
+    return qs
+
+
+def _price_edit_tab_counts(car):
+    """Лёгкие счётчики для навигации price_edit (без тяжёлой аналитики)."""
+    avtohub_n = _car_avtohub_queryset(car).count()
+    estimation_n = RegEstimationRefCarsOrganizations.objects.filter(car_id=car.pk).count()
+    return {
+        'photos': RefCarsOrganizationFiles.objects.filter(сars_organization=car).count(),
+        'price_revaluations': RegRefCarsOrganizationsPrice.objects.filter(car=car).count(),
+        'avtohub': avtohub_n,
+        'estimation': estimation_n,
+        'analytics_total': avtohub_n + estimation_n,
+    }
+
+
 def _cumulative_to_daily_deltas(values):
     """Прирост по дням из накопительных счётчиков Avtohub."""
     deltas = []
@@ -1288,12 +1311,7 @@ def _latest_avtohub_snapshot(records):
 
 def _car_avtohub_analytics(car):
     """Сводка и ряды Avtohub для вкладки «Аналитика»."""
-    qs = Avtohub.objects.filter(vin=car.vin)
-    if car.lo_link_date and car.date_refresh:
-        in_range = qs.filter(date__range=[car.lo_link_date, car.date_refresh])
-        if in_range.exists():
-            qs = in_range
-    records = list(qs.order_by('date'))
+    records = list(_car_avtohub_queryset(car).order_by('date'))
 
     rows = []
     labels = []
@@ -1625,6 +1643,8 @@ def price_edit(request, slug):
     car     = RefCarsOrganization.objects.filter(slug = slug)[0]
     base1C  = ''
     page    = _price_edit_page(request)
+    if page == 1 and not request.user.profiles.korsavto_settings:
+        page = 0
 
     if request.method == "POST":
         photo_action = request.POST.get('action', '')
@@ -1663,9 +1683,11 @@ def price_edit(request, slug):
             if response.text != '':
                 base1C = json.loads(response.text)
 
-    price_revaluations = _car_price_revaluations(car)
+    tab_counts = _price_edit_tab_counts(car)
+    price_revaluations = _car_price_revaluations(car) if page == 4 else []
+    photos = _car_photos_queryset(car) if page == 1 else []
     list_price = RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')
-    
+
     interactiv = None
 
     if RegInteractivOcenka.objects.filter(rlk = car.lo.rlk).count() > 0:
@@ -1680,14 +1702,23 @@ def price_edit(request, slug):
         if DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk).count() > 0:
             shipment = DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk)[0] 
 
-    finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
-    avtohub_analytics = _car_avtohub_analytics(car)
-    estimation_analytics = _car_estimation_analytics(car)
-    avtohub_analytics['estimation'] = estimation_analytics
-    avtohub_analytics['total_count'] = avtohub_analytics['count'] + estimation_analytics['count']
-    marketing   = avtohub_analytics['summary']['marketing']
-    avtohubs    = avtohub_analytics['rows']
-    calculations = estimation_analytics['rows']
+    finance = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
+
+    avtohub_analytics = None
+    estimation_analytics = None
+    marketing = 0
+    avtohubs = []
+    calculations = []
+    if page == 10:
+        avtohub_analytics = _car_avtohub_analytics(car)
+        estimation_analytics = _car_estimation_analytics(car)
+        avtohub_analytics['estimation'] = estimation_analytics
+        avtohub_analytics['total_count'] = (
+            avtohub_analytics['count'] + estimation_analytics['count']
+        )
+        marketing = avtohub_analytics['summary']['marketing']
+        avtohubs = avtohub_analytics['rows']
+        calculations = estimation_analytics['rows']
 
     calc_express    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 7).order_by('-date')
     calc_autohub    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 1).order_by('-date')
@@ -1701,13 +1732,11 @@ def price_edit(request, slug):
         'ratings'       : RefRatingCarsOrganization.objects.all().order_by('name'),
     }
 
-    if page == 1 and not request.user.profiles.korsavto_settings:
-        page = 0
-
     params = {
         'object'            : car,
         'selected'          : selected,
         'list_price'        : list_price,
+        'tab_counts'        : tab_counts,
         'price_revaluations': price_revaluations,
         '1C'                : base1C,
         'calculations'      : calculations,
@@ -1723,7 +1752,7 @@ def price_edit(request, slug):
         'calc_autohub'      : calc_autohub,
         'calc_1C'           : calc_1C,
         'page'              : page,
-        'photos'            : _car_photos_queryset(car),
+        'photos'            : photos,
         'can_edit_photos'   : request.user.profiles.korsavto_settings,
     }
     
