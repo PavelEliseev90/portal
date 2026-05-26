@@ -1,8 +1,9 @@
 {% comment %}
   Аналитика: Avtohub + RegEstimationRefCarsOrganizations.
-  Ожидает: params.avtohub_analytics (с ключом estimation)
+  Ожидает: params.avtohub_analytics, params.estimation_analytics
 {% endcomment %}
-{% with a=params.avtohub_analytics s=a.summary e=a.estimation es=e.summary %}
+{% with a=params.avtohub_analytics s=a.summary %}
+{% with e=params.estimation_analytics %}
 
 <div class="portal-panel mb-3">
 	<h6 class="mb-3 padding-portal">
@@ -185,20 +186,20 @@
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Средняя стоимость</div>
 					<div class="metric-card-value-portal">
-						{% if es.avg_price is not None %}{{ es.avg_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
+						{% if e.summary.avg_price is not None %}{{ e.summary.avg_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
 					</div>
-					<small class="text-muted">{% if es.latest_date %}{{ es.latest_date|date:"d.m.Y H:i" }}{% endif %}</small>
+					<small class="text-muted">{% if e.summary.latest_date %}{{ e.summary.latest_date|date:"d.m.Y H:i" }}{% endif %}</small>
 				</div>
 			</div>
 			<div class="col-12 col-sm-6 col-lg-3">
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Цена в оценке</div>
 					<div class="metric-card-value-portal">
-						{% if es.our_price is not None %}{{ es.our_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
+						{% if e.summary.our_price is not None %}{{ e.summary.our_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
 					</div>
-					{% if es.price_vs_market is not None %}
-						<small class="{% if es.price_vs_market > 0 %}text-danger{% elif es.price_vs_market < 0 %}text-success{% else %}text-muted{% endif %}">
-							{% if es.price_vs_market > 0 %}+{% endif %}{{ es.price_vs_market|floatformat:0 }} &#8381; к ср. рынку
+					{% if e.summary.price_vs_market is not None %}
+						<small class="{% if e.summary.price_vs_market > 0 %}text-danger{% elif e.summary.price_vs_market < 0 %}text-success{% else %}text-muted{% endif %}">
+							{% if e.summary.price_vs_market > 0 %}+{% endif %}{{ e.summary.price_vs_market|floatformat:0 }} &#8381; к ср. рынку
 						</small>
 					{% endif %}
 				</div>
@@ -207,10 +208,10 @@
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Позиция на рынке</div>
 					<div class="metric-card-value-portal">
-						{% if es.total %}{{ es.position|default:0 }} / {{ es.total }}{% else %}—{% endif %}
+						{% if e.summary.total %}{{ e.summary.position|default:0 }} / {{ e.summary.total }}{% else %}—{% endif %}
 					</div>
-					{% if es.attractiveness_pct is not None %}
-						<small class="text-muted">{{ es.attractiveness_pct }}% привлекательность</small>
+					{% if e.summary.attractiveness_pct is not None %}
+						<small class="text-muted">{{ e.summary.attractiveness_pct }}% привлекательность</small>
 					{% endif %}
 				</div>
 			</div>
@@ -218,9 +219,9 @@
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Ср. дней на складе</div>
 					<div class="metric-card-value-portal">
-						{% if es.avg_days is not None %}{{ es.avg_days|floatformat:0 }} д.{% else %}—{% endif %}
+						{% if e.summary.avg_days is not None %}{{ e.summary.avg_days|floatformat:0 }} д.{% else %}—{% endif %}
 					</div>
-					<small class="text-muted">текущая цена АМ: {{ es.car_price|floatformat:0 }} &#8381;</small>
+					<small class="text-muted">текущая цена АМ: {{ e.summary.car_price|floatformat:0 }} &#8381;</small>
 				</div>
 			</div>
 		</div>
@@ -594,4 +595,5 @@
 </script>
 {% endif %}
 
+{% endwith %}
 {% endwith %}
