@@ -2517,6 +2517,63 @@
                 </div>
               </div>
 
+              {% for rlk_op in params.rlk_op %}
+              <div class="portal-panel">
+                <h6 class="d-flex align-items-center gap-2 mb-3">
+                  <span class="icon-mbri-info"></span> Рабочий лист ОП
+                </h6>
+
+                <div class="row g-1">
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.dataTime}}">
+                      <label for="floatingInput">Дата</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.nomer}}">
+                      <label for="floatingInput">Номер</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-4">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.staff__name}}">
+                      <label for="floatingInput">Менеджер</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-6">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.commentAdministrator}}">
+                      <label for="floatingInput">Комментарий администратора</label>
+                    </div>
+              
+                  </div>
+
+                  <div class="col-12 col-sm-6">
+                    
+                    <div class="form-floating mb-3">
+                      <input class="form-control form-control-sm" type="text" id="rlk_date" name="rlk_date" value="{{rlk_op.commentManager}}">
+                      <label for="floatingInput">Комментарий менеджера</label>
+                    </div>
+              
+                  </div>
+
+                </div>
+
+              </div>
+              {% endfor %}
+
               <div class="portal-panel">
                 
                 <h6 class="d-flex align-items-center gap-2 mb-3">

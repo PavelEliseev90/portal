@@ -4023,6 +4023,9 @@ def doc(request, id):
             if start_eco_2 != '':
                 interactiv_rlk.staff_eco_2_rlk = request.user
                 interactiv_rlk.save()   
+        rlk_op = None
+        if page == 0:
+            rlk_op = DocRLK.objects.filter(uin__in = DocRLK.objects.filter(uin = interactiv_rlk.rlk.uin).exclude(footing = None).values_list('footing__uin', flat=True)).filter(eco = False).values('nomer', 'dataTime', 'staff__name', 'commentAdministrator', 'commentManager', )
 
         list_work_podgotovka    = RegEstimationPodgotovka.objects.filter(estimation = estimation)
         list_work_ss            = RegEstimationSS.objects.filter(estimation = estimation)
@@ -4053,7 +4056,8 @@ def doc(request, id):
         params = {
                 'page'                  : page,
                 'type'                  : 'eco',
-                'interactiv_rlk'      : interactiv_rlk,
+                'rlk_op'                : rlk_op,
+                'interactiv_rlk'        : interactiv_rlk,
                 'rlk'                   : rlk,
                 'rlk_estimations'       : rlk_estimations,
                 'estimation'            : estimation,
