@@ -1422,10 +1422,10 @@
 						<span>Переоценки - {{ params.price_revaluations|length }}</span>                
 					</a>
 					<a href="?{% url_replace page=10 %}" class="kors-anchor-button {% if params.page == 10 %}active{% endif %}" data-tab-target="10">
-						<span>Аналитика - {{ params.avtohub_analytics.count }}</span>                
+						<span>Аналитика - {{ params.avtohub_analytics.total_count }}</span>                
 					</a>
 					<a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
-						<span>История оценок - {{params.tab_estimations_count|default:0}}</span>                
+						<span>История оценок - {{ params.avtohub_analytics.estimation.count }}</span>                
 					</a>
 					<a  href="?{% url_replace page=6 %}" class="kors-anchor-button" data-tab-target="6">
 						<span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               

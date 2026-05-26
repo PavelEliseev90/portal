@@ -1256,11 +1256,43 @@ def _car_photos_queryset(car):
     return RefCarsOrganizationFiles.objects.filter(сars_organization=car).order_by('-main', '-date')
 
 
+def _cumulative_to_daily_deltas(values):
+    """Прирост по дням из накопительных счётчиков Avtohub."""
+    deltas = []
+    prev = None
+    for value in values:
+        current = value or 0
+        if prev is None:
+            deltas.append(current)
+        else:
+            diff = current - prev
+            deltas.append(current if diff < 0 else diff)
+        prev = current
+    return deltas
+
+
+def _latest_avtohub_snapshot(records):
+    """Последний снимок с данными (последний пустой снимок Avtohub не затирает сводку)."""
+    if not records:
+        return None
+    for ah in reversed(records):
+        if (
+            (ah.avgMarketPrice or 0) > 0
+            or (ah.numberOfCompetitors or 0) > 0
+            or (ah.averageDaysInSale or 0) > 0
+            or (ah.avitoViews or 0) + (ah.autoruViews or 0) + (ah.dromViews or 0) > 0
+        ):
+            return ah
+    return records[-1]
+
+
 def _car_avtohub_analytics(car):
     """Сводка и ряды Avtohub для вкладки «Аналитика»."""
     qs = Avtohub.objects.filter(vin=car.vin)
     if car.lo_link_date and car.date_refresh:
-        qs = qs.filter(date__range=[car.lo_link_date, car.date_refresh])
+        in_range = qs.filter(date__range=[car.lo_link_date, car.date_refresh])
+        if in_range.exists():
+            qs = in_range
     records = list(qs.order_by('date'))
 
     rows = []
@@ -1270,17 +1302,27 @@ def _car_avtohub_analytics(car):
     attractiveness = []
     days_in_sale = []
     advertising = []
-    views_avito = []
-    views_autoru = []
-    views_drom = []
+    raw_views_avito = []
+    raw_views_autoru = []
+    raw_views_drom = []
     competitors = []
     marketing = 0
 
     for ah in records:
+        marketing = round(max(marketing, ah.totalAdvertisingCost or 0), 2)
+        raw_views_avito.append(ah.avitoViews or 0)
+        raw_views_autoru.append(ah.autoruViews or 0)
+        raw_views_drom.append(ah.dromViews or 0)
+        competitors.append(ah.numberOfCompetitors or 0)
+
+    views_avito_delta = _cumulative_to_daily_deltas(raw_views_avito)
+    views_autoru_delta = _cumulative_to_daily_deltas(raw_views_autoru)
+    views_drom_delta = _cumulative_to_daily_deltas(raw_views_drom)
+
+    for index, ah in enumerate(records):
         pct = 0
         if ah.numberOfCompetitors > 0:
             pct = round(100 * ah.vRatingPosition / ah.numberOfCompetitors, 1)
-        marketing = round(max(marketing, ah.totalAdvertisingCost or 0), 2)
 
         rows.append({
             'date': ah.date,
@@ -1296,6 +1338,9 @@ def _car_avtohub_analytics(car):
             'avito_views': ah.avitoViews,
             'autoru_views': ah.autoruViews,
             'drom_views': ah.dromViews,
+            'avito_views_delta': views_avito_delta[index],
+            'autoru_views_delta': views_autoru_delta[index],
+            'drom_views_delta': views_drom_delta[index],
             'calls': ah.callsCounts_uniqueTotal,
             'actual_market_sales': ah.actualMarketSales,
         })
@@ -1305,15 +1350,13 @@ def _car_avtohub_analytics(car):
         attractiveness.append(pct)
         days_in_sale.append(ah.averageDaysInSale or 0)
         advertising.append(round(ah.totalAdvertisingCost or 0))
-        views_avito.append(ah.avitoViews or 0)
-        views_autoru.append(ah.autoruViews or 0)
-        views_drom.append(ah.dromViews or 0)
-        competitors.append(ah.numberOfCompetitors or 0)
 
-    latest = records[-1] if records else None
+    latest = _latest_avtohub_snapshot(records)
+    car_price = car.price or 0
+    avg_market = latest.avgMarketPrice if latest else None
     price_vs_market = None
-    if latest and latest.avgMarketPrice:
-        price_vs_market = (car.price or 0) - latest.avgMarketPrice
+    if latest is not None and avg_market is not None:
+        price_vs_market = car_price - avg_market
 
     chart_data = {
         'labels': labels,
@@ -1323,9 +1366,9 @@ def _car_avtohub_analytics(car):
         'attractiveness': attractiveness,
         'days_in_sale': days_in_sale,
         'advertising': advertising,
-        'views_avito': views_avito,
-        'views_autoru': views_autoru,
-        'views_drom': views_drom,
+        'views_avito_delta': views_avito_delta,
+        'views_autoru_delta': views_autoru_delta,
+        'views_drom_delta': views_drom_delta,
         'competitors': competitors,
     }
 
@@ -1334,21 +1377,89 @@ def _car_avtohub_analytics(car):
         'rows': list(reversed(rows)),
         'summary': {
             'latest_date': latest.date if latest else None,
-            'avg_market_price': latest.avgMarketPrice if latest else None,
-            'car_price': car.price,
+            'avg_market_price': avg_market,
+            'car_price': car_price,
             'price_vs_market': price_vs_market,
-            'position': latest.vRatingPosition if latest else None,
-            'competitors': latest.numberOfCompetitors if latest else None,
-            'attractiveness_pct': rows[-1]['attractiveness_pct'] if rows else None,
-            'average_days_in_sale': latest.averageDaysInSale if latest else None,
+            'position': latest.vRatingPosition if latest is not None else None,
+            'competitors': latest.numberOfCompetitors if latest is not None else None,
+            'attractiveness_pct': (
+                round(100 * latest.vRatingPosition / latest.numberOfCompetitors, 1)
+                if latest and (latest.numberOfCompetitors or 0) > 0
+                else None
+            ),
+            'average_days_in_sale': latest.averageDaysInSale if latest is not None else None,
             'marketing': marketing,
             'total_views': (
                 (latest.avitoViews or 0) + (latest.autoruViews or 0) + (latest.dromViews or 0)
             ) if latest else 0,
         },
+        'used_date_filter': bool(car.lo_link_date and car.date_refresh),
         'chart_json': json.dumps(chart_data, ensure_ascii=False),
         'period_from': car.lo_link_date,
         'period_to': car.date_refresh,
+    }
+
+
+def _car_estimation_analytics(car):
+    """История оценок калькулятора RegEstimationRefCarsOrganizations."""
+    records = list(RegEstimationRefCarsOrganizations.objects.filter(car=car).order_by('date'))
+    rows = []
+    labels = []
+    avg_prices = []
+    our_prices = []
+    attractiveness = []
+    avg_days_list = []
+
+    for est in records:
+        pct = round(100 * est.position / est.total, 1) if (est.total or 0) > 0 else 0
+        rows.append({
+            'date': est.date,
+            'avg_price': est.avg_price,
+            'avg_days': est.avg_days,
+            'position': est.position,
+            'total': est.total,
+            'price': est.price,
+            'attractiveness_pct': pct,
+            'percent': pct / 100,
+            'error': est.error,
+        })
+        labels.append(est.date.strftime('%d.%m.%y') if est.date else '—')
+        avg_prices.append(est.avg_price or 0)
+        our_prices.append(est.price or 0)
+        attractiveness.append(pct)
+        avg_days_list.append(est.avg_days or 0)
+
+    latest = records[-1] if records else None
+    car_price = car.price or 0
+    latest_avg = latest.avg_price if latest else None
+    price_vs_market = None
+    if latest is not None and latest_avg is not None:
+        price_vs_market = (latest.price or 0) - latest_avg
+
+    chart_data = {
+        'labels': labels,
+        'avg_price': avg_prices,
+        'our_price': our_prices,
+        'car_price': car_price,
+        'attractiveness': attractiveness,
+        'avg_days': avg_days_list,
+    }
+
+    return {
+        'count': len(rows),
+        'rows': list(reversed(rows)),
+        'summary': {
+            'latest_date': latest.date if latest else None,
+            'avg_price': latest_avg,
+            'our_price': latest.price if latest else None,
+            'car_price': car_price,
+            'price_vs_market': price_vs_market,
+            'position': latest.position if latest is not None else None,
+            'total': latest.total if latest is not None else None,
+            'attractiveness_pct': rows[-1]['attractiveness_pct'] if rows else None,
+            'avg_days': latest.avg_days if latest is not None else None,
+        },
+        'chart_json': json.dumps(chart_data, ensure_ascii=False),
     }
 
 
@@ -1553,23 +1664,6 @@ def price_edit(request, slug):
     price_revaluations = _car_price_revaluations(car)
     list_price = RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')
     
-    calculations_list    = RegEstimationRefCarsOrganizations.objects.filter(car = car).order_by('-date')    
-    calculations = list()
-    for calc in calculations_list:
-        percent = 0 
-        if calc.total > 0:
-            percent = calc.position / calc.total
-        
-        data_calculations = {
-            'date'      : calc.date,
-            'avg_price' : calc.avg_price,
-            'avg_days'  : calc.avg_days,
-            'position'  : calc.position,
-            'total'     : calc.total,
-            'percent'   : percent 
-        }
-        calculations.append(data_calculations)
-    
     interactiv = None
 
     if RegInteractivOcenka.objects.filter(rlk = car.lo.rlk).count() > 0:
@@ -1586,8 +1680,12 @@ def price_edit(request, slug):
 
     finance     = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
     avtohub_analytics = _car_avtohub_analytics(car)
+    estimation_analytics = _car_estimation_analytics(car)
+    avtohub_analytics['estimation'] = estimation_analytics
+    avtohub_analytics['total_count'] = avtohub_analytics['count'] + estimation_analytics['count']
     marketing   = avtohub_analytics['summary']['marketing']
     avtohubs    = avtohub_analytics['rows']
+    calculations = estimation_analytics['rows']
 
     calc_express    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 7).order_by('-date')
     calc_autohub    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 1).order_by('-date')

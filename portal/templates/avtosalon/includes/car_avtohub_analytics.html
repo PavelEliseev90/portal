@@ -1,36 +1,47 @@
 {% comment %}
-  Аналитика Avtohub. Ожидает: params.avtohub_analytics, params.object
+  Аналитика: Avtohub + RegEstimationRefCarsOrganizations.
+  Ожидает: params.avtohub_analytics (с ключом estimation)
 {% endcomment %}
-{% with a=params.avtohub_analytics s=a.summary %}
+{% with a=params.avtohub_analytics s=a.summary e=a.estimation es=e.summary %}
 
 <div class="portal-panel mb-3">
 	<h6 class="mb-3 padding-portal">
-		<span class="icon-mbri-globe me-2"></span>Аналитика Avtohub
-		<span class="text-muted fw-normal ms-1">— {{ a.count }} снимков</span>
+		<span class="icon-mbri-growing-chart me-2"></span>Аналитика
+		<span class="text-muted fw-normal ms-1">— Avtohub {{ a.count }}, оценки {{ e.count }}</span>
 	</h6>
 	{% if a.period_from and a.period_to %}
-		<p class="text-muted small mb-3">
-			Период: {{ a.period_from|date:"d.m.Y" }} — {{ a.period_to|date:"d.m.Y" }}
+		<p class="text-muted small mb-2">
+			Период Avtohub: {{ a.period_from|date:"d.m.Y" }} — {{ a.period_to|date:"d.m.Y" }}
 		</p>
 	{% endif %}
+
+	<h6 class="small text-uppercase text-muted mb-2 mt-2">
+		<span class="icon-mbri-globe me-1"></span>Avtohub
+	</h6>
 
 	{% if a.count %}
 		<div class="row g-2 mb-3">
 			<div class="col-12 col-sm-6 col-lg-3">
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Среднерыночная цена</div>
-					<div class="metric-card-value-portal">{{ s.avg_market_price|floatformat:"0g" }} &#8381;</div>
-					<small class="text-muted">на {{ s.latest_date|date:"d.m.Y" }}</small>
+					<div class="metric-card-value-portal">
+						{% if s.avg_market_price is not None %}{{ s.avg_market_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
+					</div>
+					<small class="text-muted">
+						{% if s.latest_date %}снимок от {{ s.latest_date|date:"d.m.Y H:i" }}{% else %}нет даты снимка{% endif %}
+					</small>
 				</div>
 			</div>
 			<div class="col-12 col-sm-6 col-lg-3">
 				<div class="metric-card-portal h-100">
-					<div class="metric-card-label-portal">Наша цена</div>
-					<div class="metric-card-value-portal">{{ s.car_price|floatformat:"0g" }} &#8381;</div>
+					<div class="metric-card-label-portal">Наша цена (автомобиль)</div>
+					<div class="metric-card-value-portal">{{ s.car_price|floatformat:0 }} &#8381;</div>
 					{% if s.price_vs_market is not None %}
 						<small class="{% if s.price_vs_market > 0 %}text-danger{% elif s.price_vs_market < 0 %}text-success{% else %}text-muted{% endif %}">
-							{% if s.price_vs_market > 0 %}+{% endif %}{{ s.price_vs_market|floatformat:"0g" }} &#8381; к рынку
+							{% if s.price_vs_market > 0 %}+{% endif %}{{ s.price_vs_market|floatformat:0 }} &#8381; к рынку
 						</small>
+					{% elif s.avg_market_price is None %}
+						<small class="text-muted">нет ср. рыночной в Avtohub</small>
 					{% endif %}
 				</div>
 			</div>
@@ -38,22 +49,26 @@
 				<div class="metric-card-portal h-100">
 					<div class="metric-card-label-portal">Привлекательность</div>
 					<div class="metric-card-value-portal">
-						{% if s.position and s.competitors %}
-							{{ s.position }} / {{ s.competitors }}
+						{% if s.competitors %}
+							{{ s.position|default:0 }} / {{ s.competitors }}
 						{% else %}
 							—
 						{% endif %}
 					</div>
 					{% if s.attractiveness_pct is not None %}
-						<small class="text-muted">{{ s.attractiveness_pct }}% рейтинг</small>
+						<small class="text-muted">{{ s.attractiveness_pct }}% (позиция / конкуренты)</small>
+					{% else %}
+						<small class="text-muted">нет данных о конкурентах</small>
 					{% endif %}
 				</div>
 			</div>
 			<div class="col-12 col-sm-6 col-lg-3">
 				<div class="metric-card-portal h-100">
-					<div class="metric-card-label-portal">Ср. дней в продаже</div>
-					<div class="metric-card-value-portal">{{ s.average_days_in_sale|default:"—" }} д.</div>
-					<small class="text-muted">просмотров: {{ s.total_views|floatformat:"0g" }}</small>
+					<div class="metric-card-label-portal">Ср. дней в продаже (рынок)</div>
+					<div class="metric-card-value-portal">
+						{% if s.average_days_in_sale is not None %}{{ s.average_days_in_sale|floatformat:0 }} д.{% else %}—{% endif %}
+					</div>
+					<small class="text-muted">просмотров всего: {{ s.total_views|floatformat:0 }}</small>
 				</div>
 			</div>
 		</div>
@@ -93,7 +108,7 @@
 			</div>
 			<div class="col-12">
 				<div class="portal-panel mb-0" style="background: #f8f9fc;">
-					<h6 class="small text-uppercase text-muted mb-2">Просмотры по площадкам</h6>
+					<h6 class="small text-uppercase text-muted mb-2">Прирост просмотров по площадкам (за период между снимками)</h6>
 					<div style="position: relative; height: 280px;">
 						<canvas id="avtohubChartViews"></canvas>
 					</div>
@@ -115,7 +130,7 @@
 							<th class="text-end">Привл., %</th>
 							<th class="text-end">Дней в продаже</th>
 							<th class="text-end">Реклама</th>
-							<th class="text-end">Просмотры</th>
+							<th class="text-end">Просмотры (+прирост)</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -138,9 +153,9 @@
 								<td class="text-end">{{ row.average_days_in_sale|default:"—" }}</td>
 								<td class="text-end">{{ row.total_advertising_cost|floatformat:"0g" }} &#8381;</td>
 								<td class="text-end text-nowrap">
-									<small>Avito {{ row.avito_views }}</small><br>
-									<small>Auto.ru {{ row.autoru_views }}</small><br>
-									<small>Drom {{ row.drom_views }}</small>
+									<small>Avito <span class="text-success">+{{ row.avito_views_delta }}</span> <span class="text-muted">({{ row.avito_views }})</span></small><br>
+									<small>Auto.ru <span class="text-success">+{{ row.autoru_views_delta }}</span> <span class="text-muted">({{ row.autoru_views }})</span></small><br>
+									<small>Drom <span class="text-success">+{{ row.drom_views_delta }}</span> <span class="text-muted">({{ row.drom_views }})</span></small>
 								</td>
 							</tr>
 						{% endfor %}
@@ -150,15 +165,140 @@
 		</div>
 
 	{% else %}
-		<div class="text-center py-5 text-muted">
-			<span class="icon-mbri-globe" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem;"></span>
+		<div class="text-center py-4 text-muted">
+			<span class="icon-mbri-globe" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.75rem;"></span>
 			<p class="mb-0">Нет данных Avtohub за выбранный период</p>
 			<p class="small">Проверьте VIN и даты поступления / обновления автомобиля</p>
 		</div>
 	{% endif %}
+
+	<hr class="my-4">
+
+	<h6 class="mb-3 padding-portal">
+		<span class="icon-params me-2"></span>Калькулятор (оценки на складе)
+		<span class="text-muted fw-normal ms-1">— {{ e.count }} записей</span>
+	</h6>
+
+	{% if e.count %}
+		<div class="row g-2 mb-3">
+			<div class="col-12 col-sm-6 col-lg-3">
+				<div class="metric-card-portal h-100">
+					<div class="metric-card-label-portal">Средняя стоимость</div>
+					<div class="metric-card-value-portal">
+						{% if es.avg_price is not None %}{{ es.avg_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
+					</div>
+					<small class="text-muted">{% if es.latest_date %}{{ es.latest_date|date:"d.m.Y H:i" }}{% endif %}</small>
+				</div>
+			</div>
+			<div class="col-12 col-sm-6 col-lg-3">
+				<div class="metric-card-portal h-100">
+					<div class="metric-card-label-portal">Цена в оценке</div>
+					<div class="metric-card-value-portal">
+						{% if es.our_price is not None %}{{ es.our_price|floatformat:0 }} &#8381;{% else %}—{% endif %}
+					</div>
+					{% if es.price_vs_market is not None %}
+						<small class="{% if es.price_vs_market > 0 %}text-danger{% elif es.price_vs_market < 0 %}text-success{% else %}text-muted{% endif %}">
+							{% if es.price_vs_market > 0 %}+{% endif %}{{ es.price_vs_market|floatformat:0 }} &#8381; к ср. рынку
+						</small>
+					{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-6 col-lg-3">
+				<div class="metric-card-portal h-100">
+					<div class="metric-card-label-portal">Позиция на рынке</div>
+					<div class="metric-card-value-portal">
+						{% if es.total %}{{ es.position|default:0 }} / {{ es.total }}{% else %}—{% endif %}
+					</div>
+					{% if es.attractiveness_pct is not None %}
+						<small class="text-muted">{{ es.attractiveness_pct }}% привлекательность</small>
+					{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-6 col-lg-3">
+				<div class="metric-card-portal h-100">
+					<div class="metric-card-label-portal">Ср. дней на складе</div>
+					<div class="metric-card-value-portal">
+						{% if es.avg_days is not None %}{{ es.avg_days|floatformat:0 }} д.{% else %}—{% endif %}
+					</div>
+					<small class="text-muted">текущая цена АМ: {{ es.car_price|floatformat:0 }} &#8381;</small>
+				</div>
+			</div>
+		</div>
+
+		<div class="row g-3 mb-3">
+			<div class="col-12 col-lg-6">
+				<div class="portal-panel h-100 mb-0" style="background: #f8f9fc;">
+					<h6 class="small text-uppercase text-muted mb-2">Динамика цен (калькулятор)</h6>
+					<div style="position: relative; height: 280px;">
+						<canvas id="estimationChartPrices"></canvas>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-lg-6">
+				<div class="portal-panel h-100 mb-0" style="background: #f8f9fc;">
+					<h6 class="small text-uppercase text-muted mb-2">Привлекательность, %</h6>
+					<div style="position: relative; height: 280px;">
+						<canvas id="estimationChartAttractiveness"></canvas>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-lg-6">
+				<div class="portal-panel h-100 mb-0" style="background: #f8f9fc;">
+					<h6 class="small text-uppercase text-muted mb-2">Среднее дней на складе</h6>
+					<div style="position: relative; height: 260px;">
+						<canvas id="estimationChartDays"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="portal-panel mb-0">
+			<h6 class="small text-uppercase text-muted mb-3">История оценок</h6>
+			<div class="table-responsive">
+				<table class="table table-sm table-hover align-middle mb-0">
+					<thead>
+						<tr>
+							<th>Дата</th>
+							<th class="text-end">Ср. стоимость</th>
+							<th class="text-end">Наша цена</th>
+							<th class="text-end">Позиция</th>
+							<th class="text-end">Всего АМ</th>
+							<th class="text-end">Привл., %</th>
+							<th class="text-end">Ср. дней</th>
+							<th>Правило</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for row in e.rows %}
+							<tr class="{% if row.percent <= 0.3 %}table-success{% elif row.percent <= 0.6 %}table-warning{% else %}table-danger{% endif %}">
+								<td>{% if row.date %}{{ row.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+								<td class="text-end">{{ row.avg_price|floatformat:0 }} &#8381;</td>
+								<td class="text-end fw-bold">{{ row.price|floatformat:0 }} &#8381;</td>
+								<td class="text-end">{{ row.position|default:"—" }}</td>
+								<td class="text-end">{{ row.total|default:"—" }}</td>
+								<td class="text-end">{{ row.attractiveness_pct }}%</td>
+								<td class="text-end">{{ row.avg_days|default:"—" }}</td>
+								<td><small class="text-muted">{{ row.error|default:"—"|truncatechars:80 }}</small></td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{% else %}
+		<div class="text-center py-4 text-muted">
+			<p class="mb-0">Нет записей калькулятора по этому автомобилю</p>
+		</div>
+	{% endif %}
+
+	{% if not a.count and not e.count %}
+		<div class="text-center py-4 text-muted border-top mt-3">
+			<p class="mb-0">Нет данных для аналитики</p>
+		</div>
+	{% endif %}
 </div>
 
-{% if a.count %}
+{% if a.count or e.count %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script>
 (function() {
@@ -308,17 +448,146 @@
 			data: {
 				labels: data.labels,
 				datasets: [
-					{ label: 'Avito', data: data.views_avito, backgroundColor: 'rgba(34, 197, 94, 0.8)' },
-					{ label: 'Auto.ru', data: data.views_autoru, backgroundColor: 'rgba(0, 42, 90, 0.75)' },
-					{ label: 'Drom', data: data.views_drom, backgroundColor: 'rgba(255, 138, 0, 0.8)' }
+					{ label: 'Avito, прирост', data: data.views_avito_delta, backgroundColor: 'rgba(34, 197, 94, 0.8)' },
+					{ label: 'Auto.ru, прирост', data: data.views_autoru_delta, backgroundColor: 'rgba(0, 42, 90, 0.75)' },
+					{ label: 'Drom, прирост', data: data.views_drom_delta, backgroundColor: 'rgba(255, 138, 0, 0.8)' }
 				]
 			},
 			options: Object.assign({}, baseOptions, {
+				plugins: Object.assign({}, baseOptions.plugins, {
+					tooltip: {
+						callbacks: {
+							label: function(ctx) {
+								return ctx.dataset.label + ': +' + Number(ctx.raw).toLocaleString('ru-RU');
+							}
+						}
+					}
+				}),
 				scales: {
-					x: { stacked: true, ticks: baseOptions.scales.x.ticks },
-					y: { stacked: true, beginAtZero: true }
+					x: { ticks: baseOptions.scales.x.ticks },
+					y: { beginAtZero: true, ticks: { precision: 0 } }
 				}
 			})
+		});
+	}
+})();
+
+(function() {
+	var data;
+	try {
+		data = JSON.parse('{{ e.chart_json|escapejs }}');
+	} catch (err) {
+		return;
+	}
+	if (!data.labels || !data.labels.length || typeof Chart === 'undefined') {
+		return;
+	}
+
+	var portalColor = 'rgba(0, 42, 90, 1)';
+	var portalFill = 'rgba(0, 42, 90, 0.12)';
+	var orangeColor = 'rgba(255, 138, 0, 1)';
+	var greenColor = 'rgba(34, 197, 94, 1)';
+	var purpleColor = 'rgba(99, 102, 241, 1)';
+	var carPriceLine = data.labels.map(function() { return data.car_price; });
+
+	var baseOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		interaction: { mode: 'index', intersect: false },
+		plugins: {
+			legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+		},
+		scales: {
+			x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } },
+			y: { beginAtZero: true }
+		}
+	};
+
+	var elPrices = document.getElementById('estimationChartPrices');
+	if (elPrices) {
+		new Chart(elPrices, {
+			type: 'line',
+			data: {
+				labels: data.labels,
+				datasets: [
+					{
+						label: 'Средняя стоимость',
+						data: data.avg_price,
+						borderColor: portalColor,
+						backgroundColor: portalFill,
+						fill: true,
+						tension: 0.25
+					},
+					{
+						label: 'Цена в оценке',
+						data: data.our_price,
+						borderColor: orangeColor,
+						borderDash: [4, 4],
+						tension: 0.25
+					},
+					{
+						label: 'Текущая цена АМ',
+						data: carPriceLine,
+						borderColor: greenColor,
+						borderWidth: 2,
+						pointRadius: 0,
+						tension: 0
+					}
+				]
+			},
+			options: Object.assign({}, baseOptions, {
+				plugins: Object.assign({}, baseOptions.plugins, {
+					tooltip: {
+						callbacks: {
+							label: function(ctx) {
+								return ctx.dataset.label + ': ' + Number(ctx.raw).toLocaleString('ru-RU') + ' ₽';
+							}
+						}
+					}
+				})
+			})
+		});
+	}
+
+	var elAttr = document.getElementById('estimationChartAttractiveness');
+	if (elAttr) {
+		new Chart(elAttr, {
+			type: 'line',
+			data: {
+				labels: data.labels,
+				datasets: [{
+					label: 'Привлекательность',
+					data: data.attractiveness,
+					borderColor: purpleColor,
+					backgroundColor: 'rgba(99, 102, 241, 0.15)',
+					fill: true,
+					tension: 0.25
+				}]
+			},
+			options: Object.assign({}, baseOptions, {
+				scales: {
+					x: baseOptions.scales.x,
+					y: { beginAtZero: true, max: 100, ticks: { callback: function(v) { return v + '%'; } } }
+				}
+			})
+		});
+	}
+
+	var elDays = document.getElementById('estimationChartDays');
+	if (elDays) {
+		new Chart(elDays, {
+			type: 'bar',
+			data: {
+				labels: data.labels,
+				datasets: [{
+					label: 'Ср. дней на складе',
+					data: data.avg_days,
+					backgroundColor: 'rgba(14, 165, 233, 0.65)',
+					borderColor: 'rgba(14, 165, 233, 1)',
+					borderWidth: 1
+				}]
+			},
+			options: baseOptions
 		});
 	}
 })();
