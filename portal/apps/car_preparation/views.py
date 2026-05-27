@@ -133,7 +133,11 @@ def preparation_schedule(request, preparation_id):
     
     # Получаем работы с расписаниями
     work_items = preparation.work_items.all().prefetch_related(
-        'schedule', 'schedule__planned_performer', 'work', 'work__stage'
+        'schedule',
+        'schedule__planned_performer',
+        'work',
+        'work__stage',
+        'work_order_items__work_order',
     )
     
     # Получаем доступные ресурсы
@@ -190,6 +194,11 @@ def preparation_schedule(request, preparation_id):
     # Группируем работы подготовки по этапам для удобного отображения
     preparation_works_by_stage = {}
     for work_item in work_items:
+        # активный заказ-наряд, в который уже выдана эта работа (чтобы не дублировать)
+        work_item.active_work_order = work_item.work_order_items.filter(
+            work_order__status__in=['scheduled', 'in_progress'],
+        ).select_related('work_order').order_by('-work_order__id').first()
+
         stage_name = work_item.work.stage.name if work_item.work and work_item.work.stage else 'Без этапа'
         if stage_name not in preparation_works_by_stage:
             preparation_works_by_stage[stage_name] = []
@@ -882,6 +891,14 @@ def work_order_create(request, preparation_id):
                             'status': 'pending',
                         },
                     )
+
+                    # Не даём выдать одну и ту же работу в несколько активных ЗН
+                    already_in_active = prep_item.work_order_items.filter(
+                        work_order__status__in=['scheduled', 'in_progress'],
+                    ).exists()
+                    if already_in_active:
+                        continue
+
                     WorkOrderItem.objects.create(
                         work_order=work_order,
                         work=work,
