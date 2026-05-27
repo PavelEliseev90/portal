@@ -221,8 +221,7 @@ class CarPreparationCreateSerializer(serializers.ModelSerializer):
         if template_id:
             try:
                 template = CarPreparationTemplate.objects.get(id=template_id)
-                # Здесь можно добавить логику применения шаблона
-                # создание work_items на основе шаблона
+                template.apply_to_preparation(preparation)
             except CarPreparationTemplate.DoesNotExist:
                 pass
         

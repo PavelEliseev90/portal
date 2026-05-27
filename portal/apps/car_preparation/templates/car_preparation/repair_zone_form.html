@@ -68,6 +68,19 @@
             <label for="description">Описание</label>
           </div>
         </div>
+
+        <div class="col-12">
+          <label class="form-label">Сотрудники рабочего стола (видят ЗН этой зоны)</label>
+          <select class="form-select" name="assigned_staff" id="assigned_staff" multiple size="8">
+            {% for s in all_staff %}
+            <option value="{{ s.id }}"
+              {% if assigned_staff_ids and s.id in assigned_staff_ids %}selected{% endif %}>
+              {{ s.name }}{% if s.post %} — {{ s.post }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <small class="text-muted">Удерживайте Ctrl для выбора нескольких. Если пусто — зона видна всем сотрудникам подразделения.</small>
+        </div>
       </div>
       
       <div class="mt-4 d-flex gap-2">

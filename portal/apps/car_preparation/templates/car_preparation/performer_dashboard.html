@@ -1,280 +1,235 @@
 {% extends 'base_web.html' %}
 {% load static %}
 
-{% block title %} - Мои работы - Панель исполнителя {% endblock %}
-{% block title_navbar %} - Мои работы {% endblock %}
+{% block title %} - Рабочий стол {% endblock %}
+{% block title_navbar %} - Рабочий стол {% endblock %}
 
 {% block content %}
-<div class="portal-page">
-  <div class="portal-header">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-      <h2>Мои работы</h2>
-      <div class="d-flex gap-2 align-items-center">
-        <span class="text-muted">Исполнитель: <strong>{{ staff.name }}</strong></span>
-        <a href="{% url 'car_preparation:list' %}" class="btn btn-outline-secondary">
-          <span class="icon-mbri-list"></span> Все подготовки
-        </a>
-      </div>
-    </div>
-  </div>
+<style>
+.workbench-page { background: #f4f7fb; min-height: 100vh; padding: 1rem 0; }
+.wo-card { background: #fff; border-radius: 1rem; border: 1px solid rgba(0,42,90,.1); margin-bottom: 1rem; overflow: hidden; }
+.wo-card-header { background: linear-gradient(135deg, #002a5a, #00509d); color: #fff; padding: .85rem 1rem; }
+.wo-item { border-top: 1px solid #e9ecef; padding: 1rem; }
+.wo-item.in_progress { background: #fffbeb; }
+.wo-item.completed { background: #f0fdf4; }
+.photo-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: .5rem; cursor: pointer; margin: 2px; }
+.photo-drop { border: 2px dashed #00509d; border-radius: .5rem; padding: .75rem; text-align: center; cursor: pointer; background: #f8f9fa; }
+.zone-title { font-size: 1.1rem; font-weight: 600; color: #002a5a; margin: 1.25rem 0 .75rem; padding-bottom: .35rem; border-bottom: 2px solid #00509d; }
+</style>
 
-  {% if error %}
-  <div class="alert alert-danger" role="alert">
-    {{ error }}
-  </div>
-  {% else %}
+<div class="workbench-page">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="mb-1">Рабочий стол</h2>
+        {% if staff %}
+        <p class="text-muted mb-0">{{ staff.name }}{% if staff.post %} · {{ staff.post }}{% endif %}</p>
+        {% endif %}
+      </div>
+      <a href="{% url 'car_preparation:dashboard' %}" class="btn btn-outline-secondary btn-sm">Управление подготовкой</a>
+    </div>
 
-  <!-- Статистика -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-2">
-      <div class="metric-card">
-        <div class="metric-card-label">Всего</div>
-        <div class="metric-card-value">{{ total_count }}</div>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <div class="metric-card">
-        <div class="metric-card-label">Ожидают</div>
-        <div class="metric-card-value">{{ pending_count }}</div>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <div class="metric-card">
-        <div class="metric-card-label">В работе</div>
-        <div class="metric-card-value">{{ in_progress_count }}</div>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <div class="metric-card">
-        <div class="metric-card-label">Выполнено</div>
-        <div class="metric-card-value">{{ completed_count }}</div>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <div class="metric-card">
-        <div class="metric-card-label">Просрочено</div>
-        <div class="metric-card-value">{{ overdue_count }}</div>
-      </div>
-    </div>
-  </div>
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% else %}
 
-  <!-- Фильтры -->
-  <div class="portal-panel portal-filter">
-    <form method="get" action="">
-      <div class="row g-3">
+    {% if not repair_zones %}
+    <div class="alert alert-warning">
+      <strong>Нет доступных ремзон.</strong>
+      Администратор должен назначить вас в карточке ремонтной зоны
+      (<a href="{% url 'car_preparation:repair_zones_list' %}">ремонтные зоны</a>)
+      или привязать вас к подразделению.
+    </div>
+    {% else %}
+
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3"><div class="card p-2 text-center"><small class="text-muted">Ремзон</small><strong>{{ zones_count }}</strong></div></div>
+      <div class="col-6 col-md-3"><div class="card p-2 text-center"><small class="text-muted">Заказ-нарядов</small><strong>{{ orders_count }}</strong></div></div>
+      <div class="col-4 col-md-2"><div class="card p-2 text-center"><small class="text-muted">Ожидают</small><strong class="text-secondary">{{ pending_items }}</strong></div></div>
+      <div class="col-4 col-md-2"><div class="card p-2 text-center"><small class="text-muted">В работе</small><strong class="text-warning">{{ in_progress_items }}</strong></div></div>
+      <div class="col-4 col-md-2"><div class="card p-2 text-center"><small class="text-muted">Готово</small><strong class="text-success">{{ completed_items }}</strong></div></div>
+    </div>
+
+    <div class="card mb-3 p-3">
+      <form method="get" class="row g-2 align-items-end">
         <div class="col-md-4">
-          <div class="form-floating">
-            <select class="form-select" id="status" name="status">
-              <option value="">Все статусы</option>
-              <option value="pending" {% if status_filter == "pending" %}selected{% endif %}>Ожидают</option>
-              <option value="in_progress" {% if status_filter == "in_progress" %}selected{% endif %}>В работе</option>
-              <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Выполнено</option>
-            </select>
-            <label for="status">Статус</label>
-          </div>
+          <label class="form-label small mb-0">Ремзона</label>
+          <select name="zone_id" class="form-select form-select-sm">
+            <option value="">Все мои зоны</option>
+            {% for z in repair_zones %}
+            <option value="{{ z.id }}" {% if zone_filter == z.id|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div class="col-md-4">
-          <div class="form-floating">
-            <input type="date" class="form-control" id="date" name="date" value="{{ date_filter }}">
-            <label for="date">Дата</label>
-          </div>
+          <label class="form-label small mb-0">Статус ЗН</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="active" {% if status_filter == "active" %}selected{% endif %}>Активные</option>
+            <option value="today" {% if status_filter == "today" %}selected{% endif %}>На сегодня</option>
+            <option value="scheduled" {% if status_filter == "scheduled" %}selected{% endif %}>Запланированы</option>
+            <option value="in_progress" {% if status_filter == "in_progress" %}selected{% endif %}>В работе</option>
+            <option value="completed" {% if status_filter == "completed" %}selected{% endif %}>Выполнены</option>
+            <option value="" {% if not status_filter %}selected{% endif %}>Все</option>
+          </select>
         </div>
         <div class="col-md-4">
-          <button type="submit" class="btn btn-outline-success w-100 h-100">
-            <span class="icon-mbri-search"></span> Применить
-          </button>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Показать</button>
         </div>
-      </div>
-    </form>
-  </div>
+      </form>
+    </div>
 
-  <!-- Список работ -->
-  {% if work_items %}
-  <div class="row g-3">
-    {% for work_item in work_items %}
-    <div class="col-md-6 col-lg-4">
-      <div class="portal-panel {% if work_item.status == 'overdue' %}border-danger{% elif work_item.status == 'in_progress' %}border-primary{% elif work_item.status == 'completed' %}border-success{% endif %}" id="work-card-{{ work_item.id }}">
-        <div class="d-flex justify-content-between align-items-start mb-3">
+    {% regroup work_orders by repair_zone as zone_groups %}
+    {% if zone_groups %}
+      {% for group in zone_groups %}
+      <div class="zone-title">{{ group.grouper.name }}</div>
+      {% for wo in group.list %}
+      <div class="wo-card" id="wo-{{ wo.id }}">
+        <div class="wo-card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div>
-            <h6 class="mb-1">{{ work_item.work.name }}</h6>
-            <small class="text-muted">{{ work_item.work.stage.name|default:"Без этапа" }}</small>
+            <strong>{{ wo.number }}</strong> — {{ wo.title }}
+            <div class="small opacity-75 mt-1">
+              {{ wo.car.name|default:wo.car.vin }}
+              {% if wo.car.vin %} · VIN {{ wo.car.vin }}{% endif %}
+            </div>
           </div>
-          <span class="badge 
-            {% if work_item.status == 'pending' %}bg-secondary
-            {% elif work_item.status == 'in_progress' %}bg-primary
-            {% elif work_item.status == 'completed' %}bg-success
-            {% else %}bg-secondary{% endif %}">
-            {% if work_item.status == 'pending' %}Ожидает выполнения
-            {% elif work_item.status == 'in_progress' %}В работе
-            {% elif work_item.status == 'completed' %}Выполнено
-            {% else %}{{ work_item.get_status_display }}{% endif %}
+          <span class="badge {% if wo.status == 'completed' %}bg-success{% elif wo.status == 'in_progress' %}bg-warning text-dark{% else %}bg-light text-dark{% endif %}">
+            {{ wo.get_status_display }}
           </span>
         </div>
-
-        <div class="bg-light p-2 rounded mb-3">
-          <small>
-            <strong>Автомобиль:</strong> {{ work_item.preparation.car.name|default:"-" }}<br>
-            <strong>VIN:</strong> <code>{{ work_item.preparation.car.vin|default:"-" }}</code><br>
-            {% if work_item.preparation.unit %}
-            <strong>Подразделение:</strong> {{ work_item.preparation.unit.name }}
-            {% endif %}
-          </small>
+        {% if wo.planned_start %}
+        <div class="px-3 py-2 small text-muted border-bottom">
+          План: {{ wo.planned_start|date:"d.m.Y H:i" }}{% if wo.planned_end %} — {{ wo.planned_end|date:"H:i" }}{% endif %}
         </div>
-
-        <div class="mb-3">
-          <small class="text-muted">
-            <div class="d-flex justify-content-between mb-1">
-              <span>Планируемое начало:</span>
-              <span>{% if work_item.schedule.planned_start %}{{ work_item.schedule.planned_start|date:"d.m.Y H:i" }}{% else %}-{% endif %}</span>
+        {% endif %}
+        {% for item in wo.items.all %}
+        <div class="wo-item {{ item.status }}" id="wo-item-{{ item.id }}" data-photo-count="{{ item.photos.count }}">
+          <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+            <div>
+              <strong>{{ item.work.name }}</strong>
+              {% if item.work.stage %}<span class="badge bg-info ms-1">{{ item.work.stage.name }}</span>{% endif %}
             </div>
-            <div class="d-flex justify-content-between mb-1">
-              <span>Планируемое окончание:</span>
-              <span>{% if work_item.schedule.planned_end %}{{ work_item.schedule.planned_end|date:"d.m.Y H:i" }}{% else %}-{% endif %}</span>
-            </div>
-            {% if work_item.date_start %}
-            <div class="d-flex justify-content-between mb-1">
-              <span>Фактическое начало:</span>
-              <span>{{ work_item.date_start|date:"d.m.Y H:i" }}</span>
-            </div>
-            {% endif %}
-            {% if work_item.date_end %}
-            <div class="d-flex justify-content-between mb-1">
-              <span>Фактическое окончание:</span>
-              <span>{{ work_item.date_end|date:"d.m.Y H:i" }}</span>
-            </div>
-            {% endif %}
-            {% if work_item.planned_time %}
-            <div class="d-flex justify-content-between mb-1">
-              <span>Планируемая длительность:</span>
-              <span>{{ work_item.planned_time }} мин</span>
-            </div>
-            {% endif %}
-            {% if work_item.actual_time %}
-            <div class="d-flex justify-content-between mb-1">
-              <span>Фактическая длительность:</span>
-              <span>{{ work_item.actual_time }} мин</span>
-            </div>
-            {% endif %}
-          </small>
-        </div>
-
-        {% if work_item.schedule.planned_end and work_item.status != 'completed' %}
-          {% if work_item.schedule.planned_end < now %}
-          <div class="alert alert-danger py-2 mb-3">
-            <small><strong>⚠ Просрочено!</strong></small>
+            <span class="badge {% if item.status == 'completed' %}bg-success{% elif item.status == 'in_progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ item.get_status_display }}
+            </span>
           </div>
-          {% endif %}
-        {% endif %}
 
-        <div class="d-grid gap-2">
-          {% if work_item.status == 'pending' %}
-          <button class="btn btn-outline-primary" onclick="startWork({{ work_item.id }})">
-            <span class="icon-mbri-play"></span> Начать работу
-          </button>
-          {% elif work_item.status == 'in_progress' %}
-          <button class="btn btn-outline-success" onclick="completeWork({{ work_item.id }})">
-            <span class="icon-mbri-check"></span> Завершить работу
-          </button>
-          {% elif work_item.status == 'completed' %}
-          <div class="text-center text-success fw-bold">
-            ✓ Работа завершена
+          <div class="row g-2 small mb-2">
+            <div class="col-6">
+              <span class="text-muted">Начало:</span>
+              <strong id="start-{{ item.id }}">{% if item.actual_start %}{{ item.actual_start|date:"d.m.Y H:i" }}{% else %}—{% endif %}</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted">Окончание:</span>
+              <strong id="end-{{ item.id }}">{% if item.actual_end %}{{ item.actual_end|date:"d.m.Y H:i" }}{% else %}—{% endif %}</strong>
+            </div>
           </div>
-          {% endif %}
-        </div>
 
-        {% if work_item.quality %}
-        <div class="mt-2">
-          <small class="text-muted">Качество: {{ work_item.get_quality_display }}</small>
-        </div>
-        {% endif %}
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            {% if item.status == 'pending' %}
+            <button type="button" class="btn btn-sm btn-success" onclick="startWoItem({{ item.id }})">Начать</button>
+            {% elif item.status == 'in_progress' %}
+            <button type="button" class="btn btn-sm btn-primary" onclick="completeWoItem({{ item.id }})">Завершить</button>
+            {% else %}
+            <span class="text-success small">✓ Выполнено</span>
+            {% endif %}
+          </div>
 
-        {% if work_item.comment %}
-        <div class="mt-2 pt-2 border-top">
-          <small><strong>Комментарий:</strong> {{ work_item.comment }}</small>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Фото выполнения</label>
+            <div class="photo-drop" onclick="document.getElementById('photo-{{ item.id }}').click()">
+              <span class="icon-mbri-camera"></span> Добавить фото
+            </div>
+            <input type="file" id="photo-{{ item.id }}" accept="image/*" capture="environment" class="d-none"
+                   onchange="uploadWoPhoto({{ item.id }}, this)">
+            <div class="d-flex flex-wrap mt-2" id="photos-{{ item.id }}">
+              {% for photo in item.photos.all %}
+              <img src="{{ photo.photo.url }}" class="photo-thumb" alt="" onclick="window.open('{{ photo.photo.url }}')">
+              {% endfor %}
+            </div>
+          </div>
         </div>
-        {% endif %}
+        {% empty %}
+        <div class="p-3 text-muted small">Нет работ в заказ-наряде</div>
+        {% endfor %}
       </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="portal-panel">
-    <div class="text-center py-5">
-      <h3>Нет работ для отображения</h3>
-      <p class="text-muted">У вас нет назначенных работ по выбранным фильтрам</p>
-    </div>
-  </div>
-  {% endif %}
+      {% endfor %}
+      {% endfor %}
+    {% else %}
+    <div class="alert alert-info">Нет заказ-нарядов по выбранным фильтрам.</div>
+    {% endif %}
 
-  {% endif %}
+    {% endif %}
+    {% endif %}
+  </div>
 </div>
 
 <script>
-  function startWork(workItemId) {
-    if (confirm('Начать выполнение работы?')) {
-      fetch(`/api/car_preparation/work_items/${workItemId}/start/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken')
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          window.location.reload();
-        } else {
-          alert('Ошибка: ' + (data.message || 'Не удалось начать работу'));
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при запуске работы');
-      });
-    }
-  }
+const csrfToken = '{{ csrf_token }}';
 
-  function completeWork(workItemId) {
-    const comment = prompt('Введите комментарий к выполненной работе (необязательно):');
-    
-    fetch(`/api/car_preparation/work_items/${workItemId}/complete/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        quality: 'excellent',
-        comment: comment || ''
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        window.location.reload();
-      } else {
-        alert('Ошибка: ' + (data.message || 'Не удалось завершить работу'));
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Произошла ошибка при завершении работы');
-    });
-  }
-
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
+function startWoItem(itemId) {
+  if (!confirm('Зафиксировать время начала работы?')) return;
+  fetch(`{% url 'car_preparation:work_order_item_start' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Ошибка');
     }
-    return cookieValue;
+  });
+}
+
+function completeWoItem(itemId) {
+  const row = document.getElementById('wo-item-' + itemId);
+  const photoCount = parseInt(row.dataset.photoCount || '0', 10);
+  const gallery = document.getElementById('photos-' + itemId);
+  const hasPhotos = photoCount > 0 || (gallery && gallery.querySelectorAll('img').length > 0);
+  if (!hasPhotos && !confirm('Нет фото. Всё равно завершить работу?')) {
+    return;
   }
+  if (!confirm('Зафиксировать время окончания?')) return;
+  fetch(`{% url 'car_preparation:work_order_item_complete' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Ошибка');
+    }
+  });
+}
+
+function uploadWoPhoto(itemId, input) {
+  if (!input.files || !input.files[0]) return;
+  const fd = new FormData();
+  fd.append('photo', input.files[0]);
+  fetch(`{% url 'car_preparation:work_order_item_photo_upload' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success && data.photo && data.photo.url) {
+      const gal = document.getElementById('photos-' + itemId);
+      const img = document.createElement('img');
+      img.src = data.photo.url;
+      img.className = 'photo-thumb';
+      img.onclick = () => window.open(data.photo.url);
+      gal.appendChild(img);
+      const row = document.getElementById('wo-item-' + itemId);
+      row.dataset.photoCount = String(parseInt(row.dataset.photoCount || '0', 10) + 1);
+      input.value = '';
+    } else {
+      alert(data.error || 'Ошибка загрузки');
+    }
+  });
+}
 </script>
 {% endblock %}
