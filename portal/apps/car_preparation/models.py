@@ -8,6 +8,7 @@ from refs.models import RefUnit, RefStaff, RefCarsOrganization, RefStatusCarsOrg
 from changelog.mixins import ChangeloggableMixin
 from django.db.models.signals import post_delete, post_save
 from changelog.signals import journal_save_handler, journal_delete_handler
+from django.db import IntegrityError, transaction
 
 
 # ===========================================
@@ -972,22 +973,38 @@ class WorkOrder(models.Model):
         if not self.number:
             from django.utils import timezone
             date_str = timezone.now().strftime('%Y%m%d')
-            last_order = WorkOrder.objects.filter(number__startswith=date_str).order_by('-id').first()
-            if last_order:
+            prefix = f"ЗН-{date_str}-"
+            last_order = WorkOrder.objects.filter(number__startswith=prefix).order_by('-id').first()
+            if last_order and last_order.number and last_order.number.startswith(prefix):
                 try:
-                    last_num = int(last_order.number[-4:])
+                    last_num = int(last_order.number.replace(prefix, '')[-4:])
                     new_num = last_num + 1
-                except:
+                except Exception:
                     new_num = 1
             else:
                 new_num = 1
-            self.number = f"ЗН-{date_str}-{new_num:04d}"
+            self.number = f"{prefix}{new_num:04d}"
         return self.number
     
     def save(self, *args, **kwargs):
-        if not self.number:
+        if self.number:
+            return super().save(*args, **kwargs)
+
+        # Защита от коллизий уникального номера при одновременном создании.
+        # Повторяем генерацию номера до успешного сохранения.
+        for _ in range(10):
             self.generate_number()
-        super().save(*args, **kwargs)
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                # Сброс номера и повторная попытка
+                self.number = ''
+                continue
+
+        # Последняя попытка (пусть выбросит ошибку, если что-то совсем не так)
+        self.generate_number()
+        return super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.number or 'Черновик'} - {self.car}"

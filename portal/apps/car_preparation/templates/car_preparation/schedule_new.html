@@ -761,6 +761,11 @@
                       <span class="badge {% if work_item.is_confirmed %}bg-info{% else %}bg-secondary{% endif %}" id="confirm-badge-{{ work_item.id }}">
                         {% if work_item.is_confirmed %}Подтверждена{% else %}Не подтверждена{% endif %}
                       </span>
+                      {% if work_item.active_work_order %}
+                      <span class="badge bg-primary">
+                        Уже в ЗН: {{ work_item.active_work_order.work_order.number }}
+                      </span>
+                      {% endif %}
                     </div>
                     {% if work_item.comment %}
                     <div class="small text-muted mb-1">{{ work_item.comment }}</div>
@@ -784,17 +789,24 @@
                     </div>
                   </div>
                   <div class="d-flex flex-wrap gap-1 align-items-start">
-                    {% if work_item.is_confirmed %}
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleWorkConfirm({{ work_item.id }}, false)" title="Снять подтверждение">
-                      Отменить подтверждение
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPreparationWorkToCart({{ work_item.work.id }}, '{{ work_item.work.name|escapejs }}', true)">
-                      <span class="icon-mbri-plus"></span> В корзину ЗН
-                    </button>
+                    {% if work_item.active_work_order %}
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="{% url 'car_preparation:work_order_detail' work_item.active_work_order.work_order.id %}">
+                        Открыть ЗН
+                      </a>
                     {% else %}
-                    <button type="button" class="btn btn-sm btn-success" onclick="toggleWorkConfirm({{ work_item.id }}, true)">
-                      <span class="icon-mbri-success"></span> Подтвердить
-                    </button>
+                      {% if work_item.is_confirmed %}
+                      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleWorkConfirm({{ work_item.id }}, false)" title="Снять подтверждение">
+                        Отменить подтверждение
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPreparationWorkToCart({{ work_item.work.id }}, '{{ work_item.work.name|escapejs }}', true)">
+                        <span class="icon-mbri-plus"></span> В корзину ЗН
+                      </button>
+                      {% else %}
+                      <button type="button" class="btn btn-sm btn-success" onclick="toggleWorkConfirm({{ work_item.id }}, true)">
+                        <span class="icon-mbri-success"></span> Подтвердить
+                      </button>
+                      {% endif %}
                     {% endif %}
                   </div>
                 </div>
