@@ -3787,6 +3787,143 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         verbose_name = "Данные интерактивной оценки рабочего листа"
         verbose_name_plural = "данные интерактивных оценок рабочего листа"
 
+#Страница приемка второго комплекта колес
+class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):
+    rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
+    estimation          = models.ForeignKey(RegInteractivOcenka, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Оценка")
+    date                = models.DateTimeField('Дата начала', blank=True, null=True)
+    
+    mark_tyre           = models.ForeignKey(RefMarkTyres, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Марка резины 2")
+    model_tyre          = models.CharField('Модель резины 2', max_length=250, default='', null=True, blank=True)
+    width_tyre          = models.ForeignKey(RefWidthTyres, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Ширина резины 2")
+    profil_tyre         = models.ForeignKey(RefProfileTyres, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Профиль резины 2")
+    radius              = models.ForeignKey(RefRadius, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Радиус колес 2")
+    sezon               = models.ForeignKey(RefSezonTyres, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Сезон колес 2")
+    disk_type           = models.ForeignKey(RefTypeDisk, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Тип диска 2")
+    model_disk          = models.CharField('Модель дисков 2', max_length=250, default='', null=True, blank=True)
+    et_disk             = models.ForeignKey(RefEtDisk, on_delete=models.PROTECT, null=True, blank=True, verbose_name="ET дисков 2")
+    dia_disk            = models.ForeignKey(RefDiaDisk, on_delete=models.PROTECT, null=True, blank=True, verbose_name="DIA дисков 2")
+    psd_disk            = models.ForeignKey(RefPsdDisk, on_delete=models.PROTECT, null=True, blank=True, verbose_name="PSD дисков 2")
+    count_disk          = models.IntegerField('Количество дисков 2', default=0, null=True, blank=True)
+    count_tyre          = models.IntegerField('Количество резины 2', default=0, null=True, blank=True)
+    kolesa_estimation   = models.IntegerField('Количество дисков 2', default=10, null=False, blank=False)
+    send_wheels_ib      = models.BooleanField("Отправлена информация в базу бу колес", default = False, null=True, blank=True)
+    user                = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
+
+    def __str__(self):
+        return "{} / {}".format(self.date, self.rlk)
+
+    class Meta:
+        db_table = 'regInteractivOcenkaKolesaRegInteractivOcenkaKolesa'
+        verbose_name = "Прием второго комплекта колес"
+        verbose_name_plural = "Приемка второго комплекта колес"
+post_save.connect(journal_save_handler, sender=RegInteractivOcenkaKolesaReception)
+post_delete.connect(journal_delete_handler, sender=RegInteractivOcenkaKolesaReception)
+
+class RegRegInteractivOcenkaFilesKolesaReception(models.Model):
+    kolesa_reception  = models.ForeignKey(RegInteractivOcenkaKolesaReception, on_delete=models.PROTECT, null=True, verbose_name="Приемка колес")
+    name        = models.CharField("Наименование", max_length=512, default='', blank=True)
+    type_file   = models.CharField("Принадлежность файлов", max_length=512, default='', blank=True)
+    file        = models.FileField(storage=save_directory,  upload_to="estimation_wheels/%Y/%m/%d/", verbose_name="Файл", blank=True, null=True)
+    file_mini   = models.FileField(storage=save_directory,  upload_to="estimation_wheels/%Y/%m/%d/", verbose_name="Файл сжатый", blank=True, null=True) 
+    comment     = models.CharField("Комментарий", max_length=512, default='', blank=True)
+    file_number = models.IntegerField('Порядок', default=0, null=True, blank=True) 
+    text        = models.CharField("Текст", max_length=512, default='', blank=True)
+    type_point  = models.CharField("Тип метки", max_length=512, default='', blank=True)
+    cor_x       = models.IntegerField('Координата X', default=0, null=True, blank=True) 
+    cor_y       = models.IntegerField('Координата Y', default=0, null=True, blank=True) 
+    kraska      = models.IntegerField('Показание толщиномера', default=0, null=True, blank=True) 
+    order       = models.IntegerField('Приоритет', default=0, null=True, blank=True) 
+    blank       = models.BooleanField("Пустой", default = False, null=True, blank=True)
+    date        = models.DateTimeField('Дата', blank=True, null=True)
+    user        = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
+
+    def get_absolute_url(self):
+        try:
+            return self.file.url.replace('/media/', '/media_dop/')
+        except:
+            if self.kraska > 0:
+                return '/media_dop/static/estimation/pribor.jpg'
+
+        return '/media_dop/static/estimation/no_foto.jpg'
+
+    def get_thumbnail_url(self):
+        """URL миниатюры (400×300), если есть; иначе — оригинал."""
+        try:
+            if self.file_mini and self.file_mini.name:
+                return self.file_mini.url.replace('/media/', '/media_dop/')
+        except Exception:
+            pass
+        return self.get_absolute_url()
+    
+    def is_video(self):
+        list_world_name = self.file.name.lower().split('.')
+        format = list_world_name[-1]
+        if format.find('jpg') > -1 or format.find('jpeg') > -1 or format.find('svg') > -1 or format.find('gif') > -1 or format.find('png') > -1 or format.find('tiff') > -1:
+            return False
+        return True
+
+    def _generate_thumbnail(self):
+        """Генерирует миниатюру 400×300 (fit по длинной стороне), сохраняет в file_mini."""
+        import os
+        if not self.file or not self.file.name:
+            return
+        if self.is_video():
+            return
+        try:
+            from PIL import Image
+            from django.core.files.base import ContentFile
+            path = getattr(self.file, 'path', None)
+            if path and os.path.isfile(path):
+                img = Image.open(path)
+            else:
+                self.file.open('rb')
+                img = Image.open(io.BytesIO(self.file.read()))
+                self.file.close()
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                if img.mode == 'RGBA' and len(img.split()) >= 4:
+                    background.paste(img, mask=img.split()[3])
+                else:
+                    background.paste(img)
+                img = background
+            elif img.mode not in ('RGB', 'L'):
+                img = img.convert('RGB')
+            img.thumbnail((400, 300), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            base, ext = os.path.splitext(self.file.name)
+            thumb_name = base + '_mini.jpg'
+            img.save(buf, format='JPEG', quality=85, optimize=True)
+            buf.seek(0)
+            self.file_mini.save(thumb_name, ContentFile(buf.read()), save=False)
+            super(RegRegInteractivOcenkaFiles, self).save(update_fields=['file_mini'])
+        except Exception:
+            pass
+
+    def save(self, *args, **kwargs):
+        try:
+            if self.date == None:
+                self.date = datetime.now()
+
+        except:
+            self.order = 0
+
+        super().save(*args, **kwargs)
+        
+
+    def __str__(self):
+        return "{}".format(self.kolesa_reception)
+
+    class Meta:
+        db_table = 'regRegInteractivOcenkaFilesKolesaReception'
+        verbose_name = "Фото интерактивной оценки - приемка второго комплекта"
+        verbose_name_plural = "Фото интерактивной оценки - приемка второго комплекта"
+
+
+
+
 #Страница История ценнообразования
 class RegInteractivOcenkaPrice(models.Model):
     date                = models.DateTimeField('Дата', blank=True, null=True)
