@@ -96,4 +96,7 @@ urlpatterns = [
     # Настройки цен/км по маркам
     path('prices_car/',         include('prices_car.urls')),
 
+    # Расчётные данные кумулятива (БУ)
+    path('prices_car_bu/',      include('prices_car_bu.urls')),
+
 ]

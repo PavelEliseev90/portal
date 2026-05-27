@@ -1,0 +1,92 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Кумулятив #{{ item.id }} {% endblock %}
+{% block title_navbar %} — Кумулятив {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h2>Расчётные данные кумулятива</h2>
+      <p class="text-muted mb-0">
+        {% if agreement %}Соглашение №{{ agreement.nomer }} от {{ agreement.dataTime|date:"d.m.Y H:i" }}{% else %}Без соглашения{% endif %}
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'prices_car_bu:cumulative_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+      {% if agreement %}
+      <a href="/docs_car_agreement/{{ agreement.id }}/" class="btn btn-outline-primary btn-sm" target="_blank">Соглашение в портале</a>
+      {% endif %}
+      <form method="post" action="{% url 'prices_car_bu:cumulative_delete' item.id %}" class="d-inline"
+            onsubmit="return confirm('Удалить эту запись кумулятива?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+      </form>
+    </div>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="portal-panel">
+        <h5 class="mb-3">Запись кумулятива</h5>
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th class="text-muted" style="width:40%">ID</th><td>{{ item.id }}</td></tr>
+            <tr><th class="text-muted">Показатель</th><td>{{ item.indicatorKVP.name|default:"—" }}</td></tr>
+            <tr><th class="text-muted">Сумма</th><td class="fw-bold">{{ item.amount|floatformat:2 }}</td></tr>
+            <tr><th class="text-muted">Автор</th><td>{{ item.author|default:"—" }}</td></tr>
+            <tr><th class="text-muted">Комментарий</th><td>{{ item.comment|default:"—" }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {% if same_agreement_items.count > 1 %}
+      <div class="portal-panel mt-3">
+        <h6 class="mb-2">Все показатели по этому соглашению</h6>
+        <ul class="list-group list-group-flush">
+          {% for o in same_agreement_items %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0 {% if o.id == item.id %}fw-bold{% endif %}">
+            <span>{{ o.indicatorKVP.name|default:"—" }}</span>
+            <span>
+              {{ o.amount|floatformat:2 }}
+              {% if o.id != item.id %}
+              <a href="{% url 'prices_car_bu:cumulative_detail' o.id %}" class="btn btn-link btn-sm p-0 ms-1">открыть</a>
+              {% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-8">
+      <div class="portal-panel">
+        <h5 class="mb-3">Данные соглашения</h5>
+        {% if agreement %}
+        <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+          <table class="table table-sm table-striped mb-0">
+            <tbody>
+              {% for row in agreement_rows %}
+              <tr>
+                <th class="text-muted" style="width: 38%;">{{ row.label }}</th>
+                <td>{{ row.value }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Соглашение не привязано.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
