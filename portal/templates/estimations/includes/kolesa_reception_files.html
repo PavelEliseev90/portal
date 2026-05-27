@@ -1,0 +1,126 @@
+{% comment %}
+  Файлы приёмки 2-го комплекта колёс.
+  Ожидает: params.reception, params.files
+{% endcomment %}
+
+{% if messages %}
+	{% for message in messages %}
+		<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+			{{ message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
+	{% endfor %}
+{% endif %}
+
+<div class="portal-panel">
+	<h6 class="mb-3 padding-portal">
+		<span class="icon-mbri-photo me-2"></span>Фото приёмки
+		<span class="text-muted fw-normal ms-1">— {{ params.files|length }}</span>
+	</h6>
+
+	<div class="portal-panel mb-4" style="background: #f8f9fa; border: 2px dashed #dee2e6;">
+		<form method="post" enctype="multipart/form-data" id="kolesaUploadForm">
+			{% csrf_token %}
+			<input type="hidden" name="action" value="upload">
+			<div class="text-center py-4">
+				<div class="mb-3">
+					<span class="icon-mbri-upload" style="font-size: 3rem; color: #8ea1ba;"></span>
+				</div>
+				<h5 class="mb-3">Загрузить фото</h5>
+				<div class="mb-3">
+					<input type="file" class="form-control" id="kolesaPhotosInput" name="photos" multiple accept="image/*" style="display: none;">
+					<label for="kolesaPhotosInput" class="btn btn-primary btn-lg">
+						<span class="icon-mbri-photo me-2"></span>Выбрать файлы
+					</label>
+				</div>
+				<div id="kolesaSelectedFiles" class="text-muted small"></div>
+				<div class="mt-3">
+					<button type="submit" class="btn btn-success" id="kolesaUploadBtn" style="display: none;">
+						<span class="icon-mbri-upload me-2"></span>Загрузить
+					</button>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="row g-3">
+		{% for photo in params.files %}
+			<div class="col-6 col-md-4 col-lg-3">
+				<div class="kolesa-photo-card">
+					<div class="kolesa-photo-card-image-wrapper">
+						<a href="{{ photo.get_absolute_url }}" target="_blank" rel="noopener">
+							<img src="{{ photo.get_thumbnail_url }}" alt="{{ photo.name|default:'Фото' }}" class="kolesa-photo-card-image" loading="lazy">
+						</a>
+						<div class="kolesa-photo-card-overlay">
+							<form method="post" class="d-inline" onsubmit="return confirm('Удалить файл?');">
+								{% csrf_token %}
+								<input type="hidden" name="action" value="delete">
+								<input type="hidden" name="photo_id" value="{{ photo.id }}">
+								<button type="submit" class="btn btn-sm btn-danger" title="Удалить">
+									<span class="icon-mbri-trash"></span>
+								</button>
+							</form>
+						</div>
+					</div>
+					<div class="p-2">
+						<small class="text-muted d-block">{{ photo.name|truncatewords:6|default:"Фото" }}</small>
+						<small class="text-muted">{% if photo.date %}{{ photo.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+					</div>
+				</div>
+			</div>
+		{% empty %}
+			<div class="col-12 text-center py-5 text-muted">
+				<span class="icon-mbri-photo" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem;"></span>
+				<p class="mb-0">Нет прикреплённых файлов</p>
+			</div>
+		{% endfor %}
+	</div>
+</div>
+
+<style>
+.kolesa-photo-card {
+	background: #fff;
+	border-radius: 0.75rem;
+	border: 2px solid rgba(0, 42, 90, 0.1);
+	overflow: hidden;
+}
+.kolesa-photo-card-image-wrapper {
+	position: relative;
+	aspect-ratio: 4/3;
+	background: #f0f2f5;
+}
+.kolesa-photo-card-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+.kolesa-photo-card-overlay {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+.kolesa-photo-card:hover .kolesa-photo-card-overlay {
+	opacity: 1;
+}
+</style>
+
+<script>
+(function() {
+	var input = document.getElementById('kolesaPhotosInput');
+	var hint = document.getElementById('kolesaSelectedFiles');
+	var btn = document.getElementById('kolesaUploadBtn');
+	if (!input) return;
+	input.addEventListener('change', function() {
+		if (input.files.length > 0) {
+			hint.textContent = 'Выбрано файлов: ' + input.files.length;
+			btn.style.display = 'inline-block';
+		} else {
+			hint.textContent = '';
+			btn.style.display = 'none';
+		}
+	});
+})();
+</script>

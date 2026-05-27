@@ -1,0 +1,144 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Приёмка 2-го комплекта колёс {% endblock %}
+{% block title_navbar %} — Приёмка 2-го комплекта колёс {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header">
+		<h2>Приёмка второго комплекта колёс</h2>
+		<p class="text-muted mb-0">Оценки Trade-in: статус, 2КК и приёмка на складе</p>
+	</div>
+
+	<div class="portal-panel mb-3">
+		<form method="get" class="row g-3 align-items-end">
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Дата с</label>
+				<input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Дата по</label>
+				<input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+			</div>
+			<div class="col-12 col-md-6 col-lg-3">
+				<label class="form-label small text-muted mb-1">Подразделение</label>
+				<select class="form-select" name="unit">
+					<option value="">Все</option>
+					{% for unit in params.units %}
+						<option value="{{ unit.id }}" {% if params.filters.unit == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Статус оценки</label>
+				<select class="form-select" name="status">
+					<option value="">Все</option>
+					{% for st in params.statuses %}
+						<option value="{{ st.id }}" {% if params.filters.status == st.id|stringformat:"s" %}selected{% endif %}>{{ st.name }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">2-й комплект</label>
+				<select class="form-select" name="kolesa2">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.kolesa2 == '1' %}selected{% endif %}>Со 2КК</option>
+					<option value="0" {% if params.filters.kolesa2 == '0' %}selected{% endif %}>Без 2КК</option>
+				</select>
+			</div>
+			<div class="col-12 col-lg-1">
+				<button type="submit" class="btn btn-primary w-100">
+					<span class="icon-mbri-search"></span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="portal-panel no-padding">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+					<tr>
+						<th class="text-white border-0 ps-3">Дата оценки</th>
+						<th class="text-white border-0">Автомобиль / VIN</th>
+						<th class="text-white border-0">Подразделение</th>
+						<th class="text-white border-0">Статус</th>
+						<th class="text-white border-0 text-center">2КК</th>
+						<th class="text-white border-0 text-center">Приёмка</th>
+						<th class="text-white border-0 pe-3">Действие</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.rows %}
+						<tr>
+							<td class="ps-3">
+								{% if row.estimation_date %}{{ row.estimation_date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+							</td>
+							<td>
+								<div class="fw-semibold">{{ row.car_label }}</div>
+								<small class="text-muted">{{ row.estimation.vin|default:row.estimation.number_body }}</small>
+								{% if row.estimation.rlk %}
+									<br><small class="text-muted">РЛ {{ row.estimation.rlk.nomer }}</small>
+								{% endif %}
+							</td>
+							<td>{{ row.unit_name }}</td>
+							<td>{{ row.status.name|default:"—" }}</td>
+							<td class="text-center">
+								{% if row.has_second_set %}
+									<span class="badge bg-success">2КК</span>
+								{% else %}
+									<span class="badge bg-secondary">нет</span>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								{% if row.has_reception %}
+									<span class="badge bg-primary">есть</span>
+								{% else %}
+									<span class="badge bg-light text-dark">нет</span>
+								{% endif %}
+							</td>
+							<td class="pe-3">
+								{% if row.has_reception %}
+									<a href="/estimations/kolesa-reception/{{ row.reception_id }}/" class="btn btn-sm btn-outline-primary">Открыть</a>
+								{% elif row.has_second_set %}
+									<a href="/estimations/kolesa-reception/create/{{ row.estimation.id }}/" class="btn btn-sm btn-success">Создать</a>
+								{% else %}
+									<span class="text-muted small">—</span>
+								{% endif %}
+								{% if row.estimation.rlk_id %}
+									<a href="/estimations/{{ row.estimation.rlk_id }}/" class="btn btn-sm btn-link" title="Оценка">Оценка</a>
+								{% endif %}
+							</td>
+						</tr>
+					{% empty %}
+						<tr>
+							<td colspan="7" class="text-center text-muted py-5">Нет записей по выбранным фильтрам</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	{% if params.page_obj.has_other_pages %}
+		<nav class="mt-3">
+			<ul class="pagination justify-content-center">
+				{% if params.page_obj.has_previous %}
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.page_obj.previous_page_number %}">Назад</a>
+					</li>
+				{% endif %}
+				<li class="page-item disabled">
+					<span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span>
+				</li>
+				{% if params.page_obj.has_next %}
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.page_obj.next_page_number %}">Вперёд</a>
+					</li>
+				{% endif %}
+			</ul>
+		</nav>
+	{% endif %}
+</div>
+{% endblock %}
