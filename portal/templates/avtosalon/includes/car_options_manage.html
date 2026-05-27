@@ -1,0 +1,140 @@
+{% comment %}
+  Опции автомобиля (AvtohubOptions), группы AvtohubGroupOptions.
+  Ожидает: params.object, params.options_groups, params.options_selected_count, ...
+{% endcomment %}
+
+{% if messages %}
+	{% for message in messages %}
+		<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+			{{ message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
+	{% endfor %}
+{% endif %}
+
+<div class="portal-panel mb-3">
+	<h6 class="mb-2 padding-portal">Опции комплектации</h6>
+	<div class="padding-portal">
+		<p class="text-muted small mb-2">
+			Выбрано: <strong id="optionsSelectedCount">{{ params.options_selected_count }}</strong>
+			из {{ params.options_total_count }}
+			{% if params.auto_prefill_applied %}
+				<span class="badge bg-info ms-2">Предзаполнено по комплектации</span>
+			{% endif %}
+		</p>
+
+		{% if params.complectation_autoru_name %}
+			<p class="small mb-2">
+				Комплектация Auto.ru: <strong>{{ params.complectation_autoru_name }}</strong>
+				{% if params.avtohub_complectation %}
+					<span class="text-success">(найдена в Avtohub)</span>
+				{% else %}
+					<span class="text-warning">(в Avtohub не найдена)</span>
+				{% endif %}
+			</p>
+		{% else %}
+			<p class="small text-warning mb-2">Комплектация Auto.ru не указана — доступны опции по модификации или полный список.</p>
+		{% endif %}
+
+		<div class="d-flex flex-wrap gap-2 mb-3">
+			{% if params.can_prefill_complectation %}
+				<button type="button" class="btn btn-outline-primary btn-sm" id="btnPrefillComplectation"
+					data-ids="{{ params.suggested_complectation_ids|join:',' }}">
+					Предзаполнить по комплектации
+				</button>
+			{% endif %}
+			{% if params.can_prefill_modification %}
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="btnPrefillModification"
+					data-ids="{{ params.suggested_modification_ids|join:',' }}">
+					Предзаполнить по модификации
+				</button>
+			{% endif %}
+			<button type="button" class="btn btn-outline-dark btn-sm" id="btnOptionsClear">Снять все</button>
+		</div>
+	</div>
+</div>
+
+<form method="post" id="carOptionsForm">
+	{% csrf_token %}
+	<input type="hidden" name="options_action" value="save">
+
+	{% for group in params.options_groups %}
+		<div class="portal-panel mb-3">
+			<h6 class="mb-2 padding-portal" style="color: #002a5a;">
+				{{ group.name }}
+				<span class="badge bg-secondary ms-1">{{ group.options|length }}</span>
+			</h6>
+			<div class="padding-portal">
+				<div class="row g-2">
+					{% for opt in group.options %}
+						<div class="col-12 col-md-6 col-lg-4">
+							<div class="form-check">
+								<input class="form-check-input car-option-checkbox" type="checkbox"
+									name="option_ids" value="{{ opt.id }}" id="opt_{{ opt.id }}"
+									{% if opt.checked %}checked{% endif %}
+									{% if opt.key_equipment %}data-key="1"{% endif %}>
+								<label class="form-check-label small" for="opt_{{ opt.id }}">
+									{{ opt.name }}
+									{% if opt.key_equipment %}
+										<span class="text-primary" title="Ключевая опция">*</span>
+									{% endif %}
+								</label>
+							</div>
+						</div>
+					{% empty %}
+						<p class="text-muted small mb-0">Нет опций в группе</p>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	{% empty %}
+		<div class="portal-panel">
+			<p class="padding-portal text-muted mb-0">Опции не найдены. Проверьте модификацию Auto.ru и справочник Avtohub.</p>
+		</div>
+	{% endfor %}
+
+	<div class="sticky-bottom bg-white border-top py-3 px-3" style="z-index: 10;">
+		<button type="submit" class="btn btn-primary">
+			Сохранить опции
+		</button>
+		<span class="text-muted small ms-3" id="optionsSelectedCountFooter">
+			Выбрано: {{ params.options_selected_count }}
+		</span>
+	</div>
+</form>
+
+<script>
+(function () {
+	const checkboxes = document.querySelectorAll('.car-option-checkbox');
+	const countEls = [
+		document.getElementById('optionsSelectedCount'),
+		document.getElementById('optionsSelectedCountFooter'),
+	];
+
+	function updateCount() {
+		const n = document.querySelectorAll('.car-option-checkbox:checked').length;
+		countEls.forEach(el => { if (el) el.textContent = n; });
+	}
+
+	function setCheckedByIds(ids) {
+		const idSet = new Set(ids.map(String));
+		checkboxes.forEach(cb => { cb.checked = idSet.has(cb.value); });
+		updateCount();
+	}
+
+	checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+	document.getElementById('btnPrefillComplectation')?.addEventListener('click', function () {
+		const raw = this.getAttribute('data-ids') || '';
+		setCheckedByIds(raw.split(',').filter(Boolean));
+	});
+	document.getElementById('btnPrefillModification')?.addEventListener('click', function () {
+		const raw = this.getAttribute('data-ids') || '';
+		setCheckedByIds(raw.split(',').filter(Boolean));
+	});
+	document.getElementById('btnOptionsClear')?.addEventListener('click', function () {
+		checkboxes.forEach(cb => { cb.checked = false; });
+		updateCount();
+	});
+})();
+</script>

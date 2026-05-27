@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations, Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase
+from .models import AvtohubGroupOptions, AvtohubOptions, AvtohubComplectations, Avtohub, AvtohubSite, AvtohubSiteInfo, RefreshCarsLog, RefreshSpecificationsAutoRU, Autoteka_signal, Autoteka_signal_last_id, Autoteka_signal_region, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase, CarsOrganizationEquipment
 
 
 @admin.register(AvtohubGroupOptions)
@@ -16,6 +16,14 @@ class AvtohubOptionsAdmin(admin.ModelAdmin):
 class AvtohubComplectationsAdmin(admin.ModelAdmin):
     list_display    = ('id', 'id_avtohub', 'name', 'autoruId', 'isActive',)
     search_fields   = ('autoruId', 'id_avtohub', 'name',)
+
+
+@admin.register(CarsOrganizationEquipment)
+class CarsOrganizationEquipmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'car', 'option', 'date_update', 'user')
+    list_filter = ('date_update',)
+    search_fields = ('car__vin', 'option__name')
+    raw_id_fields = ('car', 'option', 'user')
 
 
 @admin.register(Autoteka_signal)
