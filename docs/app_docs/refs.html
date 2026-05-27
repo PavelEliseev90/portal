@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Документация: refs</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.4; color: #111; }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 22px; font-size: 18px; }
+    .muted { color: #555; font-size: 13px; }
+    .box { border: 1px solid #e6e6e6; border-radius: 12px; padding: 14px; margin-top: 10px; }
+    code { background: #f4f6f8; padding: 1px 5px; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #e6e6e6; padding: 8px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; }
+  </style>
+</head>
+<body>
+<h1>Приложение: refs</h1>
+<div class="muted">
+  Назначение: справочники (марки, радиусы, статусы, типы и т.д.). Почти все формы проекта опираются на refs.
+</div>
+
+<div class="box">
+  <h2>Роль приложения refs в архитектуре</h2>
+  <ul>
+    <li><b>Единый источник справочников:</b> значения, которые нельзя “хардкодить” в бизнес-моделях, вынесены в refs.</li>
+    <li><b>Нормализация данных:</b> большинство доменных моделей используют FK на refs вместо свободного текста.</li>
+    <li><b>Управление через admin:</b> refs обеспечивает гибкую настройку без переписывания бизнес-кода.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Ключевые группы справочников</h2>
+  <table>
+    <thead>
+      <tr><th>Группа</th><th>Примеры моделей</th><th>Где используются</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Шины/диски</td>
+        <td><code>RefMarkTyres</code>, <code>RefWidthTyres</code>, <code>RefProfileTyres</code>, <code>RefRadius</code>, <code>RefSezonTyres</code>, <code>RefTypeDisk</code>, <code>RefEtDisk</code>, <code>RefDiaDisk</code>, <code>RefPsdDisk</code></td>
+        <td>Оценка/приёмка 2КК, карточки колёс, блоки диагностики и формы согласования комплектации.</td>
+      </tr>
+      <tr>
+        <td>Оргструктура</td>
+        <td><code>RefUnit</code>, <code>RefOrganization</code>, <code>RefFilial</code>, <code>RefStore</code></td>
+        <td>Фильтры списков, маршрутизация задач, аналитика и отчёты по подразделениям.</td>
+      </tr>
+      <tr>
+        <td>Статусы и этапы</td>
+        <td><code>RefStatusEstimation</code>, <code>RefTypeEvaluationCarsOrganization</code>, и др.</td>
+        <td>Сценарии оценки, ценообразование, workflow согласования.</td>
+      </tr>
+      <tr>
+        <td>Каталожные авто-данные</td>
+        <td><code>AutoruMark</code>, <code>AutoruModel</code>, <code>AutoruModification</code>, <code>AutoruComplectation</code></td>
+        <td>Старт оценки, выбор модификации, API каталогов mobile v2.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>В контексте 2КК (подробно)</h2>
+  <ul>
+    <li><code>RefMarkTyres</code>, <code>RefWidthTyres</code>, <code>RefProfileTyres</code>, <code>RefRadius</code>, <code>RefSezonTyres</code></li>
+    <li><code>RefTypeDisk</code>, <code>RefEtDisk</code>, <code>RefDiaDisk</code>, <code>RefPsdDisk</code></li>
+    <li>Используются в модели <code>RegInteractivOcenkaKolesaReception</code> и в редактировании полей приёмки 2КК через searchable Select2.</li>
+    <li>Те же типы справочников используются на основной странице колёс (<code>RegInteractivOcenkaKolesa</code>) при фиксации данных оценки.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Связки с другими приложениями</h2>
+  <ul>
+    <li><b>register/estimations:</b> основные потребители refs в сценариях оценки и её этапов.</li>
+    <li><b>api:</b> отдаёт и принимает значения, основанные на refs (каталоги, типы, статусы).</li>
+    <li><b>avtosalon/prices:</b> управление складом, ценой и аналитикой использует оргструктуру и статусы из refs.</li>
+    <li><b>documents:</b> рабочие листы и документы привязаны к подразделениям/типам из refs.</li>
+  </ul>
+  <div class="muted">Следующий шаг по refs: можно сделать “словарь моделей” (каждая модель refs + поля + порядок сортировки + где читается/пишется).</div>
+</div>
+</body>
+</html>
+

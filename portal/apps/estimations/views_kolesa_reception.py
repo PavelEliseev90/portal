@@ -13,6 +13,7 @@ from django.utils import timezone
 from refs.models import RefStatusEstimation, RefUnit
 from register.models import (
     RegInteractivOcenka,
+    RegInteractivOcenkaRLK,
     RegInteractivOcenkaKolesaReception,
     RegRegInteractivOcenkaFilesKolesaReception,
 )
@@ -169,50 +170,68 @@ def handle_kolesa_reception_files_post(request, reception):
 
 
 def _kolesa_reception_list_queryset(request):
+    """
+    Основа списка: RegInteractivOcenkaRLK.
+    По умолчанию фильтруем статус RLK = 8 (“АМ принят”).
+
+    Важно: если пользователь явно выбрал “Все” (то есть status присутствует, но пустой),
+    фильтр статуса НЕ применяется.
+    """
     reception_sq = RegInteractivOcenkaKolesaReception.objects.filter(
-        estimation_id=OuterRef('pk'),
+        estimation_id=OuterRef('estimation_id'),
     )
     qs = (
-        RegInteractivOcenka.objects.select_related(
+        RegInteractivOcenkaRLK.objects.select_related(
+            'unit',
             'status',
-            'rlk',
-            'rlk__unit',
-            'page_kolesa',
-            'modification',
-            'modification__model',
-            'modification__model__mark',
+            'estimation',
+            'estimation__page_kolesa',
+            'estimation__rlk',
+            'estimation__modification',
+            'estimation__modification__model',
+            'estimation__modification__model__mark',
         )
+        .filter(estimation__isnull=False)
         .annotate(
             has_reception=Exists(reception_sq),
             reception_id=Subquery(reception_sq.values('pk')[:1]),
         )
-        .order_by('-start_estimation', '-id')
+        .order_by('-estimation__start_estimation', '-id')
     )
 
     date_from = _parse_date(request.GET.get('date_from', ''))
     date_to = _parse_date(request.GET.get('date_to', ''))
     unit_id = request.GET.get('unit', '').strip()
-    status_id = request.GET.get('status', '').strip()
     kolesa2 = request.GET.get('kolesa2', '').strip()
+
+    status_param_present = 'status' in request.GET
+    status_id_raw = request.GET.get('status', '').strip()
 
     if date_from:
         qs = qs.filter(
-            Q(start_estimation__date__gte=date_from)
-            | Q(end_estimation__date__gte=date_from)
+            Q(estimation__start_estimation__date__gte=date_from)
+            | Q(estimation__end_estimation__date__gte=date_from)
         )
     if date_to:
         qs = qs.filter(
-            Q(start_estimation__date__lte=date_to)
-            | Q(end_estimation__date__lte=date_to)
+            Q(estimation__start_estimation__date__lte=date_to)
+            | Q(estimation__end_estimation__date__lte=date_to)
         )
+
     if unit_id.isdigit():
-        qs = qs.filter(rlk__unit_id=int(unit_id))
-    if status_id.isdigit():
-        qs = qs.filter(status_id=int(status_id))
+        qs = qs.filter(unit_id=int(unit_id))
+
+    if status_param_present:
+        if status_id_raw.isdigit():
+            qs = qs.filter(status_id=int(status_id_raw))
+        # иначе status= (пусто) => “все статусы”
+    else:
+        qs = qs.filter(status_id=8)
+
     if kolesa2 == '1':
-        qs = qs.filter(page_kolesa__kolesa2_estimation=1)
+        qs = qs.filter(estimation__page_kolesa__kolesa2_estimation=1)
     elif kolesa2 == '0':
-        qs = qs.filter(page_kolesa__kolesa2_estimation=0)
+        qs = qs.filter(estimation__page_kolesa__kolesa2_estimation=0)
 
     return qs
 
@@ -224,18 +243,19 @@ def kolesa_reception_list(request):
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     rows = []
-    for est in page_obj.object_list:
+    for rlk in page_obj.object_list:
+        est = rlk.estimation
         pk = est.page_kolesa.kolesa2_estimation if est.page_kolesa_id else 10
         rows.append({
             'estimation': est,
             'car_label': _estimation_car_label(est),
             'estimation_date': est.end_estimation or est.start_estimation,
-            'status': est.status,
-            'unit_name': est.rlk.unit.name if est.rlk and est.rlk.unit_id else '—',
+            'status': rlk.status,
+            'unit_name': rlk.unit.name if rlk.unit_id else '—',
             'kolesa2_estimation': pk,
             'has_second_set': pk == 1,
-            'has_reception': est.has_reception,
-            'reception_id': est.reception_id,
+            'has_reception': rlk.has_reception,
+            'reception_id': rlk.reception_id,
         })
 
     params = {
@@ -247,7 +267,11 @@ def kolesa_reception_list(request):
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
             'unit': request.GET.get('unit', ''),
-            'status': request.GET.get('status', ''),
+            'status': (
+                request.GET.get('status', '')
+                if 'status' in request.GET
+                else '8'
+            ),
             'kolesa2': request.GET.get('kolesa2', ''),
         },
     }

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Документация: register</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.4; color: #111; }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 22px; font-size: 18px; }
+    h3 { margin-top: 12px; font-size: 15px; }
+    .muted { color: #555; font-size: 13px; }
+    .box { border: 1px solid #e6e6e6; border-radius: 12px; padding: 14px; margin-top: 10px; }
+    code { background: #f4f6f8; padding: 1px 5px; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #e6e6e6; padding: 8px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; }
+  </style>
+</head>
+<body>
+<h1>Приложение: register</h1>
+<div class="muted">
+  Назначение приложения: хранение и сопровождение доменных сущностей оценки/ценообразования/диагностики
+  (семейство <code>Reg*</code>), плюс сервисные API для справочника диагностики и блок массовой переоценки автомобилей.
+</div>
+
+<div class="box">
+  <h2>Точки входа (register/urls.py)</h2>
+  <table>
+    <thead>
+      <tr><th>Route</th><th>Функция</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>diagnostic_reference/</code></td><td><code>diagnostic_reference_api</code></td><td>Выдаёт элементы диагностического справочника по категории.</td></tr>
+      <tr><td><code>diagnostic_reference/stats/</code></td><td><code>diagnostic_reference_stats</code></td><td>Отдаёт статистику использования справочника диагностики.</td></tr>
+      <tr><td><code>repricing/</code></td><td><code>repricing_list</code></td><td>Список историй запусков переоценки.</td></tr>
+      <tr><td><code>repricing/units/</code></td><td><code>repricing_units</code></td><td>Экран выбора подразделения/параметров запуска переоценки.</td></tr>
+      <tr><td><code>repricing/run/[unit_id]</code></td><td><code>repricing_run</code></td><td>Запуск сервиса переоценки и формирование истории/логов.</td></tr>
+      <tr><td><code>repricing/history/&lt;history_id&gt;/</code></td><td><code>repricing_history_detail</code></td><td>Детали конкретного запуска переоценки и логи по автомобилям.</td></tr>
+      <tr><td><code>repricing/preview/[unit_id]</code></td><td><code>repricing_preview_cars</code></td><td>AJAX-предпросмотр автомобилей для переоценки.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Карта моделей (ядро register.models)</h2>
+  <h3>1) Интерактивная оценка — страничные сущности</h3>
+  <ul>
+    <li><code>RegInteractivOcenka</code> — главная сущность оценки.</li>
+    <li>OneToOne-страницы: <code>RegInteractivOcenkaRemote</code>, <code>...Document</code>, <code>...Salon</code>, <code>...Vnesh</code>, <code>...Complectnost</code>, <code>...Kolesa</code>, <code>...TestDrive</code>, <code>...Proverki</code>, <code>...Soglasovanie</code>.</li>
+    <li><code>RegInteractivOcenkaRLK</code> — агрегат/связка оценки с рабочим листом.</li>
+  </ul>
+
+  <h3>2) Дополнительные модели внутри процесса оценки</h3>
+  <ul>
+    <li><code>RegInteractivOcenkaPrice</code> — история ценовых изменений в контуре оценки.</li>
+    <li><code>RegInteractivOcenkaOptions</code> — опции/конфигурация в оценке.</li>
+    <li><code>RegRegInteractivOcenkaFiles</code> — файлы интерактивной оценки (фото/медиа по элементам).</li>
+    <li><code>RegInteractivOcenkaTask</code>, <code>RegInteractivOcenkaEmailPush</code>, <code>RegInteractivOcenkaHistoryOpens</code> — задачи/уведомления/история просмотра.</li>
+    <li><code>RegInteractivOcenkaKorsStore</code>, <code>RegInteractivOcenkaKorsStoreSale</code> — сущности по складским/продажным данным в контуре оценки.</li>
+  </ul>
+
+  <h3>3) Модели для 2КК (второго комплекта колес)</h3>
+  <ul>
+    <li><code>RegInteractivOcenkaKolesa.kolesa2_estimation</code> — признак/значение наличия второго комплекта на этапе оценки.</li>
+    <li><code>RegInteractivOcenkaKolesaReception</code> — факт приёмки 2КК (привязан к <code>RegInteractivOcenka</code> и <code>DocRLK</code>).</li>
+    <li><code>RegRegInteractivOcenkaFilesKolesaReception</code> — файлы приёмки 2КК, FK на <code>kolesa_reception</code>.</li>
+  </ul>
+
+  <h3>4) Модели диагностического справочника</h3>
+  <ul>
+    <li><code>DiagnosticReferenceCategory</code> — категория дефектов/диагностики.</li>
+    <li><code>DiagnosticReferenceItem</code> — конкретный элемент внутри категории.</li>
+    <li><code>DiagnosticReferenceSelection</code> — факты выбора диагностических пунктов.</li>
+  </ul>
+
+  <h3>5) Модели переоценки авто</h3>
+  <ul>
+    <li><code>RegCarsRepricingHistory</code> — “шапка” запуска переоценки (статус, счётчики, ошибки).</li>
+    <li><code>RegCarsRepricingLog</code> — логи по каждому авто в рамках запуска.</li>
+    <li><code>RegRefCarsOrganizationsPrice</code>, <code>RegRefCarsOrganizationsCalculationPrice</code>, <code>RegEstimationRefCarsOrganizations</code> — связанные реестры цен/расчётов, используются в ценообразовании и аналитике.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Функции и логика (register/views.py)</h2>
+  <h3><code>diagnostic_reference_api(request)</code></h3>
+  <ul>
+    <li>Проверяет GET-параметр <code>category</code>.</li>
+    <li>Ищет активную <code>DiagnosticReferenceCategory</code> по code.</li>
+    <li>Возвращает JSON категории + список активных <code>DiagnosticReferenceItem</code> (отсортированы по order/title).</li>
+    <li>Коды ответов: 400 (нет category), 404 (категория не найдена), 500 (ошибка).</li>
+  </ul>
+
+  <h3><code>diagnostic_reference_stats(request)</code></h3>
+  <ul>
+    <li>Формирует агрегированную статистику:
+      <ul>
+        <li>по категориям (число элементов/использований),</li>
+        <li>топ элементов по использованиям,</li>
+        <li>сводка <code>DiagnosticReferenceSelection</code> по category_code.</li>
+      </ul>
+    </li>
+    <li>Возвращает JSON-структуру для дашборда/аналитики диагностики.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Функции и логика (register/views_repricing.py)</h2>
+  <h3><code>repricing_list</code></h3>
+  <ul>
+    <li>Читает фильтры: search/unit/status/evaluation.</li>
+    <li>Строит queryset <code>RegCarsRepricingHistory</code> с фильтрами и пагинацией.</li>
+    <li>Подгружает справочники подразделений и вариантов оценки.</li>
+  </ul>
+
+  <h3><code>repricing_history_detail</code></h3>
+  <ul>
+    <li>Загружает конкретную запись истории и её логи (<code>RegCarsRepricingLog</code>), делает пагинацию логов.</li>
+  </ul>
+
+  <h3><code>repricing_run</code></h3>
+  <ul>
+    <li>Получает параметры запуска (unit/evaluation), создаёт <code>CarsRepricingService</code>.</li>
+    <li>Запускает <code>run_repricing(user=request.user)</code>, пишет flash-messages по результату.</li>
+    <li>Редиректит в детализацию истории.</li>
+  </ul>
+
+  <h3><code>repricing_units</code></h3>
+  <ul>
+    <li>Собирает список подразделений и краткую статистику по предыдущим запускам.</li>
+  </ul>
+
+  <h3><code>repricing_preview_cars</code></h3>
+  <ul>
+    <li>AJAX-метод предпросмотра выборки автомобилей для будущего запуска.</li>
+    <li>Использует <code>CarsRepricingService.get_cars_for_repricing()</code>, отдаёт первые 100 в JSON.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Сервис переоценки (register/services_repricing.py)</h2>
+  <h3><code>CarsRepricingService.get_cars_for_repricing</code></h3>
+  <ul>
+    <li>Базовая выборка: <code>RefCarsOrganization(quantity__gt=0)</code>.</li>
+    <li>Опциональные фильтры по подразделению и варианту оценки.</li>
+  </ul>
+
+  <h3><code>CarsRepricingService.calculate_car_price</code></h3>
+  <ul>
+    <li>Сейчас заглушка (TODO): возвращает old_price как new_price.</li>
+    <li>Предполагается, что здесь будет пользовательская логика расчёта цены.</li>
+  </ul>
+
+  <h3><code>CarsRepricingService.run_repricing</code></h3>
+  <ul>
+    <li>Создаёт <code>RegCarsRepricingHistory(status='processing')</code>.</li>
+    <li>Проходит по авто и для каждого:
+      <ul>
+        <li>либо пишет <code>error</code> в <code>RegCarsRepricingLog</code>,</li>
+        <li>либо обновляет цену авто и пишет <code>success</code>,</li>
+        <li>либо пишет <code>skipped</code>, если цена не изменилась.</li>
+      </ul>
+    </li>
+    <li>Заполняет итоговые счётчики и финальный статус (<code>success/partial/error</code>).</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Где используется register (связки с другими приложениями)</h2>
+  <ul>
+    <li><b>estimations</b>: использует ключевые модели интерактивной оценки и новую логику 2КК приёмки.</li>
+    <li><b>eco</b>: активно использует диагностические справочники/селекции и ряд моделей оценки.</li>
+    <li><b>avtosalon</b>: использует ценовые и расчётные модели <code>RegEstimationRefCarsOrganizations</code>, <code>RegRefCarsOrganizationsPrice</code>, <code>RegRefCarsOrganizationsCalculationPrice</code>.</li>
+    <li><b>admin</b>: значительная часть моделей register зарегистрирована в Django Admin для ручного сопровождения.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Примечание по полноте</h2>
+  <div class="muted">
+    В приложении <code>register</code> очень большой объём моделей и полей. Здесь зафиксирован архитектурный срез
+    и ключевые функции/связи. В следующем шаге могу сделать для <code>register</code> отдельную “табличную энциклопедию”
+    по всем классам (модель → ключевые поля → FK/OneToOne → где читается/пишется).
+  </div>
+</div>
+</body>
+</html>
+

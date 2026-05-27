@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Документация: estimations</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.35; color: #111; }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 22px; font-size: 18px; }
+    h3 { margin-top: 14px; font-size: 15px; }
+    code { background: #f4f6f8; padding: 1px 5px; border-radius: 6px; }
+    pre { background: #f4f6f8; padding: 10px; border-radius: 12px; overflow: auto; }
+    .muted { color: #555; font-size: 13px; }
+    .box { border: 1px solid #e6e6e6; border-radius: 12px; padding: 14px; margin-top: 10px; }
+    ul { padding-left: 18px; }
+    li { margin: 6px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #e6e6e6; padding: 8px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; }
+  </style>
+</head>
+<body>
+<h1>Приложение: estimations</h1>
+<div class="muted">
+  Назначение: страницы интерактивных оценок (осмотр/карточки этапов), а также часть логики и endpoint-ов,
+  связанных с формированием/проведением оценок. В этом документе подробно разобран ключевой функционал,
+  который сейчас в работе: <b>приёмка второго комплекта колёс (2КК)</b>.
+</div>
+
+<div class="box">
+  <h2>Точки входа (routes) — что доступно через estimations/urls.py</h2>
+  <table>
+    <thead>
+      <tr><th>URL</th><th>Вьюха</th><th>Назначение (кратко)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>kolesa-reception/</code></td><td><code>views_kolesa_reception.kolesa_reception_list</code></td><td>Список оценок с фильтрами + создание/открытие приёмки 2КК.</td></tr>
+      <tr><td><code>kolesa-reception/create/&lt;estimation_id&gt;/</code></td><td><code>views_kolesa_reception.kolesa_reception_create</code></td><td>Создать приёмку 2КК по выбранной оценке (если указан 2-й комплект).</td></tr>
+      <tr><td><code>kolesa-reception/&lt;reception_id&gt;/</code></td><td><code>views_kolesa_reception.kolesa_reception_detail</code></td><td>Детальная приёмка 2КК + правка данных и загрузка/удаление файлов.</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/</code></td><td><code>views.estimation_rlk</code></td><td>Страница оценки по рабочему листу (карточка интерактива).</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/start/</code></td><td><code>views.estimation_start</code></td><td>Старт/инициализация оценки для рабочего листа.</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/&lt;slug:rl_id&gt;/osmotr/&lt;slug:type&gt;/</code></td><td><code>views.osmotr</code></td><td>Страница этапа «осмотр» (разные типы).</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/&lt;slug:rl_id&gt;/osmotr_salon/&lt;slug:type&gt;/</code></td><td><code>views.osmotr_salon</code></td><td>Осмотр в салоне.</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/s/</code></td><td><code>views.years</code></td><td>Каталог выбора года выпуска.</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/s/&lt;slug:years&gt;/</code></td><td><code>views.catalog</code></td><td>Каталог выбора марки/модели (по логике внутри).</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/s/&lt;slug:years&gt;/&lt;slug:mark_id&gt;/</code></td><td><code>views.models</code></td><td>Каталог выбора модели.</td></tr>
+      <tr><td><code>&lt;slug:rlk_id&gt;/s/&lt;slug:years&gt;/&lt;slug:mark_id&gt;/&lt;slug:model_id&gt;/</code></td><td><code>views.modifications</code></td><td>Каталог выбора модификации.</td></tr>
+      <tr><td>Также имеются API-эндпоинты <code>/api/*</code></td><td>в views (api_get_marks_by_year и т.п.)</td><td>AJAX/Select2 загрузка справочников под модальные/каталожные выборы.</td></tr>
+    </tbody>
+  </table>
+  <div class="muted">Полная детализация всех функций views.py в данном документе пока не развёрнута (проект большой). В следующей итерации можно углубиться по остальным endpoints.</div>
+</div>
+
+<h2>Модели и связи, необходимые для 2КК</h2>
+<div class="box">
+  <h3>Ключевая сущность: оценка интерактивная</h3>
+  <ul>
+    <li><code>register.models.RegInteractivOcenka</code> — основная сущность интерактивной оценки (связана с <code>DocRLK</code> через rlk_id косвенно в этом модуле).</li>
+    <li>Внутри оценки есть <code>page_kolesa</code> (OneToOne) с данными по колёсам.</li>
+  </ul>
+
+  <h3>Данные 2-го комплекта колес (в оценке)</h3>
+  <ul>
+    <li><code>register.models.RegInteractivOcenkaKolesa</code> — страница колёс.</li>
+    <li>Ключевое поле: <code>kolesa2_estimation</code> — индикатор/количество “второго комплекта колес / оценка со 2КК”.</li>
+  </ul>
+
+  <h3>Приёмка второго комплекта колес (в отдельной сущности)</h3>
+  <ul>
+    <li><code>register.models.RegInteractivOcenkaKolesaReception</code> — отдельная “приёмка” 2КК.</li>
+    <li>Связи:
+      <ul>
+        <li><code>estimation</code> — FK на <code>RegInteractivOcenka</code> (какая оценка породила приёмку).</li>
+        <li><code>rlk</code> — OneToOne на <code>DocRLK</code> (рабочий лист).</li>
+        <li>Справочники резины/дисков (mark_tyre/width_tyre/radius/season/disk_type + ET/DIA/PSD + количества).</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>Файлы приёмки (картинки/файлы)</h3>
+  <ul>
+    <li><code>register.models.RegRegInteractivOcenkaFilesKolesaReception</code> — файлы, привязанные к конкретной приёмке 2КК.</li>
+    <li>Связь: <code>kolesa_reception</code> FK на <code>RegInteractivOcenkaKolesaReception</code>.</li>
+    <li>Хранит: <code>file</code>, <code>file_mini</code>, метаданные (name/comment/type_point/кординаты и т.п.).</li>
+  </ul>
+</div>
+
+<h2>2КК: полный “сквозной сценарий” (лист → создать/открыть → редактирование → файлы)</h2>
+
+<div class="box">
+  <h3>1) Список: <code>kolesa_reception_list</code></h3>
+  <div><b>Что делает:</b> формирует пагинированный список оценок и показывает, есть ли приёмка 2КК и указан ли 2-й комплект в оценке.</div>
+  <h3>Логика запроса (где/как выбираются данные)</h3>
+  <ul>
+    <li>Берёт базовую выборку: <code>RegInteractivOcenka</code> с <code>select_related</code> на поля, нужные для вывода (status, rlk, unit, page_kolesa, modification…).</li>
+    <li>С помощью <code>Exists</code> проверяет: существует ли <code>RegInteractivOcenkaKolesaReception</code> для этой оценки.</li>
+    <li>С помощью <code>Subquery</code> подтягивает <code>reception_id</code> (первый найденный id приёмки).</li>
+    <li>Применяет фильтры из query-string:
+      <ul>
+        <li><code>date_from</code>/<code>date_to</code> — фильтр по датам <code>start_estimation</code> / <code>end_estimation</code>.</li>
+        <li><code>unit</code> — фильтр по <code>rlk.unit</code>.</li>
+        <li><code>status</code> — фильтр по <code>RegInteractivOcenka.status_id</code>.</li>
+        <li><code>kolesa2</code> — фильтр по <code>page_kolesa.kolesa2_estimation</code> (1 или 0).</li>
+      </ul>
+    </li>
+    <li>Пагинация: 30 записей на страницу.</li>
+  </ul>
+
+  <h3>Что выводится в таблице</h3>
+  <ul>
+    <li>Дата оценки: <code>end_estimation</code> (если есть) иначе <code>start_estimation</code>.</li>
+    <li>Автомобиль/маркировка: вычисляется функцией <code>_estimation_car_label</code> (использует modification/mark/model/modification_name или fallback VIN/number_body).</li>
+    <li>Подразделение и статус: из <code>estimation.rlk.unit</code> и <code>estimation.status</code>.</li>
+    <li>2КК: значение <code>estimation.page_kolesa.kolesa2_estimation</code> и флаг <code>has_second_set</code> (true если == 1).</li>
+    <li>Наличие приёмки: флаг <code>has_reception</code> + <code>reception_id</code>.</li>
+    <li>Действия:
+      <ul>
+        <li>Если приёмка существует → кнопка “Открыть” по <code>/estimations/kolesa-reception/&lt;reception_id&gt;/</code>.</li>
+        <li>Если приёмки нет и 2КК = да → кнопка “Создать” по <code>/estimations/kolesa-reception/create/&lt;estimation_id&gt;/</code>.</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<div class="box">
+  <h3>2) Создание приёмки: <code>kolesa_reception_create</code></h3>
+  <div><b>Что делает:</b> создаёт (идемпотентно) запись <code>RegInteractivOcenkaKolesaReception</code> для выбранной оценки, но только если в оценке указан второй комплект колес.</div>
+  <ul>
+    <li>Получает <code>RegInteractivOcenka</code> вместе с <code>page_kolesa</code> и <code>rlk</code>.</li>
+    <li>Проверяет: <code>estimation.page_kolesa_id</code> и <code>estimation.page_kolesa.kolesa2_estimation == 1</code>.</li>
+    <li>Дальше вызывает <code>create_kolesa_reception</code>:
+      <ul>
+        <li>Сначала ищет существующую приёмку по <code>estimation</code> (если есть — возвращает её).</li>
+        <li>Если приёмки нет — создаёт объект с rlk, estimation, date=now, user=request.user.</li>
+        <li>Заполняет поля приёмки из <code>estimation.page_kolesa</code> (через <code>_copy_kolesa_to_reception</code>).</li>
+      </ul>
+    </li>
+    <li>Редирект на детальную страницу приёмки.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h3>3) Детальная приёмка: <code>kolesa_reception_detail</code></h3>
+  <div><b>Что делает:</b> показывает данные приёмки, позволяет сохранить отредактированные поля и прикреплять/удалять файлы.</div>
+  <h3>GET-загрузка</h3>
+  <ul>
+    <li>Загружает <code>RegInteractivOcenkaKolesaReception</code> с <code>select_related</code> на всю “витрину” (estimation, status, unit, справочники и т.д.).</li>
+    <li>Загружает файлы приёмки:
+      <ul>
+        <li><code>RegRegInteractivOcenkaFilesKolesaReception.objects.filter(kolesa_reception=reception).order_by('-date','-id')</code></li>
+      </ul>
+    </li>
+    <li>Передаёт в шаблон справочники для редактирования Select2:
+      <code>marks/widths/profiles/radii/seasons/disk_types</code> и <code>et_disks/dia_disks/psd_disks</code>.</li>
+  </ul>
+
+  <h3>POST-обработка (важно: разные формы и action)</h3>
+  <ul>
+    <li>Если <code>action == save_reception</code>:
+      <ul>
+        <li>Берёт id выбранных элементов справочников из POST (mark_tyre/width_tyre/…/psd_disk).</li>
+        <li>Находит соответствующие сущности в refs и назначает на объект reception.</li>
+        <li>Сохраняет количества дисков/шин и <code>kolesa_estimation</code>.</li>
+      </ul>
+    </li>
+    <li>Иначе (или дополнительно) вызывается обработчик файлов:
+      <ul>
+        <li><code>handle_kolesa_reception_files_post</code></li>
+        <li>Операции: <code>action=upload</code> (multipart upload) и <code>action=delete</code> (удаление по id файла).</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>Файлы приёмки: <code>handle_kolesa_reception_files_post</code></h3>
+  <ul>
+    <li><b>delete:</b> извлекает <code>RegRegInteractivOcenkaFilesKolesaReception</code> по <code>photo_id</code> и текущей приёмке, удаляет, пишет messages.</li>
+    <li><b>upload:</b>
+      <ul>
+        <li>Читает <code>request.FILES.getlist('photos')</code>.</li>
+        <li>Фильтрует только <code>image/*</code> (по content_type).</li>
+        <li>Создаёт запись файла: <code>name</code>, <code>file</code>, <code>user</code>, <code>date=now</code>.</li>
+        <li>Сразу генерирует миниатюру через <code>_save_file_thumbnail</code> (PIL) и сохраняет <code>file_mini</code>.</li>
+      </ul>
+    </li>
+    <li>После успешной загрузки/удаления редирект обратно на текущую страницу.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Где эта логика используется в проекте</h2>
+  <ul>
+    <li>Список/создание/деталь 2КК доступны в веб-интерфейсе через routes <code>estimations/urls.py</code>.</li>
+    <li>Страницы используются для управления процессом приёмки второго комплекта колес для интерактивных оценок.</li>
+    <li>Поля приёмки (<code>mark_tyre</code>, <code>radius</code>, <code>count_disk</code> и т.д.) напрямую соответствуют полям модели <code>RegInteractivOcenkaKolesaReception</code>.</li>
+    <li>Загрузка файлов привязана к модели <code>RegRegInteractivOcenkaFilesKolesaReception</code> через FK <code>kolesa_reception</code>.</li>
+  </ul>
+  <div class="muted">В следующих итерациях можем добавить сюда (по остальным app’ам) полностью список функций и их назначение, но это придётся делать частями из-за объёма проекта.</div>
+</div>
+</body>
+</html>
+
