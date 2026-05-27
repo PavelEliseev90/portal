@@ -184,6 +184,7 @@ def _kolesa_reception_list_queryset(request):
         RegInteractivOcenkaRLK.objects.select_related(
             'unit',
             'status',
+            'rlk',
             'estimation',
             'estimation__page_kolesa',
             'estimation__rlk',
@@ -192,6 +193,7 @@ def _kolesa_reception_list_queryset(request):
             'estimation__modification__model__mark',
         )
         .filter(estimation__isnull=False)
+        .filter(unit__name__icontains='КорсАвто')
         .annotate(
             has_reception=Exists(reception_sq),
             reception_id=Subquery(reception_sq.values('pk')[:1]),
@@ -201,8 +203,10 @@ def _kolesa_reception_list_queryset(request):
 
     date_from = _parse_date(request.GET.get('date_from', ''))
     date_to = _parse_date(request.GET.get('date_to', ''))
-    unit_id = request.GET.get('unit', '').strip()
+    unit_ids = [v for v in request.GET.getlist('unit') if str(v).strip().isdigit()]
     kolesa2 = request.GET.get('kolesa2', '').strip()
+    vin = request.GET.get('vin', '').strip()
+    rlk_number = request.GET.get('rlk', '').strip()
 
     status_param_present = 'status' in request.GET
     status_id_raw = request.GET.get('status', '').strip()
@@ -218,8 +222,8 @@ def _kolesa_reception_list_queryset(request):
             | Q(estimation__end_estimation__date__lte=date_to)
         )
 
-    if unit_id.isdigit():
-        qs = qs.filter(unit_id=int(unit_id))
+    if unit_ids:
+        qs = qs.filter(unit_id__in=[int(v) for v in unit_ids])
 
     if status_param_present:
         if status_id_raw.isdigit():
@@ -227,6 +231,15 @@ def _kolesa_reception_list_queryset(request):
         # иначе status= (пусто) => “все статусы”
     else:
         qs = qs.filter(status_id=8)
+
+    if vin:
+        qs = qs.filter(
+            Q(estimation__vin__icontains=vin)
+            | Q(estimation__number_body__icontains=vin)
+        )
+
+    if rlk_number:
+        qs = qs.filter(rlk__nomer__icontains=rlk_number)
 
     if kolesa2 == '1':
         qs = qs.filter(estimation__page_kolesa__kolesa2_estimation=1)
@@ -261,18 +274,20 @@ def kolesa_reception_list(request):
     params = {
         'page_obj': page_obj,
         'rows': rows,
-        'units': RefUnit.objects.all().order_by('name'),
+        'units': RefUnit.objects.filter(name__icontains='КорсАвто').order_by('name'),
         'statuses': RefStatusEstimation.objects.all().order_by('name'),
         'filters': {
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
-            'unit': request.GET.get('unit', ''),
+            'unit': request.GET.getlist('unit'),
             'status': (
                 request.GET.get('status', '')
                 if 'status' in request.GET
                 else '8'
             ),
             'kolesa2': request.GET.get('kolesa2', ''),
+            'vin': request.GET.get('vin', ''),
+            'rlk': request.GET.get('rlk', ''),
         },
     }
     return render(request, 'estimations/kolesa_reception_list.html', {'params': params})
