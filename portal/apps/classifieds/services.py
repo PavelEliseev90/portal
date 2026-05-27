@@ -4,12 +4,16 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from django.db.models import Q
-from refs.models import RefCarsOrganization
+from refs.models import RefCarsOrganization, RefCarsOrganizationFiles
 from .models import ClassifiedsExportConfig, ClassifiedsExportHistory, ClassifiedsExportLog
 from datetime import datetime
 import os
 from django.conf import settings
+from django.db.models import Prefetch
 import json
+
+DEFAULT_PHOTOS_BASE_URL = 'http://carcopy.autoshina.net:8080/carcopy/'
+DEFAULT_PHOTOS_HOST = 'https://ah.kors-group.com'
 
 
 class ClassifiedsExportService:
@@ -68,6 +72,13 @@ class ClassifiedsExportService:
         if not self.config.include_sold:
             qs = qs.filter(quantity__gt=0)
         
+        qs = qs.prefetch_related(
+            Prefetch(
+                'refcarsorganizationfiles_set',
+                queryset=RefCarsOrganizationFiles.objects.order_by('-main', 'date'),
+            )
+        )
+
         # Ограничение количества
         if self.config.max_cars_per_export:
             qs = qs[:self.config.max_cars_per_export]
@@ -117,6 +128,8 @@ class ClassifiedsExportService:
         else:
             # Стандартный маппинг без настроек
             self._add_standard_fields(car_elem, car)
+
+        self._add_photos_element(car_elem, car)
         
         return car_elem
     
@@ -160,6 +173,7 @@ class ClassifiedsExportService:
     def _add_standard_fields(self, car_elem, car):
         """Добавить стандартные поля автомобиля в XML"""
         fields = {
+            'id': car.vin,
             'vin': car.vin,
             'mark': car.mark,
             'model': car.model,
@@ -187,6 +201,74 @@ class ClassifiedsExportService:
             if field_value is not None and field_value != '':
                 field_elem = ET.SubElement(car_elem, field_name)
                 field_elem.text = str(field_value)
+
+    def _get_photos_xml_settings(self):
+        """Настройки блока photos из xml_settings конфигурации."""
+        xml_settings = self.config.get_xml_settings()
+        include_photos = xml_settings.get('include_photos', True)
+        photos_host = xml_settings.get('photos_host', DEFAULT_PHOTOS_HOST)
+        return include_photos, str(photos_host or '').strip() or DEFAULT_PHOTOS_HOST
+
+    def _resolve_photo_url(self, photo, photos_host):
+        """
+        Полный URL фото для XML.
+
+        Требование: формируем только из пути к медиа-файлу портала, например:
+        https://ah.kors-group.com/media/cars_images/2026/05/26/XXX.jpg
+        """
+        file_field = photo.file or photo.file_mini or photo.file_bak
+        if not file_field:
+            return None
+
+        try:
+            path = (file_field.url or '').strip()
+        except Exception:
+            path = ''
+
+        if not path:
+            return None
+
+        # нормализуем слэши и собираем абсолютный URL
+        host = photos_host.rstrip('/')
+        if not path.startswith('/'):
+            path = '/' + path
+        return f'{host}{path}'.replace('\\', '/')
+
+    def _get_car_photo_urls(self, car):
+        include_photos, photos_host = self._get_photos_xml_settings()
+        if not include_photos:
+            return []
+
+        if hasattr(car, '_prefetched_objects_cache') and 'refcarsorganizationfiles_set' in car._prefetched_objects_cache:
+            photos = car.refcarsorganizationfiles_set.all()
+        else:
+            photos = RefCarsOrganizationFiles.objects.filter(
+                сars_organization=car
+            ).order_by('-main', 'date')
+
+        urls = []
+        for photo in photos:
+            if photo.is_video():
+                continue
+            resolved = self._resolve_photo_url(photo, photos_host)
+            if resolved:
+                urls.append(resolved)
+        return urls
+
+    def _add_photos_element(self, car_elem, car):
+        """
+        <photos>
+            <photo>http://carcopy.autoshina.net:8080/carcopy/KalugaBP/VIN_..._1.jpg</photo>
+        </photos>
+        """
+        urls = self._get_car_photo_urls(car)
+        if not urls:
+            return
+
+        photos_elem = ET.SubElement(car_elem, 'photos')
+        for url in urls:
+            photo_elem = ET.SubElement(photos_elem, 'photo')
+            photo_elem.text = url
     
     def export_to_file(self, user=None):
         """Выполнить выгрузку в файл"""

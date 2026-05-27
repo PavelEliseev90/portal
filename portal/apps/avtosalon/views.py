@@ -25,7 +25,8 @@ from datetime import timedelta
 import os
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegInteractivOcenka, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations
-from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase
+from avtosalon.models import Avtohub, AvtohubSiteInfo, AvtohubSite, RegCarsOrganizationTask, RegCarsOrganizationTaskComment, RegCarsOrganizationTaskFile, CarsWarehouseShowcase, CarsOrganizationEquipment
+from avtosalon.car_options import build_car_options_context, save_car_equipment
 from documents.models import DocCarAgreement, DocCarShipment, DocZNKA, DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocZNPerformersKA, DocRLK, DocLO, RefService, DocServiceItem
 from django.http import JsonResponse
 from rest_framework import status
@@ -1273,6 +1274,7 @@ def _price_edit_tab_counts(car):
     return {
         'photos': RefCarsOrganizationFiles.objects.filter(сars_organization=car).count(),
         'price_revaluations': RegRefCarsOrganizationsPrice.objects.filter(car=car).count(),
+        'options': CarsOrganizationEquipment.objects.filter(car=car).count(),
         'avtohub': avtohub_n,
         'estimation': estimation_n,
         'analytics_total': avtohub_n + estimation_n,
@@ -1647,6 +1649,14 @@ def price_edit(request, slug):
         page = 0
 
     if request.method == "POST":
+        options_action = request.POST.get('options_action', '')
+        if options_action == 'save':
+            from django.contrib import messages
+            option_ids = request.POST.getlist('option_ids')
+            save_car_equipment(car, option_ids, user=request.user)
+            messages.success(request, f'Сохранено опций: {len(option_ids)}')
+            return HttpResponseRedirect(request.path + '?page=11')
+
         photo_action = request.POST.get('action', '')
         if photo_action in ('delete', 'set_main', 'upload'):
             if not request.user.profiles.korsavto_settings:
@@ -1686,6 +1696,7 @@ def price_edit(request, slug):
     tab_counts = _price_edit_tab_counts(car)
     price_revaluations = _car_price_revaluations(car) if page == 4 else []
     photos = _car_photos_queryset(car) if page == 1 else []
+    car_options_ctx = build_car_options_context(car) if page == 11 else {}
     list_price = RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')
 
     interactiv = None
@@ -1755,6 +1766,7 @@ def price_edit(request, slug):
         'photos'            : photos,
         'can_edit_photos'   : request.user.profiles.korsavto_settings,
     }
+    params.update(car_options_ctx)
     
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
 

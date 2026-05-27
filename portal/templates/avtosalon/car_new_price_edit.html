@@ -1407,6 +1407,9 @@
 					<a href="?{% url_replace page=0 %}" class="kors-anchor-button {% if params.page == 0 %}active{% endif %}" data-tab-target="0">
 					<span>Главная</span>                
 					</a>
+					<a href="?{% url_replace page=11 %}" class="kors-anchor-button {% if params.page == 11 %}active{% endif %}" data-tab-target="11">
+						<span>Опции - {{ params.tab_counts.options|default:0 }}</span>
+					</a>
 					{% if params.can_edit_photos %}
 					<a href="?{% url_replace page=1 %}" class="kors-anchor-button {% if params.page == 1 %}active{% endif %}" data-tab-target="1">
 						<span>Фотографии - {{ params.tab_counts.photos }}</span>                
@@ -1456,6 +1459,8 @@
 			{% include 'avtosalon/includes/car_price_revaluations.html' %}
 		{% elif params.page == 10 %}
 			{% include 'avtosalon/includes/car_avtohub_analytics.html' %}
+		{% elif params.page == 11 %}
+			{% include 'avtosalon/includes/car_options_manage.html' %}
 		{% else %}
 
 		<div class="portal-panel">

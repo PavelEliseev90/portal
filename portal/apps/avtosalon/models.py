@@ -137,6 +137,44 @@ class AvtohubComplectations(models.Model):
         verbose_name_plural = "Автохаб комплектации - https://api.maxposter.ru/partners-api/directories/vehicle-complectations"
 
 
+class CarsOrganizationEquipment(models.Model):
+    """Выбранные опции автомобиля (справочник AvtohubOptions)."""
+    car = models.ForeignKey(
+        RefCarsOrganization,
+        on_delete=models.CASCADE,
+        related_name='equipment_selections',
+        verbose_name='Автомобиль',
+    )
+    option = models.ForeignKey(
+        AvtohubOptions,
+        on_delete=models.CASCADE,
+        related_name='car_selections',
+        verbose_name='Опция',
+    )
+    date_update = models.DateTimeField('Дата изменения', auto_now=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Пользователь',
+    )
+
+    def __str__(self):
+        return f'{self.car_id} / {self.option.name}'
+
+    class Meta:
+        db_table = 'carsOrganizationEquipment'
+        verbose_name = 'Опция автомобиля'
+        verbose_name_plural = 'Опции автомобилей'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['car', 'option'],
+                name='cars_org_equipment_car_option_uniq',
+            ),
+        ]
+
+
 class Avtohub(models.Model):
     date                = models.DateTimeField('date - dateTimeField - Дата запроса', default=datetime.now, blank=False)
     id_vencle           = models.IntegerField('id - integer - ID объявления', default=0, null=False, blank=False) 
