@@ -1,0 +1,389 @@
+"""Список и приёмка второго комплекта колес (RegInteractivOcenkaKolesaReception)."""
+import io
+import os
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Exists, OuterRef, Q, Subquery
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+
+from refs.models import RefStatusEstimation, RefUnit
+from register.models import (
+    RegInteractivOcenka,
+    RegInteractivOcenkaKolesaReception,
+    RegRegInteractivOcenkaFilesKolesaReception,
+)
+
+
+def _parse_date(value):
+    if not value:
+        return None
+    for fmt in ('%Y-%m-%d', '%d.%m.%Y'):
+        try:
+            from datetime import datetime
+            return datetime.strptime(value.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _estimation_car_label(estimation):
+    if estimation.modification_id and estimation.modification:
+        mod = estimation.modification
+        if mod.model_id and mod.model:
+            mark = mod.model.mark.name if mod.model.mark_id else ''
+            return f'{mark} {mod.model.name} {mod.name}'.strip()
+    parts = [estimation.mark_name, estimation.model_name, estimation.modification_name]
+    label = ' '.join(p for p in parts if p)
+    return label or estimation.vin or estimation.number_body or '—'
+
+
+def _copy_kolesa_to_reception(reception, page_kolesa):
+    """Перенос данных 2-го комплекта из оценки в приёмку."""
+    reception.mark_tyre = page_kolesa.mark_tyre2
+    reception.model_tyre = page_kolesa.model_tyre2 or ''
+    reception.width_tyre = page_kolesa.width_tyre2
+    reception.profil_tyre = page_kolesa.profil_tyre2
+    reception.radius = page_kolesa.radius2
+    reception.sezon = page_kolesa.sezon2
+    reception.disk_type = page_kolesa.disk_type2
+    reception.model_disk = page_kolesa.model_disk2 or ''
+    reception.et_disk = page_kolesa.et_disk2
+    reception.dia_disk = page_kolesa.dia_disk2
+    reception.psd_disk = page_kolesa.psd_disk2
+    reception.count_disk = page_kolesa.count_disk2 or 0
+    reception.count_tyre = page_kolesa.count_tyre2 or 0
+    reception.kolesa_estimation = page_kolesa.kolesa2_estimation
+
+
+def create_kolesa_reception(estimation, user):
+    """Создать приёмку для оценки (идемпотентно по estimation)."""
+    existing = RegInteractivOcenkaKolesaReception.objects.filter(
+        estimation=estimation,
+    ).first()
+    if existing:
+        return existing
+
+    reception = RegInteractivOcenkaKolesaReception(
+        rlk=estimation.rlk,
+        estimation=estimation,
+        date=timezone.now(),
+        user=user,
+    )
+    if estimation.page_kolesa_id:
+        _copy_kolesa_to_reception(reception, estimation.page_kolesa)
+    else:
+        reception.kolesa_estimation = 1
+    reception.save()
+    return reception
+
+
+def _save_file_thumbnail(file_obj):
+    if not file_obj.file or not file_obj.file.name:
+        return
+    if file_obj.is_video():
+        return
+    try:
+        from PIL import Image
+        from django.core.files.base import ContentFile
+
+        path = getattr(file_obj.file, 'path', None)
+        if path and os.path.isfile(path):
+            img = Image.open(path)
+        else:
+            file_obj.file.open('rb')
+            img = Image.open(io.BytesIO(file_obj.file.read()))
+            file_obj.file.close()
+
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            if img.mode == 'RGBA' and len(img.split()) >= 4:
+                background.paste(img, mask=img.split()[3])
+            else:
+                background.paste(img)
+            img = background
+        elif img.mode not in ('RGB', 'L'):
+            img = img.convert('RGB')
+
+        img.thumbnail((400, 300), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        base, _ext = os.path.splitext(file_obj.file.name)
+        thumb_name = base + '_mini.jpg'
+        img.save(buf, format='JPEG', quality=85, optimize=True)
+        buf.seek(0)
+        file_obj.file_mini.save(thumb_name, ContentFile(buf.read()), save=False)
+        file_obj.save(update_fields=['file_mini'])
+    except Exception:
+        pass
+
+
+def handle_kolesa_reception_files_post(request, reception):
+    action = request.POST.get('action', '')
+    if action not in ('delete', 'upload'):
+        return False
+
+    if action == 'delete':
+        photo_id = request.POST.get('photo_id', '')
+        try:
+            photo = RegRegInteractivOcenkaFilesKolesaReception.objects.get(
+                id=photo_id,
+                kolesa_reception=reception,
+            )
+            photo.delete()
+            messages.success(request, 'Файл удалён')
+        except RegRegInteractivOcenkaFilesKolesaReception.DoesNotExist:
+            messages.error(request, 'Файл не найден')
+
+    elif action == 'upload':
+        uploaded_files = request.FILES.getlist('photos')
+        if not uploaded_files:
+            messages.warning(request, 'Не выбраны файлы')
+            return True
+
+        uploaded_count = 0
+        for uploaded_file in uploaded_files:
+            if not uploaded_file.content_type.startswith('image/'):
+                continue
+            file_obj = RegRegInteractivOcenkaFilesKolesaReception(
+                kolesa_reception=reception,
+                name=uploaded_file.name,
+                file=uploaded_file,
+                user=request.user,
+                date=timezone.now(),
+            )
+            file_obj.save()
+            _save_file_thumbnail(file_obj)
+            uploaded_count += 1
+
+        if uploaded_count:
+            messages.success(request, f'Загружено файлов: {uploaded_count}')
+        else:
+            messages.warning(request, 'Не удалось загрузить изображения')
+
+    return True
+
+
+def _kolesa_reception_list_queryset(request):
+    reception_sq = RegInteractivOcenkaKolesaReception.objects.filter(
+        estimation_id=OuterRef('pk'),
+    )
+    qs = (
+        RegInteractivOcenka.objects.select_related(
+            'status',
+            'rlk',
+            'rlk__unit',
+            'page_kolesa',
+            'modification',
+            'modification__model',
+            'modification__model__mark',
+        )
+        .annotate(
+            has_reception=Exists(reception_sq),
+            reception_id=Subquery(reception_sq.values('pk')[:1]),
+        )
+        .order_by('-start_estimation', '-id')
+    )
+
+    date_from = _parse_date(request.GET.get('date_from', ''))
+    date_to = _parse_date(request.GET.get('date_to', ''))
+    unit_id = request.GET.get('unit', '').strip()
+    status_id = request.GET.get('status', '').strip()
+    kolesa2 = request.GET.get('kolesa2', '').strip()
+
+    if date_from:
+        qs = qs.filter(
+            Q(start_estimation__date__gte=date_from)
+            | Q(end_estimation__date__gte=date_from)
+        )
+    if date_to:
+        qs = qs.filter(
+            Q(start_estimation__date__lte=date_to)
+            | Q(end_estimation__date__lte=date_to)
+        )
+    if unit_id.isdigit():
+        qs = qs.filter(rlk__unit_id=int(unit_id))
+    if status_id.isdigit():
+        qs = qs.filter(status_id=int(status_id))
+    if kolesa2 == '1':
+        qs = qs.filter(page_kolesa__kolesa2_estimation=1)
+    elif kolesa2 == '0':
+        qs = qs.filter(page_kolesa__kolesa2_estimation=0)
+
+    return qs
+
+
+@login_required
+def kolesa_reception_list(request):
+    qs = _kolesa_reception_list_queryset(request)
+    paginator = Paginator(qs, 30)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    rows = []
+    for est in page_obj.object_list:
+        pk = est.page_kolesa.kolesa2_estimation if est.page_kolesa_id else 10
+        rows.append({
+            'estimation': est,
+            'car_label': _estimation_car_label(est),
+            'estimation_date': est.end_estimation or est.start_estimation,
+            'status': est.status,
+            'unit_name': est.rlk.unit.name if est.rlk and est.rlk.unit_id else '—',
+            'kolesa2_estimation': pk,
+            'has_second_set': pk == 1,
+            'has_reception': est.has_reception,
+            'reception_id': est.reception_id,
+        })
+
+    params = {
+        'page_obj': page_obj,
+        'rows': rows,
+        'units': RefUnit.objects.all().order_by('name'),
+        'statuses': RefStatusEstimation.objects.all().order_by('name'),
+        'filters': {
+            'date_from': request.GET.get('date_from', ''),
+            'date_to': request.GET.get('date_to', ''),
+            'unit': request.GET.get('unit', ''),
+            'status': request.GET.get('status', ''),
+            'kolesa2': request.GET.get('kolesa2', ''),
+        },
+    }
+    return render(request, 'estimations/kolesa_reception_list.html', {'params': params})
+
+
+@login_required
+def kolesa_reception_create(request, estimation_id):
+    estimation = get_object_or_404(
+        RegInteractivOcenka.objects.select_related('page_kolesa', 'rlk'),
+        pk=estimation_id,
+    )
+    if not estimation.page_kolesa_id or estimation.page_kolesa.kolesa2_estimation != 1:
+        messages.error(request, 'Для этой оценки не указан второй комплект колес')
+        return HttpResponseRedirect('/estimations/kolesa-reception/')
+
+    reception = create_kolesa_reception(estimation, request.user)
+    messages.success(request, 'Приёмка второго комплекта колёс создана')
+    return HttpResponseRedirect(f'/estimations/kolesa-reception/{reception.pk}/')
+
+
+@login_required
+def kolesa_reception_detail(request, reception_id):
+    reception = get_object_or_404(
+        RegInteractivOcenkaKolesaReception.objects.select_related(
+            'estimation',
+            'estimation__page_kolesa',
+            'estimation__status',
+            'estimation__rlk',
+            'estimation__rlk__unit',
+            'rlk',
+            'rlk__unit',
+            'mark_tyre',
+            'width_tyre',
+            'radius',
+            'sezon',
+            'disk_type',
+        ),
+        pk=reception_id,
+    )
+
+    if request.method == 'POST':
+        # Сохранение полей приёмки
+        if request.POST.get('action') == 'save_reception':
+            from refs.models import (
+                RefMarkTyres,
+                RefWidthTyres,
+                RefProfileTyres,
+                RefRadius,
+                RefSezonTyres,
+                RefTypeDisk,
+                RefEtDisk,
+                RefDiaDisk,
+                RefPsdDisk,
+            )
+
+            def _int(val, default=0):
+                try:
+                    return int(val)
+                except (TypeError, ValueError):
+                    return default
+
+            mark_id = request.POST.get('mark_tyre') or None
+            width_id = request.POST.get('width_tyre') or None
+            profil_id = request.POST.get('profil_tyre') or None
+            radius_id = request.POST.get('radius') or None
+            sezon_id = request.POST.get('sezon') or None
+            disk_type_id = request.POST.get('disk_type') or None
+            et_id = request.POST.get('et_disk') or None
+            dia_id = request.POST.get('dia_disk') or None
+            psd_id = request.POST.get('psd_disk') or None
+
+            reception.mark_tyre = RefMarkTyres.objects.filter(pk=mark_id).first() if mark_id else None
+            reception.model_tyre = request.POST.get('model_tyre', '').strip()
+            reception.width_tyre = RefWidthTyres.objects.filter(pk=width_id).first() if width_id else None
+            reception.profil_tyre = RefProfileTyres.objects.filter(pk=profil_id).first() if profil_id else None
+            reception.radius = RefRadius.objects.filter(pk=radius_id).first() if radius_id else None
+            reception.sezon = RefSezonTyres.objects.filter(pk=sezon_id).first() if sezon_id else None
+            reception.disk_type = RefTypeDisk.objects.filter(pk=disk_type_id).first() if disk_type_id else None
+            reception.model_disk = request.POST.get('model_disk', '').strip()
+            reception.et_disk = RefEtDisk.objects.filter(pk=et_id).first() if et_id else None
+            reception.dia_disk = RefDiaDisk.objects.filter(pk=dia_id).first() if dia_id else None
+            reception.psd_disk = RefPsdDisk.objects.filter(pk=psd_id).first() if psd_id else None
+            reception.count_disk = _int(request.POST.get('count_disk'), 0)
+            reception.count_tyre = _int(request.POST.get('count_tyre'), 0)
+            reception.kolesa_estimation = _int(request.POST.get('kolesa_estimation'), reception.kolesa_estimation)
+            reception.save()
+            messages.success(request, 'Данные приёмки сохранены')
+            return HttpResponseRedirect(request.path)
+
+        # Работа с файлами
+        if handle_kolesa_reception_files_post(request, reception):
+            return HttpResponseRedirect(request.path)
+
+    estimation = reception.estimation
+    files = RegRegInteractivOcenkaFilesKolesaReception.objects.filter(
+        kolesa_reception=reception,
+    ).order_by('-date', '-id')
+
+    # Справочники для удобного ввода (Select2 + поиск)
+    from refs.models import (
+        RefMarkTyres,
+        RefWidthTyres,
+        RefProfileTyres,
+        RefRadius,
+        RefSezonTyres,
+        RefTypeDisk,
+        RefEtDisk,
+        RefDiaDisk,
+        RefPsdDisk,
+    )
+
+    marks = RefMarkTyres.objects.all().order_by('name')
+    widths = RefWidthTyres.objects.all().order_by('value')
+    profiles = RefProfileTyres.objects.all().order_by('value')
+    radii = RefRadius.objects.all().order_by('value')
+    seasons = RefSezonTyres.objects.all().order_by('name')
+    disk_types = RefTypeDisk.objects.all().order_by('name')
+    et_disks = RefEtDisk.objects.all().order_by('value')
+    dia_disks = RefDiaDisk.objects.all().order_by('value')
+    psd_disks = RefPsdDisk.objects.all().order_by('value')
+
+    params = {
+        'reception': reception,
+        'estimation': estimation,
+        'car_label': _estimation_car_label(estimation) if estimation else '—',
+        'files': files,
+        'files_count': files.count(),
+        'marks': marks,
+        'widths': widths,
+        'profiles': profiles,
+        'radii': radii,
+        'seasons': seasons,
+        'disk_types': disk_types,
+        'et_disks': et_disks,
+        'dia_disks': dia_disks,
+        'psd_disks': psd_disks,
+    }
+    return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})

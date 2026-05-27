@@ -1,0 +1,217 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Приёмка 2КК {{ params.car_label }} {% endblock %}
+{% block title_navbar %} — Приёмка 2КК {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+		<div>
+			<h2 class="mb-1">Приёмка второго комплекта колёс</h2>
+			<p class="text-muted mb-0">{{ params.car_label }}</p>
+			{% if params.estimation %}
+				<small class="text-muted">
+					VIN: {{ params.estimation.vin|default:params.estimation.number_body }}
+					{% if params.estimation.rlk %} · РЛ {{ params.estimation.rlk.nomer }}{% endif %}
+				</small>
+			{% endif %}
+		</div>
+		<div class="d-flex gap-2">
+			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">К списку</a>
+			{% if params.estimation and params.estimation.rlk_id %}
+				<a href="/estimations/{{ params.estimation.rlk_id }}/" class="btn btn-outline-primary btn-sm">Оценка</a>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Дата приёмки</h6>
+				<div class="fw-bold">{% if params.reception.date %}{{ params.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Подразделение</h6>
+				<div class="fw-bold">
+					{% if params.reception.rlk and params.reception.rlk.unit %}{{ params.reception.rlk.unit.name }}{% else %}—{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Статус оценки</h6>
+				<div class="fw-bold">{{ params.estimation.status.name|default:"—" }}</div>
+			</div>
+		</div>
+	</div>
+
+	<form method="post" class="portal-panel mb-3">
+		{% csrf_token %}
+		<input type="hidden" name="action" value="save_reception">
+		<h6 class="mb-3 padding-portal">Данные 2-го комплекта (приёмка)</h6>
+
+		<div class="row g-2 small">
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="mark_tyre" name="mark_tyre">
+						<option value=""></option>
+						{% for m in params.marks %}
+							<option value="{{ m.id }}" {% if params.reception.mark_tyre_id == m.id %}selected{% endif %}>{{ m.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="mark_tyre">Марка шин</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<label class="text-muted small mb-1 d-block">Модель шин</label>
+				<input type="text" class="form-control form-control-sm" name="model_tyre" value="{{ params.reception.model_tyre|default:'' }}">
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="width_tyre" name="width_tyre">
+						<option value=""></option>
+						{% for w in params.widths %}
+							<option value="{{ w.id }}" {% if params.reception.width_tyre_id == w.id %}selected{% endif %}>{{ w.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="width_tyre">Ширина</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="profil_tyre" name="profil_tyre">
+						<option value=""></option>
+						{% for p in params.profiles %}
+							<option value="{{ p.id }}" {% if params.reception.profil_tyre_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="profil_tyre">Профиль</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="radius" name="radius">
+						<option value=""></option>
+						{% for r in params.radii %}
+							<option value="{{ r.id }}" {% if params.reception.radius_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="radius">Радиус</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="sezon" name="sezon">
+						<option value=""></option>
+						{% for s in params.seasons %}
+							<option value="{{ s.id }}" {% if params.reception.sezon_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="sezon">Сезон</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="disk_type" name="disk_type">
+						<option value=""></option>
+						{% for d in params.disk_types %}
+							<option value="{{ d.id }}" {% if params.reception.disk_type_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="disk_type">Тип диска</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<label class="text-muted small mb-1 d-block">Модель дисков</label>
+				<input type="text" class="form-control form-control-sm" name="model_disk" value="{{ params.reception.model_disk|default:'' }}">
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="et_disk" name="et_disk">
+						<option value=""></option>
+						{% for et in params.et_disks %}
+							<option value="{{ et.id }}" {% if params.reception.et_disk_id == et.id %}selected{% endif %}>{{ et.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="et_disk">ET</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="dia_disk" name="dia_disk">
+						<option value=""></option>
+						{% for dia in params.dia_disks %}
+							<option value="{{ dia.id }}" {% if params.reception.dia_disk_id == dia.id %}selected{% endif %}>{{ dia.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="dia_disk">DIA</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<div class="search-select-wrapper select2-wrapper">
+					<select class="search-select kors-form-control form-control-sm" id="psd_disk" name="psd_disk">
+						<option value=""></option>
+						{% for psd in params.psd_disks %}
+							<option value="{{ psd.id }}" {% if params.reception.psd_disk_id == psd.id %}selected{% endif %}>{{ psd.name }}</option>
+						{% endfor %}
+					</select>
+					<label for="psd_disk">PSD</label>
+				</div>
+			</div>
+
+			<div class="col-12 col-md-3">
+				<label class="text-muted small mb-1 d-block">2-й комплект колес</label>
+				<select class="form-select form-select-sm" id="kolesa_estimation" name="kolesa_estimation">
+					<option value="0" {% if params.reception.kolesa_estimation == 0 %}selected{% endif %}>Нет второго комплекта колес</option>
+					<option value="1" {% if params.reception.kolesa_estimation == 1 %}selected{% endif %}>Оценка со вторым комплектом колес</option>
+					{% if params.reception.kolesa_estimation != 0 and params.reception.kolesa_estimation != 1 %}
+						<option value="{{ params.reception.kolesa_estimation }}" selected>Значение: {{ params.reception.kolesa_estimation }}</option>
+					{% endif %}
+				</select>
+			</div>
+
+			<div class="col-12 col-md-6">
+				<label class="text-muted small mb-1 d-block">Дисков (2-й комплект)</label>
+				<input type="number" class="form-control form-control-sm" name="count_disk" value="{{ params.reception.count_disk|default:0 }}">
+			</div>
+
+			<div class="col-12 col-md-6">
+				<label class="text-muted small mb-1 d-block">Шин (2-й комплект)</label>
+				<input type="number" class="form-control form-control-sm" name="count_tyre" value="{{ params.reception.count_tyre|default:0 }}">
+			</div>
+		</div>
+
+		<div class="mt-3">
+			<button type="submit" class="btn btn-success btn-sm">
+				<span class="icon-mbri-success me-1"></span>Сохранить данные приёмки
+			</button>
+		</div>
+	</form>
+
+	<script>
+		$(document).ready(function() {
+			$('.search-select').select2({
+				language: 'ru',
+				allowClear: false,
+				width: '100%',
+				dropdownAutoWidth: true
+			});
+		});
+	</script>
+
+	{% include 'estimations/includes/kolesa_reception_files.html' %}
+</div>
+{% endblock %}

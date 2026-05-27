@@ -1,10 +1,15 @@
 from django.urls import path
 from . import views
+from . import views_kolesa_reception
 from django.views.generic import TemplateView
 
 app_name = 'eco'
 
 urlpatterns = [
+
+    path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
+    path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),
+    path('kolesa-reception/<int:reception_id>/',                                views_kolesa_reception.kolesa_reception_detail, name='kolesa_reception_detail'),
 
     path('',                                                                    views.estimation),
     path('<slug:rlk_id>/',                                                      views.estimation_rlk, name='slug'),
