@@ -343,6 +343,42 @@ class CarPreparationTemplate(models.Model):
     
     def __str__(self):
         return self.name
+
+    def apply_to_preparation(self, preparation, *, auto_confirm=False):
+        """
+        Создаёт пункты работ по шаблону. Уже существующие работы не дублируются.
+        Возвращает (created_count, skipped_count).
+        """
+        created_count = 0
+        skipped_count = 0
+        template_works = self.carpreparationtemplatework_set.select_related('work').order_by('sort_order')
+        for tw in template_works:
+            work = tw.work
+            if not work or not work.is_active:
+                skipped_count += 1
+                continue
+            item, was_created = CarPreparationWorkItem.objects.get_or_create(
+                preparation=preparation,
+                work=work,
+                defaults={
+                    'is_confirmed': auto_confirm or not tw.is_required,
+                    'planned_time': tw.planned_time or work.estimated_time or 0,
+                    'cost': tw.default_cost,
+                    'status': 'pending',
+                },
+            )
+            if was_created:
+                created_count += 1
+            elif tw.default_cost and not item.cost:
+                item.cost = tw.default_cost
+                item.planned_time = item.planned_time or tw.planned_time or work.estimated_time or 0
+                item.save(update_fields=['cost', 'planned_time'])
+                created_count += 1
+            else:
+                skipped_count += 1
+        preparation.progress_percent = preparation.calculate_progress()
+        preparation.save(update_fields=['progress_percent', 'date_updated'])
+        return created_count, skipped_count
     
     class Meta:
         db_table = 'carPreparationTemplate'
@@ -800,6 +836,13 @@ class RefRepairZone(models.Model):
     description = models.TextField("Описание", max_length=2000, blank=True, default='')
     unit = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL,
                             verbose_name="Подразделение")
+    assigned_staff = models.ManyToManyField(
+        RefStaff,
+        blank=True,
+        related_name='repair_zones',
+        verbose_name='Сотрудники зоны',
+        help_text='Кто видит заказ-наряды этой ремзоны на своём рабочем столе',
+    )
     is_active = models.BooleanField("Активна", default=True)
     sort_order = models.IntegerField("Порядок сортировки", default=0)
     

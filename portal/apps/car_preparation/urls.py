@@ -6,6 +6,7 @@ app_name = 'car_preparation'
 urlpatterns = [
     path('', views.preparation_list, name='list'),
     path('performer/', views.performer_dashboard, name='performer_dashboard'),
+    path('workbench/', views.performer_dashboard, name='workbench'),
     path('performers/', views.performers_works, name='performers_works'),
     # ресурсы планирования
     path('resources/', views.resources_list, name='resources_list'),
@@ -28,6 +29,12 @@ urlpatterns = [
     path('work_order/item/<int:item_id>/material/', views.work_order_item_material_add, name='work_order_item_material_add'),
     path('work_order/material/<int:material_id>/delete/', views.work_order_item_material_delete, name='work_order_item_material_delete'),
     path('api/templates/<int:template_id>/works/', views.work_order_template_works, name='work_order_template_works'),
+    path('api/preparation-templates/<int:template_id>/works/', views.preparation_template_works, name='preparation_template_works'),
+    path('preparation/<int:preparation_id>/apply-template/', views.preparation_apply_template, name='preparation_apply_template'),
+    path('preparation/<int:preparation_id>/add-works/', views.preparation_add_works, name='preparation_add_works'),
+    path('preparation/work-item/<int:item_id>/update/', views.preparation_work_item_update, name='preparation_work_item_update'),
+    path('preparation/work-item/<int:item_id>/confirm/', views.preparation_work_item_confirm, name='preparation_work_item_confirm'),
+    path('preparation/<int:preparation_id>/checklist/', views.preparation_checklist_save, name='preparation_checklist_save'),
     # Dashboard и управление
     path('dashboard/', views.preparation_dashboard, name='dashboard'),
     # Ремонтные зоны

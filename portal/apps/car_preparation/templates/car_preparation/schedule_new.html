@@ -488,17 +488,21 @@
       <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h4 class="mb-1" style="color: #fff;">Планирование работ</h4>
+            <h4 class="mb-1" style="color: #fff;">Подготовка автомобиля №{{ preparation.id }}</h4>
             <p class="mb-0" style="color: rgba(255,255,255,0.9);">
               Автомобиль: <a href="/cars/{{ preparation.car.slug }}/" target="_blank" style="color: #fff; text-decoration: underline;">{{ preparation.car.name|default:preparation.car.vin }}</a>
             </p>
+            <p class="mb-0 small" style="color: rgba(255,255,255,0.75);">Документ подготовки: план работ и учёт затрат</p>
           </div>
           <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-light" onclick="toggleCart()" id="cartToggleBtn">
-              <span class="icon-mbri-shopping-cart"></span> <span class="d-none d-md-inline">Корзина</span> (<span id="cartCount">0</span>)
+              <span class="icon-mbri-shopping-cart"></span> <span class="d-none d-md-inline">Заказ-наряд</span> (<span id="cartCount">0</span>)
             </button>
             <a href="{% url 'car_preparation:work_order_timeline' preparation.car.id %}" class="btn btn-light">
               <span class="icon-mbri-clock"></span> <span class="d-none d-md-inline">Таймлайн</span>
+            </a>
+            <a href="{% url 'car_preparation:workbench' %}" class="btn btn-light" title="Рабочий стол цеха">
+              <span class="icon-mbri-user"></span> <span class="d-none d-md-inline">Рабочий стол</span>
             </a>
             <a href="{% url 'car_preparation:list' %}" class="btn btn-light">
               <span class="icon-mbri-arrow-prev"></span> <span class="d-none d-md-inline">К списку</span>
@@ -532,6 +536,32 @@
               <label>Подразделение</label>
             </div>
           </div>
+          <div class="col-12 col-sm-4 col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="plannedWorksCostDisplay" value="{{ planned_works_cost|floatformat:2 }} ₽" readonly>
+              <label>Затраты по работам (план)</label>
+            </div>
+          </div>
+          <div class="col-12 col-sm-4 col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="materialsCostDisplay" value="{{ materials_cost|floatformat:2 }} ₽" readonly>
+              <label>Материалы по ЗН</label>
+            </div>
+          </div>
+          <div class="col-12 col-sm-4 col-md-3">
+            <div class="form-floating">
+              <input type="text" class="form-control fw-bold" id="totalCostDisplay" value="{{ total_estimated_cost|floatformat:2 }} ₽" readonly>
+              <label>Итого затрат (оценка)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-light border mt-3 mb-0 small" role="alert">
+          <strong>Как устроено:</strong>
+          <ul class="mb-0 ps-3">
+            <li><b>Документ «Подготовка»</b> — фиксируете перечень работ, плановое время и стоимость (затраты), подтверждаете позиции.</li>
+            <li><b>Заказ-наряд</b> — выдача подтверждённых работ в цех: обязательно указывается <b>ремонтная зона</b>, далее выполнение, фото и материалы.</li>
+          </ul>
         </div>
         
         <!-- Комментарии к подготовке -->
@@ -709,7 +739,7 @@
         <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
           <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
             <h5 class="mb-0" style="color: #fff;">
-              <span class="icon-mbri-list"></span> Работы подготовки ({{ work_items.count }})
+              <span class="icon-mbri-list"></span> План работ и затраты ({{ work_items.count }})
             </h5>
           </div>
           <div class="card-body">
@@ -717,10 +747,10 @@
             <div class="mb-4">
               <h6 class="border-bottom pb-2 mb-3" style="color: #002a5a;">{{ stage_name }}</h6>
               {% for work_item in stage_works %}
-              <div class="preparation-work-item {{ work_item.status }}">
-                <div class="d-flex justify-content-between align-items-start">
+              <div class="preparation-work-item {{ work_item.status }}" id="prep-work-{{ work_item.id }}" data-work-id="{{ work_item.work.id }}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                   <div class="flex-grow-1">
-                    <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                       <strong style="color: #002a5a;">{{ work_item.work.name }}</strong>
                       <span class="badge 
                         {% if work_item.status == 'completed' %}bg-success
@@ -728,9 +758,9 @@
                         {% else %}bg-secondary{% endif %}">
                         {{ work_item.get_status_display }}
                       </span>
-                      {% if work_item.is_confirmed %}
-                      <span class="badge bg-info">Подтверждена</span>
-                      {% endif %}
+                      <span class="badge {% if work_item.is_confirmed %}bg-info{% else %}bg-secondary{% endif %}" id="confirm-badge-{{ work_item.id }}">
+                        {% if work_item.is_confirmed %}Подтверждена{% else %}Не подтверждена{% endif %}
+                      </span>
                     </div>
                     {% if work_item.comment %}
                     <div class="small text-muted mb-1">{{ work_item.comment }}</div>
@@ -738,11 +768,34 @@
                     {% if work_item.performer %}
                     <div class="small text-muted">Исполнитель: {{ work_item.performer.name }}</div>
                     {% endif %}
+                    <div class="row g-2 mt-2">
+                      <div class="col-6 col-md-3">
+                        <label class="form-label small mb-0">План, мин</label>
+                        <input type="number" class="form-control form-control-sm prep-cost-field"
+                               data-item-id="{{ work_item.id }}" data-field="planned_time" min="0"
+                               value="{{ work_item.planned_time|default:work_item.work.estimated_time|default:0 }}">
+                      </div>
+                      <div class="col-6 col-md-3">
+                        <label class="form-label small mb-0">Затраты, ₽</label>
+                        <input type="number" class="form-control form-control-sm prep-cost-field"
+                               data-item-id="{{ work_item.id }}" data-field="cost" min="0" step="0.01"
+                               value="{{ work_item.cost }}">
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <button class="btn btn-sm btn-outline-primary" onclick="addPreparationWorkToCart({{ work_item.work.id }}, '{{ work_item.work.name|escapejs }}')">
-                      <span class="icon-mbri-plus"></span> В корзину
+                  <div class="d-flex flex-wrap gap-1 align-items-start">
+                    {% if work_item.is_confirmed %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleWorkConfirm({{ work_item.id }}, false)" title="Снять подтверждение">
+                      Отменить подтверждение
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPreparationWorkToCart({{ work_item.work.id }}, '{{ work_item.work.name|escapejs }}', true)">
+                      <span class="icon-mbri-plus"></span> В корзину ЗН
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-success" onclick="toggleWorkConfirm({{ work_item.id }}, true)">
+                      <span class="icon-mbri-success"></span> Подтвердить
+                    </button>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -753,12 +806,56 @@
         </div>
         {% endif %}
 
+        <!-- Шаблоны подготовки (набор работ в подготовку) -->
+        <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #0d4d3a 0%, #16a34a 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <h5 class="mb-0" style="color: #fff;">
+                <span class="icon-mbri-file"></span> Шаблоны подготовки
+              </h5>
+              <button class="btn btn-sm btn-light" type="button" onclick="showPreparationTemplateModal()">
+                <span class="icon-mbri-search"></span> Все шаблоны
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">Шаблон заполняет документ подготовки (работы и плановые затраты из шаблона). Подтвердите позиции, затем оформите заказ-наряд в ремзону.</p>
+            {% if preparation_templates %}
+            <div class="row g-3">
+              {% for pt in preparation_templates|slice:":4" %}
+              <div class="col-12 col-md-6">
+                <div class="template-card" style="border-color: rgba(22, 163, 74, 0.25);">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0" style="color: #0d4d3a; font-weight: 600;">{{ pt.name }}</h6>
+                    <span class="badge bg-success">{{ pt.works.count }} работ</span>
+                  </div>
+                  {% if pt.description %}
+                  <p class="text-muted small mb-2">{{ pt.description|truncatewords:12 }}</p>
+                  {% endif %}
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-success" onclick="applyPreparationTemplate({{ pt.id }}, false)">
+                      Применить
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="applyPreparationTemplate({{ pt.id }}, true)">
+                      Применить и подтвердить все
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">Шаблоны подготовки не настроены (админка → Шаблоны подготовки).</p>
+            {% endif %}
+          </div>
+        </div>
+
         <!-- Шаблоны заказ-нарядов -->
         <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
           <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
             <div class="d-flex justify-content-between align-items-center">
               <h5 class="mb-0" style="color: #fff;">
-                <span class="icon-mbri-file"></span> Шаблоны заказ-нарядов
+                <span class="icon-mbri-file"></span> Шаблоны для заказ-наряда (в цех)
               </h5>
               <button class="btn btn-sm btn-light" onclick="showTemplateModal()">
                 <span class="icon-mbri-search"></span> Выбрать шаблон
@@ -814,7 +911,7 @@
               <div class="row g-2">
                 {% for work in works %}
                 <div class="col-12 col-sm-6 col-md-6 col-lg-4">
-                  <div class="work-card" data-work-id="{{ work.id }}" onclick="toggleWorkSelection({{ work.id }})">
+                  <div class="work-card" data-work-id="{{ work.id }}">
                     <div class="work-card-header">
                       <div class="work-card-title">{{ work.name }}</div>
                       <input type="checkbox" class="form-check-input work-checkbox" 
@@ -829,6 +926,14 @@
                       </span>
                       {% endif %}
                     </div>
+                    <div class="mt-2 d-flex gap-1 flex-wrap">
+                      <button type="button" class="btn btn-sm btn-outline-success" onclick="event.stopPropagation(); addWorksToPreparation([{{ work.id }}])">
+                        В подготовку
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); updateCart({{ work.id }}, true); toggleCart();">
+                        В корзину ЗН
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {% endfor %}
@@ -842,8 +947,58 @@
         </div>
       </div>
 
-      <!-- Боковая панель с существующими заказ-нарядами -->
+      <!-- Боковая панель -->
       <div class="col-lg-3">
+        <!-- Чек-лист ОТК -->
+        <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1rem 1.25rem; border: none;">
+            <h6 class="mb-0" style="color: #fff;">Чек-лист качества</h6>
+          </div>
+          <div class="card-body">
+            <form id="checklistForm">
+              <div class="mb-2">
+                <label class="form-label small">Общая оценка (1–10)</label>
+                <input type="number" class="form-control form-control-sm" name="overall_quality" min="0" max="10" value="{{ checklist.overall_quality }}">
+              </div>
+              <div class="mb-2">
+                <label class="form-label small">Чистота</label>
+                <input type="number" class="form-control form-control-sm" name="cleanliness_score" min="0" max="10" value="{{ checklist.cleanliness_score }}">
+              </div>
+              <div class="mb-2">
+                <label class="form-label small">Комплектность</label>
+                <input type="number" class="form-control form-control-sm" name="completeness_score" min="0" max="10" value="{{ checklist.completeness_score }}">
+              </div>
+              <div class="mb-2">
+                <label class="form-label small">Без дефектов</label>
+                <input type="number" class="form-control form-control-sm" name="defect_score" min="0" max="10" value="{{ checklist.defect_score }}">
+              </div>
+              <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="exterior_checked" id="exterior_checked" {% if checklist.exterior_checked %}checked{% endif %}>
+                <label class="form-check-label small" for="exterior_checked">Экстерьер</label>
+              </div>
+              <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="interior_checked" id="interior_checked" {% if checklist.interior_checked %}checked{% endif %}>
+                <label class="form-check-label small" for="interior_checked">Салон</label>
+              </div>
+              <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="technical_checked" id="technical_checked" {% if checklist.technical_checked %}checked{% endif %}>
+                <label class="form-check-label small" for="technical_checked">Техника</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="documents_checked" id="documents_checked" {% if checklist.documents_checked %}checked{% endif %}>
+                <label class="form-check-label small" for="documents_checked">Документы</label>
+              </div>
+              <div class="mb-2">
+                <textarea class="form-control form-control-sm" name="defects_found" rows="2" placeholder="Дефекты">{{ checklist.defects_found }}</textarea>
+              </div>
+              <input type="hidden" name="mark_checked" id="mark_checked" value="0">
+              <input type="hidden" name="approve" id="approve_checklist" value="0">
+              <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="saveChecklist(false)">Сохранить</button>
+              <button type="button" class="btn btn-sm btn-primary w-100" style="background: #7c3aed; border: none;" onclick="saveChecklist(true)">Утвердить и завершить</button>
+            </form>
+          </div>
+        </div>
+
         <div class="card" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
           <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
             <h6 class="mb-0" style="color: #fff;">
@@ -866,6 +1021,9 @@
                   {{ wo.get_status_display }}
                 </span>
               </div>
+              {% if wo.repair_zone %}
+              <div class="small"><span class="badge bg-secondary">{{ wo.repair_zone.name }}</span></div>
+              {% endif %}
               {% if wo.planned_start %}
               <div class="small text-muted">
                 <span class="icon-mbri-clock"></span> 
@@ -937,31 +1095,66 @@
   </div>
 </div>
 
+<!-- Модальное окно шаблонов подготовки -->
+<div class="modal fade" id="preparationTemplateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0d4d3a 0%, #16a34a 100%); color: #fff;">
+        <h5 class="modal-title">Шаблоны подготовки</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3">
+        {% for pt in preparation_templates %}
+        <div class="template-card mb-2" style="border-color: rgba(22, 163, 74, 0.25);">
+          <h6 class="mb-1">{{ pt.name }}</h6>
+          <p class="text-muted small mb-2">{{ pt.description|default:""|truncatewords:20 }}</p>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-success" onclick="applyPreparationTemplate({{ pt.id }}, false); bootstrap.Modal.getInstance(document.getElementById('preparationTemplateModal')).hide();">Применить</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="applyPreparationTemplate({{ pt.id }}, true); bootstrap.Modal.getInstance(document.getElementById('preparationTemplateModal')).hide();">+ подтвердить все</button>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center">Нет шаблонов</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Корзина работ -->
 <div class="cart-works" id="cartWorks">
   <div class="cart-header">
-    <h5 class="mb-0" style="color: #fff;">Корзина работ</h5>
+    <h5 class="mb-0" style="color: #fff;">Заказ-наряд в цех</h5>
     <button class="btn btn-sm btn-outline-light" onclick="toggleCart()">
       <span class="icon-mbri-close"></span>
     </button>
   </div>
   <div class="cart-body" id="cartBody">
-    <p class="text-muted text-center py-4">Корзина пуста</p>
+    <p class="text-muted text-center py-4">Выберите подтверждённые работы для выдачи в ремзону</p>
   </div>
   <div class="cart-footer p-3 border-top">
     <form id="workOrderForm">
+      <input type="hidden" name="template_id" id="workOrderTemplateId" value="">
       <div class="mb-3">
         <label class="form-label small">Название заказ-наряда</label>
         <input type="text" class="form-control form-control-sm" name="title" placeholder="Например: Мойка перед выдачей" required>
       </div>
       <div class="mb-3">
-        <label class="form-label small">Ремонтная зона</label>
-        <select class="form-select form-select-sm" name="repair_zone_id">
-          <option value="">Выберите зону</option>
+        <label class="form-label small">Ремонтная зона <span class="text-danger">*</span></label>
+        <select class="form-select form-select-sm" name="repair_zone_id" id="repairZoneSelect" required>
+          <option value="">— выберите ремзону —</option>
           {% for zone in repair_zones %}
-          <option value="{{ zone.id }}">{{ zone.name }}</option>
+          <option value="{{ zone.id }}">{{ zone.name }}{% if zone.unit %} ({{ zone.unit.name }}){% endif %}</option>
           {% endfor %}
         </select>
+        {% if not repair_zones %}
+        <div class="text-danger small mt-1">
+          Нет ремзон для подразделения.
+          <a href="{% url 'car_preparation:repair_zones_list' %}">Настроить зоны</a>
+        </div>
+        {% else %}
+        <div class="text-muted small mt-1">Обязательно: куда в цеху направляется автомобиль</div>
+        {% endif %}
       </div>
       <div class="mb-3">
         <label class="form-label small">Планируемое время начала</label>
@@ -975,7 +1168,7 @@
         <label class="form-label small">Описание</label>
         <textarea class="form-control form-control-sm" name="description" rows="2" placeholder="Дополнительная информация"></textarea>
       </div>
-      <button type="submit" class="btn btn-primary w-100 btn-sm" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;">
+      <button type="submit" class="btn btn-primary w-100 btn-sm" id="workOrderSubmitBtn" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); border: none;" {% if not repair_zones %}disabled{% endif %}>
         <span class="icon-mbri-save"></span> Создать заказ-наряд
       </button>
     </form>
@@ -985,6 +1178,8 @@
 <script>
 let cart = [];
 let workData = {};
+let selectedWorkOrderTemplateId = null;
+const csrfToken = '{{ csrf_token }}';
 
 // Инициализация данных о работах
 {% for stage_name, works in works_by_stage.items %}
@@ -1001,7 +1196,7 @@ let workData = {};
 // Добавляем работы из подготовки
 {% for stage_name, stage_works in preparation_works_by_stage.items %}
   {% for work_item in stage_works %}
-    workData[{{ work_item.work.id }}}] = {
+    workData[{{ work_item.work.id }}] = {
       id: {{ work_item.work.id }},
       name: "{{ work_item.work.name|escapejs }}",
       estimated_time: {{ work_item.work.estimated_time|default:0 }},
@@ -1054,7 +1249,7 @@ function updateCartUI() {
   cartCount.textContent = cart.length;
   
   if (cart.length === 0) {
-    cartBody.innerHTML = '<p class="text-muted text-center py-4">Корзина пуста</p>';
+    cartBody.innerHTML = '<p class="text-muted text-center py-4">Выберите подтверждённые работы для выдачи в ремзону</p>';
     return;
   }
   
@@ -1091,10 +1286,17 @@ function removeFromCart(workId) {
   updateWorkCard(workId, false);
 }
 
-function addPreparationWorkToCart(workId, workName) {
+function addPreparationWorkToCart(workId, workName, requireConfirmed) {
+  if (requireConfirmed) {
+    const row = document.querySelector(`[data-work-id="${workId}"]`);
+    const badge = row && row.querySelector('[id^="confirm-badge-"]');
+    if (badge && badge.textContent.indexOf('Не подтверждена') >= 0) {
+      alert('Сначала подтвердите работу');
+      return;
+    }
+  }
   if (!cart.includes(workId)) {
     cart.push(workId);
-    // Если работы нет в workData, добавляем
     if (!workData[workId]) {
       workData[workId] = {
         id: workId,
@@ -1104,11 +1306,106 @@ function addPreparationWorkToCart(workId, workName) {
       };
     }
     updateCartUI();
-    // Показываем корзину
     toggleCart();
   } else {
     alert('Работа уже в корзине');
   }
+}
+
+function toggleWorkConfirm(itemId, confirm) {
+  const body = new URLSearchParams();
+  body.append('action', confirm ? 'confirm' : 'unconfirm');
+  fetch(`{% url 'car_preparation:preparation_work_item_confirm' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: body.toString()
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert(data.error || 'Ошибка');
+    }
+  })
+  .catch(() => alert('Ошибка подтверждения'));
+}
+
+function applyPreparationTemplate(templateId, autoConfirm) {
+  const body = new URLSearchParams();
+  body.append('template_id', templateId);
+  if (autoConfirm) body.append('auto_confirm', '1');
+  fetch('{% url "car_preparation:preparation_apply_template" preparation.id %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: body.toString()
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification(data.message, 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      alert(data.error || 'Ошибка применения шаблона');
+    }
+  })
+  .catch(() => alert('Ошибка применения шаблона'));
+}
+
+function addWorksToPreparation(workIds) {
+  const formData = new FormData();
+  workIds.forEach(id => formData.append('work_ids[]', id));
+  fetch('{% url "car_preparation:preparation_add_works" preparation.id %}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification(`Добавлено работ: ${data.created_count}`, 'success');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      alert(data.error || 'Ошибка');
+    }
+  });
+}
+
+function showPreparationTemplateModal() {
+  new bootstrap.Modal(document.getElementById('preparationTemplateModal')).show();
+}
+
+function saveChecklist(approve) {
+  const form = document.getElementById('checklistForm');
+  const formData = new FormData(form);
+  formData.set('mark_checked', '1');
+  formData.set('approve', approve ? '1' : '0');
+  ['exterior_checked', 'interior_checked', 'technical_checked', 'documents_checked'].forEach(name => {
+    const el = form.querySelector(`[name="${name}"]`);
+    formData.set(name, el && el.checked ? '1' : '0');
+  });
+  fetch('{% url "car_preparation:preparation_checklist_save" preparation.id %}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification(approve ? 'Подготовка утверждена' : 'Чек-лист сохранён', 'success');
+      if (approve) setTimeout(() => location.reload(), 1000);
+    } else {
+      alert(data.error || 'Ошибка');
+    }
+  });
 }
 
 function showTemplateModal() {
@@ -1133,27 +1430,34 @@ function filterTemplates(searchText) {
 }
 
 function loadTemplate(templateId) {
+  selectedWorkOrderTemplateId = templateId;
+  document.getElementById('workOrderTemplateId').value = templateId;
   fetch(`{% url 'car_preparation:work_order_template_works' 0 %}`.replace('0', templateId))
     .then(response => response.json())
     .then(data => {
       if (data.success && data.works) {
+        let added = 0;
         data.works.forEach(work => {
           if (!cart.includes(work.id)) {
             cart.push(work.id);
-            // Добавляем в workData если нет
-            if (!workData[work.id]) {
-              workData[work.id] = work;
-            }
-            const checkbox = document.querySelector(`.work-checkbox[data-work-id="${work.id}"]`);
-            if (checkbox) {
-              checkbox.checked = true;
-              updateWorkCard(work.id, true);
-            }
+            added++;
+          }
+          if (!workData[work.id]) {
+            workData[work.id] = work;
+          }
+          const checkbox = document.querySelector(`.work-checkbox[data-work-id="${work.id}"]`);
+          if (checkbox) {
+            checkbox.checked = true;
+            updateWorkCard(work.id, true);
           }
         });
         updateCartUI();
         toggleCart();
-        alert(`Шаблон "${data.template_name}" загружен! Добавлено ${data.works.length} работ.`);
+        const titleInput = document.querySelector('#workOrderForm input[name="title"]');
+        if (titleInput && !titleInput.value) {
+          titleInput.value = data.template_name || '';
+        }
+        showNotification(`Шаблон ЗН «${data.template_name}»: в корзину ${added} работ`, 'success');
       }
     })
     .catch(error => {
@@ -1184,17 +1488,61 @@ function saveComment(commentType, commentText) {
   });
 }
 
+// Сохранение плановых затрат по работе подготовки
+document.querySelectorAll('.prep-cost-field').forEach(input => {
+  input.addEventListener('change', function() {
+    const itemId = this.dataset.itemId;
+    const field = this.dataset.field;
+    const body = new URLSearchParams();
+    body.append(field, this.value);
+    fetch(`{% url 'car_preparation:preparation_work_item_update' 0 %}`.replace('0', itemId), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: body.toString()
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        if (document.getElementById('plannedWorksCostDisplay')) {
+          document.getElementById('plannedWorksCostDisplay').value = parseFloat(data.planned_works_cost).toFixed(2) + ' ₽';
+        }
+        if (document.getElementById('materialsCostDisplay')) {
+          document.getElementById('materialsCostDisplay').value = parseFloat(data.materials_cost).toFixed(2) + ' ₽';
+        }
+        if (document.getElementById('totalCostDisplay')) {
+          document.getElementById('totalCostDisplay').value = parseFloat(data.total_estimated_cost).toFixed(2) + ' ₽';
+        }
+        showNotification('Сохранено', 'success');
+      }
+    });
+  });
+});
+
 // Обработка формы создания заказ-наряда
 document.getElementById('workOrderForm').addEventListener('submit', function(e) {
   e.preventDefault();
   
   if (cart.length === 0) {
-    alert('Выберите хотя бы одну работу');
+    alert('Выберите хотя бы одну подтверждённую работу');
+    return;
+  }
+
+  const zoneId = document.getElementById('repairZoneSelect').value;
+  if (!zoneId) {
+    alert('Укажите ремонтную зону — это обязательное поле для заказ-наряда');
+    document.getElementById('repairZoneSelect').focus();
     return;
   }
   
   const formData = new FormData(this);
-  formData.append('work_ids[]', cart);
+  cart.forEach(id => formData.append('work_ids[]', id));
+  if (selectedWorkOrderTemplateId) {
+    formData.set('template_id', selectedWorkOrderTemplateId);
+  }
   
   fetch('{% url "car_preparation:work_order_create" preparation.id %}', {
     method: 'POST',

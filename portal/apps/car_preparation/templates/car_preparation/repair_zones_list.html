@@ -22,6 +22,7 @@
             <th>Код</th>
             <th>Подразделение</th>
             <th>Порядок</th>
+            <th>Сотрудники</th>
             <th>Статус</th>
             <th width="150">Действия</th>
           </tr>
@@ -38,6 +39,15 @@
             <td>{{ zone.code|default:"-" }}</td>
             <td>{{ zone.unit.name|default:"Все" }}</td>
             <td>{{ zone.sort_order }}</td>
+            <td>
+              {% with staff_list=zone.assigned_staff.all %}
+              {% if staff_list %}
+              <small>{% for s in staff_list %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+              {% else %}
+              <small class="text-muted">по подразделению</small>
+              {% endif %}
+              {% endwith %}
+            </td>
             <td>
               {% if zone.is_active %}
               <span class="badge bg-success">Активна</span>

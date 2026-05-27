@@ -8,9 +8,10 @@ from datetime import datetime, timedelta
 from calendar import monthrange
 import json
 from .models import (
-    CarPreparation, CarPreparationWorkSchedule, CarPreparationCalendar,
+    CarPreparation, CarPreparationWorkItem, CarPreparationWorkSchedule, CarPreparationCalendar,
     CarPreparationResource, RefCarPreparationStatus, WorkOrder, WorkOrderItem,
-    WorkOrderTemplate, RefRepairZone, WorkOrderItemPhoto, WorkOrderItemMaterial,
+    WorkOrderTemplate, CarPreparationTemplate, CarPreparationChecklist,
+    RefRepairZone, WorkOrderItemPhoto, WorkOrderItemMaterial,
     RefCarPreparationStage, RefCarPreparationWork, RefPreparationMaterial,
     CarPreparationComment, CarPreparationCommentFile
 )
@@ -159,12 +160,24 @@ def preparation_schedule(request, preparation_id):
     
     # Получаем шаблоны заказ-нарядов
     templates = WorkOrderTemplate.objects.filter(is_active=True).prefetch_related('works')
+    preparation_templates = CarPreparationTemplate.objects.filter(
+        is_active=True
+    ).filter(
+        Q(unit__isnull=True) | Q(unit=preparation.unit)
+    ).prefetch_related('works')
     
-    # Получаем ремонтные зоны
+    # Ремонтные зоны подразделения и общие (unit пустой)
     repair_zones = RefRepairZone.objects.filter(
         is_active=True,
-        unit=preparation.unit
+    ).filter(
+        Q(unit__isnull=True) | Q(unit=preparation.unit)
     ).order_by('sort_order', 'name')
+
+    planned_works_cost = work_items.aggregate(total=Sum('cost'))['total'] or 0
+    materials_cost = WorkOrderItemMaterial.objects.filter(
+        work_order_item__work_order__preparation=preparation,
+    ).aggregate(total=Sum('total_price'))['total'] or 0
+    total_estimated_cost = planned_works_cost + materials_cost
     
     # Получаем существующие заказ-наряды по этой подготовке
     work_orders = WorkOrder.objects.filter(
@@ -226,6 +239,8 @@ def preparation_schedule(request, preparation_id):
         import traceback
         print(f"Ошибка получения данных интерактивной оценки: {e}")
         print(traceback.format_exc())
+
+    checklist, _ = CarPreparationChecklist.objects.get_or_create(preparation=preparation)
     
     context = {
         'preparation': preparation,
@@ -235,6 +250,8 @@ def preparation_schedule(request, preparation_id):
         'available_works': available_works,
         'works_by_stage': works_by_stage,
         'templates': templates,
+        'preparation_templates': preparation_templates,
+        'checklist': checklist,
         'repair_zones': repair_zones,
         'work_orders': work_orders,
         'performers': performers,
@@ -243,6 +260,9 @@ def preparation_schedule(request, preparation_id):
         'body_inspection': body_inspection,
         'interior_inspection': interior_inspection,
         'diagnostics': diagnostics,
+        'planned_works_cost': planned_works_cost,
+        'materials_cost': materials_cost,
+        'total_estimated_cost': total_estimated_cost,
     }
     
     return render(request, 'car_preparation/schedule_new.html', context)
@@ -380,81 +400,76 @@ def preparation_list(request):
 
 @login_required
 def performer_dashboard(request):
-    """Панель исполнителя с его работами"""
+    """Рабочий стол сотрудника: заказ-наряды по его ремзонам."""
     from refs.models import RefStaff
-    # Получаем сотрудника для текущего пользователя (с возможностью переопределения через GET)
-    user = request.user
-    staff = getattr(user, 'staff', None)
+    from .utils import get_staff_for_user, get_repair_zones_for_staff
+
+    staff = get_staff_for_user(request.user)
     override_staff_id = request.GET.get('staff_id')
-    if override_staff_id:
+    if override_staff_id and request.user.is_staff:
         try:
             staff = RefStaff.objects.get(pk=override_staff_id)
         except RefStaff.DoesNotExist:
-            staff = None
+            pass
+
     if not staff:
-        context = {
-            'error': 'Пользователь не связан с сотрудником'
-        }
-        return render(request, 'car_preparation/performer_dashboard.html', context)
-    
-    # Получаем работы, назначенные на этого исполнителя
-    from .models import CarPreparationWorkItem
-    work_items = CarPreparationWorkItem.objects.filter(
-        Q(schedule__planned_performer=staff) | Q(performer=staff)
-    ).select_related(
-        'work', 'work__stage', 'preparation', 'preparation__car', 
-        'performer', 'schedule'
-    ).prefetch_related(
-        'preparation__unit'
-    ).order_by('-schedule__planned_start', '-date_start', '-id')
-    
-    # Фильтры
-    status_filter = request.GET.get('status', None)
-    date_filter = request.GET.get('date', None)
-    
-    if status_filter:
-        work_items = work_items.filter(status=status_filter)
-    
-    if date_filter:
+        return render(request, 'car_preparation/performer_dashboard.html', {
+            'error': 'Не найден сотрудник для вашего входа. Укажите domain_login в карточке RefStaff.',
+        })
+
+    repair_zones = get_repair_zones_for_staff(staff)
+    zone_ids = list(repair_zones.values_list('id', flat=True))
+
+    status_filter = request.GET.get('status', 'active')
+    zone_filter = request.GET.get('zone_id')
+
+    work_orders = WorkOrder.objects.filter(
+        repair_zone_id__in=zone_ids,
+    ).select_related('car', 'repair_zone', 'preparation').prefetch_related(
+        'items__work',
+        'items__work__stage',
+        'items__performer',
+        'items__photos',
+    )
+
+    if zone_filter:
         try:
-            date_obj = datetime.strptime(date_filter, '%Y-%m-%d').date()
-            work_items = work_items.filter(
-                schedule__planned_start__date=date_obj
-            )
+            work_orders = work_orders.filter(repair_zone_id=int(zone_filter))
         except ValueError:
             pass
-    
-    # Группируем работы по статусам
-    pending_works = work_items.filter(status='pending')
-    in_progress_works = work_items.filter(status='in_progress')
-    completed_works = work_items.filter(status='completed')
-    
-    # Статистика
-    total_count = work_items.count()
-    pending_count = pending_works.count()
-    in_progress_count = in_progress_works.count()
-    completed_count = completed_works.count()
-    overdue_count = work_items.filter(
-        schedule__planned_end__lt=timezone.now(),
-        status__in=['pending', 'in_progress']
-    ).count()
-    
+
+    if status_filter == 'active':
+        work_orders = work_orders.filter(status__in=['scheduled', 'in_progress'])
+    elif status_filter == 'today':
+        today = timezone.now().date()
+        work_orders = work_orders.filter(
+            Q(planned_start__date=today) | Q(actual_start__date=today)
+        )
+    elif status_filter:
+        work_orders = work_orders.filter(status=status_filter)
+
+    work_orders = work_orders.order_by('repair_zone__sort_order', '-planned_start', '-id')
+
+    items_qs = WorkOrderItem.objects.filter(work_order__repair_zone_id__in=zone_ids)
+    if status_filter == 'active':
+        items_qs = items_qs.filter(work_order__status__in=['scheduled', 'in_progress'])
+    pending_items = items_qs.filter(status='pending').count()
+    in_progress_items = items_qs.filter(status='in_progress').count()
+    completed_items = items_qs.filter(status='completed').count()
+
     context = {
         'staff': staff,
-        'work_items': work_items,
-        'pending_works': pending_works[:10],  # Ограничиваем для производительности
-        'in_progress_works': in_progress_works[:10],
-        'completed_works': completed_works[:10],
-        'total_count': total_count,
-        'pending_count': pending_count,
-        'in_progress_count': in_progress_count,
-        'completed_count': completed_count,
-        'overdue_count': overdue_count,
+        'repair_zones': repair_zones,
+        'work_orders': work_orders,
+        'zones_count': repair_zones.count(),
+        'orders_count': work_orders.count(),
+        'pending_items': pending_items,
+        'in_progress_items': in_progress_items,
+        'completed_items': completed_items,
         'status_filter': status_filter,
-        'date_filter': date_filter,
-        'today': timezone.now().date(),
+        'zone_filter': zone_filter,
+        'now': timezone.now(),
     }
-    
     return render(request, 'car_preparation/performer_dashboard.html', context)
 
 
@@ -805,6 +820,19 @@ def work_order_create(request, preparation_id):
             
             if not work_ids:
                 return JsonResponse({'success': False, 'error': 'Не выбрано ни одной работы'}, status=400)
+
+            if not repair_zone_id:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Укажите ремонтную зону — без неё заказ-наряд не создаётся',
+                }, status=400)
+
+            repair_zone = get_object_or_404(RefRepairZone, id=int(repair_zone_id), is_active=True)
+            if repair_zone.unit_id and preparation.unit_id and repair_zone.unit_id != preparation.unit_id:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Ремонтная зона не относится к подразделению автомобиля',
+                }, status=400)
             
             # Парсим даты
             planned_start = None
@@ -830,7 +858,7 @@ def work_order_create(request, preparation_id):
                 car=preparation.car,
                 preparation=preparation,
                 template_id=int(template_id) if template_id else None,
-                repair_zone_id=int(repair_zone_id) if repair_zone_id else None,
+                repair_zone_id=repair_zone.id,
                 title=title or 'Заказ-наряд',
                 description=description,
                 planned_start=planned_start,
@@ -845,17 +873,30 @@ def work_order_create(request, preparation_id):
             for work_id in work_ids:
                 try:
                     work = RefCarPreparationWork.objects.get(id=int(work_id))
+                    prep_item, _ = CarPreparationWorkItem.objects.get_or_create(
+                        preparation=preparation,
+                        work=work,
+                        defaults={
+                            'is_confirmed': True,
+                            'planned_time': work.estimated_time or 0,
+                            'status': 'pending',
+                        },
+                    )
                     WorkOrderItem.objects.create(
                         work_order=work_order,
                         work=work,
                         sort_order=sort_order,
                         status='pending',
                         planned_start=planned_start,
-                        planned_end=planned_end
+                        planned_end=planned_end,
+                        preparation_work_item=prep_item,
                     )
                     sort_order += 1
                 except (RefCarPreparationWork.DoesNotExist, ValueError):
                     continue
+
+            preparation.progress_percent = preparation.calculate_progress()
+            preparation.save(update_fields=['progress_percent', 'date_updated'])
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -912,6 +953,15 @@ def work_order_item_start(request, item_id):
         if not item.performer:
             item.performer = getattr(request.user, 'staff', None)
         item.save()
+
+        if item.preparation_work_item_id:
+            prep_item = item.preparation_work_item
+            prep_item.status = 'in_progress'
+            if not prep_item.date_start:
+                prep_item.date_start = item.actual_start
+            if not prep_item.performer and item.performer:
+                prep_item.performer = item.performer
+            prep_item.save()
         
         # Обновляем статус заказ-наряда
         work_order = item.work_order
@@ -941,6 +991,21 @@ def work_order_item_complete(request, item_id):
         item.status = 'completed'
         item.actual_end = timezone.now()
         item.save()
+
+        if item.preparation_work_item_id:
+            prep_item = item.preparation_work_item
+            prep_item.status = 'completed'
+            prep_item.date_end = item.actual_end
+            if item.performer:
+                prep_item.performer = item.performer
+            if item.actual_start and item.actual_end:
+                delta = item.actual_end - item.actual_start
+                prep_item.actual_time = max(1, int(delta.total_seconds() / 60))
+            prep_item.has_photos = item.photos.exists()
+            prep_item.save()
+            prep = prep_item.preparation
+            prep.progress_percent = prep.calculate_progress()
+            prep.save(update_fields=['progress_percent', 'date_updated'])
         
         # Проверяем, все ли работы выполнены
         work_order = item.work_order
@@ -978,14 +1043,30 @@ def work_order_item_photo_upload(request, item_id):
         if uploaded_file.size > max_size:
             return JsonResponse({'success': False, 'error': 'Размер файла превышает 10 МБ'}, status=400)
         
-        # Создаем запись о фотографии
+        from django.core.files.base import ContentFile
+        file_content = uploaded_file.read()
+        file_name = uploaded_file.name
+
         photo = WorkOrderItemPhoto.objects.create(
             work_order_item=item,
-            photo=uploaded_file,
+            photo=ContentFile(file_content, name=file_name),
             description=description,
             created_by=getattr(request.user, 'staff', None),
             date_created=timezone.now()
         )
+
+        if item.preparation_work_item_id:
+            from .models import CarPreparationPhoto
+            prep_item = item.preparation_work_item
+            CarPreparationPhoto.objects.create(
+                work_item=prep_item,
+                preparation=prep_item.preparation,
+                photo=ContentFile(file_content, name=file_name),
+                description=description,
+                created_by=getattr(request.user, 'staff', None),
+            )
+            prep_item.has_photos = True
+            prep_item.save(update_fields=['has_photos'])
         
         return JsonResponse({
             'success': True,
@@ -1052,6 +1133,229 @@ def work_order_template_works(request, template_id):
         'template_name': template.name,
         'estimated_duration': template.estimated_duration_minutes,
     })
+
+
+@login_required
+def preparation_template_works(request, template_id):
+    """API: работы из шаблона подготовки (не заказ-наряда)."""
+    template = get_object_or_404(CarPreparationTemplate, id=template_id, is_active=True)
+    works_data = []
+    for tw in template.carpreparationtemplatework_set.select_related('work', 'work__stage').order_by('sort_order'):
+        work = tw.work
+        if not work or not work.is_active:
+            continue
+        works_data.append({
+            'id': work.id,
+            'name': work.name,
+            'estimated_time': tw.planned_time or work.estimated_time or 0,
+            'stage': work.stage.name if work.stage else 'Без этапа',
+            'is_required': tw.is_required,
+            'default_cost': float(tw.default_cost or 0),
+        })
+    return JsonResponse({
+        'success': True,
+        'works': works_data,
+        'template_name': template.name,
+        'template_id': template.id,
+    })
+
+
+@login_required
+def preparation_apply_template(request, preparation_id):
+    """Применить шаблон подготовки — создать пункты работ."""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+    template_id = request.POST.get('template_id')
+    auto_confirm = request.POST.get('auto_confirm') in ('1', 'true', 'on')
+    if not template_id:
+        return JsonResponse({'success': False, 'error': 'Не указан шаблон'}, status=400)
+
+    template = get_object_or_404(
+        CarPreparationTemplate,
+        id=int(template_id),
+        is_active=True,
+    )
+    if template.unit_id and preparation.unit_id and template.unit_id != preparation.unit_id:
+        return JsonResponse({'success': False, 'error': 'Шаблон не для этого подразделения'}, status=400)
+
+    created, skipped = template.apply_to_preparation(preparation, auto_confirm=auto_confirm)
+    return JsonResponse({
+        'success': True,
+        'message': f'Добавлено работ: {created}, уже были: {skipped}',
+        'created_count': created,
+        'skipped_count': skipped,
+    })
+
+
+@login_required
+def preparation_add_works(request, preparation_id):
+    """Добавить выбранные работы в подготовку (без заказ-наряда)."""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+    work_ids = request.POST.getlist('work_ids[]') or request.POST.getlist('work_ids')
+    if not work_ids and request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+            work_ids = data.get('work_ids', [])
+        except (json.JSONDecodeError, TypeError):
+            work_ids = []
+
+    if not work_ids:
+        return JsonResponse({'success': False, 'error': 'Не выбраны работы'}, status=400)
+
+    created = 0
+    for work_id in work_ids:
+        try:
+            work = RefCarPreparationWork.objects.get(id=int(work_id), is_active=True)
+        except (RefCarPreparationWork.DoesNotExist, ValueError):
+            continue
+        _, was_created = CarPreparationWorkItem.objects.get_or_create(
+            preparation=preparation,
+            work=work,
+            defaults={
+                'is_confirmed': False,
+                'planned_time': work.estimated_time or 0,
+                'status': 'pending',
+            },
+        )
+        if was_created:
+            created += 1
+
+    preparation.progress_percent = preparation.calculate_progress()
+    preparation.save(update_fields=['progress_percent', 'date_updated'])
+    return JsonResponse({'success': True, 'created_count': created})
+
+
+@login_required
+def preparation_work_item_update(request, item_id):
+    """Обновление плановых затрат и норм времени в документе подготовки."""
+    work_item = get_object_or_404(CarPreparationWorkItem, id=item_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+    if 'planned_time' in request.POST:
+        try:
+            work_item.planned_time = max(0, int(request.POST.get('planned_time') or 0))
+        except ValueError:
+            pass
+
+    if 'cost' in request.POST:
+        try:
+            from decimal import Decimal
+            work_item.cost = Decimal(str(request.POST.get('cost') or '0').replace(',', '.'))
+        except Exception:
+            return JsonResponse({'success': False, 'error': 'Некорректная сумма'}, status=400)
+
+    if 'comment' in request.POST:
+        work_item.comment = request.POST.get('comment', '')[:2000]
+
+    work_item.save()
+
+    prep = work_item.preparation
+    prep_total = prep.work_items.aggregate(total=Sum('cost'))['total'] or 0
+    materials = WorkOrderItemMaterial.objects.filter(
+        work_order_item__work_order__preparation=prep,
+    ).aggregate(total=Sum('total_price'))['total'] or 0
+
+    return JsonResponse({
+        'success': True,
+        'item_id': work_item.id,
+        'planned_time': work_item.planned_time,
+        'cost': str(work_item.cost),
+        'planned_works_cost': str(prep_total),
+        'materials_cost': str(materials),
+        'total_estimated_cost': str(prep_total + materials),
+    })
+
+
+@login_required
+def preparation_work_item_confirm(request, item_id):
+    """Подтвердить / снять подтверждение работы."""
+    work_item = get_object_or_404(CarPreparationWorkItem, id=item_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+    action = request.POST.get('action', 'confirm')
+    staff = getattr(request.user, 'staff', None)
+    if action == 'unconfirm':
+        work_item.is_confirmed = False
+        work_item.confirmed_by = None
+        work_item.confirmed_at = None
+    else:
+        work_item.is_confirmed = True
+        work_item.confirmed_by = staff
+        work_item.confirmed_at = timezone.now()
+
+    comment = request.POST.get('confirmation_comment', '').strip()
+    if comment:
+        work_item.confirmation_comment = comment
+    work_item.save()
+
+    prep = work_item.preparation
+    prep.progress_percent = prep.calculate_progress()
+    prep.save(update_fields=['progress_percent', 'date_updated'])
+
+    return JsonResponse({
+        'success': True,
+        'is_confirmed': work_item.is_confirmed,
+        'item_id': work_item.id,
+    })
+
+
+@login_required
+def preparation_checklist_save(request, preparation_id):
+    """Сохранение чек-листа контроля качества."""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+    checklist, _ = CarPreparationChecklist.objects.get_or_create(preparation=preparation)
+    staff = getattr(request.user, 'staff', None)
+
+    int_fields = (
+        'overall_quality', 'cleanliness_score', 'completeness_score', 'defect_score',
+    )
+    bool_fields = (
+        'exterior_checked', 'interior_checked', 'technical_checked', 'documents_checked',
+    )
+    text_fields = ('defects_found', 'recommendations')
+
+    for field in int_fields:
+        val = request.POST.get(field)
+        if val is not None and val != '':
+            try:
+                setattr(checklist, field, max(0, min(10, int(val))))
+            except ValueError:
+                pass
+
+    for field in bool_fields:
+        setattr(checklist, field, request.POST.get(field) in ('1', 'true', 'on'))
+
+    for field in text_fields:
+        if field in request.POST:
+            setattr(checklist, field, request.POST.get(field, ''))
+
+    if request.POST.get('mark_checked') == '1':
+        checklist.checked_by = staff
+        checklist.date_checked = timezone.now()
+
+    if request.POST.get('approve') == '1':
+        checklist.approved = True
+        checklist.approved_by = staff
+        checklist.date_approved = timezone.now()
+        completed_status = RefCarPreparationStatus.objects.filter(code='completed').first()
+        if completed_status:
+            preparation.status = completed_status
+            preparation.date_end = timezone.now()
+            preparation.progress_percent = 100
+            preparation.save()
+
+    checklist.save()
+    return JsonResponse({'success': True, 'message': 'Чек-лист сохранён'})
 
 
 @login_required
@@ -1424,7 +1728,9 @@ def work_order_item_material_delete(request, material_id):
 @login_required
 def repair_zones_list(request):
     """Список ремонтных зон"""
-    zones = RefRepairZone.objects.all().select_related('unit').order_by('sort_order', 'name')
+    zones = RefRepairZone.objects.all().select_related('unit').prefetch_related(
+        'assigned_staff'
+    ).order_by('sort_order', 'name')
     
     context = {
         'zones': zones,
@@ -1455,6 +1761,9 @@ def repair_zone_create(request):
             is_active=is_active,
             sort_order=sort_order
         )
+        staff_ids = request.POST.getlist('assigned_staff')
+        if staff_ids:
+            zone.assigned_staff.set(staff_ids)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -1465,9 +1774,11 @@ def repair_zone_create(request):
         
         return redirect('car_preparation:repair_zones_list')
     
+    from refs.models import RefStaff
     units = RefUnit.objects.filter(buauto=True).order_by('name')
     context = {
         'units': units,
+        'all_staff': RefStaff.objects.all().order_by('name')[:500],
     }
     return render(request, 'car_preparation/repair_zone_form.html', context)
 
@@ -1495,6 +1806,7 @@ def repair_zone_edit(request, zone_id):
         zone.is_active = is_active
         zone.sort_order = sort_order
         zone.save()
+        zone.assigned_staff.set(request.POST.getlist('assigned_staff'))
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -1504,10 +1816,13 @@ def repair_zone_edit(request, zone_id):
         
         return redirect('car_preparation:repair_zones_list')
     
+    from refs.models import RefStaff
     units = RefUnit.objects.filter(buauto=True).order_by('name')
     context = {
         'zone': zone,
         'units': units,
+        'all_staff': RefStaff.objects.all().order_by('name')[:500],
+        'assigned_staff_ids': list(zone.assigned_staff.values_list('id', flat=True)),
     }
     return render(request, 'car_preparation/repair_zone_form.html', context)
 

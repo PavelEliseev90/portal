@@ -216,6 +216,7 @@ class RefRepairZoneAdmin(admin.ModelAdmin):
     list_display = ['name', 'code', 'unit', 'is_active', 'sort_order']
     list_filter = ['is_active', 'unit']
     search_fields = ['name', 'code', 'description']
+    filter_horizontal = ['assigned_staff']
     ordering = ['sort_order', 'name']
 
 
