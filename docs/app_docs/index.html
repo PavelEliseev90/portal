@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Документация проекта (по приложениям)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.35; color: #111; }
+    h1 { margin-bottom: 6px; }
+    .note { color: #444; margin-bottom: 18px; }
+    ul { padding-left: 18px; }
+    li { margin: 6px 0; }
+    a { color: #0b57d0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
+    .card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; }
+    .card h2 { font-size: 16px; margin: 0 0 8px; }
+    .muted { color: #555; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Документация проекта (по приложениям)</h1>
+  <div class="note">
+    Эта документация формируется итеративно. По каждому приложению создаётся отдельная HTML-страница с описанием:
+    <b>связей моделей</b>, <b>функционала</b> и <b>точек входа (views/urls)</b>.
+    Сейчас подготовлены первые страницы (в первую очередь блок, который мы уже трогали).
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><a href="./estimations.html">estimations</a></h2>
+      <div class="muted">Интерактивные оценки (осмотры/страницы оценки), включая страницу приёмки 2-го комплекта колёс (2КК).</div>
+    </div>
+
+    <div class="card">
+      <h2><a href="./register.html">register</a></h2>
+      <div class="muted">Хранение сущностей интерактивных оценок и связанных данных (Reg* модели, включая 2КК приёмку и файлы).</div>
+    </div>
+
+    <div class="card">
+      <h2><a href="./refs.html">refs</a></h2>
+      <div class="muted">Справочники (марки, размеры шин/дисков, статусы и т.д.), используемые почти во всех формах.</div>
+    </div>
+
+    <div class="card">
+      <h2><a href="./api.html">api</a></h2>
+      <div class="muted">REST/служебные endpoint-ы: мобильные v1/v2, обмен с 1С, swagger, интеграционные методы и сервисные операции.</div>
+    </div>
+
+    <div class="card">
+      <h2>Остальные приложения</h2>
+      <div class="muted">
+        Список приложений берётся из <code>INSTALLED_APPS</code> в <code>portal/settings.py</code>. Остальные страницы буду добавлять по очереди.
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:18px;">
+    Подтверди, пожалуйста, с чего продолжать углубляться в детализацию: <b>по app страницам в порядке</b> или <b>по твоей очереди</b> (например: сначала <code>api</code>, потом <code>avtosalon</code>).
+  </p>
+</body>
+</html>
+

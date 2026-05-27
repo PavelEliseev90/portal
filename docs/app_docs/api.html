@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Документация: api</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.4; color: #111; }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 22px; font-size: 18px; }
+    .muted { color: #555; font-size: 13px; }
+    .box { border: 1px solid #e6e6e6; border-radius: 12px; padding: 14px; margin-top: 10px; }
+    code { background: #f4f6f8; padding: 1px 5px; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #e6e6e6; padding: 8px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; }
+  </style>
+</head>
+<body>
+<h1>Приложение: api</h1>
+<div class="muted">
+  Назначение: централизованный слой endpoint-ов для интеграций и внешних клиентов
+  (мобильные приложения, обмены, swagger/openapi, сервисные операции).
+</div>
+
+<div class="box">
+  <h2>Общая структура (api/urls.py)</h2>
+  <ul>
+    <li><b>Документация API:</b> <code>/api/swagger/</code>, <code>/api/redoc/</code>, schema-json.</li>
+    <li><b>Android API v1:</b> префикс <code>/api/a/v1/*</code> (авторизация, список РЛК, оценка, отправка форм/фото).</li>
+    <li><b>Android API v2 (Flutter):</b> префикс <code>/api/a/v2/*</code> (оптимизированные endpoint-ы).</li>
+    <li><b>Интеграции с 1С:</b> <code>/api/exchange/</code>, <code>/api/exchange_bu/</code> и сервисные методы.</li>
+    <li><b>Автосалон/склад/цены:</b> <code>/api/v1/*</code> (refresh автомобилей, avtohub/zna и др.).</li>
+    <li><b>Обработка медиа/голоса/очередей:</b> endpoint-ы для аудио/конвертации/распознавания/очередей.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Крупные блоки endpoint-ов</h2>
+  <table>
+    <thead>
+      <tr><th>Блок</th><th>Пример endpoint</th><th>Смысл</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Post/utility</td>
+        <td><code>post_info/</code></td>
+        <td>Сервисные операции и внутренние API-вызовы.</td>
+      </tr>
+      <tr>
+        <td>Mobile v1</td>
+        <td><code>a/v1/login_in/</code>, <code>a/v1/rlk_eco/</code>, <code>a/v1/estimation_*_post/</code></td>
+        <td>Старая линия API для Android-клиента, покрывает шаги интерактивной оценки и работу с РЛК.</td>
+      </tr>
+      <tr>
+        <td>Mobile v2</td>
+        <td><code>a/v2/login_in/</code>, <code>a/v2/offline_sync/</code>, <code>a/v2/catalogs/*</code></td>
+        <td>Новая/оптимизированная линия API для Flutter, включая offline sync и каталоги.</td>
+      </tr>
+      <tr>
+        <td>Swagger/OpenAPI</td>
+        <td><code>swagger/</code>, <code>redoc/</code></td>
+        <td>Автогенерация документации и схема для интеграторов.</td>
+      </tr>
+      <tr>
+        <td>Автосалон v1</td>
+        <td><code>v1/refresh_new_cars/</code>, <code>v1/info_cars_organization/</code></td>
+        <td>Операции обновления/синхронизации данных автомобилей и связанных сущностей.</td>
+      </tr>
+      <tr>
+        <td>Интеграции и обмен</td>
+        <td><code>exchange/</code>, <code>exchange_bu/</code>, <code>refresh_link_cars_exchange/</code></td>
+        <td>Обмен данными с внешними системами (в т.ч. 1С контуры).</td>
+      </tr>
+      <tr>
+        <td>Голос/очереди</td>
+        <td><code>get_records_queue/</code>, <code>post_call_queue/</code></td>
+        <td>Фоновые конвейеры обработки записей/звонков (распознавание и маршрутизация).</td>
+      </tr>
+      <tr>
+        <td>Каталоги</td>
+        <td><code>catalog_mark</code>, <code>catalog_model</code>, <code>catalog_modification</code></td>
+        <td>Поставки каталожных данных, используемых в оценке/подборе.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Связки с другими приложениями</h2>
+  <ul>
+    <li><b>estimations/register</b>: мобильные endpoint-ы чтения/записи этапов интерактивной оценки.</li>
+    <li><b>avtosalon</b>: endpoint-ы обновления автомобилей, цен и данных аналитики.</li>
+    <li><b>documents</b>: часть интеграционных endpoint-ов оперирует сущностями РЛК/документов.</li>
+    <li><b>refs</b>: каталоги и справочники прокидываются в мобильные/API сценарии.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h2>Примечание по детализации</h2>
+  <div class="muted">
+    В <code>api/urls.py</code> очень большой перечень endpoint-ов. Для полной энциклопедии следующим шагом можно сделать
+    подстраницы: <code>api_mobile_v1.html</code>, <code>api_mobile_v2.html</code>, <code>api_exchange.html</code>
+    с описанием каждого метода (входные параметры, модельные связи, side effects).
+  </div>
+</div>
+</body>
+</html>
+
