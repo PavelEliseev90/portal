@@ -44,3 +44,24 @@ class CalculatedCumulativeData(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
+
+# class CheckingCumulativeData(models.Model):
+    
+#     agreement       = models.ForeignKey(DocCarAgreement, null=True, on_delete=models.SET_NULL, verbose_name='Соглашение')
+    
+#     amount          = models.FloatField('Сумма', help_text='Расчетная сумма по показателю')
+#     author          = models.CharField("Автор", max_length=512, default='', null=True, blank=True)
+#     comment         = models.CharField("Комментарий", max_length=512, default='', null=True, blank=True)
+
+#     class Meta:
+#         db_table = 'checkingCumulativeData'
+#         verbose_name = 'Проверка ценовых правил соглашений'
+#         verbose_name_plural = 'Проверки ценовых правил соглашений'
+#         ordering = ['agreement__dataTime']
+
+#     def __str__(self):
+#         return "{} {} / {}".format(self.agreement, self.amount)
+
+#     def save(self, *args, **kwargs):
+#         super().save(*args, **kwargs)
+
