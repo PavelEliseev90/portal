@@ -3177,14 +3177,41 @@ def get_type_link(name):
 ######
 #####
 ####
+def _parse_1c_exchange_body(request, context_radius=300):
+    """
+    Разбор JSON тела обмена с 1С.
+    Возвращает (data, None) при успехе или (None, error_dict) при JSONDecodeError.
+    """
+    body_unicode = request.body.decode('utf-8', errors='replace').replace("'", '"')
+    try:
+        return json.loads(body_unicode), None
+    except json.JSONDecodeError as e:
+        pos = e.pos if e.pos is not None else 0
+        start = max(0, pos - context_radius)
+        end = min(len(body_unicode), pos + context_radius)
+        return None, {
+            'error': str(e),
+            'json_error': {
+                'message': e.msg,
+                'line': e.lineno,
+                'column': e.colno,
+                'position': pos,
+                'body_length': len(body_unicode),
+                'context_start': start,
+                'context_end': end,
+                'context': body_unicode[start:end],
+            },
+        }
+
+
 ###
 ##
 #Функция обмена данными с 1С Корс Авто
 @api_view(['POST',])
 def exchange_bu(request):
-    
-    body_unicode    = request.body.decode().replace("'", '"')
-    data            = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
     
     list_services           = list()
     list_units              = list()
@@ -3328,10 +3355,10 @@ def exchange_bu(request):
 #Функция обмена данными с 1С
 @api_view(['POST',])
 def exchange(request):
-    
-    body_unicode    = request.body.decode().replace("'", '"')
-    data            = json.loads(body_unicode)
-    
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+
     list_staff              = list()
     list_cars               = list()
     list_сustomers          = list()
