@@ -618,7 +618,7 @@ def calculate_car(request):
             calc = persist_auction_calculation(
                 info,
                 answer,
-                unit=dc,
+                unit=dc, 
                 user=request.user,
             )
             if calc:
@@ -3180,28 +3180,45 @@ def get_type_link(name):
 def _parse_1c_exchange_body(request, context_radius=300):
     """
     Разбор JSON тела обмена с 1С.
+    Сначала парсим как есть; replace("'", '"') — только legacy-fallback
+    (может ломать строки с апострофом внутри значения).
     Возвращает (data, None) при успехе или (None, error_dict) при JSONDecodeError.
     """
-    body_unicode = request.body.decode('utf-8', errors='replace').replace("'", '"')
+    body_unicode = request.body.decode('utf-8', errors='replace')
+    parse_error = None
+
     try:
         return json.loads(body_unicode), None
     except json.JSONDecodeError as e:
-        pos = e.pos if e.pos is not None else 0
-        start = max(0, pos - context_radius)
-        end = min(len(body_unicode), pos + context_radius)
-        return None, {
-            'error': str(e),
-            'json_error': {
-                'message': e.msg,
-                'line': e.lineno,
-                'column': e.colno,
-                'position': pos,
-                'body_length': len(body_unicode),
-                'context_start': start,
-                'context_end': end,
-                'context': body_unicode[start:end],
-            },
-        }
+        parse_error = e
+
+    # Legacy: старые обмены иногда шлют одинарные кавычки вместо двойных
+    try:
+        return json.loads(body_unicode.replace("'", '"')), None
+    except json.JSONDecodeError:
+        pass
+
+    e = parse_error
+    pos = e.pos if e.pos is not None else 0
+    start = max(0, pos - context_radius)
+    end = min(len(body_unicode), pos + context_radius)
+    return None, {
+        'error': str(e),
+        'json_error': {
+            'message': e.msg,
+            'line': e.lineno,
+            'column': e.colno,
+            'position': pos,
+            'body_length': len(body_unicode),
+            'context_start': start,
+            'context_end': end,
+            'context': body_unicode[start:end],
+            'note': (
+                "Контекст из исходного тела без replace(\"'\", '\"'). "
+                'Если в строках есть апострофы, глобальная замена кавычек ломает JSON.'
+            ),
+        },
+    }
 
 
 ###
