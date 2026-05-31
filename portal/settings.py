@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'checklists.apps.ChecklistsConfig',
     'recognition.apps.RecognitionConfig',
     'changelog.apps.ChangelogConfig',
+    'monitoring.apps.MonitoringConfig',
     'updatesportal.apps.UpdatesportalConfig',
     'manuals.apps.ManualsConfig',
     'online.apps.OnlineConfig',

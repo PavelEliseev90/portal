@@ -495,7 +495,7 @@
                             
                             {% if request.user.is_superuser %}
                                 <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'monitorings' %}secondary active {% else %}white{% endif %}" href="/monitorings/">
+                                    <a class="nav-link text-{% if params.type == 'monitorings' or params.type == 'monitoring_hub' or params.type == 'monitoring_exchange' %}secondary active {% else %}white{% endif %}" href="/monitoring/">
                                         <span class="sidebar-icon bi bi-graph-up-arrow"></span>
                                         Мониторинг
                                     </a>
