@@ -26,7 +26,10 @@ from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 import json
+import traceback
 from urllib.parse import unquote
+
+from api.models import Exchange1CErrorLog
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
@@ -3246,97 +3249,106 @@ def exchange_bu(request):
     list_los                = list()
     list_agreements         = list()
     list_washings         = list()
+    exchange_errors       = list()
 
     if 'Services' in data:
-        #Поступления услуг
-        services  = data['Services']
+        services = data['Services']
         if len(services) > 0:
-            list_services = load_doc_services(services)
+            list_services, errs = load_doc_services(services)
+            exchange_errors.extend(_exchange_errors_response('Services', errs))
 
     if 'Units' in data:
-        #Подразделения ДЦ
-        units  = data['Units']
+        units = data['Units']
         if len(units) > 0:
-            list_units = load_units(units)
+            list_units, errs = load_units(units)
+            exchange_errors.extend(_exchange_errors_response('Units', errs))
 
     if 'Filials' in data:
-        #Филиалы
-        filials  = data['Filials']
+        filials = data['Filials']
         if len(filials) > 0:
-            list_filials = load_filials(filials)
+            list_filials, errs = load_filials(filials)
+            exchange_errors.extend(_exchange_errors_response('Filials', errs))
 
-    #Сотрудники
-    staffs  = data['Staffs']
+    staffs = data.get('Staffs') or []
     if len(staffs) > 0:
-        list_staff = load_staffs(staffs)
+        list_staff, errs = load_staffs(staffs)
+        exchange_errors.extend(_exchange_errors_response('Staffs', errs))
     
-    #Автомобили клиентов
-    cars = data['Cars']
+    cars = data.get('Cars') or []
     if len(cars) > 0:
-        list_cars = load_cars(cars)
+        list_cars, errs = load_cars(cars)
+        exchange_errors.extend(_exchange_errors_response('Cars', errs))
 
-    #Клиенты
-    сustomers = data['Customers']
+    сustomers = data.get('Customers') or []
     if len(сustomers) > 0:
-        list_сustomers = load_сustomers(сustomers)
+        list_сustomers, errs = load_сustomers(сustomers)
+        exchange_errors.extend(_exchange_errors_response('Customers', errs))
     
-    #Рабочие листы
-    worksheets = data['Worksheets']
+    worksheets = data.get('Worksheets') or []
     if len(worksheets) > 0:
-        list_worksheets = load_worksheets(worksheets)
+        list_worksheets, errs = load_worksheets(worksheets)
+        exchange_errors.extend(_exchange_errors_response('Worksheets', errs))
 
-    #События рабочих листов
-    worksheets_events = data['WorksheetEvents']
+    worksheets_events = data.get('WorksheetEvents') or []
     if len(worksheets_events) > 0:
-        list_worksheets_events = load_worksheets_events(worksheets_events)
+        list_worksheets_events, errs = load_worksheets_events(worksheets_events)
+        exchange_errors.extend(_exchange_errors_response('WorksheetEvents', errs))
 
-    #Соглашения по автомобилям
-    agreements = data['Agreements']
+    agreements = data.get('Agreements') or []
     if len(agreements) > 0:
-        list_agreements = load_agreements(agreements)
+        list_agreements, errs = load_agreements(agreements)
+        exchange_errors.extend(_exchange_errors_response('Agreements', errs))
 
-    #Отгрузки автомобиля
-    shipments = data['Shipments']
+    shipments = data.get('Shipments') or []
     if len(shipments) > 0:
-        list_shipments = load_shipments(shipments)
+        list_shipments, errs = load_shipments(shipments)
+        exchange_errors.extend(_exchange_errors_response('Shipments', errs))
 
-    #Опросы
     if 'Surveys' in data:
         surveys = data['Surveys']
         if len(surveys) > 0:
-            list_surveys = load_surveys(surveys)
+            list_surveys, errs = load_surveys(surveys)
+            exchange_errors.extend(_exchange_errors_response('Surveys', errs))
 
-    #Мойки / но их грузим как заказ наряды, нет смысла вести отдельную таблицу.
     if 'Washings' in data:
         orders_washings = data['Washings']
         if len(orders_washings) > 0:
             for washing in orders_washings:
-                uin = washing['Uin']
-                DocZNKA.objects.filter(uin__icontains = uin).delete()
-                orders_s = washing['Items']
-                list_orders_s = load_orders_service_ka(orders_s)
-                if len(orders_s) == len(list_orders_s):
-                    answer = {
-                        'Uin'       : uin,
-                        'Version'   : washing['Version']
-                    }
-                    list_washings.append(answer)
+                try:
+                    uin = washing['Uin']
+                    DocZNKA.objects.filter(uin__icontains=uin).delete()
+                    orders_s = washing['Items']
+                    list_orders_s, errs = load_orders_service_ka(orders_s)
+                    exchange_errors.extend(_exchange_errors_response('Washings', errs))
+                    if len(orders_s) == len(list_orders_s):
+                        list_washings.append({
+                            'Uin': uin,
+                            'Version': washing['Version'],
+                        })
+                except Exception as exc:
+                    err_text = '{}: {}'.format(type(exc).__name__, exc)
+                    exchange_errors.append({
+                        'Type': 'Washings',
+                        'Data': washing,
+                        'Error': err_text,
+                    })
+                    _log_exchange_1c_error('Washings', washing, exc)
                                     
-    #Заказ-Наряды
-    orders_service = data['OrdersService']
+    orders_service = data.get('OrdersService') or []
     if len(orders_service) > 0:
-        list_order_service = load_orders_service_ka(orders_service)
+        list_order_service, errs = load_orders_service_ka(orders_service)
+        exchange_errors.extend(_exchange_errors_response('OrdersService', errs))
 
-    #СМС документы
     if 'SMSS' in data:
         smss = data['SMSS']
         if len(smss) > 0:
-            list_smss = load_smss(smss)
+            list_smss, errs = load_smss(smss)
+            exchange_errors.extend(_exchange_errors_response('SMSS', errs))
     
-    #Листы оценок
-    los = data['Los']
+    los = data.get('Los') or []
     if len(los) > 0:
-        list_los = load_los(los)
+        list_los, errs = load_los(los)
+        exchange_errors.extend(_exchange_errors_response('Los', errs))
 
 
     #Ответ
@@ -3355,7 +3367,9 @@ def exchange_bu(request):
         'Los'               : list_los,
         'Services'          : list_services,
         'Washings'          : list_washings,
-        'Units'             : list_units        
+        'Units'             : list_units,
+        'ExchangeErrors'    : exchange_errors,
+        'ExchangeErrorsCount': len(exchange_errors),
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -3388,71 +3402,84 @@ def exchange(request):
     list_resource_plannings = list()
     list_smss               = list()
     list_calculation_cars   = list()
+    exchange_errors         = list()
 
     #Коммерческие предложения 
     if 'CalculationCars' in data:
         calculation_cars = data['CalculationCars']
         if len(calculation_cars) > 0:
-            list_calculation_cars = load_calculation_cars(calculation_cars)
+            list_calculation_cars, errs = load_calculation_cars(calculation_cars)
+            exchange_errors.extend(_exchange_errors_response('CalculationCars', errs))
 
     #Сотрудники
-    staffs  = data['Staffs']
+    staffs = data.get('Staffs') or []
     if len(staffs) > 0:
-        list_staff = load_staffs(staffs)
+        list_staff, errs = load_staffs(staffs)
+        exchange_errors.extend(_exchange_errors_response('Staffs', errs))
     
     #Автомобили клиентов
-    cars = data['Cars']
+    cars = data.get('Cars') or []
     if len(cars) > 0:
-        list_cars = load_cars(cars)
+        list_cars, errs = load_cars(cars)
+        exchange_errors.extend(_exchange_errors_response('Cars', errs))
 
     #Клиенты
-    сustomers = data['Customers']
+    сustomers = data.get('Customers') or []
     if len(сustomers) > 0:
-        list_сustomers = load_сustomers(сustomers)
+        list_сustomers, errs = load_сustomers(сustomers)
+        exchange_errors.extend(_exchange_errors_response('Customers', errs))
     
     
     #Рабочие листы
-    worksheets = data['Worksheets']
+    worksheets = data.get('Worksheets') or []
     if len(worksheets) > 0:
-        list_worksheets = load_worksheets(worksheets)
+        list_worksheets, errs = load_worksheets(worksheets)
+        exchange_errors.extend(_exchange_errors_response('Worksheets', errs))
 
     #События рабочих листов
-    worksheets_events = data['WorksheetEvents']
+    worksheets_events = data.get('WorksheetEvents') or []
     if len(worksheets_events) > 0:
-        list_worksheets_events = load_worksheets_events(worksheets_events)
+        list_worksheets_events, errs = load_worksheets_events(worksheets_events)
+        exchange_errors.extend(_exchange_errors_response('WorksheetEvents', errs))
 
     #Соглашения по автомобилям
     #agreements = data['Agreements']
     #if len(agreements) > 0:
-    #    list_agreements = load_agreements(agreements)
+    #    list_agreements, errs = load_agreements(agreements)
+    #    exchange_errors.extend(_exchange_errors_response('Agreements', errs))
 
     #Отгрузки автомобиля
-    shipments = data['Shipments']
+    shipments = data.get('Shipments') or []
     if len(shipments) > 0:
-        list_shipments = load_shipments(shipments)
+        list_shipments, errs = load_shipments(shipments)
+        exchange_errors.extend(_exchange_errors_response('Shipments', errs))
 
     #Опросы
     if 'Surveys' in data:
         surveys = data['Surveys']
         if len(surveys) > 0:
-            list_surveys = load_surveys(surveys)
+            list_surveys, errs = load_surveys(surveys)
+            exchange_errors.extend(_exchange_errors_response('Surveys', errs))
 
     #Планируемые ресурсы
     if 'ResourcePlannings' in data:
         resourcePlannings = data['ResourcePlannings']
         if len(resourcePlannings) > 0:
-            list_resource_plannings = load_resource_planings(resourcePlannings)
+            list_resource_plannings, errs = load_resource_planings(resourcePlannings)
+            exchange_errors.extend(_exchange_errors_response('ResourcePlannings', errs))
 
     #СМС документы
     if 'SMSS' in data:
         smss = data['SMSS']
         if len(smss) > 0:
-            list_smss = load_smss(smss)
+            list_smss, errs = load_smss(smss)
+            exchange_errors.extend(_exchange_errors_response('SMSS', errs))
     
     #Заказ-Наряды
-    orders_service = data['OrdersService']
+    orders_service = data.get('OrdersService') or []
     if len(orders_service) > 0:
-        list_order_service = load_orders_service(orders_service)
+        list_order_service, errs = load_orders_service(orders_service)
+        exchange_errors.extend(_exchange_errors_response('OrdersService', errs))
     
     # Добавить в ответ нужные данные:
     recomendations              = list()
@@ -3491,6 +3518,8 @@ def exchange(request):
         'SMSS'              : list_smss,
         'CalculationCars'   : list_calculation_cars,
         'Answer'            : answer,
+        'ExchangeErrors'    : exchange_errors,
+        'ExchangeErrorsCount': len(exchange_errors),
     }   
 
     return JsonResponse(to, status=status.HTTP_200_OK)
@@ -3550,253 +3579,185 @@ def get_records_online_confirmed(unit, records_online_confirmed):
 ####
 ###
 ##
-#Загрузка данных
-def load_los(los):
-    
-    answer_data = list()
-    for lo in los:
+# Загрузка данных (обмен с 1С)
+_EXCHANGE_DATA_MAX_LEN = 30000
+_EXCHANGE_ERROR_DESC_MAX_LEN = 8000
+
+
+def _json_exchange_item(item):
+    try:
+        text = json.dumps(item, ensure_ascii=False, default=str)
+    except Exception:
+        text = str(item)
+    if len(text) > _EXCHANGE_DATA_MAX_LEN:
+        text = text[:_EXCHANGE_DATA_MAX_LEN] + '…'
+    return text
+
+
+def _log_exchange_1c_error(exchange_type, item, exc):
+    desc = traceback.format_exc()
+    if len(desc) > _EXCHANGE_ERROR_DESC_MAX_LEN:
+        desc = desc[-_EXCHANGE_ERROR_DESC_MAX_LEN:]
+    Exchange1CErrorLog.objects.create(
+        exchange_type=exchange_type[:64],
+        data=_json_exchange_item(item),
+        error_description=desc,
+    )
+
+
+def _exchange_item_loop(exchange_type, items, process_fn):
+    """
+    Обработка элементов массива обмена.
+    Возвращает (успешные ответы, список ошибок [{data, error}, ...]).
+    """
+    answer_data = []
+    errors = []
+    if not items:
+        return answer_data, errors
+    for item in items:
         try:
-            lo_object = get_lo(lo)
-            answer = {
-                'Uin'       : lo_object.uin,
-                'Version'   : lo['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = lo
-    return answer_data        
+            answer_data.append(process_fn(item))
+        except Exception as exc:
+            err_text = '{}: {}'.format(type(exc).__name__, exc)
+            errors.append({'data': item, 'error': err_text})
+            _log_exchange_1c_error(exchange_type, item, exc)
+    return answer_data, errors
+
+
+def _exchange_errors_response(exchange_type, errors):
+    return [
+        {
+            'Type': exchange_type,
+            'Data': err['data'],
+            'Error': err['error'],
+        }
+        for err in errors
+    ]
+
+
+def load_los(los):
+    def process(lo):
+        lo_object = get_lo(lo)
+        return {'Uin': lo_object.uin, 'Version': lo['Version']}
+    return _exchange_item_loop('Los', los, process)
 
 
 def load_smss(smss):
-    
-    answer_data = list()
-    for sms in smss:
-        try:
-            sms_object = get_sms(sms)
-            answer = {
-                'Uin'       : sms_object.uin,
-                'Version'   : sms['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = sms
-    return answer_data        
+    def process(sms):
+        sms_object = get_sms(sms)
+        return {'Uin': sms_object.uin, 'Version': sms['Version']}
+    return _exchange_item_loop('SMSS', smss, process)
+
 
 def load_staffs(staffs):
-    
-    answer_data = list()
-    for staff in staffs:
-        try:
-            staff_object = get_staff(staff)
-            answer = {
-                'Uin'       : staff_object.uin,
-                'Version'   : staff['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = staff 
-    return answer_data
+    def process(staff):
+        staff_object = get_staff(staff)
+        return {'Uin': staff_object.uin, 'Version': staff['Version']}
+    return _exchange_item_loop('Staffs', staffs, process)
+
 
 def load_doc_services(doc_services):
-    
-    answer_data = list()
-    for doc_service in doc_services:
-        try:
-            doc_service_object = get_doc_service(doc_service)
-            answer = {
-                'Uin'       : doc_service_object.uin,
-                'Version'   : doc_service['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = 1 
-    return answer_data
+    def process(doc_service):
+        doc_service_object = get_doc_service(doc_service)
+        return {'Uin': doc_service_object.uin, 'Version': doc_service['Version']}
+    return _exchange_item_loop('Services', doc_services, process)
+
 
 def load_units(units):
-    
-    answer_data = list()
-    for unit in units:
-        try:
-            unit_object = get_unit(unit)
-            answer = {
-                'Uin'       : unit_object.uin,
-                'Version'   : unit['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = 1 
-    return answer_data
+    def process(unit):
+        unit_object = get_unit(unit)
+        return {'Uin': unit_object.uin, 'Version': unit['Version']}
+    return _exchange_item_loop('Units', units, process)
+
 
 def load_filials(filials):
-    
-    answer_data = list()
-    for filial in filials:
-        try:
-            filial_object = get_filial(filial)
-            answer = {
-                'Uin'       : filial_object.uin,
-                'Version'   : filial['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = 1 
-    return answer_data
+    def process(filial):
+        filial_object = get_filial(filial)
+        return {'Uin': filial_object.uin, 'Version': filial['Version']}
+    return _exchange_item_loop('Filials', filials, process)
+
 
 def load_cars(cars):
-    
-    answer_data = list()
-    for car in cars:
-        try:
-            car_object = get_car(car)
-            answer = {
-                'Vin'       : car_object.name,
-                'Version'   : car['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = car
-    return answer_data
+    def process(car):
+        car_object = get_car(car)
+        return {'Vin': car_object.name, 'Version': car['Version']}
+    return _exchange_item_loop('Cars', cars, process)
+
 
 def load_calculation_cars(calculation_cars):
-    
-    answer_data = list()
-    for calculation_car in calculation_cars:
-        try:
-            calculation_car_object = get_calculation_car(calculation_car)
-            answer = {
-                'Uin'       : calculation_car_object.uin,
-                'Version'   : calculation_car['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = calculation_car
-    return answer_data
+    def process(calculation_car):
+        calculation_car_object = get_calculation_car(calculation_car)
+        return {'Uin': calculation_car_object.uin, 'Version': calculation_car['Version']}
+    return _exchange_item_loop('CalculationCars', calculation_cars, process)
+
 
 def load_сustomers(сustomers):
-    
-    answer_data = list()
-    for сustomer in сustomers:
-        try:
-            сustomer_object = get_сustomer(сustomer)
-            answer = {
-                'Uin'       : сustomer_object.uin,
-                'Version'   : сustomer['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = сustomer
-    return answer_data
+    def process(сustomer):
+        сustomer_object = get_сustomer(сustomer)
+        return {'Uin': сustomer_object.uin, 'Version': сustomer['Version']}
+    return _exchange_item_loop('Customers', сustomers, process)
+
 
 def load_orders_service(orders_service):
-    answer_data = list()
-    for order in orders_service:
-        try:
-            order_object = get_order(order)
-            answer = {
-                'Uin'       : order_object.uin,
-                'Version'   : order['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = order
-    return answer_data   
+    def process(order):
+        order_object = get_order(order)
+        return {'Uin': order_object.uin, 'Version': order['Version']}
+    return _exchange_item_loop('OrdersService', orders_service, process)
+
 
 def load_worksheets(worksheets):
-    answer_data = list()
-    for worksheet in worksheets:
-        try:
-            worksheet_object = get_worksheet(worksheet)
-            answer = {
-                'Uin'       : worksheet_object.uin,
-                'Version'   : worksheet['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = worksheet
-    return answer_data   
+    def process(worksheet):
+        worksheet_object = get_worksheet(worksheet)
+        return {'Uin': worksheet_object.uin, 'Version': worksheet['Version']}
+    return _exchange_item_loop('Worksheets', worksheets, process)
+
 
 def load_worksheets_events(worksheets_events):
-    answer_data = list()
-    for worksheets_event in worksheets_events:
-        try:
-            worksheet_events_object = get_worksheet_event(worksheets_event)
-            answer_data.append(worksheet_events_object.uin)
-        except:
-            error = worksheets_event
-    return answer_data
+    def process(worksheets_event):
+        worksheet_events_object = get_worksheet_event(worksheets_event)
+        return worksheet_events_object.uin
+    return _exchange_item_loop('WorksheetEvents', worksheets_events, process)
+
 
 def load_agreements(agreements):
-    answer_data = list()
-    for agreement in agreements:
-        try:
-            agreement_object = get_agreement(agreement)
-            answer = {
-                'Uin'       : agreement_object.uin,
-                'Version'   : agreement['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = agreement
-    return answer_data
+    def process(agreement):
+        agreement_object = get_agreement(agreement)
+        return {'Uin': agreement_object.uin, 'Version': agreement['Version']}
+    return _exchange_item_loop('Agreements', agreements, process)
+
 
 def load_shipments(shipments):
-    answer_data = list()
-    for shipment in shipments:
-        try:
-            shipment_object = get_shipment(shipment)
-            answer = {
-                'Uin'       : shipment_object.uin,
-                'Version'   : shipment['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = shipment
-    return answer_data
+    def process(shipment):
+        shipment_object = get_shipment(shipment)
+        return {'Uin': shipment_object.uin, 'Version': shipment['Version']}
+    return _exchange_item_loop('Shipments', shipments, process)
+
 
 def load_surveys(surveys):
-    answer_data = list()
-    for survey in surveys:
-        try:
-            survey_object = get_survey(survey)
-            answer = {
-                'Uin'       : survey_object.uin,
-                'Version'   : survey['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = survey
-    return answer_data
+    def process(survey):
+        survey_object = get_survey(survey)
+        return {'Uin': survey_object.uin, 'Version': survey['Version']}
+    return _exchange_item_loop('Surveys', surveys, process)
+
 
 def load_resource_planings(resource_planings):
-    answer_data = list()
-    for resource_planing in resource_planings:
-        try:
-            resource_planing_object = get_resource_planing(resource_planing)
-            answer = {
-                'Uin'                   : resource_planing_object.uin,
-                'ServiceRequest'        : resource_planing_object.serviceRequest.uin, 
-                'Active'                : resource_planing['Active'],
-                'DateStart'             : resource_planing['DateStart'],
-                'DateEnd'               : resource_planing['DateEnd']
-            }
-            answer_data.append(answer)
-        except:
-            error = resource_planing
-    return answer_data    
+    def process(resource_planing):
+        resource_planing_object = get_resource_planing(resource_planing)
+        return {
+            'Uin': resource_planing_object.uin,
+            'ServiceRequest': resource_planing_object.serviceRequest.uin,
+            'Active': resource_planing['Active'],
+            'DateStart': resource_planing['DateStart'],
+            'DateEnd': resource_planing['DateEnd'],
+        }
+    return _exchange_item_loop('ResourcePlannings', resource_planings, process)
+
 
 def load_orders_service_ka(orders_service):
-    answer_data = list()
-    for order in orders_service:
-        try:
-            order_object = get_order_ka(order)
-            answer = {
-                'Uin'       : order_object.uin,
-                'Version'   : order['Version']
-            }
-            answer_data.append(answer)
-        except:
-            error = order
-    return answer_data 
+    def process(order):
+        order_object = get_order_ka(order)
+        return {'Uin': order_object.uin, 'Version': order['Version']}
+    return _exchange_item_loop('OrdersService', orders_service, process)
 ######
 #####
 ####

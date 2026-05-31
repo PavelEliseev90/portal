@@ -52,6 +52,7 @@ urlpatterns = [
     path('asp/',            include('asp.urls')),
     path('auction_avito/',  include('auction_avito.urls')),
     path('changelog/',      include('changelog.urls')),
+    path('monitoring/',     include('monitoring.urls')),
 
     #Веб - сайт
     path('',            include('website.urls')),

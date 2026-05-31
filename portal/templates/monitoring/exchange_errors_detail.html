@@ -1,0 +1,37 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Ошибка обмена #{{ params.object.pk }} {% endblock %}
+{% block title_navbar %} — Ошибка обмена {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+	<p class="mb-3">
+		<a href="{% url 'monitoring:exchange_errors_list' %}">← К списку ошибок</a>
+		· <a href="{% url 'monitoring:hub' %}">Панель мониторинга</a>
+	</p>
+
+	<div class="portal-panel mb-3">
+		<h2 class="h5 mb-3" style="color: #002a5a;">Ошибка обмена #{{ params.object.pk }}</h2>
+		<div class="row g-3 padding-portal">
+			<div class="col-12 col-md-4">
+				<div class="text-muted small">Дата</div>
+				<div class="fw-semibold">{{ params.object.date_create|date:"d.m.Y H:i:s" }}</div>
+			</div>
+			<div class="col-12 col-md-4">
+				<div class="text-muted small">Тип (массив)</div>
+				<div><span class="badge bg-primary">{{ params.object.exchange_type }}</span></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel mb-3">
+		<h6 class="padding-portal mb-2">Описание ошибки</h6>
+		<pre class="padding-portal mb-0 small bg-light border rounded p-3" style="max-height: 400px; overflow: auto; white-space: pre-wrap;">{{ params.object.error_description }}</pre>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="padding-portal mb-2">Данные элемента (JSON)</h6>
+		<pre class="padding-portal mb-0 small bg-light border rounded p-3" style="max-height: 500px; overflow: auto;">{{ params.data_pretty }}</pre>
+	</div>
+</div>
+{% endblock %}

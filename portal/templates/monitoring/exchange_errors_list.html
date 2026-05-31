@@ -1,0 +1,124 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Ошибки обмена 1С {% endblock %}
+{% block title_navbar %} — Ошибки обмена 1С {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+		<div>
+			<h2 class="mb-1" style="color: #002a5a;">Ошибки обмена с 1С</h2>
+			<p class="text-muted small mb-0">
+				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+				· найдено: <strong>{{ params.total_count }}</strong>
+			</p>
+		</div>
+	</div>
+
+	<form method="get" class="portal-panel mb-3">
+		<div class="row g-2 align-items-end">
+			<div class="col-12 col-md-4 col-lg-2">
+				<label class="form-label small">Дата с</label>
+				<input type="date" name="date_start" class="form-control form-control-sm"
+					value="{{ params.date_start|date:'Y-m-d' }}">
+			</div>
+			<div class="col-12 col-md-4 col-lg-2">
+				<label class="form-label small">Дата по</label>
+				<input type="date" name="date_end" class="form-control form-control-sm"
+					value="{{ params.date_end|date:'Y-m-d' }}">
+			</div>
+			<div class="col-12 col-md-4 col-lg-3">
+				<label class="form-label small">Тип (массив)</label>
+				<select name="exchange_type" class="form-select form-select-sm">
+					<option value="">— все —</option>
+					{% for t in params.type_choices %}
+					<option value="{{ t }}" {% if params.exchange_type == t %}selected{% endif %}>{{ t }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-12 col-md-4 col-lg-2">
+				<label class="form-label small">На странице</label>
+				<select name="per_page" class="form-select form-select-sm">
+					<option value="25" {% if params.per_page == 25 %}selected{% endif %}>25</option>
+					<option value="50" {% if params.per_page == 50 %}selected{% endif %}>50</option>
+					<option value="100" {% if params.per_page == 100 %}selected{% endif %}>100</option>
+				</select>
+			</div>
+			<div class="col-12 col-lg-3">
+				<button type="submit" class="btn btn-primary btn-sm">Применить</button>
+				<a href="{% url 'monitoring:exchange_errors_list' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+			</div>
+		</div>
+	</form>
+
+	{% if params.stats_by_type %}
+	<div class="portal-panel mb-3">
+		<h6 class="mb-2 padding-portal">По типам за период</h6>
+		<div class="padding-portal d-flex flex-wrap gap-2">
+			{% for row in params.stats_by_type %}
+			<a href="?{% url_replace exchange_type=row.exchange_type date_start=params.date_start_str date_end=params.date_end_str %}"
+				class="badge rounded-pill text-decoration-none {% if params.exchange_type == row.exchange_type %}bg-primary{% else %}bg-secondary{% endif %}">
+				{{ row.exchange_type }}: {{ row.cnt }}
+			</a>
+			{% endfor %}
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="portal-panel">
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th>Дата</th>
+						<th>Тип</th>
+						<th>Ошибка</th>
+						<th>Данные</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in params.page_obj %}
+					<tr>
+						<td class="text-nowrap small">{{ item.date_create|date:"d.m.Y H:i:s" }}</td>
+						<td><span class="badge bg-light text-dark border">{{ item.exchange_type }}</span></td>
+						<td class="small" style="max-width: 320px;">
+							<span class="text-danger">{{ item.error_description|truncatechars:180 }}</span>
+						</td>
+						<td class="small text-muted" style="max-width: 280px;">{{ item.data|truncatechars:120 }}</td>
+						<td class="text-nowrap">
+							<a href="{% url 'monitoring:exchange_errors_detail' item.pk %}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="5" class="text-center text-muted py-4">За выбранный период ошибок нет</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		{% if params.page_obj.has_other_pages %}
+		<nav class="padding-portal mt-3">
+			<ul class="pagination pagination-sm mb-0 justify-content-center">
+				{% if params.page_obj.has_previous %}
+				<li class="page-item">
+					<a class="page-link" href="?{{ params.query_without_page }}&page={{ params.page_obj.previous_page_number }}">←</a>
+				</li>
+				{% endif %}
+				<li class="page-item disabled">
+					<span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }}</span>
+				</li>
+				{% if params.page_obj.has_next %}
+				<li class="page-item">
+					<a class="page-link" href="?{{ params.query_without_page }}&page={{ params.page_obj.next_page_number }}">→</a>
+				</li>
+				{% endif %}
+			</ul>
+		</nav>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

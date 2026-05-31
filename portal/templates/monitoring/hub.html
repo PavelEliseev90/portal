@@ -1,0 +1,59 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Мониторинг {% endblock %}
+{% block title_navbar %} — Мониторинг {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+	<h2 class="mb-2" style="color: #002a5a; font-weight: 700;">Панель мониторинга</h2>
+	<p class="text-muted mb-4">Сводный доступ к диагностике портала, обмену с 1С и просмотрам страниц.</p>
+
+	<div class="row g-3">
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="{% url 'monitoring:exchange_errors_list' %}" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #ef4444;">
+					<h5 class="mb-2" style="color: #002a5a;">Ошибки обмена с 1С</h5>
+					<p class="text-muted small mb-2">Элементы пакета <code>/api/exchange/</code>, которые не загрузились.</p>
+					<div class="d-flex gap-3">
+						<div>
+							<div class="text-muted small">За 24 ч</div>
+							<div class="fs-4 fw-bold text-danger">{{ params.exchange_errors_24h }}</div>
+						</div>
+						<div>
+							<div class="text-muted small">Всего</div>
+							<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.exchange_errors_total }}</div>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
+
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="{% url 'changelog:pageview_dashboard' %}" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #00509d;">
+					<h5 class="mb-2" style="color: #002a5a;">Статистика страниц</h5>
+					<p class="text-muted small mb-0">Логи открытий страниц: пользователи, пути, устройства, период.</p>
+				</div>
+			</a>
+		</div>
+
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="/monitorings/" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #22c55e;">
+					<h5 class="mb-2" style="color: #002a5a;">Мониторинг системы</h5>
+					<p class="text-muted small mb-0">Интеграции, диски, очереди, каталоги, Power BI и сервисы портала.</p>
+				</div>
+			</a>
+		</div>
+
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="/monitorings_eco/" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #f59e0b;">
+					<h5 class="mb-2" style="color: #002a5a;">Мониторинг ЕЦО</h5>
+					<p class="text-muted small mb-0">Интерактивные оценки, автотека, push, задачи ценообразования.</p>
+				</div>
+			</a>
+		</div>
+	</div>
+</div>
+{% endblock %}
