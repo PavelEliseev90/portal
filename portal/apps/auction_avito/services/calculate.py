@@ -62,6 +62,7 @@ def _lot_payload_from_calculate_request(payload: dict, lot_id: int) -> dict:
         'bidGroupV2': payload.get('bidGroupV2'),
         'images': payload.get('images') or [],
         'badges': payload.get('badges') or [],
+        'badgesByStyle': payload.get('badgesByStyle') or [],
         'equipment': payload.get('equipment') or [],
         'finishAt': payload.get('finishAt'),
         'expiresAt': payload.get('expiresAt'),
