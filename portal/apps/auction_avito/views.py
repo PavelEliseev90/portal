@@ -5,6 +5,14 @@ from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from auction_avito.lot_tabs import (
+    default_two_months_period,
+    lot_estimation_page,
+    lot_sales_page,
+    lot_stock_page,
+    resolve_autoru_models,
+    resolve_period,
+)
 from auction_avito.models import (
     AvitoAutotekaEvent,
     AvitoLot,
@@ -110,6 +118,45 @@ def _venue_filter_choices():
         (str(v.dealer_id), v.display_label)
         for v in AvitoVenue.objects.select_related('city').order_by('city__name', 'name', 'dealer_id')
     ]
+
+
+def _lot_qs_inject(stock_model, est_unit, sales_from, sales_to, est_from, est_to):
+    data = {}
+    if stock_model:
+        data['stock_model'] = stock_model
+    if est_unit:
+        data['est_unit'] = est_unit
+    if sales_from:
+        data['sales_from'] = sales_from.isoformat()
+    if sales_to:
+        data['sales_to'] = sales_to.isoformat()
+    if est_from:
+        data['est_from'] = est_from.isoformat()
+    if est_to:
+        data['est_to'] = est_to.isoformat()
+    return data
+
+
+def _page_num(request, key):
+    try:
+        return max(1, int(request.GET.get(key) or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _tab_query_string(request, tab, inject=None, **overrides):
+    q = request.GET.copy()
+    q['tab'] = tab
+    if inject:
+        for key, val in inject.items():
+            if val is not None and val != '':
+                q[key] = str(val)
+    for key, val in overrides.items():
+        if val is None:
+            q.pop(key, None)
+        else:
+            q[key] = str(val)
+    return q.urlencode()
 
 
 def _equipment_items(lot):
@@ -267,10 +314,137 @@ def lot_detail(request, pk):
     seen_types = {b.badge_type for b in offer_badges}
     all_badges = offer_badges + [b for b in lot_badges if b.badge_type not in seen_types]
 
+    vehicle = getattr(lot, 'vehicle_avito', None)
+    model_ctx = resolve_autoru_models(vehicle)
+    stock_model_raw = (request.GET.get('stock_model') or '').strip()
+    stock_model_id = None
+    if stock_model_raw:
+        try:
+            stock_model_id = int(stock_model_raw)
+        except ValueError:
+            pass
+    tab = (request.GET.get('tab') or 'main').strip()
+    if tab not in ('main', 'autoteka', 'stock', 'sales', 'estimations'):
+        tab = 'main'
+
+    default_from, default_to = default_two_months_period()
+    sales_from, sales_to = resolve_period(
+        request.GET.get('sales_from'),
+        request.GET.get('sales_to'),
+    )
+    est_from, est_to = resolve_period(
+        request.GET.get('est_from'),
+        request.GET.get('est_to'),
+    )
+    est_unit_raw = (request.GET.get('est_unit') or '').strip()
+    est_unit_id = None
+    if est_unit_raw:
+        try:
+            est_unit_id = int(est_unit_raw)
+        except ValueError:
+            pass
+
+    stock_rows, stock_total, stock_page_obj = [], 0, None
+    sales_rows, sales_total, sales_page_obj = [], 0, None
+    estimation_rows, estimation_total, est_page_obj = [], 0, None
+    estimation_unit_choices = []
+
+    if model_ctx and model_ctx.get('model_ids'):
+        stock_rows, stock_total, stock_page_obj = lot_stock_page(
+            model_ctx['model_ids'],
+            model_filter_id=stock_model_id,
+            page=_page_num(request, 'stock_page'),
+        )
+        sales_rows, sales_total, sales_page_obj = lot_sales_page(
+            model_ctx['model_ids'],
+            sales_from,
+            sales_to,
+            page=_page_num(request, 'sales_page'),
+        )
+    brand = (model_ctx or {}).get('brand_name') or (
+        vehicle.brand_name if vehicle else ''
+    )
+    model_label = (model_ctx or {}).get('model_name') or (
+        vehicle.model_name if vehicle else ''
+    )
+    estimation_rows, estimation_total, est_page_obj, estimation_unit_choices = (
+        lot_estimation_page(
+            model_ctx,
+            brand_name=brand,
+            model_name=model_label,
+            date_from=est_from,
+            date_to=est_to,
+            unit_id=est_unit_id,
+            page=_page_num(request, 'est_page'),
+        )
+    )
+
     params = {
         'type': 'auction_avito_detail',
         'lot': lot,
-        'vehicle': getattr(lot, 'vehicle_avito', None),
+        'vehicle': vehicle,
+        'tab': tab,
+        'model_ctx': model_ctx,
+        'stock_model': stock_model_raw,
+        'stock_model_id': stock_model_id,
+        'stock_rows': stock_rows,
+        'stock_total': stock_total,
+        'stock_page_obj': stock_page_obj,
+        'sales_rows': sales_rows,
+        'sales_total': sales_total,
+        'sales_page_obj': sales_page_obj,
+        'sales_from': sales_from,
+        'sales_to': sales_to,
+        'sales_from_default': default_from,
+        'sales_to_default': default_to,
+        'estimation_rows': estimation_rows,
+        'estimation_total': estimation_total,
+        'est_page_obj': est_page_obj,
+        'est_from': est_from,
+        'est_to': est_to,
+        'est_unit': est_unit_raw,
+        'est_unit_id': est_unit_id,
+        'estimation_unit_choices': estimation_unit_choices,
+        'qs_main': _tab_query_string(
+            request, 'main', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_autoteka': _tab_query_string(
+            request, 'autoteka', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_stock': _tab_query_string(
+            request, 'stock', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_sales': _tab_query_string(
+            request, 'sales', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_sales_reset': _tab_query_string(
+            request, 'sales', inject=_lot_qs_inject(stock_model_raw, est_unit_raw, None, None, est_from, est_to),
+            sales_from=None, sales_to=None, sales_page=None,
+            stock_page=None, est_page=None,
+        ),
+        'qs_estimations': _tab_query_string(
+            request, 'estimations', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_est_reset': _tab_query_string(
+            request, 'estimations', inject=_lot_qs_inject(stock_model_raw, None, sales_from, sales_to, None, None),
+            est_from=None, est_to=None, est_unit=None, est_page=None,
+            stock_page=None, sales_page=None,
+        ),
         'autohub': getattr(lot, 'vehicle_autohub', None),
         'autoteka': getattr(lot, 'autoteka', None),
         'autoteka_events': (

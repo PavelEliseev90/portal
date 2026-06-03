@@ -79,6 +79,37 @@
     color: #002a5a;
     margin-bottom: 0.65rem;
   }
+  .aav-tabs .nav-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 0.55rem 0.75rem;
+  }
+  .aav-tabs .nav-link.active {
+    color: #002a5a;
+    background: transparent;
+    border-bottom-color: #00509d;
+  }
+  .aav-tab-badge {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(0, 80, 157, 0.12);
+    color: #00509d;
+    margin-left: 0.25rem;
+    font-weight: 700;
+  }
+  .aav-stock-filter { max-width: 320px; }
+  .aav-filter-form {
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    margin-bottom: 1rem;
+  }
 </style>
 {% endblock %}
 
@@ -164,24 +195,346 @@
       </div>
 
       <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-card-text me-1"></span> Описание</div>
-        <div class="aav-desc">{{ params.lot.description|default:"—" }}</div>
-      </div>
+        <ul class="nav nav-tabs aav-tabs flex-nowrap overflow-auto" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'main' %}active{% endif %}" href="?{{ params.qs_main }}">Основная</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'autoteka' %}active{% endif %}" href="?{{ params.qs_autoteka }}">
+              Автотека
+              {% if params.autoteka_events %}<span class="aav-tab-badge">{{ params.autoteka_events|length }}</span>{% endif %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'stock' %}active{% endif %}" href="?{{ params.qs_stock }}">
+              Наш склад
+              {% if params.stock_total %}<span class="aav-tab-badge">{{ params.stock_total }}</span>{% endif %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'sales' %}active{% endif %}" href="?{{ params.qs_sales }}">
+              Продажи
+              {% if params.sales_total %}<span class="aav-tab-badge">{{ params.sales_total }}</span>{% endif %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'estimations' %}active{% endif %}" href="?{{ params.qs_estimations }}">
+              Оценки
+              {% if params.estimation_total %}<span class="aav-tab-badge">{{ params.estimation_total }}</span>{% endif %}
+            </a>
+          </li>
+        </ul>
 
-      <div class="portal-panel mb-3">
-        <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация </div>
-        {% if params.equipment_items %}
-          <div class="row g-2">
-            {% for eq in params.equipment_items %}
-              <div class="col-md-6">
-                <strong class="small d-block text-secondary">{{ eq.name }}</strong>
-                <span class="small">{% if eq.values %}{{ eq.values|join:", " }}{% else %}—{% endif %}</span>
+        <div class="pt-3">
+          {% if params.tab == 'main' %}
+            <div class="aav-panel-title"><span class="bi bi-card-text me-1"></span> Описание</div>
+            <div class="aav-desc mb-4">{{ params.lot.description|default:"—" }}</div>
+            <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация</div>
+            {% if params.equipment_items %}
+              <div class="row g-2">
+                {% for eq in params.equipment_items %}
+                  <div class="col-md-6">
+                    <strong class="small d-block text-secondary">{{ eq.name }}</strong>
+                    <span class="small">{% if eq.values %}{{ eq.values|join:", " }}{% else %}—{% endif %}</span>
+                  </div>
+                {% endfor %}
               </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="text-muted small mb-0">Нет данных. Синхронизируйте оффер или пересчитайте лот с полным <code>lot.equipment[]</code>.</p>
-        {% endif %}
+            {% else %}
+              <p class="text-muted small mb-0">Нет данных. Синхронизируйте оффер или пересчитайте лот с полным <code>lot.equipment[]</code>.</p>
+            {% endif %}
+
+          {% elif params.tab == 'autoteka' %}
+            {% if params.autoteka %}
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <span class="fw-semibold text-secondary small">Отчёт Автотеки</span>
+                {% if params.autoteka.state_status %}
+                  <span class="badge bg-light text-dark border">Статус: {{ params.autoteka.state_status }}</span>
+                {% endif %}
+              </div>
+              {% if params.autoteka_events %}
+                <div class="table-responsive portal-radius">
+                  <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Проверка</th>
+                        <th>Результат</th>
+                        <th style="width:6rem">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for ev in params.autoteka_events %}
+                        <tr>
+                          <td class="small text-muted">{{ ev.event_type }}</td>
+                          <td>{{ ev.description }}</td>
+                          <td>
+                            {% if ev.status == 'ok' %}<span class="aav-autoteka-ok bi bi-check-circle-fill"></span>
+                            {% elif ev.status == 'warning' %}<span class="aav-autoteka-warn bi bi-exclamation-triangle-fill"></span>
+                            {% elif ev.status == 'caution' %}<span class="aav-autoteka-bad bi bi-exclamation-circle-fill"></span>
+                            {% elif ev.status == 'incomplete' %}<span class="aav-autoteka-inc bi bi-hourglass-split"></span>
+                            {% else %}{{ ev.status }}{% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <p class="text-muted small mb-0">События отчёта не загружены.</p>
+              {% endif %}
+            {% else %}
+              <p class="text-muted small mb-0">Данные Автотеки по этому лоту отсутствуют.</p>
+            {% endif %}
+
+          {% elif params.tab == 'stock' %}
+            {% if params.model_ctx and params.model_ctx.models %}
+              <form method="get" class="aav-filter-form d-flex flex-wrap align-items-end gap-3">
+                <input type="hidden" name="tab" value="stock">
+                {% if params.sales_from %}<input type="hidden" name="sales_from" value="{{ params.sales_from|date:'Y-m-d' }}">{% endif %}
+                {% if params.sales_to %}<input type="hidden" name="sales_to" value="{{ params.sales_to|date:'Y-m-d' }}">{% endif %}
+                {% if params.est_from %}<input type="hidden" name="est_from" value="{{ params.est_from|date:'Y-m-d' }}">{% endif %}
+                {% if params.est_to %}<input type="hidden" name="est_to" value="{{ params.est_to|date:'Y-m-d' }}">{% endif %}
+                {% if params.est_unit %}<input type="hidden" name="est_unit" value="{{ params.est_unit }}">{% endif %}
+                <div class="aav-stock-filter">
+                  <label class="form-label small text-muted mb-1">Модель (каталог Autoru)</label>
+                  <select name="stock_model" class="form-select form-select-sm">
+                    <option value="">Все совпавшие модели</option>
+                    {% for m in params.model_ctx.models %}
+                      <option value="{{ m.id }}" {% if params.stock_model_id == m.id %}selected{% endif %}>{{ m.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+                {% if params.model_ctx.mark %}
+                  <p class="small text-muted mb-0 ms-auto">
+                    Марка: <strong>{{ params.model_ctx.mark.name }}</strong>
+                    {% if params.model_ctx.model_name %} · Avito: {{ params.model_ctx.brand_name }} {{ params.model_ctx.model_name }}{% endif %}
+                  </p>
+                {% endif %}
+              </form>
+            {% elif params.vehicle %}
+              <p class="alert alert-warning small py-2 mb-3">
+                Не удалось сопоставить «{{ params.vehicle.brand_name }} {{ params.vehicle.model_name }}» с каталогом Autoru — склад показан не будет.
+              </p>
+            {% endif %}
+            {% if params.stock_rows %}
+              <p class="small text-muted mb-2">
+                В наличии: {{ params.stock_total }} (quantity &gt; 0)
+                {% if params.stock_page_obj %}· страница {{ params.stock_page_obj.number }} из {{ params.stock_page_obj.paginator.num_pages }}{% endif %}
+              </p>
+              <div class="table-responsive portal-radius">
+                <table class="table table-sm table-striped table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Автомобиль</th>
+                      <th>VIN</th>
+                      <th>Год</th>
+                      <th>Пробег</th>
+                      <th>Кузов</th>
+                      <th>КПП</th>
+                      <th>Цена</th>
+                      <th>Себест.</th>
+                      <th>БЦП</th>
+                      <th>Дней</th>
+                      <th>ДЦ / склад</th>
+                      <th>Статус</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in params.stock_rows %}
+                      <tr>
+                        <td class="small">
+                          <strong>{{ row.mark }} {{ row.model }}</strong><br>
+                          <span class="text-muted">{{ row.modification }}</span>
+                          {% if row.complectation != '—' %}<br><span class="text-muted">{{ row.complectation }}</span>{% endif %}
+                        </td>
+                        <td class="small"><code>{{ row.vin|default:"—" }}</code></td>
+                        <td>{{ row.year|default:"—" }}</td>
+                        <td>{% if row.run %}{{ row.run|formatted_number }} км{% else %}—{% endif %}</td>
+                        <td class="small">{{ row.body }}</td>
+                        <td class="small">{{ row.gear }}</td>
+                        <td><strong>{{ row.price|formatted_number }}</strong> ₽</td>
+                        <td>{{ row.cost_price|formatted_number|default:"—" }} ₽</td>
+                        <td>{{ row.bcp|formatted_number|default:"—" }}</td>
+                        <td>{{ row.days_in_stok|default:"—" }}</td>
+                        <td class="small">{{ row.unit }}<br>{{ row.store }}{% if row.city %} · {{ row.city }}{% endif %}</td>
+                        <td class="small">{{ row.status }}<br><span class="text-muted">{{ row.evaluation }}</span></td>
+                        <td>
+                          {% if row.slug %}
+                            <a href="/cars/{{ row.slug }}/" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">Карточка</a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% include 'auction_avito/lot_detail_pagination.html' with page_obj=params.stock_page_obj page_param='stock_page' base_qs=params.qs_stock %}
+            {% elif params.model_ctx and params.model_ctx.model_ids %}
+              <p class="text-muted small mb-0">На складе нет автомобилей выбранной модели.</p>
+            {% endif %}
+
+          {% elif params.tab == 'sales' %}
+            {% if params.model_ctx and params.model_ctx.model_ids %}
+              <form method="get" class="aav-filter-form">
+                <input type="hidden" name="tab" value="sales">
+                {% if params.stock_model %}<input type="hidden" name="stock_model" value="{{ params.stock_model }}">{% endif %}
+                {% if params.est_from %}<input type="hidden" name="est_from" value="{{ params.est_from|date:'Y-m-d' }}">{% endif %}
+                {% if params.est_to %}<input type="hidden" name="est_to" value="{{ params.est_to|date:'Y-m-d' }}">{% endif %}
+                {% if params.est_unit %}<input type="hidden" name="est_unit" value="{{ params.est_unit }}">{% endif %}
+                <div class="row g-2 align-items-end">
+                  <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">Период с</label>
+                    <input type="date" name="sales_from" class="form-control form-control-sm"
+                           value="{{ params.sales_from|date:'Y-m-d' }}">
+                  </div>
+                  <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">по</label>
+                    <input type="date" name="sales_to" class="form-control form-control-sm"
+                           value="{{ params.sales_to|date:'Y-m-d' }}">
+                  </div>
+                  <div class="col-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Показать</button>
+                    <a href="?{{ params.qs_sales_reset }}" class="btn btn-outline-secondary btn-sm"
+                       title="По умолчанию: с {{ params.sales_from_default|date:'d.m.Y' }}">Сбросить</a>
+                  </div>
+                  <div class="col-12">
+                    <p class="small text-muted mb-0">
+                      Розница · модель {{ params.model_ctx.model_name|default:"—" }}
+                      · по умолчанию текущий и предыдущий месяц
+                      {% if params.sales_total %}· найдено {{ params.sales_total }}{% endif %}
+                    </p>
+                  </div>
+                </div>
+              </form>
+              {% if params.sales_rows %}
+                <div class="table-responsive portal-radius">
+                  <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Дата</th>
+                        <th>Автомобиль</th>
+                        <th>VIN</th>
+                        <th>Выручка</th>
+                        <th>Маржа</th>
+                        <th>ДЦ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in params.sales_rows %}
+                        <tr>
+                          <td>{{ row.DataProdazhi|date:"d.m.Y" }}</td>
+                          <td class="small">{{ row.Marka }} {{ row.Model }}<br><span class="text-muted">{{ row.Modifikatsiya }}</span></td>
+                          <td class="small"><code>{{ row.VIN|default:"—" }}</code></td>
+                          <td>{{ row.VyruchkaZaAvto|formatted_number|default:"—" }} ₽</td>
+                          <td><strong>{{ row.margin|formatted_number }}</strong> ₽</td>
+                          <td class="small">{{ row.PodrazdelenieDTs|default:"—" }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% include 'auction_avito/lot_detail_pagination.html' with page_obj=params.sales_page_obj page_param='sales_page' base_qs=params.qs_sales %}
+              {% else %}
+                <p class="text-muted small mb-0">За выбранный период продаж этой модели не найдено.</p>
+              {% endif %}
+            {% elif params.vehicle %}
+              <p class="text-muted small mb-0">Нет сопоставления с каталогом Autoru — продажи недоступны.</p>
+            {% else %}
+              <p class="text-muted small mb-0">Укажите марку и модель в данных лота.</p>
+            {% endif %}
+
+          {% elif params.tab == 'estimations' %}
+            <form method="get" class="aav-filter-form">
+              <input type="hidden" name="tab" value="estimations">
+              {% if params.stock_model %}<input type="hidden" name="stock_model" value="{{ params.stock_model }}">{% endif %}
+              {% if params.sales_from %}<input type="hidden" name="sales_from" value="{{ params.sales_from|date:'Y-m-d' }}">{% endif %}
+              {% if params.sales_to %}<input type="hidden" name="sales_to" value="{{ params.sales_to|date:'Y-m-d' }}">{% endif %}
+              <div class="row g-2 align-items-end">
+                <div class="col-auto">
+                  <label class="form-label small text-muted mb-1">Период с</label>
+                  <input type="date" name="est_from" class="form-control form-control-sm"
+                         value="{{ params.est_from|date:'Y-m-d' }}">
+                </div>
+                <div class="col-auto">
+                  <label class="form-label small text-muted mb-1">по</label>
+                  <input type="date" name="est_to" class="form-control form-control-sm"
+                         value="{{ params.est_to|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small text-muted mb-1">Подразделение (ДЦ)</label>
+                  <select name="est_unit" class="form-select form-select-sm">
+                    <option value="">Все ДЦ</option>
+                    {% for u in params.estimation_unit_choices %}
+                      <option value="{{ u.id }}" {% if params.est_unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                  <button type="submit" class="btn btn-primary btn-sm">Показать</button>
+                  <a href="?{{ params.qs_est_reset }}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+                </div>
+                <div class="col-12">
+                  <p class="small text-muted mb-0">
+                    Без статуса «АМ принят» · по дате начала/окончания оценки
+                    · по умолчанию текущий и предыдущий месяц
+                    {% if params.estimation_total %}· найдено {{ params.estimation_total }}{% endif %}
+                  </p>
+                </div>
+              </div>
+            </form>
+            {% if params.estimation_rows %}
+              <div class="table-responsive portal-radius">
+                <table class="table table-sm table-striped table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>РЛК</th>
+                      <th>Статус</th>
+                      <th>Начало</th>
+                      <th>Автомобиль</th>
+                      <th>VIN</th>
+                      <th>ДЦ</th>
+                      <th>Цена до КД</th>
+                      <th>Цена после КД</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in params.estimation_rows %}
+                      <tr>
+                        <td class="small">
+                          {% if row.rlk_id %}
+                            <strong>{{ row.rlk_nomer }}</strong>
+                          {% else %}—{% endif %}
+                        </td>
+                        <td class="small">{{ row.status }}</td>
+                        <td class="small">
+                          {% if row.start %}{{ row.start|date:"d.m.Y" }}{% else %}—{% endif %}
+                        </td>
+                        <td class="small">
+                          {{ row.mark }} {{ row.model }}<br>
+                          <span class="text-muted">{{ row.modification }}{% if row.year %} · {{ row.year }}{% endif %}</span>
+                        </td>
+                        <td class="small"><code>{{ row.vin|default:"—" }}</code></td>
+                        <td class="small">{{ row.filial }}<br>{{ row.unit }}</td>
+                        <td>{% if row.price_before_kd %}{{ row.price_before_kd|formatted_number }} ₽{% else %}—{% endif %}</td>
+                        <td>{% if row.price_after_kd %}{{ row.price_after_kd|formatted_number }} ₽{% else %}—{% endif %}</td>
+                        <td>
+                          {% if row.rlk_id %}
+                            <a href="/eco/{{ row.rlk_id }}/" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">Оценка</a>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% include 'auction_avito/lot_detail_pagination.html' with page_obj=params.est_page_obj page_param='est_page' base_qs=params.qs_estimations %}
+            {% else %}
+              <p class="text-muted small mb-0">Оценок по этой модели (кроме «АМ принят») за выбранный период не найдено.</p>
+            {% endif %}
+          {% endif %}
+        </div>
       </div>
 
     </div>
@@ -472,47 +825,6 @@
           </tbody>
         </table>
       </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  {% if params.autoteka %}
-  <div class="portal-panel mb-3">
-    <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span><span class="bi bi-shield-check me-1"></span> Автотека</span>
-      {% if params.autoteka.state_status %}
-        <span class="badge bg-light text-dark border">Статус: {{ params.autoteka.state_status }}</span>
-      {% endif %}
-    </div>
-    {% if params.autoteka_events %}
-    <div class="table-responsive portal-radius">
-      <table class="table table-sm table-striped table-hover mb-0">
-          <thead >
-            <tr>
-              <th>Проверка</th>
-              <th>Результат</th>
-              <th style="width:6rem">Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ev in params.autoteka_events %}
-              <tr>
-                <td class="small text-muted">{{ ev.event_type }}</td>
-                <td>{{ ev.description }}</td>
-                <td>
-                  {% if ev.status == 'ok' %}<span class="aav-autoteka-ok bi bi-check-circle-fill"></span>
-                  {% elif ev.status == 'warning' %}<span class="aav-autoteka-warn bi bi-exclamation-triangle-fill"></span>
-                  {% elif ev.status == 'caution' %}<span class="aav-autoteka-bad bi bi-exclamation-circle-fill"></span>
-                  {% elif ev.status == 'incomplete' %}<span class="aav-autoteka-inc bi bi-hourglass-split"></span>
-                  {% else %}{{ ev.status }}{% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="text-muted small mb-0">События отчёта не загружены.</p>
     {% endif %}
   </div>
   {% endif %}

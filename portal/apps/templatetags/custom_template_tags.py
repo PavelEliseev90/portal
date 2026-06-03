@@ -9,10 +9,13 @@ from dateutil.relativedelta import relativedelta
 register = Library()
 
 def formatted_number(value):
-    if value != '':
-        value = int(value)
-        return '{0:,}'.format(value).replace(',', ' ')
-    return 0
+    if value is None or value == '':
+        return '0'
+    try:
+        num = int(float(value))
+        return '{0:,}'.format(num).replace(',', ' ')
+    except (TypeError, ValueError):
+        return '0'
 
 def formatted_float(value):
     value = floatformat(value, arg=2)

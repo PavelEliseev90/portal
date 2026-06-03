@@ -71,10 +71,11 @@ def upsert_venue(hints: dict) -> AvitoVenue | None:
         return venue
 
     update_fields = []
-    if defaults['name'] and venue.name != defaults['name']:
+    # Наименование и город задаются вручную в админке — не перезаписываем при синхронизации.
+    if not (venue.name or '').strip() and defaults['name']:
         venue.name = defaults['name']
         update_fields.append('name')
-    if ref_city and venue.city_id != ref_city.pk:
+    if not venue.city_id and ref_city:
         venue.city = ref_city
         update_fields.append('city')
     if update_fields:
