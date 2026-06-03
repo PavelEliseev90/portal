@@ -110,6 +110,18 @@
     border: 1px solid rgba(0, 42, 90, 0.08);
     margin-bottom: 1rem;
   }
+  .aav-cond-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-weight: 650;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+  .aav-cond-badge--new { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+  .aav-cond-badge--used { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .aav-cond-badge--unknown { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 </style>
 {% endblock %}
 
@@ -202,31 +214,70 @@
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'autoteka' %}active{% endif %}" href="?{{ params.qs_autoteka }}">
               Автотека
-              {% if params.autoteka_events %}<span class="aav-tab-badge">{{ params.autoteka_events|length }}</span>{% endif %}
+              {% if params.tab_counts.autoteka %}<span class="aav-tab-badge">{{ params.tab_counts.autoteka }}</span>{% endif %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'calculations' %}active{% endif %}" href="?{{ params.qs_calculations }}">
+              Расчёты
+              {% if params.tab_counts.calculations %}<span class="aav-tab-badge">{{ params.tab_counts.calculations }}</span>{% endif %}
             </a>
           </li>
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'stock' %}active{% endif %}" href="?{{ params.qs_stock }}">
               Наш склад
-              {% if params.stock_total %}<span class="aav-tab-badge">{{ params.stock_total }}</span>{% endif %}
+              {% if params.tab_counts.stock %}<span class="aav-tab-badge">{{ params.tab_counts.stock }}</span>{% endif %}
             </a>
           </li>
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'sales' %}active{% endif %}" href="?{{ params.qs_sales }}">
               Продажи
-              {% if params.sales_total %}<span class="aav-tab-badge">{{ params.sales_total }}</span>{% endif %}
+              {% if params.tab_counts.sales %}<span class="aav-tab-badge">{{ params.tab_counts.sales }}</span>{% endif %}
             </a>
           </li>
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'estimations' %}active{% endif %}" href="?{{ params.qs_estimations }}">
               Оценки
-              {% if params.estimation_total %}<span class="aav-tab-badge">{{ params.estimation_total }}</span>{% endif %}
+              {% if params.tab_counts.estimations %}<span class="aav-tab-badge">{{ params.tab_counts.estimations }}</span>{% endif %}
             </a>
           </li>
         </ul>
 
         <div class="pt-3">
           {% if params.tab == 'main' %}
+            <div class="aav-panel-title"><span class="bi bi-geo-alt me-1"></span> Место продавца</div>
+            <div class="table-responsive portal-radius mb-4">
+              <table class="table table-sm table-borderless aav-spec-table mb-0">
+                <tbody>
+                  <tr>
+                    <td>Наименование</td>
+                    <td><strong>{{ params.seller_place.name }}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Город</td>
+                    <td>{{ params.seller_place.city|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <td>dealerId</td>
+                    <td>{% if params.seller_place.dealer_id %}{{ params.seller_place.dealer_id }}{% else %}—{% endif %}</td>
+                  </tr>
+                  {% if params.seller_place.seller_place_raw != params.seller_place.name %}
+                    <tr>
+                      <td>Как в API (sellerPlaceName)</td>
+                      <td class="small text-muted">{{ params.seller_place.seller_place_raw }}</td>
+                    </tr>
+                  {% endif %}
+                  {% if params.seller_place.has_venue and params.venue.dealer_id %}
+                    <tr>
+                      <td></td>
+                      <td>
+                        <a href="{% url 'auction_avito:lot_list' %}?venue={{ params.venue.dealer_id }}" class="small">Все лоты этой площадки</a>
+                      </td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
             <div class="aav-panel-title"><span class="bi bi-card-text me-1"></span> Описание</div>
             <div class="aav-desc mb-4">{{ params.lot.description|default:"—" }}</div>
             <div class="aav-panel-title"><span class="bi bi-list-check me-1"></span> Комплектация</div>
@@ -285,6 +336,92 @@
               <p class="text-muted small mb-0">Данные Автотеки по этому лоту отсутствуют.</p>
             {% endif %}
 
+          {% elif params.tab == 'calculations' %}
+            {% if params.latest_calculation or params.calculations %}
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <span class="fw-semibold text-secondary small">Расчёты выкупа</span>
+                {% if params.latest_calculation %}
+                  <span class="badge bg-primary">Актуальный: {{ params.latest_calculation.estimation_price|formatted_number }} ₽</span>
+                {% endif %}
+              </div>
+              {% if params.latest_calculation %}
+                <div class="aav-kpi mb-3">
+                  <div class="aav-kpi-item">
+                    <div class="label">Цена выкупа</div>
+                    <div class="value">{{ params.latest_calculation.estimation_price|formatted_number }} ₽</div>
+                  </div>
+                  <div class="aav-kpi-item">
+                    <div class="label">ЦНА (рынок)</div>
+                    <div class="value">{{ params.latest_calculation.zna|formatted_number }} ₽</div>
+                  </div>
+                  <div class="aav-kpi-item">
+                    <div class="label">Маржа</div>
+                    <div class="value">{{ params.latest_calculation.profit|formatted_number }} ₽</div>
+                  </div>
+                  <div class="aav-kpi-item">
+                    <div class="label">Группа / kf</div>
+                    <div class="value" style="font-size:0.9rem">{{ params.latest_calculation.price_group }} · {{ params.latest_calculation.kf }}</div>
+                  </div>
+                </div>
+                {% if params.latest_calculation.price_steps %}
+                  <p class="small text-muted mb-2">Шаги последнего расчёта ({{ params.latest_calculation.calculated_at|date:"d.m.Y H:i" }})</p>
+                  <div class="table-responsive portal-radius mb-3">
+                    <table class="table table-sm table-striped table-hover mb-0">
+                      <thead>
+                        <tr><th>Этап</th><th>Цена после</th><th>Δ</th><th>Комментарий</th></tr>
+                      </thead>
+                      <tbody>
+                        {% for step in params.latest_calculation.price_steps %}
+                          <tr>
+                            <td>{{ step.name|default:"—" }}</td>
+                            <td>{{ step.price|formatted_number }} ₽</td>
+                            <td>{% if step.dif %}{{ step.dif|formatted_number }}{% else %}—{% endif %}</td>
+                            <td class="small text-muted">{{ step.comment|default:"" }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% endif %}
+              {% endif %}
+              {% if params.calculations|length > 1 %}
+                <p class="small fw-semibold text-secondary mb-2">История расчётов</p>
+                <div class="table-responsive portal-radius">
+                  <table class="table table-sm table-striped table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Дата</th>
+                        <th>Выкуп</th>
+                        <th>ЦНА</th>
+                        <th>Маржа</th>
+                        <th>minPrice</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for calc in params.calculations %}
+                        <tr class="{% if params.latest_calculation and calc.pk == params.latest_calculation.pk %}table-primary{% endif %}">
+                          <td>{{ calc.calculated_at|date:"d.m.Y H:i" }}</td>
+                          <td><strong>{{ calc.estimation_price|formatted_number|default:"—" }}</strong></td>
+                          <td>{{ calc.zna|formatted_number|default:"—" }}</td>
+                          <td>{{ calc.profit|formatted_number|default:"—" }}</td>
+                          <td>{{ calc.min_price|formatted_number|default:"—" }}</td>
+                          <td>
+                            {% if not calc.is_success %}<span class="badge bg-danger">ошибка</span>
+                            {% elif calc.auction_risk %}<span class="badge bg-warning text-dark">риск</span>{% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% elif params.calculations|length == 1 and not params.latest_calculation.price_steps %}
+                <p class="text-muted small mb-0">Один расчёт — детали выше.</p>
+              {% endif %}
+            {% else %}
+              <p class="text-muted small mb-0">Расчётов выкупа по этому лоту пока нет.</p>
+            {% endif %}
+
           {% elif params.tab == 'stock' %}
             {% if params.model_ctx and params.model_ctx.models %}
               <form method="get" class="aav-filter-form d-flex flex-wrap align-items-end gap-3">
@@ -325,6 +462,7 @@
                 <table class="table table-sm table-striped table-hover mb-0">
                   <thead>
                     <tr>
+                      <th>Тип</th>
                       <th>Автомобиль</th>
                       <th>VIN</th>
                       <th>Год</th>
@@ -343,6 +481,7 @@
                   <tbody>
                     {% for row in params.stock_rows %}
                       <tr>
+                        <td>{% include 'auction_avito/_condition_badge.html' with condition=row.condition %}</td>
                         <td class="small">
                           <strong>{{ row.mark }} {{ row.model }}</strong><br>
                           <span class="text-muted">{{ row.modification }}</span>
@@ -413,6 +552,7 @@
                     <thead>
                       <tr>
                         <th>Дата</th>
+                        <th>Тип</th>
                         <th>Автомобиль</th>
                         <th>VIN</th>
                         <th>Выручка</th>
@@ -424,6 +564,7 @@
                       {% for row in params.sales_rows %}
                         <tr>
                           <td>{{ row.DataProdazhi|date:"d.m.Y" }}</td>
+                          <td>{% include 'auction_avito/_condition_badge.html' with condition=row.condition %}</td>
                           <td class="small">{{ row.Marka }} {{ row.Model }}<br><span class="text-muted">{{ row.Modifikatsiya }}</span></td>
                           <td class="small"><code>{{ row.VIN|default:"—" }}</code></td>
                           <td>{{ row.VyruchkaZaAvto|formatted_number|default:"—" }} ₽</td>
@@ -716,7 +857,10 @@
             <a href="{% url 'auction_avito:lot_list' %}?badge={{ params.all_badges.0.badge_type }}">Показать лоты с похожей меткой</a>
           </p>
         {% else %}
-          <p class="text-muted small mb-0">Метки появятся после синхронизации оффера с API (<code>badges</code>, <code>badgesByStyle</code>).</p>
+          <p class="text-muted small mb-0">
+            Меток в базе нет. Проверьте <code>badges</code> / <code>badgesByStyle</code> в JSON оффера или лота
+            (при открытии карточки метки подтягиваются из сохранённого ответа API).
+          </p>
         {% endif %}
       </div>
 
@@ -745,89 +889,6 @@
       {% endif %}
     </div>
   </div>
-
-  {% if params.latest_calculation or params.calculations %}
-  <div class="portal-panel mb-3">
-    <div class="aav-panel-title d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span><span class="bi bi-calculator me-1"></span> Наши расчёты выкупа</span>
-      {% if params.latest_calculation %}
-        <span class="badge bg-primary">Актуальный: {{ params.latest_calculation.estimation_price|formatted_number }} ₽</span>
-      {% endif %}
-    </div>
-    {% if params.latest_calculation %}
-      <div class="aav-kpi mb-3">
-        <div class="aav-kpi-item">
-          <div class="label">Цена выкупа</div>
-          <div class="value">{{ params.latest_calculation.estimation_price|formatted_number }} ₽</div>
-        </div>
-        <div class="aav-kpi-item">
-          <div class="label">ЦНА (рынок)</div>
-          <div class="value">{{ params.latest_calculation.zna|formatted_number }} ₽</div>
-        </div>
-        <div class="aav-kpi-item">
-          <div class="label">Маржа</div>
-          <div class="value">{{ params.latest_calculation.profit|formatted_number }} ₽</div>
-        </div>
-        <div class="aav-kpi-item">
-          <div class="label">Группа / kf</div>
-          <div class="value" style="font-size:0.9rem">{{ params.latest_calculation.price_group }} · {{ params.latest_calculation.kf }}</div>
-        </div>
-      </div>
-      {% if params.latest_calculation.price_steps %}
-        <p class="small text-muted mb-2">Шаги последнего расчёта ({{ params.latest_calculation.calculated_at|date:"d.m.Y H:i" }})</p>
-        <div class="table-responsive portal-radius">
-          <table class="table table-sm table-striped table-hover mb-0">
-            <thead >
-              <tr><th>Этап</th><th>Цена после</th><th>Δ</th><th>Комментарий</th></tr>
-            </thead>
-            <tbody>
-              {% for step in params.latest_calculation.price_steps %}
-                <tr>
-                  <td>{{ step.name|default:"—" }}</td>
-                  <td>{{ step.price|formatted_number }} ₽</td>
-                  <td>{% if step.dif %}{{ step.dif|formatted_number }}{% else %}—{% endif %}</td>
-                  <td class="small text-muted">{{ step.comment|default:"" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endif %}
-    {% endif %}
-    {% if params.calculations|length > 1 %}
-      <p class="small fw-semibold text-secondary mb-2">История расчётов</p>
-      <div class="table-responsive portal-radius">
-        <table class="table table-sm table-striped table-hover mb-0">
-          <thead >
-            <tr>
-              <th>Дата</th>
-              <th>Выкуп</th>
-              <th>ЦНА</th>
-              <th>Маржа</th>
-              <th>minPrice</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for calc in params.calculations %}
-              <tr class="{% if params.latest_calculation and calc.pk == params.latest_calculation.pk %}table-primary{% endif %}">
-                <td>{{ calc.calculated_at|date:"d.m.Y H:i" }}</td>
-                <td><strong>{{ calc.estimation_price|formatted_number|default:"—" }}</strong></td>
-                <td>{{ calc.zna|formatted_number|default:"—" }}</td>
-                <td>{{ calc.profit|formatted_number|default:"—" }}</td>
-                <td>{{ calc.min_price|formatted_number|default:"—" }}</td>
-                <td>
-                  {% if not calc.is_success %}<span class="badge bg-danger">ошибка</span>
-                  {% elif calc.auction_risk %}<span class="badge bg-warning text-dark">риск</span>{% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% endif %}
-  </div>
-  {% endif %}
 
   <div class="portal-panel">
     <div class="aav-panel-title"><span class="bi bi-info-circle me-1"></span> Служебное</div>

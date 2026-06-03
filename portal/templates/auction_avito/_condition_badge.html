@@ -1,0 +1,9 @@
+{% if condition.is_new == True %}
+  <span class="aav-cond-badge aav-cond-badge--new">{{ condition.label }}</span>
+{% elif condition.is_new == False %}
+  <span class="aav-cond-badge aav-cond-badge--used">{{ condition.label }}</span>
+{% elif condition.label and condition.label != '—' %}
+  <span class="aav-cond-badge aav-cond-badge--unknown">{{ condition.label }}</span>
+{% else %}
+  <span class="text-muted">—</span>
+{% endif %}

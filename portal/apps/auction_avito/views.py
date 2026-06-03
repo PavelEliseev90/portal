@@ -5,13 +5,21 @@ from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from auction_avito.services.badges import collect_badges_for_display, ensure_badges_synced
 from auction_avito.lot_tabs import (
     default_two_months_period,
+    lot_estimation_count,
     lot_estimation_page,
+    lot_sales_count,
     lot_sales_page,
+    lot_stock_count,
     lot_stock_page,
     resolve_autoru_models,
     resolve_period,
+)
+
+LOT_DETAIL_TABS = (
+    'main', 'autoteka', 'calculations', 'stock', 'sales', 'estimations',
 )
 from auction_avito.models import (
     AvitoAutotekaEvent,
@@ -113,6 +121,20 @@ def _venue_display(lot, offer=None) -> dict:
     }
 
 
+def _seller_place_display(lot, offer=None) -> dict:
+    """Место продавца для вкладки «Основная»."""
+    venue = _venue_display(lot, offer)
+    seller_raw = (lot.seller_place_name or '').strip()
+    return {
+        'dealer_id': venue.get('dealer_id'),
+        'name': venue.get('name') or seller_raw or '—',
+        'city': venue.get('city') or '',
+        'seller_place_raw': seller_raw or '—',
+        'label': venue.get('label') or '—',
+        'has_venue': bool(lot.venue_id),
+    }
+
+
 def _venue_filter_choices():
     return [
         (str(v.dealer_id), v.display_label)
@@ -209,6 +231,24 @@ def _lot_queryset():
     )
 
 
+def _lot_detail_queryset():
+    """Карточка лота: без тяжёлых prefetch — данные вкладок по запросу."""
+    offer_qs = AvitoLotOffer.objects.select_related('account').prefetch_related(
+        'badges',
+    ).order_by('-updated_at')
+    return AvitoLot.objects.select_related(
+        'venue__city',
+        'vehicle_avito',
+        'vehicle_autohub',
+        'autoteka',
+    ).prefetch_related(
+        'images',
+        'equipment',
+        'badges',
+        Prefetch('offers', queryset=offer_qs),
+    )
+
+
 @login_required
 def lot_list(request):
     qs = _lot_queryset()
@@ -276,6 +316,9 @@ def lot_list(request):
     ).order_by(sort)
 
     page_obj = Paginator(qs, 24).get_page(request.GET.get('page') or 1)
+    for lot in page_obj.object_list:
+        offers = list(lot.offers.all())
+        ensure_badges_synced(lot, offers[0] if offers else None)
 
     params = {
         'type': 'auction_avito_list',
@@ -307,15 +350,11 @@ def lot_list(request):
 
 @login_required
 def lot_detail(request, pk):
-    lot = get_object_or_404(_lot_queryset(), pk=pk)
+    lot = get_object_or_404(_lot_detail_queryset(), pk=pk)
     primary_offer = lot.offers.first()
-    offer_badges = list(primary_offer.badges.all()) if primary_offer else []
-    lot_badges = list(lot.badges.all())
-    seen_types = {b.badge_type for b in offer_badges}
-    all_badges = offer_badges + [b for b in lot_badges if b.badge_type not in seen_types]
+    offer_badges, lot_badges, all_badges = collect_badges_for_display(lot, primary_offer)
 
     vehicle = getattr(lot, 'vehicle_avito', None)
-    model_ctx = resolve_autoru_models(vehicle)
     stock_model_raw = (request.GET.get('stock_model') or '').strip()
     stock_model_id = None
     if stock_model_raw:
@@ -324,7 +363,7 @@ def lot_detail(request, pk):
         except ValueError:
             pass
     tab = (request.GET.get('tab') or 'main').strip()
-    if tab not in ('main', 'autoteka', 'stock', 'sales', 'estimations'):
+    if tab not in LOT_DETAIL_TABS:
         tab = 'main'
 
     default_from, default_to = default_two_months_period()
@@ -344,40 +383,84 @@ def lot_detail(request, pk):
         except ValueError:
             pass
 
-    stock_rows, stock_total, stock_page_obj = [], 0, None
-    sales_rows, sales_total, sales_page_obj = [], 0, None
-    estimation_rows, estimation_total, est_page_obj = [], 0, None
-    estimation_unit_choices = []
-
-    if model_ctx and model_ctx.get('model_ids'):
-        stock_rows, stock_total, stock_page_obj = lot_stock_page(
-            model_ctx['model_ids'],
-            model_filter_id=stock_model_id,
-            page=_page_num(request, 'stock_page'),
-        )
-        sales_rows, sales_total, sales_page_obj = lot_sales_page(
-            model_ctx['model_ids'],
-            sales_from,
-            sales_to,
-            page=_page_num(request, 'sales_page'),
-        )
+    model_ctx = resolve_autoru_models(
+        vehicle,
+        include_model_choices=(tab == 'stock'),
+    )
+    model_ids = (model_ctx or {}).get('model_ids') or []
     brand = (model_ctx or {}).get('brand_name') or (
         vehicle.brand_name if vehicle else ''
     )
     model_label = (model_ctx or {}).get('model_name') or (
         vehicle.model_name if vehicle else ''
     )
-    estimation_rows, estimation_total, est_page_obj, estimation_unit_choices = (
-        lot_estimation_page(
+
+    tab_counts = {
+        'autoteka': (
+            AvitoAutotekaEvent.objects.filter(report_id=lot.autoteka_id).count()
+            if lot.autoteka_id
+            else 0
+        ),
+        'stock': lot_stock_count(model_ids, stock_model_id) if model_ids else 0,
+        'sales': lot_sales_count(model_ids, sales_from, sales_to) if model_ids else 0,
+        'estimations': lot_estimation_count(
             model_ctx,
             brand_name=brand,
             model_name=model_label,
             date_from=est_from,
             date_to=est_to,
             unit_id=est_unit_id,
-            page=_page_num(request, 'est_page'),
+        ),
+        'calculations': AvitoLotCalculation.objects.filter(lot_id=lot.pk).count(),
+    }
+
+    stock_rows, stock_total, stock_page_obj = [], 0, None
+    sales_rows, sales_total, sales_page_obj = [], 0, None
+    estimation_rows, estimation_total, est_page_obj = [], 0, None
+    estimation_unit_choices = []
+    autoteka_events = []
+    calculations = []
+    latest_calculation = None
+
+    if tab == 'stock' and model_ids:
+        stock_rows, stock_total, stock_page_obj = lot_stock_page(
+            model_ids,
+            model_filter_id=stock_model_id,
+            page=_page_num(request, 'stock_page'),
         )
-    )
+    elif tab == 'sales' and model_ids:
+        sales_rows, sales_total, sales_page_obj = lot_sales_page(
+            model_ids,
+            sales_from,
+            sales_to,
+            page=_page_num(request, 'sales_page'),
+        )
+    elif tab == 'estimations':
+        estimation_rows, estimation_total, est_page_obj, estimation_unit_choices = (
+            lot_estimation_page(
+                model_ctx,
+                brand_name=brand,
+                model_name=model_label,
+                date_from=est_from,
+                date_to=est_to,
+                unit_id=est_unit_id,
+                page=_page_num(request, 'est_page'),
+                load_unit_choices=True,
+            )
+        )
+    elif tab == 'autoteka' and lot.autoteka_id:
+        autoteka_events = list(
+            AvitoAutotekaEvent.objects.filter(report_id=lot.autoteka_id).order_by('pk')
+        )
+    elif tab == 'calculations':
+        calculations = list(
+            AvitoLotCalculation.objects.filter(lot_id=lot.pk)
+            .select_related('unit', 'user')
+            .order_by('-calculated_at')
+        )
+        latest_calculation = next((c for c in calculations if c.is_success), None)
+        if latest_calculation is None and calculations:
+            latest_calculation = calculations[0]
 
     params = {
         'type': 'auction_avito_detail',
@@ -388,23 +471,27 @@ def lot_detail(request, pk):
         'stock_model': stock_model_raw,
         'stock_model_id': stock_model_id,
         'stock_rows': stock_rows,
-        'stock_total': stock_total,
+        'stock_total': tab_counts['stock'],
         'stock_page_obj': stock_page_obj,
         'sales_rows': sales_rows,
-        'sales_total': sales_total,
+        'sales_total': tab_counts['sales'],
         'sales_page_obj': sales_page_obj,
         'sales_from': sales_from,
         'sales_to': sales_to,
         'sales_from_default': default_from,
         'sales_to_default': default_to,
         'estimation_rows': estimation_rows,
-        'estimation_total': estimation_total,
+        'estimation_total': tab_counts['estimations'],
         'est_page_obj': est_page_obj,
         'est_from': est_from,
         'est_to': est_to,
         'est_unit': est_unit_raw,
         'est_unit_id': est_unit_id,
         'estimation_unit_choices': estimation_unit_choices,
+        'tab_counts': tab_counts,
+        'autoteka_events': autoteka_events,
+        'calculations': calculations,
+        'latest_calculation': latest_calculation,
         'qs_main': _tab_query_string(
             request, 'main', inject=_lot_qs_inject(
                 stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
@@ -413,6 +500,12 @@ def lot_detail(request, pk):
         ),
         'qs_autoteka': _tab_query_string(
             request, 'autoteka', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
+        'qs_calculations': _tab_query_string(
+            request, 'calculations', inject=_lot_qs_inject(
                 stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
             ),
             stock_page=None, sales_page=None, est_page=None,
@@ -447,19 +540,9 @@ def lot_detail(request, pk):
         ),
         'autohub': getattr(lot, 'vehicle_autohub', None),
         'autoteka': getattr(lot, 'autoteka', None),
-        'autoteka_events': (
-            lot.autoteka.events.all()
-            if getattr(lot, 'autoteka', None)
-            else []
-        ),
         'primary_offer': primary_offer,
         'offers': lot.offers.all(),
         'images': lot.images.all(),
-        'calculations': lot.calculations.all(),
-        'latest_calculation': (
-            lot.calculations.filter(is_success=True).first()
-            or lot.calculations.first()
-        ),
         'all_badges': all_badges,
         'offer_badges': offer_badges,
         'lot_badges': lot_badges,
@@ -468,6 +551,7 @@ def lot_detail(request, pk):
         'trade_in': _trade_in_display(lot),
         'prices': _lot_price_display(lot, primary_offer),
         'venue': _venue_display(lot, primary_offer),
+        'seller_place': _seller_place_display(lot, primary_offer),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
 

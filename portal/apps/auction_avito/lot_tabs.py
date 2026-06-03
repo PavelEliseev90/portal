@@ -12,6 +12,30 @@ from register.models import RegInteractivOcenkaRLK
 TAB_PAGE_SIZE = 25
 
 
+def vehicle_condition_dict(is_new=None, label=None):
+    """Маркер «Новый» / «С пробегом» для таблиц склада и продаж."""
+    if is_new is True:
+        return {'is_new': True, 'label': 'Новый'}
+    if is_new is False:
+        return {'is_new': False, 'label': 'С пробегом'}
+    return {'is_new': None, 'label': label or '—'}
+
+
+def condition_from_postuplenie(postuplenie, *, default_new=True):
+    """
+    Тип АМ по полю Postuplenie (Cumulative).
+    Пустое значение в кумулятиве новых считаем «Новый», если default_new.
+    """
+    s = (postuplenie or '').strip().lower()
+    if not s:
+        return vehicle_condition_dict(is_new=True if default_new else None)
+    if any(x in s for x in ('пробег', 'б/у', 'бу', 'подерж', 'асп', 'trade')):
+        return vehicle_condition_dict(is_new=False)
+    if 'нов' in s:
+        return vehicle_condition_dict(is_new=True)
+    return vehicle_condition_dict(label=(postuplenie or '').strip()[:40] or '—')
+
+
 def default_two_months_period():
     """С 1-го числа прошлого месяца по сегодня."""
     now = timezone.now()
@@ -42,7 +66,7 @@ def resolve_period(date_from_raw, date_to_raw):
     return date_from, date_to
 
 
-def resolve_autoru_models(vehicle):
+def resolve_autoru_models(vehicle, *, include_model_choices=True):
     if not vehicle:
         return None
     brand = (getattr(vehicle, 'brand_name', None) or '').strip()
@@ -71,16 +95,23 @@ def resolve_autoru_models(vehicle):
             | Q(nameHuman__icontains=model_name)
             | Q(nameEn__icontains=model_name)
         )
-    models_qs = models_qs.order_by('name')[:80]
-    models = [
-        {'id': m.id, 'label': m.nameHuman or m.name}
-        for m in models_qs
-    ]
-    model_ids = [m['id'] for m in models]
-    if not model_ids and model_name:
-        models_qs = AutoruModel.objects.filter(mark=mark).order_by('name')[:80]
-        models = [{'id': m.id, 'label': m.nameHuman or m.name} for m in models_qs]
+    model_ids = list(models_qs.values_list('id', flat=True)[:80])
+    models = []
+    if include_model_choices:
+        models_qs = models_qs.order_by('name')[:80]
+        models = [
+            {'id': m.id, 'label': m.nameHuman or m.name}
+            for m in models_qs
+        ]
         model_ids = [m['id'] for m in models]
+        if not model_ids and model_name:
+            models_qs = AutoruModel.objects.filter(mark=mark).order_by('name')[:80]
+            models = [{'id': m.id, 'label': m.nameHuman or m.name} for m in models_qs]
+            model_ids = [m['id'] for m in models]
+    elif not model_ids and model_name:
+        model_ids = list(
+            AutoruModel.objects.filter(mark=mark).values_list('id', flat=True)[:80]
+        )
 
     return {
         'mark': mark,
@@ -161,7 +192,12 @@ def _car_to_stock_row(car):
         'color': car.color or '—',
         'owners': car.owners,
         'bcp': car.bcp,
+        'condition': vehicle_condition_dict(is_new=bool(car.is_new)),
     }
+
+
+def lot_stock_count(model_ids, model_filter_id=None):
+    return _stock_queryset(model_ids, model_filter_id).count()
 
 
 def lot_stock_page(model_ids, model_filter_id=None, page=1):
@@ -182,23 +218,34 @@ def _modification_id_sites(model_ids):
     ]
 
 
-def lot_sales_page(model_ids, date_from, date_to, page=1):
-    if not model_ids:
-        return [], 0, None
-
+def _sales_queryset(model_ids, date_from, date_to):
     mod_ids = _modification_id_sites(model_ids)
     if not mod_ids:
-        return [], 0, None
-
+        return None
     from powerbi.models import Cumulative
 
-    q = Cumulative.objects.filter(
+    return Cumulative.objects.filter(
         TipProdazhi='Розница',
         DataProdazhi__gte=date_from,
         DataProdazhi__lte=date_to,
         SebestoimostPoDokumentu__gt=0,
         IDModifikatsii__in=mod_ids,
-    ).order_by('-DataProdazhi')
+    )
+
+
+def lot_sales_count(model_ids, date_from, date_to):
+    q = _sales_queryset(model_ids, date_from, date_to)
+    return q.count() if q is not None else 0
+
+
+def lot_sales_page(model_ids, date_from, date_to, page=1):
+    if not model_ids:
+        return [], 0, None
+
+    q = _sales_queryset(model_ids, date_from, date_to)
+    if q is None:
+        return [], 0, None
+    q = q.order_by('-DataProdazhi')
 
     paginator = Paginator(q, TAB_PAGE_SIZE)
     page_obj = paginator.get_page(page)
@@ -210,9 +257,11 @@ def lot_sales_page(model_ids, date_from, date_to, page=1):
             'Model': row.Model,
             'Modifikatsiya': row.Modifikatsiya,
             'VIN': row.VIN,
+            'Postuplenie': row.Postuplenie,
             'VyruchkaZaAvto': row.VyruchkaZaAvto,
             'PodrazdelenieDTs': row.PodrazdelenieDTs,
             'TipProdazhi': row.TipProdazhi,
+            'condition': condition_from_postuplenie(row.Postuplenie),
             'SummaMarzhiBezNDS': row.SummaMarzhiBezNDS,
             'VPOPFU': row.VPOPFU,
             'SummaTreydInPoPlanu': row.SummaTreydInPoPlanu,
@@ -273,6 +322,50 @@ def _estimation_base_qs(model_ctx, brand_name='', model_name=''):
     return qs
 
 
+def _estimation_filtered_qs(
+    model_ctx,
+    brand_name='',
+    model_name='',
+    date_from=None,
+    date_to=None,
+    unit_id=None,
+):
+    qs = _estimation_base_qs(model_ctx, brand_name, model_name)
+    if qs is None:
+        return None
+    if date_from and date_to:
+        qs = qs.filter(
+            Q(
+                estimation__start_estimation__date__gte=date_from,
+                estimation__start_estimation__date__lte=date_to,
+            )
+            | Q(
+                estimation__end_estimation__date__gte=date_from,
+                estimation__end_estimation__date__lte=date_to,
+            )
+        )
+    if unit_id:
+        try:
+            qs = qs.filter(unit_id=int(unit_id))
+        except (TypeError, ValueError):
+            pass
+    return qs
+
+
+def lot_estimation_count(
+    model_ctx,
+    brand_name='',
+    model_name='',
+    date_from=None,
+    date_to=None,
+    unit_id=None,
+):
+    qs = _estimation_filtered_qs(
+        model_ctx, brand_name, model_name, date_from, date_to, unit_id,
+    )
+    return qs.count() if qs is not None else 0
+
+
 def estimation_unit_choices(model_ctx, brand_name='', model_name=''):
     qs = _estimation_base_qs(model_ctx, brand_name, model_name)
     if qs is None:
@@ -291,30 +384,21 @@ def lot_estimation_page(
     date_to=None,
     unit_id=None,
     page=1,
+    *,
+    load_unit_choices=False,
 ):
-    qs = _estimation_base_qs(model_ctx, brand_name, model_name)
+    qs = _estimation_filtered_qs(
+        model_ctx, brand_name, model_name, date_from, date_to, unit_id,
+    )
     if qs is None:
         return [], 0, None, []
 
-    if date_from and date_to:
-        qs = qs.filter(
-            Q(
-                estimation__start_estimation__date__gte=date_from,
-                estimation__start_estimation__date__lte=date_to,
-            )
-            | Q(
-                estimation__end_estimation__date__gte=date_from,
-                estimation__end_estimation__date__lte=date_to,
-            )
-        )
-    if unit_id:
-        try:
-            qs = qs.filter(unit_id=int(unit_id))
-        except (TypeError, ValueError):
-            pass
-
     qs = qs.order_by('-estimation__start_estimation')
-    unit_choices = estimation_unit_choices(model_ctx, brand_name, model_name)
+    unit_choices = (
+        estimation_unit_choices(model_ctx, brand_name, model_name)
+        if load_unit_choices
+        else []
+    )
 
     paginator = Paginator(qs, TAB_PAGE_SIZE)
     page_obj = paginator.get_page(page)
