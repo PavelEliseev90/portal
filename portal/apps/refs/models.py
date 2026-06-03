@@ -145,10 +145,19 @@ class RefOrganization(models.Model):
         verbose_name = "Организация / фирма"
         verbose_name_plural = "Организации / фирмы"
 
+#Направления (Направления)
+class RefDirection(models.Model):
+    name            = models.CharField("Наименование", max_length=250, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refDirection'
+        verbose_name = "Направления / подразделения"
+        verbose_name_plural = "Направления / подразделения"
 
 # Подразделения ДЦ
-
-
 AVTOHUB_DATA_USAGE_CHOICES = [
     ('ПЦП', 'ПЦП'),
     ('ЦНА', 'ЦНА'),
@@ -180,7 +189,8 @@ class RefUnit(models.Model):
     ib              = models.ForeignKey(RefIb, null=True, on_delete=models.SET_NULL, verbose_name='Информационная база')
     mcc             = models.BooleanField("Расширения МКЦ", default=False)
     active_eco      = models.BooleanField("Доступен для оценки", default=False)
-    
+    direction       = models.ForeignKey(RefDirection, null=True, on_delete=models.SET_NULL, verbose_name='Направление')
+
     eco_staff               = models.ManyToManyField('RefStaff', verbose_name='Сотрудники для оповещения', blank=True)
     eco_units               = models.ManyToManyField('self', verbose_name='Подразделения', blank=True)
     
@@ -2925,6 +2935,7 @@ class RefCarsOrganization(models.Model):
                     s = 1
                 if name_slug != '':
                     name_slug = name_slug + "_"
+
                 name_slug = name_slug + str(self.lo_uin[0:10]) + self.lo_uin[14:18]
                 self.slug = slugify(name_slug.lower())
         

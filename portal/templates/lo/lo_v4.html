@@ -3793,6 +3793,34 @@
                         <div class="row g-1">
                           <div class="col-sm-12">
                             <div class="kors-btn-group-wrapper">
+                              <div class="kors-btn-group-compact" role="group" aria-label="Лобовое стекло с камерой">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_camera_int" 
+                                       id="windshield_camera_int-radio1" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_camera_int == 0 %} checked {% endif %} 
+                                       value="0" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_camera_int-radio1">Нет</label>
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="windshield_camera_int" 
+                                       id="windshield_camera_int-radio2" 
+                                       autocomplete="off" 
+                                       {% if params.estimation.page_vnesh.windshield_camera_int == 1 %} checked {% endif %} 
+                                       value="1" 
+                                       required>
+                                <label class="btn btn-outline-success" for="windshield_camera_int-radio2">Да</label>
+                              </div>
+                              <label class="fs-6" for="check_engine">Лобовое стекло с камерой</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="row g-1">
+                          <div class="col-sm-12">
+                            <div class="kors-btn-group-wrapper">
                               <div class="kors-btn-group-compact" role="group" aria-label="Проверка VIN номера и номера ДВС">
                                 <input type="radio" class="btn-check" name="check_vin_int" id="check_vin_int-radio1" autocomplete="off" {% if params.estimation.page_vnesh.check_vin_int == 1 %} checked {% endif %} value="1" required>
                                 <label class="btn btn-outline-success" for="check_vin_int-radio1">В порядке</label>

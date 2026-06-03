@@ -3235,6 +3235,7 @@ def exchange_bu(request):
     
     list_services           = list()
     list_units              = list()
+    list_store              = list()
     list_staff              = list()
     list_filials            = list()
     list_cars               = list()
