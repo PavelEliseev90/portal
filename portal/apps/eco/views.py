@@ -6475,7 +6475,10 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         info_diff   = "Лобовое стекло"
                     if estimation.page_vnesh.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
-                        info_diff = info_diff + " с проекцией"  
+                        info_diff = info_diff + " с проекцией"
+                    if estimation.page_vnesh.windshield_camera_int == 1:
+                        price_diff = price_diff + 6000
+                        info_diff = info_diff + " с камерой"  
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -6712,154 +6715,202 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             
             info_diff = ''
             price_diff = 0
-            if modification.typeEngine.id == 1:
-                price_diff  = (price * engine_danger_kf / 100)
-                info_diff   = 'Бензиновый двигатель ремонт'
-
-                if price_diff < engine_danger_amount_min:
-                    price_diff  = engine_danger_amount_min
+            if modification != None:
+                if modification.typeEngine.id == 1:
+                    price_diff  = (price * engine_danger_kf / 100)
                     info_diff   = 'Бензиновый двигатель ремонт'
-            else:
-                price_diff  = (price * engine_dt_danger_kf / 100)
-                info_diff   = 'Дизельный двигатель ремонт'
 
-                if price_diff < engine_dt_danger_amount_min:
-                    price_diff  = engine_dt_danger_amount_min
+                    if price_diff < engine_danger_amount_min:
+                        price_diff  = engine_danger_amount_min
+                        info_diff   = 'Бензиновый двигатель ремонт'
+                else:
+                    price_diff  = (price * engine_dt_danger_kf / 100)
                     info_diff   = 'Дизельный двигатель ремонт'
-            dop = {
-                'name'      : info_diff,
-                'quantity'  : 1,
-                'amount_pod': 1, 
-                'amount'    : price_diff
-            }
-            list_work_service.append(dop)
-            amount_ss = amount_ss + price_diff
+
+                    if price_diff < engine_dt_danger_amount_min:
+                        price_diff  = engine_dt_danger_amount_min
+                        info_diff   = 'Дизельный двигатель ремонт'
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff
+            else:
+                if estimation.type_engine.id == 1:
+                    price_diff  = (price * engine_danger_kf / 100)
+                    info_diff   = 'Бензиновый двигатель ремонт'
+
+                    if price_diff < engine_danger_amount_min:
+                        price_diff  = engine_danger_amount_min
+                        info_diff   = 'Бензиновый двигатель ремонт'
+                else:
+                    price_diff  = (price * engine_dt_danger_kf / 100)
+                    info_diff   = 'Дизельный двигатель ремонт'
+
+                    if price_diff < engine_dt_danger_amount_min:
+                        price_diff  = engine_dt_danger_amount_min
+                        info_diff   = 'Дизельный двигатель ремонт'
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff
 
         if estimation.page_test_drive != None and estimation.page_test_drive.engine == 2:
             
             info_diff = ''
             price_diff = 0
-            
-            if modification.typeEngine.id == 1:  
-                price_diff = (price * engine_warning_kf / 100)
-                info_diff   = 'Бензиновый двигатель устранение замечаний'
-                
-                if price_diff < engine_warning_amount_min:
-                    price_diff = engine_warning_amount_min
+            if modification != None:
+                if modification.typeEngine.id == 1:  
+                    price_diff = (price * engine_warning_kf / 100)
                     info_diff   = 'Бензиновый двигатель устранение замечаний'
-            else:
-            
-                price_diff = (price * engine_dt_warning_kf / 100)
-                info_diff   = 'Дизельный двигатель устранение замечаний'
-
-                if price_diff < engine_dt_warning_amount_min:
-                    price_diff = engine_dt_warning_amount_min
+                    
+                    if price_diff < engine_warning_amount_min:
+                        price_diff = engine_warning_amount_min
+                        info_diff   = 'Бензиновый двигатель устранение замечаний'
+                else:
+                
+                    price_diff = (price * engine_dt_warning_kf / 100)
                     info_diff   = 'Дизельный двигатель устранение замечаний'
 
-            dop = {
-                'name'      : info_diff,
-                'quantity'  : 1,
-                'amount_pod': 1, 
-                'amount'    : price_diff
-            }
-            list_work_service.append(dop)
-            amount_ss = amount_ss + price_diff
+                    if price_diff < engine_dt_warning_amount_min:
+                        price_diff = engine_dt_warning_amount_min
+                        info_diff   = 'Дизельный двигатель устранение замечаний'
 
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff
+            else:
+                if estimation.type_engine.id == 1:  
+                    price_diff = (price * engine_warning_kf / 100)
+                    info_diff   = 'Бензиновый двигатель устранение замечаний'
+                    
+                    if price_diff < engine_warning_amount_min:
+                        price_diff = engine_warning_amount_min
+                        info_diff   = 'Бензиновый двигатель устранение замечаний'
+                else:
+                
+                    price_diff = (price * engine_dt_warning_kf / 100)
+                    info_diff   = 'Дизельный двигатель устранение замечаний'
+
+                    if price_diff < engine_dt_warning_amount_min:
+                        price_diff = engine_dt_warning_amount_min
+                        info_diff   = 'Дизельный двигатель устранение замечаний'
+
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff 
         # кпп
         if estimation.page_test_drive != None and estimation.page_test_drive.gear == 0:
             
             info_diff = ''
             price_diff = 0
-            
-            if modification.typeGear.id == 1:
-                price_diff = (price * gear_amt_danger_kf / 100)
-                info_diff   = 'Робот устранение замечаний'
-
-                if price_diff < gear_amt_danger_amount_min:
-                    price_diff = gear_amt_danger_amount_min
+            if modification != None:
+                if modification.typeGear.id == 1:
+                    price_diff = (price * gear_amt_danger_kf / 100)
                     info_diff   = 'Робот устранение замечаний'
 
-            elif modification.typeGear.id == 2:
-                price_diff = (price * gear_mt_danger_kf / 100)
-                info_diff   = 'Механика устранение замечаний'
+                    if price_diff < gear_amt_danger_amount_min:
+                        price_diff = gear_amt_danger_amount_min
+                        info_diff   = 'Робот устранение замечаний'
 
-                if price_diff < gear_mt_danger_amount_min:
-                    price_diff = gear_mt_danger_amount_min
+                elif modification.typeGear.id == 2:
+                    price_diff = (price * gear_mt_danger_kf / 100)
                     info_diff   = 'Механика устранение замечаний'
 
-            elif modification.typeGear.id == 3:
-                price_diff = (price * gear_at_danger_kf / 100)
-                info_diff   = 'Автомат устранение замечаний'
-                if price_diff < gear_at_danger_amount_min:
-                    price_diff = gear_at_danger_amount_min
+                    if price_diff < gear_mt_danger_amount_min:
+                        price_diff = gear_mt_danger_amount_min
+                        info_diff   = 'Механика устранение замечаний'
+
+                elif modification.typeGear.id == 3:
+                    price_diff = (price * gear_at_danger_kf / 100)
                     info_diff   = 'Автомат устранение замечаний'
+                    if price_diff < gear_at_danger_amount_min:
+                        price_diff = gear_at_danger_amount_min
+                        info_diff   = 'Автомат устранение замечаний'
 
-            elif modification.typeGear.id == 4:
-                price_diff = (price * gear_cvt_danger_kf / 100)
-                info_diff   = 'Вариатор устранение замечаний'
-
-                if price_diff < gear_cvt_danger_amount_min:
-                    price_diff = gear_cvt_danger_amount_min
+                elif modification.typeGear.id == 4:
+                    price_diff = (price * gear_cvt_danger_kf / 100)
                     info_diff   = 'Вариатор устранение замечаний'
 
-            dop = {
-                'name'      : info_diff,
-                'quantity'  : 1,
-                'amount_pod': 1, 
-                'amount'    : price_diff
-            }
-            list_work_service.append(dop)
-            amount_ss = amount_ss + price_diff
+                    if price_diff < gear_cvt_danger_amount_min:
+                        price_diff = gear_cvt_danger_amount_min
+                        info_diff   = 'Вариатор устранение замечаний'
+
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff
 
         if estimation.page_test_drive != None and estimation.page_test_drive.gear == 2:
             
             price_diff = 0
             info_diff = ''
-
-            if modification.typeGear.id == 1:
-                
-                price_diff = (price * gear_amt_warning_kf / 100)
-                info_diff   = 'Робот ремонт'
-
-                if price_diff < gear_amt_warning_amount_min:
-                    price_diff = gear_amt_warning_amount_min
+            if modification != None:
+                if modification.typeGear.id == 1:
+                    
+                    price_diff = (price * gear_amt_warning_kf / 100)
                     info_diff   = 'Робот ремонт'
 
-            elif modification.typeGear.id == 2:
-                
-                price_diff = (price * gear_mt_warning_kf / 100)
-                info_diff   = 'Механика ремонт'
+                    if price_diff < gear_amt_warning_amount_min:
+                        price_diff = gear_amt_warning_amount_min
+                        info_diff   = 'Робот ремонт'
 
-                if price_diff < gear_mt_warning_amount_min:
-                    price_diff = gear_mt_warning_amount_min
+                elif modification.typeGear.id == 2:
+                    
+                    price_diff = (price * gear_mt_warning_kf / 100)
                     info_diff   = 'Механика ремонт'
 
-            elif modification.typeGear.id == 3:
-                
-                price_diff = (price * gear_at_warning_kf / 100)
-                info_diff   = 'Автомат ремонт'
+                    if price_diff < gear_mt_warning_amount_min:
+                        price_diff = gear_mt_warning_amount_min
+                        info_diff   = 'Механика ремонт'
 
-                if price_diff < gear_at_warning_amount_min:
-                    price_diff = gear_at_warning_amount_min
+                elif modification.typeGear.id == 3:
+                    
+                    price_diff = (price * gear_at_warning_kf / 100)
                     info_diff   = 'Автомат ремонт'
-            
-            elif modification.typeGear.id == 4:
-                
-                price_diff = (price * gear_cvt_warning_kf / 100)
-                info_diff   = 'Вариатор ремонт'
 
-                if price_diff < gear_cvt_warning_amount_min:
-                    price_diff = gear_cvt_warning_amount_min
+                    if price_diff < gear_at_warning_amount_min:
+                        price_diff = gear_at_warning_amount_min
+                        info_diff   = 'Автомат ремонт'
+                
+                elif modification.typeGear.id == 4:
+                    
+                    price_diff = (price * gear_cvt_warning_kf / 100)
                     info_diff   = 'Вариатор ремонт'
-            
-            dop = {
-                'name'      : info_diff,
-                'quantity'  : 1,
-                'amount_pod': 1, 
-                'amount'    : price_diff
-            }
-            list_work_service.append(dop)
-            amount_ss = amount_ss + price_diff
+
+                    if price_diff < gear_cvt_warning_amount_min:
+                        price_diff = gear_cvt_warning_amount_min
+                        info_diff   = 'Вариатор ремонт'
+                
+                dop = {
+                    'name'      : info_diff,
+                    'quantity'  : 1,
+                    'amount_pod': 1, 
+                    'amount'    : price_diff
+                }
+                list_work_service.append(dop)
+                amount_ss = amount_ss + price_diff
         
         # подвеска
         if estimation.page_test_drive != None and estimation.page_test_drive.suspension == 0:
@@ -7602,6 +7653,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     if estimation.page_vnesh.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
                         info_diff = info_diff + " с проекцией" 
+                    if estimation.page_vnesh.windshield_camera_int == 1:
+                        price_diff = price_diff + 6000
+                        info_diff = info_diff + " с камерой" 
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -8435,7 +8489,8 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         }
 
         return price
-    except:
+    except Exception as exc:
+        error = f'{type(exc).__name__}: {exc}'
         return None
 
 
@@ -9337,7 +9392,10 @@ def estimations_price_calculation_cd(cd, type_calculation):
                         info_diff   = "Лобовое стекло"
                     if cd.page_vnesh_copy.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
-                        info_diff = info_diff + " с проекцией" 
+                        info_diff = info_diff + " с проекцией"
+                    if cd.page_vnesh_copy.windshield_camera_int == 1:
+                        price_diff = price_diff + 6000
+                        info_diff = info_diff + " с камерой" 
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {
@@ -10451,7 +10509,10 @@ def estimations_price_calculation_cd(cd, type_calculation):
                         info_diff   = info['name']
                     if cd.page_vnesh_copy.windshield_projection_int == 1:
                         price_diff = price_diff + (price_diff * 0.3)
-                        info_diff = info_diff + " с проекцией" 
+                        info_diff = info_diff + " с проекцией"
+                    if cd.page_vnesh_copy.windshield_camera_int == 1:
+                        price_diff = price_diff + 6000
+                        info_diff = info_diff + " с камерой"  
                     work        = info_diff.capitalize()
                     diff_sum    = price_diff
                     dop = {

@@ -27,7 +27,7 @@
        
         <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
 
-        <link href="/static/select2.min.css" rel="stylesheet" />
+        <link href="/static/select2.min.css" rel="stylesheet"/>
         <script src="/static/select2.min.js"></script>
     
         {% block head %} {% endblock %}
@@ -495,7 +495,7 @@
                             
                             {% if request.user.is_superuser %}
                                 <li class="nav-item">
-                                    <a class="nav-link text-{% if params.type == 'monitorings' or params.type == 'monitoring_hub' or params.type == 'monitoring_exchange' %}secondary active {% else %}white{% endif %}" href="/monitoring/">
+                                    <a class="nav-link text-{% if params.type == 'monitorings' %}secondary active {% else %}white{% endif %}" href="/monitorings/">
                                         <span class="sidebar-icon bi bi-graph-up-arrow"></span>
                                         Мониторинг
                                     </a>

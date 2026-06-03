@@ -792,15 +792,16 @@ def estimation_rlk(request, rlk_id):
                 reg_interactiv_ocenka.rama = False
             reg_interactiv_ocenka.save(update_fields=['rama']) 
 
-            reg_interactiv_ocenka_vnesh.check_vin_int           = int(request.POST.get('check_vin_int', '3'))
-            reg_interactiv_ocenka_vnesh.check_engine_int        = int(request.POST.get('check_engine_int', '3'))
-            reg_interactiv_ocenka_vnesh.windshield_projection_int = int(request.POST.get('windshield_projection_int', '3'))
-            reg_interactiv_ocenka_vnesh.type_color_int          = int(request.POST.get('type_color_int', '0'))
-            reg_interactiv_ocenka_vnesh.windshield_heat_int     = int(request.POST.get('windshield_heat_int', '3'))
-            reg_interactiv_ocenka_vnesh.windshield_error_int    = int(request.POST.get('windshield_error_int', '3'))
-            reg_interactiv_ocenka_vnesh.light_error_int         = int(request.POST.get('light_error_int', '3'))
-            reg_interactiv_ocenka_vnesh.oil_error_int           = int(request.POST.get('oil_error_int', '3'))
-            reg_interactiv_ocenka_vnesh.water_error_int         = int(request.POST.get('water_error_int', '3'))
+            reg_interactiv_ocenka_vnesh.check_vin_int               = int(request.POST.get('check_vin_int', '3'))
+            reg_interactiv_ocenka_vnesh.check_engine_int            = int(request.POST.get('check_engine_int', '3'))
+            reg_interactiv_ocenka_vnesh.windshield_projection_int   = int(request.POST.get('windshield_projection_int', '3'))
+            reg_interactiv_ocenka_vnesh.windshield_camera_int       = int(request.POST.get('windshield_camera_int', '10'))
+            reg_interactiv_ocenka_vnesh.type_color_int              = int(request.POST.get('type_color_int', '0'))
+            reg_interactiv_ocenka_vnesh.windshield_heat_int         = int(request.POST.get('windshield_heat_int', '3'))
+            reg_interactiv_ocenka_vnesh.windshield_error_int        = int(request.POST.get('windshield_error_int', '3'))
+            reg_interactiv_ocenka_vnesh.light_error_int             = int(request.POST.get('light_error_int', '3'))
+            reg_interactiv_ocenka_vnesh.oil_error_int               = int(request.POST.get('oil_error_int', '3'))
+            reg_interactiv_ocenka_vnesh.water_error_int             = int(request.POST.get('water_error_int', '3'))
 
             reg_interactiv_ocenka_vnesh.windshield_error    = 'windshield_error' in request.POST
             reg_interactiv_ocenka_vnesh.light_error         = 'light_error' in request.POST

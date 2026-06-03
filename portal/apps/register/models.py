@@ -2122,6 +2122,7 @@ class RegInteractivOcenkaVnesh(ChangeloggableMixin, models.Model):
 
     windshield_heat_int             = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True) #'// 1 - есть обогрев
     windshield_projection_int       = models.IntegerField('Лобовое стекло с проекцией', default=10, null=True, blank=True) #'// 1 - есть проекция
+    windshield_camera_int           = models.IntegerField('Лобовое стекло с камерой', default=10, null=True, blank=True) #'// 1 - есть проекция
     type_color_int                  = models.IntegerField('Тип окраса повреждений', default=10, null=True, blank=True) #'// 1 - обычный окрас 2 - перламутр 3 - под прибор
     
     def __str__(self):
@@ -4097,6 +4098,7 @@ class RegControlDiagnosticVnesh(models.Model):
     water_error_int = models.IntegerField('Следы подтекания охлаждающей жидкости', default=10, null=True, blank=True)
     windshield_heat_int = models.IntegerField('Лобовое стекло с обогревом', default=10, null=True, blank=True)
     windshield_projection_int       = models.IntegerField('Лобовое стекло с проекцией', default=10, null=True, blank=True) #'// 1 - есть проекция
+    windshield_camera_int           = models.IntegerField('Лобовое стекло с камерой', default=10, null=True, blank=True) #'// 1 - есть проекция
     type_color_int                  = models.IntegerField('Тип окраса повреждений', default=10, null=True, blank=True) #'// 1 - обычный окрас 2 - перламутр 3 - под прибор
     
     class Meta:
