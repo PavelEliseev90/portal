@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Моя покупка — презентация для руководства</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Literata:opsz,wght@7..72,600;7..72,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #041a2c;
+      --bg-mid: #0a3356;
+      --bg-deep: #062640;
+      --bg-gradient: linear-gradient(155deg, #031525 0%, #0a3356 45%, #0d5e8a 100%);
+      --panel: rgba(8, 28, 48, 0.88);
+      --text: #eef6fc;
+      --muted: #8eb4d4;
+      --accent: #5eead4;
+      --accent2: #fde68a;
+      --brand: #38bdf8;
+      --ok: #86efac;
+      --warn: #fdba74;
+      --line: rgba(142, 180, 212, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      font-family: 'Manrope', system-ui, sans-serif;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text);
+    }
+    .deck { height: 100%; position: relative; }
+    .slide {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column; justify-content: center;
+      padding: 48px 64px 88px;
+      background:
+        radial-gradient(ellipse at 12% 8%, rgba(94, 234, 212, 0.11), transparent 42%),
+        radial-gradient(ellipse at 88% 92%, rgba(56, 189, 248, 0.18), transparent 48%),
+        var(--bg-gradient);
+    }
+    .slide.active { display: flex; }
+    .slide-top { justify-content: flex-start; padding-top: 36px; overflow-y: auto; }
+    .tag {
+      display: inline-block; font-size: 11px; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 14px; font-weight: 700;
+    }
+    h1 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(28px, 4.2vw, 46px); line-height: 1.12; font-weight: 700; max-width: 920px;
+    }
+    h2 {
+      font-family: 'Literata', Georgia, serif;
+      font-size: clamp(22px, 3vw, 34px); margin-bottom: 20px; color: var(--accent);
+    }
+    .sub {
+      font-size: 18px; color: var(--muted); margin-top: 14px;
+      max-width: 760px; line-height: 1.55;
+    }
+    ul { margin: 14px 0 0 22px; max-width: 860px; }
+    li { margin: 9px 0; font-size: 16px; line-height: 1.48; }
+    li strong { color: var(--accent2); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; max-width: 1040px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; max-width: 1100px; }
+    .card {
+      border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px;
+      background: rgba(6, 24, 42, 0.72);
+    }
+    .card h3 { font-size: 14px; color: var(--muted); margin-bottom: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .card p, .card li { font-size: 15px; color: var(--text); line-height: 1.45; }
+    .card ul { margin-left: 16px; }
+    .kpi-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 26px; }
+    .kpi {
+      min-width: 170px; padding: 16px 18px; border-radius: 14px;
+      border: 1px solid var(--line); background: rgba(6, 20, 36, 0.82);
+    }
+    .kpi .v { font-size: 26px; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; }
+    .kpi .t { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+    .flow {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px;
+      margin-top: 22px; font-size: 13px; max-width: 980px;
+    }
+    .flow span {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .flow .arrow { color: var(--muted); border: none; background: none; padding: 0 4px; }
+    .nav {
+      position: fixed; bottom: 24px; right: 32px; display: flex; gap: 10px; z-index: 10;
+    }
+    .nav button {
+      cursor: pointer; border: 1px solid var(--line); background: var(--panel);
+      color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 700;
+    }
+    .nav button:hover { border-color: var(--accent); }
+    .progress { position: fixed; bottom: 28px; left: 32px; font-size: 13px; color: var(--muted); z-index: 10; }
+    .logo-line { margin-top: 28px; font-size: 13px; color: var(--muted); }
+    table { width: 100%; max-width: 960px; border-collapse: collapse; margin-top: 18px; font-size: 14px; }
+    th, td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: rgba(6, 20, 36, 0.95); color: var(--muted); font-weight: 700; }
+    .caption { font-size: 12px; color: var(--muted); margin-top: 10px; max-width: 1100px; line-height: 1.45; }
+    .caption strong { color: var(--accent); }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+      padding: 10px 16px; border-radius: 999px;
+      background: rgba(94, 234, 212, 0.12); border: 1px solid rgba(94, 234, 212, 0.28);
+      font-size: 13px; font-weight: 700; color: var(--accent);
+    }
+    .hero-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+    /* Phone mock */
+    .phone-stage {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px; max-width: 1180px; width: 100%; margin-top: 14px;
+    }
+    .phone {
+      border-radius: 28px; overflow: hidden; border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 28px 80px rgba(0,0,0,0.45);
+      background: #f4f7fb; color: #0b1f3a; min-height: 420px;
+    }
+    .phone-notch {
+      height: 26px; background: #0b1f3a; display: flex; align-items: center; justify-content: center;
+    }
+    .phone-notch span { width: 56px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.18); }
+    .phone-body { padding: 12px; font-size: 10px; }
+    .ph-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .ph-brand { display: flex; gap: 6px; align-items: center; font-weight: 800; }
+    .ph-mark { width: 24px; height: 24px; border-radius: 8px; background: linear-gradient(135deg,#0057a8,#1f8fff); color:#fff; display:grid; place-items:center; font-size:9px; }
+    .ph-pill { font-size: 8px; padding: 2px 6px; border-radius: 999px; background:#e8f2fc; color:#0057a8; font-weight:700; }
+    .ph-status { display:inline-block; padding:4px 8px; border-radius:999px; background:#e6f7f1; color:#0d6b4f; font-weight:800; font-size:8px; margin-bottom:6px; }
+    .ph-h1 { font-family:'Literata',serif; font-size:14px; font-weight:700; line-height:1.15; margin-bottom:4px; }
+    .ph-muted { color:#5b6b82; font-size:8px; }
+    .ph-card {
+      background:#fff; border:1px solid rgba(11,31,58,0.08); border-radius:12px;
+      padding:8px; margin-bottom:8px; box-shadow:0 6px 18px rgba(11,31,58,0.05);
+    }
+    .ph-card strong { font-size:9px; }
+    .ph-row { display:flex; justify-content:space-between; gap:6px; margin:3px 0; font-size:8px; }
+    .ph-money { font-weight:800; font-variant-numeric:tabular-nums; }
+    .ph-photo {
+      height: 58px; border-radius:8px; background:linear-gradient(135deg,#dbe7f5,#eef4fb);
+      display:grid; place-items:center; color:#5b6b82; margin:6px 0; font-size:8px;
+    }
+    .ph-timeline { padding-left:10px; border-left:2px solid #bbf7d0; }
+    .ph-step { position:relative; padding:0 0 6px 8px; font-size:8px; }
+    .ph-step::before {
+      content:''; position:absolute; left:-13px; top:2px; width:7px; height:7px;
+      border-radius:50%; background:#22c55e; border:2px solid #fff;
+    }
+    .ph-nav {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-top:8px;
+      padding-top:6px; border-top:1px solid rgba(11,31,58,0.08); font-size:7px; text-align:center; color:#5b6b82;
+    }
+    .ph-nav .on { color:#0057a8; font-weight:800; }
+    .phone-label { text-align:center; margin-top:8px; font-size:12px; color:var(--muted); }
+
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; max-width:1000px; margin-top:18px; }
+    .compare-card { border:1px solid var(--line); border-radius:14px; padding:18px; background:rgba(6,24,42,.65); }
+    .compare-card h3 { font-size:15px; color:var(--accent); margin-bottom:8px; }
+    .compare-card p { font-size:14px; color:var(--muted); line-height:1.45; }
+    .value-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; max-width:1100px; margin-top:16px; }
+    .value-item { padding:14px; border-radius:14px; border:1px solid var(--line); background:rgba(6,24,42,.55); }
+    .value-item strong { display:block; color:var(--accent2); font-size:13px; margin-bottom:6px; }
+    .value-item span { font-size:12px; color:var(--muted); line-height:1.4; }
+    .roadmap { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; max-width:1100px; margin-top:16px; }
+    .road-item { border:1px solid var(--line); border-radius:14px; padding:16px; background:rgba(6,24,42,.6); }
+    .road-item .phase { font-size:11px; color:var(--accent); font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+    .road-item h4 { font-size:15px; margin-bottom:8px; }
+    .road-item ul { margin:0 0 0 16px; }
+    .road-item li { font-size:13px; margin:5px 0; }
+    .cta-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+    .cta {
+      display:inline-flex; padding:10px 16px; border-radius:12px; font-size:13px; font-weight:800;
+      border:1px solid var(--line); background:rgba(6,24,42,.8); color:var(--text);
+    }
+    .cta.primary { background:linear-gradient(135deg,#0d5e8a,#38bdf8); border-color:transparent; }
+
+    @media (max-width: 900px) {
+      .slide { padding: 20px 16px 88px; overflow-y:auto; justify-content:flex-start; }
+      .grid2, .grid3, .compare-grid, .value-grid, .roadmap { grid-template-columns:1fr; }
+      .phone-stage { grid-template-columns:1fr 1fr; }
+      .nav { left:12px; right:12px; justify-content:space-between; }
+      .progress { left:16px; right:16px; text-align:center; bottom:68px; }
+    }
+    @media (max-width: 520px) {
+      .phone-stage { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- 1 Титул -->
+    <section class="slide active">
+      <div class="tag">Стратегический проект · Корпоративный портал</div>
+      <h1>«Моя покупка» — цифровое сопровождение клиента от визита до выдачи</h1>
+      <p class="sub">Персональный кабинет покупателя нового автомобиля: прозрачность сделки, удобство, доверие. Основа — <strong>рабочий лист отдела продаж</strong> и данные портала Kors Group.</p>
+      <div class="hero-badge">Цель: продавать больше и лучше — не только ценой, а опытом и доверием</div>
+      <p class="logo-line">Kors Group · ИТ-портал · 2026</p>
+    </section>
+
+    <!-- 2 Проблема -->
+    <section class="slide">
+      <div class="tag">Проблема</div>
+      <h2>Что клиент не видит сегодня — и почему это стоит продаж</h2>
+      <ul>
+        <li>После визита в ДЦ клиент остаётся в <strong>«чёрном ящике»</strong>: непонятно, что происходит с заказом, trade-in и итоговой ценой.</li>
+        <li>Менеджер объясняет устно, в мессенджере и на бумаге — <strong>нет единой точки правды</strong> для клиента.</li>
+        <li>При сравнении с конкурентом решает не только цена, а <strong>спокойствие и предсказуемость</strong> — мы это не упаковываем.</li>
+        <li>Внутри портала уже есть РЛК, калькуляции, оценки, соглашения — но <strong>клиент этого не видит</strong>.</li>
+        <li>Каждый звонок «ну что там с машиной?» — нагрузка на ОП и признак тревоги, а не сервиса.</li>
+      </ul>
+    </section>
+
+    <!-- 3 Цель -->
+    <section class="slide">
+      <div class="tag">Цель проекта</div>
+      <h2>Зачем мы это делаем</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Для клиента</h3>
+          <ul>
+            <li>Понятный статус покупки в любой момент</li>
+            <li>Один контакт — менеджер, расчёт, сроки</li>
+            <li>Прозрачный итог: цена, trade-in, допы, услуги</li>
+            <li>Спокойное ожидание заказного авто с этапами и сроками</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Для бизнеса</h3>
+          <ul>
+            <li>Рост конверсии «визит → сделка» без ценовой войны</li>
+            <li>Конкурентное отличие от других ДЦ</li>
+            <li>Снижение потерь из-за неясности и недоверия</li>
+            <li>Укрепление бренда: честность, забота, профессионализм</li>
+          </ul>
+        </div>
+      </div>
+      <p class="sub" style="margin-top:18px;">Формула: <strong>прозрачность + удобство + доверие = выбор нашего ДЦ</strong>, даже если витринная цена чуть выше.</p>
+    </section>
+
+    <!-- 4 Значимость -->
+    <section class="slide slide-top">
+      <div class="tag">Значимость</div>
+      <h2>Почему это стратегически важно для группы</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Рынок</h3>
+          <p>Клиент сравнивает 2–3 ДЦ. Побеждает тот, кто снимает тревожность и даёт <strong>ощущение контроля</strong> над дорогой покупкой.</p>
+        </div>
+        <div class="card">
+          <h3>Данные уже есть</h3>
+          <p>Не нужно строить с нуля: РЛК, калькуляции, trade-in, соглашения, отгрузки — всё в портале. Проект <strong>упаковывает ценность</strong> для клиента.</p>
+        </div>
+        <div class="card">
+          <h3>Масштаб</h3>
+          <p>Единый модуль для всех ДЦ сети: один стандарт сервиса, один клиентский опыт, измеримые KPI по воронке.</p>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">1 РЛК</div><div class="t">единая логика сделки внутри компании</div></div>
+        <div class="kpi"><div class="v">1 ссылка</div><div class="t">клиенту — без приложения и регистрации</div></div>
+        <div class="kpi"><div class="v">4 экрана</div><div class="t">главная · авто · расчёт · события</div></div>
+        <div class="kpi"><div class="v">24/7</div><div class="t">статус доступен после визита</div></div>
+      </div>
+    </section>
+
+    <!-- 5 Решение -->
+    <section class="slide">
+      <div class="tag">Решение</div>
+      <h2>«Моя покупка» — модуль на корпоративном портале</h2>
+      <p class="sub">Отдельное приложение <strong>client_journey</strong>: легко поддерживать, развивать и подключать к любому ДЦ группы.</p>
+      <div class="flow">
+        <span>Визит в ДЦ · РЛК</span>
+        <span class="arrow">→</span>
+        <span>Ссылка клиенту</span>
+        <span class="arrow">→</span>
+        <span>Подбор / расчёт / trade-in</span>
+        <span class="arrow">→</span>
+        <span>Заказ и поставка</span>
+        <span class="arrow">→</span>
+        <span>Выдача и лояльность</span>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">MVP</div><div class="t">демо и предпросмотр по РЛК готовы</div></div>
+        <div class="kpi"><div class="v">API</div><div class="t">данные из существующих модулей</div></div>
+        <div class="kpi"><div class="v">Mobile</div><div class="t">оптимизация под телефон клиента</div></div>
+      </div>
+    </section>
+
+    <!-- 6 Основа РЛК -->
+    <section class="slide slide-top">
+      <div class="tag">Архитектура данных</div>
+      <h2>Рабочий лист — центр логики продажи</h2>
+      <table>
+        <thead>
+          <tr><th>Источник в портале</th><th>Что видит клиент</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>DocRLK</strong> — рабочий лист ОП</td><td>Менеджер, визит, статус, лента событий</td></tr>
+          <tr><td><strong>CarCalculations</strong> — калькуляция</td><td>Цена, скидки, trade-in, допы, ОПФУ, итог</td></tr>
+          <tr><td><strong>Eco-РЛК</strong> — оценка trade-in</td><td>Этапы оценки, предварительная и финальная сумма</td></tr>
+          <tr><td><strong>RefCarsOrganization</strong> — склад</td><td>Авто из наличия или под заказ</td></tr>
+          <tr><td><strong>DocCarAgreement</strong> — соглашение</td><td>Фиксация сделки, планируемая выдача</td></tr>
+          <tr><td><strong>DocCarShipment</strong> — отгрузка</td><td>Факт выдачи автомобиля</td></tr>
+        </tbody>
+      </table>
+      <p class="caption">Данные <strong>не дублируются</strong> — модуль собирает клиентскую картину из уже существующих процессов 1С и портала.</p>
+    </section>
+
+    <!-- 7 Ценности -->
+    <section class="slide slide-top">
+      <div class="tag">Ценности бренда</div>
+      <h2>Как проект транслирует ценности Kors Group клиенту</h2>
+      <div class="value-grid">
+        <div class="value-item"><strong>Честность</strong><span>Понятный итог сделки: что включено, что нет, до какого срока актуально предложение.</span></div>
+        <div class="value-item"><strong>Уважение</strong><span>Менеджер на связи, клиент не ищет информацию по звонкам и чатам.</span></div>
+        <div class="value-item"><strong>Профессионализм</strong><span>Этапы, сроки, статусы trade-in и заказа — как у сильного digital-сервиса.</span></div>
+        <div class="value-item"><strong>Забота</strong><span>«Что дальше» всегда на виду: следующий шаг, дата, ответственный.</span></div>
+      </div>
+      <p class="sub" style="margin-top:16px;">Позиционирование для рынка: <strong>«С нами не страшно принять решение о покупке»</strong>.</p>
+    </section>
+
+    <!-- 8 Экраны -->
+    <section class="slide slide-top">
+      <div class="tag">Клиентский опыт</div>
+      <h2>4 экрана — вся покупка в одном месте</h2>
+      <div class="grid2">
+        <div class="card"><h3>Главная</h3><ul><li>Менеджер и контакты</li><li>Текущий статус сделки</li><li>Следующий шаг</li><li>Этапы от визита до выдачи</li></ul></div>
+        <div class="card"><h3>Автомобиль</h3><ul><li>Наличие или заказ</li><li>Комплектация, VIN, срок</li><li>Трекер поставки</li><li>Фото приёмки с автовоза</li></ul></div>
+        <div class="card"><h3>Расчёт</h3><ul><li>Цена и скидки</li><li>Trade-in с этапами</li><li>Допоборудование и статусы</li><li>ОПФУ и итоговая доплата</li></ul></div>
+        <div class="card"><h3>События</h3><ul><li>Лента действий по РЛК</li><li>Визит, КП, оценка, заказ</li><li>Прозрачная история без «забыли перезвонить»</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 9 DEMO главная -->
+    <section class="slide slide-top">
+      <div class="tag">Как выглядит</div>
+      <h2>Главный экран клиента</h2>
+      <p class="sub">Мобильная web-страница по персональной ссылке — без установки приложения.</p>
+      <div class="phone-stage">
+        <div>
+          <div class="phone">
+            <div class="phone-notch"><span></span></div>
+            <div class="phone-body">
+              <div class="ph-top"><div class="ph-brand"><div class="ph-mark">К</div><div>Моя покупка</div></div><span class="ph-pill">Активно</span></div>
+              <div class="ph-status">В пути</div>
+              <div class="ph-h1">Здравствуйте, Иван</div>
+              <div class="ph-muted">РЛК ОП-0001842 · 01.06.2026</div>
+              <div class="ph-card" style="margin-top:8px;">
+                <strong>Алексей Петров</strong><div class="ph-muted">Ваш менеджер · KIA Корс Авто</div>
+                <div style="margin-top:6px;display:flex;gap:4px;"><span style="background:#0057a8;color:#fff;padding:3px 8px;border-radius:8px;font-size:7px;font-weight:800;">Позвонить</span><span style="border:1px solid #cbd5e1;padding:3px 8px;border-radius:8px;font-size:7px;font-weight:800;color:#0057a8;">WhatsApp</span></div>
+              </div>
+              <div class="ph-card">
+                <strong>Что дальше</strong>
+                <div class="ph-muted">Ожидаем прибытие автомобиля · ориентир 2 дня</div>
+              </div>
+              <div class="ph-card">
+                <strong>Kia Sportage, IV</strong>
+                <div class="ph-photo">Фото автомобиля</div>
+                <div class="ph-money">3 450 000 ₽</div>
+              </div>
+              <div class="ph-nav"><div class="on">Главная</div><div>Авто</div><div>Расчёт</div><div>События</div></div>
+            </div>
+          </div>
+          <div class="phone-label">Главная · менеджер · статус · следующий шаг</div>
+        </div>
+        <div>
+          <div class="phone">
+            <div class="phone-notch"><span></span></div>
+            <div class="phone-body">
+              <div class="ph-top"><div class="ph-brand"><div class="ph-mark">К</div><div>Автомобиль</div></div><span class="ph-pill">Под заказ</span></div>
+              <div class="ph-card">
+                <strong>Kia Sportage Prestige 2.0 AT 4WD</strong>
+                <div class="ph-photo">Трекер поставки</div>
+                <div class="ph-timeline">
+                  <div class="ph-step">Заказ подтверждён</div>
+                  <div class="ph-step">В пути · ориентир 2 дня</div>
+                  <div class="ph-step" style="opacity:.55;">Приёмка с автовоза</div>
+                  <div class="ph-step" style="opacity:.55;">Осмотр · фото</div>
+                </div>
+              </div>
+              <div class="ph-card"><strong>Планируемая выдача</strong><div class="ph-money">09.06.2026</div></div>
+              <div class="ph-nav"><div>Главная</div><div class="on">Авто</div><div>Расчёт</div><div>События</div></div>
+            </div>
+          </div>
+          <div class="phone-label">Заказ · этапы · сроки · фото приёмки</div>
+        </div>
+      </div>
+      <p class="caption"><strong>①</strong> Персональная ссылка после визита · <strong>②</strong> статус без звонка в ДЦ · <strong>③</strong> ожидание заказа без тревоги</p>
+    </section>
+
+    <!-- 10 DEMO расчёт -->
+    <section class="slide slide-top">
+      <div class="tag">Как работает</div>
+      <h2>Расчёт сделки и trade-in — прозрачно</h2>
+      <div class="phone-stage">
+        <div>
+          <div class="phone">
+            <div class="phone-notch"><span></span></div>
+            <div class="phone-body">
+              <div class="ph-top"><div class="ph-brand"><div class="ph-mark">К</div><div>Расчёт</div></div></div>
+              <div class="ph-card">
+                <strong>Калькуляция № КР-2406-118</strong>
+                <div class="ph-row"><span>Цена автомобиля</span><span class="ph-money">3 450 000 ₽</span></div>
+                <div class="ph-row"><span>Скидка</span><span class="ph-money">−80 000 ₽</span></div>
+                <div class="ph-row"><span>Trade-in Solaris</span><span class="ph-money">−1 850 000 ₽</span></div>
+                <div class="ph-row"><span>Допоборудование</span><span class="ph-money">+45 000 ₽</span></div>
+                <div class="ph-row"><span>ОПФУ</span><span class="ph-money">+120 000 ₽</span></div>
+                <div class="ph-row" style="border-top:1px solid #e2e8f0;padding-top:4px;margin-top:4px;"><span><strong>Итого к доплате</strong></span><span class="ph-money">1 688 500 ₽</span></div>
+              </div>
+              <div class="ph-card">
+                <strong>Trade-in · Hyundai Solaris</strong>
+                <div class="ph-muted">Финальная оценка</div>
+                <div class="ph-money">1 850 000 ₽</div>
+              </div>
+              <div class="ph-nav"><div>Главная</div><div>Авто</div><div class="on">Расчёт</div><div>События</div></div>
+            </div>
+          </div>
+          <div class="phone-label">Итог под ключ — не только «цена на витрине»</div>
+        </div>
+        <div>
+          <div class="phone">
+            <div class="phone-notch"><span></span></div>
+            <div class="phone-body">
+              <div class="ph-top"><div class="ph-brand"><div class="ph-mark">К</div><div>События</div></div></div>
+              <div class="ph-card">
+                <div class="ph-row"><strong>Визит в ДЦ</strong><span class="ph-muted">01.06</span></div>
+                <div class="ph-muted">Обсудили Sportage и trade-in</div>
+              </div>
+              <div class="ph-card">
+                <div class="ph-row"><strong>Расчёт отправлен</strong><span class="ph-muted">03.06</span></div>
+                <div class="ph-muted">Коммерческое предложение</div>
+              </div>
+              <div class="ph-card">
+                <div class="ph-row"><strong>Заказ подтверждён</strong><span class="ph-muted">04.06</span></div>
+                <div class="ph-muted">Ожидаем поставку</div>
+              </div>
+              <div class="ph-card">
+                <div class="ph-row"><strong>Автомобиль в пути</strong><span class="ph-muted">05.06</span></div>
+              </div>
+              <div class="ph-nav"><div>Главная</div><div>Авто</div><div>Расчёт</div><div class="on">События</div></div>
+            </div>
+          </div>
+          <div class="phone-label">Лента по РЛК — клиент в курсе каждого шага</div>
+        </div>
+      </div>
+      <p class="caption">Менеджер перестаёт «продавать цифры в разговоре» — клиент <strong>видит логику сделки</strong> сам.</p>
+    </section>
+
+    <!-- 11 Сценарий -->
+    <section class="slide slide-top">
+      <div class="tag">Сценарий</div>
+      <h2>Путь клиента от визита до выдачи</h2>
+      <div class="flow" style="margin-bottom:16px;">
+        <span>Клиент пришёл в ДЦ</span><span class="arrow">→</span>
+        <span>Создан РЛК</span><span class="arrow">→</span>
+        <span>SMS / WhatsApp со ссылкой</span><span class="arrow">→</span>
+        <span>Клиент видит подбор и расчёт</span><span class="arrow">→</span>
+        <span>Trade-in и заказ</span><span class="arrow">→</span>
+        <span>Выдача</span>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>День 0 — визит</h3>
+          <ul>
+            <li>Визитная карточка менеджера</li>
+            <li>Резюме встречи в кабинете</li>
+            <li>2–4 варианта авто из наличия / под заказ</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>День 1–3 — решение</h3>
+          <ul>
+            <li>Калькуляция с trade-in и допами</li>
+            <li>Итоговая доплата в одном экране</li>
+            <li>Ответ на «у соседа дешевле» фактами</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Недели ожидания — заказ</h3>
+          <ul>
+            <li>Трекер поставки без лишних звонков</li>
+            <li>Фото приёмки и осмотра</li>
+            <li>Статусы допоборудования</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Выдача и после</h3>
+          <ul>
+            <li>Дата и чек-лист «что взять»</li>
+            <li>Сопровождение 30 дней</li>
+            <li>База для повторных обращений и сервиса</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 Бизнес-эффект -->
+    <section class="slide">
+      <div class="tag">Бизнес-результат</div>
+      <h2>Что ожидаем при внедрении</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Продажи</h3>
+          <ul>
+            <li><strong>+конверсия</strong> визит → сделка за счёт скорости и ясности</li>
+            <li><strong>−потери</strong> «я подумаю / сравню у соседа»</li>
+            <li><strong>+доля trade-in</strong> — прозрачная оценка в момент решения</li>
+            <li><strong>−споры по цене</strong> — продаём полную сделку, не витрину</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Клиент и бренд</h3>
+          <ul>
+            <li><strong>+NPS</strong> и рекомендации — клиент чувствует заботу</li>
+            <li><strong>+повторные визиты</strong> — сервис, следующая покупка</li>
+            <li><strong>Единый стандарт</strong> сервиса во всех ДЦ группы</li>
+            <li><strong>Цифровой имидж</strong> — современный дилер, не «как все»</li>
+          </ul>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">−30%</div><div class="t">целевое сокращение времени до КП</div></div>
+        <div class="kpi"><div class="v">−25%</div><div class="t">отказов по причине «непонятно»</div></div>
+        <div class="kpi"><div class="v">+15%</div><div class="t">конверсии при пилоте в 1–2 ДЦ</div></div>
+      </div>
+      <p class="caption">KPI уточняются на пилоте; замер: время до КП, win-rate vs конкурент, доля trade-in, NPS после выдачи.</p>
+    </section>
+
+    <!-- 13 До / после -->
+    <section class="slide slide-top">
+      <div class="tag">Сравнение</div>
+      <h2>До и после внедрения</h2>
+      <table>
+        <thead>
+          <tr><th>Критерий</th><th>Сейчас (типовой ДЦ)</th><th>«Моя покупка»</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>После визита</td><td>Клиент ждёт звонка, ищет контакт</td><td>Ссылка, менеджер, статус сразу</td></tr>
+          <tr><td>Расчёт</td><td>Устно, PDF, разные версии</td><td>Один актуальный итог в кабинете</td></tr>
+          <tr><td>Trade-in</td><td>«Чёрный ящик», сюрприз в день сделки</td><td>Этапы и сумма с объяснением</td></tr>
+          <tr><td>Заказное авто</td><td>«Позвоните через неделю»</td><td>Трекер, сроки, фото приёмки</td></tr>
+          <tr><td>Конкурент «дешевле»</td><td>Спор скидкой</td><td>Сравнение полной сделки и сервиса</td></tr>
+          <tr><td>Лояльность</td><td>Контакт теряется после выдачи</td><td>Сопровождение, база для возврата</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 14 Конкурентное преимущество -->
+    <section class="slide">
+      <div class="tag">Конкурентное преимущество</div>
+      <h2>Почему клиент выберет нас, даже если цена чуть выше</h2>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Другие ДЦ</h3>
+          <p>Цена на витрине, обещания устно, статус заказа по звонку, trade-in «потом скажем».</p>
+        </div>
+        <div class="compare-card">
+          <h3>Kors Group + «Моя покупка»</h3>
+          <p>Полная сделка под ключ, прозрачный trade-in, трекер заказа, менеджер и история в одном месте.</p>
+        </div>
+      </div>
+      <p class="sub" style="margin-top:14px;">Мы продаём не только автомобиль — <strong>спокойствие, предсказуемость и уважение к времени клиента</strong>.</p>
+    </section>
+
+    <!-- 15 Внедрение -->
+    <section class="slide slide-top">
+      <div class="tag">Внедрение</div>
+      <h2>Этапы запуска</h2>
+      <div class="roadmap">
+        <div class="road-item">
+          <div class="phase">Этап 1 · готово</div>
+          <h4>MVP на портале</h4>
+          <ul>
+            <li>Приложение client_journey</li>
+            <li>Демо и предпросмотр по РЛК</li>
+            <li>Клиентская ссылка по токену</li>
+          </ul>
+        </div>
+        <div class="road-item">
+          <div class="phase">Этап 2 · 4–6 недель</div>
+          <h4>Пилот в 1–2 ДЦ</h4>
+          <ul>
+            <li>Отправка ссылки после визита</li>
+            <li>Интеграция с калькуляцией</li>
+            <li>Обучение ОП, замер KPI</li>
+          </ul>
+        </div>
+        <div class="road-item">
+          <div class="phase">Этап 3 · 2–3 мес.</div>
+          <h4>Масштаб сети</h4>
+          <ul>
+            <li>Фото приёмки и осмотра</li>
+            <li>SMS / WhatsApp автоматизация</li>
+            <li>Сопровождение 30 дней после выдачи</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16 Дорожная карта -->
+    <section class="slide">
+      <div class="tag">Дорожная карта</div>
+      <h2>Следующие шаги развития</h2>
+      <ul>
+        <li><strong>Кнопка «Отправить клиенту»</strong> из РЛК и калькуляции — в один клик после визита.</li>
+        <li><strong>Автоуведомления</strong> при смене этапа: заказ, приёмка, готовность к выдаче.</li>
+        <li><strong>Фото и документы</strong> приёмки с автовоза, акт осмотра — в трекере заказа.</li>
+        <li><strong>Аналитика для РОП</strong>: сколько клиентов открыли кабинет, где зависла сделка.</li>
+        <li><strong>Интеграция с сервисом</strong> — запись на ТО из кабинета после выдачи.</li>
+        <li><strong>Единый стандарт</strong> для всех брендов и ДЦ группы.</li>
+      </ul>
+    </section>
+
+    <!-- 17 Технически -->
+    <section class="slide slide-top">
+      <div class="tag">Техническая зрелость</div>
+      <h2>Как устроено на портале</h2>
+      <table>
+        <thead><tr><th>Компонент</th><th>Назначение</th></tr></thead>
+        <tbody>
+          <tr><td><strong>client_journey</strong></td><td>Отдельное Django-приложение — единая точка поддержки</td></tr>
+          <tr><td><strong>services/journey.py</strong></td><td>Сборка клиентского контекста из DocRLK и связанных моделей</td></tr>
+          <tr><td><strong>ClientJourneyLink</strong></td><td>Персональный токен доступа для клиента</td></tr>
+          <tr><td><strong>/client_journey/demo/</strong></td><td>Демо для презентаций и обучения ОП</td></tr>
+          <tr><td><strong>/client_journey/preview/&lt;rlk&gt;/</strong></td><td>Предпросмотр сотрудником по реальному РЛК</td></tr>
+          <tr><td><strong>/client_journey/c/&lt;token&gt;/</strong></td><td>Клиентский кабинет по ссылке</td></tr>
+        </tbody>
+      </table>
+      <div class="cta-row">
+        <a class="cta primary" href="/client_journey/demo/" target="_blank">Живое демо</a>
+        <a class="cta" href="/client_journey/" target="_blank">Презентация модуля</a>
+      </div>
+    </section>
+
+    <!-- 18 Итог -->
+    <section class="slide">
+      <div class="tag">Итог</div>
+      <h1>Прозрачность и удобство — наш ответ конкуренции по цене</h1>
+      <p class="sub">«Моя покупка» превращает внутренние процессы Kors Group в <strong>видимую ценность для клиента</strong>. MVP на портале готов к пилоту.</p>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">+доверие</div><div class="t">клиент видит всю сделку</div></div>
+        <div class="kpi"><div class="v">+конверсия</div><div class="t">меньше потерь после визита</div></div>
+        <div class="kpi"><div class="v">+бренд</div><div class="t">цифровой стандарт сети</div></div>
+        <div class="kpi"><div class="v">+лояльность</div><div class="t">клиент возвращается</div></div>
+      </div>
+      <div class="cta-row">
+        <a class="cta primary" href="/client_journey/demo/" target="_blank">Открыть демо для клиента</a>
+      </div>
+      <p class="logo-line" style="margin-top:32px">Демо: /client_journey/demo/ · Презентация: /client_journey/ceo/ · Пилот: 1–2 ДЦ · Kors Group 2026</p>
+    </section>
+
+  </div>
+
+  <div class="progress" id="progress">1 / 18</div>
+  <div class="nav">
+    <button type="button" id="prev">← Назад</button>
+    <button type="button" id="next">Далее →</button>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    let i = 0;
+    const progress = document.getElementById('progress');
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+      progress.textContent = `${i + 1} / ${slides.length}`;
+    }
+    document.getElementById('prev').onclick = () => show(i - 1);
+    document.getElementById('next').onclick = () => show(i + 1);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+      if (e.key === 'ArrowLeft') show(i - 1);
+    });
+    let touchX = null;
+    document.addEventListener('touchstart', (e) => { touchX = e.changedTouches[0]?.screenX ?? null; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (touchX == null) return;
+      const dx = (e.changedTouches[0]?.screenX ?? touchX) - touchX;
+      touchX = null;
+      if (Math.abs(dx) < 48) return;
+      if (dx < 0) show(i + 1); else show(i - 1);
+    }, { passive: true });
+    show(0);
+  </script>
+</body>
+</html>
