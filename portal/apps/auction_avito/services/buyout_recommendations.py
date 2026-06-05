@@ -7,15 +7,19 @@
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 
-from auction_avito.lot_tabs import resolve_autoru_models, resolve_period
+from auction_avito.lot_tabs import (
+    resolve_period,
+)
 from auction_avito.models import AvitoLot
+from avtosalon.models import AvtohubModifications
 from documents.models import DocCarShipment, DocLO
-from refs.models import RefCarsOrganization, RefUnit
+from refs.models import AutoruModification, RefCarsOrganization, RefUnit
 
 # PK этапов УС в refStagePrice (как в korsavto_dashboard)
 STAGE_TEST_PRICE = 4
@@ -32,6 +36,9 @@ STAGE_META = (
 
 STAGE_WEIGHT_BY_ID = {sid: weight for sid, _key, _label, weight in STAGE_META}
 STAGE_LABEL_BY_ID = {sid: label for sid, _key, label, _weight in STAGE_META}
+
+RATINGS_PAGE_SIZE = 25
+TOP_SHOWCASE_SIZE = 15
 
 
 @dataclass
@@ -129,15 +136,27 @@ def _segment_score(cnt_test, cnt_rdo, cnt_kor, cnt_txt, total):
     return weighted / total
 
 
+def _filter_ratings_by_search(ratings: List[SegmentRating], search: str) -> List[SegmentRating]:
+    search = (search or '').strip().lower()
+    if not search:
+        return ratings
+    tokens = [t for t in search.split() if t]
+    result = []
+    for r in ratings:
+        hay = f'{r.mark_name} {r.model_name}'.lower()
+        if all(token in hay for token in tokens):
+            result.append(r)
+    return result
+
+
 def compute_segment_ratings(
     date_from,
     date_to,
     unit_ids=None,
     *,
     min_sales=1,
-    top_segments=40,
 ) -> Tuple[List[SegmentRating], dict]:
-    """Агрегат продаж по марке/модели с рейтингом этапа УС."""
+    """Агрегат продаж по марке/модели с рейтингом этапа УС (без обрезки)."""
     qs = build_shipments_queryset(date_from, date_to, unit_ids)
 
     rows = qs.values('mark_id', 'mark_name', 'model_id', 'model_name').annotate(
@@ -172,7 +191,6 @@ def compute_segment_ratings(
         ratings.append(rating)
 
     ratings.sort(key=lambda r: (-r.score, -r.total, r.mark_name, r.model_name))
-    ratings = ratings[:top_segments]
 
     summary = {
         'shipments_total': qs.count(),
@@ -186,7 +204,7 @@ def compute_segment_ratings(
 def _active_lots_queryset():
     return (
         AvitoLot.objects.filter(offers__status_code='inprogress')
-        .select_related('vehicle_avito', 'venue', 'venue__city')
+        .select_related('vehicle_avito', 'vehicle_autohub', 'venue', 'venue__city')
         .prefetch_related('images', 'offers')
         .distinct()
         .order_by('-finish_at')
@@ -218,42 +236,93 @@ def _lot_card(lot, segment: SegmentRating, match_score: float) -> dict:
     }
 
 
+def _build_autohub_mod_to_model_ids_map_for_models(model_ids: Sequence[int]) -> Dict[int, set]:
+    """
+    Матчинг только через AutohubModifications:
+      AutoruModification.idSiteTech -> AvtohubModifications(autoruId) -> id_avtohub (modification_id лота)
+    """
+    model_ids = [int(x) for x in model_ids if x]
+    if not model_ids:
+        return {}
+
+    tech_to_models: Dict[int, set] = {}
+    tech_ids: set = set()
+
+    for tech_id, model_id in AutoruModification.objects.filter(
+        model_id__in=model_ids,
+    ).values_list('idSiteTech', 'model_id'):
+        if not tech_id or not model_id:
+            continue
+        tech_to_models.setdefault(int(tech_id), set()).add(int(model_id))
+        tech_ids.add(int(tech_id))
+
+    if not tech_ids:
+        return {}
+
+    autohub_to_models: Dict[int, set] = {}
+    for autoru_id, ah_mod_id in AvtohubModifications.objects.filter(
+        autoruId__in=tech_ids,
+    ).values_list('autoruId', 'id_avtohub'):
+        if not autoru_id or not ah_mod_id:
+            continue
+        models = tech_to_models.get(int(autoru_id))
+        if not models:
+            continue
+        autohub_to_models.setdefault(int(ah_mod_id), set()).update(models)
+
+    return autohub_to_models
+
+
 def match_lots_to_segments(
     ratings: Sequence[SegmentRating],
     *,
     max_lots_per_segment=3,
     max_lots_total=60,
-) -> Tuple[List[SegmentRating], List[dict]]:
+) -> Tuple[List[SegmentRating], List[dict], dict]:
     """Подбор активных лотов Avito под сегменты с высоким рейтингом."""
+    empty_stats = {
+        'active_lots': 0,
+        'with_vehicle_autohub_mod': 0,
+        'autohub_mod_mapped': 0,
+        'matched_to_segment': 0,
+    }
     if not ratings:
-        return [], []
+        return [], [], empty_stats
 
     model_rating: Dict[int, SegmentRating] = {r.model_id: r for r in ratings}
     top_model_ids = set(model_rating.keys())
 
-    # Кэш: model_id -> related Autoru model names for fuzzy lot match
-    model_names = {
-        m.id: (m.name or '', m.nameHuman or '', m.mark.name if m.mark_id else '')
-        for m in AutoruModel.objects.filter(id__in=top_model_ids).select_related('mark')
+    active_lots = list(_active_lots_queryset()[:400])
+    stats = {
+        'active_lots': len(active_lots),
+        'with_vehicle_autohub_mod': 0,
+        'autohub_mod_mapped': 0,
+        'matched_to_segment': 0,
     }
 
-    active_lots = list(_active_lots_queryset()[:400])
+    autohub_mod_to_model_ids = _build_autohub_mod_to_model_ids_map_for_models(top_model_ids)
+
     lot_matches: List[Tuple[float, AvitoLot, SegmentRating]] = []
 
     for lot in active_lots:
-        vehicle = getattr(lot, 'vehicle_avito', None)
-        if not vehicle:
+        autohub = getattr(lot, 'vehicle_autohub', None)
+        autohub_mod_id = getattr(autohub, 'modification_id', None) if autohub else None
+        if not autohub_mod_id:
             continue
-        ctx = resolve_autoru_models(vehicle, include_model_choices=False)
-        if not ctx or not ctx.get('model_ids'):
+        stats['with_vehicle_autohub_mod'] += 1
+
+        candidate_model_ids = autohub_mod_to_model_ids.get(int(autohub_mod_id))
+        if not candidate_model_ids:
             continue
-        matched_ids = [mid for mid in ctx['model_ids'] if mid in top_model_ids]
+        stats['autohub_mod_mapped'] += 1
+
+        matched_ids = [mid for mid in candidate_model_ids if mid in top_model_ids]
         if not matched_ids:
             continue
+        stats['matched_to_segment'] += 1
         best_mid = max(matched_ids, key=lambda mid: model_rating[mid].score)
         segment = model_rating[best_mid]
-        # Чем выше рейтинг сегмента и совпадение — тем лучше
-        match_score = segment.score + (0.05 if best_mid in matched_ids[:1] else 0)
+        match_score = segment.score
         lot_matches.append((match_score, lot, segment))
 
     lot_matches.sort(key=lambda x: (-x[0], x[1].finish_at or 0))
@@ -276,7 +345,7 @@ def match_lots_to_segments(
         per_segment_count[segment.model_id] = cnt + 1
         seen_lot_pks.add(lot.pk)
 
-    return list(ratings), flat_recommendations
+    return list(ratings), flat_recommendations, stats
 
 
 def build_buyout_page_context(request) -> dict:
@@ -297,16 +366,59 @@ def build_buyout_page_context(request) -> dict:
         min_sales = 2
 
     try:
-        top_segments = min(80, max(10, int(request.GET.get('top') or 30)))
+        top_showcase = min(30, max(5, int(request.GET.get('top_showcase') or TOP_SHOWCASE_SIZE)))
     except ValueError:
-        top_segments = 30
+        top_showcase = TOP_SHOWCASE_SIZE
 
-    ratings, summary = compute_segment_ratings(
+    search = (request.GET.get('q') or '').strip()
+
+    all_ratings, summary = compute_segment_ratings(
         date_from, date_to, unit_ids or None,
         min_sales=min_sales,
-        top_segments=top_segments,
     )
-    ratings, recommendations = match_lots_to_segments(ratings)
+
+    # Витрина ТОП — только для рекомендаций лотов
+    top_ratings = all_ratings[:top_showcase]
+    top_copy = [
+        SegmentRating(
+            mark_id=r.mark_id,
+            mark_name=r.mark_name,
+            model_id=r.model_id,
+            model_name=r.model_name,
+            total=r.total,
+            cnt_test=r.cnt_test,
+            cnt_rdo=r.cnt_rdo,
+            cnt_kor=r.cnt_kor,
+            cnt_txt=r.cnt_txt,
+            score=r.score,
+            test_share=r.test_share,
+        )
+        for r in top_ratings
+    ]
+    _, recommendations, match_stats = match_lots_to_segments(top_copy)
+    summary['match_stats'] = match_stats
+
+    matched_counts = {r.model_id: len(r.matched_lots) for r in top_copy}
+
+    filtered_ratings = _filter_ratings_by_search(all_ratings, search)
+    summary['segments_filtered'] = len(filtered_ratings)
+
+    paginator = Paginator(filtered_ratings, RATINGS_PAGE_SIZE)
+    page_number = request.GET.get('page') or 1
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    ratings_page = []
+    start_rank = (page_obj.number - 1) * paginator.per_page
+    for idx, r in enumerate(page_obj.object_list):
+        row = r.as_dict()
+        row['rank'] = start_rank + idx + 1
+        row['matched_lots_count'] = matched_counts.get(r.model_id, 0)
+        ratings_page.append(row)
 
     bu_units = RefUnit.objects.filter(buauto=True, ib__active=True).order_by('name')
 
@@ -315,8 +427,11 @@ def build_buyout_page_context(request) -> dict:
         'date_to': date_to.isoformat(),
         'unit_ids': unit_ids,
         'min_sales': min_sales,
-        'top_segments': top_segments,
-        'ratings': [r.as_dict() for r in ratings],
+        'top_showcase': top_showcase,
+        'search': search,
+        'top_ratings': [r.as_dict() for r in top_ratings],
+        'ratings_page': ratings_page,
+        'page_obj': page_obj,
         'recommendations': recommendations,
         'summary': summary,
         'bu_units': bu_units,

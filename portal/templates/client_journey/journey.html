@@ -1,0 +1,432 @@
+{% extends 'client_journey/base_client.html' %}
+{% load custom_template_tags %}
+
+{% block title %}Моя покупка{% if journey.client.name %} — {{ journey.client.name }}{% endif %}{% endblock %}
+
+{% block extra_css %}
+.cj-hero {
+  padding: 0.5rem 0 1rem;
+}
+.cj-hero h1 {
+  margin: 0 0 0.35rem;
+  font-family: 'Literata', Georgia, serif;
+  font-size: 1.55rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.cj-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: #0d6b4f;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.cj-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cj-manager {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+.cj-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  color: var(--brand);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.cj-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  border: none;
+}
+.cj-btn-outline {
+  background: #fff;
+  color: var(--brand);
+  border: 1px solid rgba(0,87,168,0.18);
+}
+.cj-next {
+  background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+  border-color: rgba(0,87,168,0.14);
+}
+.cj-car-photo {
+  aspect-ratio: 16/10;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #dbe7f5, #eef4fb);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-bottom: 0.85rem;
+  overflow: hidden;
+}
+.cj-car-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cj-tag {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.cj-tag-stock { background: var(--accent-soft); color: #0d6b4f; }
+.cj-timeline { position: relative; padding-left: 1.1rem; }
+.cj-timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.28rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), rgba(0,168,120,0.15));
+}
+.cj-step {
+  position: relative;
+  padding: 0 0 0.95rem 0.85rem;
+}
+.cj-step::before {
+  content: '';
+  position: absolute;
+  left: -0.86rem;
+  top: 0.2rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #cbd5e1;
+}
+.cj-step.done::before {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(0,168,120,0.12);
+}
+.cj-step-title { font-size: 0.84rem; font-weight: 800; }
+.cj-step-date { font-size: 0.74rem; color: var(--muted); }
+.cj-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px dashed rgba(11,31,58,0.08);
+  font-size: 0.84rem;
+}
+.cj-line:last-child { border-bottom: none; }
+.cj-line.total {
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 2px solid rgba(11,31,58,0.08);
+  border-bottom: none;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.cj-extra {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(11,31,58,0.06);
+}
+.cj-extra:last-child { border-bottom: none; }
+.cj-status-chip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--muted);
+}
+.cj-status-chip.agreed { background: var(--accent-soft); color: #0d6b4f; }
+.cj-status-chip.ordered { background: var(--brand-soft); color: var(--brand); }
+.cj-status-chip.progress { background: var(--warn-soft); color: var(--warn); }
+.cj-feed-item {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(11,31,58,0.06);
+}
+.cj-feed-item:last-child { border-bottom: none; }
+.cj-preview-banner {
+  margin: 0 1rem 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  background: #fff7e8;
+  border: 1px solid rgba(217,119,6,0.18);
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.cj-panel { display: none; }
+.cj-panel.active { display: block; }
+{% endblock %}
+
+{% block body %}
+<div class="cj-topbar">
+  <div class="cj-brand">
+    <div class="cj-brand-mark">К</div>
+    <div>
+      <div style="font-size:0.95rem;">Моя покупка</div>
+      <div class="cj-muted" style="font-size:0.72rem;">{{ journey.manager.unit_name }}</div>
+    </div>
+  </div>
+  {% if page_mode == 'demo' %}
+  <span class="cj-pill">Демо</span>
+  {% elif page_mode == 'preview' %}
+  <span class="cj-pill">Предпросмотр</span>
+  {% endif %}
+</div>
+
+{% if page_mode == 'preview' and link %}
+<div class="cj-preview-banner">
+  Режим сотрудника. Клиентская ссылка:
+  <a href="{% url 'client_journey:journey' token=link.token %}">открыть как клиент</a>
+</div>
+{% endif %}
+
+<main class="cj-main">
+  <section class="cj-hero">
+    <div class="cj-status">{{ journey.current_stage }}</div>
+    <h1>Здравствуйте, {{ journey.client.name }}</h1>
+    <p class="cj-muted" style="margin:0;">Рабочий лист {{ journey.client.rlk_number }} · {{ journey.client.rlk_date|date:"d.m.Y" }}</p>
+  </section>
+
+  <section class="cj-panel active" id="panel-home">
+    <div class="cj-card cj-manager">
+      <div class="cj-avatar">{{ journey.manager.name|slice:":1" }}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:800;">{{ journey.manager.name }}</div>
+        <div class="cj-muted">Ваш менеджер · {{ journey.manager.unit_name }}</div>
+        {% if journey.manager.phone %}
+        <div style="margin-top:0.55rem; display:flex; gap:0.45rem; flex-wrap:wrap;">
+          <a class="cj-btn" href="tel:{{ journey.manager.phone }}">Позвонить</a>
+          <a class="cj-btn cj-btn-outline" href="https://wa.me/{{ journey.manager.phone|cut:' '|cut:'('|cut:')'|cut:'-' }}">WhatsApp</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="cj-card cj-next">
+      <div class="cj-section-title">Что дальше</div>
+      <div style="font-weight:800; margin-bottom:0.25rem;">{{ journey.next_step.title }}</div>
+      <div class="cj-muted">{{ journey.next_step.text }}</div>
+      {% if journey.next_step.date %}
+      <div class="cj-muted" style="margin-top:0.45rem;">Ориентир: {{ journey.next_step.date|date:"d.m.Y H:i" }}</div>
+      {% endif %}
+      {% if journey.next_step.actor %}
+      <div class="cj-muted">Ответственный: {{ journey.next_step.actor }}</div>
+      {% endif %}
+    </div>
+
+    {% if journey.car %}
+    <div class="cj-card">
+      <div class="d-flex justify-content-between align-items-start gap-2" style="display:flex; justify-content:space-between; gap:0.5rem;">
+        <div>
+          <div class="cj-section-title" style="margin:0;">Ваш автомобиль</div>
+          <div class="cj-muted">{{ journey.car.complectation }}</div>
+        </div>
+        <span class="cj-tag {% if journey.car.in_stock %}cj-tag-stock{% endif %}">{{ journey.car.delivery_hint }}</span>
+      </div>
+      <div class="cj-car-photo">
+        {% if journey.car.photo_url %}
+        <img src="{{ journey.car.photo_url }}" alt="{{ journey.car.title }}">
+        {% else %}
+        <span>Фото автомобиля</span>
+        {% endif %}
+      </div>
+      <div style="font-weight:800; font-size:1.05rem;">{{ journey.car.title }}</div>
+      <div class="cj-muted">
+        {% if journey.car.year %}{{ journey.car.year }} · {% endif %}
+        {% if journey.car.color %}{{ journey.car.color }} · {% endif %}
+        {% if journey.car.vin %}VIN {{ journey.car.vin }}{% endif %}
+      </div>
+      {% if journey.car.price %}
+      <div class="cj-money" style="margin-top:0.55rem;">{{ journey.car.price|formatted_number }} ₽</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="cj-card">
+      <div class="cj-section-title">Этапы сделки</div>
+      <div class="cj-timeline">
+        {% for step in journey.journey_stages %}
+        <div class="cj-step {% if step.done %}done{% endif %}">
+          <div class="cj-step-title">{{ step.label }}</div>
+          {% if step.date %}<div class="cj-step-date">{{ step.date|date:"d.m.Y H:i" }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="cj-panel" id="panel-car">
+    {% if journey.car %}
+    <div class="cj-card">
+      <div class="cj-section-title">{% if journey.car.in_stock %}Автомобиль из наличия{% else %}Заказ автомобиля{% endif %}</div>
+      <div class="cj-car-photo">
+        {% if journey.car.photo_url %}
+        <img src="{{ journey.car.photo_url }}" alt="">
+        {% else %}
+        <span>{% if journey.car.in_stock %}Наличие{% else %}Заказ{% endif %}</span>
+        {% endif %}
+      </div>
+      <div style="font-weight:800; font-size:1.05rem;">{{ journey.car.title }}</div>
+      <div class="cj-muted">{{ journey.car.complectation }}</div>
+      {% if journey.agreement and journey.agreement.planned_delivery %}
+      <div style="margin-top:0.75rem; padding:0.75rem; border-radius:12px; background:#f8fbff;">
+        <div class="cj-muted">Планируемая выдача</div>
+        <div style="font-weight:800;">{{ journey.agreement.planned_delivery|date:"d.m.Y" }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if journey.order_timeline %}
+    <div class="cj-card">
+      <div class="cj-section-title">Статус поставки</div>
+      <div class="cj-timeline">
+        {% for step in journey.order_timeline %}
+        <div class="cj-step {% if step.done %}done{% endif %}">
+          <div class="cj-step-title">{{ step.label }}</div>
+          {% if step.date %}<div class="cj-step-date">{{ step.date|date:"d.m.Y H:i" }}</div>{% endif %}
+          {% if step.note %}<div class="cj-step-date">{{ step.note }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="cj-muted" style="margin:0.5rem 0 0;">После приёмки с автовоза здесь появятся фото и результат осмотра.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="cj-panel" id="panel-calc">
+    {% if journey.calculation.has_data %}
+    <div class="cj-card">
+      <div class="cj-section-title">Расчёт сделки</div>
+      {% if journey.calculation.calc_number %}
+      <div class="cj-muted">№ {{ journey.calculation.calc_number }}{% if journey.calculation.calc_date %} · {{ journey.calculation.calc_date|date:"d.m.Y" }}{% endif %}</div>
+      {% endif %}
+      {% for line in journey.calculation.lines %}
+      <div class="cj-line {% if line.highlight %}total{% endif %}">
+        <span>{{ line.label }}</span>
+        <span class="cj-money">{{ line.amount|formatted_number }} ₽</span>
+      </div>
+      {% endfor %}
+      {% if journey.calculation.comment %}
+      <p class="cj-muted" style="margin:0.75rem 0 0;">{{ journey.calculation.comment }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if journey.trade_ins %}
+    {% for ti in journey.trade_ins %}
+    <div class="cj-card">
+      <div class="cj-section-title">Trade-in</div>
+      <div style="font-weight:800;">{{ ti.title }}</div>
+      {% if ti.vin %}<div class="cj-muted">VIN {{ ti.vin }}</div>{% endif %}
+      <div class="cj-muted">Статус: {{ ti.status }}</div>
+      {% if ti.price_final %}
+      <div class="cj-money" style="margin-top:0.55rem;">{{ ti.price_final|formatted_number }} ₽</div>
+      {% elif ti.price_preliminary %}
+      <div class="cj-money" style="margin-top:0.55rem;">{{ ti.price_preliminary|formatted_number }} ₽ <span class="cj-muted" style="font-weight:500;">предварительно</span></div>
+      {% endif %}
+      <div class="cj-timeline" style="margin-top:0.75rem;">
+        {% for step in ti.stages %}
+        <div class="cj-step {% if step.done %}done{% endif %}">
+          <div class="cj-step-title">{{ step.label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if journey.extras %}
+    <div class="cj-card">
+      <div class="cj-section-title">Допоборудование и услуги</div>
+      {% for item in journey.extras %}
+      <div class="cj-extra">
+        <div>
+          <div style="font-weight:700;">{{ item.name }}</div>
+          <div class="cj-money">{{ item.price|formatted_number }} ₽</div>
+        </div>
+        <span class="cj-status-chip {{ item.status_code }}">{{ item.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="cj-panel" id="panel-events">
+    <div class="cj-card">
+      <div class="cj-section-title">История событий</div>
+      {% for ev in journey.events %}
+      <div class="cj-feed-item">
+        <div style="display:flex; justify-content:space-between; gap:0.5rem;">
+          <strong style="font-size:0.84rem;">{{ ev.title }}</strong>
+          <span class="cj-muted">{{ ev.date|date:"d.m.Y H:i" }}</span>
+        </div>
+        {% if ev.text %}<div class="cj-muted" style="margin-top:0.2rem;">{{ ev.text }}</div>{% endif %}
+        {% if ev.staff %}<div class="cj-muted">{{ ev.staff }}</div>{% endif %}
+      </div>
+      {% empty %}
+      <p class="cj-muted" style="margin:0;">События появятся по мере работы над вашей сделкой.</p>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+
+<nav class="cj-bottom-nav" id="cj-nav">
+  <button type="button" class="cj-nav-item active" data-panel="panel-home" style="background:none;border:none;">
+    <div class="cj-nav-dot"></div>Главная
+  </button>
+  <button type="button" class="cj-nav-item" data-panel="panel-car" style="background:none;border:none;">
+    <div class="cj-nav-dot"></div>Авто
+  </button>
+  <button type="button" class="cj-nav-item" data-panel="panel-calc" style="background:none;border:none;">
+    <div class="cj-nav-dot"></div>Расчёт
+  </button>
+  <button type="button" class="cj-nav-item" data-panel="panel-events" style="background:none;border:none;">
+    <div class="cj-nav-dot"></div>События
+  </button>
+</nav>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var nav = document.getElementById('cj-nav');
+  if (!nav) return;
+  nav.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-panel]');
+    if (!btn) return;
+    var panelId = btn.getAttribute('data-panel');
+    document.querySelectorAll('.cj-panel').forEach(function (p) {
+      p.classList.toggle('active', p.id === panelId);
+    });
+    nav.querySelectorAll('.cj-nav-item').forEach(function (item) {
+      item.classList.toggle('active', item === btn);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+</script>
+{% endblock %}

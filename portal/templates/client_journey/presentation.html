@@ -1,0 +1,327 @@
+{% extends 'client_journey/base_client.html' %}
+
+{% block title %}Моя покупка — презентация{% endblock %}
+
+{% block extra_css %}
+body { background: #071426; }
+.cj-wrap {
+  max-width: 1100px;
+  background:
+    radial-gradient(circle at top right, rgba(31,143,255,0.18), transparent 28%),
+    radial-gradient(circle at 20% 20%, rgba(0,168,120,0.12), transparent 24%),
+    linear-gradient(180deg, #071426 0%, #0d213f 100%);
+  color: #eef4fb;
+  min-height: 100vh;
+}
+.cj-pres {
+  padding: 1.25rem 1.1rem 2rem;
+}
+.cj-pres-hero {
+  padding: 1.5rem 0 2rem;
+}
+.cj-pres-hero h1 {
+  margin: 0 0 0.75rem;
+  font-family: 'Literata', Georgia, serif;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+.cj-pres-lead {
+  max-width: 42rem;
+  color: rgba(238,244,251,0.78);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+.cj-pres-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.cj-pres-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 22px;
+  padding: 1.1rem;
+  backdrop-filter: blur(10px);
+}
+.cj-pres-card h2, .cj-pres-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+.cj-pres-points {
+  display: grid;
+  gap: 0.8rem;
+}
+.cj-pres-point {
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.cj-pres-point strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.92rem;
+}
+.cj-pres-point span {
+  color: rgba(238,244,251,0.72);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.cj-pres-flow {
+  display: grid;
+  gap: 0.55rem;
+}
+.cj-pres-flow-item {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  font-size: 0.84rem;
+}
+.cj-pres-flow-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(0,168,120,0.18);
+  color: #7ce7c3;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.cj-pres-phone {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+  background: #f4f7fb;
+}
+.cj-pres-phone iframe {
+  width: 100%;
+  height: 720px;
+  border: 0;
+  display: block;
+  background: #f4f7fb;
+}
+.cj-pres-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+.cj-pres-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.1rem;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+.cj-pres-btn-primary {
+  background: linear-gradient(135deg, #1f8fff, #0057a8);
+  color: #fff;
+}
+.cj-pres-btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #eef4fb;
+}
+.cj-pres-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.cj-pres-kpi {
+  padding: 0.85rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.cj-pres-kpi strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.2rem;
+}
+.cj-pres-kpi span {
+  color: rgba(238,244,251,0.68);
+  font-size: 0.78rem;
+}
+.cj-pres-section {
+  margin-top: 1.5rem;
+}
+.cj-pres-section h2 {
+  margin: 0 0 0.85rem;
+  font-family: 'Literata', Georgia, serif;
+  font-size: 1.45rem;
+}
+.cj-pres-screens {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+.cj-pres-screen {
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  min-height: 120px;
+}
+.cj-pres-screen strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+}
+.cj-pres-screen span {
+  color: rgba(238,244,251,0.68);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+@media (max-width: 900px) {
+  .cj-pres-grid { grid-template-columns: 1fr; }
+  .cj-pres-screens { grid-template-columns: repeat(2, 1fr); }
+  .cj-pres-kpis { grid-template-columns: 1fr; }
+  .cj-pres-phone iframe { height: 640px; }
+}
+{% endblock %}
+
+{% block body %}
+<div class="cj-pres">
+  <div class="cj-topbar" style="padding-left:0;padding-right:0;">
+    <div class="cj-brand">
+      <div class="cj-brand-mark">К</div>
+      <div>
+        <div style="font-size:0.95rem;">КорсГрупп</div>
+        <div style="font-size:0.72rem; color:rgba(238,244,251,0.62);">Моя покупка</div>
+      </div>
+    </div>
+    <span class="cj-pill" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1); color:rgba(238,244,251,0.72);">Презентация</span>
+  </div>
+
+  <section class="cj-pres-hero">
+    <h1>Полная прозрачность и удобство для клиента — от визита до выдачи</h1>
+    <p class="cj-pres-lead">
+      «Моя покупка» — отдельный модуль портала, который строится от <strong>рабочего листа отдела продаж</strong>.
+      Клиент получает персональную ссылку и видит статус сделки, автомобиль, trade-in, расчёт, заказ и следующий шаг —
+      без звонков «ну что там с машиной?».
+    </p>
+    <div class="cj-pres-actions">
+      <a class="cj-pres-btn cj-pres-btn-primary" href="{% url 'client_journey:demo' %}">Открыть демо для клиента</a>
+      <a class="cj-pres-btn cj-pres-btn-secondary" href="{% url 'client_journey:demo' %}" target="_blank">Открыть в новой вкладке</a>
+    </div>
+  </section>
+
+  <div class="cj-pres-grid">
+    <div>
+      <div class="cj-pres-card">
+        <h2>Что получает клиент</h2>
+        <div class="cj-pres-points">
+          {% for point in concept_points %}
+          <div class="cj-pres-point">
+            <strong>{{ point.title }}</strong>
+            <span>{{ point.text }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="cj-pres-card cj-pres-section">
+        <h2>Логика от рабочего листа</h2>
+        <div class="cj-pres-flow">
+          <div class="cj-pres-flow-item">
+            <div class="cj-pres-flow-num">1</div>
+            <div><strong>Визит в ДЦ</strong><br>РЛК создаётся в отделе продаж, клиенту уходит визитка менеджера и ссылка.</div>
+          </div>
+          <div class="cj-pres-flow-item">
+            <div class="cj-pres-flow-num">2</div>
+            <div><strong>Подбор и расчёт</strong><br>Из РЛК подтягиваются калькуляции, автомобиль из наличия или под заказ.</div>
+          </div>
+          <div class="cj-pres-flow-item">
+            <div class="cj-pres-flow-num">3</div>
+            <div><strong>Trade-in</strong><br>Дочерние eco-РЛК и оценка показывают этапы и сумму в зачёт новой машины.</div>
+          </div>
+          <div class="cj-pres-flow-item">
+            <div class="cj-pres-flow-num">4</div>
+            <div><strong>Заказ и поставка</strong><br>Этапы заказа, сроки, приёмка с автовоза, осмотр, подготовка к выдаче.</div>
+          </div>
+          <div class="cj-pres-flow-item">
+            <div class="cj-pres-flow-num">5</div>
+            <div><strong>Итог сделки</strong><br>Допоборудование, ОПФУ, услуги и итоговая сумма — в одном понятном экране.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cj-pres-kpis">
+        <div class="cj-pres-kpi">
+          <strong>1 ссылка</strong>
+          <span>без установки приложения</span>
+        </div>
+        <div class="cj-pres-kpi">
+          <strong>1 РЛК</strong>
+          <span>единая точка логики сделки</span>
+        </div>
+        <div class="cj-pres-kpi">
+          <strong>4 экрана</strong>
+          <span>главная, авто, расчёт, события</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cj-pres-card">
+      <h3>Как это выглядит у клиента</h3>
+      <p style="color:rgba(238,244,251,0.68); font-size:0.84rem; line-height:1.5; margin:0 0 0.85rem;">
+        Ниже — живое демо интерфейса. Его можно показывать клиенту на встрече или отправлять как пример будущего сервиса.
+      </p>
+      <div class="cj-pres-phone">
+        <iframe src="{% url 'client_journey:demo' %}" title="Демо — Моя покупка"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <section class="cj-pres-section">
+    <h2>Экраны клиентского кабинета</h2>
+    <div class="cj-pres-screens">
+      <div class="cj-pres-screen">
+        <strong>Главная</strong>
+        <span>Менеджер, текущий статус, следующий шаг, этапы сделки.</span>
+      </div>
+      <div class="cj-pres-screen">
+        <strong>Автомобиль</strong>
+        <span>Наличие или заказ, сроки, трекер поставки, фото приёмки.</span>
+      </div>
+      <div class="cj-pres-screen">
+        <strong>Расчёт</strong>
+        <span>Цена, trade-in, допы, ОПФУ, итоговая доплата.</span>
+      </div>
+      <div class="cj-pres-screen">
+        <strong>События</strong>
+        <span>Лента действий по РЛК: визит, КП, оценка, заказ, логистика.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="cj-pres-section cj-pres-card">
+    <h2>Как это внедряется в портал</h2>
+    <div class="cj-pres-flow">
+      <div class="cj-pres-flow-item">
+        <div class="cj-pres-flow-num">A</div>
+        <div>Отдельное приложение <strong>client_journey</strong> в портале — единая точка поддержки и развития.</div>
+      </div>
+      <div class="cj-pres-flow-item">
+        <div class="cj-pres-flow-num">B</div>
+        <div>Данные не дублируются: используются <strong>DocRLK</strong>, <strong>CarCalculations</strong>, trade-in, соглашение и отгрузка.</div>
+      </div>
+      <div class="cj-pres-flow-item">
+        <div class="cj-pres-flow-num">C</div>
+        <div>Менеджер открывает предпросмотр по РЛК и отправляет клиенту персональную ссылку.</div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
