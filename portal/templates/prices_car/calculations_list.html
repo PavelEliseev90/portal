@@ -32,6 +32,34 @@
                         <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
                     </div>
 
+                    <div class="col-sm-12 col-md-3">
+                        <div class="metric-card-label-portal">Марка</div>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcMarkSearch" placeholder="Поиск по маркам..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcMarkDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                {% for mark in params.select_marks %}
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="mark[]" value="{{ mark.pk }}"
+                                        {% if mark.pk in params.filtr.filter_mark %}checked{% endif %}>
+                                    {{ mark.name }}
+                                </label>
+                                {% empty %}
+                                <span class="list-group-item text-muted small">Нет марок</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div id="calcSelectedMarks" class="mt-2"></div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-3">
+                        <div class="metric-card-label-portal">Модель</div>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcModelSearch" placeholder="Сначала выберите марку" autocomplete="off" disabled>
+                            <div class="list-group position-absolute w-100 mt-1" id="calcModelDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;"></div>
+                        </div>
+                        <div id="calcSelectedModels" class="mt-2"></div>
+                    </div>
+
                     <div class="col-sm-12 col-md">
                         <div class="metric-card-label-portal">Подразделения</div>
                         <div class="position-relative">
@@ -92,12 +120,17 @@
                     </div>
                 </div>
 
-                <div class="row g-2">
+                <div class="row g-2 align-items-center">
                     <div class="col-auto">
                         <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
                     </div>
                     <div class="col-auto">
                         <a class="btn-calculate-secondary-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+                    </div>
+                    <div class="col-auto ms-md-auto">
+                        <a class="btn-calculate-secondary-sm" href="{% url 'prices_car:calculations_list_export' %}?{{ request.GET.urlencode }}" title="Выгрузить в Excel с учётом текущих фильтров">
+                            <span class="icon-mbri-download"></span> Выгрузить в Excel
+                        </a>
                     </div>
                 </div>
             </form>
@@ -109,17 +142,72 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Дата</th>
-                            <th>Номер</th>
-                            <th>Подразделение</th>
-                            <th>Рабочий лист</th>
-                            <th>Автомобиль</th>
-                            <th>VIN</th>
-                            <th>Клиент</th>
-                            <th>Автор</th>
-                            <th>КВ</th>
-                            <th>Соглашение</th>
-                            <th>Отгрузка</th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('date')">
+                                    Дата
+                                    {% if params.filtr.order_by == 'date' %}&uarr;{% elif params.filtr.order_by == '-date' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('number')">
+                                    Номер
+                                    {% if params.filtr.order_by == 'number' %}&uarr;{% elif params.filtr.order_by == '-number' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('unit')">
+                                    Подразделение
+                                    {% if params.filtr.order_by == 'unit' %}&uarr;{% elif params.filtr.order_by == '-unit' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('rlk')">
+                                    Рабочий лист
+                                    {% if params.filtr.order_by == 'rlk' %}&uarr;{% elif params.filtr.order_by == '-rlk' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('car')">
+                                    Автомобиль
+                                    {% if params.filtr.order_by == 'car' %}&uarr;{% elif params.filtr.order_by == '-car' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('vin')">
+                                    VIN
+                                    {% if params.filtr.order_by == 'vin' %}&uarr;{% elif params.filtr.order_by == '-vin' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('client')">
+                                    Клиент
+                                    {% if params.filtr.order_by == 'client' %}&uarr;{% elif params.filtr.order_by == '-client' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('author')">
+                                    Автор
+                                    {% if params.filtr.order_by == 'author' %}&uarr;{% elif params.filtr.order_by == '-author' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('kvp')">
+                                    КВ
+                                    {% if params.filtr.order_by == 'kvp' %}&uarr;{% elif params.filtr.order_by == '-kvp' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('agreement')">
+                                    Соглашение
+                                    {% if params.filtr.order_by == 'agreement' %}&uarr;{% elif params.filtr.order_by == '-agreement' %}&darr;{% endif %}
+                                </button>
+                            </th>
+                            <th>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-dark fw-semibold" onclick="setCalcOrder('shipment')">
+                                    Отгрузка
+                                    {% if params.filtr.order_by == 'shipment' %}&uarr;{% elif params.filtr.order_by == '-shipment' %}&darr;{% endif %}
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -195,7 +283,24 @@
 </div>
 
 <script>
+function setCalcOrder(field) {
+  var url = new URL(document.location.href);
+  var current = url.searchParams.get('order_by') || '-date';
+  if (current === field) {
+    url.searchParams.set('order_by', '-' + field);
+  } else if (current === '-' + field) {
+    url.searchParams.set('order_by', field);
+  } else {
+    url.searchParams.set('order_by', field);
+  }
+  url.searchParams.set('page', '1');
+  document.location.href = url.href;
+}
+
 (function() {
+  var getModelsUrl = '{% url "prices_car:brands_get_models" %}';
+  var initialSelectedModelIds = [{% for mid in params.filtr.filter_model %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
   function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -253,6 +358,86 @@
     updateSelected();
   }
 
+  function updateCalcModelBadges() {
+    var dropdown = document.getElementById('calcModelDropdown');
+    var selectedDiv = document.getElementById('calcSelectedModels');
+    if (!dropdown || !selectedDiv) return;
+    var checked = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+    selectedDiv.innerHTML = '';
+    if (!checked.length) return;
+    selectedDiv.innerHTML = Array.prototype.map.call(checked, function(cb) {
+      var label = cb.closest('label');
+      var text = label ? label.textContent.trim().replace(/\s+/g, ' ') : '';
+      return '<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">' + escapeHtml(text) +
+        ' <button type="button" class="btn-close btn-close-white ms-1 calc-filter-remove" style="font-size: 0.65em;" data-cb-name="model[]" data-cb-value="' + escapeHtml(cb.value) + '"></button></span>';
+    }).join('');
+  }
+
+  function loadCalcModels() {
+    var modelSearch = document.getElementById('calcModelSearch');
+    var modelDropdown = document.getElementById('calcModelDropdown');
+    var selectedDiv = document.getElementById('calcSelectedModels');
+    if (!modelSearch || !modelDropdown) return;
+
+    var markIds = Array.prototype.map.call(
+      document.querySelectorAll('input[name="mark[]"]:checked'),
+      function(cb) { return cb.value; }
+    );
+    if (!markIds.length) {
+      modelSearch.disabled = true;
+      modelSearch.placeholder = 'Сначала выберите марку';
+      modelSearch.value = '';
+      modelDropdown.innerHTML = '';
+      if (selectedDiv) selectedDiv.innerHTML = '';
+      return;
+    }
+
+    modelSearch.disabled = false;
+    modelSearch.placeholder = 'Поиск по моделям...';
+    var search = (modelSearch.value || '').trim();
+    var url = getModelsUrl + '?' + markIds.map(function(id) { return 'mark_ids[]=' + encodeURIComponent(id); }).join('&') +
+      (search ? '&search=' + encodeURIComponent(search) : '');
+
+    var preserveIds = Array.prototype.map.call(
+      modelDropdown.querySelectorAll('input[name="model[]"]:checked'),
+      function(cb) { return parseInt(cb.value, 10); }
+    );
+    if (!preserveIds.length && initialSelectedModelIds.length) preserveIds = initialSelectedModelIds.slice();
+
+    fetch(url, { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        modelDropdown.innerHTML = '';
+        if (data.models && data.models.length) {
+          data.models.forEach(function(m) {
+            var label = document.createElement('label');
+            label.className = 'list-group-item';
+            label.style.marginBottom = '0';
+            label.style.cursor = 'pointer';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'form-check-input me-2';
+            cb.name = 'model[]';
+            cb.value = m.id;
+            if (preserveIds.indexOf(m.id) !== -1) cb.checked = true;
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(' ' + (m.mark_name ? m.mark_name + ' — ' : '') + m.name));
+            modelDropdown.appendChild(label);
+            cb.addEventListener('change', updateCalcModelBadges);
+          });
+          updateCalcModelBadges();
+        } else {
+          var empty = document.createElement('span');
+          empty.className = 'list-group-item text-muted small';
+          empty.textContent = 'Модели не найдены';
+          modelDropdown.appendChild(empty);
+        }
+      })
+      .catch(function() {
+        modelDropdown.innerHTML = '<span class="list-group-item text-muted small">Ошибка загрузки</span>';
+      });
+  }
+
   function initCalcListForm() {
     var form = document.getElementById('calcListFilters');
     if (!form) return;
@@ -268,10 +453,81 @@
     });
   }
 
+  function initCalcModelFilter() {
+    var markDropdown = document.getElementById('calcMarkDropdown');
+    var modelSearch = document.getElementById('calcModelSearch');
+    var modelDropdown = document.getElementById('calcModelDropdown');
+    if (markDropdown) {
+      markDropdown.querySelectorAll('input[name="mark[]"]').forEach(function(cb) {
+        cb.addEventListener('change', loadCalcModels);
+      });
+    }
+    var selectedMarksDiv = document.getElementById('calcSelectedMarks');
+    if (selectedMarksDiv) {
+      selectedMarksDiv.addEventListener('click', function(e) {
+        if (e.target.closest('.calc-filter-remove')) {
+          setTimeout(loadCalcModels, 0);
+        }
+      });
+    }
+    if (!modelSearch || !modelDropdown) return;
+
+    modelSearch.addEventListener('focus', function() {
+      var markIds = document.querySelectorAll('input[name="mark[]"]:checked');
+      if (markIds.length) {
+        var hasItems = modelDropdown.querySelectorAll('label.list-group-item').length > 0;
+        if (!hasItems || modelDropdown.querySelector('.text-muted')) loadCalcModels();
+        else {
+          var q = (modelSearch.value || '').toLowerCase().trim();
+          modelDropdown.querySelectorAll('label.list-group-item').forEach(function(item) {
+            var text = (item.textContent || '').toLowerCase();
+            item.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+          });
+        }
+        modelDropdown.style.display = 'block';
+      } else {
+        modelDropdown.innerHTML = '<span class="list-group-item text-muted small">Сначала выберите марку</span>';
+        modelDropdown.style.display = 'block';
+      }
+    });
+
+    modelSearch.addEventListener('input', function() {
+      if (document.querySelectorAll('input[name="mark[]"]:checked').length) {
+        clearTimeout(window.calcModelSearchTimeout);
+        window.calcModelSearchTimeout = setTimeout(loadCalcModels, 300);
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!modelSearch.contains(e.target) && !modelDropdown.contains(e.target)) {
+        modelDropdown.style.display = 'none';
+      }
+    });
+    modelDropdown.addEventListener('mousedown', function(e) { e.preventDefault(); });
+
+    var selectedModelsDiv = document.getElementById('calcSelectedModels');
+    if (selectedModelsDiv) {
+      selectedModelsDiv.addEventListener('click', function(e) {
+        var btn = e.target.closest('.calc-filter-remove');
+        if (!btn) return;
+        var val = btn.getAttribute('data-cb-value');
+        var inp = modelDropdown.querySelector('input[name="model[]"][value="' + val + '"]');
+        if (inp) inp.checked = false;
+        updateCalcModelBadges();
+      });
+    }
+
+    if (document.querySelectorAll('input[name="mark[]"]:checked').length) {
+      loadCalcModels();
+    }
+  }
+
   function run() {
     initMultiCheckboxFilter('calcUnitSearch', 'calcUnitDropdown', 'calcSelectedUnits');
+    initMultiCheckboxFilter('calcMarkSearch', 'calcMarkDropdown', 'calcSelectedMarks');
     initMultiCheckboxFilter('calcAgrSearch', 'calcAgrDropdown', 'calcSelectedAgr');
     initMultiCheckboxFilter('calcShpSearch', 'calcShpDropdown', 'calcSelectedShp');
+    initCalcModelFilter();
     initCalcListForm();
   }
 

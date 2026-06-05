@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, datetime
 
 from django.conf import settings
 from django.db import transaction
@@ -83,9 +83,9 @@ def director_dashboard(request):
 
 @login_required
 def brands_get_models(request):
-    """AJAX: модели по выбранным маркам (для формы брендов)."""
-    from django.http import JsonResponse
+    """AJAX: модели по выбранным маркам (для форм брендов, калькуляций и т.п.)."""
     mark_ids = request.GET.getlist('mark_ids[]') or request.GET.getlist('mark_ids')
+    search = (request.GET.get('search') or '').strip()
     if not mark_ids:
         return JsonResponse({'models': []})
     try:
@@ -96,8 +96,11 @@ def brands_get_models(request):
             AutoruModel.objects.filter(mark_id__in=mark_ids_int)
             .select_related('mark')
             .only('id', 'name', 'mark')
-            .order_by('mark__name', 'name')[:500]
+            .order_by('mark__name', 'name')
         )
+        if search:
+            models = models.filter(name__icontains=search)
+        models = models[:500]
         return JsonResponse({
             'models': [{'id': m.id, 'name': m.name, 'mark_name': m.mark.name} for m in models]
         })
@@ -241,19 +244,24 @@ def settings_page(request):
                 messages.warning(request, 'Нет брендов для сохранения.')
                 return _redirect_settings(month_str)
 
+            def _parse_nonneg_int(raw):
+                raw = (raw or '').strip().replace(' ', '').replace('\u00a0', '')
+                if not raw:
+                    return 0
+                try:
+                    val = int(raw)
+                    return val if val >= 0 else 0
+                except ValueError:
+                    return 0
+
             with transaction.atomic():
                 for bid in brand_ids:
-                    km_str = request.POST.get('km_%s' % bid, '').strip()
-                    try:
-                        km = int(km_str) if km_str else 0
-                        if km < 0:
-                            km = 0
-                    except ValueError:
-                        km = 0
+                    km = _parse_nonneg_int(request.POST.get('km_%s' % bid))
+                    km_min_dc = _parse_nonneg_int(request.POST.get('km_min_dc_%s' % bid))
                     BrandKM.objects.update_or_create(
                         brand_id=bid,
                         month=month_date,
-                        defaults={'km': km},
+                        defaults={'km': km, 'km_min_dc': km_min_dc},
                     )
 
             messages.success(
@@ -643,27 +651,69 @@ def discount_km_page(request):
     })
 
 
-@login_required
-def calculations_list(request):
-    
-    select_units = RefUnit.objects.filter(buauto=False, ib__active = True).order_by('name')
+CALC_LIST_ORDER_FIELDS = {
+    'date': 'date',
+    'number': 'number',
+    'unit': 'unit__name',
+    'rlk': 'rlk__nomer',
+    'car': 'car__name',
+    'vin': 'car__vin',
+    'client': 'rlk__clientName',
+    'author': 'author__name',
+    'kvp': 'kvp',
+    'agreement': 'agreement_nomer',
+    'shipment': 'shipment_nomer',
+}
 
+
+def _resolve_calc_list_order(order_by: str) -> str:
+    default = '-date'
+    order_by = (order_by or '').strip()
+    if not order_by:
+        return default
+    desc = order_by.startswith('-')
+    field = order_by.lstrip('-')
+    db_field = CALC_LIST_ORDER_FIELDS.get(field)
+    if not db_field:
+        return default
+    return ('-' if desc else '') + db_field
+
+
+def _parse_int_id_list(values):
+    ids = []
+    for raw in values:
+        if str(raw).isdigit():
+            val = int(raw)
+            if val not in ids:
+                ids.append(val)
+    return ids
+
+
+def _calculation_client_name(item):
+    rlk = getattr(item, 'rlk', None)
+    if not rlk:
+        return ''
+    customer = getattr(rlk, 'customer', None)
+    if customer:
+        return customer.name or ''
+    return rlk.clientName or ''
+
+
+def _build_calculations_list_queryset(request):
+    """Фильтры и queryset калькуляций (список и выгрузка)."""
     date_start = (request.GET.get('date_start') or '').strip()
     date_end = (request.GET.get('date_end') or '').strip()
     vin = (request.GET.get('vin') or '').strip()
-    unit_ids = []
-    for raw in request.GET.getlist('unit[]'):
-        if str(raw).isdigit():
-            uid = int(raw)
-            if uid not in unit_ids:
-                unit_ids.append(uid)
-    for raw in request.GET.getlist('unit_ids'):
-        if str(raw).isdigit():
-            uid = int(raw)
-            if uid not in unit_ids:
-                unit_ids.append(uid)
+    unit_ids = _parse_int_id_list(
+        request.GET.getlist('unit[]') + request.GET.getlist('unit_ids')
+    )
+    mark_ids = _parse_int_id_list(
+        request.GET.getlist('mark[]') + request.GET.getlist('mark_ids')
+    )
+    model_ids = _parse_int_id_list(request.GET.getlist('model[]'))
     agreement_filters = set(request.GET.getlist('agreement_filter'))
     shipment_filters = set(request.GET.getlist('shipment_filter'))
+    order_by = _resolve_calc_list_order(request.GET.get('order_by'))
 
     agreement_qs = (
         DocCarAgreement.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
@@ -673,7 +723,9 @@ def calculations_list(request):
         DocCarShipment.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
         .order_by('-dataTime')
     )
-    objects = CarCalculations.objects.select_related('rlk', 'unit', 'car', 'author', 'staff').annotate(
+    objects = CarCalculations.objects.select_related(
+        'rlk', 'rlk__customer', 'unit', 'car', 'author', 'staff',
+    ).annotate(
         agreement_pk=Subquery(agreement_qs.values('pk')[:1]),
         agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
         shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
@@ -694,6 +746,10 @@ def calculations_list(request):
         objects = objects.filter(car__vin__icontains=vin)
     if unit_ids:
         objects = objects.filter(unit_id__in=unit_ids)
+    if mark_ids:
+        objects = objects.filter(car__modification_autoru__model__mark__id__in=mark_ids)
+    if model_ids:
+        objects = objects.filter(car__modification_autoru__model__id__in=model_ids)
 
     if agreement_filters == {'yes'}:
         objects = objects.filter(agreement_pk__isnull=False)
@@ -705,7 +761,27 @@ def calculations_list(request):
     elif shipment_filters == {'no'}:
         objects = objects.filter(shipment_pk__isnull=True)
 
-    objects = objects.order_by('-date')
+    filtr = {
+        'date_start': date_start,
+        'date_end': date_end,
+        'vin': vin,
+        'filter_unit': unit_ids,
+        'filter_mark': mark_ids,
+        'filter_model': model_ids,
+        'agreement_filter': list(agreement_filters),
+        'shipment_filter': list(shipment_filters),
+        'order_by': request.GET.get('order_by') or '-date',
+    }
+    return objects.order_by(order_by, '-pk'), filtr
+
+
+@login_required
+def calculations_list(request):
+
+    select_units = RefUnit.objects.filter(buauto=False, ib__active=True).order_by('name')
+    select_marks = AutoruMark.objects.only('id', 'name').order_by('name')
+
+    objects, filtr = _build_calculations_list_queryset(request)
 
     paginator = Paginator(objects, 25)
     page_number = request.GET.get('page') or 1
@@ -717,22 +793,77 @@ def calculations_list(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    filtr = {
-        'date_start': date_start,
-        'date_end': date_end,
-        'vin': vin,
-        'filter_unit': unit_ids,
-        'agreement_filter': list(agreement_filters),
-        'shipment_filter': list(shipment_filters),
-    }
-
     return render(request, 'prices_car/calculations_list.html', {
         'params': {
             'objects': page_obj,
             'filtr': filtr,
             'select_units': select_units,
+            'select_marks': select_marks,
         },
     })
+
+
+@login_required
+def calculations_list_export(request):
+    """Выгрузка отфильтрованного списка калькуляций в Excel."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    objects, _filtr = _build_calculations_list_queryset(request)
+
+    headers = [
+        'ID', 'Дата', 'Номер', 'Подразделение', 'Рабочий лист', 'Автомобиль', 'VIN',
+        'Клиент', 'Автор', 'КВ', 'Соглашение', 'Отгрузка',
+    ]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Калькуляции'
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    for item in objects.iterator(chunk_size=500):
+        dt = item.date.strftime('%d.%m.%Y %H:%M') if item.date else ''
+        ws.append([
+            item.pk,
+            dt,
+            item.number or '',
+            item.unit.name if item.unit else '',
+            item.rlk.nomer if item.rlk else '',
+            item.car.name if item.car else '',
+            item.car.vin if item.car else '',
+            _calculation_client_name(item),
+            item.author.name if item.author else '',
+            item.kvp if item.kvp is not None else '',
+            item.agreement_nomer or '',
+            item.shipment_nomer or '',
+        ])
+
+    for col in range(1, len(headers) + 1):
+        column_letter = get_column_letter(col)
+        max_length = 0
+        for cell in ws[column_letter]:
+            try:
+                if cell.value is not None and len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except Exception:
+                pass
+        ws.column_dimensions[column_letter].width = min(max_length + 2, 50)
+
+    filename = 'calculations_%s.xlsx' % datetime.now().strftime('%Y%m%d_%H%M%S')
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    wb.save(response)
+    return response
 
 
 def _presentation_root():

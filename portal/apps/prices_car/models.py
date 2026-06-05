@@ -51,14 +51,10 @@ class BrandKM(models.Model):
         verbose_name='Бренд',
     )
     km = models.PositiveIntegerField('Км', default=0, help_text='Значение кумулятивной маржи')
-    km_index_rdo = models.DecimalField(
-        'Индекс Км для РДО',
-        max_digits=12,
-        decimal_places=2,
+    km_min_dc = models.PositiveIntegerField(
+        'Минимальное значение кумулятивной маржи ДЦ',
         default=0,
-        null=True,
-        blank=True,
-        help_text='Индекс км для РДО (число с 2 знаками после запятой)',
+        help_text='Минимальное значение кумулятивной маржи ДЦ',
     )
     month = models.DateField(
         'Месяц (период)',
