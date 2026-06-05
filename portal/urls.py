@@ -51,6 +51,7 @@ urlpatterns = [
     path('checklists/',     include('checklists.urls')),
     path('asp/',            include('asp.urls')),
     path('auction_avito/',  include('auction_avito.urls')),
+    path('client_journey/', include('client_journey.urls')),
     path('changelog/',      include('changelog.urls')),
     path('monitoring/',     include('monitoring.urls')),
 
