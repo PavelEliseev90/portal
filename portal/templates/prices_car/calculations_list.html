@@ -127,8 +127,11 @@
                     <div class="col-auto">
                         <a class="btn-calculate-secondary-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
                     </div>
-                    <div class="col-auto ms-md-auto">
-                        <a class="btn-calculate-secondary-sm" href="{% url 'prices_car:calculations_list_export' %}?{{ request.GET.urlencode }}" title="Выгрузить в Excel с учётом текущих фильтров">
+                    <div class="col-auto ms-md-auto d-flex flex-wrap gap-2">
+                        <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalCalcColumns" title="Настроить столбцы таблицы">
+                            <span class="icon-mbri-setting"></span> Столбцы
+                        </button>
+                        <a class="btn-calculate-secondary-sm" href="{% url 'prices_car:calculations_list_export' %}?{{ request.GET.urlencode }}" title="Выгрузить в Excel с учётом текущих фильтров и столбцов">
                             <span class="icon-mbri-download"></span> Выгрузить в Excel
                         </a>
                     </div>
@@ -141,106 +144,21 @@
                 <table class="table table-sm table-striped table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('date')">
-                                    Дата
-                                    {% if params.filtr.order_by == 'date' %}&uarr;{% elif params.filtr.order_by == '-date' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('number')">
-                                    Номер
-                                    {% if params.filtr.order_by == 'number' %}&uarr;{% elif params.filtr.order_by == '-number' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('unit')">
-                                    Подразделение
-                                    {% if params.filtr.order_by == 'unit' %}&uarr;{% elif params.filtr.order_by == '-unit' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('rlk')">
-                                    Рабочий лист
-                                    {% if params.filtr.order_by == 'rlk' %}&uarr;{% elif params.filtr.order_by == '-rlk' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('car')">
-                                    Автомобиль
-                                    {% if params.filtr.order_by == 'car' %}&uarr;{% elif params.filtr.order_by == '-car' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('vin')">
-                                    VIN
-                                    {% if params.filtr.order_by == 'vin' %}&uarr;{% elif params.filtr.order_by == '-vin' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('client')">
-                                    Клиент
-                                    {% if params.filtr.order_by == 'client' %}&uarr;{% elif params.filtr.order_by == '-client' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('author')">
-                                    Автор
-                                    {% if params.filtr.order_by == 'author' %}&uarr;{% elif params.filtr.order_by == '-author' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('kvp')">
-                                    КВ
-                                    {% if params.filtr.order_by == 'kvp' %}&uarr;{% elif params.filtr.order_by == '-kvp' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('agreement')">
-                                    Соглашение
-                                    {% if params.filtr.order_by == 'agreement' %}&uarr;{% elif params.filtr.order_by == '-agreement' %}&darr;{% endif %}
-                                </button>
-                            </th>
-                            <th>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('shipment')">
-                                    Отгрузка
-                                    {% if params.filtr.order_by == 'shipment' %}&uarr;{% elif params.filtr.order_by == '-shipment' %}&darr;{% endif %}
-                                </button>
-                            </th>
+                            {% for col in params.table_columns %}
+                            {% include 'prices_car/_calculations_list_column.html' with col=col part='head' params=params %}
+                            {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in params.objects %}
                         <tr>
-                            <td><a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark"><span class="icon-doc"></span></a></td>
-                            <td data-label="Дата">{{ item.date }}</td>
-                            <td data-label="Номер">{{ item.number }}</td>
-                            <td data-label="Подразделение">{{ item.unit.name|default:"—" }}</td>
-                            <td data-label="Рабочий лист">{% if item.rlk %}{{ item.rlk.nomer }}{% else %}—{% endif %}</td>
-                            <td data-label="Автомобиль">{{ item.car.name|default:"—" }}</td>
-                            <td data-label="VIN">{{ item.car.vin|default:"—" }}</td>
-                            <td data-label="Клиент">{% if item.rlk %}{% if item.rlk.customer == None %} {{ item.rlk.clientName }} {% else %} {{ item.rlk.customer.name }} {% endif %}{% else %}—{% endif %}</td>
-                            <td data-label="Автор">{{ item.author.name|default:"—" }}</td>
-                            <td data-label="КВ" class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
-                            <td data-label="Соглашение" class="text-nowrap">
-                                {% if item.agreement_pk %}
-                                    <a href="/docs_car_agreement/{{ item.agreement_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.agreement_nomer|default:"—" }}</a>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td data-label="Отгрузка" class="text-nowrap">
-                                {% if item.shipment_pk %}
-                                    <a href="/docs_car_shipment/{{ item.shipment_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.shipment_nomer|default:"—" }}</a>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
+                            {% for col in params.table_columns %}
+                            {% include 'prices_car/_calculations_list_column.html' with col=col part='body' item=item params=params %}
+                            {% endfor %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="12" class="text-center text-muted py-4">Нет записей. Проверьте фильтр.</td>
+                            <td colspan="{{ params.table_columns|length }}" class="text-center text-muted py-4">Нет записей. Проверьте фильтр.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -279,6 +197,38 @@
 
         </div>
 
+    </div>
+</div>
+
+<div class="modal fade" id="modalCalcColumns" tabindex="-1" aria-labelledby="modalCalcColumnsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCalcColumnsLabel">Настройка столбцов таблицы</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3">Отметьте нужные столбцы и перетащите строки для изменения порядка. Настройка сохраняется для вашего пользователя и применяется к выгрузке в Excel.</p>
+                <ul class="list-group" id="calcColumnsList">
+                    {% for col in params.columns_settings %}
+                    <li class="list-group-item d-flex align-items-center gap-2 calc-col-item" draggable="true" data-key="{{ col.key }}">
+                        <span class="text-muted calc-col-drag" style="cursor: grab;" title="Перетащить">☰</span>
+                        <input class="form-check-input m-0 calc-col-check" type="checkbox" id="col-{{ col.key }}" {% if col.visible %}checked{% endif %}>
+                        <label class="form-check-label flex-grow-1 mb-0" for="col-{{ col.key }}">{{ col.label }}</label>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div id="calcColumnsError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <input type="hidden" id="calcColumnsCsrf" value="{{ csrf_token }}">
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="calcColumnsReset">По умолчанию</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="calcColumnsSave">Сохранить</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -522,6 +472,119 @@ function setCalcOrder(field) {
     }
   }
 
+  function initCalcColumnsSettings() {
+    var list = document.getElementById('calcColumnsList');
+    var saveBtn = document.getElementById('calcColumnsSave');
+    var resetBtn = document.getElementById('calcColumnsReset');
+    var errorBox = document.getElementById('calcColumnsError');
+    var saveUrl = '{% url "prices_car:calculations_list_columns_save" %}';
+    var builtInDefaults = ['link', 'date', 'number', 'unit', 'rlk', 'car', 'vin', 'client', 'author', 'kvp', 'agreement', 'shipment'];
+    var dragItem = null;
+
+    if (!list || !saveBtn) return;
+
+    function showError(msg) {
+      if (!errorBox) return;
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    }
+
+    function hideError() {
+      if (!errorBox) return;
+      errorBox.classList.add('d-none');
+      errorBox.textContent = '';
+    }
+
+    function getCsrfToken() {
+      var inp = document.getElementById('calcColumnsCsrf');
+      if (inp && inp.value) return inp.value;
+      var match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function collectColumns() {
+      return Array.prototype.map.call(list.querySelectorAll('.calc-col-item'), function(item) {
+        var cb = item.querySelector('.calc-col-check');
+        if (!cb || !cb.checked) return null;
+        return item.getAttribute('data-key');
+      }).filter(Boolean);
+    }
+
+    list.querySelectorAll('.calc-col-item').forEach(function(item) {
+      item.addEventListener('dragstart', function(e) {
+        dragItem = item;
+        item.classList.add('opacity-50');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', function() {
+        item.classList.remove('opacity-50');
+        dragItem = null;
+      });
+      item.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (!dragItem || dragItem === item) return;
+        var rect = item.getBoundingClientRect();
+        var after = (e.clientY - rect.top) > rect.height / 2;
+        if (after) {
+          item.parentNode.insertBefore(dragItem, item.nextSibling);
+        } else {
+          item.parentNode.insertBefore(dragItem, item);
+        }
+      });
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        hideError();
+        list.querySelectorAll('.calc-col-item').forEach(function(item) {
+          var key = item.getAttribute('data-key');
+          var cb = item.querySelector('.calc-col-check');
+          if (cb) cb.checked = builtInDefaults.indexOf(key) !== -1;
+        });
+        builtInDefaults.forEach(function(key) {
+          var item = list.querySelector('.calc-col-item[data-key="' + key + '"]');
+          if (item) list.appendChild(item);
+        });
+        list.querySelectorAll('.calc-col-item').forEach(function(item) {
+          if (builtInDefaults.indexOf(item.getAttribute('data-key')) === -1) {
+            list.appendChild(item);
+          }
+        });
+      });
+    }
+
+    saveBtn.addEventListener('click', function() {
+      hideError();
+      var columns = collectColumns();
+      if (!columns.length) {
+        showError('Выберите хотя бы один столбец.');
+        return;
+      }
+      saveBtn.disabled = true;
+      fetch(saveUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ columns: columns }),
+      })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(res) {
+          if (!res.ok) throw new Error((res.data && res.data.error) || 'Ошибка сохранения');
+          window.location.reload();
+        })
+        .catch(function(err) {
+          showError(err.message || 'Не удалось сохранить настройки');
+        })
+        .finally(function() {
+          saveBtn.disabled = false;
+        });
+    });
+  }
+
   function run() {
     initMultiCheckboxFilter('calcUnitSearch', 'calcUnitDropdown', 'calcSelectedUnits');
     initMultiCheckboxFilter('calcMarkSearch', 'calcMarkDropdown', 'calcSelectedMarks');
@@ -529,6 +592,7 @@ function setCalcOrder(field) {
     initMultiCheckboxFilter('calcShpSearch', 'calcShpDropdown', 'calcSelectedShp');
     initCalcModelFilter();
     initCalcListForm();
+    initCalcColumnsSettings();
   }
 
   if (document.readyState === 'loading') {

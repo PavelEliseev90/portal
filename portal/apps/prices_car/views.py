@@ -1,3 +1,4 @@
+import calendar
 import os
 from datetime import date, datetime
 
@@ -15,6 +16,13 @@ from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
 from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations
+from .calculations_table import (
+    CALC_LIST_SORT_FIELDS,
+    build_columns_settings,
+    build_table_columns,
+    export_cell_value,
+    save_user_table_columns,
+)
 
 
 def _prev_month_first(month_date: date) -> date:
@@ -651,21 +659,6 @@ def discount_km_page(request):
     })
 
 
-CALC_LIST_ORDER_FIELDS = {
-    'date': 'date',
-    'number': 'number',
-    'unit': 'unit__name',
-    'rlk': 'rlk__nomer',
-    'car': 'car__name',
-    'vin': 'car__vin',
-    'client': 'rlk__clientName',
-    'author': 'author__name',
-    'kvp': 'kvp',
-    'agreement': 'agreement_nomer',
-    'shipment': 'shipment_nomer',
-}
-
-
 def _resolve_calc_list_order(order_by: str) -> str:
     default = '-date'
     order_by = (order_by or '').strip()
@@ -673,7 +666,7 @@ def _resolve_calc_list_order(order_by: str) -> str:
         return default
     desc = order_by.startswith('-')
     field = order_by.lstrip('-')
-    db_field = CALC_LIST_ORDER_FIELDS.get(field)
+    db_field = CALC_LIST_SORT_FIELDS.get(field)
     if not db_field:
         return default
     return ('-' if desc else '') + db_field
@@ -689,20 +682,22 @@ def _parse_int_id_list(values):
     return ids
 
 
-def _calculation_client_name(item):
-    rlk = getattr(item, 'rlk', None)
-    if not rlk:
-        return ''
-    customer = getattr(rlk, 'customer', None)
-    if customer:
-        return customer.name or ''
-    return rlk.clientName or ''
+def _current_month_period():
+    """Первый и последний день текущего календарного месяца."""
+    today = timezone.now().date()
+    first_day = today.replace(day=1)
+    last_day = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+    return first_day, last_day
 
 
 def _build_calculations_list_queryset(request):
     """Фильтры и queryset калькуляций (список и выгрузка)."""
     date_start = (request.GET.get('date_start') or '').strip()
     date_end = (request.GET.get('date_end') or '').strip()
+    if not date_start and not date_end:
+        month_start, month_end = _current_month_period()
+        date_start = month_start.isoformat()
+        date_end = month_end.isoformat()
     vin = (request.GET.get('vin') or '').strip()
     unit_ids = _parse_int_id_list(
         request.GET.getlist('unit[]') + request.GET.getlist('unit_ids')
@@ -799,7 +794,35 @@ def calculations_list(request):
             'filtr': filtr,
             'select_units': select_units,
             'select_marks': select_marks,
+            'table_columns': build_table_columns(request.user),
+            'columns_settings': build_columns_settings(request.user),
         },
+    })
+
+
+@login_required
+def calculations_list_columns_save(request):
+    """Сохранение персонального порядка и состава столбцов таблицы."""
+    import json
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Некорректный JSON'}, status=400)
+
+    columns = payload.get('columns')
+    if not isinstance(columns, list):
+        return JsonResponse({'error': 'Передайте массив columns'}, status=400)
+    try:
+        saved = save_user_table_columns(request.user, columns)
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    return JsonResponse({
+        'ok': True,
+        'columns': saved,
     })
 
 
@@ -811,11 +834,8 @@ def calculations_list_export(request):
     from openpyxl.utils import get_column_letter
 
     objects, _filtr = _build_calculations_list_queryset(request)
-
-    headers = [
-        'ID', 'Дата', 'Номер', 'Подразделение', 'Рабочий лист', 'Автомобиль', 'VIN',
-        'Клиент', 'Автор', 'КВ', 'Соглашение', 'Отгрузка',
-    ]
+    table_columns = build_table_columns(request.user)
+    headers = [col['label_export'] for col in table_columns]
 
     wb = Workbook()
     ws = wb.active
@@ -829,22 +849,9 @@ def calculations_list_export(request):
         cell.font = header_font
         cell.alignment = Alignment(horizontal='center', vertical='center')
 
+    column_keys = [col['key'] for col in table_columns]
     for item in objects.iterator(chunk_size=500):
-        dt = item.date.strftime('%d.%m.%Y %H:%M') if item.date else ''
-        ws.append([
-            item.pk,
-            dt,
-            item.number or '',
-            item.unit.name if item.unit else '',
-            item.rlk.nomer if item.rlk else '',
-            item.car.name if item.car else '',
-            item.car.vin if item.car else '',
-            _calculation_client_name(item),
-            item.author.name if item.author else '',
-            item.kvp if item.kvp is not None else '',
-            item.agreement_nomer or '',
-            item.shipment_nomer or '',
-        ])
+        ws.append([export_cell_value(item, key) for key in column_keys])
 
     for col in range(1, len(headers) + 1):
         column_letter = get_column_letter(col)

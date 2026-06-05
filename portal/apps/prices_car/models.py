@@ -281,6 +281,30 @@ class CarCalculationsDetail(models.Model):
         super().save(*args, **kwargs)
 
         
+class CarCalculationsListSettings(models.Model):
+    """Персональные настройки столбцов списка калькуляций."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='car_calculations_list_settings',
+        verbose_name='Пользователь',
+    )
+    columns = models.JSONField(
+        'Столбцы',
+        default=list,
+        blank=True,
+        help_text='Упорядоченный список ключей видимых столбцов',
+    )
+
+    class Meta:
+        db_table = 'prices_car_calc_list_settings'
+        verbose_name = 'Настройки таблицы калькуляций'
+        verbose_name_plural = 'Настройки таблиц калькуляций'
+
+    def __str__(self):
+        return 'Таблица калькуляций — %s' % self.user
+
+
 class EmailPushCar(models.Model):
     date                = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
     car                 = models.ForeignKey(RefCarsOrganization, on_delete=models.CASCADE, related_name='email_push_car', verbose_name='Автомобиль')
