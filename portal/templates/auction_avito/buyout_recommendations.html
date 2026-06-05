@@ -1,0 +1,246 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Рекомендации выкупа {% endblock %}
+{% block title_navbar %} — Рекомендации выкупа {% endblock %}
+
+{% block head %}
+<style>
+  .aav-rec-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: linear-gradient(135deg, #f0fdf4 0%, #fff 45%, #eef4fb 100%);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+  .aav-rec-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
+  .aav-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+  .aav-score-high { background: #dcfce7; color: #166534; }
+  .aav-score-mid { background: #fef9c3; color: #854d0e; }
+  .aav-score-low { background: #fee2e2; color: #991b1b; }
+  .aav-stage-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e2e8f0;
+    min-width: 90px;
+  }
+  .aav-stage-bar span { display: block; height: 100%; }
+  .aav-stage-test { background: #22c55e; }
+  .aav-stage-rdo { background: #3b82f6; }
+  .aav-stage-kor { background: #f59e0b; }
+  .aav-stage-txt { background: #ef4444; }
+  .aav-rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .aav-rec-card {
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 1rem;
+    background: #fff;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.06);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .aav-rec-card:hover { color: inherit; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 42, 90, 0.1); }
+  .aav-rec-card-photo {
+    aspect-ratio: 4/3;
+    background: #e8eef5;
+    position: relative;
+    overflow: hidden;
+  }
+  .aav-rec-card-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .aav-rec-card-body { padding: 0.85rem 1rem; }
+  .aav-rec-match {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.92);
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+
+  <div class="aav-rec-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h2><span class="bi bi-graph-up-arrow me-2"></span>Рекомендации выкупа</h2>
+      <p class="text-muted small mb-0">
+        Анализ продаж БУ по отгрузкам (<code>DocCarShipment</code>) с разбивкой по этапу УС на момент продажи.
+        Чем выше доля продаж на <strong>Тест-прайс</strong>, тем лучше сегмент для выкупа на аукционе.
+      </p>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">
+      <span class="bi bi-arrow-left"></span> К лотам
+    </a>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Параметры анализа</h6>
+    <form method="get" class="row g-3 padding-title align-items-end">
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted">Дата с</label>
+        <input type="date" class="form-control" name="date_from" value="{{ params.date_from }}">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted">Дата по</label>
+        <input type="date" class="form-control" name="date_to" value="{{ params.date_to }}">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted">Мин. продаж</label>
+        <input type="number" class="form-control" name="min_sales" min="1" value="{{ params.min_sales }}">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted">Топ сегментов</label>
+        <input type="number" class="form-control" name="top" min="10" max="80" value="{{ params.top_segments }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small text-muted">Подразделения БУ</label>
+        <select class="form-select" name="unit_ids" multiple size="3">
+          {% for u in params.bu_units %}
+          <option value="{{ u.pk }}" {% if u.pk in params.unit_ids %}selected{% endif %}>{{ u.name }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Пусто — все БУ подразделения</div>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+      </div>
+      <div class="col-auto">
+        <a href="{% url 'auction_avito:buyout_recommendations' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+      </div>
+    </form>
+    <p class="small text-muted mb-0 padding-title">
+      Отгрузок за период: <strong>{{ params.summary.shipments_total }}</strong> ·
+      Сегментов в рейтинге: <strong>{{ params.summary.segments_total }}</strong>
+    </p>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h6 class="mb-2 padding-title">Формула рейтинга</h6>
+    <p class="small text-muted padding-title mb-2">
+      Для каждой пары марка/модель считаем взвешенную долю этапов:
+      {% for s in params.stage_meta %}
+      <span class="badge bg-light text-dark border me-1">{{ s.label }} × {{ s.weight }}</span>
+      {% endfor %}
+    </p>
+    <div class="d-flex flex-wrap gap-3 small padding-title">
+      <span><span class="d-inline-block rounded-circle aav-stage-test" style="width:10px;height:10px;"></span> Тест-прайс</span>
+      <span><span class="d-inline-block rounded-circle aav-stage-rdo" style="width:10px;height:10px;"></span> РДО</span>
+      <span><span class="d-inline-block rounded-circle aav-stage-kor" style="width:10px;height:10px;"></span> Коррекция</span>
+      <span><span class="d-inline-block rounded-circle aav-stage-txt" style="width:10px;height:10px;"></span> ТХТ</span>
+    </div>
+  </div>
+
+  <div class="portal-panel no-padding mb-3">
+    <h6 class="padding-title mb-0">Рейтинг сегментов (марка / модель)</h6>
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-striped table-hover mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Марка</th>
+            <th>Модель</th>
+            <th class="text-end">Продаж</th>
+            <th>Структура этапов</th>
+            <th class="text-end">Тест-прайс %</th>
+            <th class="text-end">Рейтинг</th>
+            <th class="text-end">Лотов Avito</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.ratings %}
+          <tr>
+            <td data-label="#">{{ forloop.counter }}</td>
+            <td data-label="Марка">{{ row.mark_name }}</td>
+            <td data-label="Модель">{{ row.model_name }}</td>
+            <td data-label="Продаж" class="text-end">{{ row.total }}</td>
+            <td data-label="Этапы">
+              <div class="aav-stage-bar" title="Тест {{ row.cnt_test }} · РДО {{ row.cnt_rdo }} · Корр. {{ row.cnt_kor }} · ТХТ {{ row.cnt_txt }}">
+                {% if row.total %}
+                <span class="aav-stage-test" style="width:{% widthratio row.cnt_test row.total 100 %}%"></span>
+                <span class="aav-stage-rdo" style="width:{% widthratio row.cnt_rdo row.total 100 %}%"></span>
+                <span class="aav-stage-kor" style="width:{% widthratio row.cnt_kor row.total 100 %}%"></span>
+                <span class="aav-stage-txt" style="width:{% widthratio row.cnt_txt row.total 100 %}%"></span>
+                {% endif %}
+              </div>
+              <span class="small text-muted">{{ row.cnt_test }}/{{ row.cnt_rdo }}/{{ row.cnt_kor }}/{{ row.cnt_txt }}</span>
+            </td>
+            <td data-label="Тест-прайс %" class="text-end">{{ row.test_share }}%</td>
+            <td data-label="Рейтинг" class="text-end">
+              <span class="aav-score {% if row.score >= 0.7 %}aav-score-high{% elif row.score >= 0.4 %}aav-score-mid{% else %}aav-score-low{% endif %}">{{ row.score }}</span>
+            </td>
+            <td data-label="Лотов" class="text-end">{{ row.matched_lots|length }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">Нет данных за период. Уменьшите «Мин. продаж» или расширьте период.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="portal-panel">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 padding-title">
+      <h6 class="mb-0">Рекомендованные лоты Avito</h6>
+      <span class="badge bg-secondary">{{ params.recommendations|length }} лот(ов)</span>
+    </div>
+    {% if params.recommendations %}
+    <div class="aav-rec-grid padding-title">
+      {% for lot in params.recommendations %}
+      <a href="{% url 'auction_avito:lot_detail' lot.pk %}" class="aav-rec-card">
+        <div class="aav-rec-card-photo">
+          {% if lot.photo_url %}
+          <img src="{{ lot.photo_url }}" alt="">
+          {% else %}
+          <div class="d-flex align-items-center justify-content-center h-100 text-muted"><span class="bi bi-car-front" style="font-size:2rem;"></span></div>
+          {% endif %}
+          <span class="aav-rec-match">{{ lot.segment_mark }} {{ lot.segment_model }}</span>
+        </div>
+        <div class="aav-rec-card-body">
+          <div class="fw-semibold text-truncate">{{ lot.title }}</div>
+          <div class="small text-muted mb-1">{{ lot.venue }}</div>
+          <div class="small">
+            Рейтинг сегмента: <strong>{{ lot.segment_score }}</strong>
+            · совпадение: <strong>{{ lot.match_score }}</strong>
+          </div>
+          <div class="small mt-1">
+            {% if lot.min_price %}от {{ lot.min_price|formatted_number }} ₽{% endif %}
+            {% if lot.imv_median %} · IMV {{ lot.imv_median|formatted_number }}{% endif %}
+          </div>
+          {% if lot.finish_at %}
+          <div class="small text-muted">до {{ lot.finish_at|date:"d.m.Y H:i" }}</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted padding-title mb-0">Нет активных лотов, совпадающих с топ-сегментами. Проверьте рейтинг выше или дождитесь новых лотов на аукционе.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

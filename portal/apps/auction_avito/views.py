@@ -586,3 +586,12 @@ def lot_upload_images(request, pk):
     else:
         messages.warning(request, msg)
     return redirect('auction_avito:lot_detail', pk=pk)
+
+
+@login_required
+def buyout_recommendations(request):
+    """Рейтинг продаж БУ по этапу УС + рекомендации лотов Avito на выкуп."""
+    from auction_avito.services.buyout_recommendations import build_buyout_page_context
+
+    ctx = build_buyout_page_context(request)
+    return render(request, 'auction_avito/buyout_recommendations.html', {'params': ctx})
