@@ -1,0 +1,64 @@
+{% if part == 'head' %}
+<th>
+    {% if col.sortable %}
+    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-white fw-semibold" onclick="setCalcOrder('{{ col.sort_key }}')">
+        {{ col.label }}
+        {% if params.filtr.order_by == col.sort_key %}&uarr;{% elif params.filtr.order_by == '-'|add:col.sort_key %}&darr;{% endif %}
+    </button>
+    {% else %}
+    {{ col.label }}
+    {% endif %}
+</th>
+{% elif part == 'body' %}
+{% if col.key == 'link' %}
+<td data-label="{{ col.label }}"><a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark"><span class="icon-doc"></span></a></td>
+{% elif col.key == 'date' %}
+<td data-label="{{ col.label }}">{{ item.date }}</td>
+{% elif col.key == 'number' %}
+<td data-label="{{ col.label }}">{{ item.number }}</td>
+{% elif col.key == 'unit' %}
+<td data-label="{{ col.label }}">{{ item.unit.name|default:"—" }}</td>
+{% elif col.key == 'rlk' %}
+<td data-label="{{ col.label }}">{% if item.rlk %}{{ item.rlk.nomer }}{% else %}—{% endif %}</td>
+{% elif col.key == 'car' %}
+<td data-label="{{ col.label }}">{{ item.car.name|default:"—" }}</td>
+{% elif col.key == 'vin' %}
+<td data-label="{{ col.label }}">{{ item.car.vin|default:"—" }}</td>
+{% elif col.key == 'client' %}
+<td data-label="{{ col.label }}">{% if item.rlk %}{% if item.rlk.customer == None %}{{ item.rlk.clientName }}{% else %}{{ item.rlk.customer.name }}{% endif %}{% else %}—{% endif %}</td>
+{% elif col.key == 'author' %}
+<td data-label="{{ col.label }}">{{ item.author.name|default:"—" }}</td>
+{% elif col.key == 'staff' %}
+<td data-label="{{ col.label }}">{{ item.staff.name|default:"—" }}</td>
+{% elif col.key == 'kvp' %}
+<td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
+{% elif col.key == 'amount' %}
+<td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.amount|floatformat:"0g"|default:"—" }}</td>
+{% elif col.key == 'price' %}
+<td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.price|floatformat:"0g"|default:"—" }}</td>
+{% elif col.key == 'discount' %}
+<td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.discount|floatformat:"0g"|default:"—" }}</td>
+{% elif col.key == 'uin' %}
+<td data-label="{{ col.label }}">{{ item.uin|default:"—" }}</td>
+{% elif col.key == 'date_success' %}
+<td data-label="{{ col.label }}">{{ item.date_success }}</td>
+{% elif col.key == 'agreement' %}
+<td data-label="{{ col.label }}" class="text-nowrap">
+    {% if item.agreement_pk %}
+        <a href="/docs_car_agreement/{{ item.agreement_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.agreement_nomer|default:"—" }}</a>
+    {% else %}
+        <span class="text-muted">—</span>
+    {% endif %}
+</td>
+{% elif col.key == 'shipment' %}
+<td data-label="{{ col.label }}" class="text-nowrap">
+    {% if item.shipment_pk %}
+        <a href="/docs_car_shipment/{{ item.shipment_pk }}/" class="text-dark text-decoration-none"><span class="icon-doc"></span> {{ item.shipment_nomer|default:"—" }}</a>
+    {% else %}
+        <span class="text-muted">—</span>
+    {% endif %}
+</td>
+{% elif col.key == 'comment' %}
+<td data-label="{{ col.label }}">{{ item.comment|default:"—" }}</td>
+{% endif %}
+{% endif %}

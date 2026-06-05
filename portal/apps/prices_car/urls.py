@@ -8,6 +8,7 @@ urlpatterns = [
     path('director/', views.director_dashboard, name='director'),
     path('calculations_list/', views.calculations_list, name='calculations_list'),
     path('calculations_list/export/', views.calculations_list_export, name='calculations_list_export'),
+    path('calculations_list/columns/', views.calculations_list_columns_save, name='calculations_list_columns_save'),
     path('brands/', views.brands_list, name='brands'),
     path('brands/get_models/', views.brands_get_models, name='brands_get_models'),
     path('settings/', views.settings_page, name='settings'),
