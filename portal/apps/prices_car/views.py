@@ -778,7 +778,7 @@ def _build_calculations_list_queryset(request):
 @login_required
 def calculations_list(request):
 
-    select_units = RefUnit.objects.filter(buauto=False, ib__active=True).order_by('name')
+    select_units = RefUnit.objects.filter(buauto=False, ib__active=True).filter(name__istartswith='дц').order_by('name')
     select_marks = AutoruMark.objects.only('id', 'name').order_by('name')
 
     objects, filtr = _build_calculations_list_queryset(request)

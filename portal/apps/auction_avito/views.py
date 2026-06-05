@@ -351,6 +351,7 @@ def lot_list(request):
 @login_required
 def lot_detail(request, pk):
     lot = get_object_or_404(_lot_detail_queryset(), pk=pk)
+    autoteka_report = getattr(lot, 'autoteka', None)
     primary_offer = lot.offers.first()
     offer_badges, lot_badges, all_badges = collect_badges_for_display(lot, primary_offer)
 
@@ -397,8 +398,8 @@ def lot_detail(request, pk):
 
     tab_counts = {
         'autoteka': (
-            AvitoAutotekaEvent.objects.filter(report_id=lot.autoteka_id).count()
-            if lot.autoteka_id
+            AvitoAutotekaEvent.objects.filter(report=autoteka_report).count()
+            if autoteka_report
             else 0
         ),
         'stock': lot_stock_count(model_ids, stock_model_id) if model_ids else 0,
@@ -448,9 +449,9 @@ def lot_detail(request, pk):
                 load_unit_choices=True,
             )
         )
-    elif tab == 'autoteka' and lot.autoteka_id:
+    elif tab == 'autoteka' and autoteka_report:
         autoteka_events = list(
-            AvitoAutotekaEvent.objects.filter(report_id=lot.autoteka_id).order_by('pk')
+            AvitoAutotekaEvent.objects.filter(report=autoteka_report).order_by('pk')
         )
     elif tab == 'calculations':
         calculations = list(
@@ -539,7 +540,7 @@ def lot_detail(request, pk):
             stock_page=None, sales_page=None,
         ),
         'autohub': getattr(lot, 'vehicle_autohub', None),
-        'autoteka': getattr(lot, 'autoteka', None),
+        'autoteka': autoteka_report,
         'primary_offer': primary_offer,
         'offers': lot.offers.all(),
         'images': lot.images.all(),

@@ -27,8 +27,8 @@
         <div class="portal-panel mb-4">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h5 class="mb-0">Внести КМ по всем брендам</h5>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBrandKm" id="btn-open-brand-km">
-                    Добавить
+                <button type="button" class="btn-calculate-sm text-white" data-bs-toggle="modal" data-bs-target="#modalBrandKm" id="btn-open-brand-km">
+                    <span class="icon-mbri-plus"></span> Добавить
                 </button>
             </div>
             <p class="small text-muted mb-0">Откроется форма: выберите месяц, для каждого бренда введите КМ и мин. КМ ДЦ. Рядом показываются значения за предыдущий месяц. Сохранение записывает значения сразу по всем брендам.</p>
@@ -53,7 +53,8 @@
                 </div>
             </div>
             <p class="small text-muted mb-2">Показаны записи за выбранный месяц. Стрелки переключают месяц; нажмите на название месяца, чтобы открыть календарь и выбрать любую дату.</p>
-            <div class="table-responsive">
+            
+            <div class="table-responsive portal-radius">
                 <table class="table table-sm table-striped table-hover mb-0">
                     <thead>
                         <tr>
@@ -66,9 +67,9 @@
                     <tbody>
                         {% for item in params.items %}
                         <tr>
-                            <td>{{ item.brand }}</td>
-                            <td class="text-nowrap">{{ item.km|formatted_number }}</td>
-                            <td class="text-nowrap">{{ item.km_min_dc|formatted_number }}</td>
+                            <td data-label="Бренд">{{ item.brand }}</td>
+                            <td data-label="КМ" class="text-nowrap">{{ item.km|formatted_number }}</td>
+                            <td data-label="Мин. КМ ДЦ" class="text-nowrap">{{ item.km_min_dc|formatted_number }}</td>
                             <td>
                                 <form method="post" action="{% url 'prices_car:settings' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
                                     {% csrf_token %}
@@ -108,37 +109,39 @@
                 </div>
                 <div class="modal-body">
                     <p class="small text-muted mb-2" id="bulk-prev-month-hint">КМ за предыдущий месяц: <span id="bulk-prev-month-label">—</span></p>
-                    <div class="table-responsive" style="max-height: 55vh;">
-                        <table class="table table-sm table-bordered align-middle mb-0">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Бренд</th>
-                                    <th class="text-nowrap">КМ (пред. мес.)</th>
-                                    <th class="text-nowrap">Мин. КМ ДЦ (пред. мес.)</th>
-                                    <th style="width: 9rem;">КМ</th>
-                                    <th style="width: 9rem;">Мин. КМ ДЦ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for b in params.brands %}
-                                <tr>
-                                    <td>{{ b.name }}</td>
-                                    <td class="text-muted small prev-km-cell" data-brand-id="{{ b.id }}">—</td>
-                                    <td class="text-muted small prev-km-min-dc-cell" data-brand-id="{{ b.id }}">—</td>
-                                    <td>
-                                        <input type="text" inputmode="numeric" name="km_{{ b.id }}" class="form-control form-control-sm km-input int-space-input" value="" placeholder="0" data-brand-id="{{ b.id }}" autocomplete="off">
-                                    </td>
-                                    <td>
-                                        <input type="text" inputmode="numeric" name="km_min_dc_{{ b.id }}" class="form-control form-control-sm km-min-dc-input int-space-input" value="" placeholder="0" data-brand-id="{{ b.id }}" autocomplete="off">
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Нет брендов — добавьте их в разделе «Бренды».</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="portal-panel no-padding">
+                        <div class="table-responsive portal-radius" style="max-height: 55vh; overflow-y: auto;">
+                            <table class="table table-sm table-striped table-hover mb-0">
+                                <thead >
+                                    <tr>
+                                        <th>Бренд</th>
+                                        <th class="text-nowrap">КМ (пред. мес.)</th>
+                                        <th >КМ</th>
+                                        <th class="text-nowrap">Мин. КМ ДЦ (пред. мес.)</th>
+                                        <th >Мин. КМ ДЦ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for b in params.brands %}
+                                    <tr>
+                                        <td>{{ b.name }}</td>
+                                        <td data-label="КМ (пред. мес.)" class="text-muted small prev-km-cell text-end" data-brand-id="{{ b.id }}">—</td>
+                                        <td data-label="КМ" class="text-end">
+                                            <input type="text" inputmode="numeric" name="km_{{ b.id }}" class="form-control form-control-sm km-input int-space-input" value="" placeholder="0" data-brand-id="{{ b.id }}" autocomplete="off">
+                                        </td>
+                                        <td data-label="Мин. КМ ДЦ (пред. мес.)" class="text-muted small prev-km-min-dc-cell text-end" data-brand-id="{{ b.id }}">—</td>
+                                        <td data-label="Мин. КМ ДЦ" class="text-end">
+                                            <input type="text" inputmode="numeric" name="km_min_dc_{{ b.id }}" class="form-control form-control-sm km-min-dc-input int-space-input" value="" placeholder="0" data-brand-id="{{ b.id }}" autocomplete="off">
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Нет брендов — добавьте их в разделе «Бренды».</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
