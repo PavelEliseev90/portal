@@ -27,7 +27,7 @@ class PriceCarBrandAdmin(admin.ModelAdmin):
 
 @admin.register(BrandKM)
 class BrandKMAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'month', 'km', 'km_index_rdo')
+    list_display = ('brand', 'month', 'km', 'km_min_dc')
     list_filter = ('brand', 'month')
     search_fields = ('brand__name',)
     date_hierarchy = 'month'
