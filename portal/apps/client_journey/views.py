@@ -1,12 +1,27 @@
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+import os
 from django.utils import timezone
 
 from client_journey.models import ClientJourneyLink
 from client_journey.services.demo import build_demo_context
 from client_journey.services.journey import build_journey_context
 from documents.models import DocRLK
+
+
+def _ceo_presentation_path():
+    return os.path.join(settings.BASE_DIR, 'portal', 'presentation', 'client_journey_presentation.html')
+
+
+def ceo_presentation(request):
+    """Презентация для генерального директора — slide-deck (standalone HTML)."""
+    path = _ceo_presentation_path()
+    if not os.path.isfile(path):
+        raise Http404('Презентация не найдена')
+    with open(path, encoding='utf-8') as f:
+        return HttpResponse(f.read(), content_type='text/html; charset=utf-8')
 
 
 def presentation(request):
