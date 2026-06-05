@@ -76,6 +76,25 @@
     color: #166534;
     border: 1px solid #bbf7d0;
   }
+  .aav-top-card {
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 0.85rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    height: 100%;
+  }
+  .aav-top-rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    background: #002a5a;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
 </style>
 {% endblock %}
 
@@ -86,8 +105,8 @@
     <div>
       <h2><span class="bi bi-graph-up-arrow me-2"></span>Рекомендации выкупа</h2>
       <p class="text-muted small mb-0">
-        Анализ продаж БУ по отгрузкам (<code>DocCarShipment</code>) с разбивкой по этапу УС на момент продажи.
-        Чем выше доля продаж на <strong>Тест-прайс</strong>, тем лучше сегмент для выкупа на аукционе.
+        Анализ продаж БУ по отгрузкам с разбивкой по этапу УС на момент продажи.
+        Полный рейтинг — в таблице ниже; витрина ТОП — для быстрого выбора и подбора лотов Avito.
       </p>
     </div>
     <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">
@@ -97,7 +116,7 @@
 
   <div class="portal-panel mb-3">
     <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Параметры анализа</h6>
-    <form method="get" class="row g-3 padding-title align-items-end">
+    <form method="get" class="row g-3 padding-title align-items-end" id="buyoutFiltersForm">
       <div class="col-sm-6 col-md-2">
         <label class="form-label small text-muted">Дата с</label>
         <input type="date" class="form-control" name="date_from" value="{{ params.date_from }}">
@@ -111,8 +130,8 @@
         <input type="number" class="form-control" name="min_sales" min="1" value="{{ params.min_sales }}">
       </div>
       <div class="col-sm-6 col-md-2">
-        <label class="form-label small text-muted">Топ сегментов</label>
-        <input type="number" class="form-control" name="top" min="10" max="80" value="{{ params.top_segments }}">
+        <label class="form-label small text-muted">ТОП витрина</label>
+        <input type="number" class="form-control" name="top_showcase" min="5" max="30" value="{{ params.top_showcase }}" title="Сколько лучших сегментов показывать в блоке ТОП и использовать для подбора лотов">
       </div>
       <div class="col-md-4">
         <label class="form-label small text-muted">Подразделения БУ</label>
@@ -133,6 +152,7 @@
     <p class="small text-muted mb-0 padding-title">
       Отгрузок за период: <strong>{{ params.summary.shipments_total }}</strong> ·
       Сегментов в рейтинге: <strong>{{ params.summary.segments_total }}</strong>
+      {% if params.search %} · Найдено по поиску: <strong>{{ params.summary.segments_filtered }}</strong>{% endif %}
     </p>
   </div>
 
@@ -152,61 +172,46 @@
     </div>
   </div>
 
-  <div class="portal-panel no-padding mb-3">
-    <h6 class="padding-title mb-0">Рейтинг сегментов (марка / модель)</h6>
-    <div class="table-responsive portal-radius">
-      <table class="table table-sm table-striped table-hover mb-0">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Марка</th>
-            <th>Модель</th>
-            <th class="text-end">Продаж</th>
-            <th>Структура этапов</th>
-            <th class="text-end">Тест-прайс %</th>
-            <th class="text-end">Рейтинг</th>
-            <th class="text-end">Лотов Avito</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in params.ratings %}
-          <tr>
-            <td data-label="#">{{ forloop.counter }}</td>
-            <td data-label="Марка">{{ row.mark_name }}</td>
-            <td data-label="Модель">{{ row.model_name }}</td>
-            <td data-label="Продаж" class="text-end">{{ row.total }}</td>
-            <td data-label="Этапы">
-              <div class="aav-stage-bar" title="Тест {{ row.cnt_test }} · РДО {{ row.cnt_rdo }} · Корр. {{ row.cnt_kor }} · ТХТ {{ row.cnt_txt }}">
-                {% if row.total %}
-                <span class="aav-stage-test" style="width:{% widthratio row.cnt_test row.total 100 %}%"></span>
-                <span class="aav-stage-rdo" style="width:{% widthratio row.cnt_rdo row.total 100 %}%"></span>
-                <span class="aav-stage-kor" style="width:{% widthratio row.cnt_kor row.total 100 %}%"></span>
-                <span class="aav-stage-txt" style="width:{% widthratio row.cnt_txt row.total 100 %}%"></span>
-                {% endif %}
-              </div>
-              <span class="small text-muted">{{ row.cnt_test }}/{{ row.cnt_rdo }}/{{ row.cnt_kor }}/{{ row.cnt_txt }}</span>
-            </td>
-            <td data-label="Тест-прайс %" class="text-end">{{ row.test_share }}%</td>
-            <td data-label="Рейтинг" class="text-end">
-              <span class="aav-score {% if row.score >= 0.7 %}aav-score-high{% elif row.score >= 0.4 %}aav-score-mid{% else %}aav-score-low{% endif %}">{{ row.score }}</span>
-            </td>
-            <td data-label="Лотов" class="text-end">{{ row.matched_lots|length }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="8" class="text-center text-muted py-4">Нет данных за период. Уменьшите «Мин. продаж» или расширьте период.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  {% if params.top_ratings %}
+  <div class="portal-panel mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 padding-title">
+      <h6 class="mb-0">ТОП {{ params.top_showcase }} — лучшие сегменты для выкупа</h6>
+      <span class="badge bg-success">витрина</span>
+    </div>
+    <div class="row g-3 padding-title">
+      {% for row in params.top_ratings %}
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="aav-top-card">
+          <div class="d-flex align-items-start gap-2 mb-2">
+            <span class="aav-top-rank">{{ forloop.counter }}</span>
+            <div class="flex-grow-1 min-w-0">
+              <div class="fw-semibold text-truncate">{{ row.mark_name }}</div>
+              <div class="text-muted small text-truncate">{{ row.model_name }}</div>
+            </div>
+            <span class="aav-score {% if row.score >= 0.7 %}aav-score-high{% elif row.score >= 0.4 %}aav-score-mid{% else %}aav-score-low{% endif %}">{{ row.score }}</span>
+          </div>
+          <div class="small text-muted mb-2">Продаж: <strong>{{ row.total }}</strong> · Тест-прайс: <strong>{{ row.test_share }}%</strong></div>
+          <div class="aav-stage-bar mb-1" title="Тест {{ row.cnt_test }} · РДО {{ row.cnt_rdo }} · Корр. {{ row.cnt_kor }} · ТХТ {{ row.cnt_txt }}">
+            {% if row.total %}
+            <span class="aav-stage-test" style="width:{% widthratio row.cnt_test row.total 100 %}%"></span>
+            <span class="aav-stage-rdo" style="width:{% widthratio row.cnt_rdo row.total 100 %}%"></span>
+            <span class="aav-stage-kor" style="width:{% widthratio row.cnt_kor row.total 100 %}%"></span>
+            <span class="aav-stage-txt" style="width:{% widthratio row.cnt_txt row.total 100 %}%"></span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
+  {% endif %}
 
   <div class="portal-panel">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 padding-title">
       <h6 class="mb-0">Рекомендованные лоты Avito</h6>
       <span class="badge bg-secondary">{{ params.recommendations|length }} лот(ов)</span>
     </div>
+    <p class="small text-muted padding-title mb-3">Подбор по сегментам из блока ТОП {{ params.top_showcase }}.</p>
     {% if params.recommendations %}
     <div class="aav-rec-grid padding-title">
       {% for lot in params.recommendations %}
@@ -238,7 +243,97 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-muted padding-title mb-0">Нет активных лотов, совпадающих с топ-сегментами. Проверьте рейтинг выше или дождитесь новых лотов на аукционе.</p>
+    <p class="text-muted padding-title mb-0">Нет активных лотов, совпадающих с топ-сегментами.</p>
+    {% endif %}
+  </div>
+
+  <div class="portal-panel no-padding mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 padding-title">
+      <h6 class="mb-0">Полный рейтинг сегментов</h6>
+      <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+        <input type="hidden" name="date_from" value="{{ params.date_from }}">
+        <input type="hidden" name="date_to" value="{{ params.date_to }}">
+        <input type="hidden" name="min_sales" value="{{ params.min_sales }}">
+        <input type="hidden" name="top_showcase" value="{{ params.top_showcase }}">
+        {% for uid in params.unit_ids %}
+        <input type="hidden" name="unit_ids" value="{{ uid }}">
+        {% endfor %}
+        <input type="search" class="form-control form-control-sm" name="q" value="{{ params.search }}" placeholder="Марка или модель…" style="min-width: 14rem;">
+        <button type="submit" class="btn btn-outline-primary btn-sm">Найти</button>
+        {% if params.search %}
+        <a href="?date_from={{ params.date_from }}&date_to={{ params.date_to }}&min_sales={{ params.min_sales }}&top_showcase={{ params.top_showcase }}{% for uid in params.unit_ids %}&unit_ids={{ uid }}{% endfor %}" class="btn btn-outline-secondary btn-sm">Сбросить поиск</a>
+        {% endif %}
+      </form>
+    </div>
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-striped table-hover mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Марка</th>
+            <th>Модель</th>
+            <th class="text-end">Продаж</th>
+            <th>Структура этапов</th>
+            <th class="text-end">Тест-прайс %</th>
+            <th class="text-end">Рейтинг</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.ratings_page %}
+          <tr>
+            <td data-label="#">{{ row.rank }}</td>
+            <td data-label="Марка">{{ row.mark_name }}</td>
+            <td data-label="Модель">{{ row.model_name }}</td>
+            <td data-label="Продаж" class="text-end">{{ row.total }}</td>
+            <td data-label="Этапы">
+              <div class="aav-stage-bar" title="Тест {{ row.cnt_test }} · РДО {{ row.cnt_rdo }} · Корр. {{ row.cnt_kor }} · ТХТ {{ row.cnt_txt }}">
+                {% if row.total %}
+                <span class="aav-stage-test" style="width:{% widthratio row.cnt_test row.total 100 %}%"></span>
+                <span class="aav-stage-rdo" style="width:{% widthratio row.cnt_rdo row.total 100 %}%"></span>
+                <span class="aav-stage-kor" style="width:{% widthratio row.cnt_kor row.total 100 %}%"></span>
+                <span class="aav-stage-txt" style="width:{% widthratio row.cnt_txt row.total 100 %}%"></span>
+                {% endif %}
+              </div>
+              <span class="small text-muted">{{ row.cnt_test }}/{{ row.cnt_rdo }}/{{ row.cnt_kor }}/{{ row.cnt_txt }}</span>
+            </td>
+            <td data-label="Тест-прайс %" class="text-end">{{ row.test_share }}%</td>
+            <td data-label="Рейтинг" class="text-end">
+              <span class="aav-score {% if row.score >= 0.7 %}aav-score-high{% elif row.score >= 0.4 %}aav-score-mid{% else %}aav-score-low{% endif %}">{{ row.score }}</span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              {% if params.search %}Ничего не найдено по запросу «{{ params.search }}».{% else %}Нет данных за период. Уменьшите «Мин. продаж» или расширьте период.{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if params.page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Навигация по рейтингу" class="p-3">
+      <ul class="pagination mb-0">
+        {% if params.page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% url_replace page=params.page_obj.previous_page_number %}">&lt;</a>
+        </li>
+        {% endif %}
+        {% for p in params.page_obj.paginator.page_range %}
+          {% if params.page_obj.number == p %}
+          <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+          {% elif p >= params.page_obj.number|add:-2 and p <= params.page_obj.number|add:2 %}
+          <li class="page-item"><a class="page-link" href="?{% url_replace page=p %}">{{ p }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if params.page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% url_replace page=params.page_obj.next_page_number %}">&gt;</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
     {% endif %}
   </div>
 
