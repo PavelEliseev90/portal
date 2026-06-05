@@ -6,7 +6,14 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 
-from refs.models import AutoruMark, AutoruModel, AutoruModification, RefCarsOrganization, RefUnit
+from avtosalon.models import AvtohubModifications
+from refs.models import (
+    AutoruMark,
+    AutoruModel,
+    AutoruModification,
+    RefCarsOrganization,
+    RefUnit,
+)
 from register.models import RegInteractivOcenkaRLK
 
 TAB_PAGE_SIZE = 25
@@ -66,11 +73,35 @@ def resolve_period(date_from_raw, date_to_raw):
     return date_from, date_to
 
 
+def _vehicle_model_name_variants(vehicle):
+    """Варианты названия модели: с поколением (Sportage + IV → Sportage, IV)."""
+    model_name = (getattr(vehicle, 'model_name', None) or '').strip()
+    generation = (getattr(vehicle, 'generation_name', None) or '').strip()
+    if not model_name:
+        return []
+    variants = []
+    if generation:
+        variants.extend([
+            f'{model_name}, {generation}',
+            f'{model_name} {generation}',
+        ])
+    variants.append(model_name)
+    seen = set()
+    result = []
+    for v in variants:
+        key = v.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(v)
+    return result
+
+
 def resolve_autoru_models(vehicle, *, include_model_choices=True):
     if not vehicle:
         return None
     brand = (getattr(vehicle, 'brand_name', None) or '').strip()
-    model_name = (getattr(vehicle, 'model_name', None) or '').strip()
+    model_variants = _vehicle_model_name_variants(vehicle)
+    model_name = model_variants[-1] if model_variants else ''
     if not brand:
         return None
 
@@ -89,12 +120,15 @@ def resolve_autoru_models(vehicle, *, include_model_choices=True):
         }
 
     models_qs = AutoruModel.objects.filter(mark=mark)
-    if model_name:
-        models_qs = models_qs.filter(
-            Q(name__icontains=model_name)
-            | Q(nameHuman__icontains=model_name)
-            | Q(nameEn__icontains=model_name)
-        )
+    if model_variants:
+        q = Q()
+        for variant in model_variants:
+            q |= (
+                Q(name__icontains=variant)
+                | Q(nameHuman__icontains=variant)
+                | Q(nameEn__icontains=variant)
+            )
+        models_qs = models_qs.filter(q)
     model_ids = list(models_qs.values_list('id', flat=True)[:80])
     models = []
     if include_model_choices:
@@ -120,6 +154,86 @@ def resolve_autoru_models(vehicle, *, include_model_choices=True):
         'models': models,
         'model_ids': model_ids,
     }
+
+
+def build_avito_mod_to_model_ids_map():
+    """Связь Avito modification_id → AutoruModel PK по автомобилям на складе."""
+    mapping = {}
+    rows = (
+        RefCarsOrganization.objects.filter(
+            modification_avito__isnull=False,
+            modification_autoru__isnull=False,
+        )
+        .values_list('modification_avito__avito_id', 'modification_autoru__model_id')
+        .distinct()
+    )
+    for avito_id, model_id in rows:
+        if avito_id and model_id:
+            mapping.setdefault(avito_id, set()).add(model_id)
+    return mapping
+
+
+def build_autohub_mod_to_model_ids_map(autohub_mod_ids):
+    """Связь Autohub modificationID → AutoruModel PK через avtohubModifications."""
+    mapping = {mid: set() for mid in autohub_mod_ids if mid}
+    if not mapping:
+        return mapping
+
+    ah_by_id = {
+        row.id_avtohub: row.autoruId
+        for row in AvtohubModifications.objects.filter(id_avtohub__in=mapping.keys())
+        if row.autoruId
+    }
+    autoru_ids = set(ah_by_id.values())
+    if not autoru_ids:
+        return mapping
+
+    mod_by_autoru = {}
+    for mod in AutoruModification.objects.filter(
+        Q(idSite__in=autoru_ids) | Q(idSiteTech__in=autoru_ids)
+    ).only('idSite', 'idSiteTech', 'model_id'):
+        if not mod.model_id:
+            continue
+        for aid in (mod.idSite, mod.idSiteTech):
+            if aid:
+                mod_by_autoru.setdefault(aid, set()).add(mod.model_id)
+
+    for ah_id, autoru_id in ah_by_id.items():
+        mapping[ah_id].update(mod_by_autoru.get(autoru_id, ()))
+    return mapping
+
+
+def resolve_lot_autoru_model_ids(lot, *, avito_mod_map=None, autohub_mod_map=None):
+    """
+    AutoruModel PK для сопоставления лота с сегментами продаж БУ.
+
+    Порядок: Autohub modificationID → Avito modification_id (склад) → текст каталога Avito.
+    """
+    vehicle_avito = getattr(lot, 'vehicle_avito', None)
+    vehicle_autohub = getattr(lot, 'vehicle_autohub', None)
+    model_ids = []
+    seen = set()
+
+    def _add(ids):
+        for mid in ids:
+            if mid and mid not in seen:
+                seen.add(mid)
+                model_ids.append(mid)
+
+    autohub_mod_id = getattr(vehicle_autohub, 'modification_id', None) if vehicle_autohub else None
+    if autohub_mod_id and autohub_mod_map is not None:
+        _add(autohub_mod_map.get(autohub_mod_id, ()))
+
+    avito_mod_id = getattr(vehicle_avito, 'modification_id', None) if vehicle_avito else None
+    if avito_mod_id and avito_mod_map is not None:
+        _add(avito_mod_map.get(avito_mod_id, ()))
+
+    if vehicle_avito:
+        ctx = resolve_autoru_models(vehicle_avito, include_model_choices=False)
+        if ctx:
+            _add(ctx.get('model_ids') or [])
+
+    return model_ids
 
 
 def _stock_queryset(model_ids, model_filter_id=None):

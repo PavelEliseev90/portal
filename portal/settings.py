@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'prices_car_bu.apps.PricesCarBuConfig',
     'asp.apps.AspConfig',
     'auction_avito.apps.AuctionAvitoConfig',
+    'client_journey.apps.ClientJourneyConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
