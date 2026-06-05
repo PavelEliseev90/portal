@@ -146,9 +146,14 @@
       <h2><span class="bi bi-hammer me-2" aria-hidden="true"></span>Аукцион Авито</h2>
       <p class="text-muted small mb-0">Лоты B2B-аукциона: оценка, ставки, Автотека и рыночный коридор IMV.</p>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'asp:asp' %}">
-      <span class="bi bi-arrow-left"></span> КорсАвто
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">
+        <span class="bi bi-graph-up-arrow"></span> Рекомендации выкупа
+      </a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'asp:asp' %}">
+        <span class="bi bi-arrow-left"></span> КорсАвто
+      </a>
+    </div>
   </div>
 
   <div class="portal-panel aav-filters mb-3">
