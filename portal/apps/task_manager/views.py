@@ -474,7 +474,35 @@ def kors_estimation_data(id_estimation):
     estimation.kors_price = kors_price
 
     if save:
-        estimation.save()
+        estimation.save(update_fields=[
+            'kors_count_sale',
+            'kors_start_sale',
+            'kors_start_store',
+            'kors_count_store',
+            'kors_price',
+            'kors_price_market_min',
+            'kors_price_market_max',
+            'kors_sale_cost_price_min',
+            'kors_sale_cost_price_max',
+            'kors_sale_days_in_stok_avg',
+            'kors_sale_cost_price_avg',
+            'kors_sale_outlay_avg',
+            'kors_sale_price_avg',
+            'kors_sale_run_avg',
+            'kors_sale_year_avg',
+            'kors_sale_cum_avg',
+            'kors_price_min',
+            'kors_price_max',
+            'kors_cost_price_min',
+            'kors_cost_price_max',
+            'kors_days_in_stok_avg',
+            'kors_cost_price_avg',
+            'kors_outlay_avg',
+            'kors_price_avg',
+            'kors_run_avg',
+            'kors_year_avg',
+            'kors_cum_avg',
+        ])
 
 
 ####

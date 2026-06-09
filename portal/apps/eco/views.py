@@ -4122,7 +4122,7 @@ def doc(request, id):
 
         add_swap(interactiv_rlk.rlk, reg_interactiv_ocenka)
 
-        if 'custom_zna' in request.POST:
+        if 'save_custom_zna' in request.POST:
             zna = int(request.POST.get('custom_zna', 0)) 
             reg_interactiv_ocenka.custom_zna = zna
             reg_interactiv_ocenka.custom_zna_comment    = request.POST.get('custom_zna_comment', "")
