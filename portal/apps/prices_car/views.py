@@ -14,8 +14,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
-from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit
-from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations
+from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit, RefCarsOrganization
+from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations, KMCar
 from .calculations_table import (
     CALC_LIST_SORT_FIELDS,
     build_columns_settings,
@@ -901,3 +901,24 @@ def presentation_asset(request, asset):
         raise Http404
     content_type = 'image/svg+xml' if path.endswith('.svg') else 'application/octet-stream'
     return FileResponse(open(path, 'rb'), content_type=content_type)  # noqa: SIM115
+
+
+def refresh_km_cars():
+    cars_list = RefCarsOrganization.objects.filter(is_new = True, quantity__gt = 0)
+    for car in cars_list:
+        if car.min_km != 0 and car.min_km == None:
+            auto1 = 0
+            auto2 = 0
+            try:
+                info = car.cumulative_data()
+                auto1 = info['automatic']['km_min_automatic']
+                auto2 = info['automatic_2']['km_min_automatic']
+                km_car = KMCar() 
+                km_car.date = datetime.now()
+                km_car.car = car
+                km_car.km_auto_1 = auto1
+                km_car.km_auto_2 = auto2
+                km_car.save()
+            except:
+                s = 1
+        s = 1

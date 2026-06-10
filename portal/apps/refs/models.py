@@ -2077,6 +2077,7 @@ class RefCarsOrganization(models.Model):
     description_op          = models.CharField("Комментарий для отдела продаж", max_length=5120, default='')
     run                     = models.IntegerField("Пробег", null=True, default=0, blank=True)
     min_km                  = models.IntegerField("Минимальный КМ (для новых АМ)", null=True, blank=True)
+    min_comment             = models.CharField("Минимальный КМ (для новых АМ) комментарий", max_length=5120, default='')
     min_km_user             = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, verbose_name='Минимальный КМ (для новых АМ) автор')
     min_km_date             = models.DateTimeField("Минимальный КМ (для новых АМ) дата", null=True, blank=True)
     

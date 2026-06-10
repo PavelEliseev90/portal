@@ -211,11 +211,7 @@
       <h6 class="mb-0">Рекомендованные лоты Avito</h6>
       <span class="badge bg-secondary">{{ params.recommendations|length }} лот(ов)</span>
     </div>
-    <p class="small text-muted padding-title mb-3">
-      Подбор по сегментам из блока ТОП {{ params.top_showcase }}.
-      Связь лота с рейтингом: `lot.vehicle_autohub.modification_id` сопоставляется через
-      `AvtohubModifications(autoruId = AutoruModification.idSiteTech)` к модели Авто. Текст марки/модели используется только для подписи карточки.
-    </p>
+    <p class="small text-muted padding-title mb-3">Подбор по сегментам из блока ТОП {{ params.top_showcase }}.</p>
     {% if params.recommendations %}
     <div class="aav-rec-grid padding-title">
       {% for lot in params.recommendations %}
@@ -247,15 +243,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-muted padding-title mb-2">Нет активных лотов, совпадающих с топ-сегментами.</p>
-    {% if params.summary.match_stats %}
-    <p class="small text-muted padding-title mb-0">
-      Диагностика: активных лотов <strong>{{ params.summary.match_stats.active_lots }}</strong>,
-      с Autohub modificationID <strong>{{ params.summary.match_stats.with_vehicle_autohub_mod }}</strong>,
-      с матчингом по Autohub <strong>{{ params.summary.match_stats.autohub_mod_mapped }}</strong>,
-      попало в ТОП-сегменты <strong>{{ params.summary.match_stats.matched_to_segment }}</strong>.
-    </p>
-    {% endif %}
+    <p class="text-muted padding-title mb-0">Нет активных лотов, совпадающих с топ-сегментами.</p>
     {% endif %}
   </div>
 

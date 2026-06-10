@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from documents.models import DocCarAgreement
-from refs.models import RefUnit
+from refs.models import RefUnit, RefCarsOrganization
 
 from .models import CalculatedCumulativeData, IndicatorKVP
 
@@ -163,3 +163,7 @@ def cumulative_delete(request, pk):
     item.delete()
     messages.success(request, 'Запись расчётных данных кумулятива удалена.')
     return HttpResponseRedirect(reverse('prices_car_bu:cumulative_list'))
+
+
+
+    
