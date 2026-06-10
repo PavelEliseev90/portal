@@ -2176,7 +2176,7 @@ class RefCarsOrganization(models.Model):
         from prices_car.models import PriceCarStageKM, BrandKM, PriceCarBrand
         data        = PriceCarStageKM.objects.filter(stage = self.stage_price).last()
         if self.modification_autoru != None:
-            brand_car   = PriceCarBrand.objects.filter(marks = self.modification_autoru.model.mark).exclude(models_included = self.modification_autoru.model).last()
+            brand_car   = PriceCarBrand.objects.filter(marks = self.modification_autoru.model.mark).filter(models_included = self.modification_autoru.model).last()
             
             if brand_car != None:
                 info['brand_km'] = BrandKM.objects.filter(brand = brand_car).order_by('month').last()
