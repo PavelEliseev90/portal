@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
-from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
+from django.db.models import BooleanField, Case, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min, Value, When
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
 from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit, RefCarsOrganization
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations, KMCar
@@ -21,7 +21,8 @@ from .calculations_table import (
     build_columns_settings,
     build_table_columns,
     export_cell_value,
-    save_user_table_columns,
+    get_user_list_settings,
+    save_user_list_settings,
 )
 
 
@@ -708,6 +709,7 @@ def _build_calculations_list_queryset(request):
     model_ids = _parse_int_id_list(request.GET.getlist('model[]'))
     agreement_filters = set(request.GET.getlist('agreement_filter'))
     shipment_filters = set(request.GET.getlist('shipment_filter'))
+    km_kvp_filters = set(request.GET.getlist('km_kvp_filter'))
     order_by = _resolve_calc_list_order(request.GET.get('order_by'))
 
     agreement_qs = (
@@ -718,6 +720,10 @@ def _build_calculations_list_queryset(request):
         DocCarShipment.objects.filter(rlk_id=OuterRef('rlk_id'), active=True)
         .order_by('-dataTime')
     )
+    car_last_km_qs = (
+        KMCar.objects.filter(car_id=OuterRef('car_id'))
+        .order_by('-date', '-pk')
+    )
     objects = CarCalculations.objects.select_related(
         'rlk', 'rlk__customer', 'unit', 'car', 'author', 'staff',
     ).annotate(
@@ -725,6 +731,15 @@ def _build_calculations_list_queryset(request):
         agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
         shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
         shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
+        car_last_km=Subquery(car_last_km_qs.values('km')[:1]),
+        km_kvp_fulfilled=Case(
+            When(
+                Q(car_last_km__isnull=False) & Q(kvp__isnull=False) & Q(car_last_km__gte=F('kvp')),
+                then=Value(True),
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
     )
 
     if date_start:
@@ -756,6 +771,11 @@ def _build_calculations_list_queryset(request):
     elif shipment_filters == {'no'}:
         objects = objects.filter(shipment_pk__isnull=True)
 
+    if km_kvp_filters == {'yes'}:
+        objects = objects.filter(km_kvp_fulfilled=True)
+    elif km_kvp_filters == {'no'}:
+        objects = objects.filter(kvp__isnull=False).filter(km_kvp_fulfilled=False)
+
     filtr = {
         'date_start': date_start,
         'date_end': date_end,
@@ -765,6 +785,7 @@ def _build_calculations_list_queryset(request):
         'filter_model': model_ids,
         'agreement_filter': list(agreement_filters),
         'shipment_filter': list(shipment_filters),
+        'km_kvp_filter': list(km_kvp_filters),
         'order_by': request.GET.get('order_by') or '-date',
     }
     return objects.order_by(order_by, '-pk'), filtr
@@ -796,6 +817,7 @@ def calculations_list(request):
             'select_marks': select_marks,
             'table_columns': build_table_columns(request.user),
             'columns_settings': build_columns_settings(request.user),
+            'list_settings': get_user_list_settings(request.user),
         },
     })
 
@@ -813,16 +835,29 @@ def calculations_list_columns_save(request):
         return JsonResponse({'error': 'Некорректный JSON'}, status=400)
 
     columns = payload.get('columns')
-    if not isinstance(columns, list):
+    if columns is not None and not isinstance(columns, list):
         return JsonResponse({'error': 'Передайте массив columns'}, status=400)
+    compare_km_kvp = payload.get('compare_km_kvp')
+    highlight_km_below_kvp = payload.get('highlight_km_below_kvp')
+    if compare_km_kvp is not None:
+        compare_km_kvp = bool(compare_km_kvp)
+    if highlight_km_below_kvp is not None:
+        highlight_km_below_kvp = bool(highlight_km_below_kvp)
     try:
-        saved = save_user_table_columns(request.user, columns)
+        saved = save_user_list_settings(
+            request.user,
+            columns=columns,
+            compare_km_kvp=compare_km_kvp,
+            highlight_km_below_kvp=highlight_km_below_kvp,
+        )
     except ValueError as exc:
         return JsonResponse({'error': str(exc)}, status=400)
 
     return JsonResponse({
         'ok': True,
-        'columns': saved,
+        'columns': saved['columns'],
+        'compare_km_kvp': saved['compare_km_kvp'],
+        'highlight_km_below_kvp': saved['highlight_km_below_kvp'],
     })
 
 
@@ -904,21 +939,21 @@ def presentation_asset(request, asset):
 
 
 def refresh_km_cars():
-    cars_list = RefCarsOrganization.objects.filter(is_new = True, quantity__gt = 0)
+    cars_list = RefCarsOrganization.objects.filter(is_new=True, quantity__gt=0)
     for car in cars_list:
-        if car.min_km != 0 and car.min_km == None:
-            auto1 = 0
-            auto2 = 0
-            try:
-                info = car.cumulative_data()
-                auto1 = info['automatic']['km_min_automatic']
-                auto2 = info['automatic_2']['km_min_automatic']
-                km_car = KMCar() 
-                km_car.date = datetime.now()
-                km_car.car = car
-                km_car.km_auto_1 = auto1
-                km_car.km_auto_2 = auto2
-                km_car.save()
-            except:
-                s = 1
-        s = 1
+        if car.min_km:
+            continue
+        try:
+            info = car.cumulative_data()
+            auto1 = int(info.get('automatic', {}).get('km_min_automatic') or 0)
+            auto2 = int(info.get('automatic_2', {}).get('km_min_automatic') or 0)
+            auto3 = int(info.get('automatic_3', {}).get('km_min_automatic') or 0)
+            km_car = KMCar()
+            km_car.date = datetime.now()
+            km_car.car = car
+            km_car.km_auto_1 = auto1
+            km_car.km_auto_2 = auto2
+            km_car.km_auto_3 = auto3
+            km_car.save()
+        except Exception:
+            pass

@@ -31,7 +31,7 @@
 {% elif col.key == 'staff' %}
 <td data-label="{{ col.label }}">{{ item.staff.name|default:"—" }}</td>
 {% elif col.key == 'kvp' %}
-<td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
+<td data-label="{{ col.label }}" class="text-end text-nowrap{% if params.list_settings.compare_km_kvp and item.kvp %}{% if item.km_kvp_fulfilled %} text-success{% else %} text-danger fw-semibold{% endif %}{% endif %}">{{ item.kvp|floatformat:"2g" }} ₽</td>
 {% elif col.key == 'amount' %}
 <td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.amount|floatformat:"0g"|default:"—" }}</td>
 {% elif col.key == 'price' %}
@@ -57,6 +57,10 @@
     {% else %}
         <span class="text-muted">—</span>
     {% endif %}
+</td>
+{% elif col.key == 'car_km' %}
+<td data-label="{{ col.label }}" class="text-end text-nowrap{% if params.list_settings.compare_km_kvp and item.kvp %}{% if item.km_kvp_fulfilled %} text-success{% else %} text-danger fw-semibold{% endif %}{% endif %}">
+    {% if item.car_last_km is not None %}{{ item.car_last_km|floatformat:"0g" }} ₽{% else %}<span class="text-muted">—</span>{% endif %}
 </td>
 {% elif col.key == 'comment' %}
 <td data-label="{{ col.label }}">{{ item.comment|default:"—" }}</td>

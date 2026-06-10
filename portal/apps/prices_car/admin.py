@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM
+from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, KMCar
 
 @admin.register(CarCalculations)
 class CarCalculationsAdmin(admin.ModelAdmin):
@@ -41,3 +41,14 @@ class PriceCarStageKMAdmin(admin.ModelAdmin):
     search_fields = ('stage__name',)
     date_hierarchy = 'month'
     ordering = ('-month', 'stage')
+
+
+@admin.register(KMCar)
+class KMCarAdmin(admin.ModelAdmin):
+    list_display = ('date', 'car', 'km', 'km_auto_1', 'km_auto_2', 'km_auto_3')
+    list_filter = ('date',)
+    raw_id_fields = ('car',)
+    search_fields = ('car__vin', 'car__name', 'car__slug')
+    date_hierarchy = 'date'
+    ordering = ('-date',)
+    readonly_fields = ('km',)
