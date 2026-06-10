@@ -1857,7 +1857,7 @@ def refresh_avtoteka_data(interactiv_ocenka_id):
             task_id     = data_prev['result']['preview']['previewId']
             object_estimation.avtoteka_preview = str(task_id)
             object_estimation.save(update_fields=['avtoteka_preview'])
-    elif object_estimation.avtoteka_task == None and object_estimation.avtoteka_task != '':
+    elif object_estimation.avtoteka_task == None or object_estimation.avtoteka_task == '':
         url_prev = 'https://pro.autoteka.ru/autoteka/v1/previews/' + str(object_estimation.avtoteka_preview)                        
         response_prev = requests.get(url_prev, headers=header)
         
