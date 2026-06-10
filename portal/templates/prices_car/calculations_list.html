@@ -6,6 +6,15 @@
 
 {% block content %}
 
+<style>
+  #calcListTable tr.calc-km-kvp-fail > td {
+    background-color: rgba(255, 193, 7, 0.28) !important;
+  }
+  #calcListTable tr.calc-km-kvp-fail:hover > td {
+    background-color: rgba(255, 193, 7, 0.42) !important;
+  }
+</style>
+
 <div class="portal-page">
     <div class="">
         <p class="mb-2">
@@ -100,6 +109,26 @@
                     </div>
 
                     <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Расчетный КМ</div>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcKmKvpSearch" placeholder="Выполнен / не выполнен..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcKmKvpDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="km_kvp_filter" value="yes"
+                                        {% if 'yes' in params.filtr.km_kvp_filter %}checked{% endif %}>
+                                    Выполнен
+                                </label>
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="km_kvp_filter" value="no"
+                                        {% if 'no' in params.filtr.km_kvp_filter %}checked{% endif %}>
+                                    Не выполнен
+                                </label>
+                            </div>
+                        </div>
+                        <div id="calcSelectedKmKvp" class="mt-2"></div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-2">
                         <div class="metric-card-label-portal">Отгрузка</div>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="calcShpSearch" placeholder="Да / Нет..." autocomplete="off">
@@ -141,7 +170,7 @@
 
         <div class="portal-panel no-padding">
            <div class="table-responsive portal-radius">
-                <table class="table table-sm table-striped table-hover mb-0">
+                <table class="table table-sm table-striped table-hover mb-0" id="calcListTable">
                     <thead>
                         <tr>
                             {% for col in params.table_columns %}
@@ -151,7 +180,7 @@
                     </thead>
                     <tbody>
                         {% for item in params.objects %}
-                        <tr>
+                        <tr{% if params.list_settings.compare_km_kvp and params.list_settings.highlight_km_below_kvp and item.kvp and not item.km_kvp_fulfilled %} class="calc-km-kvp-fail"{% endif %}>
                             {% for col in params.table_columns %}
                             {% include 'prices_car/_calculations_list_column.html' with col=col part='body' item=item params=params %}
                             {% endfor %}
@@ -209,7 +238,7 @@
             </div>
             <div class="modal-body">
                 <p class="small text-muted mb-3">Отметьте нужные столбцы и перетащите строки для изменения порядка. Настройка сохраняется для вашего пользователя и применяется к выгрузке в Excel.</p>
-                <ul class="list-group" id="calcColumnsList">
+                <ul class="list-group mb-3" id="calcColumnsList">
                     {% for col in params.columns_settings %}
                     <li class="list-group-item d-flex align-items-center gap-2 calc-col-item" draggable="true" data-key="{{ col.key }}">
                         <span class="text-muted calc-col-drag" style="cursor: grab;" title="Перетащить">☰</span>
@@ -218,6 +247,18 @@
                     </li>
                     {% endfor %}
                 </ul>
+                <div class="border rounded p-3 bg-light">
+                    <div class="fw-semibold mb-2">Сравнение расчетного КМ с КВ</div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="calcCompareKmKvp" {% if params.list_settings.compare_km_kvp %}checked{% endif %}>
+                        <label class="form-check-label" for="calcCompareKmKvp">Включить сравнение расчетного КМ с КВ</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="calcHighlightKmKvp" {% if params.list_settings.highlight_km_below_kvp %}checked{% endif %}>
+                        <label class="form-check-label" for="calcHighlightKmKvp">Подсвечивать строки, где расчетный КМ ниже КВ</label>
+                    </div>
+                    <div class="small text-muted mt-2 mb-0">Выполнен: расчетный КМ ≥ КВ. Не выполнен: КВ указан, а расчетный КМ отсутствует или ниже КВ.</div>
+                </div>
                 <div id="calcColumnsError" class="alert alert-danger mt-3 d-none" role="alert"></div>
             </div>
             <input type="hidden" id="calcColumnsCsrf" value="{{ csrf_token }}">
@@ -550,6 +591,10 @@ function setCalcOrder(field) {
             list.appendChild(item);
           }
         });
+        var compareCb = document.getElementById('calcCompareKmKvp');
+        var highlightCb = document.getElementById('calcHighlightKmKvp');
+        if (compareCb) compareCb.checked = false;
+        if (highlightCb) highlightCb.checked = true;
       });
     }
 
@@ -569,7 +614,11 @@ function setCalcOrder(field) {
           'X-CSRFToken': getCsrfToken(),
           'X-Requested-With': 'XMLHttpRequest',
         },
-        body: JSON.stringify({ columns: columns }),
+        body: JSON.stringify({
+          columns: columns,
+          compare_km_kvp: document.getElementById('calcCompareKmKvp') && document.getElementById('calcCompareKmKvp').checked,
+          highlight_km_below_kvp: document.getElementById('calcHighlightKmKvp') && document.getElementById('calcHighlightKmKvp').checked,
+        }),
       })
         .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
         .then(function(res) {
@@ -590,6 +639,7 @@ function setCalcOrder(field) {
     initMultiCheckboxFilter('calcMarkSearch', 'calcMarkDropdown', 'calcSelectedMarks');
     initMultiCheckboxFilter('calcAgrSearch', 'calcAgrDropdown', 'calcSelectedAgr');
     initMultiCheckboxFilter('calcShpSearch', 'calcShpDropdown', 'calcSelectedShp');
+    initMultiCheckboxFilter('calcKmKvpSearch', 'calcKmKvpDropdown', 'calcSelectedKmKvp');
     initCalcModelFilter();
     initCalcListForm();
     initCalcColumnsSettings();

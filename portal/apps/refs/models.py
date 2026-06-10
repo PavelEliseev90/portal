@@ -2115,6 +2115,52 @@ class RefCarsOrganization(models.Model):
     days_next_stage         = models.IntegerField("Дней до следующего этапа", blank=True, default=0)
     
     access_user             = models.ManyToManyField(User, related_name='access_user_car', verbose_name='Пользователь', blank=True)
+
+    def _find_applicable_km_discount(self, brand_car):
+        """Подбор активного дисконта Км по бренду и детализации автомобиля."""
+        from prices_car.models import PriceCarKmDiscount
+        from django.utils import timezone
+
+        if brand_car is None or self.modification_autoru is None:
+            return None
+
+        today = timezone.now().date()
+        discounts = PriceCarKmDiscount.objects.filter(
+            brand=brand_car,
+            date_from__lte=today,
+            date_to__gte=today,
+        ).order_by('-date_from')
+
+        car_model = self.modification_autoru.model
+        car_modification = self.modification_autoru
+        car_complectation = self.complectation_autoru
+        car_year = self.year if self.year else None
+
+        best = None
+        best_score = -1
+        for discount in discounts:
+            if discount.model_id is not None and discount.model_id != car_model.id:
+                continue
+            if discount.modification_id is not None and discount.modification_id != car_modification.id:
+                continue
+            if discount.complectation_id is not None:
+                if car_complectation is None or discount.complectation_id != car_complectation.id:
+                    continue
+            if discount.year is not None:
+                if not car_year or discount.year != car_year:
+                    continue
+
+            score = (
+                (1 if discount.model_id else 0)
+                + (2 if discount.modification_id else 0)
+                + (4 if discount.complectation_id else 0)
+                + (1 if discount.year else 0)
+            )
+            if score > best_score:
+                best_score = score
+                best = discount
+
+        return best
     
     def cumulative_data(self):
         
@@ -2122,6 +2168,7 @@ class RefCarsOrganization(models.Model):
         type_km = 0
         km_min_automatic    = 0
         km_min_automatic_2  = 0
+        km_min_automatic_3  = 0
         km_min_custom       = 0
 
         #self.refresh_data()
@@ -2194,6 +2241,41 @@ class RefCarsOrganization(models.Model):
                 info['automatic_2'] = automatic
                 if km_min_automatic_2 > km_min_automatic:
                     type_km = 2
+
+            km_base_for_discount = max(km_min_automatic, km_min_automatic_2)
+            km_discount = self._find_applicable_km_discount(brand_car)
+            if km_discount and km_base_for_discount > 0:
+                km_min_automatic_3 = round(
+                    km_base_for_discount * (1 + km_discount.discount_percent / 100),
+                    2,
+                )
+                discount_parts = [km_discount.brand.name]
+                if km_discount.model:
+                    discount_parts.append(km_discount.model.name)
+                if km_discount.modification:
+                    discount_parts.append(km_discount.modification.name)
+                if km_discount.complectation:
+                    discount_parts.append(km_discount.complectation.name)
+                if km_discount.year:
+                    discount_parts.append(str(km_discount.year))
+                automatic_3 = {
+                    'km_min_automatic': km_min_automatic_3,
+                    'km_base': km_base_for_discount,
+                    'discount_percent': km_discount.discount_percent,
+                    'discount_id': km_discount.pk,
+                    'km_description': (
+                        'Специальное условие продажи ГК: {percent}% к КМ '
+                        '(база {base:,} руб., итого {result:,} руб.) — {scope}'
+                    ).format(
+                        percent=km_discount.discount_percent,
+                        base=int(km_base_for_discount),
+                        result=int(km_min_automatic_3),
+                        scope=' / '.join(discount_parts),
+                    ).replace(',', ' '),
+                }
+                info['automatic_3'] = automatic_3
+                type_km = 4
+
             if self.min_km != 0 and self.min_km != None:
                 km_brand_automatic = self.min_km  / self.price * 100
                 custom = {

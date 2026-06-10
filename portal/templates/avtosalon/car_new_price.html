@@ -377,7 +377,9 @@
 										{% elif params.cumulative_data.type_km == 2 %}
 											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>	
 										{% elif params.cumulative_data.type_km == 3 %}
-											<div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
+											<div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>
+										{% elif params.cumulative_data.type_km == 4 %}
+											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>
 										{% endif %}																										
 									</div> 								
 								</div>
@@ -400,7 +402,12 @@
 								<div class="col-12 col-sm-6 align-self-center">
 									<div class="{% if params.cumulative_data.type_km == 4 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-gradient bg-opacity-10" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
 										<div class="metric-card-label"><span class="icon-calendar"></span> Специальное условие продажи ГК</div>
-										<div class="metric-card-value"> • --- --- ₽</div>		
+										{% if params.cumulative_data.automatic_3 %}
+											<div class="metric-card-value"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>
+											<div class="metric-card-value fs-8"> • {{params.cumulative_data.automatic_3.discount_percent|floatformat:"2g"}} %</div>
+										{% else %}
+											<div class="metric-card-value"> • --- --- ₽</div>
+										{% endif %}
 									</div>					
 								</div>
 
@@ -540,7 +547,9 @@
 										{% elif params.cumulative_data.type_km == 2 %}
 										• Авто+ • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g"}} ₽</div>	
 										{% elif params.cumulative_data.type_km == 3 %}
-										• Ручной • <div class="metric-card-value fs-5"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
+										• Ручной • <div class="metric-card-value fs-5"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>
+										{% elif params.cumulative_data.type_km == 4 %}
+										• Спец. условие • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>
 										{% endif %}
 										
 									</div> 
@@ -570,7 +579,9 @@
 								{% elif params.cumulative_data.type_km == 2 %}
 									<div class="metric-card-value fs-6"> • Авто+ • {{params.cumulative_data.automatic_2.km_description}} </div>	
 								{% elif params.cumulative_data.type_km == 3 %}
-									<div class="metric-card-value fs-6"> • Ручной • {{params.cumulative_data.custom.km_description}} </div>							
+									<div class="metric-card-value fs-6"> • Ручной • {{params.cumulative_data.custom.km_description}} </div>
+								{% elif params.cumulative_data.type_km == 4 %}
+									<div class="metric-card-value fs-6"> • Спец. условие • {{params.cumulative_data.automatic_3.km_description}} </div>
 								{% endif %}
 							</div>
 						</div>

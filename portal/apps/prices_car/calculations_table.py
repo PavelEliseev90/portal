@@ -24,6 +24,7 @@ CALC_LIST_COLUMN_DEFS = {
     'date_success': {'label': 'Дата согласования', 'sortable': True, 'sort_key': 'date_success'},
     'agreement': {'label': 'Соглашение', 'sortable': True, 'sort_key': 'agreement'},
     'shipment': {'label': 'Отгрузка', 'sortable': True, 'sort_key': 'shipment'},
+    'car_km': {'label': 'Расчетный КМ', 'sortable': True, 'sort_key': 'car_km'},
     'comment': {'label': 'Комментарий', 'sortable': True, 'sort_key': 'comment'},
 }
 
@@ -45,6 +46,7 @@ CALC_LIST_SORT_FIELDS = {
     'date_success': 'date_success',
     'agreement': 'agreement_nomer',
     'shipment': 'shipment_nomer',
+    'car_km': 'car_last_km',
     'comment': 'comment',
 }
 
@@ -72,6 +74,28 @@ def normalize_columns(raw_columns):
     return result or list(DEFAULT_CALC_LIST_COLUMNS)
 
 
+DEFAULT_LIST_SETTINGS = {
+    'compare_km_kvp': False,
+    'highlight_km_below_kvp': True,
+}
+
+
+def get_user_list_settings(user):
+    from .models import CarCalculationsListSettings
+
+    settings = dict(DEFAULT_LIST_SETTINGS)
+    settings['columns'] = get_user_table_columns(user)
+    if not user or not user.is_authenticated:
+        return settings
+    try:
+        row = CarCalculationsListSettings.objects.get(user=user)
+        settings['compare_km_kvp'] = bool(row.compare_km_kvp)
+        settings['highlight_km_below_kvp'] = bool(row.highlight_km_below_kvp)
+    except CarCalculationsListSettings.DoesNotExist:
+        pass
+    return settings
+
+
 def get_user_table_columns(user):
     from .models import CarCalculationsListSettings
 
@@ -84,17 +108,45 @@ def get_user_table_columns(user):
         return list(DEFAULT_CALC_LIST_COLUMNS)
 
 
-def save_user_table_columns(user, columns):
+def km_kvp_is_fulfilled(item):
+    car_km = getattr(item, 'car_last_km', None)
+    kvp = getattr(item, 'kvp', None)
+    if car_km is None or kvp is None:
+        return False
+    return car_km >= kvp
+
+
+def save_user_list_settings(user, columns=None, compare_km_kvp=None, highlight_km_below_kvp=None):
     from .models import CarCalculationsListSettings
 
-    normalized = normalize_columns(columns)
-    if not normalized:
-        raise ValueError('Выберите хотя бы один столбец.')
-    CarCalculationsListSettings.objects.update_or_create(
+    defaults = {}
+    if columns is not None:
+        normalized = normalize_columns(columns)
+        if not normalized:
+            raise ValueError('Выберите хотя бы один столбец.')
+        defaults['columns'] = normalized
+    if compare_km_kvp is not None:
+        defaults['compare_km_kvp'] = bool(compare_km_kvp)
+    if highlight_km_below_kvp is not None:
+        defaults['highlight_km_below_kvp'] = bool(highlight_km_below_kvp)
+    if not defaults:
+        return get_user_list_settings(user)
+
+    obj, _created = CarCalculationsListSettings.objects.get_or_create(
         user=user,
-        defaults={'columns': normalized},
+        defaults={
+            'columns': list(DEFAULT_CALC_LIST_COLUMNS),
+            **DEFAULT_LIST_SETTINGS,
+        },
     )
-    return normalized
+    for key, value in defaults.items():
+        setattr(obj, key, value)
+    obj.save(update_fields=list(defaults.keys()))
+    return get_user_list_settings(user)
+
+
+def save_user_table_columns(user, columns):
+    return save_user_list_settings(user, columns=columns)
 
 
 def build_columns_settings(user):
@@ -168,6 +220,9 @@ def export_cell_value(item, key):
         return item.agreement_nomer or ''
     if key == 'shipment':
         return item.shipment_nomer or ''
+    if key == 'car_km':
+        value = getattr(item, 'car_last_km', None)
+        return value if value is not None else ''
     if key == 'comment':
         return item.comment or ''
     return ''
