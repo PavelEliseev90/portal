@@ -75,7 +75,7 @@ def normalize_columns(raw_columns):
 
 
 DEFAULT_LIST_SETTINGS = {
-    'compare_km_kvp': False,
+    'compare_km_kvp': True,
     'highlight_km_below_kvp': True,
 }
 

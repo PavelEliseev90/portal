@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
+	<Form uuid="b3c4d5e6-f7a8-4901-c234-567890abcdef">
+		<Properties>
+			<Name>Форма</Name>
+			<Synonym>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Форма</v8:content>
+				</v8:item>
+			</Synonym>
+			<FormType>Managed</FormType>
+			<IncludeHelpInContents>false</IncludeHelpInContents>
+			<UsePurposes>
+				<v8:Value xsi:type="v8:FormUsePurpose">PlatformApplication</v8:Value>
+			</UsePurposes>
+		</Properties>
+	</Form>
+</MetaDataObject>
