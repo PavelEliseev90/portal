@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
+	<ExternalDataProcessor uuid="f1a2b3c4-d5e6-4789-a012-3456789abcde">
+		<InternalInfo>
+			<xr:ContainedObject xmlns:xr="http://v8.1c.ru/8.3/xcf/readable">
+				<xr:ClassId>c3831ec8-d8d5-4f93-8a22-f9bfae07391b</xr:ClassId>
+				<xr:ObjectId>f1a2b3c4-d5e6-4789-a012-3456789abcdf</xr:ObjectId>
+			</xr:ContainedObject>
+		</InternalInfo>
+		<Properties>
+			<Name>ПечатьЦенника</Name>
+			<Synonym>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Печать ценника КорсАвто</v8:content>
+				</v8:item>
+			</Synonym>
+			<Comment>Печать HTML-ценника автомобиля (макет портала)</Comment>
+			<DefaultForm>ExternalDataProcessor.ПечатьЦенника.Form.Форма</DefaultForm>
+		</Properties>
+		<ChildObjects>
+			<Form>Форма</Form>
+			<Template>МакетЦенника</Template>
+		</ChildObjects>
+	</ExternalDataProcessor>
+</MetaDataObject>

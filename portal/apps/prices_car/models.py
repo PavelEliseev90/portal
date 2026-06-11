@@ -297,7 +297,7 @@ class CarCalculationsListSettings(models.Model):
     )
     compare_km_kvp = models.BooleanField(
         'Сравнивать расчетный КМ с КВ',
-        default=False,
+        default=True,
     )
     highlight_km_below_kvp = models.BooleanField(
         'Подсвечивать строки, где расчетный КМ ниже КВ',

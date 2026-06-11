@@ -180,7 +180,7 @@
                     </thead>
                     <tbody>
                         {% for item in params.objects %}
-                        <tr{% if params.list_settings.compare_km_kvp and params.list_settings.highlight_km_below_kvp and item.kvp is not None and item.car_last_km is not None and not item.km_kvp_fulfilled %} class="calc-km-kvp-fail"{% endif %}>
+                        <tr{% if params.list_settings.highlight_km_below_kvp and item.kvp is not None and item.car_last_km is not None and not item.km_kvp_fulfilled %} class="calc-km-kvp-fail"{% endif %}>
                             {% for col in params.table_columns %}
                             {% include 'prices_car/_calculations_list_column.html' with col=col part='body' item=item params=params %}
                             {% endfor %}
@@ -593,7 +593,7 @@ function setCalcOrder(field) {
         });
         var compareCb = document.getElementById('calcCompareKmKvp');
         var highlightCb = document.getElementById('calcHighlightKmKvp');
-        if (compareCb) compareCb.checked = false;
+        if (compareCb) compareCb.checked = true;
         if (highlightCb) highlightCb.checked = true;
       });
     }
