@@ -1878,11 +1878,17 @@ def price(request, slug):
             quantity__gt=0,
         ).count()
 
-    from powerbi.models import Cumulative
     from django.db.models.functions import TruncDate
     
     sale_type          = int(request.GET.get('sale_type', '1'))
     sale_dc            = request.GET.get('sale_dc', 'all')
+
+    from powerbi.models import Cumulative
+
+    analytics_current_vp = _cumulative_vp_metrics(Cumulative.objects.none())
+    analytics_brand_other_vp = _cumulative_vp_metrics(Cumulative.objects.none())
+    analytics_current_vp['unit_names'] = []
+    analytics_brand_other_vp['unit_names'] = []
 
     q_cumulative = Cumulative.objects.filter(
         TipProdazhi = 'Розница',
@@ -1890,23 +1896,27 @@ def price(request, slug):
         DataProdazhi__lte=last_month_end,
         SebestoimostPoDokumentu__gt = 0
     )
+
+    q_sales_base = _apply_car_sale_type_filter(q_cumulative, car, sale_type)
     if car.unit and car.unit.name:
-        
+        analytics_current_vp = _cumulative_vp_metrics(
+            q_sales_base.filter(PodrazdelenieDTs__icontains=car.unit.name),
+        )
+        analytics_current_vp['unit_names'] = [car.unit.name]
+
+        brand_other_units = _brand_other_unit_names(car)
+        analytics_brand_other_vp['unit_names'] = brand_other_units
+        if brand_other_units:
+            analytics_brand_other_vp = _cumulative_vp_metrics(
+                q_sales_base.filter(PodrazdelenieDTs__in=brand_other_units),
+            )
+            analytics_brand_other_vp['unit_names'] = brand_other_units
+
+    if car.unit and car.unit.name:
         if sale_dc == 'all':
-            q_unit = q_cumulative
+            q_unit = q_sales_base
         else:
-            q_unit = q_cumulative.filter(PodrazdelenieDTs__icontains=car.unit.name)
-        
-        if sale_type == 0:
-            model_list = AutoruModification.objects.filter(model__mark = car.modification_autoru.model.mark).values_list('idSite', flat=True)
-            q_unit = q_unit.filter(IDModifikatsii__in = model_list) 
-        if sale_type == 1:
-            model_list = AutoruModification.objects.filter(model = car.modification_autoru.model).values_list('idSite', flat=True)
-            q_unit = q_unit.filter(IDModifikatsii__in = model_list)
-        elif sale_type == 2: 
-            q_unit = q_unit.filter(IDModifikatsii = car.modification_autoru.idSite)
-        elif sale_type == 3:
-            q_unit = q_unit.filter(IdKomplektatsii = car.complectation_autoru.idSite)
+            q_unit = q_sales_base.filter(PodrazdelenieDTs__icontains=car.unit.name)
 
         analytics['unit_sales_count'] = q_unit.count()
         q_unit = q_unit.annotate(
@@ -2075,6 +2085,9 @@ def price(request, slug):
     car_analitics   = car.unit_info()
     sale_info       = car.sale_info()
     cumulative_data = car.cumulative_data()
+    brand_mark_name = ''
+    if car.modification_autoru and car.modification_autoru.model and car.modification_autoru.model.mark:
+        brand_mark_name = ' ' + car.modification_autoru.model.mark.name
 
     car_price_and_dop = car.cost_price
     if info_dop != None and info_dop['sum_amount'] != None:
@@ -2093,6 +2106,7 @@ def price(request, slug):
         'sale_info' : sale_info,
         'car_analitics' : car_analitics,
         'cumulative_data'   : cumulative_data,
+        'brand_mark_name'   : brand_mark_name,
         'messages'      : chat.get_last_messages(),
         'selected'      : selected,
         'avtohubs'      : avtohubs,
@@ -2100,6 +2114,8 @@ def price(request, slug):
         'marketing'     : marketing,
         'user'          : request.user,
         'analytics'     : analytics,
+        'analytics_current_vp': analytics_current_vp,
+        'analytics_brand_other_vp': analytics_brand_other_vp,
         'analytics_gk'  : analytics_gk,
         'last_month_start': last_month_start,
         'last_month_end': last_month_end,
@@ -2939,6 +2955,131 @@ def info_js(request, slug):
         }
     
     return JsonResponse(params, safe=False, status=status.HTTP_200_OK)
+
+
+def _empty_cumulative_vp_detail():
+    return {
+        'sum_SummaMarzhiBezNDS': 0,
+        'sum_VPOPFU': 0,
+        'sum_SummaTreydInPoPlanu': 0,
+        'sum_ValovayaPribylZChShiny': 0,
+        'sum_SummaRabot': 0,
+        'sum_ValovayaPribylZCh': 0,
+        'sum_SummaGosreg': 0,
+        'sum_count': 0,
+    }
+
+
+def _empty_cumulative_vp_percent():
+    return {k: 0 for k in (
+        'sum_SummaMarzhiBezNDS', 'sum_VPOPFU', 'sum_SummaTreydInPoPlanu',
+        'sum_ValovayaPribylZChShiny', 'sum_SummaRabot', 'sum_ValovayaPribylZCh', 'sum_SummaGosreg',
+    )}
+
+
+def _empty_cumulative_vp_udelka():
+    return {k.replace('sum_', 'udelka_'): 0 for k in _empty_cumulative_vp_percent()}
+
+
+def _cumulative_vp_metrics(qs):
+    """Агрегаты ВП по queryset Cumulative (розница)."""
+    analytics = {
+        'cumulative_sum': 0,
+        'udelka': 0,
+        'udelka_count': 0,
+        'unit_sales_count': qs.count(),
+        'cumulative_sum_detail': _empty_cumulative_vp_detail(),
+        'cumulative_sum_detail_percent': _empty_cumulative_vp_percent(),
+        'cumulative_sum_detail_udelka': _empty_cumulative_vp_udelka(),
+    }
+    if not analytics['unit_sales_count']:
+        return analytics
+
+    detail = qs.aggregate(
+        sum_SummaMarzhiBezNDS=Sum('SummaMarzhiBezNDS'),
+        sum_VPOPFU=Sum('VPOPFU'),
+        sum_SummaTreydInPoPlanu=Sum('SummaTreydInPoPlanu'),
+        sum_ValovayaPribylZChShiny=Sum('ValovayaPribylZChShiny'),
+        sum_SummaRabot=Sum('SummaRabot'),
+        sum_ValovayaPribylZCh=Sum('ValovayaPribylZCh'),
+        sum_SummaGosreg=Sum('SummaGosreg'),
+        sum_count=Count('VIN'),
+    )
+    for key, val in detail.items():
+        detail[key] = val or 0
+
+    cumulative_sum = (
+        detail['sum_SummaMarzhiBezNDS'] + detail['sum_VPOPFU'] + detail['sum_SummaTreydInPoPlanu']
+        + detail['sum_ValovayaPribylZChShiny'] + detail['sum_SummaRabot'] + detail['sum_ValovayaPribylZCh']
+        + detail['sum_SummaGosreg']
+    )
+    analytics['cumulative_sum_detail'] = detail
+    analytics['cumulative_sum'] = cumulative_sum
+
+    if detail['sum_count'] > 0:
+        analytics['udelka'] = cumulative_sum / detail['sum_count']
+        analytics['udelka_count'] = detail['sum_count']
+
+    if cumulative_sum > 0:
+        analytics['cumulative_sum_detail_percent'] = {
+            'sum_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cumulative_sum * 100,
+            'sum_VPOPFU': detail['sum_VPOPFU'] / cumulative_sum * 100,
+            'sum_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cumulative_sum * 100,
+            'sum_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cumulative_sum * 100,
+            'sum_SummaRabot': detail['sum_SummaRabot'] / cumulative_sum * 100,
+            'sum_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cumulative_sum * 100,
+            'sum_SummaGosreg': detail['sum_SummaGosreg'] / cumulative_sum * 100,
+        }
+
+    if detail['sum_count'] > 0:
+        cnt = detail['sum_count']
+        analytics['cumulative_sum_detail_udelka'] = {
+            'udelka_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cnt,
+            'udelka_VPOPFU': detail['sum_VPOPFU'] / cnt,
+            'udelka_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cnt,
+            'udelka_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cnt,
+            'udelka_SummaRabot': detail['sum_SummaRabot'] / cnt,
+            'udelka_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cnt,
+            'udelka_SummaGosreg': detail['sum_SummaGosreg'] / cnt,
+        }
+
+    return analytics
+
+
+def _apply_car_sale_type_filter(q, car, sale_type):
+    if not car.modification_autoru_id:
+        return q
+    if sale_type == 0:
+        model_list = AutoruModification.objects.filter(
+            model__mark=car.modification_autoru.model.mark,
+        ).values_list('idSite', flat=True)
+        return q.filter(IDModifikatsii__in=model_list)
+    if sale_type == 1:
+        model_list = AutoruModification.objects.filter(
+            model=car.modification_autoru.model,
+        ).values_list('idSite', flat=True)
+        return q.filter(IDModifikatsii__in=model_list)
+    if sale_type == 2:
+        return q.filter(IDModifikatsii=car.modification_autoru.idSite)
+    if sale_type == 3 and car.complectation_autoru_id:
+        return q.filter(IdKomplektatsii=car.complectation_autoru.idSite)
+    return q
+
+
+def _brand_other_unit_names(car):
+    if not car.organization_id or not car.modification_autoru_id or not car.unit_id:
+        return []
+    return [
+        name for name in RefCarsOrganization.objects.filter(
+            organization_id=car.organization_id,
+            modification_autoru__model__mark_id=car.modification_autoru.model.mark_id,
+        )
+        .exclude(unit__isnull=True)
+        .exclude(unit_id=car.unit_id)
+        .values_list('unit__name', flat=True)
+        .distinct()
+        if name
+    ]
 
 
 def _deal_calc_unit_month_analytics(unit):

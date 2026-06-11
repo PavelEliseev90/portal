@@ -401,13 +401,13 @@
               <div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>							
             {% elif params.cumulative_data.type_km == 4 %}
               <div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>              
-            {% endif %}		
-
-            
+            {% endif %}	            
           </div>
+
           {% if params.cumulative_data.type_km == 4 %}
             <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_3.km_description}}</div>
           {% endif %}
+          
         </div>
 
         <div class="deal-section">
