@@ -180,7 +180,7 @@
                     </thead>
                     <tbody>
                         {% for item in params.objects %}
-                        <tr{% if params.list_settings.compare_km_kvp and params.list_settings.highlight_km_below_kvp and item.kvp and not item.km_kvp_fulfilled %} class="calc-km-kvp-fail"{% endif %}>
+                        <tr{% if params.list_settings.compare_km_kvp and params.list_settings.highlight_km_below_kvp and item.kvp is not None and item.car_last_km is not None and not item.km_kvp_fulfilled %} class="calc-km-kvp-fail"{% endif %}>
                             {% for col in params.table_columns %}
                             {% include 'prices_car/_calculations_list_column.html' with col=col part='body' item=item params=params %}
                             {% endfor %}
@@ -257,7 +257,7 @@
                         <input class="form-check-input" type="checkbox" id="calcHighlightKmKvp" {% if params.list_settings.highlight_km_below_kvp %}checked{% endif %}>
                         <label class="form-check-label" for="calcHighlightKmKvp">Подсвечивать строки, где расчетный КМ ниже КВ</label>
                     </div>
-                    <div class="small text-muted mt-2 mb-0">Выполнен: расчетный КМ ≥ КВ. Не выполнен: КВ указан, а расчетный КМ отсутствует или ниже КВ.</div>
+                    <div class="small text-muted mt-2 mb-0">Выполнен: расчетный КМ ≥ КВ. Не выполнен: расчетный КМ &lt; КВ. Оба значения могут быть отрицательными.</div>
                 </div>
                 <div id="calcColumnsError" class="alert alert-danger mt-3 d-none" role="alert"></div>
             </div>
