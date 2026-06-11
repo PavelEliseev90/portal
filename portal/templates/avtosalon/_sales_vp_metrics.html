@@ -1,0 +1,74 @@
+<div class="row g-1 padding-portal">
+	<div class="col-12 mb-2">
+		<div class="metric-card-label fw-semibold">{{ section_title }}</div>
+		{% if vp.unit_names %}
+			<div class="small text-muted">{{ vp.unit_names|join:", " }} · {{ vp.unit_sales_count }} продаж</div>
+		{% else %}
+			<div class="small text-muted">Нет подразделений · 0 продаж</div>
+		{% endif %}
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-credit-card"></span> ВП</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.udelka > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.udelka|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.udelka_count > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.udelka_count|floatformat:"0g" }} шт.</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-credit-card"></span> Маржа без НДС</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_SummaMarzhiBezNDS|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_SummaMarzhiBezNDS|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_SummaMarzhiBezNDS > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_SummaMarzhiBezNDS|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-calendar"></span> ОПФУ</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_VPOPFU|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_VPOPFU|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_VPOPFU > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_VPOPFU|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-truck"></span> Trade-in</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_SummaTreydInPoPlanu|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_SummaTreydInPoPlanu|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_SummaTreydInPoPlanu > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_SummaTreydInPoPlanu|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-cd"></span> ВП шины</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_ValovayaPribylZChShiny|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_ValovayaPribylZChShiny|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_ValovayaPribylZChShiny > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_ValovayaPribylZChShiny|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-setting"></span> Работы</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_SummaRabot|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_SummaRabot|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_SummaRabot > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_SummaRabot|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-shopping-bag"></span> ВП запчасти</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_ValovayaPribylZCh|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_ValovayaPribylZCh|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_ValovayaPribylZCh > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_ValovayaPribylZCh|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+	<div class="col-sm-auto col-12">
+		<div class="metric-card">
+			<div class="metric-card-label"><span class="icon-mbri-edit"></span> Гос. регистрации</div>
+			<div class="metric-card-value text-end fs-5 {% if vp.cumulative_sum_detail.sum_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail.sum_SummaGosreg|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-6 {% if vp.cumulative_sum_detail_udelka.udelka_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_udelka.udelka_SummaGosreg|floatformat:"2g" }} ₽</div>
+			<div class="metric-card-value text-end fs-7 {% if vp.cumulative_sum_detail_percent.sum_SummaGosreg > 0 %} text-success {% else %} text-danger {% endif %}"> • {{ vp.cumulative_sum_detail_percent.sum_SummaGosreg|floatformat:"2g" }} %</div>
+		</div>
+	</div>
+</div>

@@ -734,7 +734,9 @@ def _build_calculations_list_queryset(request):
         car_last_km=Subquery(car_last_km_qs.values('km')[:1]),
         km_kvp_fulfilled=Case(
             When(
-                Q(car_last_km__isnull=False) & Q(kvp__isnull=False) & Q(car_last_km__gte=F('kvp')),
+                Q(car_last_km__isnull=False)
+                & Q(kvp__isnull=False)
+                & Q(car_last_km__gte=F('kvp')),
                 then=Value(True),
             ),
             default=Value(False),
