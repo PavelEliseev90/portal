@@ -3532,10 +3532,19 @@ def deal_calculation_doc(request, id):
 
     analytics_unit = calc.unit or (car.unit if car else None)
     params_analytics = _deal_calc_unit_month_analytics(analytics_unit, car=car)
+
+    rlk_calculations = []
+    if calc.rlk_id:
+        rlk_calculations = list(
+            CarCalculations.objects.filter(rlk_id=calc.rlk_id)
+            .select_related('car', 'unit', 'author', 'staff')
+            .order_by('-date', '-pk')
+        )
     
     params.update({
         'car'               : car,
         'calc'              : calc,
+        'rlk_calculations'  : rlk_calculations,
         'dop'               : dop,
         'car_price_and_dop' : car_price_and_dop,
         'actions'           : actions,

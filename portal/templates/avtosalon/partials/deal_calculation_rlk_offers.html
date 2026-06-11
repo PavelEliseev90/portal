@@ -1,0 +1,59 @@
+{% if params.calc and params.calc.rlk %}
+<div class="deal-section">
+  <h6 class="deal-section-title mb-0">
+    <a class="h6 d-flex align-items-center justify-content-between text-reset text-decoration-none"
+       data-bs-toggle="collapse"
+       href="#dealOffersCollapse"
+       role="button"
+       aria-expanded="true"
+       aria-controls="dealOffersCollapse">
+      <span>Коммерческие предложения <span class="text-muted"> • {{ params.rlk_calculations|length }}</span></span>
+      <span class="icon-mbri-down small opacity-75"></span>
+    </a>
+  </h6>
+
+  <div id="dealOffersCollapse" class="collapse mt-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>Номер</th>
+            <th>Дата</th>
+            <th>Автомобиль</th>
+            <th>VIN</th>
+            <th class="text-end">КВП</th>
+            <th>Автор</th>
+            <th>Подразделение</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in params.rlk_calculations %}
+          <tr{% if item.pk == params.calc.pk %} class="table-primary"{% endif %}>
+            <td>
+              <a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark" title="Открыть КП">
+                <span class="icon-doc"></span>
+              </a>
+            </td>
+            <td class="text-nowrap">{{ item.number|default:"—" }}</td>
+            <td class="text-nowrap">{{ item.date|date:"d.m.Y H:i" }}</td>
+            <td>{{ item.car.name|default:"—" }}</td>
+            <td class="text-nowrap">{{ item.car.vin|default:"—" }}</td>
+            <td class="text-end text-nowrap">{{ item.kvp|floatformat:"2g" }} ₽</td>
+            <td>{{ item.author.name|default:"—" }}</td>
+            <td>{{ item.unit.name|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-3">Нет коммерческих предложений по этому рабочему листу</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if params.rlk_calculations %}
+    <p class="small text-muted mt-2 mb-0">Рабочий лист {{ params.calc.rlk.nomer }}. Текущее КП выделено.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
