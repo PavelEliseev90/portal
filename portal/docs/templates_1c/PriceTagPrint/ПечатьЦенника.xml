@@ -15,12 +15,11 @@
 					<v8:content>Печать ценника КорсАвто</v8:content>
 				</v8:item>
 			</Synonym>
-			<Comment>Печать HTML-ценника автомобиля (макет портала)</Comment>
+			<Comment>Печать ценника автомобиля (табличный документ)</Comment>
 			<DefaultForm>ExternalDataProcessor.ПечатьЦенника.Form.Форма</DefaultForm>
 		</Properties>
 		<ChildObjects>
 			<Form>Форма</Form>
-			<Template>МакетЦенника</Template>
 		</ChildObjects>
 	</ExternalDataProcessor>
 </MetaDataObject>

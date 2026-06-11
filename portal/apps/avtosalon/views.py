@@ -3082,106 +3082,145 @@ def _brand_other_unit_names(car):
     ]
 
 
-def _deal_calc_unit_month_analytics(unit):
-    """ВП по подразделению за текущий месяц (розница, Cumulative)."""
-    zero_detail = {
-        'sum_SummaMarzhiBezNDS': 0,
-        'sum_VPOPFU': 0,
-        'sum_SummaTreydInPoPlanu': 0,
-        'sum_ValovayaPribylZChShiny': 0,
-        'sum_SummaRabot': 0,
-        'sum_ValovayaPribylZCh': 0,
-        'sum_SummaGosreg': 0,
-        'sum_count': 0,
-    }
-    zero_percent = {k: 0 for k in (
-        'sum_SummaMarzhiBezNDS', 'sum_VPOPFU', 'sum_SummaTreydInPoPlanu',
-        'sum_ValovayaPribylZChShiny', 'sum_SummaRabot', 'sum_ValovayaPribylZCh', 'sum_SummaGosreg',
-    )}
-    zero_udelka = {k.replace('sum_', 'udelka_'): 0 for k in zero_percent}
+_DEAL_SALES_TABLE_ROWS = (
+    ('sales_count', 'Продаж, шт.', 'count'),
+    ('vp_total', 'ВП итого, ₽', 'money'),
+    ('vp_udelka', 'ВП уд., ₽', 'money'),
+    ('udelka_SummaMarzhiBezNDS', 'Маржа без НДС уд., ₽', 'money'),
+    ('udelka_VPOPFU', 'ОПФУ уд., ₽', 'money'),
+    ('udelka_SummaTreydInPoPlanu', 'Trade-in уд., ₽', 'money'),
+    ('udelka_ValovayaPribylZChShiny', 'ВП шины уд., ₽', 'money'),
+    ('udelka_SummaRabot', 'Работы уд., ₽', 'money'),
+    ('udelka_ValovayaPribylZCh', 'ВП запчасти уд., ₽', 'money'),
+    ('udelka_SummaGosreg', 'Гос. рег. уд., ₽', 'money'),
+)
 
+
+def _deal_calc_month_period():
     now = timezone.now()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     period_label = '{} — {}'.format(
         month_start.strftime('%d.%m.%Y'),
         now.strftime('%d.%m.%Y'),
     )
+    return month_start, now, period_label
+
+
+def _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now):
+    from powerbi.models import Cumulative
+
+    return Cumulative.objects.filter(
+        TipProdazhi='Розница',
+        DataProdazhi__gte=month_start,
+        DataProdazhi__lte=now,
+        SebestoimostPoDokumentu__gt=0,
+        PodrazdelenieDTs__icontains=unit_name,
+    )
+
+
+def _deal_sales_metric_value(metrics, row_key):
+    if row_key == 'sales_count':
+        return metrics.get('udelka_count') or 0
+    if row_key == 'vp_total':
+        return metrics.get('cumulative_sum') or 0
+    if row_key == 'vp_udelka':
+        return metrics.get('udelka') or 0
+    udelka = metrics.get('cumulative_sum_detail_udelka') or {}
+    return udelka.get(row_key) or 0
+
+
+def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now):
+    columns = [{
+        'name': current_unit_name,
+        'is_current': True,
+        'metrics': _cumulative_vp_metrics(
+            _deal_calc_cumulative_qs_for_unit_name(current_unit_name, month_start, now),
+        ),
+    }]
+    if car:
+        for unit_name in sorted(_brand_other_unit_names(car)):
+            columns.append({
+                'name': unit_name,
+                'is_current': False,
+                'metrics': _cumulative_vp_metrics(
+                    _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now),
+                ),
+            })
+
+    current_by_key = {
+        row_key: _deal_sales_metric_value(columns[0]['metrics'], row_key)
+        for row_key, _, _ in _DEAL_SALES_TABLE_ROWS
+    }
+
+    rows = []
+    for row_key, label, fmt in _DEAL_SALES_TABLE_ROWS:
+        current_val = current_by_key[row_key]
+        cells = []
+        for col in columns:
+            val = _deal_sales_metric_value(col['metrics'], row_key)
+            css = ''
+            if not col['is_current']:
+                if val > current_val:
+                    css = 'table-success'
+                elif val < current_val:
+                    css = 'table-danger'
+            cells.append({
+                'value': val,
+                'css': css,
+                'is_current': col['is_current'],
+            })
+        rows.append({
+            'key': row_key,
+            'label': label,
+            'fmt': fmt,
+            'cells': cells,
+        })
+
+    return {
+        'columns': [{'name': col['name'], 'is_current': col['is_current']} for col in columns],
+        'rows': rows,
+    }
+
+
+def _deal_calc_unit_month_analytics(unit, car=None):
+    """ВП по подразделению за текущий месяц (розница, Cumulative)."""
+    month_start, now, period_label = _deal_calc_month_period()
 
     vp_chart_empty = {
         'labels': [], 'zhelezo': [], 'dop': [], 'opfu': [], 'ti': [], 'sales': [], 'totals': [], 'averages': [],
     }
+    empty_comparison = {'columns': [], 'rows': []}
     analytics = {
         'cumulative_sum': 0,
         'udelka': 0,
         'udelka_count': 0,
-        'cumulative_sum_detail': dict(zero_detail),
-        'cumulative_sum_detail_percent': dict(zero_percent),
-        'cumulative_sum_detail_udelka': dict(zero_udelka),
+        'cumulative_sum_detail': _empty_cumulative_vp_detail(),
+        'cumulative_sum_detail_percent': _empty_cumulative_vp_percent(),
+        'cumulative_sum_detail_udelka': _empty_cumulative_vp_udelka(),
         'period_label': period_label,
         'unit_name': unit.name if unit else '',
+        'brand_name': '',
+        'sales_comparison': empty_comparison,
         'vp_by_model': vp_chart_empty,
         'vp_by_model_json': json.dumps(vp_chart_empty, ensure_ascii=False),
     }
     if not unit or not unit.name:
         return analytics
 
-    from powerbi.models import Cumulative
+    if car and car.modification_autoru_id and car.modification_autoru.model.mark_id:
+        analytics['brand_name'] = car.modification_autoru.model.mark.name
 
-    q_unit = Cumulative.objects.filter(
-        TipProdazhi='Розница',
-        DataProdazhi__gte=month_start,
-        DataProdazhi__lte=now,
-        SebestoimostPoDokumentu__gt=0,
-        PodrazdelenieDTs__icontains=unit.name,
+    q_unit = _deal_calc_cumulative_qs_for_unit_name(unit.name, month_start, now)
+    vp_metrics = _cumulative_vp_metrics(q_unit)
+    analytics['cumulative_sum'] = vp_metrics['cumulative_sum']
+    analytics['udelka'] = vp_metrics['udelka']
+    analytics['udelka_count'] = vp_metrics['udelka_count']
+    analytics['cumulative_sum_detail'] = vp_metrics['cumulative_sum_detail']
+    analytics['cumulative_sum_detail_percent'] = vp_metrics['cumulative_sum_detail_percent']
+    analytics['cumulative_sum_detail_udelka'] = vp_metrics['cumulative_sum_detail_udelka']
+    analytics['sales_comparison'] = _build_deal_sales_comparison_table(
+        car, unit.name, month_start, now,
     )
-
-    detail = q_unit.aggregate(
-        sum_SummaMarzhiBezNDS=Sum('SummaMarzhiBezNDS'),
-        sum_VPOPFU=Sum('VPOPFU'),
-        sum_SummaTreydInPoPlanu=Sum('SummaTreydInPoPlanu'),
-        sum_ValovayaPribylZChShiny=Sum('ValovayaPribylZChShiny'),
-        sum_SummaRabot=Sum('SummaRabot'),
-        sum_ValovayaPribylZCh=Sum('ValovayaPribylZCh'),
-        sum_SummaGosreg=Sum('SummaGosreg'),
-        sum_count=Count('VIN'),
-    )
-    for key, val in detail.items():
-        detail[key] = val or 0
-
-    cumulative_sum = (
-        detail['sum_SummaMarzhiBezNDS'] + detail['sum_VPOPFU'] + detail['sum_SummaTreydInPoPlanu']
-        + detail['sum_ValovayaPribylZChShiny'] + detail['sum_SummaRabot'] + detail['sum_ValovayaPribylZCh']
-        + detail['sum_SummaGosreg']
-    )
-    analytics['cumulative_sum_detail'] = detail
-    analytics['cumulative_sum'] = cumulative_sum
-
-    if detail['sum_count'] > 0:
-        analytics['udelka'] = cumulative_sum / detail['sum_count']
-        analytics['udelka_count'] = detail['sum_count']
-
-    if cumulative_sum > 0:
-        analytics['cumulative_sum_detail_percent'] = {
-            'sum_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cumulative_sum * 100,
-            'sum_VPOPFU': detail['sum_VPOPFU'] / cumulative_sum * 100,
-            'sum_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cumulative_sum * 100,
-            'sum_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cumulative_sum * 100,
-            'sum_SummaRabot': detail['sum_SummaRabot'] / cumulative_sum * 100,
-            'sum_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cumulative_sum * 100,
-            'sum_SummaGosreg': detail['sum_SummaGosreg'] / cumulative_sum * 100,
-        }
-
-    if detail['sum_count'] > 0:
-        cnt = detail['sum_count']
-        analytics['cumulative_sum_detail_udelka'] = {
-            'udelka_SummaMarzhiBezNDS': detail['sum_SummaMarzhiBezNDS'] / cnt,
-            'udelka_VPOPFU': detail['sum_VPOPFU'] / cnt,
-            'udelka_SummaTreydInPoPlanu': detail['sum_SummaTreydInPoPlanu'] / cnt,
-            'udelka_ValovayaPribylZChShiny': detail['sum_ValovayaPribylZChShiny'] / cnt,
-            'udelka_SummaRabot': detail['sum_SummaRabot'] / cnt,
-            'udelka_ValovayaPribylZCh': detail['sum_ValovayaPribylZCh'] / cnt,
-            'udelka_SummaGosreg': detail['sum_SummaGosreg'] / cnt,
-        }
 
     vp_rows = list(
         q_unit.exclude(Model__isnull=True).exclude(Model='')
@@ -3492,7 +3531,7 @@ def deal_calculation_doc(request, id):
         stock_chart_unit_name = car.unit.name
 
     analytics_unit = calc.unit or (car.unit if car else None)
-    params_analytics = _deal_calc_unit_month_analytics(analytics_unit)
+    params_analytics = _deal_calc_unit_month_analytics(analytics_unit, car=car)
     
     params.update({
         'car'               : car,
