@@ -8,7 +8,8 @@ class ProfilesAdmin(admin.ModelAdmin):
 	list_display 	= ( 'image_img', 'user', 'nameUser', 'birth_date', 'phone', 'email', 'eco_name', 'eco', 'eco_name', 'eco_visible', 'eco_page_price_info', 'korsavto_settings', )
 	search_fields 	= ('user__last_name', 'user__first_name', )
 	raw_id_fields 	= ('user',)
-	list_filter 	= ('eco', 'eco_visible', 'eco_page_price_info', 'korsavto_settings',)
+	list_filter 	= ('eco', 'eco_visible', 'eco_page_price_info', 'korsavto_settings', 'price_car_new_all',)
+	filter_horizontal = ('korsavto_stores', 'available_units')
 	
 	def nameUser(self, obj):
 		return mark_safe(u'%s %s' % (obj.user.first_name, obj.user.last_name))
