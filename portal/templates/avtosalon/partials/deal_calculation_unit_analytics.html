@@ -9,7 +9,9 @@
        aria-controls="dealSaleCollapse">
       <span>Продажи
         <span class="text-muted">
-          • {% if params.analytics.brand_name %}{{ params.analytics.brand_name }} • {% endif %}{{ params.analytics.unit_name }} • ({{ params.analytics.period_label }})
+          • {% if params.analytics.brand_name %}{{ params.analytics.brand_name }} • {% endif %}{{ params.analytics.unit_name }}
+          • {{ params.analytics.sale_type_label }}
+          • ({{ params.analytics.period_label }})
         </span>
       </span>
       <span class="icon-mbri-down small opacity-75"></span>
@@ -17,6 +19,30 @@
   </h6>
 
   <div id="dealSaleCollapse" class="collapse mt-3">
+    <div class="row g-1 mb-3">
+      <div class="col-12">
+        <div class="metric-card-label-portal mb-1">Уровень сравнения продаж</div>
+      </div>
+      <div class="col-auto">
+        <a class="{% if params.sale_type == 0 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+           href="?sale_type=0">Бренд</a>
+      </div>
+      <div class="col-auto">
+        <a class="{% if params.sale_type == 1 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+           href="?sale_type=1">Модель</a>
+      </div>
+      <div class="col-auto">
+        <a class="{% if params.sale_type == 2 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+           href="?sale_type=2">Модификация</a>
+      </div>
+      {% if params.car.complectation_autoru %}
+      <div class="col-auto">
+        <a class="{% if params.sale_type == 3 %}btn-calculate-success-sm{% else %}btn-calculate-sm{% endif %}"
+           href="?sale_type=3">Комплектация</a>
+      </div>
+      {% endif %}
+    </div>
+
     {% with cmp=params.analytics.sales_comparison %}
     {% if cmp.columns %}
     <style>
@@ -65,34 +91,36 @@
       }
     </style>
     <div class="deal-sales-compare-wrap">
-      <table class="table table-sm table-bordered table-hover align-middle mb-0 deal-sales-compare-table">
-        <thead class="table-light">
-          <tr>
-            <th class="text-nowrap deal-sales-sticky-1">Показатель</th>
-            {% for col in cmp.columns %}
-            <th class="text-end text-nowrap{% if col.is_current %} table-primary deal-sales-sticky-2{% endif %}">
-              {{ col.name }}{% if col.is_current %} <span class="badge text-bg-light text-primary fw-normal">текущее</span>{% endif %}
-            </th>
+      <div class="table-responsive portal-radius">
+        <table class="table table-sm table-bordered table-hover align-middle mb-0 deal-sales-compare-table">
+          <thead >
+            <tr>
+              <th class="text-nowrap deal-sales-sticky-1 table-primary ">Показатель</th>
+              {% for col in cmp.columns %}
+              <th class="text-end text-nowrap{% if col.is_current %} table-primary deal-sales-sticky-2{% endif %}">
+                {{ col.name }}{% if col.is_current %} <span class="badge text-bg-light text-primary fw-normal">текущее</span>{% endif %}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in cmp.rows %}
+            <tr>
+              <td class="text-nowrap deal-sales-sticky-1">{{ row.label }}</td>
+              {% for cell in row.cells %}
+              <td class="text-end text-nowrap {{ cell.css }}{% if cell.is_current %} fw-semibold deal-sales-sticky-2{% endif %}">
+                {% if row.fmt == 'count' %}
+                  {{ cell.value|floatformat:"0g" }}
+                {% else %}
+                  {{ cell.value|floatformat:"2g" }} ₽
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
             {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in cmp.rows %}
-          <tr>
-            <td class="text-nowrap deal-sales-sticky-1">{{ row.label }}</td>
-            {% for cell in row.cells %}
-            <td class="text-end text-nowrap {{ cell.css }}{% if cell.is_current %} fw-semibold deal-sales-sticky-2{% endif %}">
-              {% if row.fmt == 'count' %}
-                {{ cell.value|floatformat:"0g" }}
-              {% else %}
-                {{ cell.value|floatformat:"2g" }} ₽
-              {% endif %}
-            </td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
     <p class="small text-muted mt-2 mb-0">
       Удельные показатели — на одну продажу. Другие ДЦ бренда:
