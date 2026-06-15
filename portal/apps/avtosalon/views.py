@@ -3083,9 +3083,9 @@ def _brand_other_unit_names(car):
 
 
 _DEAL_SALES_TABLE_ROWS = (
+    ('vp_udelka', 'КВП уд. ₽', 'money'),
     ('sales_count', 'Продаж, шт.', 'count'),
     ('vp_total', 'ВП итого, ₽', 'money'),
-    ('vp_udelka', 'ВП уд., ₽', 'money'),
     ('udelka_SummaMarzhiBezNDS', 'Маржа без НДС уд., ₽', 'money'),
     ('udelka_VPOPFU', 'ОПФУ уд., ₽', 'money'),
     ('udelka_SummaTreydInPoPlanu', 'Trade-in уд., ₽', 'money'),
