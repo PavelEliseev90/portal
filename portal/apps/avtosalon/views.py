@@ -39,6 +39,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.crypto import get_random_string
 from prices_car.models import EmailPushCar, CarCalculations
+from prices_car.brand_resolve import resolve_price_car_brand_for_car
 
 
 url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
@@ -3076,26 +3077,7 @@ def _apply_car_sale_type_filter(q, car, sale_type):
 
 
 def _resolve_price_car_brand_for_car(car):
-    """Бренд ценообразования (PriceCarBrand) для автомобиля — как в cumulative_data()."""
-    from prices_car.models import PriceCarBrand
-
-    if not car or not car.modification_autoru_id:
-        return None
-    mark = car.modification_autoru.model.mark
-    model = car.modification_autoru.model
-    brand = (
-        PriceCarBrand.objects.filter(marks=mark)
-        .exclude(models_included=model)
-        .order_by('pk')
-        .last()
-    )
-    if brand:
-        return brand
-    return (
-        PriceCarBrand.objects.filter(marks=mark, models_included=model)
-        .order_by('pk')
-        .last()
-    )
+    return resolve_price_car_brand_for_car(car)
 
 
 def _cars_qs_for_price_car_brand(brand):
@@ -3219,14 +3201,17 @@ def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now,
     }]
     if car:
         for unit_name in sorted(_brand_other_unit_names(car)):
+            metrics = _cumulative_vp_metrics(
+                _deal_calc_cumulative_qs_for_unit_name(
+                    unit_name, month_start, now, car=car, sale_type=sale_type,
+                ),
+            )
+            if not metrics.get('udelka_count'):
+                continue
             columns.append({
                 'name': unit_name,
                 'is_current': False,
-                'metrics': _cumulative_vp_metrics(
-                    _deal_calc_cumulative_qs_for_unit_name(
-                        unit_name, month_start, now, car=car, sale_type=sale_type,
-                    ),
-                ),
+                'metrics': metrics,
             })
 
     current_by_key = {
@@ -3373,19 +3358,25 @@ def _deal_calc_unit_month_analytics(unit, car=None, sale_type=3):
 
 
 def _deal_calc_stock_by_models(car, unit_id=None):
-    """Новые автомобили в наличии по моделям марки текущего авто."""
+    """Новые автомобили в наличии по моделям бренда ценообразования (PriceCarBrand)."""
     empty = {'labels': [], 'values': [], 'total': 0, 'mark_name': ''}
     if not car or not car.modification_autoru_id:
         return empty
-    model = car.modification_autoru.model
-    if not model or not model.mark_id:
-        return empty
 
-    mark_name = model.mark.name if model.mark_id else ''
-    qs = RefCarsOrganization.objects.exclude(quantity=0).filter(
-        is_new=True,
-        modification_autoru__model__mark_id=model.mark_id,
-    )
+    brand = _resolve_price_car_brand_for_car(car)
+    if brand:
+        qs = _cars_qs_for_price_car_brand(brand).exclude(quantity=0).filter(is_new=True)
+        mark_name = brand.name
+    else:
+        model = car.modification_autoru.model
+        if not model or not model.mark_id:
+            return empty
+        mark_name = model.mark.name if model.mark_id else ''
+        qs = RefCarsOrganization.objects.exclude(quantity=0).filter(
+            is_new=True,
+            modification_autoru__model__mark_id=model.mark_id,
+        )
+
     if unit_id:
         qs = qs.filter(unit_id=unit_id)
 
