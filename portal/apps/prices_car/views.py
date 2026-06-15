@@ -691,6 +691,47 @@ def _current_month_period():
     return first_day, last_day
 
 
+def _calculations_list_units_qs_all():
+    return RefUnit.objects.filter(
+        buauto=False,
+        ib__active=True,
+        name__istartswith='дц',
+    ).order_by('name')
+
+
+def _calculations_list_sees_all_units(user):
+    profile = getattr(user, 'profiles', None)
+    return bool(profile and profile.price_car_new_all)
+
+
+def _calculations_list_select_units(user):
+    if _calculations_list_sees_all_units(user):
+        return _calculations_list_units_qs_all()
+    profile = getattr(user, 'profiles', None)
+    if profile is None:
+        return RefUnit.objects.none()
+    return profile.available_units.order_by('name')
+
+
+def _resolve_calculations_list_unit_ids(user, requested_unit_ids):
+    """Ограничение фильтра и выборки по доступным подразделениям профиля."""
+    if _calculations_list_sees_all_units(user):
+        return requested_unit_ids
+
+    profile = getattr(user, 'profiles', None)
+    if profile is None:
+        return []
+
+    allowed_ids = list(profile.available_units.values_list('pk', flat=True))
+    if not allowed_ids:
+        return []
+
+    if requested_unit_ids:
+        allowed_set = set(allowed_ids)
+        return [unit_id for unit_id in requested_unit_ids if unit_id in allowed_set]
+    return allowed_ids
+
+
 def _build_calculations_list_queryset(request):
     """Фильтры и queryset калькуляций (список и выгрузка)."""
     date_start = (request.GET.get('date_start') or '').strip()
@@ -703,6 +744,8 @@ def _build_calculations_list_queryset(request):
     unit_ids = _parse_int_id_list(
         request.GET.getlist('unit[]') + request.GET.getlist('unit_ids')
     )
+    requested_unit_ids = unit_ids
+    unit_ids = _resolve_calculations_list_unit_ids(request.user, unit_ids)
     mark_ids = _parse_int_id_list(
         request.GET.getlist('mark[]') + request.GET.getlist('mark_ids')
     )
@@ -756,8 +799,13 @@ def _build_calculations_list_queryset(request):
             pass
     if vin:
         objects = objects.filter(car__vin__icontains=vin)
-    if unit_ids:
+    if _calculations_list_sees_all_units(request.user):
+        if unit_ids:
+            objects = objects.filter(unit_id__in=unit_ids)
+    elif unit_ids:
         objects = objects.filter(unit_id__in=unit_ids)
+    else:
+        objects = objects.none()
     if mark_ids:
         objects = objects.filter(car__modification_autoru__model__mark__id__in=mark_ids)
     if model_ids:
@@ -782,7 +830,7 @@ def _build_calculations_list_queryset(request):
         'date_start': date_start,
         'date_end': date_end,
         'vin': vin,
-        'filter_unit': unit_ids,
+        'filter_unit': requested_unit_ids,
         'filter_mark': mark_ids,
         'filter_model': model_ids,
         'agreement_filter': list(agreement_filters),
@@ -796,7 +844,7 @@ def _build_calculations_list_queryset(request):
 @login_required
 def calculations_list(request):
 
-    select_units = RefUnit.objects.filter(buauto=False, ib__active=True).filter(name__istartswith='дц').order_by('name')
+    select_units = _calculations_list_select_units(request.user)
     select_marks = AutoruMark.objects.only('id', 'name').order_by('name')
 
     objects, filtr = _build_calculations_list_queryset(request)
@@ -817,6 +865,7 @@ def calculations_list(request):
             'filtr': filtr,
             'select_units': select_units,
             'select_marks': select_marks,
+            'price_car_new_all': _calculations_list_sees_all_units(request.user),
             'table_columns': build_table_columns(request.user),
             'columns_settings': build_columns_settings(request.user),
             'list_settings': get_user_list_settings(request.user),
