@@ -31,6 +31,7 @@ class CalculatedCumulativeData(models.Model):
     amount          = models.FloatField('Сумма', help_text='Расчетная сумма по показателю')
     author          = models.CharField("Автор", max_length=512, default='', null=True, blank=True)
     comment         = models.CharField("Комментарий", max_length=512, default='', null=True, blank=True)
+    send            = models.BooleanField('Отпраавлено в базу', default=False) 
 
     class Meta:
         db_table = 'calculatedCumulativeData'

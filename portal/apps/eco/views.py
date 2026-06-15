@@ -3011,7 +3011,7 @@ def control_diagnostic_comparison(request, id, cd_id):
             if cf.id not in seen_cd_ids:
                 file_pairs.append((None, cf))
 
-    orig_soglasovanie = estimation.page_soglasovanie
+    orig_soglasovanie = interactiv_rlk.page_soglasovanie
     orig_salon = estimation.page_salon
     cd_salon = getattr(cd, 'page_salon_copy', None)
     orig_test_drive = estimation.page_test_drive
@@ -11185,8 +11185,8 @@ def estimations_price_calculation_cd(cd, type_calculation):
         }
 
         return price
-    except Exception as e:
-        error = str(e)
+    except Exception as exc:
+        error = f'{type(exc).__name__}: {exc}'
         return None
 
 
