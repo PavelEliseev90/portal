@@ -3106,16 +3106,39 @@ def _deal_calc_month_period():
     return month_start, now, period_label
 
 
-def _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now):
+_DEAL_SALE_TYPE_LABELS = {
+    0: 'Бренд',
+    1: 'Модель',
+    2: 'Модификация',
+    3: 'Комплектация',
+}
+
+
+def _resolve_deal_calc_sale_type(request, car=None):
+    """По умолчанию — комплектация (3)."""
+    try:
+        sale_type = int(request.GET.get('sale_type', '3'))
+    except (TypeError, ValueError):
+        sale_type = 3
+    sale_type = max(0, min(3, sale_type))
+    if sale_type == 3 and car and not car.complectation_autoru_id:
+        sale_type = 2 if car.modification_autoru_id else 1
+    return sale_type
+
+
+def _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now, car=None, sale_type=3):
     from powerbi.models import Cumulative
 
-    return Cumulative.objects.filter(
+    q = Cumulative.objects.filter(
         TipProdazhi='Розница',
         DataProdazhi__gte=month_start,
         DataProdazhi__lte=now,
         SebestoimostPoDokumentu__gt=0,
         PodrazdelenieDTs__icontains=unit_name,
     )
+    if car:
+        q = _apply_car_sale_type_filter(q, car, sale_type)
+    return q
 
 
 def _deal_sales_metric_value(metrics, row_key):
@@ -3129,12 +3152,14 @@ def _deal_sales_metric_value(metrics, row_key):
     return udelka.get(row_key) or 0
 
 
-def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now):
+def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now, sale_type=3):
     columns = [{
         'name': current_unit_name,
         'is_current': True,
         'metrics': _cumulative_vp_metrics(
-            _deal_calc_cumulative_qs_for_unit_name(current_unit_name, month_start, now),
+            _deal_calc_cumulative_qs_for_unit_name(
+                current_unit_name, month_start, now, car=car, sale_type=sale_type,
+            ),
         ),
     }]
     if car:
@@ -3143,7 +3168,9 @@ def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now)
                 'name': unit_name,
                 'is_current': False,
                 'metrics': _cumulative_vp_metrics(
-                    _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now),
+                    _deal_calc_cumulative_qs_for_unit_name(
+                        unit_name, month_start, now, car=car, sale_type=sale_type,
+                    ),
                 ),
             })
 
@@ -3182,7 +3209,7 @@ def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now)
     }
 
 
-def _deal_calc_unit_month_analytics(unit, car=None):
+def _deal_calc_unit_month_analytics(unit, car=None, sale_type=3):
     """ВП по подразделению за текущий месяц (розница, Cumulative)."""
     month_start, now, period_label = _deal_calc_month_period()
 
@@ -3200,6 +3227,8 @@ def _deal_calc_unit_month_analytics(unit, car=None):
         'period_label': period_label,
         'unit_name': unit.name if unit else '',
         'brand_name': '',
+        'sale_type': sale_type,
+        'sale_type_label': _DEAL_SALE_TYPE_LABELS.get(sale_type, ''),
         'sales_comparison': empty_comparison,
         'vp_by_model': vp_chart_empty,
         'vp_by_model_json': json.dumps(vp_chart_empty, ensure_ascii=False),
@@ -3210,7 +3239,9 @@ def _deal_calc_unit_month_analytics(unit, car=None):
     if car and car.modification_autoru_id and car.modification_autoru.model.mark_id:
         analytics['brand_name'] = car.modification_autoru.model.mark.name
 
-    q_unit = _deal_calc_cumulative_qs_for_unit_name(unit.name, month_start, now)
+    q_unit = _deal_calc_cumulative_qs_for_unit_name(
+        unit.name, month_start, now, car=car, sale_type=sale_type,
+    )
     vp_metrics = _cumulative_vp_metrics(q_unit)
     analytics['cumulative_sum'] = vp_metrics['cumulative_sum']
     analytics['udelka'] = vp_metrics['udelka']
@@ -3219,7 +3250,7 @@ def _deal_calc_unit_month_analytics(unit, car=None):
     analytics['cumulative_sum_detail_percent'] = vp_metrics['cumulative_sum_detail_percent']
     analytics['cumulative_sum_detail_udelka'] = vp_metrics['cumulative_sum_detail_udelka']
     analytics['sales_comparison'] = _build_deal_sales_comparison_table(
-        car, unit.name, month_start, now,
+        car, unit.name, month_start, now, sale_type=sale_type,
     )
 
     vp_rows = list(
@@ -3531,7 +3562,8 @@ def deal_calculation_doc(request, id):
         stock_chart_unit_name = car.unit.name
 
     analytics_unit = calc.unit or (car.unit if car else None)
-    params_analytics = _deal_calc_unit_month_analytics(analytics_unit, car=car)
+    sale_type = _resolve_deal_calc_sale_type(request, car)
+    params_analytics = _deal_calc_unit_month_analytics(analytics_unit, car=car, sale_type=sale_type)
 
     rlk_calculations = []
     if calc.rlk_id:
@@ -3562,7 +3594,8 @@ def deal_calculation_doc(request, id):
         'promotions_discount': promotions_discount,
         'bu_wheels_price': bu_wheels_price,
         'opfu_services_total': opfu_services_total,
-        'total_amount': total_amount
+        'total_amount': total_amount,
+        'sale_type': sale_type,
     })
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
