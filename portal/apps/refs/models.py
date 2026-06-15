@@ -1716,6 +1716,28 @@ class RefTypeEvaluationCarsOrganization(models.Model):
         verbose_name = "Статус автомобиля"
         verbose_name_plural = "Статусы автомобилей"
 
+class RefStatusRansom(models.Model):
+    name            = models.CharField("Наименование", max_length=200, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refStatusRansom'
+        verbose_name = "Статус выкупа"
+        verbose_name_plural = "Статусы выкупа"
+
+class RefStatusAvailability(models.Model):
+    name            = models.CharField("Наименование", max_length=200, default='')
+    
+    def __str__(self):
+        return "{}".format(self.name)
+
+    class Meta:
+        db_table = 'refStatusAvailability'
+        verbose_name = "Статус наличия"
+        verbose_name_plural = "Статус наличия"
+
 
 class RefRatingCarsOrganization(models.Model):
     name            = models.CharField("Наименование", max_length=200, default='')
@@ -2115,6 +2137,14 @@ class RefCarsOrganization(models.Model):
     days_next_stage         = models.IntegerField("Дней до следующего этапа", blank=True, default=0)
     
     access_user             = models.ManyToManyField(User, related_name='access_user_car', verbose_name='Пользователь', blank=True)
+
+    date_report             = models.DateTimeField('Дата рапорта / отчитана ', default=datetime(1, 1, 1), blank=True, null=False)
+    date_reserve            = models.DateTimeField('Дата брони до ', default=datetime(1, 1, 1), blank=True, null=False)
+    status_ransom           = models.ForeignKey(RefStatusRansom, null=True, on_delete=models.SET_NULL, verbose_name='Статус выкупа')
+    status_availability     = models.ForeignKey(RefStatusAvailability, null=True, on_delete=models.SET_NULL, verbose_name='Статус наличия')
+    attention               = models.CharField("Внимание", max_length=5120, default='')
+    note                    = models.CharField("Примечание", max_length=5120, default='')
+
 
     def _find_applicable_km_discount(self, brand_car):
         """Подбор активного дисконта Км по бренду и детализации автомобиля."""
