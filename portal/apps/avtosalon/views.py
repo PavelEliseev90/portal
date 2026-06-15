@@ -3050,6 +3050,15 @@ def _apply_car_sale_type_filter(q, car, sale_type):
     if not car.modification_autoru_id:
         return q
     if sale_type == 0:
+        brand = _resolve_price_car_brand_for_car(car)
+        if brand:
+            mods = AutoruModification.objects.filter(
+                model__mark_id__in=brand.marks.values_list('pk', flat=True),
+            )
+            model_ids = list(brand.models_included.values_list('pk', flat=True))
+            if model_ids:
+                mods = mods.filter(model_id__in=model_ids)
+            return q.filter(IDModifikatsii__in=mods.values_list('idSite', flat=True))
         model_list = AutoruModification.objects.filter(
             model__mark=car.modification_autoru.model.mark,
         ).values_list('idSite', flat=True)
@@ -3066,15 +3075,61 @@ def _apply_car_sale_type_filter(q, car, sale_type):
     return q
 
 
+def _resolve_price_car_brand_for_car(car):
+    """Бренд ценообразования (PriceCarBrand) для автомобиля — как в cumulative_data()."""
+    from prices_car.models import PriceCarBrand
+
+    if not car or not car.modification_autoru_id:
+        return None
+    mark = car.modification_autoru.model.mark
+    model = car.modification_autoru.model
+    brand = (
+        PriceCarBrand.objects.filter(marks=mark)
+        .exclude(models_included=model)
+        .order_by('pk')
+        .last()
+    )
+    if brand:
+        return brand
+    return (
+        PriceCarBrand.objects.filter(marks=mark, models_included=model)
+        .order_by('pk')
+        .last()
+    )
+
+
+def _cars_qs_for_price_car_brand(brand):
+    mark_ids = list(brand.marks.values_list('pk', flat=True))
+    if not mark_ids:
+        return RefCarsOrganization.objects.none()
+    qs = RefCarsOrganization.objects.filter(
+        modification_autoru__model__mark_id__in=mark_ids,
+    )
+    model_ids = list(brand.models_included.values_list('pk', flat=True))
+    if model_ids:
+        qs = qs.filter(modification_autoru__model_id__in=model_ids)
+    return qs
+
+
 def _brand_other_unit_names(car):
-    if not car.organization_id or not car.modification_autoru_id or not car.unit_id:
+    if not car.unit_id:
         return []
-    return [
-        name for name in RefCarsOrganization.objects.filter(
+
+    brand = _resolve_price_car_brand_for_car(car)
+    if brand:
+        qs = _cars_qs_for_price_car_brand(brand)
+        if car.organization_id:
+            qs = qs.filter(organization_id=car.organization_id)
+    elif car.modification_autoru_id and car.organization_id:
+        qs = RefCarsOrganization.objects.filter(
             organization_id=car.organization_id,
             modification_autoru__model__mark_id=car.modification_autoru.model.mark_id,
         )
-        .exclude(unit__isnull=True)
+    else:
+        return []
+
+    return [
+        name for name in qs.exclude(unit__isnull=True)
         .exclude(unit_id=car.unit_id)
         .values_list('unit__name', flat=True)
         .distinct()
@@ -3236,7 +3291,10 @@ def _deal_calc_unit_month_analytics(unit, car=None, sale_type=3):
     if not unit or not unit.name:
         return analytics
 
-    if car and car.modification_autoru_id and car.modification_autoru.model.mark_id:
+    price_car_brand = _resolve_price_car_brand_for_car(car) if car else None
+    if price_car_brand:
+        analytics['brand_name'] = price_car_brand.name
+    elif car and car.modification_autoru_id and car.modification_autoru.model.mark_id:
         analytics['brand_name'] = car.modification_autoru.model.mark.name
 
     q_unit = _deal_calc_cumulative_qs_for_unit_name(
