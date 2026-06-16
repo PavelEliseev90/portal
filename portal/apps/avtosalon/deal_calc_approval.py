@@ -1,9 +1,13 @@
 """Согласование коммерческих предложений в калькуляции сделки."""
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 
 from chats.models import Chat
+
+AUTO_APPROVE_USER_ID = 1
+AUTO_APPROVE_COMMENT = 'Автоматическое согласование: КВ выше расчетного КМ по правилу'
 
 
 def _get_profile(user):
@@ -53,6 +57,160 @@ def kvp_above_min_km_dc(calc, cumulative_data):
     kvp = int(calc.kvp or 0)
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
     return kvp > min_km_dc
+
+
+def kvp_above_km_raschet(calc):
+    """КВ выше расчетного КМ по правилу — согласование не требуется."""
+    if calc.km_raschet is None:
+        return False
+    return int(calc.kvp or 0) > int(calc.km_raschet)
+
+
+def is_auto_approved_calculation(calc):
+    from prices_car.models import CarCalculations
+
+    return (
+        calc.soglasovanie_status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
+        and calc.director_approve_user_id == AUTO_APPROVE_USER_ID
+        and calc.director_approve_comment == AUTO_APPROVE_COMMENT
+    )
+
+
+def try_auto_approve_calculation(calc, send_chat=False):
+    """Автосогласование под пользователем id=1, если КВ > расчетного КМ."""
+    from prices_car.models import CarCalculations
+
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    if status != CarCalculations.SOGLASOVANIE_PENDING:
+        return False
+    if not kvp_above_km_raschet(calc):
+        return False
+
+    user = User.objects.filter(pk=AUTO_APPROVE_USER_ID).first()
+    if not user:
+        return False
+
+    now = timezone.now()
+    calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
+    calc.director_approve_user = user
+    calc.director_approve_date = now
+    calc.director_approve_comment = AUTO_APPROVE_COMMENT
+    calc.date_success = now
+    calc.save(update_fields=[
+        'soglasovanie_status',
+        'director_approve_user',
+        'director_approve_date',
+        'director_approve_comment',
+        'date_success',
+    ])
+
+    if send_chat:
+        number = calc.number or calc.pk
+        send_calc_rlk_chat_message(
+            calc,
+            user,
+            'Коммерческое предложение #' + str(number)
+            + ' согласовано автоматически. КВ выше расчетного КМ по правилу.',
+        )
+    return True
+
+
+def notify_director_users_calculation_approval(calculation_object, car_object, unit_object):
+    """Email директорам ДЦ (price_car_new_director + unit)."""
+    from prices_car.models import EmailPushCar
+
+    try:
+        users_soglasovanie = User.objects.filter(
+            is_active=True,
+            profiles__available_units__pk=unit_object.id,
+            profiles__price_car_new_director=True,
+        ).distinct()
+        for uusr in users_soglasovanie:
+            if uusr.email:
+                new_message = EmailPushCar()
+                new_message.car = car_object
+                new_message.user = uusr
+                new_message.email = uusr.email
+                new_message.comment = (
+                    'Согласование расчета продажи автомобиля #'
+                    + str(calculation_object.number)
+                )
+                new_message.price = False
+                new_message.calc = calculation_object
+                new_message.save()
+    except Exception:
+        pass
+
+
+def notify_uk_users_calculation_approval(calc, car_object=None):
+    """Email всем с price_car_new_all («Ценообразование новых всех ДЦ»)."""
+    from prices_car.models import EmailPushCar
+
+    car = car_object or calc.car
+    if not car:
+        return
+
+    try:
+        users_uk = User.objects.filter(
+            is_active=True,
+            profiles__price_car_new_all=True,
+        ).distinct()
+        for uusr in users_uk:
+            if uusr.email:
+                new_message = EmailPushCar()
+                new_message.car = car
+                new_message.user = uusr
+                new_message.email = uusr.email
+                new_message.comment = 'Требуется согласование УК'
+                new_message.price = False
+                new_message.calc = calc
+                new_message.save()
+    except Exception:
+        pass
+
+
+def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
+    """После загрузки КП из 1С: автосогласование или уведомление директоров."""
+    auto_approved = try_auto_approve_calculation(calculation_object, send_chat=False)
+
+    try:
+        from website.views import send_web_socket_message
+
+        chat, _ = Chat.objects.get_or_create(
+            name=str(rlk_object.id),
+            slug='rlk_' + str(rlk_object.id),
+        )
+        user = User.objects.get(pk=AUTO_APPROVE_USER_ID)
+        if auto_approved:
+            text = (
+                'Коммерческое предложение #'
+                + str(calculation_object.number)
+                + ' согласовано автоматически. КВ выше расчетного КМ по правилу.'
+            )
+        else:
+            text = (
+                'Коммерческое предложение #'
+                + str(calculation_object.number)
+                + ' отправлено на согласование. '
+                + (calculation_object.comment or '')
+            )
+        send_web_socket_message(
+            group='rlk_' + str(rlk_object.id),
+            chat=chat,
+            user=user,
+            text=text,
+        )
+    except Exception:
+        pass
+
+    if auto_approved:
+        return True
+
+    notify_director_users_calculation_approval(
+        calculation_object, car_object, unit_object,
+    )
+
+    return False
 
 
 def send_calc_rlk_chat_message(calc, user, text):
@@ -107,10 +265,14 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         and status == CarCalculations.SOGLASOVANIE_PENDING_UK
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
+    approval_auto_approved = is_auto_approved_calculation(calc)
+    approval_kvp_above_raschet = kvp_above_km_raschet(calc)
 
     return {
         'approval_min_km_dc': min_km_dc,
         'approval_kvp_ok': kvp_ok,
+        'approval_kvp_above_raschet': approval_kvp_above_raschet,
+        'approval_auto_approved': approval_auto_approved,
         'approval_uk_required': (
             status == CarCalculations.SOGLASOVANIE_PENDING_UK
             or (
@@ -214,6 +376,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отправлено на согласование директором ДЦ в УК ' + comment,
         )
+        notify_uk_users_calculation_approval(calc)
         messages.success(request, 'Отправлено на согласование в УК.')
         return _approval_redirect(calc.pk)
 

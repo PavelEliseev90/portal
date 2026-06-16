@@ -91,6 +91,12 @@ def calculation_car(request):
     apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
 
+    try:
+        from avtosalon.deal_calc_approval import try_auto_approve_calculation
+        try_auto_approve_calculation(calculation_object)
+    except Exception:
+        pass
+
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
 
     list_detail = data['Detail']
@@ -182,26 +188,12 @@ def calculation_car_start_success(request):
         new_action_detail.save()
 
     try:
-        from website.views import send_web_socket_message
-        chat, created = Chat.objects.get_or_create(name=str(rlk_object.id), slug='rlk_' + str(rlk_object.id))
-        send_web_socket_message(group = 'rlk_' + str(rlk_object.id), chat=chat, user= User.objects.get(pk = 1), text='Коммерческое предложение #' + str(calculation_object.number) + ' отправлено на согласование. ' + calculation_object.comment)
-    except:
-        s= 1
-
-    try:
-        users_soglasovanie = User.objects.filter(is_active=True, profiles__available_units__pk = unit_object.id, profiles__price_car_new_director=True)
-        for uusr in users_soglasovanie:
-            if uusr.email != '':
-                new_message                 = EmailPushCar()
-                new_message.car             = car_object
-                new_message.user            = uusr
-                new_message.email           = uusr.email
-                new_message.comment         = 'Согласование расчета продажи автомобиля #' + str(calculation_object.number)
-                new_message.price           = False
-                new_message.calc            = calculation_object
-                new_message.save()
-    except:
-        s = 1
+        from avtosalon.deal_calc_approval import notify_calculation_soglasovanie_from_1c
+        notify_calculation_soglasovanie_from_1c(
+            calculation_object, car_object, rlk_object, unit_object,
+        )
+    except Exception:
+        pass
 
     to_json = {
         'answer'     : calculation_object.pk,
@@ -5042,6 +5034,12 @@ def get_calculation_car(data):
     calculation_object.amount       = data['Amount']
     apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
+
+    try:
+        from avtosalon.deal_calc_approval import try_auto_approve_calculation
+        try_auto_approve_calculation(calculation_object)
+    except Exception:
+        pass
 
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
 
