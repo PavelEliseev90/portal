@@ -3666,7 +3666,7 @@ def deal_calculation_doc(request, id):
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
 
 
-def rlk_op_chat(request, rlk_id=None):
+def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
     """
     Чат по рабочему листу ОП (для 1С и прямой ссылки).
     1С: /cars/deal/rlk-chat/1c/<uin>/<rlk_uin>/ — отдельная сессия, без login().
@@ -3676,8 +3676,8 @@ def rlk_op_chat(request, rlk_id=None):
     from django.shortcuts import redirect
 
     parsed = extract_rlk_chat_request(request)
-    staff_uin = parsed['staff_uin']
-    rlk_uin = parsed['rlk_uin']
+    staff_uin = parsed['staff_uin'] or (staff_uin or '').strip()
+    rlk_uin = parsed['rlk_uin'] or (rlk_uin or '').strip()
     from_1c = is_1c_rlk_chat_entry(request, staff_uin)
 
     chat_user = get_rlk_chat_user(request)
