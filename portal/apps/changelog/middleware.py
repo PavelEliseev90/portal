@@ -49,6 +49,8 @@ def _should_log_pageview(request):
     return False
   if path.startswith('/cars/deal/rlk-chat/poll/'):
     return False
+  if path.startswith('/cars/deal/rlk-chat/send/'):
+    return False
   return True
 
 

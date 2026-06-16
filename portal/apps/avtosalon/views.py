@@ -39,6 +39,7 @@ from chats.rlk_chat_utils import (
     build_rlk_chat_page_url,
     build_rlk_chat_params,
     build_rlk_chat_poll_url,
+    build_rlk_chat_send_url,
     extract_rlk_chat_request,
     fetch_new_rlk_chat_messages,
     resolve_rlk_chat_access,
@@ -3713,11 +3714,43 @@ def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
         'rlk_uin': rlk_uin,
         'chat_page_url': build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk),
         'poll_url': build_rlk_chat_poll_url(),
+        'send_url': build_rlk_chat_send_url(),
         'last_message_id': last_message_id,
         'from_1c': from_1c,
     }
     params.update(chat_params)
     return render(request, 'chats/chat_rlk_op_page.html', {'params': params})
+
+
+@csrf_exempt
+def rlk_op_chat_send(request):
+    """Отправка сообщения из 1С через XHR (без перезагрузки страницы)."""
+    from chats.models import ChatMessage
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method'}, status=405)
+
+    ctx = resolve_rlk_chat_poll(request)
+    if ctx.get('error'):
+        return JsonResponse({'error': ctx['error']}, status=403)
+
+    message = (request.POST.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'error': 'empty'}, status=400)
+
+    msg = ChatMessage.objects.create(
+        user=ctx['chat_user'],
+        chat_id=ctx['chat_id'],
+        content=message,
+    )
+    msg.user = ctx['chat_user']
+    items, last_id = serialize_rlk_chat_messages([msg], ctx['chat_user'].pk)
+    return JsonResponse({
+        'ok': True,
+        'message': items[0] if items else None,
+        'last_id': last_id,
+    })
 
 
 @csrf_exempt

@@ -49,9 +49,9 @@
     <form id="rlk-op-page-form" class="d-flex gap-2" method="post" action="{{ params.chat_page_url }}">
         <input type="hidden" name="uin" value="{{ params.staff_uin }}">
         <input type="hidden" name="rlk_uin" value="{{ params.rlk_uin }}">
-        <textarea class="form-control" id="rlk-op-page-message" name="message" rows="2" placeholder="Сообщение..." required></textarea>
+        <textarea class="form-control" id="rlk-op-page-message" name="message" rows="2" placeholder="Сообщение..."></textarea>
         {% if params.from_1c %}
-        <button type="submit" class="btn btn-dark text-nowrap">Отправить</button>
+        <button type="button" class="btn btn-dark text-nowrap" id="rlk-1c-send">Отправить</button>
         {% else %}
         <button type="button" class="btn btn-dark text-nowrap" id="rlk-op-page-send">Отправить</button>
         {% endif %}
@@ -63,8 +63,14 @@
 <script>
 (function () {
     var pollUrl = '{{ params.poll_url|escapejs }}';
+    var sendUrl = '{{ params.send_url|escapejs }}';
+    var staffUin = '{{ params.staff_uin|escapejs }}';
+    var rlkUin = '{{ params.rlk_uin|escapejs }}';
     var lastId = {{ params.last_message_id|default:0 }};
     var listEl = document.getElementById('rlk-op-page-message-list');
+    var formEl = document.getElementById('rlk-op-page-form');
+    var sendBtn = document.getElementById('rlk-1c-send');
+    var ta = document.getElementById('rlk-op-page-message');
     if (!listEl) return;
 
     function escapeHtml(text) {
@@ -73,6 +79,11 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function scrollToBottom() {
+        if (!listEl) return;
+        listEl.scrollTop = listEl.scrollHeight;
     }
 
     function messageExists(id) {
@@ -97,7 +108,40 @@
                 '<div class="' + (msg.own ? 'bg-primary bg-opacity-10' : 'bg-light') + ' rounded p-2 d-inline-block">' + msg.text + '</div>';
             listEl.appendChild(wrap);
         }
-        listEl.scrollTop = listEl.scrollHeight;
+        scrollToBottom();
+    }
+
+    function sendMessage() {
+        if (!window.XMLHttpRequest || !ta) {
+            if (formEl) formEl.submit();
+            return;
+        }
+        var message = ta.value.replace(/^\s+|\s+$/g, '');
+        if (!message) return;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', sendUrl, true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        var body = 'uin=' + encodeURIComponent(staffUin)
+            + '&rlk_uin=' + encodeURIComponent(rlkUin)
+            + '&message=' + encodeURIComponent(message);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) return;
+            if (xhr.status !== 200) return;
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.ok && data.message) {
+                    appendMessages([data.message]);
+                    if (data.last_id) {
+                        lastId = data.last_id;
+                    }
+                    ta.value = '';
+                    emptyPolls = 0;
+                    pollDelay = 10000;
+                }
+            } catch (e) {}
+        };
+        xhr.send(body);
     }
 
     var pollDelay = 10000;
@@ -155,6 +199,31 @@
         };
         xhr.send();
     }
+
+    if (sendBtn) {
+        sendBtn.onclick = sendMessage;
+    }
+    if (formEl) {
+        formEl.onsubmit = function () {
+            sendMessage();
+            return false;
+        };
+    }
+    if (ta) {
+        ta.onkeydown = function (e) {
+            e = e || window.event;
+            var key = e.keyCode || e.which;
+            if (key === 13 && !e.shiftKey) {
+                if (e.preventDefault) e.preventDefault();
+                sendMessage();
+                return false;
+            }
+        };
+    }
+
+    scrollToBottom();
+    setTimeout(scrollToBottom, 100);
+    setTimeout(scrollToBottom, 400);
 
     if (window.XMLHttpRequest) {
         poll();

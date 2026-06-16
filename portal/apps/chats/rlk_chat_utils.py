@@ -127,6 +127,10 @@ def build_rlk_chat_poll_url(staff_uin=None, rlk_uin=None):
     return f'{RLK_CHAT_PATH}/poll/'
 
 
+def build_rlk_chat_send_url():
+    return f'{RLK_CHAT_PATH}/send/'
+
+
 def resolve_rlk_chat_poll(request):
     """
     Лёгкая авторизация poll: сессия 1С + chat_id, без поиска РЛК и RefStaff.
