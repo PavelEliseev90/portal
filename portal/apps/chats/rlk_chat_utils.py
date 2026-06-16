@@ -225,14 +225,13 @@ def resolve_rlk_chat_access(request, rlk_id=None, staff_uin=None, rlk_uin=None):
         if rlk is None:
             return {'error': 'not_found', 'staff_uin': staff_uin, 'rlk_uin': rlk_uin, 'from_1c': from_1c}
 
-    store_rlk_chat_session(request, staff_uin, rlk_uin, chat_id=chat_params['chat'].pk)
-
     if not user_can_access_rlk_op_chat(
         chat_user, rlk, staff_uin=staff_uin, from_1c=from_1c,
     ):
         return {'error': 'access', 'staff_uin': staff_uin, 'rlk_uin': rlk_uin, 'from_1c': from_1c}
 
     chat_params = build_rlk_chat_params(request, rlk, user=chat_user)
+    store_rlk_chat_session(request, staff_uin, rlk_uin, chat_id=chat_params['chat'].pk)
     return {
         'error': None,
         'chat_user': chat_user,
