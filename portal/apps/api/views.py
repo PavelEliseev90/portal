@@ -181,7 +181,7 @@ def calculation_car_start_success(request):
     try:
         from website.views import send_web_socket_message
         chat, created = Chat.objects.get_or_create(name=str(rlk_object.id), slug='rlk_' + str(rlk_object.id))
-        send_web_socket_message(group = 'rlk_' + str(rlk_object.id), chat=chat, user= User.objects.get(pk = 1), text='Коммерческое предложение отправлено на согласование. ' + calculation_object.comment)
+        send_web_socket_message(group = 'rlk_' + str(rlk_object.id), chat=chat, user= User.objects.get(pk = 1), text='Коммерческое предложение #' + str(calculation_object.number) + ' отправлено на согласование. ' + calculation_object.comment)
     except:
         s= 1
 
@@ -193,7 +193,7 @@ def calculation_car_start_success(request):
                 new_message.car             = car_object
                 new_message.user            = uusr
                 new_message.email           = uusr.email
-                new_message.comment         = 'Согласование расчета продажи автомобиля'
+                new_message.comment         = 'Согласование расчета продажи автомобиля #' + str(calculation_object.number)
                 new_message.price           = False
                 new_message.calc            = calculation_object
                 new_message.save()
