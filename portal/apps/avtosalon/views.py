@@ -36,10 +36,14 @@ import io
 import base64
 from chats.models import Chat, ChatMessage
 from chats.rlk_chat_utils import (
+    bind_rlk_chat_1c_session,
+    build_rlk_chat_page_url,
     build_rlk_chat_params,
     extract_rlk_chat_request,
-    login_user_for_rlk_chat,
+    get_rlk_chat_user,
+    is_1c_rlk_chat_entry,
     resolve_rlk_by_uin,
+    store_rlk_chat_session,
     user_can_access_rlk_op_chat,
 )
 from profiles.models import Profiles
@@ -3665,18 +3669,25 @@ def deal_calculation_doc(request, id):
 def rlk_op_chat(request, rlk_id=None):
     """
     Чат по рабочему листу ОП (для 1С и прямой ссылки).
-    Сквозная авторизация: ?uin=<УИН сотрудника>
-    РЛК по УИН: /cars/deal/rlk-chat/?rlk_uin=...&uin=...
-    Для 1С (без query): /cars/deal/rlk-chat/1c/<uin>/<rlk_uin>/
+    1С: /cars/deal/rlk-chat/1c/<uin>/<rlk_uin>/ — отдельная сессия, без login().
+    Портал: обычная авторизация.
     """
+    from chats.models import ChatMessage
+    from django.shortcuts import redirect
+
     parsed = extract_rlk_chat_request(request)
     staff_uin = parsed['staff_uin']
     rlk_uin = parsed['rlk_uin']
+    from_1c = is_1c_rlk_chat_entry(request, staff_uin)
 
-    if not request.user.is_authenticated:
-        if staff_uin:
-            if login_user_for_rlk_chat(request, staff_uin) is None:
+    chat_user = get_rlk_chat_user(request)
+    if chat_user is None:
+        if from_1c and staff_uin:
+            chat_user = bind_rlk_chat_1c_session(request, staff_uin)
+            if chat_user is None:
                 return render(request, 'chats/rlk_chat_uin_auth_error.html')
+        elif request.user.is_authenticated:
+            chat_user = request.user
         else:
             return redirect_to_login(request.get_full_path())
 
@@ -3685,6 +3696,8 @@ def rlk_op_chat(request, rlk_id=None):
             DocRLK.objects.select_related('unit', 'staff'),
             pk=rlk_id,
         )
+        if not rlk_uin:
+            rlk_uin = (rlk.uin or '').strip()
     else:
         if not rlk_uin:
             return render(request, 'chats/rlk_chat_access_denied.html')
@@ -3692,17 +3705,34 @@ def rlk_op_chat(request, rlk_id=None):
         if rlk is None:
             raise Http404
 
-    from_1c = bool(staff_uin and (rlk_id or rlk_uin))
+    store_rlk_chat_session(request, staff_uin, rlk_uin)
+
     if not user_can_access_rlk_op_chat(
-        request.user, rlk, staff_uin=staff_uin, from_1c=from_1c,
+        chat_user, rlk, staff_uin=staff_uin, from_1c=from_1c,
     ):
         return render(request, 'chats/rlk_chat_access_denied.html')
+
+    chat_params = build_rlk_chat_params(request, rlk, user=chat_user)
+
+    if request.method == 'POST':
+        message = (request.POST.get('message') or '').strip()
+        if message:
+            ChatMessage.objects.create(
+                user=chat_user,
+                chat=chat_params['chat'],
+                content=message,
+            )
+        return redirect(build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk))
 
     params = {
         'type': 'rlk_op_chat',
         'request': request,
+        'staff_uin': staff_uin,
+        'rlk_uin': rlk_uin,
+        'chat_page_url': build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk),
+        'from_1c': from_1c,
     }
-    params.update(build_rlk_chat_params(request, rlk))
+    params.update(chat_params)
     return render(request, 'chats/chat_rlk_op_page.html', {'params': params})
 
 

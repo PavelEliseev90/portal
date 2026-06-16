@@ -17,12 +17,12 @@
     <div class="border rounded bg-white p-2 mb-2" style="min-height: 50vh; max-height: 65vh; overflow-y: auto;" id="rlk-op-page-message-list">
         {% if params.messages %}
             {% for message in params.messages %}
-                <div class="mb-2{% if message.user.profiles.eco %} text-end{% endif %}">
+                <div class="mb-2{% if message.user_id == params.user.id %} text-end{% endif %}">
                     <div class="small text-muted">
-                        {% if message.user.profiles.eco_name %}{{ message.user.profiles.eco_name }}{% else %}{{ message.user.last_name }} {{ message.user.first_name }}{% endif %}
+                        {{ message.user.last_name }} {{ message.user.first_name }}
                         · {{ message.date|date:'d.m.Y H:i' }}
                     </div>
-                    <div class="{% if message.user.profiles.eco %}bg-primary bg-opacity-10{% else %}bg-light{% endif %} rounded p-2 d-inline-block">
+                    <div class="{% if message.user_id == params.user.id %}bg-primary bg-opacity-10{% else %}bg-light{% endif %} rounded p-2 d-inline-block">
                         {% autoescape off %}{{ message.content_html }}{% endautoescape %}
                     </div>
                 </div>
@@ -32,11 +32,13 @@
         {% endif %}
     </div>
 
-    {% if not params.user.profiles.user_sb %}
-    <form id="rlk-op-page-form" class="d-flex gap-2">
+    {% if params.can_send_messages %}
+    <form id="rlk-op-page-form" class="d-flex gap-2" method="post" action="{{ params.chat_page_url }}">
         {% csrf_token %}
-        <textarea class="form-control" id="rlk-op-page-message" rows="2" placeholder="Сообщение..." required></textarea>
-        <button type="submit" class="btn btn-dark text-nowrap">Отправить</button>
+        <input type="hidden" name="uin" value="{{ params.staff_uin }}">
+        <input type="hidden" name="rlk_uin" value="{{ params.rlk_uin }}">
+        <textarea class="form-control" id="rlk-op-page-message" name="message" rows="2" placeholder="Сообщение..." required></textarea>
+        <button type="button" class="btn btn-dark text-nowrap" id="rlk-op-page-send">Отправить</button>
     </form>
     {% endif %}
 </div>
@@ -50,18 +52,22 @@
     const username = '{{ params.user.username|escapejs }}';
     const last_name = '{{ params.user.last_name|escapejs }}';
     const first_name = '{{ params.user.first_name|escapejs }}';
-    const psevdo_name = '{{ params.user.profiles.eco_name|escapejs }}';
-    const eco = {% if params.user.profiles.eco %}true{% else %}false{% endif %};
+    const psevdo_name = '{{ params.eco_name|escapejs }}';
+    const eco = {% if params.user_eco %}true{% else %}false{% endif %};
+    const currentUserId = {{ params.user.id }};
 
     const listEl = document.getElementById('rlk-op-page-message-list');
+    const formEl = document.getElementById('rlk-op-page-form');
+    const sendBtn = document.getElementById('rlk-op-page-send');
     let chatSocket;
+    let wsAvailable = false;
 
     function scrollToBottom() {
         if (listEl) listEl.scrollTop = listEl.scrollHeight;
     }
 
     function appendMessage(data, isOwner) {
-        const author = data.psevdo_name || (data.last_name + ' ' + data.first_name);
+        const author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim();
         const text = (data.message || '').replace(/\n/g, '<br>');
         const wrap = document.createElement('div');
         wrap.className = 'mb-2' + (isOwner ? ' text-end' : '');
@@ -72,42 +78,78 @@
         scrollToBottom();
     }
 
-    function connectWs() {
-        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-        chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
-        chatSocket.onopen = function () {
-            document.getElementById('rlk_op_page_reconect').classList.add('d-none');
-        };
-        chatSocket.onmessage = function (e) {
-            const data = JSON.parse(e.data);
-            if (!data.message || String(data.chat_id) !== String(chat_id)) return;
-            document.getElementById('rlk-op-page-notif')?.play().catch(function () {});
-            appendMessage(data, !!data.eco);
-        };
-        chatSocket.onclose = function () {
-            document.getElementById('rlk_op_page_reconect').classList.remove('d-none');
-            setTimeout(connectWs, 3000);
-        };
+    function sendViaHttp() {
+        if (!formEl) return;
+        formEl.submit();
     }
 
-    document.getElementById('rlk-op-page-form')?.addEventListener('submit', function (e) {
-        e.preventDefault();
+    function sendMessage() {
         const ta = document.getElementById('rlk-op-page-message');
         const message = ta.value.trim();
-        if (!message || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-        chatSocket.send(JSON.stringify({
-            chat_id: chat_id,
-            name: username,
-            chat: chatName,
-            message: message,
-            username: username,
-            last_name: last_name,
-            first_name: first_name,
-            psevdo_name: psevdo_name,
-            eco: eco
-        }));
+        if (!message) return;
+
         document.getElementById('rlk-op-page-no-message')?.remove();
-        ta.value = '';
+
+        if (wsAvailable && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                chat_id: chat_id,
+                name: username,
+                chat: chatName,
+                message: message,
+                username: username,
+                last_name: last_name,
+                first_name: first_name,
+                psevdo_name: psevdo_name,
+                eco: eco
+            }));
+            appendMessage({
+                message: message,
+                last_name: last_name,
+                first_name: first_name,
+                psevdo_name: psevdo_name
+            }, true);
+            ta.value = '';
+            return;
+        }
+
+        sendViaHttp();
+    }
+
+    function connectWs() {
+        if (typeof WebSocket === 'undefined') {
+            wsAvailable = false;
+            return;
+        }
+        try {
+            const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+            chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
+            chatSocket.onopen = function () {
+                wsAvailable = true;
+                document.getElementById('rlk_op_page_reconect').classList.add('d-none');
+            };
+            chatSocket.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                if (!data.message || String(data.chat_id) !== String(chat_id)) return;
+                document.getElementById('rlk-op-page-notif')?.play().catch(function () {});
+                appendMessage(data, !!data.eco);
+            };
+            chatSocket.onclose = function () {
+                wsAvailable = false;
+                document.getElementById('rlk_op_page_reconect').classList.remove('d-none');
+                setTimeout(connectWs, 3000);
+            };
+            chatSocket.onerror = function () {
+                wsAvailable = false;
+            };
+        } catch (err) {
+            wsAvailable = false;
+        }
+    }
+
+    sendBtn?.addEventListener('click', sendMessage);
+    formEl?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        sendMessage();
     });
 
     document.getElementById('rlk_op_page_reconnect')?.addEventListener('click', connectWs);
