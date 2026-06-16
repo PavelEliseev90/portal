@@ -40,6 +40,7 @@ from chats.rlk_chat_utils import (
     build_rlk_chat_params,
     build_rlk_chat_poll_url,
     build_rlk_chat_send_url,
+    broadcast_rlk_chat_ws_message,
     extract_rlk_chat_request,
     fetch_new_rlk_chat_messages,
     resolve_rlk_chat_access,
@@ -3702,6 +3703,7 @@ def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
                 chat=chat_params['chat'],
                 content=message,
             )
+            broadcast_rlk_chat_ws_message(chat_params['chat'], chat_user, message)
         return redirect(build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk))
 
     messages = chat_params['messages']
@@ -3739,12 +3741,17 @@ def rlk_op_chat_send(request):
     if not message:
         return JsonResponse({'error': 'empty'}, status=400)
 
+    from chats.models import Chat
+
     msg = ChatMessage.objects.create(
         user=ctx['chat_user'],
         chat_id=ctx['chat_id'],
         content=message,
     )
     msg.user = ctx['chat_user']
+    chat = Chat.objects.filter(pk=ctx['chat_id']).only('pk', 'slug').first()
+    if chat:
+        broadcast_rlk_chat_ws_message(chat, ctx['chat_user'], message)
     items, last_id = serialize_rlk_chat_messages([msg], ctx['chat_user'].pk)
     return JsonResponse({
         'ok': True,
