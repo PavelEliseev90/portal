@@ -2704,7 +2704,11 @@ def send_push_car():
                 car_mark        = car.modification_autoru.model.mark.name 
                 car_model       = car.modification_autoru.model.name 
                 car_modification    = car.modification_autoru.name
-                car_complectation   = car.complectation_autoru.name
+                if car.complectation_autoru != None:
+                    car_complectation   = car.complectation_autoru.name
+                else:
+                    car_complectation   = "-"
+                    
                 car_year            = car.year
                 car_run             = '{:,}'.format(car.run).replace(',', ' ')
                 car_price           = '{:,}'.format(car.price).replace(',', ' ')

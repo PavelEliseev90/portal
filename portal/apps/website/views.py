@@ -10641,11 +10641,13 @@ def sb_lo(request):
 
 def test(request):
 
-    from prices_car.views import refresh_km_cars, send_km_car_1C
-    send_km_car_1C()
+    #from prices_car.views import refresh_km_cars, send_km_car_1C
+    #send_km_car_1C()
+
+
     #refresh_km_cars()
-    # from task_manager.views import refresh_list_auction_status
-    # refresh_list_auction_status()
+    from task_manager.views import send_push_car
+    send_push_car()
     
     # from background_task.models import Task
     # task = Task.objects.all()

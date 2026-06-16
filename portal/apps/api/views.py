@@ -60,7 +60,9 @@ from django.views.decorators.csrf import csrf_exempt
 from dateutil.relativedelta import relativedelta
 from requests.auth import HTTPBasicAuth
 from avtosalon.models import AvtohubModifications
-from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail
+from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail, EmailPushCar
+from chats.models import Chat
+from profiles.models import Profiles
 
 
 @api_view(['POST'])
@@ -144,6 +146,8 @@ def calculation_car_start_success(request):
     calculation_object.staff        = get_staff(data['Staff'])
     calculation_object.kvp          = data['Kvp']
     calculation_object.amount       = data['Amount']
+    calculation_object.comment      = data['CommentSoglasovanie']
+    
     calculation_object.save()
 
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
@@ -173,6 +177,28 @@ def calculation_car_start_success(request):
         new_action_detail.amount_sale = action_info['Amount_sale']
         new_action_detail.amount_comp = action_info['Amount_comp']        
         new_action_detail.save()
+
+    try:
+        from website.views import send_web_socket_message
+        chat, created = Chat.objects.get_or_create(name=str(rlk_object.id), slug='rlk_' + str(rlk_object.id))
+        send_web_socket_message(group = 'rlk_' + str(rlk_object.id), chat=chat, user= User.objects.get(pk = 1), text='Коммерческое предложение отправлено на согласование. ' + calculation_object.comment)
+    except:
+        s= 1
+
+    try:
+        users_soglasovanie = User.objects.filter(is_active=True, profiles__available_units__pk = unit_object.id, profiles__price_car_new_director=True)
+        for uusr in users_soglasovanie:
+            if uusr.email != '':
+                new_message                 = EmailPushCar()
+                new_message.car             = car_object
+                new_message.user            = uusr
+                new_message.email           = uusr.email
+                new_message.comment         = 'Согласование расчета продажи автомобиля'
+                new_message.price           = False
+                new_message.calc            = calculation_object
+                new_message.save()
+    except:
+        s = 1
 
     to_json = {
         'answer'     : calculation_object.pk,

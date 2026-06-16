@@ -38,6 +38,8 @@ class Profiles(models.Model):
     user_sb                 = models.BooleanField("Сотрудник службы безопасности", default = False)
     
     price_car_new           = models.BooleanField("Ценообразование новых", default = False)
+    price_car_new_director  = models.BooleanField("Ценообразование новых директор", default = False)
+    
     price_car_new_all       = models.BooleanField("Ценообразование новых всех ДЦ", default = False)
     price_car_bu            = models.BooleanField("Ценообразование бу", default = False)
     price_car_new_settings  = models.BooleanField("Ценообразование новых настройки", default = False)
