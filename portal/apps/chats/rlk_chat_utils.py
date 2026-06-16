@@ -7,6 +7,45 @@ from refs.models import RefStaff
 
 User = get_user_model()
 
+RLK_CHAT_PATH = '/cars/deal/rlk-chat'
+
+
+def is_rlk_chat_request(request):
+    return (request.path_info or '').startswith(RLK_CHAT_PATH)
+
+
+def extract_rlk_chat_request(request):
+    """УИН сотрудника и РЛК из query (?uin, ?rlk_uin) или пути /1c/{uin}/{rlk_uin}/."""
+    staff_uin = (request.GET.get('uin') or request.GET.get('staff_uin') or '').strip()
+    rlk_uin = (request.GET.get('rlk_uin') or '').strip()
+
+    path = request.path_info or ''
+    prefix_1c = f'{RLK_CHAT_PATH}/1c/'
+    if path.startswith(prefix_1c):
+        rest = path[len(prefix_1c):].strip('/')
+        parts = [part for part in rest.split('/') if part]
+        if len(parts) >= 1 and not staff_uin:
+            staff_uin = parts[0].strip()
+        if len(parts) >= 2 and not rlk_uin:
+            rlk_uin = parts[1].strip()
+
+    return {
+        'staff_uin': staff_uin,
+        'rlk_uin': rlk_uin,
+    }
+
+
+def login_user_for_rlk_chat(request, staff_uin):
+    """Вход по УИН сотрудника из 1С; возвращает User или None."""
+    user = resolve_user_by_staff_uin(staff_uin)
+    if user is None:
+        return None
+    from django.contrib.auth import login
+
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    request.session.save()
+    return user
+
 
 def _username_candidates_from_domain_login(domain_login):
     domain_login = (domain_login or '').strip()

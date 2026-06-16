@@ -4,6 +4,8 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import logout
 
+from chats.rlk_chat_utils import extract_rlk_chat_request, is_rlk_chat_request
+
 CURRENT_SESSION_CACHE_KEY = "current_session:{}"
 CURRENT_SESSION_CACHE_TTL = getattr(settings, 'SESSION_COOKIE_AGE', 1209600)
 
@@ -14,6 +16,14 @@ class SingleDeviceSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Чат из 1С: сбрасываем чужую сессию, view залогинит по УИН из ссылки
+        if is_rlk_chat_request(request):
+            staff_uin = extract_rlk_chat_request(request)['staff_uin']
+            if staff_uin:
+                if getattr(request, 'user', None) and request.user.is_authenticated:
+                    logout(request)
+                return self.get_response(request)
+
         if not getattr(request, 'user', None) or not request.user.is_authenticated:
             return self.get_response(request)
 
