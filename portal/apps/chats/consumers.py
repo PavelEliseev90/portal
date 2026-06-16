@@ -46,8 +46,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         first_name      = text_data_json['first_name']
         psevdo_name     = text_data_json['psevdo_name']
         eco             = text_data_json['eco']
+        skip_save       = text_data_json.get('skip_save', False)
 
-        if chat_id != '':
+        if chat_id != '' and not skip_save:
             await self.save_message(username, chat, message, chat_id)
         
         admin = False
