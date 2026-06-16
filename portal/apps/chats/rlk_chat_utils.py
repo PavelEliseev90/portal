@@ -132,37 +132,32 @@ def build_rlk_chat_send_url():
 
 
 def broadcast_rlk_chat_ws_message(chat, user, message_text):
-    """Уведомить подписчиков WebSocket (калькуляция, портал) о новом сообщении."""
-    try:
-        from asgiref.sync import async_to_sync
-        from channels.layers import get_channel_layer
-    except ImportError:
-        return
-
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-
+    """
+    Уведомить подписчиков WebSocket (калькуляция, портал) о новом сообщении.
+    Сообщение уже сохранено в БД — шлём через Daphne (send_message_socket), skip_save.
+    """
     profile = _get_user_profile(user)
     eco = bool(profile and profile.eco)
     eco_name = (profile.eco_name or '') if profile else ''
 
-    async_to_sync(channel_layer.group_send)(
-        'chat_rlk_list_eco',
-        {
-            'type': 'chat_message',
-            'chat_id': chat.pk,
-            'chat': chat.slug or '',
-            'admin': False,
-            'name': user.username,
-            'message': message_text,
-            'username': user.username,
-            'last_name': user.last_name or '',
-            'first_name': user.first_name or '',
-            'psevdo_name': eco_name,
-            'eco': eco,
-        },
-    )
+    message_json = {
+        'chat_id': str(chat.pk),
+        'name': user.username,
+        'chat': chat.slug or '',
+        'message': message_text,
+        'username': user.username,
+        'last_name': user.last_name or '',
+        'first_name': user.first_name or '',
+        'psevdo_name': eco_name,
+        'eco': eco,
+        'skip_save': True,
+        'estimation_id': 0,
+    }
+    try:
+        from task_manager.views import send_message_socket
+        send_message_socket(message=message_json)
+    except Exception:
+        pass
 
 
 def resolve_rlk_chat_poll(request):
