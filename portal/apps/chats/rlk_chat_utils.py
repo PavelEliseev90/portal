@@ -1,10 +1,54 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from chats.models import Chat
 from documents.models import DocRLK
 from refs.models import RefStaff
 
 User = get_user_model()
+
+
+def _username_candidates_from_domain_login(domain_login):
+    domain_login = (domain_login or '').strip()
+    if not domain_login:
+        return []
+    candidates = [domain_login]
+    if '\\' in domain_login:
+        candidates.append(domain_login.split('\\')[-1])
+    if '@' in domain_login:
+        candidates.append(domain_login.split('@')[0])
+    seen = set()
+    result = []
+    for candidate in candidates:
+        key = candidate.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(candidate)
+    return result
+
+
+def _user_matches_domain_login(user, domain_login):
+    if not user or not domain_login:
+        return False
+    username = (user.username or '').strip().lower()
+    for candidate in _username_candidates_from_domain_login(domain_login):
+        if username == candidate.lower():
+            return True
+    return False
+
+
+def _get_user_profile(user):
+    try:
+        return user.profiles
+    except Exception:
+        return None
+
+
+def _staff_by_uin(staff_uin):
+    staff_uin = (staff_uin or '').strip()
+    if not staff_uin:
+        return None
+    return RefStaff.objects.filter(uin__iexact=staff_uin).first()
 
 
 def get_or_create_rlk_chat(rlk):
@@ -19,26 +63,75 @@ def get_or_create_rlk_chat(rlk):
     return chat
 
 
+def resolve_rlk_by_uin(rlk_uin):
+    rlk_uin = (rlk_uin or '').strip()
+    if not rlk_uin:
+        return None
+    qs = DocRLK.objects.select_related('unit', 'staff').filter(uin__iexact=rlk_uin)
+    rlk = qs.filter(eco=False).order_by('-pk').first()
+    if rlk is None:
+        rlk = qs.order_by('-pk').first()
+    return rlk
+
+
 def resolve_user_by_staff_uin(uin):
     """Пользователь портала по УИН сотрудника из 1С (RefStaff.uin → domain_login)."""
-    uin = (uin or '').strip()
-    if not uin:
-        return None
-    staff = RefStaff.objects.filter(uin=uin).first()
+    staff = _staff_by_uin(uin)
     if staff is None or not (staff.domain_login or '').strip():
         return None
-    return User.objects.filter(username__iexact=staff.domain_login.strip()).first()
+    for candidate in _username_candidates_from_domain_login(staff.domain_login):
+        user = User.objects.filter(username__iexact=candidate).first()
+        if user:
+            return user
+    return None
 
 
-def user_can_access_rlk_op_chat(user, rlk):
+def user_can_access_rlk_op_chat(user, rlk, staff_uin=None, from_1c=False):
+    """
+    Доступ к чату РЛК ОП.
+
+    Портал: price_car_new / price_car_new_settings / price_car_new_all,
+    менеджер РЛК (domain_login или УИН).
+
+    Ссылка из 1С (?uin=...&rlk_uin=...): сотрудник из uin совпадает
+    с текущим пользователем портала — достаточно для доступа;
+    дополнительно: УИН = менеджер РЛК или участник CarCalculations по РЛК.
+    """
     if not user.is_authenticated:
         return False
-    profile = getattr(user, 'profiles', None)
-    if profile and (profile.price_car_new or profile.price_car_new_settings):
+
+    staff_uin = (staff_uin or '').strip()
+    link_staff = _staff_by_uin(staff_uin)
+    user_matches_link = bool(
+        link_staff and _user_matches_domain_login(user, link_staff.domain_login)
+    )
+
+    profile = _get_user_profile(user)
+    if profile and (
+        profile.price_car_new
+        or profile.price_car_new_settings
+        or profile.price_car_new_all
+    ):
         return True
-    if rlk.staff_id and rlk.staff.domain_login:
-        if user.username.lower() == rlk.staff.domain_login.strip().lower():
+
+    if from_1c and user_matches_link:
+        return True
+
+    if rlk.staff_id and _user_matches_domain_login(user, rlk.staff.domain_login):
+        return True
+
+    if user_matches_link and rlk.staff_id:
+        if (rlk.staff.uin or '').strip().lower() == staff_uin.lower():
             return True
+
+    if user_matches_link and staff_uin:
+        from prices_car.models import CarCalculations
+
+        if CarCalculations.objects.filter(rlk_id=rlk.pk).filter(
+            Q(author_id=link_staff.pk) | Q(staff_id=link_staff.pk)
+        ).exists():
+            return True
+
     return False
 
 

@@ -1,9 +1,9 @@
-{% extends 'base_web_no_users.html' %}
+{% extends 'base_rlk_chat_1c.html' %}
 
 {% block title %} — Чат РЛК {{ params.rlk.nomer }} {% endblock %}
 
 {% block content %}
-<div class="container py-3" style="max-width: 720px;">
+<div class="container-fluid py-3 px-3" style="max-width: 900px; margin: 0 auto;">
     <h4 class="mb-1">Чат по рабочему листу</h4>
     <p class="text-muted mb-3">
         РЛК {{ params.rlk.nomer }} от {{ params.rlk.dataTime|date:'d.m.Y' }}

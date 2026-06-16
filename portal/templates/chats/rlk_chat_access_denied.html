@@ -1,0 +1,18 @@
+{% extends 'base_rlk_chat_1c.html' %}
+
+{% block title %}Нет доступа — чат РЛК{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 560px;">
+    <div class="alert alert-danger mb-0">
+        <h5 class="alert-heading mb-2">403 — нет доступа к чату</h5>
+        <p class="mb-2">
+            Откройте ссылку из 1С с параметром <code>uin</code> вашего сотрудника
+            или войдите под учётной записью менеджера этого рабочего листа / сотрудника ценообразования.
+        </p>
+        <p class="mb-0 small text-muted">
+            Если вы уже вошли в портал под другим пользователем, выйдите из системы и откройте ссылку из 1С снова.
+        </p>
+    </div>
+</div>
+{% endblock %}

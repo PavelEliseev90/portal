@@ -35,7 +35,12 @@ import qrcode
 import io
 import base64
 from chats.models import Chat, ChatMessage
-from chats.rlk_chat_utils import build_rlk_chat_params, resolve_user_by_staff_uin, user_can_access_rlk_op_chat
+from chats.rlk_chat_utils import (
+    build_rlk_chat_params,
+    resolve_rlk_by_uin,
+    resolve_user_by_staff_uin,
+    user_can_access_rlk_op_chat,
+)
 from profiles.models import Profiles
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -3663,13 +3668,15 @@ def rlk_op_chat(request, rlk_id=None):
     РЛК по УИН: /cars/deal/rlk-chat/?rlk_uin=...&uin=...
     """
     staff_uin = (request.GET.get('uin') or '').strip()
-    if not request.user.is_authenticated and staff_uin:
-        user = resolve_user_by_staff_uin(staff_uin)
-        if user:
-            dj_login(request, user)
-
     if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
+        if staff_uin:
+            user = resolve_user_by_staff_uin(staff_uin)
+            if user:
+                dj_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            else:
+                return render(request, 'chats/rlk_chat_uin_auth_error.html')
+        else:
+            return redirect_to_login(request.get_full_path())
 
     if rlk_id:
         rlk = get_object_or_404(
@@ -3679,14 +3686,16 @@ def rlk_op_chat(request, rlk_id=None):
     else:
         rlk_uin = (request.GET.get('rlk_uin') or '').strip()
         if not rlk_uin:
-            return render(request, 'errors/403.html', {'params': {'type': 'home', 'request': request}})
-        rlk = get_object_or_404(
-            DocRLK.objects.select_related('unit', 'staff'),
-            uin=rlk_uin,
-        )
+            return render(request, 'chats/rlk_chat_access_denied.html')
+        rlk = resolve_rlk_by_uin(rlk_uin)
+        if rlk is None:
+            raise Http404
 
-    if not user_can_access_rlk_op_chat(request.user, rlk):
-        return render(request, 'errors/403.html', {'params': {'type': 'home', 'request': request}})
+    from_1c = bool(staff_uin and (rlk_id or (request.GET.get('rlk_uin') or '').strip()))
+    if not user_can_access_rlk_op_chat(
+        request.user, rlk, staff_uin=staff_uin, from_1c=from_1c,
+    ):
+        return render(request, 'chats/rlk_chat_access_denied.html')
 
     params = {
         'type': 'rlk_op_chat',
