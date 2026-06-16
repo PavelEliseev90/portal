@@ -1,0 +1,171 @@
+<div class="" style="position: fixed; bottom: 0; right: 0; padding: 20px; z-index: 1030;">
+    <button type="button" class="btn bg-dark text-white" id="rlk_op_chat_open" data-bs-toggle="offcanvas" data-bs-target="#rlkOpOffcanvas" aria-controls="rlkOpOffcanvas">
+        <span class="icon-mbri-chat"></span> Чат по РЛК
+    </button>
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="rlkOpOffcanvas" aria-labelledby="rlkOpOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="rlkOpOffcanvasLabel">
+            Чат — РЛК {% if params.rlk %}{{ params.rlk.nomer }}{% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+    </div>
+
+    <div id="rlk_op_div_reconect" class="d-none align-items-center align-self-center px-3">
+        <hr>
+        <label class="fs-6 fw-bold">Соединение потеряно...</label>
+        <button class="btn btn-outline-danger" type="button" id="rlk_op_btn_reconect"><span class="icon-mbri-close"></span> Переподключиться</button>
+        <hr>
+    </div>
+
+    <div class="offcanvas-body" style="padding: 0;">
+        <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1" style="padding-bottom: 4rem;">
+            <div class="container" style="padding: 0 0 4rem 0; margin: 0;">
+                <div class="row message-list" id="rlk-op-message-list" style="padding: 0; margin: 0;">
+                    {% if params.messages %}
+                        {% for message in params.messages %}
+                            <div class="item-chat-message{% if message.user.profiles.eco %}-owner text-end{% endif %} col-12" style="padding: 0;">
+                                <div class="item-chat-body{% if message.user.profiles.eco %}-owner text-end{% endif %}">
+                                    <div class="item-content-chat">
+                                        <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                            {% autoescape off %}{{ message.content_html }}{% endautoescape %}
+                                        </label>
+                                    </div>
+                                    <p class="item-time-chat{% if message.user == params.user %}-owner text-end{% endif %}">
+                                        {% if message.user.profiles.eco_name %}{{ message.user.profiles.eco_name }}{% else %}{{ message.user.last_name }} {{ message.user.first_name }}{% endif %}
+                                        / {{ message.date }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12" id="rlk-op-no-message">
+                            <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold px-3">
+                                В чате пока нет сообщений.
+                            </h6>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        {% if not params.user.profiles.user_sb %}
+        <section id="rlk_op_form_send" style="position:absolute; bottom:0.25rem; padding:0; width:-webkit-fill-available; margin-left:0.25rem; margin-right:0.25rem;">
+            <form id="rlk-op-post-form">
+                {% csrf_token %}
+                <div class="position-relative w-100">
+                    <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0;">
+                        <textarea class="form-control border-end-0" name="message" id="rlk-op-message" placeholder="Введите текст" rows="3" required></textarea>
+                        <button class="btn btn-dark text-white" type="submit" id="rlk-op-form-submit"><span class="icon-mbri-play"></span></button>
+                    </div>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+    </div>
+</div>
+
+<audio id="rlk-op-notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+(function () {
+    const chat_id = '{{ params.chat.pk }}';
+    const chatName = '{{ params.chat.slug }}';
+    const username = '{{ params.user.username|escapejs }}';
+    const last_name = '{{ params.user.last_name|escapejs }}';
+    const first_name = '{{ params.user.first_name|escapejs }}';
+    const psevdo_name = '{{ params.user.profiles.eco_name|escapejs }}';
+    const eco = {% if params.user.profiles.eco %}true{% else %}false{% endif %};
+
+    let chatSocket;
+
+    function scrollToBottom() {
+        const list = document.getElementById('rlk-op-message-list');
+        if (list) list.scrollIntoViewIfNeeded();
+    }
+
+    function appendMessage(data, isOwner) {
+        const now = new Date();
+        const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+        const author = data.psevdo_name || (data.last_name + ' ' + data.first_name);
+        const text = (data.message || '').replace(/\n/g, '<br>');
+        let html;
+        if (isOwner) {
+            html = '<div class="item-chat-message-owner text-end col-12" style="padding:0;">';
+            html += '<div class="item-chat-body-owner text-end"><div class="item-content-chat">';
+            html += '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + text + '</label>';
+            html += '<p class="item-time-chat-owner text-end">' + author + ' / ' + time + '</p>';
+            html += '</div></div></div>';
+        } else {
+            html = '<div class="item-chat-message col-12" style="padding:0;">';
+            html += '<div class="item-chat-body"><div class="item-content-chat">';
+            html += '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + text + '</label>';
+            html += '<p class="item-time-chat">' + author + ' / ' + time + '</p>';
+            html += '</div></div></div>';
+        }
+        document.getElementById('rlk-op-message-list').insertAdjacentHTML('beforeend', html);
+        scrollToBottom();
+    }
+
+    function connectWs() {
+        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+        chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
+
+        chatSocket.onopen = function () {
+            document.getElementById('rlk_op_div_reconect').classList.add('d-none');
+            const formSend = document.getElementById('rlk_op_form_send');
+            if (formSend) formSend.classList.remove('d-none');
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            if (!data.message || String(data.chat_id) !== String(chat_id)) return;
+            const notif = document.getElementById('rlk-op-notif');
+            if (notif) notif.play().catch(function () {});
+            appendMessage(data, !!data.eco);
+        };
+
+        chatSocket.onclose = function () {
+            const formSend = document.getElementById('rlk_op_form_send');
+            if (formSend) formSend.classList.add('d-none');
+            document.getElementById('rlk_op_div_reconect').classList.remove('d-none');
+            setTimeout(connectWs, 3000);
+        };
+    }
+
+    document.getElementById('rlk-op-post-form')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const ta = document.getElementById('rlk-op-message');
+        const message = ta.value.trim();
+        if (!message || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({
+            chat_id: chat_id,
+            name: username,
+            chat: chatName,
+            message: message,
+            username: username,
+            last_name: last_name,
+            first_name: first_name,
+            psevdo_name: psevdo_name,
+            eco: eco
+        }));
+        const noMsg = document.getElementById('rlk-op-no-message');
+        if (noMsg) noMsg.remove();
+        ta.value = '';
+    });
+
+    document.getElementById('rlk-op-message')?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('rlk-op-form-submit')?.click();
+        }
+    });
+
+    document.getElementById('rlk_op_btn_reconect')?.addEventListener('click', connectWs);
+    document.getElementById('rlk_op_chat_open')?.addEventListener('click', scrollToBottom);
+
+    connectWs();
+    scrollToBottom();
+})();
+</script>

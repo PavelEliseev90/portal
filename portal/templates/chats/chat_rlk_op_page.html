@@ -1,0 +1,118 @@
+{% extends 'base_web_no_users.html' %}
+
+{% block title %} — Чат РЛК {{ params.rlk.nomer }} {% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 720px;">
+    <h4 class="mb-1">Чат по рабочему листу</h4>
+    <p class="text-muted mb-3">
+        РЛК {{ params.rlk.nomer }} от {{ params.rlk.dataTime|date:'d.m.Y' }}
+        {% if params.rlk.unit %} · {{ params.rlk.unit.name }}{% endif %}
+    </p>
+
+    <div id="rlk_op_page_reconect" class="alert alert-warning d-none">
+        Соединение потеряно. <button type="button" class="btn btn-sm btn-outline-danger" id="rlk_op_page_reconnect">Переподключиться</button>
+    </div>
+
+    <div class="border rounded bg-white p-2 mb-2" style="min-height: 50vh; max-height: 65vh; overflow-y: auto;" id="rlk-op-page-message-list">
+        {% if params.messages %}
+            {% for message in params.messages %}
+                <div class="mb-2{% if message.user.profiles.eco %} text-end{% endif %}">
+                    <div class="small text-muted">
+                        {% if message.user.profiles.eco_name %}{{ message.user.profiles.eco_name }}{% else %}{{ message.user.last_name }} {{ message.user.first_name }}{% endif %}
+                        · {{ message.date|date:'d.m.Y H:i' }}
+                    </div>
+                    <div class="{% if message.user.profiles.eco %}bg-primary bg-opacity-10{% else %}bg-light{% endif %} rounded p-2 d-inline-block">
+                        {% autoescape off %}{{ message.content_html }}{% endautoescape %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted mb-0" id="rlk-op-page-no-message">В чате пока нет сообщений.</p>
+        {% endif %}
+    </div>
+
+    {% if not params.user.profiles.user_sb %}
+    <form id="rlk-op-page-form" class="d-flex gap-2">
+        {% csrf_token %}
+        <textarea class="form-control" id="rlk-op-page-message" rows="2" placeholder="Сообщение..." required></textarea>
+        <button type="submit" class="btn btn-dark text-nowrap">Отправить</button>
+    </form>
+    {% endif %}
+</div>
+
+<audio id="rlk-op-page-notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+(function () {
+    const chat_id = '{{ params.chat.pk }}';
+    const chatName = '{{ params.chat.slug }}';
+    const username = '{{ params.user.username|escapejs }}';
+    const last_name = '{{ params.user.last_name|escapejs }}';
+    const first_name = '{{ params.user.first_name|escapejs }}';
+    const psevdo_name = '{{ params.user.profiles.eco_name|escapejs }}';
+    const eco = {% if params.user.profiles.eco %}true{% else %}false{% endif %};
+
+    const listEl = document.getElementById('rlk-op-page-message-list');
+    let chatSocket;
+
+    function scrollToBottom() {
+        if (listEl) listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    function appendMessage(data, isOwner) {
+        const author = data.psevdo_name || (data.last_name + ' ' + data.first_name);
+        const text = (data.message || '').replace(/\n/g, '<br>');
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-2' + (isOwner ? ' text-end' : '');
+        wrap.innerHTML =
+            '<div class="small text-muted">' + author + '</div>' +
+            '<div class="' + (isOwner ? 'bg-primary bg-opacity-10' : 'bg-light') + ' rounded p-2 d-inline-block">' + text + '</div>';
+        listEl.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function connectWs() {
+        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+        chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
+        chatSocket.onopen = function () {
+            document.getElementById('rlk_op_page_reconect').classList.add('d-none');
+        };
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            if (!data.message || String(data.chat_id) !== String(chat_id)) return;
+            document.getElementById('rlk-op-page-notif')?.play().catch(function () {});
+            appendMessage(data, !!data.eco);
+        };
+        chatSocket.onclose = function () {
+            document.getElementById('rlk_op_page_reconect').classList.remove('d-none');
+            setTimeout(connectWs, 3000);
+        };
+    }
+
+    document.getElementById('rlk-op-page-form')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const ta = document.getElementById('rlk-op-page-message');
+        const message = ta.value.trim();
+        if (!message || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({
+            chat_id: chat_id,
+            name: username,
+            chat: chatName,
+            message: message,
+            username: username,
+            last_name: last_name,
+            first_name: first_name,
+            psevdo_name: psevdo_name,
+            eco: eco
+        }));
+        document.getElementById('rlk-op-page-no-message')?.remove();
+        ta.value = '';
+    });
+
+    document.getElementById('rlk_op_page_reconnect')?.addEventListener('click', connectWs);
+    connectWs();
+    scrollToBottom();
+})();
+</script>
+{% endblock %}

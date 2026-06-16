@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
 from django.conf import settings
 from django.contrib.auth import login as dj_login
 from django.contrib.auth.models import User
@@ -34,6 +35,7 @@ import qrcode
 import io
 import base64
 from chats.models import Chat, ChatMessage
+from chats.rlk_chat_utils import build_rlk_chat_params, resolve_user_by_staff_uin, user_can_access_rlk_op_chat
 from profiles.models import Profiles
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -3522,6 +3524,7 @@ def deal_calculation_doc(request, id):
     }
     
     calc    = CarCalculations.objects.select_related(
+        'rlk', 'rlk__staff', 'rlk__unit',
         'unit', 'car', 'car__unit',
         'car__modification_autoru', 'car__modification_autoru__model', 'car__modification_autoru__model__mark',
     ).get(pk=id)
@@ -3646,8 +3649,51 @@ def deal_calculation_doc(request, id):
         'total_amount': total_amount,
         'sale_type': sale_type,
     })
+
+    if calc.rlk_id and user_can_access_rlk_op_chat(request.user, calc.rlk):
+        params.update(build_rlk_chat_params(request, calc.rlk))
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+def rlk_op_chat(request, rlk_id=None):
+    """
+    Чат по рабочему листу ОП (для 1С и прямой ссылки).
+    Сквозная авторизация: ?uin=<УИН сотрудника>
+    РЛК по УИН: /cars/deal/rlk-chat/?rlk_uin=...&uin=...
+    """
+    staff_uin = (request.GET.get('uin') or '').strip()
+    if not request.user.is_authenticated and staff_uin:
+        user = resolve_user_by_staff_uin(staff_uin)
+        if user:
+            dj_login(request, user)
+
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+
+    if rlk_id:
+        rlk = get_object_or_404(
+            DocRLK.objects.select_related('unit', 'staff'),
+            pk=rlk_id,
+        )
+    else:
+        rlk_uin = (request.GET.get('rlk_uin') or '').strip()
+        if not rlk_uin:
+            return render(request, 'errors/403.html', {'params': {'type': 'home', 'request': request}})
+        rlk = get_object_or_404(
+            DocRLK.objects.select_related('unit', 'staff'),
+            uin=rlk_uin,
+        )
+
+    if not user_can_access_rlk_op_chat(request.user, rlk):
+        return render(request, 'errors/403.html', {'params': {'type': 'home', 'request': request}})
+
+    params = {
+        'type': 'rlk_op_chat',
+        'request': request,
+    }
+    params.update(build_rlk_chat_params(request, rlk))
+    return render(request, 'chats/chat_rlk_op_page.html', {'params': params})
 
 
 @login_required
