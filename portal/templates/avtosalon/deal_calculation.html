@@ -5,7 +5,9 @@
 
 {% block content %}
 
-{% include 'chats/chat_car.html' %}
+{% if params.chat %}
+{% include 'chats/chat_rlk_op_embed.html' %}
+{% endif %}
 
 <div class="portal-page">
   <div class="portal-header">
