@@ -120,7 +120,66 @@ def calculation_car(request):
     }
 
     return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def calculation_car_start_success(request):
     
+    body_unicode    = request.body.decode().replace("'", '"')
+    data            = json.loads(body_unicode)
+    unit_object     = get_unit(data["Car"]["Unit"])
+    car_object      = get_car_object(data["Car"], unit_object)
+    rlk_object      = get_worksheet(data["Rlk"])
+    uin             = data['Uin'] 
+    calculation_object, created = CarCalculations.objects.filter(uin = uin).get_or_create(uin = uin)
+
+    calculation_object.rlk = rlk_object
+    calculation_object.car = car_object
+    calculation_object.unit = unit_object
+    calculation_object.date = DT.datetime.strptime(data['Date'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_success = DT.datetime.strptime(data['Date_success'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.date_refresh = DT.datetime.strptime(data['Date_refresh'], '%Y-%m-%dT%H:%M:%S')
+    calculation_object.number = data['Number']
+    calculation_object.rejection    = data['Rejection']
+    calculation_object.author       = get_staff(data['Author'])
+    calculation_object.staff        = get_staff(data['Staff'])
+    calculation_object.kvp          = data['Kvp']
+    calculation_object.amount       = data['Amount']
+    calculation_object.save()
+
+    CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
+
+    list_detail = data['Detail']
+
+    for detail_info in list_detail:
+        type_detail, created = CarCalculationsTypeDetail.objects.filter(name = detail_info['Type']).get_or_create(name = detail_info['Type'])
+        new_cal_detail = CarCalculationsDetail()
+        new_cal_detail.calculation = calculation_object
+        new_cal_detail.detail_type  = type_detail
+        new_cal_detail.success      = detail_info['Success']
+        new_cal_detail.amount       = detail_info['Amount']
+        new_cal_detail.vp           = detail_info['Vp']
+        new_cal_detail.pocazatel    = detail_info['Pocazatel']
+        new_cal_detail.amount_k     = detail_info['Amount_k']
+        new_cal_detail.save()
+    
+    RefCarsOrganizationAction.objects.filter(car = car_object).delete()
+
+    list_action = data['Action']
+    for action_info in list_action:
+        new_action_detail = RefCarsOrganizationAction()
+        new_action_detail.car       = car_object
+        new_action_detail.name      = action_info['Name']
+        new_action_detail.comment   = action_info['Comment']
+        new_action_detail.amount_sale = action_info['Amount_sale']
+        new_action_detail.amount_comp = action_info['Amount_comp']        
+        new_action_detail.save()
+
+    to_json = {
+        'answer'     : calculation_object.pk,
+    }
+
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+       
     
 def get_car_object(car, unit):
         
@@ -4086,24 +4145,28 @@ def get_organization(organization):
     return ref_organization
 
 def get_worksheet_event(worksheets_event):
-    worksheet   = get_worksheet(worksheets_event['WorkSheet'])
-    uin         = worksheets_event['Uin']
-    events = DocRLKEvents.objects.filter(uin = uin)
-    if len(events) == 0:
-        event_object = DocRLKEvents()
-    else:
-        event_object = events[0]
-    event_object.uin            = uin
-    event_object.rlk            = worksheet
-    event_object.dataTime       = worksheets_event['Date']
-    event_object.dataTimeEvent  = worksheets_event['DateEvent']
-    event_object.staff          = get_staff(worksheets_event['Staff'])
-    event_object.contacType     = get_contactType(worksheets_event['ContactType'])
-    event_object.comment        = worksheets_event['Comment'][:1024]
-    event_object.status         = get_status_event(worksheets_event['Status'])
-    event_object.save()
     
-    return event_object
+    worksheet_uin   = worksheets_event['RLKUin']
+    worksheet       = DocRLK.objects.filter(uin=worksheet_uin).first()
+    if worksheet:
+        uin         = worksheets_event['Uin']
+        events = DocRLKEvents.objects.filter(uin = uin)
+        if len(events) == 0:
+            event_object = DocRLKEvents()
+        else:
+            event_object = events[0]
+        event_object.uin            = uin
+        event_object.rlk            = worksheet
+        event_object.dataTime       = worksheets_event['Date']
+        event_object.dataTimeEvent  = worksheets_event['DateEvent']
+        event_object.staff          = get_staff(worksheets_event['Staff'])
+        event_object.contacType     = get_contactType(worksheets_event['ContactType'])
+        event_object.comment        = worksheets_event['Comment'][:1024]
+        event_object.status         = get_status_event(worksheets_event['Status'])
+        event_object.save()
+        
+        return event_object
+    return None
     
 def get_worksheet(worksheet):
     

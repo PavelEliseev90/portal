@@ -133,7 +133,10 @@ urlpatterns = [
   
    #Работа с расширениями заказ - наряда (Тизер)
    path('recomendations_exchange/',       views.recomendations_exchange),
+   
    path('calculation_car/',               views.calculation_car),
+   path('calculation_car_start_success/', views.calculation_car_start_success),
+
    # Конвертация аудио файлов с диктофона так как там уйня полная
 
    path('post_recordeds_voice_audio_portative_programm',       views.post_recordeds_voice_audio_portative_programm),

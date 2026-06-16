@@ -24,6 +24,11 @@ from .calculations_table import (
     get_user_list_settings,
     save_user_list_settings,
 )
+import requests
+import json
+
+url_alfa = 'http://k01srv1c05/ralfa01/hs/mb/?type='
+time_out_im    = 25
 
 
 def _prev_month_first(month_date: date) -> date:
@@ -1008,3 +1013,32 @@ def refresh_km_cars():
             km_car.save()
         except Exception:
             pass
+
+
+def send_km_car_1C():
+    url_post = url_alfa + "KMCar"
+    km_list = KMCar.objects.all().order_by("-date")[:5000]
+    km_info = list()
+    for km in km_list:
+        data = {
+            "VIN"       : km.car.vin,
+            "Comment"   : km.car.vin,
+            "KM"        : km.km,
+            'Date'      : km.date.strftime('%Y-%m-%dT%H:%M:%S%z')
+        }
+        km_info.append(data)
+    
+    js_data = {
+        'Type': 'KMCar', 
+        'Cars': km_info 
+    }
+
+    response = requests.post(
+        url_post,
+        json=js_data,
+        auth=("reglament", "aliluj24"),
+        timeout=180,
+    )  
+
+    if response.status_code == 200:
+        data = json.loads(response.text)
