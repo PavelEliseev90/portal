@@ -13,11 +13,14 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 from django.db.models import BooleanField, Case, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min, Value, When
+from django.db.models.functions import Coalesce
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
 from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit, RefCarsOrganization
 from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations, KMCar
 from .calculations_table import (
     CALC_LIST_SORT_FIELDS,
+    SOGLASOVANIE_LIST_FILTER_CHOICES,
+    apply_soglasovanie_status_filter,
     build_columns_settings,
     build_table_columns,
     export_cell_value,
@@ -758,6 +761,7 @@ def _build_calculations_list_queryset(request):
     agreement_filters = set(request.GET.getlist('agreement_filter'))
     shipment_filters = set(request.GET.getlist('shipment_filter'))
     km_kvp_filters = set(request.GET.getlist('km_kvp_filter'))
+    soglasovanie_filters = set(request.GET.getlist('soglasovanie_filter'))
     order_by = _resolve_calc_list_order(request.GET.get('order_by'))
 
     agreement_qs = (
@@ -779,7 +783,10 @@ def _build_calculations_list_queryset(request):
         agreement_nomer=Subquery(agreement_qs.values('nomer')[:1]),
         shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
         shipment_nomer=Subquery(shipment_qs.values('nomer')[:1]),
-        car_last_km=Subquery(car_last_km_qs.values('km')[:1]),
+        car_last_km=Coalesce(
+            F('km_raschet'),
+            Subquery(car_last_km_qs.values('km')[:1]),
+        ),
         km_kvp_fulfilled=Case(
             When(
                 Q(car_last_km__isnull=False)
@@ -831,6 +838,8 @@ def _build_calculations_list_queryset(request):
     elif km_kvp_filters == {'no'}:
         objects = objects.filter(kvp__isnull=False).filter(km_kvp_fulfilled=False)
 
+    objects = apply_soglasovanie_status_filter(objects, soglasovanie_filters)
+
     filtr = {
         'date_start': date_start,
         'date_end': date_end,
@@ -841,6 +850,7 @@ def _build_calculations_list_queryset(request):
         'agreement_filter': list(agreement_filters),
         'shipment_filter': list(shipment_filters),
         'km_kvp_filter': list(km_kvp_filters),
+        'soglasovanie_filter': list(soglasovanie_filters),
         'order_by': request.GET.get('order_by') or '-date',
     }
     return objects.order_by(order_by, '-pk'), filtr
@@ -874,6 +884,7 @@ def calculations_list(request):
             'table_columns': build_table_columns(request.user),
             'columns_settings': build_columns_settings(request.user),
             'list_settings': get_user_list_settings(request.user),
+            'soglasovanie_filter_choices': SOGLASOVANIE_LIST_FILTER_CHOICES,
         },
     })
 

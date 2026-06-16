@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.conf import settings
@@ -53,6 +53,12 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.crypto import get_random_string
 from prices_car.models import EmailPushCar, CarCalculations
+from avtosalon.deal_calc_approval import (
+    build_deal_calc_approval_context,
+    handle_deal_calc_approval_post,
+    user_can_access_deal_calculation_doc,
+)
+from prices_car.km_raschet import apply_km_raschet_to_calculation
 from prices_car.brand_resolve import resolve_price_car_brand_for_car
 
 
@@ -3517,7 +3523,15 @@ def deal_calculation(request):
 @login_required
 def deal_calculation_doc(request, id):
     
-    if not request.user.profiles.price_car_new and not request.user.profiles.price_car_new_settings: 
+    calc    = CarCalculations.objects.select_related(
+        'rlk', 'rlk__staff', 'rlk__unit',
+        'unit', 'car', 'car__unit',
+        'car__modification_autoru', 'car__modification_autoru__model', 'car__modification_autoru__model__mark',
+        'director_approve_user', 'director_approve_user__profiles',
+        'uk_approve_user', 'uk_approve_user__profiles',
+    ).get(pk=id)
+
+    if not user_can_access_deal_calculation_doc(request.user, calc):
         params = {
             'type': 'home',
             'request': request,
@@ -3535,27 +3549,21 @@ def deal_calculation_doc(request, id):
         'request': request,
     }
     
-    calc    = CarCalculations.objects.select_related(
-        'rlk', 'rlk__staff', 'rlk__unit',
-        'unit', 'car', 'car__unit',
-        'car__modification_autoru', 'car__modification_autoru__model', 'car__modification_autoru__model__mark',
-    ).get(pk=id)
     car     = calc.car
+    if calc.km_raschet is None and car:
+        apply_km_raschet_to_calculation(calc, car)
+        if calc.km_raschet is not None:
+            calc.save(update_fields=['km_raschet'])
+    cumulative_data = car.cumulative_data() if car else {}
+
     if request.method == 'POST':
-        new_object =  calc
-        
-        if 'send' in request.POST:
-            for uusr in car.access_user.all():
-                if uusr.email != '':
-                    new_message              = EmailPushCar()
-                    new_message.car           = car
-                    new_message.user          = uusr
-                    new_message.email         = uusr.email
-                    new_message.comment       = 'Согласование расчета продажи автомобиля'
-                    new_message.price         = False
-                    new_message.calc         = calc
-                    new_message.save()
-            
+        approval_response = handle_deal_calc_approval_post(
+            request, calc, cumulative_data,
+        )
+        if approval_response is not None:
+            return approval_response
+
+        new_object = calc
         new_object.car = car
         new_object.user = request.user
         new_object.comment = request.POST.get('comment', '')
@@ -3570,7 +3578,7 @@ def deal_calculation_doc(request, id):
         new_object.custom_product  = int(request.POST.get('custom_product', '0'))
         new_object.save()
         
-        return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')  
+        return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')
     
     from documents.models import DocZN
     zn_list = []
@@ -3651,7 +3659,7 @@ def deal_calculation_doc(request, id):
         'stock_chart_unit_name': stock_chart_unit_name,
         'stock_chart_unit_json': json.dumps(stock_chart_unit, ensure_ascii=False),
         'stock_chart_all_json': json.dumps(stock_chart_all, ensure_ascii=False),
-        'cumulative_data' : car.cumulative_data(),
+        'cumulative_data' : cumulative_data,
         'selected_opfu_services': selected_opfu_services,
         'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
         'car_price': car_price,
@@ -3661,6 +3669,7 @@ def deal_calculation_doc(request, id):
         'total_amount': total_amount,
         'sale_type': sale_type,
     })
+    params.update(build_deal_calc_approval_context(request.user, calc, cumulative_data))
 
     if calc.rlk_id and user_can_access_rlk_op_chat(request.user, calc.rlk):
         params.update(build_rlk_chat_params(request, calc.rlk))

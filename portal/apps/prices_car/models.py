@@ -197,6 +197,7 @@ class CarCalculations(models.Model):
     number              = models.CharField("Номер", max_length=15, null=True, blank=True)
     amount              = models.IntegerField("Сумма итого", default=0, null=True, blank=True)
     kvp                 = models.IntegerField("КВП", default=0, null=True, blank=True)
+    km_raschet          = models.IntegerField("Расчетный КМ", null=True, blank=True)
     author              = models.ForeignKey(RefStaff, null=True, related_name='car_calculation_author', on_delete=models.SET_NULL, verbose_name='Пользователь')
     staff               = models.ForeignKey(RefStaff, null=True, related_name='car_calculation_staff', on_delete=models.SET_NULL, verbose_name='Пользователь')
     
@@ -224,6 +225,64 @@ class CarCalculations(models.Model):
     custom_product  = models.IntegerField("Товары", default=0, null=True, blank=True)
 
     comment    = models.CharField("Текст", max_length=2048, default='', null=True, blank=True)
+
+    SOGLASOVANIE_PENDING = 'pending'
+    SOGLASOVANIE_DIRECTOR_APPROVED = 'director_approved'
+    SOGLASOVANIE_PENDING_UK = 'pending_uk'
+    SOGLASOVANIE_UK_APPROVED = 'uk_approved'
+    SOGLASOVANIE_STATUS_CHOICES = (
+        (SOGLASOVANIE_PENDING, 'Ожидает директора ДЦ'),
+        (SOGLASOVANIE_DIRECTOR_APPROVED, 'Согласовано директором ДЦ'),
+        (SOGLASOVANIE_PENDING_UK, 'На согласовании УК'),
+        (SOGLASOVANIE_UK_APPROVED, 'Согласовано УК'),
+    )
+    soglasovanie_status = models.CharField(
+        "Статус согласования",
+        max_length=32,
+        choices=SOGLASOVANIE_STATUS_CHOICES,
+        default=SOGLASOVANIE_PENDING,
+        blank=True,
+    )
+    director_approve_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='calc_director_approvals',
+        verbose_name='Согласовал директор',
+    )
+    director_approve_date = models.DateTimeField(
+        'Дата согласования директором',
+        null=True,
+        blank=True,
+    )
+    director_approve_comment = models.CharField(
+        "Комментарий директора",
+        max_length=2048,
+        default='',
+        null=True,
+        blank=True,
+    )
+    uk_approve_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='calc_uk_approvals',
+        verbose_name='Согласовал УК',
+    )
+    uk_approve_date = models.DateTimeField(
+        'Дата согласования УК',
+        null=True,
+        blank=True,
+    )
+    uk_approve_comment = models.CharField(
+        "Комментарий УК",
+        max_length=2048,
+        default='',
+        null=True,
+        blank=True,
+    )
 
     def detail(self):
         from prices_car.models import CarCalculationsDetail

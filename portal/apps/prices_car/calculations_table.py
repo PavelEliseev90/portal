@@ -2,8 +2,14 @@
 
 DEFAULT_CALC_LIST_COLUMNS = [
     'link', 'date', 'number', 'unit', 'rlk', 'car', 'vin',
-    'client', 'author', 'kvp', 'agreement', 'shipment',
+    'client', 'author', 'kvp', 'soglasovanie_status', 'agreement', 'shipment',
 ]
+
+SOGLASOVANIE_LIST_FILTER_CHOICES = (
+    ('approved', 'Согласовано'),
+    ('pending_director', 'Требуется согласование директором ДЦ'),
+    ('pending_uk', 'Требуется согласование УК'),
+)
 
 CALC_LIST_COLUMN_DEFS = {
     'link': {'label': '#', 'label_export': 'ID', 'sortable': False},
@@ -17,6 +23,12 @@ CALC_LIST_COLUMN_DEFS = {
     'author': {'label': 'Автор', 'sortable': True, 'sort_key': 'author'},
     'staff': {'label': 'Менеджер', 'sortable': True, 'sort_key': 'staff'},
     'kvp': {'label': 'КВ', 'sortable': True, 'sort_key': 'kvp'},
+    'soglasovanie_status': {
+        'label': 'Согласование КП',
+        'label_export': 'Статус согласования',
+        'sortable': True,
+        'sort_key': 'soglasovanie_status',
+    },
     'amount': {'label': 'Сумма итого', 'sortable': True, 'sort_key': 'amount'},
     'price': {'label': 'Цена автомобиля', 'sortable': True, 'sort_key': 'price'},
     'discount': {'label': 'Скидка', 'sortable': True, 'sort_key': 'discount'},
@@ -39,6 +51,7 @@ CALC_LIST_SORT_FIELDS = {
     'author': 'author__name',
     'staff': 'staff__name',
     'kvp': 'kvp',
+    'soglasovanie_status': 'soglasovanie_status',
     'amount': 'amount',
     'price': 'price',
     'discount': 'discount',
@@ -108,8 +121,50 @@ def get_user_table_columns(user):
         return list(DEFAULT_CALC_LIST_COLUMNS)
 
 
+def _effective_car_km(item):
+    if getattr(item, 'km_raschet', None) is not None:
+        return item.km_raschet
+    return getattr(item, 'car_last_km', None)
+
+
+def get_soglasovanie_status_display(item):
+    from .models import CarCalculations
+
+    status = getattr(item, 'soglasovanie_status', None)
+    if not status:
+        status = CarCalculations.SOGLASOVANIE_PENDING
+    return dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(status, status)
+
+
+def apply_soglasovanie_status_filter(queryset, filter_values):
+    from django.db.models import Q
+    from .models import CarCalculations
+
+    if not filter_values:
+        return queryset
+
+    status_q = Q()
+    if 'approved' in filter_values:
+        status_q |= Q(soglasovanie_status__in=[
+            CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+            CarCalculations.SOGLASOVANIE_UK_APPROVED,
+        ])
+    if 'pending_director' in filter_values:
+        status_q |= (
+            Q(soglasovanie_status=CarCalculations.SOGLASOVANIE_PENDING)
+            | Q(soglasovanie_status='')
+            | Q(soglasovanie_status__isnull=True)
+        )
+    if 'pending_uk' in filter_values:
+        status_q |= Q(soglasovanie_status=CarCalculations.SOGLASOVANIE_PENDING_UK)
+
+    if status_q:
+        return queryset.filter(status_q)
+    return queryset
+
+
 def km_kvp_is_fulfilled(item):
-    car_km = getattr(item, 'car_last_km', None)
+    car_km = _effective_car_km(item)
     kvp = getattr(item, 'kvp', None)
     if car_km is None or kvp is None:
         return False
@@ -206,6 +261,8 @@ def export_cell_value(item, key):
         return item.staff.name if item.staff else ''
     if key == 'kvp':
         return item.kvp if item.kvp is not None else ''
+    if key == 'soglasovanie_status':
+        return get_soglasovanie_status_display(item)
     if key == 'amount':
         return item.amount if item.amount is not None else ''
     if key == 'price':
@@ -221,7 +278,7 @@ def export_cell_value(item, key):
     if key == 'shipment':
         return item.shipment_nomer or ''
     if key == 'car_km':
-        value = getattr(item, 'car_last_km', None)
+        value = _effective_car_km(item)
         return value if value is not None else ''
     if key == 'comment':
         return item.comment or ''
