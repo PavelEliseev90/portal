@@ -36,14 +36,14 @@ import io
 import base64
 from chats.models import Chat, ChatMessage
 from chats.rlk_chat_utils import (
-    bind_rlk_chat_1c_session,
     build_rlk_chat_page_url,
     build_rlk_chat_params,
+    build_rlk_chat_poll_url,
     extract_rlk_chat_request,
-    get_rlk_chat_user,
-    is_1c_rlk_chat_entry,
-    resolve_rlk_by_uin,
-    store_rlk_chat_session,
+    fetch_new_rlk_chat_messages,
+    resolve_rlk_chat_access,
+    resolve_rlk_chat_poll,
+    serialize_rlk_chat_messages,
     user_can_access_rlk_op_chat,
 )
 from profiles.models import Profiles
@@ -3666,6 +3666,7 @@ def deal_calculation_doc(request, id):
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
 
 
+@csrf_exempt
 def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
     """
     Чат по рабочему листу ОП (для 1С и прямой ссылки).
@@ -3675,44 +3676,22 @@ def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
     from chats.models import ChatMessage
     from django.shortcuts import redirect
 
-    parsed = extract_rlk_chat_request(request)
-    staff_uin = parsed['staff_uin'] or (staff_uin or '').strip()
-    rlk_uin = parsed['rlk_uin'] or (rlk_uin or '').strip()
-    from_1c = is_1c_rlk_chat_entry(request, staff_uin)
-
-    chat_user = get_rlk_chat_user(request)
-    if chat_user is None:
-        if from_1c and staff_uin:
-            chat_user = bind_rlk_chat_1c_session(request, staff_uin)
-            if chat_user is None:
-                return render(request, 'chats/rlk_chat_uin_auth_error.html')
-        elif request.user.is_authenticated:
-            chat_user = request.user
-        else:
-            return redirect_to_login(request.get_full_path())
-
-    if rlk_id:
-        rlk = get_object_or_404(
-            DocRLK.objects.select_related('unit', 'staff'),
-            pk=rlk_id,
-        )
-        if not rlk_uin:
-            rlk_uin = (rlk.uin or '').strip()
-    else:
-        if not rlk_uin:
-            return render(request, 'chats/rlk_chat_access_denied.html')
-        rlk = resolve_rlk_by_uin(rlk_uin)
-        if rlk is None:
-            raise Http404
-
-    store_rlk_chat_session(request, staff_uin, rlk_uin)
-
-    if not user_can_access_rlk_op_chat(
-        chat_user, rlk, staff_uin=staff_uin, from_1c=from_1c,
-    ):
+    ctx = resolve_rlk_chat_access(request, rlk_id=rlk_id, staff_uin=staff_uin, rlk_uin=rlk_uin)
+    if ctx['error'] == 'uin_auth':
+        return render(request, 'chats/rlk_chat_uin_auth_error.html')
+    if ctx['error'] == 'login':
+        return redirect_to_login(request.get_full_path())
+    if ctx['error'] == 'not_found':
+        raise Http404
+    if ctx['error'] == 'access':
         return render(request, 'chats/rlk_chat_access_denied.html')
 
-    chat_params = build_rlk_chat_params(request, rlk, user=chat_user)
+    chat_user = ctx['chat_user']
+    rlk = ctx['rlk']
+    staff_uin = ctx['staff_uin']
+    rlk_uin = ctx['rlk_uin']
+    from_1c = ctx['from_1c']
+    chat_params = ctx['chat_params']
 
     if request.method == 'POST':
         message = (request.POST.get('message') or '').strip()
@@ -3724,16 +3703,41 @@ def rlk_op_chat(request, rlk_id=None, staff_uin=None, rlk_uin=None):
             )
         return redirect(build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk))
 
+    messages = chat_params['messages']
+    _, last_message_id = serialize_rlk_chat_messages(messages, chat_user.pk)
+
     params = {
         'type': 'rlk_op_chat',
         'request': request,
         'staff_uin': staff_uin,
         'rlk_uin': rlk_uin,
         'chat_page_url': build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=rlk.pk),
+        'poll_url': build_rlk_chat_poll_url(),
+        'last_message_id': last_message_id,
         'from_1c': from_1c,
     }
     params.update(chat_params)
     return render(request, 'chats/chat_rlk_op_page.html', {'params': params})
+
+
+@csrf_exempt
+def rlk_op_chat_poll(request):
+    """HTTP-polling новых сообщений для 1С (без WebSocket)."""
+    from django.http import JsonResponse
+
+    ctx = resolve_rlk_chat_poll(request)
+    if ctx.get('error'):
+        return JsonResponse({'error': ctx['error']}, status=403)
+
+    try:
+        after_id = int(request.GET.get('after_id') or 0)
+    except (TypeError, ValueError):
+        after_id = 0
+
+    items, last_id = fetch_new_rlk_chat_messages(
+        ctx['chat_id'], after_id, ctx['chat_user'].pk,
+    )
+    return JsonResponse({'messages': items, 'last_id': last_id})
 
 
 @login_required

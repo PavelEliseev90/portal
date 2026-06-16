@@ -10,6 +10,7 @@ User = get_user_model()
 RLK_CHAT_PATH = '/cars/deal/rlk-chat'
 RLK_CHAT_1C_SESSION_FLAG = 'rlk_chat_1c_session'
 RLK_CHAT_USER_ID_KEY = 'rlk_chat_user_id'
+RLK_CHAT_CHAT_ID_KEY = 'rlk_chat_chat_id'
 
 
 def is_rlk_chat_request(request):
@@ -65,13 +66,15 @@ def extract_rlk_chat_request(request):
     }
 
 
-def store_rlk_chat_session(request, staff_uin, rlk_uin):
+def store_rlk_chat_session(request, staff_uin, rlk_uin, chat_id=None):
     staff_uin = (staff_uin or '').strip()
     rlk_uin = (rlk_uin or '').strip()
     if staff_uin:
         request.session['rlk_chat_staff_uin'] = staff_uin
     if rlk_uin:
         request.session['rlk_chat_rlk_uin'] = rlk_uin
+    if chat_id:
+        request.session[RLK_CHAT_CHAT_ID_KEY] = int(chat_id)
     request.session.modified = True
 
 
@@ -118,6 +121,148 @@ def build_rlk_chat_page_url(staff_uin, rlk_uin, rlk_id=None):
     if staff_uin and rlk_uin:
         return f'{RLK_CHAT_PATH}/?rlk_uin={rlk_uin}&uin={staff_uin}'
     return f'{RLK_CHAT_PATH}/'
+
+
+def build_rlk_chat_poll_url(staff_uin=None, rlk_uin=None):
+    return f'{RLK_CHAT_PATH}/poll/'
+
+
+def resolve_rlk_chat_poll(request):
+    """
+    Лёгкая авторизация poll: сессия 1С + chat_id, без поиска РЛК и RefStaff.
+    Полный resolve — только при первом запросе без chat_id в сессии.
+    """
+    chat_id = request.session.get(RLK_CHAT_CHAT_ID_KEY)
+    user_id = request.session.get(RLK_CHAT_USER_ID_KEY)
+
+    if is_rlk_chat_1c_session(request) and chat_id and user_id:
+        user = User.objects.filter(pk=user_id).only(
+            'id', 'username', 'first_name', 'last_name',
+        ).first()
+        if user:
+            return {
+                'error': None,
+                'chat_id': int(chat_id),
+                'chat_user': user,
+            }
+
+    ctx = resolve_rlk_chat_access(request)
+    if ctx.get('error'):
+        return ctx
+    chat = ctx['chat_params']['chat']
+    store_rlk_chat_session(
+        request, ctx['staff_uin'], ctx['rlk_uin'], chat_id=chat.pk,
+    )
+    return {
+        'error': None,
+        'chat_id': chat.pk,
+        'chat_user': ctx['chat_user'],
+    }
+
+
+def fetch_new_rlk_chat_messages(chat_id, after_id, current_user_id, limit=30):
+    """Только новые сообщения; при отсутствии — быстрый ответ без выборки текста."""
+    from chats.models import ChatMessage
+
+    after_id = int(after_id or 0)
+    if after_id > 0:
+        if not ChatMessage.objects.filter(chat_id=chat_id, pk__gt=after_id).exists():
+            return [], after_id
+
+    messages = list(
+        ChatMessage.objects.filter(chat_id=chat_id, pk__gt=after_id)
+        .select_related('user')
+        .only('pk', 'content', 'date', 'user_id', 'user__first_name', 'user__last_name')
+        .order_by('pk')[:limit]
+    )
+    return serialize_rlk_chat_messages(messages, current_user_id)
+
+
+def resolve_rlk_chat_access(request, rlk_id=None, staff_uin=None, rlk_uin=None):
+    """
+    Общая авторизация и поиск РЛК для страницы чата и HTTP-poll.
+    Возвращает dict или None при ошибке (вызывающий отдаёт нужный HttpResponse).
+    """
+    from django.shortcuts import get_object_or_404
+
+    parsed = extract_rlk_chat_request(request)
+    staff_uin = parsed['staff_uin'] or (staff_uin or '').strip()
+    rlk_uin = parsed['rlk_uin'] or (rlk_uin or '').strip()
+    from_1c = is_1c_rlk_chat_entry(request, staff_uin)
+
+    chat_user = get_rlk_chat_user(request)
+    error_response = None
+
+    if chat_user is None:
+        if from_1c and staff_uin:
+            chat_user = bind_rlk_chat_1c_session(request, staff_uin)
+            if chat_user is None:
+                error_response = 'uin_auth'
+        elif request.user.is_authenticated:
+            chat_user = request.user
+        else:
+            error_response = 'login'
+
+    if error_response:
+        return {
+            'error': error_response,
+            'staff_uin': staff_uin,
+            'rlk_uin': rlk_uin,
+            'from_1c': from_1c,
+        }
+
+    if rlk_id:
+        rlk = get_object_or_404(
+            DocRLK.objects.select_related('unit', 'staff'),
+            pk=rlk_id,
+        )
+        if not rlk_uin:
+            rlk_uin = (rlk.uin or '').strip()
+    else:
+        if not rlk_uin:
+            return {'error': 'access', 'staff_uin': staff_uin, 'rlk_uin': rlk_uin, 'from_1c': from_1c}
+        rlk = resolve_rlk_by_uin(rlk_uin)
+        if rlk is None:
+            return {'error': 'not_found', 'staff_uin': staff_uin, 'rlk_uin': rlk_uin, 'from_1c': from_1c}
+
+    store_rlk_chat_session(request, staff_uin, rlk_uin, chat_id=chat_params['chat'].pk)
+
+    if not user_can_access_rlk_op_chat(
+        chat_user, rlk, staff_uin=staff_uin, from_1c=from_1c,
+    ):
+        return {'error': 'access', 'staff_uin': staff_uin, 'rlk_uin': rlk_uin, 'from_1c': from_1c}
+
+    chat_params = build_rlk_chat_params(request, rlk, user=chat_user)
+    return {
+        'error': None,
+        'chat_user': chat_user,
+        'rlk': rlk,
+        'staff_uin': staff_uin,
+        'rlk_uin': rlk_uin,
+        'from_1c': from_1c,
+        'chat_params': chat_params,
+    }
+
+
+def serialize_rlk_chat_messages(messages, current_user_id):
+    items = []
+    last_id = 0
+    for message in messages:
+        user = message.user
+        author = ''
+        if user:
+            author = f'{user.last_name or ""} {user.first_name or ""}'.strip()
+        content = message.content or ''
+        items.append({
+            'id': message.pk,
+            'author': author,
+            'text': content.replace('\n', '<br>'),
+            'date': message.date.strftime('%d.%m.%Y %H:%M'),
+            'own': message.user_id == current_user_id,
+        })
+        if message.pk > last_id:
+            last_id = message.pk
+    return items, last_id
 
 
 def user_matches_staff_uin(user, staff_uin):
