@@ -132,6 +132,23 @@
                     </div>
 
                     <div class="col-sm-6 col-md-2">
+                        <div class="metric-card-label-portal">Согласование КП</div>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="calcSoglasovanieSearch" placeholder="Статус согласования..." autocomplete="off">
+                            <div class="list-group position-absolute w-100 mt-1" id="calcSoglasovanieDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                {% for value, label in params.soglasovanie_filter_choices %}
+                                <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="soglasovanie_filter" value="{{ value }}"
+                                        {% if value in params.filtr.soglasovanie_filter %}checked{% endif %}>
+                                    {{ label }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div id="calcSelectedSoglasovanie" class="mt-2"></div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-2">
                         <div class="metric-card-label-portal">Отгрузка</div>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="calcShpSearch" placeholder="Да / Нет..." autocomplete="off">
@@ -522,7 +539,7 @@ function setCalcOrder(field) {
     var resetBtn = document.getElementById('calcColumnsReset');
     var errorBox = document.getElementById('calcColumnsError');
     var saveUrl = '{% url "prices_car:calculations_list_columns_save" %}';
-    var builtInDefaults = ['link', 'date', 'number', 'unit', 'rlk', 'car', 'vin', 'client', 'author', 'kvp', 'agreement', 'shipment'];
+    var builtInDefaults = ['link', 'date', 'number', 'unit', 'rlk', 'car', 'vin', 'client', 'author', 'kvp', 'soglasovanie_status', 'agreement', 'shipment'];
     var dragItem = null;
 
     if (!list || !saveBtn) return;
@@ -643,6 +660,7 @@ function setCalcOrder(field) {
     initMultiCheckboxFilter('calcAgrSearch', 'calcAgrDropdown', 'calcSelectedAgr');
     initMultiCheckboxFilter('calcShpSearch', 'calcShpDropdown', 'calcSelectedShp');
     initMultiCheckboxFilter('calcKmKvpSearch', 'calcKmKvpDropdown', 'calcSelectedKmKvp');
+    initMultiCheckboxFilter('calcSoglasovanieSearch', 'calcSoglasovanieDropdown', 'calcSelectedSoglasovanie');
     initCalcModelFilter();
     initCalcListForm();
     initCalcColumnsSettings();

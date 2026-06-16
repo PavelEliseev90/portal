@@ -10,6 +10,16 @@
 {% endif %}
 
 <div class="portal-page">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="portal-header">
     <h2>Калькуляция автомобиля</h2>
     <p>№ {{params.calc.number}} от {{params.calc.date}} </p>    
@@ -237,7 +247,7 @@
                role="button"
                aria-expanded="true"
                aria-controls="dealKVPCollapse">
-              <span>Расчетные данные  <span class="text-muted"> • КВП {{params.calc.kvp|floatformat:"2g"}} ₽</span></span>
+              <span>Расчетные данные  <span class="text-muted"> • КВ {{params.calc.kvp|floatformat:"2g"}} ₽{% if params.calc.km_raschet is not None %} · расч. КМ {{params.calc.km_raschet|floatformat:"2g"}} ₽{% endif %}</span></span>
               <span class="icon-mbri-down small opacity-75"></span>
             </a>
           </h6>
@@ -247,12 +257,19 @@
           <div id="dealKVPCollapse" class="collapse mt-3">
             <div class="row g-1 h-100">
               <div class="col-12 col-sm-4 " >
-                <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
-                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВП </div>
+                <div class="metric-card-portal h-100 bg-primary bg-opacity-10 bg-gradient">
+                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> КВ </div>
                   <div class="metric-card-value-portal"> • {{params.calc.kvp|floatformat:"2g"}} ₽</div>
                 </div>
-                
               </div>
+              {% if params.calc.km_raschet is not None %}
+              <div class="col-12 col-sm-4 " >
+                <div class="metric-card-portal h-100 bg-info bg-opacity-10 bg-gradient">
+                  <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> Расчетный КМ </div>
+                  <div class="metric-card-value-portal"> • {{params.calc.km_raschet|floatformat:"2g"}} ₽</div>
+                </div>
+              </div>
+              {% endif %}
               {% for detail in params.calc.detail %}
                 <div class="col-12 col-sm-4 " >
                   <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
@@ -375,21 +392,63 @@
           </div>
         {% endif %}
 
-        {% if params.calc.user != None %}
+        {% if params.calc.comment %}
           <div class="deal-section">
-            <h6 class="deal-section-title">Согласование</h6>
-            <div class="col-auto align-items-center">
-              <div class="car-info-item"> • {{params.calc.user.profiles.eco_name}} </div>
-              <div class="car-info-item"> • {{params.calc.date}} </div>    
-            </div>
+            <h6 class="deal-section-title">Комментарий к согласованию (1С)</h6>
+            <div class="car-info-item"> • {{ params.calc.comment }}</div>
           </div>
+        {% endif %}
+
+        {% if params.approval_status_label %}
+        <div class="deal-section">
+          <h6 class="deal-section-title">Статус согласования</h6>
+          <div class="car-info-item mb-2">
+            <span class="badge bg-secondary">{{ params.approval_status_label }}</span>
+          </div>
+
+          {% if params.approval_final_without_uk %}
+          <p class="small text-success mb-2">Согласование завершено. Дополнительное согласование УК не требуется.</p>
+          {% elif params.approval_status == 'pending' and params.approval_kvp_ok %}
+          <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
+          {% elif params.approval_status == 'pending' and params.approval_uk_required %}
+          <p class="small text-muted mb-2">КВ не выше мин. КМ ДЦ — потребуется согласование УК.</p>
+          {% elif params.approval_status == 'pending_uk' %}
+          <p class="small text-warning mb-2">Ожидается согласование УК.</p>
+          {% endif %}
+
+          {% if params.calc.director_approve_user %}
+          <div class="metric-card-portal mb-2">
+            <div class="metric-card-label-portal">Директор ДЦ</div>
+            <div class="metric-card-value-portal">
+              {{ params.calc.director_approve_user.profiles.eco_name|default:params.calc.director_approve_user.get_full_name }}
+              · {{ params.calc.director_approve_date|date:"d.m.Y H:i" }}
+            </div>
+            {% if params.calc.director_approve_comment %}
+            <div class="small text-muted mt-1">{{ params.calc.director_approve_comment }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if params.calc.uk_approve_user %}
+          <div class="metric-card-portal mb-2">
+            <div class="metric-card-label-portal">Управляющая компания</div>
+            <div class="metric-card-value-portal">
+              {{ params.calc.uk_approve_user.profiles.eco_name|default:params.calc.uk_approve_user.get_full_name }}
+              · {{ params.calc.uk_approve_date|date:"d.m.Y H:i" }}
+            </div>
+            {% if params.calc.uk_approve_comment %}
+            <div class="small text-muted mt-1">{{ params.calc.uk_approve_comment }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
         {% endif %}
 
       </div>
 
       <!-- Правая колонка - Итоги -->
       <div class="col-lg-4">
-        <div id='km_result' class="deal-section bg-danger bg-opacity-75 text-white">
+        <div id='km_result' class="deal-section {% if params.approval_kvp_ok %}bg-success{% else %}bg-danger{% endif %} bg-opacity-75 text-white">
           
           <h3 class="deal-section-title text-white">Минимальный КМ (правило)</h3>
 
@@ -495,24 +554,124 @@
           <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
             <div class="total-card">
               <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого по сделке:</p>
-              <h2 id="itog">{{ params.total_amount|floatformat:"0g" }} ₽</h2>
+              <h2 id="itog">{{ params.calc.amount|default:params.total_amount|floatformat:"0g" }} ₽</h2>
               <br>
-              <h5 id="itog_km">{{ params.total_amount|floatformat:"0g" }} ₽</h5>
+              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽ · расч. КМ {{ params.calc.km_raschet|floatformat:"0g" }} ₽ · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
             </div>
           </div>
-          
-        
-          
+
+          {% if params.approval_can_director_approve %}
           <div class="mt-3">
-            <button type="submit" name="send" class="btn btn-calculate w-100">
-              Согласовать
+            <button type="button" class="btn btn-calculate w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorApproveModal">
+              Согласовать (директор ДЦ)
             </button>
           </div>
+          {% endif %}
+
+          {% if params.approval_can_director_send_uk %}
+          <div class="mt-3">
+            <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorUkModal">
+              Отправить на согласование в УК
+            </button>
+            <p class="small text-muted mt-2 mb-0">КВП ниже мин. КМ ДЦ — требуется согласование УК.</p>
+          </div>
+          {% endif %}
+
+          {% if params.approval_can_uk_approve %}
+          <div class="mt-3">
+            <button type="button" class="btn btn-calculate w-100" data-bs-toggle="modal" data-bs-target="#dealUkApproveModal">
+              Согласовать УК
+            </button>
+          </div>
+          {% endif %}
 
         </div>
       </div>
     </div>
   </form>
+
+  {% if params.approval_can_director_approve %}
+  <div class="modal fade" id="dealDirectorApproveModal" tabindex="-1" aria-labelledby="dealDirectorApproveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="approval_action" value="director_approve">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dealDirectorApproveModalLabel">Согласование директором ДЦ</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">КВП выше мин. КМ ДЦ. Комментарий обязателен.</p>
+            <label class="form-label" for="director_approve_comment">Комментарий согласования</label>
+            <textarea class="form-control" id="director_approve_comment" name="approval_comment" rows="4" required placeholder="Укажите комментарий"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-calculate">Согласовано</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if params.approval_can_director_send_uk %}
+  <div class="modal fade" id="dealDirectorUkModal" tabindex="-1" aria-labelledby="dealDirectorUkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="approval_action" value="director_send_uk">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dealDirectorUkModalLabel">Отправка на согласование в УК</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">КВП ниже мин. КМ ДЦ. Укажите комментарий для УК.</p>
+            <label class="form-label" for="director_uk_comment">Комментарий для УК</label>
+            <textarea class="form-control" id="director_uk_comment" name="approval_comment" rows="4" required placeholder="Укажите комментарий"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-warning">Отправить в УК</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if params.approval_can_uk_approve %}
+  <div class="modal fade" id="dealUkApproveModal" tabindex="-1" aria-labelledby="dealUkApproveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="approval_action" value="uk_approve">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dealUkApproveModalLabel">Согласование УК</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            {% if params.calc.director_approve_comment %}
+            <div class="alert alert-light border small mb-3">
+              <strong>Комментарий директора:</strong><br>
+              {{ params.calc.director_approve_comment }}
+            </div>
+            {% endif %}
+            <label class="form-label" for="uk_approve_comment">Комментарий согласования УК</label>
+            <textarea class="form-control" id="uk_approve_comment" name="approval_comment" rows="4" required placeholder="Укажите комментарий"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-calculate">Согласовано УК</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
 </div>
 
@@ -521,8 +680,8 @@
   let price = {{params.car.price}};
   let cost  = {{params.car.cost_price}};
   
-  var min_km = {{params.cumulative_data.automatic.km_min_automatic|floatformat:"0" }};
-  var kvp = {{params.calc.kvp}};	
+  var min_km = {{ params.approval_min_km_dc|default:0 }};
+  var kvp = {{ params.calc.kvp|default:0 }};
 
   document.addEventListener('readystatechange', () => {    
     if (document.readyState == 'complete') calculate_data();
@@ -573,7 +732,7 @@
     var itog = price  ; 
     var itog_km = price - cost - parseInt(discount, 10) + parseInt(opfu, 10) + parseInt(tradein_, 10) + parseInt(wheels_, 10) + parseInt(grz_, 10)  ; 
     
-    if (min_km > kvp){
+    if (kvp <= min_km) {
       $('#km_result').addClass('bg-danger');
       $('#km_result').removeClass('bg-success');
     } else {

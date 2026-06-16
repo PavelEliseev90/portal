@@ -61,6 +61,7 @@ from dateutil.relativedelta import relativedelta
 from requests.auth import HTTPBasicAuth
 from avtosalon.models import AvtohubModifications
 from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail, EmailPushCar
+from prices_car.km_raschet import apply_km_raschet_to_calculation
 from chats.models import Chat
 from profiles.models import Profiles
 
@@ -87,6 +88,7 @@ def calculation_car(request):
     calculation_object.staff        = get_staff(data['Staff'])
     calculation_object.kvp          = data['Kvp']
     calculation_object.amount       = data['Amount']
+    apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
 
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
@@ -147,6 +149,7 @@ def calculation_car_start_success(request):
     calculation_object.kvp          = data['Kvp']
     calculation_object.amount       = data['Amount']
     calculation_object.comment      = data['CommentSoglasovanie']
+    apply_km_raschet_to_calculation(calculation_object, car_object, data)
     
     calculation_object.save()
 
@@ -5037,6 +5040,7 @@ def get_calculation_car(data):
     calculation_object.staff        = get_staff(data['Staff'])
     calculation_object.kvp          = data['Kvp']
     calculation_object.amount       = data['Amount']
+    apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
 
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()

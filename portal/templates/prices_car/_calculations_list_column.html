@@ -32,6 +32,16 @@
 <td data-label="{{ col.label }}">{{ item.staff.name|default:"—" }}</td>
 {% elif col.key == 'kvp' %}
 <td data-label="{{ col.label }}" class="text-end text-nowrap{% if params.list_settings.compare_km_kvp and item.kvp is not None and item.car_last_km is not None %}{% if item.km_kvp_fulfilled %} text-success{% else %} text-danger fw-semibold{% endif %}{% endif %}">{{ item.kvp|floatformat:"2g" }} ₽</td>
+{% elif col.key == 'soglasovanie_status' %}
+<td data-label="{{ col.label }}" class="text-nowrap">
+    {% if item.soglasovanie_status == 'director_approved' or item.soglasovanie_status == 'uk_approved' %}
+        <span class="badge bg-success">{{ item.get_soglasovanie_status_display }}</span>
+    {% elif item.soglasovanie_status == 'pending_uk' %}
+        <span class="badge bg-warning text-dark">{{ item.get_soglasovanie_status_display }}</span>
+    {% else %}
+        <span class="badge bg-secondary">{{ item.get_soglasovanie_status_display|default:"Ожидает директора ДЦ" }}</span>
+    {% endif %}
+</td>
 {% elif col.key == 'amount' %}
 <td data-label="{{ col.label }}" class="text-end text-nowrap">{{ item.amount|floatformat:"0g"|default:"—" }}</td>
 {% elif col.key == 'price' %}
