@@ -2,6 +2,12 @@
 
 {% block title %} — Чат РЛК {{ params.rlk.nomer }} {% endblock %}
 
+{% block head %}
+{% if params.from_1c %}
+<meta id="rlk-1c-meta-refresh" http-equiv="refresh" content="45">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-3 px-3" style="max-width: 900px; margin: 0 auto;">
     <h4 class="mb-1">Чат по рабочему листу</h4>
@@ -10,14 +16,21 @@
         {% if params.rlk.unit %} · {{ params.rlk.unit.name }}{% endif %}
     </p>
 
+    {% if not params.from_1c %}
     <div id="rlk_op_page_reconect" class="alert alert-warning d-none">
         Соединение потеряно. <button type="button" class="btn btn-sm btn-outline-danger" id="rlk_op_page_reconnect">Переподключиться</button>
     </div>
+    {% else %}
+    <p class="small text-muted mb-2" id="rlk-1c-poll-hint">
+        <a href="{{ params.chat_page_url }}">Обновить</a>
+        · автообновление (10–20 сек) или перезагрузка через 45 сек
+    </p>
+    {% endif %}
 
     <div class="border rounded bg-white p-2 mb-2" style="min-height: 50vh; max-height: 65vh; overflow-y: auto;" id="rlk-op-page-message-list">
         {% if params.messages %}
             {% for message in params.messages %}
-                <div class="mb-2{% if message.user_id == params.user.id %} text-end{% endif %}">
+                <div class="mb-2{% if message.user_id == params.user.id %} text-end{% endif %}" data-msg-id="{{ message.pk }}">
                     <div class="small text-muted">
                         {{ message.user.last_name }} {{ message.user.first_name }}
                         · {{ message.date|date:'d.m.Y H:i' }}
@@ -34,42 +47,149 @@
 
     {% if params.can_send_messages %}
     <form id="rlk-op-page-form" class="d-flex gap-2" method="post" action="{{ params.chat_page_url }}">
-        {% csrf_token %}
         <input type="hidden" name="uin" value="{{ params.staff_uin }}">
         <input type="hidden" name="rlk_uin" value="{{ params.rlk_uin }}">
         <textarea class="form-control" id="rlk-op-page-message" name="message" rows="2" placeholder="Сообщение..." required></textarea>
+        {% if params.from_1c %}
+        <button type="submit" class="btn btn-dark text-nowrap">Отправить</button>
+        {% else %}
         <button type="button" class="btn btn-dark text-nowrap" id="rlk-op-page-send">Отправить</button>
+        {% endif %}
     </form>
     {% endif %}
 </div>
 
+{% if params.from_1c %}
+<script>
+(function () {
+    var pollUrl = '{{ params.poll_url|escapejs }}';
+    var lastId = {{ params.last_message_id|default:0 }};
+    var listEl = document.getElementById('rlk-op-page-message-list');
+    if (!listEl) return;
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function messageExists(id) {
+        return !!document.querySelector('[data-msg-id="' + id + '"]');
+    }
+
+    function appendMessages(messages) {
+        var noMsg = document.getElementById('rlk-op-page-no-message');
+        if (noMsg && noMsg.parentNode) {
+            noMsg.parentNode.removeChild(noMsg);
+        }
+        for (var i = 0; i < messages.length; i++) {
+            var msg = messages[i];
+            if (messageExists(msg.id)) {
+                continue;
+            }
+            var wrap = document.createElement('div');
+            wrap.className = 'mb-2' + (msg.own ? ' text-end' : '');
+            wrap.setAttribute('data-msg-id', msg.id);
+            wrap.innerHTML =
+                '<div class="small text-muted">' + escapeHtml(msg.author) + ' · ' + escapeHtml(msg.date) + '</div>' +
+                '<div class="' + (msg.own ? 'bg-primary bg-opacity-10' : 'bg-light') + ' rounded p-2 d-inline-block">' + msg.text + '</div>';
+            listEl.appendChild(wrap);
+        }
+        listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    var pollDelay = 10000;
+    var emptyPolls = 0;
+
+    function schedulePoll() {
+        setTimeout(function () {
+            poll();
+        }, pollDelay);
+    }
+
+    function poll() {
+        if (!window.XMLHttpRequest) {
+            return;
+        }
+        var xhr = new XMLHttpRequest();
+        var url = pollUrl + (pollUrl.indexOf('?') >= 0 ? '&' : '?') + 'after_id=' + lastId;
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+                return;
+            }
+            if (xhr.status !== 200) {
+                pollDelay = 20000;
+                schedulePoll();
+                return;
+            }
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.messages && data.messages.length) {
+                    appendMessages(data.messages);
+                    emptyPolls = 0;
+                    pollDelay = 10000;
+                } else {
+                    emptyPolls += 1;
+                    if (emptyPolls >= 3) {
+                        pollDelay = 20000;
+                    }
+                }
+                if (data.last_id) {
+                    lastId = data.last_id;
+                }
+                var meta = document.getElementById('rlk-1c-meta-refresh');
+                if (meta && meta.parentNode) {
+                    meta.parentNode.removeChild(meta);
+                }
+                var hint = document.getElementById('rlk-1c-poll-hint');
+                if (hint) {
+                    hint.innerHTML = '<a href="{{ params.chat_page_url }}">Обновить</a> · проверка каждые ' + (pollDelay / 1000) + ' сек';
+                }
+            } catch (e) {
+                pollDelay = 20000;
+            }
+            schedulePoll();
+        };
+        xhr.send();
+    }
+
+    if (window.XMLHttpRequest) {
+        poll();
+    }
+})();
+</script>
+{% else %}
 <audio id="rlk-op-page-notif" src="/media_dop/music/vin.mp3"></audio>
 
 <script>
 (function () {
-    const chat_id = '{{ params.chat.pk }}';
-    const chatName = '{{ params.chat.slug }}';
-    const username = '{{ params.user.username|escapejs }}';
-    const last_name = '{{ params.user.last_name|escapejs }}';
-    const first_name = '{{ params.user.first_name|escapejs }}';
-    const psevdo_name = '{{ params.eco_name|escapejs }}';
-    const eco = {% if params.user_eco %}true{% else %}false{% endif %};
-    const currentUserId = {{ params.user.id }};
+    var chat_id = '{{ params.chat.pk }}';
+    var chatName = '{{ params.chat.slug }}';
+    var username = '{{ params.user.username|escapejs }}';
+    var last_name = '{{ params.user.last_name|escapejs }}';
+    var first_name = '{{ params.user.first_name|escapejs }}';
+    var psevdo_name = '{{ params.eco_name|escapejs }}';
+    var eco = {% if params.user_eco %}true{% else %}false{% endif %};
 
-    const listEl = document.getElementById('rlk-op-page-message-list');
-    const formEl = document.getElementById('rlk-op-page-form');
-    const sendBtn = document.getElementById('rlk-op-page-send');
-    let chatSocket;
-    let wsAvailable = false;
+    var listEl = document.getElementById('rlk-op-page-message-list');
+    var formEl = document.getElementById('rlk-op-page-form');
+    var sendBtn = document.getElementById('rlk-op-page-send');
+    var chatSocket;
+    var wsAvailable = false;
 
     function scrollToBottom() {
-        if (listEl) listEl.scrollTop = listEl.scrollHeight;
+        if (listEl) {
+            listEl.scrollTop = listEl.scrollHeight;
+        }
     }
 
     function appendMessage(data, isOwner) {
-        const author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim();
-        const text = (data.message || '').replace(/\n/g, '<br>');
-        const wrap = document.createElement('div');
+        var author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim();
+        var text = (data.message || '').replace(/\n/g, '<br>');
+        var wrap = document.createElement('div');
         wrap.className = 'mb-2' + (isOwner ? ' text-end' : '');
         wrap.innerHTML =
             '<div class="small text-muted">' + author + '</div>' +
@@ -79,18 +199,23 @@
     }
 
     function sendViaHttp() {
-        if (!formEl) return;
-        formEl.submit();
+        if (formEl) {
+            formEl.submit();
+        }
     }
 
     function sendMessage() {
-        const ta = document.getElementById('rlk-op-page-message');
-        const message = ta.value.trim();
+        var ta = document.getElementById('rlk-op-page-message');
+        if (!ta) return;
+        var message = ta.value.replace(/^\s+|\s+$/g, '');
         if (!message) return;
 
-        document.getElementById('rlk-op-page-no-message')?.remove();
+        var noMsg = document.getElementById('rlk-op-page-no-message');
+        if (noMsg && noMsg.parentNode) {
+            noMsg.parentNode.removeChild(noMsg);
+        }
 
-        if (wsAvailable && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        if (wsAvailable && chatSocket && chatSocket.readyState === 1) {
             chatSocket.send(JSON.stringify({
                 chat_id: chat_id,
                 name: username,
@@ -121,21 +246,26 @@
             return;
         }
         try {
-            const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+            var wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
             chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
             chatSocket.onopen = function () {
                 wsAvailable = true;
-                document.getElementById('rlk_op_page_reconect').classList.add('d-none');
+                var recon = document.getElementById('rlk_op_page_reconect');
+                if (recon) recon.className = 'alert alert-warning d-none';
             };
             chatSocket.onmessage = function (e) {
-                const data = JSON.parse(e.data);
+                var data = JSON.parse(e.data);
                 if (!data.message || String(data.chat_id) !== String(chat_id)) return;
-                document.getElementById('rlk-op-page-notif')?.play().catch(function () {});
+                var notif = document.getElementById('rlk-op-page-notif');
+                if (notif && notif.play) {
+                    try { notif.play(); } catch (err) {}
+                }
                 appendMessage(data, !!data.eco);
             };
             chatSocket.onclose = function () {
                 wsAvailable = false;
-                document.getElementById('rlk_op_page_reconect').classList.remove('d-none');
+                var recon = document.getElementById('rlk_op_page_reconect');
+                if (recon) recon.className = 'alert alert-warning';
                 setTimeout(connectWs, 3000);
             };
             chatSocket.onerror = function () {
@@ -146,15 +276,25 @@
         }
     }
 
-    sendBtn?.addEventListener('click', sendMessage);
-    formEl?.addEventListener('submit', function (e) {
-        e.preventDefault();
-        sendMessage();
-    });
+    if (sendBtn) {
+        sendBtn.onclick = sendMessage;
+    }
+    if (formEl) {
+        formEl.onsubmit = function (e) {
+            if (e && e.preventDefault) e.preventDefault();
+            sendMessage();
+            return false;
+        };
+    }
 
-    document.getElementById('rlk_op_page_reconnect')?.addEventListener('click', connectWs);
+    var reconnectBtn = document.getElementById('rlk_op_page_reconnect');
+    if (reconnectBtn) {
+        reconnectBtn.onclick = connectWs;
+    }
+
     connectWs();
     scrollToBottom();
 })();
 </script>
+{% endif %}
 {% endblock %}

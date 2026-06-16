@@ -31,6 +31,7 @@ urlpatterns = [
    path('task/<int:task_id>/file/upload/',   views.car_task_file_upload, name='car_task_file_upload'),
    path('task/file/<int:file_id>/delete/',   views.car_task_file_delete, name='car_task_file_delete'),
    
+   path('deal/rlk-chat/poll/',                  views.rlk_op_chat_poll, name='rlk_op_chat_poll'),
    path('deal/rlk-chat/1c/<str:staff_uin>/<str:rlk_uin>/', views.rlk_op_chat, name='rlk_op_chat_1c'),
    path('deal/rlk-chat/',                     views.rlk_op_chat, name='rlk_op_chat_uin'),
    path('deal/rlk-chat/<int:rlk_id>/',        views.rlk_op_chat, name='rlk_op_chat'),
