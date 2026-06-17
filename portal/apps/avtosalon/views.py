@@ -3558,6 +3558,8 @@ def deal_calculation_doc(request, id):
             calc.save(update_fields=['km_raschet'])
     try_auto_approve_calculation(calc, send_chat=True)
     cumulative_data = car.cumulative_data() if car else {}
+    from prices_car.km_breakdown import build_km_calculation_breakdown
+    km_breakdown = build_km_calculation_breakdown(car) if car else {'available': False}
 
     if request.method == 'POST':
         approval_response = handle_deal_calc_approval_post(
@@ -3663,6 +3665,7 @@ def deal_calculation_doc(request, id):
         'stock_chart_unit_json': json.dumps(stock_chart_unit, ensure_ascii=False),
         'stock_chart_all_json': json.dumps(stock_chart_all, ensure_ascii=False),
         'cumulative_data' : cumulative_data,
+        'km_breakdown': km_breakdown,
         'selected_opfu_services': selected_opfu_services,
         'selected_opfu_ids': [str(sid) for sid in selected_opfu_ids],  # Для использования в шаблоне
         'car_price': car_price,
