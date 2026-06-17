@@ -213,6 +213,23 @@ def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
     return False
 
 
+def build_calculation_soglasovanie_api_response(calc):
+    """Данные согласования для ответа API 1С после загрузки КП."""
+    from prices_car.models import CarCalculations
+
+    calc.refresh_from_db()
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    return {
+        'soglasovanie_status': status,
+        'soglasovanie_status_label': dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(
+            status, status,
+        ),
+        'soglasovanie_auto_approved': is_auto_approved_calculation(calc),
+        'km_raschet': calc.km_raschet,
+        'kvp': calc.kvp,
+    }
+
+
 def send_calc_rlk_chat_message(calc, user, text):
     if not calc.rlk_id:
         return

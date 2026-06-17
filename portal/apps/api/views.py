@@ -188,15 +188,26 @@ def calculation_car_start_success(request):
         new_action_detail.save()
 
     try:
-        from avtosalon.deal_calc_approval import notify_calculation_soglasovanie_from_1c
+        from avtosalon.deal_calc_approval import (
+            build_calculation_soglasovanie_api_response,
+            notify_calculation_soglasovanie_from_1c,
+        )
         notify_calculation_soglasovanie_from_1c(
             calculation_object, car_object, rlk_object, unit_object,
         )
+        soglasovanie_info = build_calculation_soglasovanie_api_response(calculation_object)
     except Exception:
-        pass
+        soglasovanie_info = {
+            'soglasovanie_status': calculation_object.soglasovanie_status or 'pending',
+            'soglasovanie_status_label': '',
+            'soglasovanie_auto_approved': False,
+            'km_raschet': calculation_object.km_raschet,
+            'kvp': calculation_object.kvp,
+        }
 
     to_json = {
-        'answer'     : calculation_object.pk,
+        'answer': calculation_object.pk,
+        **soglasovanie_info,
     }
 
     return JsonResponse(to_json, status=status.HTTP_200_OK)
