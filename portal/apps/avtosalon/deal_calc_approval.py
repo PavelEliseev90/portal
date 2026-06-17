@@ -1,4 +1,7 @@
 """Согласование коммерческих предложений в калькуляции сделки."""
+import logging
+
+import requests
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
@@ -6,8 +9,18 @@ from django.utils import timezone
 
 from chats.models import Chat
 
+logger = logging.getLogger(__name__)
+
 AUTO_APPROVE_USER_ID = 1
 AUTO_APPROVE_COMMENT = 'Автоматическое согласование: КВ выше расчетного КМ по правилу'
+URL_HS_ALFA_AUTO      = 'http://k01srv1c10/ralfa01/hs/mb/'
+
+FINAL_SOGLASOVANIE_STATUSES_FOR_1C = frozenset({
+    'director_approved',
+    'uk_approved',
+    'director_rejected',
+    'uk_rejected',
+})
 
 
 def _get_profile(user):
@@ -230,6 +243,125 @@ def build_calculation_soglasovanie_api_response(calc):
     }
 
 
+def _format_1c_datetime(value):
+    if not value:
+        return ''
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value, timezone.get_current_timezone())
+    return value.strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def _staff_uin_for_user(user):
+    if not user:
+        return ''
+    from refs.models import RefStaff
+
+    staff = RefStaff.objects.filter(domain_login__iexact=user.username).first()
+    if staff and staff.uin:
+        return staff.uin
+    return ''
+
+
+def should_send_calculation_soglasovanie_to_1c(calc):
+    """Конечные статусы для 1С, кроме автоматического согласования."""
+    from prices_car.models import CarCalculations
+
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    if status not in FINAL_SOGLASOVANIE_STATUSES_FOR_1C:
+        return False
+    if status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED:
+        return not is_auto_approved_calculation(calc)
+    return True
+
+
+def build_calculation_soglasovanie_1c_payload(calc):
+    """Конечное состояние согласования для обмена с 1С."""
+    from prices_car.models import CarCalculations
+
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    status_label = dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(status, status)
+    approved = status in (
+        CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+        CarCalculations.SOGLASOVANIE_UK_APPROVED,
+    )
+    rejected = status in (
+        CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+        CarCalculations.SOGLASOVANIE_UK_REJECTED,
+    )
+
+    comment_soglasovanie = ''
+    rejection = ''
+    date_success = ''
+    approver_user = None
+
+    if status in (
+        CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+        CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+    ):
+        comment_soglasovanie = calc.director_approve_comment or ''
+        rejection = comment_soglasovanie if rejected else ''
+        date_success = _format_1c_datetime(calc.director_approve_date or calc.date_success)
+        approver_user = calc.director_approve_user
+    elif status in (
+        CarCalculations.SOGLASOVANIE_UK_APPROVED,
+        CarCalculations.SOGLASOVANIE_UK_REJECTED,
+    ):
+        comment_soglasovanie = calc.uk_approve_comment or ''
+        rejection = comment_soglasovanie if rejected else ''
+        date_success = _format_1c_datetime(calc.uk_approve_date or calc.date_success)
+        approver_user = calc.uk_approve_user
+
+    return {
+        'Type': 'calculation_car_soglasovanie',
+        'Uin': calc.uin or '',
+        'Number': calc.number or '',
+        'SoglasovanieStatus': status,
+        'SoglasovanieStatusLabel': status_label,
+        'Success': approved,
+        'Rejected': rejected,
+        'Date_success': date_success,
+        'CommentSoglasovanie': comment_soglasovanie if approved else '',
+        'Rejection': rejection,
+        'ApproverUin': _staff_uin_for_user(approver_user),
+        'ApproverName': (
+            (getattr(getattr(approver_user, 'profiles', None), 'eco_name', None) or '')
+            or (approver_user.get_full_name() if approver_user else '')
+        ),
+    }
+
+
+def send_calculation_soglasovanie_result_to_1c(calc):
+    """Отправка конечного статуса согласования КП в 1С."""
+    if not should_send_calculation_soglasovanie_to_1c(calc):
+        return False
+    if not (calc.uin or '').strip():
+        logger.warning('calculation soglasovanie 1C skip: empty uin, calc_id=%s', calc.pk)
+        return False
+
+    payload = build_calculation_soglasovanie_1c_payload(calc)
+    
+    js_data = {'Type': 'ChangeKP', 'Payload': payload}
+
+    try:
+        response = requests.post(
+            URL_HS_ALFA_AUTO,
+            json=js_data,
+            timeout=60,
+        )
+        if response.status_code != 200:
+            logger.warning(
+                'calculation soglasovanie 1C HTTP %s calc_id=%s body=%s',
+                response.status_code,
+                calc.pk,
+                response.text[:500],
+            )
+            return False
+        return True
+    except Exception:
+        logger.exception('calculation soglasovanie 1C failed calc_id=%s', calc.pk)
+        return False
+
+
 def send_calc_rlk_chat_message(calc, user, text):
     if not calc.rlk_id:
         return
@@ -370,6 +502,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Согласовано директором ДЦ ' + comment,
         )
+        send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Коммерческое предложение согласовано. Дополнительное согласование УК не требуется.')
         return _approval_redirect(calc.pk)
 
@@ -436,6 +569,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Согласовано УК ' + comment,
         )
+        send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Коммерческое предложение согласовано УК.')
         return _approval_redirect(calc.pk)
 
@@ -468,6 +602,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отказ в согласовании директором ДЦ: ' + comment,
         )
+        send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Отказ в согласовании зарегистрирован.')
         return _approval_redirect(calc.pk)
 
@@ -500,6 +635,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отказ в согласовании УК: ' + comment,
         )
+        send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Отказ в согласовании УК зарегистрирован.')
         return _approval_redirect(calc.pk)
 
