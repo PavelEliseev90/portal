@@ -374,6 +374,13 @@
           </div>
           <div class="chart-gauge__value" id="cvc-value">0%</div>
           <div class="chart-gauge__label">CVC</div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" id="refresh_info" name="refresh_info" value="refresh_info">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-arrow-repeat"></i> Обновить с CVC
+            </button>
+          </form>
         </div>
       </div>
     </div>
