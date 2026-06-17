@@ -230,11 +230,15 @@ class CarCalculations(models.Model):
     SOGLASOVANIE_DIRECTOR_APPROVED = 'director_approved'
     SOGLASOVANIE_PENDING_UK = 'pending_uk'
     SOGLASOVANIE_UK_APPROVED = 'uk_approved'
+    SOGLASOVANIE_DIRECTOR_REJECTED = 'director_rejected'
+    SOGLASOVANIE_UK_REJECTED = 'uk_rejected'
     SOGLASOVANIE_STATUS_CHOICES = (
         (SOGLASOVANIE_PENDING, 'Ожидает директора ДЦ'),
         (SOGLASOVANIE_DIRECTOR_APPROVED, 'Согласовано директором ДЦ'),
         (SOGLASOVANIE_PENDING_UK, 'На согласовании УК'),
         (SOGLASOVANIE_UK_APPROVED, 'Согласовано УК'),
+        (SOGLASOVANIE_DIRECTOR_REJECTED, 'Отказ директора ДЦ'),
+        (SOGLASOVANIE_UK_REJECTED, 'Отказ УК'),
     )
     soglasovanie_status = models.CharField(
         "Статус согласования",

@@ -264,6 +264,14 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         is_uk
         and status == CarCalculations.SOGLASOVANIE_PENDING_UK
     )
+    can_director_reject = (
+        is_director
+        and status == CarCalculations.SOGLASOVANIE_PENDING
+    )
+    can_uk_reject = (
+        is_uk
+        and status == CarCalculations.SOGLASOVANIE_PENDING_UK
+    )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     approval_auto_approved = is_auto_approved_calculation(calc)
     approval_kvp_above_raschet = kvp_above_km_raschet(calc)
@@ -286,6 +294,8 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         'approval_can_director_approve': can_director_approve,
         'approval_can_director_send_uk': can_director_send_uk,
         'approval_can_uk_approve': can_uk_approve,
+        'approval_can_director_reject': can_director_reject,
+        'approval_can_uk_reject': can_uk_reject,
         'approval_status': status,
         'approval_status_label': dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(
             status, status,
@@ -297,10 +307,10 @@ def _approval_redirect(calc_pk):
     return HttpResponseRedirect('/cars/deal/calculation/' + str(calc_pk) + '/')
 
 
-def _require_comment(request, comment):
+def _require_comment(request, comment, error_message='Укажите комментарий к согласованию.'):
     comment = (comment or '').strip()
     if not comment:
-        messages.error(request, 'Укажите комментарий к согласованию.')
+        messages.error(request, error_message)
         return None
     return comment
 
@@ -410,6 +420,70 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             'Согласовано УК ' + comment,
         )
         messages.success(request, 'Коммерческое предложение согласовано УК.')
+        return _approval_redirect(calc.pk)
+
+    if action == 'director_reject':
+        if not user_is_deal_calc_director_for_calc(request.user, calc):
+            messages.error(request, 'Нет прав на отказ в согласовании директором ДЦ.')
+            return _approval_redirect(calc.pk)
+        if calc.soglasovanie_status != CarCalculations.SOGLASOVANIE_PENDING:
+            messages.error(request, 'КП уже обработано директором.')
+            return _approval_redirect(calc.pk)
+        comment = _require_comment(
+            request, comment, error_message='Укажите причину отказа от согласования.',
+        )
+        if comment is None:
+            return _approval_redirect(calc.pk)
+
+        now = timezone.now()
+        calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED
+        calc.director_approve_user = request.user
+        calc.director_approve_date = now
+        calc.director_approve_comment = comment
+        calc.save(update_fields=[
+            'soglasovanie_status',
+            'director_approve_user',
+            'director_approve_date',
+            'director_approve_comment',
+        ])
+        send_calc_rlk_chat_message(
+            calc,
+            request.user,
+            'Отказ в согласовании директором ДЦ: ' + comment,
+        )
+        messages.success(request, 'Отказ в согласовании зарегистрирован.')
+        return _approval_redirect(calc.pk)
+
+    if action == 'uk_reject':
+        if not user_has_deal_calc_uk_access(request.user):
+            messages.error(request, 'Нет прав на отказ в согласовании УК.')
+            return _approval_redirect(calc.pk)
+        if calc.soglasovanie_status != CarCalculations.SOGLASOVANIE_PENDING_UK:
+            messages.error(request, 'КП не ожидает согласования УК.')
+            return _approval_redirect(calc.pk)
+        comment = _require_comment(
+            request, comment, error_message='Укажите причину отказа от согласования.',
+        )
+        if comment is None:
+            return _approval_redirect(calc.pk)
+
+        now = timezone.now()
+        calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_REJECTED
+        calc.uk_approve_user = request.user
+        calc.uk_approve_date = now
+        calc.uk_approve_comment = comment
+        calc.save(update_fields=[
+            'soglasovanie_status',
+            'uk_approve_user',
+            'uk_approve_date',
+            'uk_approve_comment',
+        ])
+        send_calc_rlk_chat_message(
+            calc,
+            request.user,
+            'Отказ в согласовании УК: ' + comment,
+        )
+        messages.success(request, 'Отказ в согласовании УК зарегистрирован.')
         return _approval_redirect(calc.pk)
 
     return None
