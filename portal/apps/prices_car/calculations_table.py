@@ -9,6 +9,7 @@ SOGLASOVANIE_LIST_FILTER_CHOICES = (
     ('approved', 'Согласовано'),
     ('pending_director', 'Требуется согласование директором ДЦ'),
     ('pending_uk', 'Требуется согласование УК'),
+    ('rejected', 'Отказ в согласовании'),
 )
 
 CALC_LIST_COLUMN_DEFS = {
@@ -157,6 +158,11 @@ def apply_soglasovanie_status_filter(queryset, filter_values):
         )
     if 'pending_uk' in filter_values:
         status_q |= Q(soglasovanie_status=CarCalculations.SOGLASOVANIE_PENDING_UK)
+    if 'rejected' in filter_values:
+        status_q |= Q(soglasovanie_status__in=[
+            CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+            CarCalculations.SOGLASOVANIE_UK_REJECTED,
+        ])
 
     if status_q:
         return queryset.filter(status_q)

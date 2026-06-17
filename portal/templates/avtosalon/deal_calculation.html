@@ -403,41 +403,61 @@
         <div class="deal-section">
           <h6 class="deal-section-title">Статус согласования</h6>
           <div class="car-info-item mb-2">
-            <span class="badge bg-secondary">{{ params.approval_status_label }}</span>
+            <span class="badge {% if params.approval_status == 'director_rejected' or params.approval_status == 'uk_rejected' %}bg-danger{% elif params.approval_final_without_uk or params.approval_status == 'uk_approved' %}bg-success{% elif params.approval_status == 'pending_uk' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ params.approval_status_label }}</span>
           </div>
 
           {% if params.approval_final_without_uk %}
-          <p class="small text-success mb-2">Согласование завершено. Дополнительное согласование УК не требуется.</p>
+          <p class="small text-success mb-2">
+            {% if params.approval_auto_approved %}
+            Согласовано автоматически (КВ выше расчетного КМ по правилу). УК не требуется.
+            {% else %}
+            Согласование завершено. Дополнительное согласование УК не требуется.
+            {% endif %}
+          </p>
+          {% elif params.approval_status == 'pending' and params.approval_kvp_above_raschet %}
+          <p class="small text-muted mb-2">КВ выше расчетного КМ — ожидается автосогласование или действие директора.</p>
           {% elif params.approval_status == 'pending' and params.approval_kvp_ok %}
           <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
           <p class="small text-muted mb-2">КВ не выше мин. КМ ДЦ — потребуется согласование УК.</p>
           {% elif params.approval_status == 'pending_uk' %}
           <p class="small text-warning mb-2">Ожидается согласование УК.</p>
+          {% elif params.approval_status == 'director_rejected' %}
+          <p class="small text-danger mb-2">Согласование отклонено директором ДЦ.</p>
+          {% elif params.approval_status == 'uk_rejected' %}
+          <p class="small text-danger mb-2">Согласование отклонено управляющей компанией.</p>
           {% endif %}
 
           {% if params.calc.director_approve_user %}
           <div class="metric-card-portal mb-2">
-            <div class="metric-card-label-portal">Директор ДЦ</div>
+            <div class="metric-card-label-portal">
+              {% if params.approval_status == 'director_rejected' %}Отказ директора ДЦ{% else %}Директор ДЦ{% endif %}
+            </div>
             <div class="metric-card-value-portal">
               {{ params.calc.director_approve_user.profiles.eco_name|default:params.calc.director_approve_user.get_full_name }}
               · {{ params.calc.director_approve_date|date:"d.m.Y H:i" }}
             </div>
             {% if params.calc.director_approve_comment %}
-            <div class="small text-muted mt-1">{{ params.calc.director_approve_comment }}</div>
+            <div class="small {% if params.approval_status == 'director_rejected' %}text-danger{% else %}text-muted{% endif %} mt-1">
+              {% if params.approval_status == 'director_rejected' %}<strong>Причина отказа:</strong> {% endif %}{{ params.calc.director_approve_comment }}
+            </div>
             {% endif %}
           </div>
           {% endif %}
 
           {% if params.calc.uk_approve_user %}
           <div class="metric-card-portal mb-2">
-            <div class="metric-card-label-portal">Управляющая компания</div>
+            <div class="metric-card-label-portal">
+              {% if params.approval_status == 'uk_rejected' %}Отказ УК{% else %}Управляющая компания{% endif %}
+            </div>
             <div class="metric-card-value-portal">
               {{ params.calc.uk_approve_user.profiles.eco_name|default:params.calc.uk_approve_user.get_full_name }}
               · {{ params.calc.uk_approve_date|date:"d.m.Y H:i" }}
             </div>
             {% if params.calc.uk_approve_comment %}
-            <div class="small text-muted mt-1">{{ params.calc.uk_approve_comment }}</div>
+            <div class="small {% if params.approval_status == 'uk_rejected' %}text-danger{% else %}text-muted{% endif %} mt-1">
+              {% if params.approval_status == 'uk_rejected' %}<strong>Причина отказа:</strong> {% endif %}{{ params.calc.uk_approve_comment }}
+            </div>
             {% endif %}
           </div>
           {% endif %}
@@ -568,6 +588,14 @@
           </div>
           {% endif %}
 
+          {% if params.approval_can_director_reject %}
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorRejectModal">
+              Отказать (директор ДЦ)
+            </button>
+          </div>
+          {% endif %}
+
           {% if params.approval_can_director_send_uk %}
           <div class="mt-3">
             <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorUkModal">
@@ -581,6 +609,14 @@
           <div class="mt-3">
             <button type="button" class="btn btn-calculate w-100" data-bs-toggle="modal" data-bs-target="#dealUkApproveModal">
               Согласовать УК
+            </button>
+          </div>
+          {% endif %}
+
+          {% if params.approval_can_uk_reject %}
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#dealUkRejectModal">
+              Отказать (УК)
             </button>
           </div>
           {% endif %}
@@ -609,6 +645,32 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
             <button type="submit" class="btn btn-calculate">Согласовано</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if params.approval_can_director_reject %}
+  <div class="modal fade" id="dealDirectorRejectModal" tabindex="-1" aria-labelledby="dealDirectorRejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="approval_action" value="director_reject">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dealDirectorRejectModalLabel">Отказ в согласовании (директор ДЦ)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">Укажите причину отказа от согласования коммерческого предложения.</p>
+            <label class="form-label" for="director_reject_comment">Причина отказа</label>
+            <textarea class="form-control" id="director_reject_comment" name="approval_comment" rows="4" required placeholder="Укажите причину отказа"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-danger">Отказать</button>
           </div>
         </form>
       </div>
@@ -666,6 +728,38 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
             <button type="submit" class="btn btn-calculate">Согласовано УК</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if params.approval_can_uk_reject %}
+  <div class="modal fade" id="dealUkRejectModal" tabindex="-1" aria-labelledby="dealUkRejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="approval_action" value="uk_reject">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dealUkRejectModalLabel">Отказ в согласовании (УК)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            {% if params.calc.director_approve_comment %}
+            <div class="alert alert-light border small mb-3">
+              <strong>Комментарий директора:</strong><br>
+              {{ params.calc.director_approve_comment }}
+            </div>
+            {% endif %}
+            <p class="small text-muted">Укажите причину отказа от согласования коммерческого предложения.</p>
+            <label class="form-label" for="uk_reject_comment">Причина отказа</label>
+            <textarea class="form-control" id="uk_reject_comment" name="approval_comment" rows="4" required placeholder="Укажите причину отказа"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-danger">Отказать</button>
           </div>
         </form>
       </div>

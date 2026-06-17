@@ -57,6 +57,7 @@ from prices_car.models import EmailPushCar, CarCalculations
 from avtosalon.deal_calc_approval import (
     build_deal_calc_approval_context,
     handle_deal_calc_approval_post,
+    try_auto_approve_calculation,
     user_can_access_deal_calculation_doc,
 )
 from prices_car.km_raschet import apply_km_raschet_to_calculation
@@ -3555,6 +3556,7 @@ def deal_calculation_doc(request, id):
         apply_km_raschet_to_calculation(calc, car)
         if calc.km_raschet is not None:
             calc.save(update_fields=['km_raschet'])
+    try_auto_approve_calculation(calc, send_chat=True)
     cumulative_data = car.cumulative_data() if car else {}
 
     if request.method == 'POST':
