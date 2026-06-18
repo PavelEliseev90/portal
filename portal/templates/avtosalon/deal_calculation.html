@@ -400,6 +400,10 @@
         {% endif %}
 
         {% if params.approval_status_label %}
+
+        
+        
+
         <div class="deal-section">
           <h6 class="deal-section-title">Статус согласования</h6>
           <div class="car-info-item mb-2">
@@ -461,6 +465,17 @@
             {% endif %}
           </div>
           {% endif %}
+          
+          <br>
+          
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" id="send_1C" name="send_1C" value="send_1C">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-arrow-repeat"></i> Обновить в 1С
+            </button>
+          </form>
+
         </div>
         {% endif %}
 
@@ -510,7 +525,9 @@
           
         </div>
 
-        {% include 'avtosalon/_km_breakdown.html' %}
+        {% if user.profiles.price_car_new_all %}
+          {% include 'avtosalon/_km_breakdown.html' %}
+        {% endif %}
 
         <div class="deal-section">
           <h3 class="deal-section-title">Итоги калькуляции</h3>

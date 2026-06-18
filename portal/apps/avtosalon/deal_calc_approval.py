@@ -310,9 +310,9 @@ def build_calculation_soglasovanie_1c_payload(calc):
         rejection = comment_soglasovanie if rejected else ''
         date_success = _format_1c_datetime(calc.uk_approve_date or calc.date_success)
         approver_user = calc.uk_approve_user
-
+    
     return {
-        'Type': 'calculation_car_soglasovanie',
+        'Type': 'ChangeKP',
         'Uin': calc.uin or '',
         'Number': calc.number or '',
         'SoglasovanieStatus': status,
@@ -321,7 +321,7 @@ def build_calculation_soglasovanie_1c_payload(calc):
         'Rejected': rejected,
         'Date_success': date_success,
         'CommentSoglasovanie': comment_soglasovanie if approved else '',
-        'Rejection': rejection,
+        'CanceledComment': rejection,
         'ApproverUin': _staff_uin_for_user(approver_user),
         'ApproverName': (
             (getattr(getattr(approver_user, 'profiles', None), 'eco_name', None) or '')
@@ -340,7 +340,7 @@ def send_calculation_soglasovanie_result_to_1c(calc):
 
     payload = build_calculation_soglasovanie_1c_payload(calc)
     
-    js_data = {'Type': 'ChangeKP', 'Payload': payload}
+    js_data = payload 
 
     try:
         response = requests.post(

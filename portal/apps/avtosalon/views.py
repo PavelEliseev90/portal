@@ -3562,6 +3562,11 @@ def deal_calculation_doc(request, id):
     km_breakdown = build_km_calculation_breakdown(car) if car else {'available': False}
 
     if request.method == 'POST':
+        if "send_1C" in request.POST:
+            from avtosalon.deal_calc_approval import send_calculation_soglasovanie_result_to_1c
+            send_calculation_soglasovanie_result_to_1c(calc)
+            return HttpResponseRedirect('/cars/deal/calculation/' + str(calc.pk) + '/')
+        
         approval_response = handle_deal_calc_approval_post(
             request, calc, cumulative_data,
         )
