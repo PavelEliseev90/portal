@@ -97,6 +97,8 @@ urlpatterns = [
    path('v1/refresh_new_cars/',                 views_avtosalon.refresh_new_cars),
    path('v1/refresh_cars/',                     views_avtosalon.refresh_cars),
    path('v1/post_image_autoru_mark/',           views_avtosalon.post_image_autoru_mark),
+   path('v1/get_autoru_mark_logos/',            views_avtosalon.get_autoru_mark_logos),
+   path('v1/get_autoru_mark_logo/',             views_avtosalon.get_autoru_mark_logo),
    path('v1/post_image_avito_mark/',            views_avtosalon.post_image_avito_mark),
    path('v1/info_cars_organization/',           views_avtosalon.info_cars_organization),
    path('v1/get_image_change/',                 views_avtosalon.get_image_change),
