@@ -3115,6 +3115,45 @@ def _cars_qs_for_price_car_brand(brand):
     return qs
 
 
+def _is_same_podrazdelenie(podrazdelenie, unit_name):
+    if not podrazdelenie or not unit_name:
+        return False
+    podrazdelenie = podrazdelenie.strip().lower()
+    unit_name = unit_name.strip().lower()
+    return podrazdelenie == unit_name or unit_name in podrazdelenie or podrazdelenie in unit_name
+
+
+def _brand_sales_podrazdeleniya(car, month_start, now, sale_type=3, current_unit_name=None):
+    """Подразделения с продажами бренда за период (из Cumulative, не со склада)."""
+    from powerbi.models import Cumulative
+
+    if not car or not car.modification_autoru_id:
+        return []
+
+    q = Cumulative.objects.filter(
+        TipProdazhi='Розница',
+        DataProdazhi__gte=month_start,
+        DataProdazhi__lte=now,
+        SebestoimostPoDokumentu__gt=0,
+    ).exclude(PodrazdelenieDTs__isnull=True).exclude(PodrazdelenieDTs='')
+    q = _apply_car_sale_type_filter(q, car, sale_type)
+
+    result = []
+    seen = set()
+    for name in q.values_list('PodrazdelenieDTs', flat=True).distinct():
+        name = (name or '').strip()
+        if not name:
+            continue
+        if _is_same_podrazdelenie(name, current_unit_name):
+            continue
+        key = name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(name)
+    return sorted(result)
+
+
 def _brand_other_unit_names(car):
     if not car.unit_id:
         return []
@@ -3200,6 +3239,21 @@ def _deal_calc_cumulative_qs_for_unit_name(unit_name, month_start, now, car=None
     return q
 
 
+def _deal_calc_cumulative_qs_for_podrazdelenie(podrazdelenie, month_start, now, car=None, sale_type=3):
+    from powerbi.models import Cumulative
+
+    q = Cumulative.objects.filter(
+        TipProdazhi='Розница',
+        DataProdazhi__gte=month_start,
+        DataProdazhi__lte=now,
+        SebestoimostPoDokumentu__gt=0,
+        PodrazdelenieDTs=podrazdelenie,
+    )
+    if car:
+        q = _apply_car_sale_type_filter(q, car, sale_type)
+    return q
+
+
 def _deal_sales_metric_value(metrics, row_key):
     if row_key == 'sales_count':
         return metrics.get('udelka_count') or 0
@@ -3222,16 +3276,22 @@ def _build_deal_sales_comparison_table(car, current_unit_name, month_start, now,
         ),
     }]
     if car:
-        for unit_name in sorted(_brand_other_unit_names(car)):
+        for podrazdelenie in _brand_sales_podrazdeleniya(
+            car,
+            month_start,
+            now,
+            sale_type=sale_type,
+            current_unit_name=current_unit_name,
+        ):
             metrics = _cumulative_vp_metrics(
-                _deal_calc_cumulative_qs_for_unit_name(
-                    unit_name, month_start, now, car=car, sale_type=sale_type,
+                _deal_calc_cumulative_qs_for_podrazdelenie(
+                    podrazdelenie, month_start, now, car=car, sale_type=sale_type,
                 ),
             )
             if not metrics.get('udelka_count'):
                 continue
             columns.append({
-                'name': unit_name,
+                'name': podrazdelenie,
                 'is_current': False,
                 'metrics': metrics,
             })
@@ -3556,8 +3616,9 @@ def deal_calculation_doc(request, id):
         apply_km_raschet_to_calculation(calc, car)
         if calc.km_raschet is not None:
             calc.save(update_fields=['km_raschet'])
-    try_auto_approve_calculation(calc, send_chat=True)
-    cumulative_data = car.cumulative_data() if car else {}
+    cumulative_data = car.cumulative_data() if car else None
+    try_auto_approve_calculation(calc, send_chat=True, cumulative_data=cumulative_data)
+    cumulative_data = cumulative_data or {}
     from prices_car.km_breakdown import build_km_calculation_breakdown
     km_breakdown = build_km_calculation_breakdown(car) if car else {'available': False}
 

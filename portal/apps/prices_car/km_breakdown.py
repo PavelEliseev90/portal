@@ -69,6 +69,29 @@ def _winner_reason(type_km, km1, km2, has_discount, has_min_km):
     return 'Недостаточно данных для расчёта (нет модификации Auto.ru).'
 
 
+def get_km_rule_total(cumulative_data, car=None):
+    """Итог по правилу — победитель cumulative_data (как в блоке «Минимальный КМ»)."""
+    if not cumulative_data:
+        return None
+    type_km = cumulative_data.get('type_km', 0)
+    if type_km == 1:
+        value = cumulative_data.get('automatic', {}).get('km_min_automatic')
+    elif type_km == 2:
+        value = cumulative_data.get('automatic_2', {}).get('km_min_automatic')
+    elif type_km == 3:
+        value = car.min_km if car else cumulative_data.get('custom', {}).get('km_min_automatic')
+    elif type_km == 4:
+        value = cumulative_data.get('automatic_3', {}).get('km_min_automatic')
+    else:
+        return None
+    if value is None:
+        return None
+    try:
+        return int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
 def build_km_calculation_breakdown(car):
     """
     Структурированный разбор cumulative_data для отображения пользователю.

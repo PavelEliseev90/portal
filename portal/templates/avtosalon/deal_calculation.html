@@ -409,13 +409,13 @@
           {% if params.approval_final_without_uk %}
           <p class="small text-success mb-2">
             {% if params.approval_auto_approved %}
-            Согласовано автоматически (КВ выше расчетного КМ по правилу). УК не требуется.
+            Согласовано автоматически (КВ выше итога по правилу). УК не требуется.
             {% else %}
             Согласование завершено. Дополнительное согласование УК не требуется.
             {% endif %}
           </p>
-          {% elif params.approval_status == 'pending' and params.approval_kvp_above_raschet %}
-          <p class="small text-muted mb-2">КВ выше расчетного КМ — ожидается автосогласование или действие директора.</p>
+          {% elif params.approval_status == 'pending' and params.approval_kvp_above_km_rule %}
+          <p class="small text-muted mb-2">КВ выше итога по правилу — ожидается автосогласование или действие директора.</p>
           {% elif params.approval_status == 'pending' and params.approval_kvp_ok %}
           <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
@@ -578,7 +578,7 @@
               <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого по сделке:</p>
               <h2 id="itog">{{ params.calc.amount|default:params.total_amount|floatformat:"0g" }} ₽</h2>
               <br>
-              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽ · расч. КМ {{ params.calc.km_raschet|floatformat:"0g" }} ₽ · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
+              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽{% if params.approval_km_rule_total is not None %} · итог по правилу {{ params.approval_km_rule_total|floatformat:"0g" }} ₽{% endif %} · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
             </div>
           </div>
 
