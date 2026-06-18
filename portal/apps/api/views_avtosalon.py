@@ -193,6 +193,124 @@ def post_image_autoru_mark(request):
     return JsonResponse(answer, status = status.HTTP_200_OK, safe = False)
 
 
+def _api_param(request, key, default=''):
+    value = request.GET.get(key, '')
+    if value not in ('', None):
+        return value
+    if request.method == 'POST' and request.body:
+        try:
+            data = json.loads(request.body.decode().replace("'", '"'))
+            value = data.get(key, default)
+            if value not in ('', None):
+                return value
+        except (ValueError, json.JSONDecodeError):
+            pass
+    return default
+
+
+def _autoru_mark_queryset(request):
+    qs = AutoruMark.objects.all().order_by('name')
+    id_mark = _api_param(request, 'id_mark')
+    if id_mark not in ('', None):
+        qs = qs.filter(idSite=id_mark)
+    name = _api_param(request, 'name')
+    if name:
+        qs = qs.filter(Q(name__icontains=name) | Q(nameEn__icontains=name))
+    only_with_logo = _api_param(request, 'only_with_logo')
+    if str(only_with_logo).lower() in ('1', 'true', 'yes'):
+        qs = qs.exclude(file='').exclude(file__isnull=True)
+    return qs
+
+
+def _resolve_autoru_mark(request):
+    pk = _api_param(request, 'id')
+    if pk not in ('', None):
+        return AutoruMark.objects.filter(pk=pk).first()
+    id_mark = _api_param(request, 'id_mark')
+    if id_mark not in ('', None):
+        return AutoruMark.objects.filter(idSite=id_mark).first()
+    name = _api_param(request, 'name')
+    if name:
+        qs = AutoruMark.objects.filter(Q(name__iexact=name) | Q(nameEn__iexact=name))
+        if qs.exists():
+            return qs.first()
+        return AutoruMark.objects.filter(
+            Q(name__icontains=name) | Q(nameEn__icontains=name),
+        ).first()
+    return None
+
+
+def _mark_logo_file_info(mark, request):
+    if not mark.file or not mark.file.name:
+        return None
+    file_name = os.path.basename(mark.file.name)
+    extension = os.path.splitext(file_name)[1].lstrip('.').lower() or 'png'
+    return {
+        'file_name': file_name,
+        'extension': extension,
+        'logo_url': request.build_absolute_uri(mark.file.url),
+    }
+
+
+@api_view(['GET', 'POST'])
+def get_autoru_mark_logos(request):
+    """Список марок AutoruMark с URL существующих логотипов для загрузки из 1С."""
+    marks = _autoru_mark_queryset(request)
+    result = []
+    for mark in marks:
+        item = {
+            'id': mark.pk,
+            'idSite': mark.idSite,
+            'name': mark.name,
+            'nameEn': mark.nameEn,
+            'has_logo': bool(mark.file and mark.file.name),
+            'logo_url': '',
+            'file_name': '',
+            'extension': '',
+        }
+        info = _mark_logo_file_info(mark, request)
+        if info:
+            item.update(info)
+        result.append(item)
+    return JsonResponse({'marks': result}, status=status.HTTP_200_OK, safe=False)
+
+
+@api_view(['GET', 'POST'])
+def get_autoru_mark_logo(request):
+    """Скачать логотип марки AutoruMark (base64 + URL) для 1С."""
+    mark = _resolve_autoru_mark(request)
+    if not mark:
+        return JsonResponse({
+            'ok': False,
+            'error': 'mark_not_found',
+        }, status=status.HTTP_404_NOT_FOUND, safe=False)
+
+    info = _mark_logo_file_info(mark, request)
+    if not info:
+        return JsonResponse({
+            'ok': False,
+            'error': 'logo_not_found',
+            'id': mark.pk,
+            'idSite': mark.idSite,
+            'name': mark.name,
+        }, status=status.HTTP_404_NOT_FOUND, safe=False)
+
+    with mark.file.open('rb') as image_file:
+        image_base64 = base64.b64encode(image_file.read()).decode()
+
+    return JsonResponse({
+        'ok': True,
+        'id': mark.pk,
+        'idSite': mark.idSite,
+        'name': mark.name,
+        'nameEn': mark.nameEn,
+        'file_name': info['file_name'],
+        'extension': info['extension'],
+        'logo_url': info['logo_url'],
+        'image': image_base64,
+    }, status=status.HTTP_200_OK, safe=False)
+
+
 @api_view(['GET', 'POST'])
 def post_image_avito_mark(request):
     
