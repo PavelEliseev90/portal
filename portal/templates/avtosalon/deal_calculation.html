@@ -416,10 +416,10 @@
           </p>
           {% elif params.approval_status == 'pending' and params.approval_kvp_above_km_rule %}
           <p class="small text-muted mb-2">КВ выше итога по правилу — ожидается автосогласование или действие директора.</p>
-          {% elif params.approval_status == 'pending' and params.approval_kvp_ok %}
+          {% elif params.approval_status == 'pending' and params.approval_director_can_approve %}
           <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
-          <p class="small text-muted mb-2">КВ не выше мин. КМ ДЦ — потребуется согласование УК.</p>
+          <p class="small text-muted mb-2">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0 — директор ДЦ не может согласовать это КП, потребуется согласование УК.{% else %}КВ не выше мин. КМ ДЦ — потребуется согласование УК.{% endif %}</p>
           {% elif params.approval_status == 'pending_uk' %}
           <p class="small text-warning mb-2">Ожидается согласование УК.</p>
           {% elif params.approval_status == 'director_rejected' %}
