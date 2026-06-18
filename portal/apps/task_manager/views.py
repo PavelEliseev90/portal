@@ -2708,7 +2708,7 @@ def send_push_car():
                     car_complectation   = car.complectation_autoru.name
                 else:
                     car_complectation   = "-"
-                    
+
                 car_year            = car.year
                 car_run             = '{:,}'.format(car.run).replace(',', ' ')
                 car_price           = '{:,}'.format(car.price).replace(',', ' ')
@@ -3748,12 +3748,15 @@ def refresh_check_list_info(checklists_cvc_info):
             check_list.id_cvc     = check['checklist_id']
             check_list.save()
         
-def cvc_get_info():
+def cvc_get_info(rlk_id=None):
     
     date_start = DT.datetime.now() + DT.timedelta(days=-7)
     date_start = date_start.replace(year=2024, month=1, day = 1, hour = 0, minute=0, second=0, microsecond=0)
     
-    list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(success = False).filter(rlk__dataTime__gte = date_start)
+    if rlk_id == None:
+        list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(success = False).filter(rlk__dataTime__gte = date_start)
+    else:
+        list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(success = False).filter(rlk__id = rlk_id)
     #list_checklist_cvc = Records_voice_recorder_cvc_checklist.objects.filter(pk = 145588)
     
     token = get_token()
