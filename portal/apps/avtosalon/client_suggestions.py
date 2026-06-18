@@ -1,7 +1,6 @@
 """Подбор альтернативных автомобилей на складе ДЦ (KMCar)."""
 from django.db.models import OuterRef, Subquery
 
-from prices_car.brand_resolve import cars_queryset_for_price_car_brand, resolve_price_car_brand_for_car
 from prices_car.km_car import get_car_latest_km_value
 from prices_car.models import KMCar
 from refs.models import RefCarsOrganization
@@ -44,18 +43,12 @@ def _suggestions_base_qs(car, unit_id):
     if not car or not unit_id or not car.modification_autoru_id:
         return RefCarsOrganization.objects.none()
 
-    brand = resolve_price_car_brand_for_car(car)
-    if brand:
-        qs = cars_queryset_for_price_car_brand(brand)
-    else:
-        qs = RefCarsOrganization.objects.filter(
-            modification_autoru__model__mark_id=car.modification_autoru.model.mark_id,
-        )
-
-    return qs.filter(
+    model_id = car.modification_autoru.model_id
+    return RefCarsOrganization.objects.filter(
         unit_id=unit_id,
         is_new=True,
         quantity__gt=0,
+        modification_autoru__model_id=model_id,
     ).exclude(
         pk=car.pk,
     ).exclude(
@@ -121,6 +114,7 @@ def serialize_client_suggestion(car, reference_km, kvp):
         'km_delta': delta,
         'type_km': car.last_km_type or 0,
         'type_km_label': TYPE_KM_LABELS.get(car.last_km_type or 0, '—'),
+        'rule_label': TYPE_KM_LABELS.get(car.last_km_type or 0, '—'),
         'days_in_stock': car.days_in_stok or 0,
         'stage_price': str(car.stage_price) if car.stage_price_id else '',
         'approval_passes': kvp_val > km if kvp_val else False,
@@ -133,10 +127,14 @@ def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_L
     qs = get_client_suggestions_qs(car, unit_id, reference_km)[:limit]
     items = [serialize_client_suggestion(item, reference_km, kvp) for item in qs]
     total = count_client_suggestions(car, unit_id, reference_km)
+    model_name = ''
+    if car.modification_autoru_id:
+        model_name = car.modification_autoru.model.name
     return {
         'items': items,
         'total': total,
         'shown': len(items),
         'reference_km': reference_km,
         'kvp': int(kvp or 0),
+        'model_name': model_name,
     }
