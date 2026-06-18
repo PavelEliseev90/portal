@@ -1,0 +1,104 @@
+{% if params.km_breakdown.available %}
+<p class="small text-muted mb-3">
+  Итог по правилу: <strong>{{ params.km_breakdown.winner.label }}</strong>
+  — <strong>{{ params.km_breakdown.winner.amount_display }}</strong>.
+  {{ params.km_breakdown.priority_note }}
+</p>
+
+{% if params.calc.km_raschet is not None and params.km_breakdown.winner.amount %}
+  {% if params.calc.km_raschet != params.km_breakdown.winner.amount %}
+  <div class="alert alert-warning py-2 small mb-3">
+    Расчётный КМ на КП ({{ params.calc.km_raschet|floatformat:"0g" }} ₽) отличается от текущего итога по правилу
+    ({{ params.km_breakdown.winner.amount_display }}). КП могло быть создано при других условиях.
+  </div>
+  {% endif %}
+{% endif %}
+
+<div class="accordion accordion-flush" id="kmBreakdownAccordion">
+  {% for method in params.km_breakdown.methods %}
+  <div class="accordion-item border rounded mb-2 overflow-hidden">
+    <h2 class="accordion-header" id="kmMethodHeading{{ method.id }}">
+      <button class="accordion-button {% if not method.applicable %}collapsed{% endif %} py-2 {% if method.applicable %}bg-success bg-opacity-10{% endif %}"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#kmMethodCollapse{{ method.id }}"
+              aria-expanded="{% if method.applicable %}true{% else %}false{% endif %}"
+              aria-controls="kmMethodCollapse{{ method.id }}">
+        <span class="me-2">
+          {% if method.applicable %}
+            <span class="badge bg-success">Применяется</span>
+          {% else %}
+            <span class="badge bg-secondary">Справочно</span>
+          {% endif %}
+        </span>
+        <span class="fw-semibold">{{ method.title }}</span>
+        <span class="ms-auto me-2 text-muted small">{{ method.result_display }}</span>
+      </button>
+    </h2>
+    <div id="kmMethodCollapse{{ method.id }}"
+         class="accordion-collapse collapse {% if method.applicable %}show{% endif %}"
+         aria-labelledby="kmMethodHeading{{ method.id }}"
+         data-bs-parent="#kmBreakdownAccordion">
+      <div class="accordion-body pt-2 pb-3">
+        {% if method.description %}
+        <p class="small text-muted mb-2">{{ method.description }}</p>
+        {% endif %}
+        {% if method.not_selected_reason and not method.applicable %}
+        <p class="small text-secondary mb-2"><em>{{ method.not_selected_reason }}</em></p>
+        {% endif %}
+        <div class="table-responsive">
+          <table class="table table-sm table-borderless mb-0 km-breakdown-table">
+            <thead>
+              <tr class="text-muted small">
+                <th>Показатель</th>
+                <th class="text-end">Значение</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for step in method.steps %}
+              <tr class="{% if step.highlight %}table-success fw-semibold{% endif %}">
+                <td>
+                  {{ step.label }}
+                  {% if step.source %}
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ step.source }}</div>
+                  {% endif %}
+                  {% if step.formula %}
+                  <div class="text-muted font-monospace" style="font-size: 0.75rem;">{{ step.formula }}</div>
+                  {% endif %}
+                </td>
+                <td class="text-end text-nowrap">{{ step.value }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="mt-3 p-2 rounded bg-light border small">
+  <div class="fw-semibold mb-1">Для согласования КП</div>
+  <div class="d-flex justify-content-between">
+    <span>КВ по КП</span>
+    <span>{{ params.calc.kvp|floatformat:"0g" }} ₽</span>
+  </div>
+  <div class="d-flex justify-content-between">
+    <span>Расчётный КМ (на момент КП)</span>
+    <span>{% if params.calc.km_raschet is not None %}{{ params.calc.km_raschet|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+  </div>
+  <div class="d-flex justify-content-between">
+    <span>Мин. КМ по правилу (сейчас)</span>
+    <span>{{ params.km_breakdown.winner.amount_display }}</span>
+  </div>
+  {% if params.km_breakdown.brand_km %}
+  <div class="d-flex justify-content-between">
+    <span>Мин. КМ ДЦ (порог директора)</span>
+    <span>{{ params.km_breakdown.brand_km.km_min_dc_display }}</span>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<p class="text-muted mb-0">Разбор расчёта КМ недоступен для этого автомобиля.</p>
+{% endif %}

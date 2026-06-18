@@ -492,7 +492,19 @@
           {% endif %}
           
           <div class="price-item">
-            <span class="price-item-label text-white opacity-75">Итог по правилу:</span>
+            <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
+              Итог по правилу:
+              {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
+              <button type="button"
+                      class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
+                      data-bs-toggle="modal"
+                      data-bs-target="#kmBreakdownModal"
+                      title="Разбор расчёта КМ">
+                <span class="icon-doc"></span>
+                <span class="small">Подробно</span>
+              </button>
+              {% endif %}
+            </span>
             {% if params.cumulative_data.type_km == 1 %}
               <span class="price-item-value text-white">{{ params.cumulative_data.automatic.km_min_automatic|floatformat:"2g" }} ₽</span>
             {% elif params.cumulative_data.type_km == 2 %}
@@ -509,8 +521,6 @@
           {% endif %}
           
         </div>
-
-        {% include 'avtosalon/_km_breakdown.html' %}
 
         <div class="deal-section">
           <h3 class="deal-section-title">Итоги калькуляции</h3>
@@ -764,6 +774,25 @@
             <button type="submit" class="btn btn-danger">Отказать</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
+  <div class="modal fade" id="kmBreakdownModal" tabindex="-1" aria-labelledby="kmBreakdownModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="kmBreakdownModalLabel">Разбор расчёта КМ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          {% include 'avtosalon/_km_breakdown_content.html' %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        </div>
       </div>
     </div>
   </div>
