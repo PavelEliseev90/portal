@@ -1443,7 +1443,11 @@ def control_detail_doc(request, id, doc_id):
                 if len(id_record) > 0:
                     Records_voice_recorder_cvc.objects.filter(records__id = id_record).delete()
                     return HttpResponseRedirect(request.path_info) 
-
+            if 'refresh_info' in request.POST:
+                from task_manager.views import cvc_get_info
+                cvc_get_info(rlk_id=doc.id)
+                return HttpResponseRedirect(request.path_info) 
+            
         audio_list_qyery    = get_audio_records(doc)
         audio_list_doc      = list()
         

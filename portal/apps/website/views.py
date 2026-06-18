@@ -10646,8 +10646,15 @@ def test(request):
 
 
     #refresh_km_cars()
-    from task_manager.views import send_push_car
-    send_push_car()
+    from prices_car.views import refresh_km_cars, send_km_car_1C
+    
+    refresh_km_cars()
+    send_km_car_1C()
+
+    # from task_manager.views import send_push_car
+    
+    # send_km_car_1C()
+    
     
     # from background_task.models import Task
     # task = Task.objects.all()
