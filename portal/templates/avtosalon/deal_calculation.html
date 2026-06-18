@@ -550,7 +550,7 @@
               <span id="clientSuggestionsCount" class="badge text-bg-light text-dark ms-1">…</span>
             </button>
             <div class="small text-white opacity-75 mt-1">
-              Альтернативы на складе ДЦ с более низким расчётным КМ.
+              Альтернативы той же модели на складе ДЦ с более низким расчётным КМ.
             </div>
           </div>
           {% endif %}
@@ -853,7 +853,7 @@
                   <th class="text-end">РРЦ</th>
                   <th class="text-end">КМ</th>
                   <th class="text-end">Δ КМ</th>
-                  <th>Метод</th>
+                  <th>Правило</th>
                   <th class="text-end">Дней</th>
                   <th class="text-center">При текущем КВ</th>
                   <th></th>
@@ -926,7 +926,7 @@
           errorEl.classList.remove('d-none');
           return;
         }
-        summary.textContent = 'Показаны автомобили ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
+        summary.textContent = (data.model_name ? data.model_name + ': ' : '') + 'на складе ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
         if (!data.items || !data.items.length) {
           errorEl.textContent = 'Подходящих автомобилей не найдено.';
           errorEl.classList.remove('d-none');
@@ -951,7 +951,7 @@
             '<td class="text-end text-nowrap">' + fmtRub(item.price) + '</td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.km) + '</td>' +
             '<td class="text-end text-nowrap text-success">−' + fmtRub(item.km_delta) + '</td>' +
-            '<td class="text-nowrap">' + (item.type_km_label || '—') + '</td>' +
+            '<td class="text-nowrap">' + (item.rule_label || item.type_km_label || '—') + '</td>' +
             '<td class="text-end">' + (item.days_in_stock || 0) + '</td>' +
             '<td class="text-center">' + approvalBadge + '</td>' +
             '<td class="text-nowrap">' + links + '</td>';
