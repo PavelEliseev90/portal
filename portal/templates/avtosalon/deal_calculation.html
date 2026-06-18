@@ -519,6 +519,26 @@
           {% if params.cumulative_data.type_km == 4 %}
             <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_3.km_description}}</div>
           {% endif %}
+
+          {% if params.client_suggestions_enabled %}
+          <div class="mt-3" id="clientSuggestionsWrap">
+            <button type="button"
+                    class="btn btn-calculate-sm w-100 text-white border-white"
+                    id="clientSuggestionsBtn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#clientSuggestionsModal"
+                    data-count-url="{% url 'avtosalon:deal_calc_client_suggestions_count' params.calc.pk %}"
+                    data-list-url="{% url 'avtosalon:deal_calc_client_suggestions_list' params.calc.pk %}"
+                    disabled>
+              <span class="icon-doc"></span>
+              Предложения для клиента
+              <span id="clientSuggestionsCount" class="badge text-bg-light text-dark ms-1">…</span>
+            </button>
+            <div class="small text-white opacity-75 mt-1">
+              Альтернативы на складе ДЦ с более низким расчётным КМ.
+            </div>
+          </div>
+          {% endif %}
           
         </div>
 
@@ -798,7 +818,144 @@
   </div>
   {% endif %}
 
+  {% if params.client_suggestions_enabled %}
+  <div class="modal fade" id="clientSuggestionsModal" tabindex="-1" aria-labelledby="clientSuggestionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="clientSuggestionsModalLabel">Предложения для клиента</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small" id="clientSuggestionsSummary"></p>
+          <div id="clientSuggestionsLoading" class="text-center py-4 text-muted">Загрузка…</div>
+          <div id="clientSuggestionsError" class="alert alert-danger d-none"></div>
+          <div class="table-responsive d-none" id="clientSuggestionsTableWrap">
+            <table class="table table-sm table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Автомобиль</th>
+                  <th class="text-end">РРЦ</th>
+                  <th class="text-end">КМ</th>
+                  <th class="text-end">Δ КМ</th>
+                  <th>Метод</th>
+                  <th class="text-end">Дней</th>
+                  <th class="text-center">При текущем КВ</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="clientSuggestionsTableBody"></tbody>
+            </table>
+          </div>
+          <p class="small text-muted d-none mb-0" id="clientSuggestionsMore"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+
+<script>
+(function() {
+  var wrap = document.getElementById('clientSuggestionsWrap');
+  if (!wrap) return;
+
+  var btn = document.getElementById('clientSuggestionsBtn');
+  var countEl = document.getElementById('clientSuggestionsCount');
+  var countUrl = btn.getAttribute('data-count-url');
+  var listUrl = btn.getAttribute('data-list-url');
+  var listLoaded = false;
+
+  function fmtRub(v) {
+    return Math.round(v || 0).toLocaleString('ru-RU') + ' ₽';
+  }
+
+  fetch(countUrl, { credentials: 'same-origin' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok || !data.show || !data.count) {
+        wrap.style.display = 'none';
+        return;
+      }
+      countEl.textContent = String(data.count);
+      btn.disabled = false;
+    })
+    .catch(function() {
+      wrap.style.display = 'none';
+    });
+
+  var modal = document.getElementById('clientSuggestionsModal');
+  if (!modal) return;
+
+  modal.addEventListener('show.bs.modal', function() {
+    if (listLoaded) return;
+
+    var loading = document.getElementById('clientSuggestionsLoading');
+    var errorEl = document.getElementById('clientSuggestionsError');
+    var tableWrap = document.getElementById('clientSuggestionsTableWrap');
+    var tbody = document.getElementById('clientSuggestionsTableBody');
+    var summary = document.getElementById('clientSuggestionsSummary');
+    var more = document.getElementById('clientSuggestionsMore');
+
+    fetch(listUrl, { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        listLoaded = true;
+        loading.classList.add('d-none');
+        if (!data.ok) {
+          errorEl.textContent = 'Не удалось загрузить предложения.';
+          errorEl.classList.remove('d-none');
+          return;
+        }
+        summary.textContent = 'Показаны автомобили ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
+        if (!data.items || !data.items.length) {
+          errorEl.textContent = 'Подходящих автомобилей не найдено.';
+          errorEl.classList.remove('d-none');
+          return;
+        }
+        data.items.forEach(function(item) {
+          var tr = document.createElement('tr');
+          var title = [item.mark, item.model, item.complectation].filter(Boolean).join(' ');
+          var approvalBadge = item.approval_passes
+            ? '<span class="badge bg-success">пройдёт</span>'
+            : '<span class="badge bg-secondary">нет</span>';
+          var links = '';
+          if (item.car_url) {
+            links += '<a class="btn btn-calculate-sm me-1" href="' + item.car_url + '" target="_blank">Карточка</a>';
+          }
+          if (item.price_url) {
+            links += '<a class="btn btn-calculate-sm" href="' + item.price_url + '" target="_blank">Ценообразование</a>';
+          }
+          tr.innerHTML =
+            '<td><div class="fw-semibold">' + (title || item.name || '—') + '</div>' +
+            '<div class="small text-muted">' + (item.vin || '') + '</div></td>' +
+            '<td class="text-end text-nowrap">' + fmtRub(item.price) + '</td>' +
+            '<td class="text-end text-nowrap">' + fmtRub(item.km) + '</td>' +
+            '<td class="text-end text-nowrap text-success">−' + fmtRub(item.km_delta) + '</td>' +
+            '<td class="text-nowrap">' + (item.type_km_label || '—') + '</td>' +
+            '<td class="text-end">' + (item.days_in_stock || 0) + '</td>' +
+            '<td class="text-center">' + approvalBadge + '</td>' +
+            '<td class="text-nowrap">' + links + '</td>';
+          tbody.appendChild(tr);
+        });
+        tableWrap.classList.remove('d-none');
+        if (data.total > data.shown) {
+          more.textContent = 'Показаны лучшие ' + data.shown + ' из ' + data.total + '.';
+          more.classList.remove('d-none');
+        }
+      })
+      .catch(function() {
+        loading.classList.add('d-none');
+        errorEl.textContent = 'Ошибка загрузки данных.';
+        errorEl.classList.remove('d-none');
+      });
+  });
+})();
+</script>
 
 <script>
 

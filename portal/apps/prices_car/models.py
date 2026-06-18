@@ -402,15 +402,20 @@ class KMCar(models.Model):
     km_auto_1           = models.IntegerField("КМ автомобиля авто 1", default=0, null=True, blank=True)
     km_auto_2           = models.IntegerField("КМ автомобиля авто 2", default=0, null=True, blank=True)
     km_auto_3           = models.IntegerField("КМ автомобиля спец. условие", default=0, null=True, blank=True)
+    km_manual           = models.IntegerField("КМ ручной (min_km)", default=0, null=True, blank=True)
+    type_km             = models.SmallIntegerField("Тип итогового КМ", default=0, null=True, blank=True)
 
     def __str__(self):
         return "{} / {}".format(self.date, self.car)
 
     def save(self, *args, **kwargs):
-        if self.km_auto_3:
-            self.km = self.km_auto_3
-        else:
-            self.km = max(self.km_auto_1 or 0, self.km_auto_2 or 0)
+        from prices_car.km_car import resolve_km_car_total
+
+        total, type_km = resolve_km_car_total(
+            self.km_manual, self.km_auto_1, self.km_auto_2, self.km_auto_3,
+        )
+        self.km = total
+        self.type_km = type_km
         super().save(*args, **kwargs)
 
     class Meta:

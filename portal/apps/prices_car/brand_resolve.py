@@ -36,3 +36,20 @@ def resolve_price_car_brand_for_car(car):
             generic_match = brand
 
     return explicit_match or generic_match
+
+
+def cars_queryset_for_price_car_brand(brand):
+    """Автомобили, относящиеся к бренду ценообразования."""
+    from refs.models import RefCarsOrganization
+
+    mark_ids = list(brand.marks.values_list('pk', flat=True))
+    if not mark_ids:
+        return RefCarsOrganization.objects.none()
+
+    qs = RefCarsOrganization.objects.filter(
+        modification_autoru__model__mark_id__in=mark_ids,
+    )
+    model_ids = list(brand.models_included.values_list('pk', flat=True))
+    if model_ids:
+        qs = qs.filter(modification_autoru__model_id__in=model_ids)
+    return qs
