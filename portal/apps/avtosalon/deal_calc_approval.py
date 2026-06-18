@@ -12,7 +12,7 @@ from chats.models import Chat
 logger = logging.getLogger(__name__)
 
 AUTO_APPROVE_USER_ID = 1
-AUTO_APPROVE_COMMENT = 'Автоматическое согласование: КВ выше расчетного КМ по правилу'
+AUTO_APPROVE_COMMENT = 'Автоматическое согласование: КВ выше итога по правилу'
 URL_HS_ALFA_AUTO      = 'http://k01srv1c10/ralfa01/hs/mb/'
 
 FINAL_SOGLASOVANIE_STATUSES_FOR_1C = frozenset({
@@ -72,11 +72,26 @@ def kvp_above_min_km_dc(calc, cumulative_data):
     return kvp > min_km_dc
 
 
-def kvp_above_km_raschet(calc):
-    """КВ выше расчетного КМ по правилу — согласование не требуется."""
-    if calc.km_raschet is None:
+def _get_calc_cumulative_data(calc):
+    car = getattr(calc, 'car', None)
+    if not car:
+        return None, None
+    try:
+        return car.cumulative_data(), car
+    except Exception:
+        return None, car
+
+
+def kvp_above_km_rule(calc, cumulative_data=None):
+    """КВ выше итога по правилу — автосогласование без участия директора/УК."""
+    from prices_car.km_breakdown import get_km_rule_total
+
+    if cumulative_data is None:
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+    km_rule = get_km_rule_total(cumulative_data, calc.car)
+    if km_rule is None:
         return False
-    return int(calc.kvp or 0) > int(calc.km_raschet)
+    return int(calc.kvp or 0) > int(km_rule)
 
 
 def is_auto_approved_calculation(calc):
@@ -89,14 +104,16 @@ def is_auto_approved_calculation(calc):
     )
 
 
-def try_auto_approve_calculation(calc, send_chat=False):
-    """Автосогласование под пользователем id=1, если КВ > расчетного КМ."""
+def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
+    """Автосогласование под пользователем id=1, если КВ > итога по правилу."""
     from prices_car.models import CarCalculations
 
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     if status != CarCalculations.SOGLASOVANIE_PENDING:
         return False
-    if not kvp_above_km_raschet(calc):
+    if cumulative_data is None:
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+    if not kvp_above_km_rule(calc, cumulative_data):
         return False
 
     user = User.objects.filter(pk=AUTO_APPROVE_USER_ID).first()
@@ -184,7 +201,17 @@ def notify_uk_users_calculation_approval(calc, car_object=None):
 
 def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
     """После загрузки КП из 1С: автосогласование или уведомление директоров."""
-    auto_approved = try_auto_approve_calculation(calculation_object, send_chat=False)
+    cumulative_data = None
+    if car_object:
+        try:
+            cumulative_data = car_object.cumulative_data()
+        except Exception:
+            pass
+    auto_approved = try_auto_approve_calculation(
+        calculation_object,
+        send_chat=False,
+        cumulative_data=cumulative_data,
+    )
 
     try:
         from website.views import send_web_socket_message
@@ -198,7 +225,7 @@ def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
             text = (
                 'Коммерческое предложение #'
                 + str(calculation_object.number)
-                + ' согласовано автоматически. КВ выше расчетного КМ по правилу.'
+                + ' согласовано автоматически. КВ выше итога по правилу.'
             )
         else:
             text = (
@@ -229,9 +256,16 @@ def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
 def build_calculation_soglasovanie_api_response(calc):
     """Данные согласования для ответа API 1С после загрузки КП."""
     from prices_car.models import CarCalculations
+    from prices_car.km_breakdown import get_km_rule_total
 
     calc.refresh_from_db()
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    km_rule_total = None
+    if calc.car_id:
+        try:
+            km_rule_total = get_km_rule_total(calc.car.cumulative_data(), calc.car)
+        except Exception:
+            pass
     return {
         'soglasovanie_status': status,
         'soglasovanie_status_label': dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(
@@ -239,6 +273,7 @@ def build_calculation_soglasovanie_api_response(calc):
         ),
         'soglasovanie_auto_approved': is_auto_approved_calculation(calc),
         'km_raschet': calc.km_raschet,
+        'km_rule_total': km_rule_total,
         'kvp': calc.kvp,
     }
 
@@ -423,12 +458,17 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     approval_auto_approved = is_auto_approved_calculation(calc)
-    approval_kvp_above_raschet = kvp_above_km_raschet(calc)
+    approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
+    km_rule_total = None
+    if cumulative_data:
+        from prices_car.km_breakdown import get_km_rule_total
+        km_rule_total = get_km_rule_total(cumulative_data, calc.car)
 
     return {
         'approval_min_km_dc': min_km_dc,
         'approval_kvp_ok': kvp_ok,
-        'approval_kvp_above_raschet': approval_kvp_above_raschet,
+        'approval_kvp_above_km_rule': approval_kvp_above_km_rule,
+        'approval_km_rule_total': km_rule_total,
         'approval_auto_approved': approval_auto_approved,
         'approval_uk_required': (
             status == CarCalculations.SOGLASOVANIE_PENDING_UK
