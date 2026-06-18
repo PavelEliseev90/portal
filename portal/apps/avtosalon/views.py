@@ -3747,10 +3747,80 @@ def deal_calculation_doc(request, id):
     })
     params.update(build_deal_calc_approval_context(request.user, calc, cumulative_data))
 
+    from avtosalon.client_suggestions import deal_needs_client_suggestions
+    params['client_suggestions_enabled'] = deal_needs_client_suggestions(calc, cumulative_data, car)
+
     if calc.rlk_id and user_can_access_rlk_op_chat(request.user, calc.rlk):
         params.update(build_rlk_chat_params(request, calc.rlk))
     
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
+
+
+def _get_deal_calc_for_suggestions(request, calc_id):
+    calc = CarCalculations.objects.select_related(
+        'unit', 'car', 'car__unit',
+        'car__modification_autoru', 'car__modification_autoru__model',
+    ).get(pk=calc_id)
+    if not user_can_access_deal_calculation_doc(request.user, calc):
+        return None, JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+    return calc, None
+
+
+@login_required
+def deal_calc_client_suggestions_count(request, id):
+    from avtosalon.client_suggestions import (
+        count_client_suggestions,
+        deal_needs_client_suggestions,
+        get_reference_km_for_car,
+    )
+
+    calc, denied = _get_deal_calc_for_suggestions(request, id)
+    if denied is not None:
+        return denied
+
+    car = calc.car
+    cumulative_data = car.cumulative_data() if car else {}
+    if not deal_needs_client_suggestions(calc, cumulative_data, car):
+        return JsonResponse({'ok': True, 'show': False, 'count': 0})
+
+    unit_id = calc.unit_id or (car.unit_id if car else None)
+    reference_km = get_reference_km_for_car(car)
+    if reference_km is None or not unit_id:
+        return JsonResponse({'ok': True, 'show': False, 'count': 0})
+
+    count = count_client_suggestions(car, unit_id, reference_km)
+    return JsonResponse({
+        'ok': True,
+        'show': count > 0,
+        'count': count,
+        'reference_km': reference_km,
+    })
+
+
+@login_required
+def deal_calc_client_suggestions_list(request, id):
+    from avtosalon.client_suggestions import (
+        deal_needs_client_suggestions,
+        get_reference_km_for_car,
+        list_client_suggestions,
+    )
+
+    calc, denied = _get_deal_calc_for_suggestions(request, id)
+    if denied is not None:
+        return denied
+
+    car = calc.car
+    cumulative_data = car.cumulative_data() if car else {}
+    if not deal_needs_client_suggestions(calc, cumulative_data, car):
+        return JsonResponse({'ok': False, 'error': 'not_applicable'}, status=400)
+
+    unit_id = calc.unit_id or (car.unit_id if car else None)
+    reference_km = get_reference_km_for_car(car)
+    if reference_km is None or not unit_id:
+        return JsonResponse({'ok': False, 'error': 'no_reference_km'}, status=400)
+
+    data = list_client_suggestions(car, unit_id, reference_km, calc.kvp)
+    return JsonResponse({'ok': True, **data})
 
 
 @csrf_exempt

@@ -21,14 +21,18 @@ def resolve_car_km_raschet(car, data_value=None):
         return int(row.km)
 
     try:
-        info = car.cumulative_data()
-        auto1 = int(info.get('automatic', {}).get('km_min_automatic') or 0)
-        auto2 = int(info.get('automatic_2', {}).get('km_min_automatic') or 0)
-        auto3 = int(info.get('automatic_3', {}).get('km_min_automatic') or 0)
-        if auto3:
-            return auto3
-        if auto1 or auto2:
-            return max(auto1, auto2)
+        from prices_car.km_car import build_km_car_fields_from_car, resolve_km_car_total
+
+        fields = build_km_car_fields_from_car(car)
+        if fields:
+            total, _ = resolve_km_car_total(
+                fields['km_manual'],
+                fields['km_auto_1'],
+                fields['km_auto_2'],
+                fields['km_auto_3'],
+            )
+            if total:
+                return int(total)
     except Exception:
         pass
 

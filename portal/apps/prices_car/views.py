@@ -1006,22 +1006,15 @@ def presentation_asset(request, asset):
 
 
 def refresh_km_cars():
-    cars_list = RefCarsOrganization.objects.filter(is_new=True, quantity__gt=0)
+    from prices_car.km_car import create_km_car_for_car
+
+    cars_list = RefCarsOrganization.objects.filter(
+        is_new=True,
+        quantity__gt=0,
+    ).exclude(modification_autoru__isnull=True)
     for car in cars_list:
-        if car.min_km:
-            continue
         try:
-            info = car.cumulative_data()
-            auto1 = int(info.get('automatic', {}).get('km_min_automatic') or 0)
-            auto2 = int(info.get('automatic_2', {}).get('km_min_automatic') or 0)
-            auto3 = int(info.get('automatic_3', {}).get('km_min_automatic') or 0)
-            km_car = KMCar()
-            km_car.date = datetime.now()
-            km_car.car = car
-            km_car.km_auto_1 = auto1
-            km_car.km_auto_2 = auto2
-            km_car.km_auto_3 = auto3
-            km_car.save()
+            create_km_car_for_car(car)
         except Exception:
             pass
 

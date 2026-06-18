@@ -45,7 +45,7 @@ class PriceCarStageKMAdmin(admin.ModelAdmin):
 
 @admin.register(KMCar)
 class KMCarAdmin(admin.ModelAdmin):
-    list_display = ('date', 'car', 'km', 'km_auto_1', 'km_auto_2', 'km_auto_3')
+    list_display = ('date', 'car', 'km', 'type_km', 'km_manual', 'km_auto_1', 'km_auto_2', 'km_auto_3')
     list_filter = ('date',)
     raw_id_fields = ('car',)
     search_fields = ('car__vin', 'car__name', 'car__slug')
