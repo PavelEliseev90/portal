@@ -72,6 +72,14 @@ def kvp_above_min_km_dc(calc, cumulative_data):
     return kvp > min_km_dc
 
 
+def director_can_approve_without_uk(calc, cumulative_data):
+    """Директор ДЦ может согласовать сам только если мин. КМ ДЦ задан и КВ его превышает."""
+    min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
+    if min_km_dc <= 0:
+        return False
+    return kvp_above_min_km_dc(calc, cumulative_data)
+
+
 def _get_calc_cumulative_data(calc):
     car = getattr(calc, 'car', None)
     if not car:
@@ -140,7 +148,7 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
             calc,
             user,
             'Коммерческое предложение #' + str(number)
-            + ' согласовано автоматически. КВ выше расчетного КМ по правилу.',
+            + ' согласовано автоматически. КВ выше итога по правилу.',
         )
     return True
 
@@ -431,18 +439,21 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     is_director = user_is_deal_calc_director_for_calc(user, calc)
     is_uk = user_has_deal_calc_uk_access(user)
-    kvp_ok = kvp_above_min_km_dc(calc, cumulative_data)
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
+    kvp_ok = kvp_above_min_km_dc(calc, cumulative_data)
+    director_can_approve = director_can_approve_without_uk(calc, cumulative_data)
+    approval_auto_approved = is_auto_approved_calculation(calc)
 
     can_director_approve = (
         is_director
         and status == CarCalculations.SOGLASOVANIE_PENDING
-        and kvp_ok
+        and director_can_approve
     )
     can_director_send_uk = (
         is_director
         and status == CarCalculations.SOGLASOVANIE_PENDING
-        and not kvp_ok
+        and not approval_auto_approved
+        and not director_can_approve
     )
     can_uk_approve = (
         is_uk
@@ -457,7 +468,6 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         and status == CarCalculations.SOGLASOVANIE_PENDING_UK
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
-    approval_auto_approved = is_auto_approved_calculation(calc)
     approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
     km_rule_total = None
     if cumulative_data:
@@ -467,6 +477,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     return {
         'approval_min_km_dc': min_km_dc,
         'approval_kvp_ok': kvp_ok,
+        'approval_director_can_approve': director_can_approve,
         'approval_kvp_above_km_rule': approval_kvp_above_km_rule,
         'approval_km_rule_total': km_rule_total,
         'approval_auto_approved': approval_auto_approved,
@@ -474,7 +485,8 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
             status == CarCalculations.SOGLASOVANIE_PENDING_UK
             or (
                 status == CarCalculations.SOGLASOVANIE_PENDING
-                and not kvp_ok
+                and not approval_auto_approved
+                and not director_can_approve
             )
         ),
         'approval_final_without_uk': approval_final_without_uk,
@@ -517,8 +529,12 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
         if calc.soglasovanie_status != CarCalculations.SOGLASOVANIE_PENDING:
             messages.error(request, 'КП уже обработано директором.')
             return _approval_redirect(calc.pk)
-        if not kvp_above_min_km_dc(calc, cumulative_data):
-            messages.error(request, 'КВП не выше мин. КМ ДЦ — отправьте на согласование в УК.')
+        if not director_can_approve_without_uk(calc, cumulative_data):
+            min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
+            if min_km_dc <= 0:
+                messages.error(request, 'Мин. КМ ДЦ не задан или равен 0 — директор ДЦ не может согласовать это КП, отправьте его в УК с комментарием.')
+            else:
+                messages.error(request, 'КВП не выше мин. КМ ДЦ — отправьте на согласование в УК.')
             return _approval_redirect(calc.pk)
         comment = _require_comment(request, comment)
         if comment is None:
@@ -553,7 +569,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
         if calc.soglasovanie_status != CarCalculations.SOGLASOVANIE_PENDING:
             messages.error(request, 'КП уже обработано директором.')
             return _approval_redirect(calc.pk)
-        if kvp_above_min_km_dc(calc, cumulative_data):
+        if director_can_approve_without_uk(calc, cumulative_data):
             messages.error(request, 'КВП выше мин. КМ ДЦ — согласуйте без отправки в УК.')
             return _approval_redirect(calc.pk)
         comment = _require_comment(request, comment)

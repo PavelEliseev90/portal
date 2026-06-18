@@ -59,6 +59,7 @@ from avtosalon.deal_calc_approval import (
     handle_deal_calc_approval_post,
     try_auto_approve_calculation,
     user_can_access_deal_calculation_doc,
+    user_has_deal_calc_uk_access,
 )
 from prices_car.km_raschet import apply_km_raschet_to_calculation
 from prices_car.brand_resolve import resolve_price_car_brand_for_car
@@ -3620,7 +3621,10 @@ def deal_calculation_doc(request, id):
     try_auto_approve_calculation(calc, send_chat=True, cumulative_data=cumulative_data)
     cumulative_data = cumulative_data or {}
     from prices_car.km_breakdown import build_km_calculation_breakdown
-    km_breakdown = build_km_calculation_breakdown(car) if car else {'available': False}
+    if user_has_deal_calc_uk_access(request.user) and car:
+        km_breakdown = build_km_calculation_breakdown(car)
+    else:
+        km_breakdown = {'available': False}
 
     if request.method == 'POST':
         if "send_1C" in request.POST:
