@@ -7,6 +7,13 @@
 
 {% block content %}
 <section class="settings-dc-page">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="settings-dc-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
       <h2>Автопереоценка КорсАвто</h2>
@@ -25,9 +32,11 @@
     </div>
   </div>
 
-  <form method="post">
+  <form method="post" id="autopricingUnitForm">
 
     {% csrf_token %}
+    <input type="hidden" name="action" id="autopricingAction" value="save">
+    <div id="applyUnitIdsContainer"></div>
 
     {% for range in params.ranges %}
     
@@ -373,12 +382,105 @@
 
     {% endfor %}
 
-    <div class="text-end mt-3">
-      <button type="submit" class="btn btn-primary px-4">
-        <span class="icon-mbri-save"></span> Сохранить изменения
+    <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+      <button type="submit" class="btn btn-primary px-4" onclick="document.getElementById('autopricingAction').value='save';">
+        <span class="icon-mbri-save"></span> Сохранить
+      </button>
+      <button type="submit" class="btn btn-success px-4"
+              onclick="if(!confirm('Сохранить настройки и применить ко всем подразделениям КорсАвто?')) return false; document.getElementById('autopricingAction').value='save_apply_all';">
+        <span class="icon-mbri-upload"></span> Сохранить и применить ко всем
+      </button>
+      <button type="button" class="btn btn-outline-primary px-4" data-bs-toggle="modal" data-bs-target="#applyAutopricingUnitsModal">
+        <span class="icon-mbri-share"></span> Применить к выбранным ДЦ
       </button>
     </div>
   </form>
+
+  <div class="modal fade" id="applyAutopricingUnitsModal" tabindex="-1" aria-labelledby="applyAutopricingUnitsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="applyAutopricingUnitsModalLabel">Применить настройки к подразделениям</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Текущие значения формы будут сохранены для <strong>{{ params.unit.name }}</strong>
+            и скопированы в отмеченные подразделения.
+          </p>
+          {% if params.other_units %}
+          <div class="mb-2 d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="applyUnitsSelectAll">Выбрать все</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="applyUnitsSelectNone">Снять все</button>
+          </div>
+          <div class="list-group">
+            {% for other in params.other_units %}
+            <label class="list-group-item d-flex align-items-start gap-2">
+              <input class="form-check-input mt-1 apply-unit-checkbox" type="checkbox" value="{{ other.pk }}">
+              <span>
+                <span class="fw-semibold">{{ other.name }}</span>
+                {% if other.city %}<span class="text-muted small"> · {{ other.city.name }}</span>{% endif %}
+                {% if other.ib %}<span class="text-muted small"> · {{ other.ib.name }}</span>{% endif %}
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted mb-0">Других подразделений КорсАвто не найдено.</p>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary" id="applySelectedUnitsBtn" {% if not params.other_units %}disabled{% endif %}>
+            Применить к выбранным
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var form = document.getElementById('autopricingUnitForm');
+    if (!form) return;
+
+    var selectAllBtn = document.getElementById('applyUnitsSelectAll');
+    var selectNoneBtn = document.getElementById('applyUnitsSelectNone');
+    var applyBtn = document.getElementById('applySelectedUnitsBtn');
+    var checkboxes = document.querySelectorAll('.apply-unit-checkbox');
+
+    function setAll(checked) {
+      checkboxes.forEach(function(cb) { cb.checked = checked; });
+    }
+
+    if (selectAllBtn) selectAllBtn.addEventListener('click', function() { setAll(true); });
+    if (selectNoneBtn) selectNoneBtn.addEventListener('click', function() { setAll(false); });
+
+    if (applyBtn) {
+      applyBtn.addEventListener('click', function() {
+        var selected = Array.prototype.filter.call(checkboxes, function(cb) { return cb.checked; });
+        if (!selected.length) {
+          alert('Выберите хотя бы одно подразделение.');
+          return;
+        }
+        if (!confirm('Сохранить текущие настройки и применить к ' + selected.length + ' подразделению(ям)?')) {
+          return;
+        }
+        var container = document.getElementById('applyUnitIdsContainer');
+        container.innerHTML = '';
+        selected.forEach(function(cb) {
+          var input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'apply_unit_ids';
+          input.value = cb.value;
+          container.appendChild(input);
+        });
+        document.getElementById('autopricingAction').value = 'apply_selected';
+        form.submit();
+      });
+    }
+  })();
+  </script>
 </section>
 {% endblock %}
 

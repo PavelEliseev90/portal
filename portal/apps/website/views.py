@@ -52,57 +52,20 @@ from register.serializers import RegInteractivOcenkaSerializer
 import urllib
 from django.contrib.auth.models import User, Group
 
-from eco.views import estimations_price_calculation 
-
-# Настройки автопереоценки КорсАвто
-AUTOPRICING_PRICE_RANGES = [200, 400, 700, 1200, 2000, 3000, 5000, 5001]
-
-AUTOPRICING_BOOL_FIELDS = [
-    ('auto_strategy', "Автостратегия цены"),
-    ('auto_active', "Активна"),
-    ('lock_eval_change_after_stage', "Запрет изменения варианта управления ценой после перехода на новый этап"),
-    ('deny_manual_price', "Запрет на ручной ввод"),
-    ('deny_discount', "Запрет скидки"),
-    ('no_limit_max_manual', "Не ограничивать максимальную ручную цену стратегией"),
-    ('reset_manual_prices', "Обнуление ручных цен"),
-    ('delay_repricing_new_stage', "Отсрочка переоценки в новом этапе"),
-    ('check_price_rule_before_sale', "Проверка выполнения ценового правила при продаже"),
-    ('check_open_tasks', "Проверка не закрытых задач"),
-    ('calc_by_days_in_sale', "Расчет по дням в продаже"),
-]
-
-AUTOPRICING_AUTOHUB_FIELDS = [
-    ('autohub_mode_kor', "Вариант использования данных Автохаб Коррекция"),
-    ('autohub_mode_rdo', "Вариант использования данных Автохаб РДО"),
-    ('autohub_mode_test', "Вариант использования данных Автохаб Тест прайс"),
-    ('autohub_mode_txt', "Вариант использования данных Автохаб ТХТ"),
-]
-
-AUTOPRICING_NUMERIC_FIELDS = [
-    ('correction_kor', "Корректировка Коррекция"),
-    ('correction_kor_1c', "Корректировка Коррекция 1С"),
-    ('correction_kor_express', "Корректировка Коррекция Экспресс"),
-    ('correction_rdo', "Корректировка РДО"),
-    ('correction_rdo_1c', "Корректировка РДО 1С"),
-    ('correction_rdo_express', "Корректировка РДО Экспресс"),
-    ('correction_test', "Корректировка Тест прайс"),
-    ('correction_test_1c', "Корректировка Тест прайс 1С"),
-    ('correction_test_express', "Корректировка Тест прайс Экспресс"),
-    ('correction_txt', "Корректировка ТХТ"),
-    ('correction_txt_1c', "Корректировка ТХТ 1С"),
-    ('correction_txt_express', "Корректировка ТХТ Экспресс"),
-    ('max_discount_tradein', "Максимальная скидка за TradeIn"),
-    ('max_discount_bargain_percent', "Максимальная скидка торг в процентах"),
-    ('marketing', "Маркетинг"),
-]
-
-AUTOPRICING_MARKUP_FIELDS = [
-    ('markup_base', "Процент наценки"),
-    ('markup_kor', "Процент наценки Коррекция"),
-    ('markup_rdo', "Процент наценки РДО"),
-    ('markup_test', "Процент наценки Тест прайс"),
-    ('markup_txt', "Процент наценки ТХТ"),
-]
+from eco.views import estimations_price_calculation
+from website.autopricing_settings import (
+    AUTOPRICING_AUTOHUB_FIELDS,
+    AUTOPRICING_BOOL_FIELDS,
+    AUTOPRICING_MARKUP_FIELDS,
+    AUTOPRICING_NUMERIC_FIELDS,
+    AUTOPRICING_PRICE_RANGES,
+    add_autopricing_portal_1c_messages,
+    apply_autopricing_post_to_unit,
+    apply_autopricing_to_units,
+    format_1c_failed_units,
+    get_korsavto_units_qs,
+    push_units_settings_to_1c,
+)
 
 #Настройки параметров доступа
 #server_im      = 'http://k01srv1c05/ralfa01eliseev/hs/mb/'
@@ -8801,7 +8764,27 @@ def settings_autopricing_korsavto_units(request):
     """
     Список подразделений Б/У КорсАвто для настройки автопереоценки.
     """
-    units = RefUnit.objects.filter(buauto=True, name__icontains='КорсАвто').select_related('city', 'ib').order_by('name')
+    if request.method == 'POST' and request.POST.get('action') == 'push_1c_all':
+        from django.contrib import messages
+
+        summary = push_units_settings_to_1c(get_korsavto_units_qs())
+        if summary['failed']:
+            messages.warning(
+                request,
+                'Отправлено в 1С: {} из {}. Ошибки: {}.'.format(
+                    summary['ok_count'],
+                    summary['total'],
+                    format_1c_failed_units(summary['failed']),
+                ),
+            )
+        else:
+            messages.success(
+                request,
+                'Настройки всех подразделений ({}) отправлены в 1С.'.format(summary['ok_count']),
+            )
+        return HttpResponseRedirect(request.path)
+
+    units = get_korsavto_units_qs()
 
     params = {
         'type': 'settings_autopricing_korsavto',
@@ -8820,102 +8803,54 @@ def settings_autopricing_korsavto_unit(request, unit_id):
     evaluations = RefTypeEvaluationCarsOrganization.objects.all().order_by('name')
 
     if request.method == 'POST':
-        # Обработка сохранения значений по всем диапазонам
-        for price in AUTOPRICING_PRICE_RANGES:
-            suffix = "_%s" % price
-
-            # Булевые флаги
-            for code, _label in AUTOPRICING_BOOL_FIELDS:
-                field_name = f"{code}{suffix}"
-                setattr(unit, field_name, field_name in request.POST)
-
-            # Варианты использования данных Автохаб
-            for code, _label in AUTOPRICING_AUTOHUB_FIELDS:
-                field_name = f"{code}{suffix}"
-                value = request.POST.get(field_name, '')
-                setattr(unit, field_name, value or '')
-
-            # Числовые корректировки и маркетинг
-            for code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
-                field_name = f"{code}{suffix}"
-                raw = request.POST.get(field_name, '').strip()
-                if raw == '':
-                    setattr(unit, field_name, None)
-                else:
-                    try:
-                        # поддержка ввода с запятой
-                        raw_normalized = raw.replace(',', '.')
-                        setattr(unit, field_name, float(raw_normalized))
-                    except (ValueError, TypeError):
-                        # игнорируем некорректные значения, оставляя старое
-                        pass
-
-            # Вариант управления ценой (FK на RefTypeEvaluationCarsOrganization)
-            eval_field_name = f"eval_type_{price}"
-            eval_id = request.POST.get(eval_field_name, '').strip()
-            if eval_id:
-                try:
-                    eval_obj = RefTypeEvaluationCarsOrganization.objects.get(pk=int(eval_id))
-                    setattr(unit, eval_field_name, eval_obj)
-                except (ValueError, RefTypeEvaluationCarsOrganization.DoesNotExist):
-                    # некорректный id — не изменяем поле
-                    pass
-            else:
-                setattr(unit, eval_field_name, None)
-
-            # Зеркалим новые поля автопереоценки обратно в старые поля,
-            # которые используются 1С (для совместимости и обмена).
-            legacy_suffix = f"_{price}"
-
-            # Тест‑прайс (Автохаб и 1С)
-            val = getattr(unit, f"correction_test{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_avtohub_test_price{legacy_suffix}", val)
-            val = getattr(unit, f"correction_test_1c{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_1с_test_price{legacy_suffix}", val)
-
-            # РДО
-            val = getattr(unit, f"correction_rdo{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_avtohub_rdo{legacy_suffix}", val)
-            val = getattr(unit, f"correction_rdo_1c{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_1с_rdo{legacy_suffix}", val)
-
-            # Коррекция
-            val = getattr(unit, f"correction_kor{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_avtohub_kor{legacy_suffix}", val)
-            val = getattr(unit, f"correction_kor_1c{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_1с_kor{legacy_suffix}", val)
-
-            # ТХТ (Автохаб и 1С)
-            val = getattr(unit, f"correction_txt{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_avtohub_txt{legacy_suffix}", val)
-            val = getattr(unit, f"correction_txt_1c{suffix}", None)
-            if val is not None:
-                setattr(unit, f"ratio_1с_txt{legacy_suffix}", val)
-
-            # Наценка ТХТ → старое поле percent_txt_*
-            val = getattr(unit, f"markup_txt{suffix}", None)
-            if val is not None:
-                setattr(unit, f"percent_txt{legacy_suffix}", val)
-
-            # Максимальная скидка торг → percent_torg_txt_*
-            val = getattr(unit, f"max_discount_bargain_percent{suffix}", None)
-            if val is not None:
-                setattr(unit, f"percent_torg_txt{legacy_suffix}", val)
-
-            # Максимальная скидка за TradeIn → discount_tt_*
-            val = getattr(unit, f"max_discount_tradein{suffix}", None)
-            if val is not None:
-                setattr(unit, f"discount_tt{legacy_suffix}", val)
-
+        action = request.POST.get('action', 'save')
+        apply_autopricing_post_to_unit(unit, request.POST)
         unit.save()
-        send_settings_unit(unit)
+
+        failed_1c = []
+        current_1c = send_settings_unit(unit)
+        if not current_1c.get('ok'):
+            failed_1c.append(current_1c)
+
+        if action == 'save_apply_all':
+            targets = get_korsavto_units_qs().exclude(pk=unit.pk)
+            applied_count, batch_failed = apply_autopricing_to_units(
+                unit, targets, send_settings_unit,
+            )
+            failed_1c.extend(batch_failed)
+            add_autopricing_portal_1c_messages(
+                request,
+                failed_1c,
+                'Настройки сохранены и применены ко всем подразделениям ({} шт.).'.format(applied_count),
+            )
+        elif action == 'apply_selected':
+            raw_ids = request.POST.getlist('apply_unit_ids')
+            try:
+                unit_ids = [int(x) for x in raw_ids if str(x).strip()]
+            except ValueError:
+                unit_ids = []
+            if not unit_ids:
+                from django.contrib import messages
+                messages.warning(request, 'Не выбрано ни одного подразделения для применения.')
+            else:
+                targets = get_korsavto_units_qs().filter(pk__in=unit_ids).exclude(pk=unit.pk)
+                applied_count, batch_failed = apply_autopricing_to_units(
+                    unit, targets, send_settings_unit,
+                )
+                failed_1c.extend(batch_failed)
+                add_autopricing_portal_1c_messages(
+                    request,
+                    failed_1c,
+                    'Настройки сохранены и применены к выбранным подразделениям ({} шт.).'.format(applied_count),
+                )
+        else:
+            add_autopricing_portal_1c_messages(
+                request,
+                failed_1c,
+                'Настройки подразделения сохранены в портале.',
+                all_1c_ok_suffix=' Отправлены в 1С.',
+            )
+
         return HttpResponseRedirect(request.build_absolute_uri())
 
     # Формируем структуру для отображения в шаблоне
@@ -9046,6 +8981,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
         'ranges': ranges,
         'evaluations': evaluations,
         'autohub_choices': AVTOHUB_DATA_USAGE_CHOICES,
+        'other_units': get_korsavto_units_qs().exclude(pk=unit.pk),
     }
 
     return render(request, "kors/settings_autopricing_korsavto_unit.html", {'params': params})
@@ -9056,7 +8992,7 @@ def settings_autopricing_korsavto_table(request):
     """
     Табличное отображение всех настроек автопереоценки для всех подразделений Б/У КорсАвто.
     """
-    units = RefUnit.objects.filter(buauto=True, name__icontains='КорсАвто').select_related('city', 'ib').order_by('name')
+    units = get_korsavto_units_qs()
     evaluations = RefTypeEvaluationCarsOrganization.objects.all().order_by('name')
     
     # Формируем структуру данных для таблицы
