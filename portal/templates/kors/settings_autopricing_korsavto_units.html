@@ -7,12 +7,26 @@
 
 {% block content %}
 <section class="settings-page">
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="settings-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
       <h2>Автопереоценка КорсАвто</h2>
       <p>Выберите подразделение Б/У КорсАвто для настройки параметров автопереоценки по ценовым диапазонам.</p>
     </div>
-    <div>
+    <div class="d-flex flex-wrap gap-2">
+      <form method="post" class="d-inline" onsubmit="return confirm('Отправить текущие настройки всех подразделений в 1С?');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="push_1c_all">
+        <button type="submit" class="btn btn-outline-success">
+          <span class="icon-mbri-upload"></span> Обновить в 1С
+        </button>
+      </form>
       <a href="/settings/settings_autopricing_korsavto/table/" class="btn btn-outline-primary">
         <span class="icon-mbri-table"></span> Табличный вид
       </a>

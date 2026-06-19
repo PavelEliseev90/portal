@@ -78,13 +78,31 @@ localhost_pem       = 'D:\\kors_group\\portal\\portal\\apps\\task_manager\\certi
 ssl_context.load_verify_locations(localhost_pem)
 
 def send_settings_unit(unit):
-    data_unit = RefUnitSerializer(unit, many=False).data
-    js_data = {
-        'Type'      : 'settings_dc',
-        'Settings'  : data_unit 
+    """Отправить настройки подразделения в 1С. Возвращает dict с результатом."""
+    result = {
+        'ok': False,
+        'status_code': None,
+        'error': None,
+        'unit_id': unit.pk,
+        'unit_name': unit.name,
     }
-    response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
-    return response.status_code
+    try:
+        data_unit = RefUnitSerializer(unit, many=False).data
+        js_data = {
+            'Type': 'settings_dc',
+            'Settings': data_unit,
+        }
+        response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
+        result['status_code'] = response.status_code
+        if 200 <= response.status_code < 300:
+            result['ok'] = True
+        else:
+            result['error'] = 'HTTP {}'.format(response.status_code)
+    except requests.RequestException as exc:
+        result['error'] = str(exc)
+    except Exception as exc:
+        result['error'] = str(exc)
+    return result
 
 #Отправка информации о матрице бцп аукциона
 def send_matrix_auction():
