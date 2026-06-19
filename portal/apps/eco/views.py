@@ -6326,7 +6326,6 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                                                 
         price = zna 
         
-        
         # повышенный износ / такси
         if estimation.iznos and estimation.taxi:
             price_new  = price - (price * 40 / 100)
@@ -6341,7 +6340,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             list_info_price.append(inf_price)
             if estimation.auction_auto_no_user != True:
                 auction = True
-                auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
+                auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6. "
                 auction_success = True
         elif estimation.iznos:
             price_new  = price - (price * 10 / 100)
@@ -6350,7 +6349,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'  : "Цена скоректирована c учетом повышенного износа",  
+                'comment'  : "Цена скоректирована c учетом повышенного износа ",  
                 'name'      : "износ" 
             }
             iznos_price = diff
@@ -6362,11 +6361,17 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'  : "Цена скоректирована c учетом использования в такси",  
+                'comment'  : "Цена скоректирована c учетом использования в такси ",  
                 'name'      : "износ" 
             }
             iznos_price = diff
             list_info_price.append(inf_price)
+            if estimation.auction_auto_no_user != True:
+                auction = True
+                auction_comment = auction_comment + "Использование в такси. Коэфицент " + str(kf_auction)
+                auction_success = True
+
+        
 
         #Считаем авто в продаже 
         price_sale_rdo = 0
