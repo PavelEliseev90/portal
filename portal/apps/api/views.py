@@ -3483,6 +3483,7 @@ def exchange(request):
         return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
 
     list_staff              = list()
+    list_filials            = list()
     list_cars               = list()
     list_сustomers          = list()
     list_order_service      = list()
@@ -3502,6 +3503,12 @@ def exchange(request):
         if len(calculation_cars) > 0:
             list_calculation_cars, errs = load_calculation_cars(calculation_cars)
             exchange_errors.extend(_exchange_errors_response('CalculationCars', errs))
+
+    #Филиалы
+    filials = data.get('Filials') or []
+    if len(filials) > 0:
+        list_filials, errs = load_filials(filials)
+        exchange_errors.extend(_exchange_errors_response('Filials', errs))
 
     #Сотрудники
     staffs = data.get('Staffs') or []
@@ -3598,6 +3605,7 @@ def exchange(request):
     #Ответ
     to = {
         'Staffs'            : list_staff,
+        'Filials'           : list_filials,
         'Cars'              : list_cars,
         'Customers'         : list_сustomers,
         'OrdersService'     : list_order_service,

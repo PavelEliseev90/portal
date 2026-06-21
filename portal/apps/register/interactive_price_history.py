@@ -20,10 +20,16 @@ PRICE_CALCULATION_LABELS = {
 }
 
 TRIGGER_LABELS = {
+    'price_before_kd': 'Согласование до КД',
     'price_after_kd': 'Согласование после КД',
     'price_remote': 'Дистанционная оценка',
     'save_auto_price': 'Сохранение автоматических цен',
     'save_custom_price': 'Сохранение согласованных цен',
+    'refresh_autohub': 'Обновление ЦНА',
+    'refresh_znak': 'Обновление ЦНА + К',
+    'refresh_kors': 'Обновление 1С / Kors',
+    'refresh_all': 'Обновление всех данных ценообразования',
+    'refresh_data1c': 'Обновление в 1С',
 }
 
 _history_context = contextvars.ContextVar('interactive_price_history_context', default=None)
@@ -88,6 +94,24 @@ def resolve_soglasovanie(interactiv_rlk=None, estimation=None, soglasovanie=None
         if ps is not None:
             return ps
     return None
+
+
+def ensure_page_soglasovanie(interactiv_rlk=None, estimation=None):
+    """Создать или синхронизировать page_soglasovanie на RLK и оценке."""
+    from register.models import RegInteractivOcenkaSoglasovanie
+
+    soglasovanie = resolve_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation)
+    if soglasovanie is None:
+        soglasovanie = RegInteractivOcenkaSoglasovanie()
+        soglasovanie.save()
+
+    if interactiv_rlk is not None and getattr(interactiv_rlk, 'page_soglasovanie_id', None) != soglasovanie.pk:
+        interactiv_rlk.page_soglasovanie = soglasovanie
+        interactiv_rlk.save(update_fields=['page_soglasovanie'])
+    if estimation is not None and getattr(estimation, 'page_soglasovanie_id', None) != soglasovanie.pk:
+        estimation.page_soglasovanie = soglasovanie
+        estimation.save(update_fields=['page_soglasovanie'])
+    return soglasovanie
 
 
 def _resolve_staff(user):
@@ -181,14 +205,20 @@ def record_interactive_price_recalculation(
     from register.models import RegInteractivOcenkaPrice
 
     user, trigger, save_history = resolve_history_params(user, trigger, save_history)
+    if not save_history:
+        return None
     soglasovanie = resolve_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation, soglasovanie=soglasovanie)
-    if not save_history or soglasovanie is None:
+    if soglasovanie is None:
+        soglasovanie = ensure_page_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation)
+    if soglasovanie is None:
         return None
 
     try:
         soglasovanie.refresh_from_db()
         safe_result = _json_safe_price_result(price_result)
         snapshot = _snapshot_soglasovanie_fields(soglasovanie)
+        for key in ('discount_torg', 'finance_price', 'zachita_ot_ubitka'):
+            snapshot.pop(key, None)
 
         record = RegInteractivOcenkaPrice(
             date=timezone.now(),
@@ -236,18 +266,22 @@ def record_interactive_price_save_snapshot(
     user=None,
     trigger='',
     type_calculation='manual_save',
+    force=False,
 ):
-    """Записать снимок согласованных цен после POST-сохранения, если расчёт не создал строку."""
+    """Записать снимок согласованных цен после POST-сохранения."""
     user, trigger, save_history = resolve_history_params(user, trigger, save_history=True)
-    if not save_history or was_interactive_price_history_recorded():
+    if not save_history:
+        return None
+    if not force and was_interactive_price_history_recorded():
         return None
 
-    soglasovanie = resolve_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation, soglasovanie=soglasovanie)
+    soglasovanie = ensure_page_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation)
+    if soglasovanie is None:
+        soglasovanie = resolve_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation, soglasovanie=soglasovanie)
     if soglasovanie is None:
         return None
 
     soglasovanie.refresh_from_db()
-    snapshot = _snapshot_soglasovanie_fields(soglasovanie)
     price_result = {
         'estimation_price': soglasovanie.price_after_kd or soglasovanie.price_before_kd or 0,
         'estimation_price_do_kd': soglasovanie.price_before_kd or 0,
@@ -260,6 +294,13 @@ def record_interactive_price_save_snapshot(
         'zachita_ot_ubitka': soglasovanie.zachita_ot_ubitka or 0,
         'zna': soglasovanie.price_zna_2 or soglasovanie.price_zna_3 or soglasovanie.price_zna_1 or 0,
     }
+    if trigger == 'price_remote' and estimation is not None and getattr(estimation, 'page_remote', None) is not None:
+        page_remote = estimation.page_remote
+        price_result['estimation_price_do_kd'] = page_remote.price_eco or price_result['estimation_price_do_kd']
+        price_result['estimation_price'] = page_remote.price_eco or price_result['estimation_price']
+        price_result['cna_expenses'] = page_remote.price_auto_bcp or price_result['cna_expenses']
+        price_result['zna'] = page_remote.price_zna or price_result['zna']
+
     return record_interactive_price_recalculation(
         estimation=estimation,
         soglasovanie=soglasovanie,
@@ -269,6 +310,63 @@ def record_interactive_price_save_snapshot(
         trigger=trigger,
         save_history=True,
         interactiv_rlk=interactiv_rlk,
+    )
+
+
+def record_interactive_price_refresh(
+    interactiv_rlk,
+    estimation,
+    user,
+    refresh_kind,
+    price_calculation_fn,
+    body_info=None,
+    salon_info=None,
+):
+    """Записать историю перерасчёта после обновления данных ценообразования (GET refresh_data)."""
+    trigger_map = {
+        'autohub': 'refresh_autohub',
+        'znak': 'refresh_znak',
+        'kors': 'refresh_kors',
+        'all': 'refresh_all',
+        'data1c': 'refresh_data1c',
+    }
+    trigger = trigger_map.get(refresh_kind, 'refresh_{}'.format(refresh_kind))
+
+    calc_types = []
+    if refresh_kind in ('autohub', 'all'):
+        calc_types.extend(['autohub', 'avito'])
+    if refresh_kind in ('znak', 'all'):
+        calc_types.append('autohub_k')
+    if refresh_kind in ('kors', 'all'):
+        calc_types.append('kors')
+    if refresh_kind == 'all':
+        calc_types.append('custom')
+    if refresh_kind == 'data1c':
+        calc_types.extend(['kors', 'autohub_k', 'autohub', 'avito', 'custom'])
+
+    calc_types = list(dict.fromkeys(calc_types))
+    ensure_page_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation)
+
+    with interactive_price_history_context(user=user, trigger=trigger, save_history=True):
+        for calc_type in calc_types:
+            price_calculation_fn(
+                interactiv_rlk,
+                estimation,
+                type_calculation=calc_type,
+                user=user,
+                trigger=trigger,
+                save_history=True,
+                body_info=body_info,
+                salon_info=salon_info,
+                persist=False,
+            )
+
+    return record_interactive_price_save_snapshot(
+        estimation=estimation,
+        interactiv_rlk=interactiv_rlk,
+        user=user,
+        trigger=trigger,
+        force=True,
     )
 
 
