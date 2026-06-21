@@ -5019,6 +5019,16 @@ def get_filial(json_filial):
         filial = filials[0]
 
     filial.name           = json_filial['Name']
+    
+    if "Active" in json_filial:
+        filial.active_eco = json_filial['Active']
+    
+    if "Unit" in json_filial:
+        if json_filial['Unit'] != None and json_filial['Unit'] != '':
+            filial.unit = get_unit(json_filial['Unit'])
+        else:
+            filial.unit = None
+
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])
 

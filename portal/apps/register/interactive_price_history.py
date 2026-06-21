@@ -153,6 +153,40 @@ def _snapshot_soglasovanie_fields(soglasovanie):
     }
 
 
+def _resolve_recovery_amounts(safe_result=None, soglasovanie=None):
+    """Затраты на восстановление: подготовка, слесарка, кузовной, итого."""
+    safe_result = safe_result or {}
+
+    podgotovka = safe_result.get('amount_podgotovka')
+    ss = safe_result.get('amount_ss')
+    mcu = safe_result.get('amount_mcu')
+
+    if soglasovanie is not None:
+        if not podgotovka:
+            podgotovka = soglasovanie.amount_podgotovka or 0
+        if not ss:
+            ss = soglasovanie.amount_ss or 0
+        if not mcu:
+            mcu = soglasovanie.amount_mcu or 0
+
+    podgotovka = podgotovka or 0
+    ss = ss or 0
+    mcu = mcu or 0
+
+    total = safe_result.get('amount_sum') or safe_result.get('amount_recovery')
+    if soglasovanie is not None and not total:
+        total = soglasovanie.amount_recovery or 0
+    if not total:
+        total = podgotovka + ss + mcu
+
+    return {
+        'amount_podgotovka': podgotovka,
+        'amount_ss': ss,
+        'amount_mcu': mcu,
+        'amount_recovery': total,
+    }
+
+
 def _build_history_row(item):
     author_name = ''
     if item.author_id:
@@ -186,6 +220,12 @@ def _build_history_row(item):
         'price_zna_3': item.price_zna_3 or 0,
         'price_before_kd': item.price_before_kd or 0,
         'price_after_kd': item.price_after_kd or 0,
+        'amount_podgotovka': item.amount_podgotovka or 0,
+        'amount_ss': item.amount_ss or 0,
+        'amount_mcu': item.amount_mcu or 0,
+        'amount_recovery': item.amount_recovery or (
+            (item.amount_podgotovka or 0) + (item.amount_ss or 0) + (item.amount_mcu or 0)
+        ),
         'comment': item.comment or '',
     }
 
@@ -219,6 +259,7 @@ def record_interactive_price_recalculation(
         snapshot = _snapshot_soglasovanie_fields(soglasovanie)
         for key in ('discount_torg', 'finance_price', 'zachita_ot_ubitka'):
             snapshot.pop(key, None)
+        recovery = _resolve_recovery_amounts(safe_result, soglasovanie)
 
         record = RegInteractivOcenkaPrice(
             date=timezone.now(),
@@ -236,17 +277,13 @@ def record_interactive_price_recalculation(
             zg=str(safe_result.get('zg') or '') if safe_result else '',
             kf=str(safe_result.get('kf') or '') if safe_result else '',
             cna_expenses=(safe_result.get('cna_expenses') if safe_result else 0) or 0,
-            amount_podgotovka=(safe_result.get('amount_podgotovka') if safe_result else 0) or 0,
-            amount_ss=(safe_result.get('amount_ss') if safe_result else 0) or 0,
-            amount_mcu=(safe_result.get('amount_mcu') if safe_result else 0) or 0,
-            amount_recovery=(
-                (safe_result.get('amount_podgotovka') or 0)
-                + (safe_result.get('amount_ss') or 0)
-                + (safe_result.get('amount_mcu') or 0)
-            ) if safe_result else 0,
-            discount_torg=(safe_result.get('discount_torg') if safe_result else snapshot.get('discount_torg')) or 0,
-            finance_price=(safe_result.get('finance_price') if safe_result else snapshot.get('finance_price')) or 0,
-            zachita_ot_ubitka=(safe_result.get('zachita_ot_ubitka') if safe_result else snapshot.get('zachita_ot_ubitka')) or 0,
+            amount_podgotovka=recovery['amount_podgotovka'],
+            amount_ss=recovery['amount_ss'],
+            amount_mcu=recovery['amount_mcu'],
+            amount_recovery=recovery['amount_recovery'],
+            discount_torg=(safe_result.get('discount_torg') if safe_result else None) or getattr(soglasovanie, 'discount_torg', 0) or 0,
+            finance_price=(safe_result.get('finance_price') if safe_result else None) or getattr(soglasovanie, 'finance_price', 0) or 0,
+            zachita_ot_ubitka=(safe_result.get('zachita_ot_ubitka') if safe_result else None) or getattr(soglasovanie, 'zachita_ot_ubitka', 0) or 0,
             raw_calculation_json=safe_result,
             **snapshot,
         )
@@ -282,13 +319,16 @@ def record_interactive_price_save_snapshot(
         return None
 
     soglasovanie.refresh_from_db()
+    recovery = _resolve_recovery_amounts(soglasovanie=soglasovanie)
     price_result = {
         'estimation_price': soglasovanie.price_after_kd or soglasovanie.price_before_kd or 0,
         'estimation_price_do_kd': soglasovanie.price_before_kd or 0,
         'cna_expenses': soglasovanie.price_bcp or soglasovanie.price_auto_bcp_2 or soglasovanie.price_auto_bcp_3 or 0,
-        'amount_podgotovka': soglasovanie.amount_podgotovka or 0,
-        'amount_ss': soglasovanie.amount_ss or 0,
-        'amount_mcu': soglasovanie.amount_mcu or 0,
+        'amount_podgotovka': recovery['amount_podgotovka'],
+        'amount_ss': recovery['amount_ss'],
+        'amount_mcu': recovery['amount_mcu'],
+        'amount_recovery': recovery['amount_recovery'],
+        'amount_sum': recovery['amount_recovery'],
         'discount_torg': soglasovanie.discount_torg or 0,
         'finance_price': soglasovanie.finance_price or 0,
         'zachita_ot_ubitka': soglasovanie.zachita_ot_ubitka or 0,
