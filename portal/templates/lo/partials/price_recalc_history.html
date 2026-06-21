@@ -14,6 +14,10 @@
           <th>Тип расчёта</th>
           <th class="text-end">Цена</th>
           <th class="text-end">БЦП</th>
+          <th class="text-end" title="Подготовка">Подг.</th>
+          <th class="text-end" title="Слесарный ремонт">Слес.</th>
+          <th class="text-end" title="Кузовной ремонт">Куз.</th>
+          <th class="text-end">Затраты</th>
           <th class="text-end">auto 1</th>
           <th class="text-end">auto 2</th>
           <th class="text-end">auto 3</th>
@@ -30,6 +34,10 @@
           <td>{{ row.type_label }}</td>
           <td class="text-end">{{ row.estimation_price|floatformat:"0g" }}</td>
           <td class="text-end">{{ row.cna_expenses|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.amount_podgotovka|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.amount_ss|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.amount_mcu|floatformat:"0g" }}</td>
+          <td class="text-end fw-semibold">{{ row.amount_recovery|floatformat:"0g" }}</td>
           <td class="text-end">{{ row.price_auto_1|floatformat:"0g" }}</td>
           <td class="text-end">{{ row.price_auto_2|floatformat:"0g" }}</td>
           <td class="text-end">{{ row.price_auto_3|floatformat:"0g" }}</td>
