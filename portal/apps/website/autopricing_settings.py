@@ -512,7 +512,11 @@ def copy_autopricing_settings(source_unit, target_unit):
     latest_map = get_latest_settings_map_for_unit(source_unit)
     if not latest_map:
         for price_group in get_active_price_groups():
-            row = copy_unit_price_range_to_settings(source_unit, price_group)
+            row = copy_unit_price_range_to_settings(
+                source_unit,
+                price_group,
+                target=UnitPriceGroupSettings(unit=source_unit, price_group=price_group),
+            )
             row.save()
         latest_map = get_latest_settings_map_for_unit(source_unit)
 
