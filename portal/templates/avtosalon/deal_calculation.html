@@ -550,7 +550,11 @@
               <span id="clientSuggestionsCount" class="badge text-bg-light text-dark ms-1">…</span>
             </button>
             <div class="small text-white opacity-75 mt-1">
+              {% if params.car.complectation_autoru_id %}
+              Альтернативы той же модели и комплектации на складе ДЦ с более низким расчётным КМ.
+              {% else %}
               Альтернативы той же модели на складе ДЦ с более низким расчётным КМ.
+              {% endif %}
             </div>
           </div>
           {% endif %}
@@ -926,7 +930,9 @@
           errorEl.classList.remove('d-none');
           return;
         }
-        summary.textContent = (data.model_name ? data.model_name + ': ' : '') + 'на складе ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
+        var filterPrefix = data.filter_label || data.model_name || '';
+        var scopeHint = data.same_complectation ? 'той же модели и комплектации' : 'той же модели';
+        summary.textContent = (filterPrefix ? filterPrefix + ' · ' : '') + scopeHint + ' на складе ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
         if (!data.items || !data.items.length) {
           errorEl.textContent = 'Подходящих автомобилей не найдено.';
           errorEl.classList.remove('d-none');

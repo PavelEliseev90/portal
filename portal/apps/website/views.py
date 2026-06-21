@@ -54,17 +54,16 @@ from django.contrib.auth.models import User, Group
 
 from eco.views import estimations_price_calculation
 from website.autopricing_settings import (
-    AUTOPRICING_AUTOHUB_FIELDS,
-    AUTOPRICING_BOOL_FIELDS,
-    AUTOPRICING_MARKUP_FIELDS,
-    AUTOPRICING_NUMERIC_FIELDS,
-    AUTOPRICING_PRICE_RANGES,
     add_autopricing_portal_1c_messages,
-    apply_autopricing_post_to_unit,
     apply_autopricing_to_units,
+    build_autopricing_ranges_for_unit,
+    build_autopricing_table_cells,
+    build_autopricing_table_columns,
     format_1c_failed_units,
+    get_active_price_group_codes,
     get_korsavto_units_qs,
     push_units_settings_to_1c,
+    save_autopricing_unit_settings,
 )
 
 #Настройки параметров доступа
@@ -8115,52 +8114,31 @@ def settings_matrix_auction(request):
 
 @login_required
 def settings_diagnostic(request):
-    
+    from website.diagnostic_settings import (
+        apply_diagnostic_post_to_settings,
+        build_diagnostic_price_groups,
+    )
+
     if request.method == 'POST':
         settings_estimation = RegEstimationsSettings.objects.all().last()
         if not settings_estimation:
             settings_estimation = RegEstimationsSettings()
-        
-        # Обрабатываем все поля диагностики
-        for key in request.POST.keys():
-            if (key.startswith('engine_') or 
-                key.startswith('system_og_') or 
-                key.startswith('suspension_') or 
-                key.startswith('gear_') or 
-                key.startswith('wheel_') or 
-                key.startswith('turbo_') or 
-                key.startswith('conditioner_') or
-                key.startswith('drive_') or
-                key.startswith('brake_') or
-                key.startswith('subframe_') or
-                key.startswith('to_') or
-                key.startswith('airbag_driver_') or
-                key.startswith('airbag_passenger_') or
-                key.startswith('airbag_side_') or
-                key.startswith('airbag_knee_') or
-                key.startswith('seat_belt_restore_') or
-                key.startswith('srs_block_')):
-                try:
-                    value = request.POST.get(key, 0)
-                    if value == '':
-                        value = 0
-                    setattr(settings_estimation, key, int(value))
-                except (ValueError, AttributeError):
-                    pass  # Пропускаем поля, которых нет в модели
-        
+
+        apply_diagnostic_post_to_settings(settings_estimation, request.POST)
         settings_estimation.save()
         return HttpResponseRedirect(request.build_absolute_uri())
-    
+
     settings_estimation = RegEstimationsSettings.objects.all().last()
-    
+
     settings_data = {
-        'settings_estimation' : settings_estimation
+        'settings_estimation': settings_estimation,
     }
     params = {
-        'type'          : 'settings',
-        'settings'      : settings_data        
+        'type': 'settings',
+        'settings': settings_data,
+        'diagnostic_price_groups': build_diagnostic_price_groups(settings_estimation),
     }
-    
+
     return render(request, "kors/settings_diagnostic.html", {'params': params})
 
 @login_required
@@ -8804,8 +8782,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
 
     if request.method == 'POST':
         action = request.POST.get('action', 'save')
-        apply_autopricing_post_to_unit(unit, request.POST)
-        unit.save()
+        save_autopricing_unit_settings(unit, request.POST)
 
         failed_1c = []
         current_1c = send_settings_unit(unit)
@@ -8853,127 +8830,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
 
         return HttpResponseRedirect(request.build_absolute_uri())
 
-    # Формируем структуру для отображения в шаблоне
-    ranges = []
-    for price in AUTOPRICING_PRICE_RANGES:
-        suffix = "_%s" % price
-        legacy_suffix = "_%s" % price
-        range_data = {
-            'price': price,
-            'bool_fields': [],
-            'autohub_fields': [],
-            'numeric_fields': [],
-            'markup_fields': [],
-            'eval_field': {},
-            # Дополнительные структуры, чтобы в шаблоне можно было
-            # однозначно привязаться к полям по их коду (имени)
-            'numeric': {},   # code -> {name, label, value}
-            'markup': {},    # code -> {name, label, value}
-            'autohub': {},   # code -> {name, label, value}
-        }
-
-        for code, label in AUTOPRICING_BOOL_FIELDS:
-            field_name = f"{code}{suffix}"
-            range_data['bool_fields'].append({
-                'name': field_name,
-                'label': label,
-                'value': getattr(unit, field_name, False),
-            })
-
-        for code, label in AUTOPRICING_AUTOHUB_FIELDS:
-            field_name = f"{code}{suffix}"
-            value = getattr(unit, field_name, '')
-            range_data['autohub_fields'].append({
-                'name': field_name,
-                'label': label,
-                'value': value,
-            })
-            range_data['autohub'][code] = {
-                'name': field_name,
-                'label': label,
-                'value': value,
-            }
-
-        for code, label in AUTOPRICING_NUMERIC_FIELDS:
-            field_name = f"{code}{suffix}"
-            value = getattr(unit, field_name, None)
-
-            # Фолбэки из старых полей, чтобы при первом открытии настроек сразу видеть актуальные значения
-            if (value is None or value == 0):
-                legacy_value = None
-
-                # Коррекция
-                if code == 'correction_kor':
-                    legacy_value = getattr(unit, f"ratio_avtohub_kor{legacy_suffix}", None)
-                elif code == 'correction_kor_1c':
-                    legacy_value = getattr(unit, f"ratio_1с_kor{legacy_suffix}", None)
-
-                # РДО
-                elif code == 'correction_rdo':
-                    legacy_value = getattr(unit, f"ratio_avtohub_rdo{legacy_suffix}", None)
-                elif code == 'correction_rdo_1c':
-                    legacy_value = getattr(unit, f"ratio_1с_rdo{legacy_suffix}", None)
-
-                # Тест‑прайс
-                elif code == 'correction_test':
-                    legacy_value = getattr(unit, f"ratio_avtohub_test_price{legacy_suffix}", None)
-                elif code == 'correction_test_1c':
-                    legacy_value = getattr(unit, f"ratio_1с_test_price{legacy_suffix}", None)
-
-                # ТХТ
-                elif code == 'correction_txt':
-                    legacy_value = getattr(unit, f"ratio_avtohub_txt{legacy_suffix}", None)
-                elif code == 'correction_txt_1c':
-                    legacy_value = getattr(unit, f"ratio_1с_txt{legacy_suffix}", None)
-
-                # Максимальная скидка за TradeIn
-                elif code == 'max_discount_tradein':
-                    legacy_value = getattr(unit, f"discount_tt{legacy_suffix}", None)
-
-                # Максимальная скидка торг в процентах
-                elif code == 'max_discount_bargain_percent':
-                    legacy_value = getattr(unit, f"percent_torg_txt{legacy_suffix}", None)
-
-                # Маркетинг – отдельное новое поле, фолбэка нет
-
-                if legacy_value not in (None, 0):
-                    value = legacy_value
-
-            field_info = {
-                'name': field_name,
-                'label': label,
-                'value': value,
-            }
-            range_data['numeric_fields'].append(field_info)
-            range_data['numeric'][code] = field_info
-
-        for code, label in AUTOPRICING_MARKUP_FIELDS:
-            field_name = f"{code}{suffix}"
-            value = getattr(unit, field_name, None)
-
-            # Для ТХТ показываем старое percent_txt, если явная наценка ещё не задана
-            if (value is None or value == 0) and code == 'markup_txt':
-                legacy_value = getattr(unit, f"percent_txt{legacy_suffix}", None)
-                if legacy_value not in (None, 0):
-                    value = legacy_value
-
-            field_info = {
-                'name': field_name,
-                'label': label,
-                'value': value,
-            }
-            range_data['markup_fields'].append(field_info)
-            range_data['markup'][code] = field_info
-
-        eval_field_name = f"eval_type_{price}"
-        eval_value_id = getattr(unit, f"{eval_field_name}_id", None)
-        range_data['eval_field'] = {
-            'name': eval_field_name,
-            'label': "Выводить в продажу по правилу",
-            'value_id': eval_value_id,
-        }
-
-        ranges.append(range_data)
+    ranges = build_autopricing_ranges_for_unit(unit)
 
     params = {
         'type': 'settings_autopricing_korsavto',
@@ -8982,6 +8839,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
         'evaluations': evaluations,
         'autohub_choices': AVTOHUB_DATA_USAGE_CHOICES,
         'other_units': get_korsavto_units_qs().exclude(pk=unit.pk),
+        'price_groups': get_active_price_group_codes(),
     }
 
     return render(request, "kors/settings_autopricing_korsavto_unit.html", {'params': params})
@@ -8994,169 +8852,26 @@ def settings_autopricing_korsavto_table(request):
     """
     units = get_korsavto_units_qs()
     evaluations = RefTypeEvaluationCarsOrganization.objects.all().order_by('name')
-    
-    # Формируем структуру данных для таблицы
+
     units_data = []
     for unit in units:
-        unit_data = {
+        units_data.append({
             'id': unit.pk,
             'name': unit.name,
             'city': unit.city.name if unit.city else '',
             'ib': unit.ib.name if unit.ib else '',
-            'cells': {}  # Плоская структура: column_id -> значение
-        }
-        
-        # Собираем данные по всем ценовым диапазонам и полям
-        for price in AUTOPRICING_PRICE_RANGES:
-            suffix = f"_{price}"
-            
-            # Булевые поля
-            for code, label in AUTOPRICING_BOOL_FIELDS:
-                field_name = f"{code}{suffix}"
-                column_id = f"{code}_{price}"
-                value = getattr(unit, field_name, False)
-                unit_data['cells'][column_id] = {'type': 'bool', 'value': value}
-            
-            # Числовые поля
-            for code, label in AUTOPRICING_NUMERIC_FIELDS:
-                field_name = f"{code}{suffix}"
-                column_id = f"{code}_{price}"
-                value = getattr(unit, field_name, None)
-                # Fallback на старые поля
-                if value is None or value == 0:
-                    if code == 'correction_kor':
-                        value = getattr(unit, f"ratio_avtohub_kor{suffix}", None)
-                    elif code == 'correction_kor_1c':
-                        value = getattr(unit, f"ratio_1с_kor{suffix}", None)
-                    elif code == 'correction_rdo':
-                        value = getattr(unit, f"ratio_avtohub_rdo{suffix}", None)
-                    elif code == 'correction_rdo_1c':
-                        value = getattr(unit, f"ratio_1с_rdo{suffix}", None)
-                    elif code == 'correction_test':
-                        value = getattr(unit, f"ratio_avtohub_test_price{suffix}", None)
-                    elif code == 'correction_test_1c':
-                        value = getattr(unit, f"ratio_1с_test_price{suffix}", None)
-                    elif code == 'correction_txt':
-                        value = getattr(unit, f"ratio_avtohub_txt{suffix}", None)
-                    elif code == 'correction_txt_1c':
-                        value = getattr(unit, f"ratio_1с_txt{suffix}", None)
-                    elif code == 'max_discount_tradein':
-                        value = getattr(unit, f"discount_tt{suffix}", None)
-                    elif code == 'max_discount_bargain_percent':
-                        value = getattr(unit, f"percent_torg_txt{suffix}", None)
-                unit_data['cells'][column_id] = {'type': 'numeric', 'value': value}
-            
-            # Наценки
-            for code, label in AUTOPRICING_MARKUP_FIELDS:
-                field_name = f"{code}{suffix}"
-                column_id = f"{code}_{price}"
-                value = getattr(unit, field_name, None)
-                if (value is None or value == 0) and code == 'markup_txt':
-                    value = getattr(unit, f"percent_txt{suffix}", None)
-                unit_data['cells'][column_id] = {'type': 'markup', 'value': value}
-            
-            # Autohub режимы
-            for code, label in AUTOPRICING_AUTOHUB_FIELDS:
-                field_name = f"{code}{suffix}"
-                column_id = f"{code}_{price}"
-                value = getattr(unit, field_name, '')
-                # Получаем название для отображения
-                autohub_label = ''
-                if value:
-                    for choice_code, choice_title in AVTOHUB_DATA_USAGE_CHOICES:
-                        if choice_code == value:
-                            autohub_label = choice_title
-                            break
-                unit_data['cells'][column_id] = {'type': 'autohub', 'value': value, 'label': autohub_label}
-            
-            # Eval type
-            eval_field_name = f"eval_type_{price}"
-            column_id = f"eval_type_{price}"
-            eval_value_id = getattr(unit, f"{eval_field_name}_id", None)
-            eval_name = ''
-            if eval_value_id:
-                try:
-                    eval_obj = RefTypeEvaluationCarsOrganization.objects.get(pk=eval_value_id)
-                    eval_name = eval_obj.name
-                except:
-                    pass
-            unit_data['cells'][column_id] = {'type': 'eval', 'value': eval_value_id, 'label': eval_name}
-        
-        units_data.append(unit_data)
-    
-    # Формируем список всех возможных столбцов для настройки видимости
-    all_columns = []
-    
-    # Базовые столбцы (всегда видимые)
-    all_columns.append({'id': 'unit_id', 'label': 'ID', 'type': 'base', 'always_visible': True})
-    all_columns.append({'id': 'unit_name', 'label': 'Подразделение', 'type': 'base', 'always_visible': True})
-    all_columns.append({'id': 'unit_city', 'label': 'Город', 'type': 'base', 'always_visible': True})
-    
-    # Столбцы по ценовым диапазонам
-    for price in AUTOPRICING_PRICE_RANGES:
-        # Булевые поля
-        for code, label in AUTOPRICING_BOOL_FIELDS:
-            all_columns.append({
-                'id': f'{code}_{price}',
-                'label': f'{label} {price}',
-                'type': 'bool',
-                'price': price,
-                'field': code,
-                'always_visible': False
-            })
-        
-        # Числовые поля
-        for code, label in AUTOPRICING_NUMERIC_FIELDS:
-            all_columns.append({
-                'id': f'{code}_{price}',
-                'label': f'{label} {price}',
-                'type': 'numeric',
-                'price': price,
-                'field': code,
-                'always_visible': False
-            })
-        
-        # Наценки
-        for code, label in AUTOPRICING_MARKUP_FIELDS:
-            all_columns.append({
-                'id': f'{code}_{price}',
-                'label': f'{label} {price}',
-                'type': 'markup',
-                'price': price,
-                'field': code,
-                'always_visible': False
-            })
-        
-        # Autohub режимы
-        for code, label in AUTOPRICING_AUTOHUB_FIELDS:
-            all_columns.append({
-                'id': f'{code}_{price}',
-                'label': f'{label} {price}',
-                'type': 'autohub',
-                'price': price,
-                'field': code,
-                'always_visible': False
-            })
-        
-        # Eval type
-        all_columns.append({
-            'id': f'eval_type_{price}',
-            'label': f'Выводить в продажу по правилу {price}',
-            'type': 'eval',
-            'price': price,
-            'field': 'eval_type',
-            'always_visible': False
+            'cells': build_autopricing_table_cells(unit),
         })
-    
+
     params = {
         'type': 'settings_autopricing_korsavto_table',
         'units': units_data,
-        'price_ranges': AUTOPRICING_PRICE_RANGES,
-        'all_columns': all_columns,
+        'price_ranges': get_active_price_group_codes(),
+        'all_columns': build_autopricing_table_columns(),
         'evaluations': evaluations,
         'autohub_choices': AVTOHUB_DATA_USAGE_CHOICES,
     }
-    
+
     return render(request, "kors/settings_autopricing_korsavto_table.html", {'params': params})
 
 

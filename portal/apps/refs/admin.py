@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AuctionStructureFiles, RefCarsOrganizationAuctionStatus, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail,  Auction, AuctionStructure, RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation
+from .models import AuctionStructureFiles, RefCarsOrganizationAuctionStatus, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail,  Auction, AuctionStructure, RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation, RefGroupPrice, UnitPriceGroupSettings
 from django_mptt_admin.admin import DjangoMpttAdmin
 
 
@@ -376,4 +376,88 @@ class RefCatalogProductAdmin(admin.ModelAdmin):
 class RefPageOcenkaAdmin(admin.ModelAdmin):
     list_display    = ('name', )
     search_fields   = ('name', )
-    
+
+
+@admin.register(RefGroupPrice)
+class RefGroupPriceAdmin(admin.ModelAdmin):
+    list_display = (
+        'code', 'name', 'min_price_rub', 'max_price_rub',
+        'sort_order', 'label_1c', 'is_active',
+    )
+    list_filter = ('is_active',)
+    search_fields = ('code', 'name', 'label_1c')
+    ordering = ('sort_order', 'code', 'name')
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'name', 'is_active', 'sort_order'),
+            'description': (
+                'Код (code) — суффикс полей формы и ключ в настройках, напр. 400, 5001. '
+                'Новая активная ЦГ автоматически появится в автопереоценке КорсАвто.'
+            ),
+        }),
+        ('Диапазон цены, руб', {
+            'fields': ('min_price_rub', 'max_price_rub'),
+            'description': 'Верхняя граница не включается (как в расчёте оценки). Для последней ЦГ max можно оставить пустым.',
+        }),
+        ('1С', {
+            'fields': ('label_1c',),
+        }),
+    )
+
+
+class UnitPriceGroupSettingsAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'created_at', 'unit', 'price_group',
+        'auto_active', 'auto_strategy', 'correction_kor', 'eval_type',
+    )
+    list_filter = ('price_group', 'auto_active', 'auto_strategy', 'created_at')
+    search_fields = ('unit__name', 'price_group__code', 'price_group__name')
+    readonly_fields = ('created_at',)
+    raw_id_fields = ('unit', 'eval_type')
+    autocomplete_fields = ('price_group',)
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at', '-id')
+    list_select_related = ('unit', 'price_group', 'eval_type')
+
+    fieldsets = (
+        (None, {
+            'fields': ('unit', 'price_group', 'created_at'),
+        }),
+        ('Автопереоценка — флаги', {
+            'fields': (
+                'auto_strategy', 'auto_active',
+                'lock_eval_change_after_stage', 'deny_manual_price', 'deny_discount',
+                'no_limit_max_manual', 'reset_manual_prices', 'delay_repricing_new_stage',
+                'check_price_rule_before_sale', 'check_open_tasks', 'calc_by_days_in_sale',
+            ),
+        }),
+        ('Автохаб', {
+            'fields': (
+                'autohub_mode_kor', 'autohub_mode_rdo', 'autohub_mode_test', 'autohub_mode_txt',
+            ),
+        }),
+        ('Корректировки и наценки', {
+            'fields': (
+                'correction_kor', 'correction_kor_1c', 'correction_kor_express',
+                'correction_rdo', 'correction_rdo_1c', 'correction_rdo_express',
+                'correction_test', 'correction_test_1c', 'correction_test_express',
+                'correction_txt', 'correction_txt_1c', 'correction_txt_express',
+                'markup_base', 'markup_kor', 'markup_rdo', 'markup_test', 'markup_txt',
+                'max_discount_tradein', 'max_discount_bargain_percent', 'marketing',
+            ),
+        }),
+        ('Legacy / ИРЦ', {
+            'classes': ('collapse',),
+            'fields': (
+                'ratio_1c_test_price', 'ratio_1c_rdo', 'ratio_1c_kor', 'ratio_1c_txt',
+                'ratio_avtohub_test_price', 'ratio_avtohub_rdo', 'ratio_avtohub_kor', 'ratio_avtohub_txt',
+                'percent_txt', 'percent_torg_txt', 'discount_tt', 'discount_torg',
+            ),
+        }),
+        ('Правило вывода в продажу', {
+            'fields': ('eval_type',),
+        }),
+    )
+
+
+admin.site.register(UnitPriceGroupSettings, UnitPriceGroupSettingsAdmin)

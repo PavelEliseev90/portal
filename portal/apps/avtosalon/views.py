@@ -3760,6 +3760,7 @@ def _get_deal_calc_for_suggestions(request, calc_id):
     calc = CarCalculations.objects.select_related(
         'unit', 'car', 'car__unit',
         'car__modification_autoru', 'car__modification_autoru__model',
+        'car__complectation_autoru',
     ).get(pk=calc_id)
     if not user_can_access_deal_calculation_doc(request.user, calc):
         return None, JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)

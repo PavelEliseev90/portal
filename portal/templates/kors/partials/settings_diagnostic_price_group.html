@@ -1,0 +1,63 @@
+<div class="settings-diagnostic-panel">
+  <h3 class="d-flex justify-content-between align-items-center"
+      data-bs-toggle="collapse"
+      data-bs-target="#collapse_{{ range.code }}"
+      aria-expanded="false"
+      aria-controls="collapse_{{ range.code }}"
+      style="cursor: pointer;">
+    <span>
+      {{ range.title }}
+      {% if range.subtitle %}
+      <span class="text-muted small"> • {{ range.subtitle }}</span>
+      {% endif %}
+    </span>
+    <span class="icon-mbri-down"></span>
+  </h3>
+
+  <div class="collapse" id="collapse_{{ range.code }}">
+    <div class="diagnostic-params-grid">
+      {% for card in range.cards %}
+      <div class="diagnostic-param-card">
+        <div class="diagnostic-param-card-title">{{ card.title }}</div>
+
+        {% for section in card.sections %}
+        <div class="diagnostic-param-section">
+          <div class="diagnostic-param-section-title {{ section.level }}">{{ section.title }}</div>
+          <div class="diagnostic-param-fields">
+            {% for field in section.fields %}
+            <div class="form-floating">
+              <input type="number"
+                     class="form-control {{ field.input_class }}"
+                     id="{{ field.name }}"
+                     name="{{ field.name }}"
+                     placeholder=""
+                     value="{{ field.value|default:0 }}"
+                     autocomplete="off">
+              <label for="{{ field.name }}">{{ field.label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if card.plain_fields %}
+        <div class="diagnostic-param-fields">
+          {% for field in card.plain_fields %}
+          <div class="form-floating">
+            <input type="number"
+                   class="form-control {{ field.input_class }}"
+                   id="{{ field.name }}"
+                   name="{{ field.name }}"
+                   placeholder=""
+                   value="{{ field.value|default:0 }}"
+                   autocomplete="off">
+            <label for="{{ field.name }}">{{ field.label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

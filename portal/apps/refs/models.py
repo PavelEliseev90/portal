@@ -1666,15 +1666,24 @@ class RefStore(models.Model):
 
 # Ценовые группы автомобилей
 class RefGroupPrice(models.Model):
-    name            = models.CharField("Наименование", max_length=200, default='')
-    
+    name = models.CharField("Наименование", max_length=200, default='')
+    code = models.CharField("Код ЦГ", max_length=10, blank=True, default='', db_index=True)
+    min_price_rub = models.PositiveIntegerField("Мин. цена, руб", null=True, blank=True)
+    max_price_rub = models.PositiveIntegerField("Макс. цена, руб", null=True, blank=True)
+    sort_order = models.PositiveSmallIntegerField("Порядок", default=0)
+    label_1c = models.CharField("Наименование для 1С", max_length=20, blank=True, default='')
+    is_active = models.BooleanField("Активна", default=True)
+
     def __str__(self):
+        if self.code:
+            return "{} ({})".format(self.name, self.code)
         return "{}".format(self.name)
 
     class Meta:
         db_table = 'refGroupPrice'
         verbose_name = "Ценовая категория"
         verbose_name_plural = "Ценовые категории"
+        ordering = ['sort_order', 'code', 'name']
 
 
 # Этапы переоценки автомобилей
@@ -2137,13 +2146,14 @@ class RefCarsOrganization(models.Model):
     days_next_stage         = models.IntegerField("Дней до следующего этапа", blank=True, default=0)
     
     access_user             = models.ManyToManyField(User, related_name='access_user_car', verbose_name='Пользователь', blank=True)
-
+    
     date_report             = models.DateTimeField('Дата рапорта / отчитана ', default=datetime(1, 1, 1), blank=True, null=False)
     date_reserve            = models.DateTimeField('Дата брони до ', default=datetime(1, 1, 1), blank=True, null=False)
     status_ransom           = models.ForeignKey(RefStatusRansom, null=True, on_delete=models.SET_NULL, verbose_name='Статус выкупа')
     status_availability     = models.ForeignKey(RefStatusAvailability, null=True, on_delete=models.SET_NULL, verbose_name='Статус наличия')
     attention               = models.CharField("Внимание", max_length=5120, default='')
     note                    = models.CharField("Примечание", max_length=5120, default='')
+    uin                     = models.CharField("UIN", max_length=64, default='', null=True, blank=True)
 
 
     def _find_applicable_km_discount(self, brand_car):
@@ -3366,3 +3376,6 @@ class RefAllowableDiscountKm(models.Model):
         db_table = 'RefAllowableDiscountKm'
         verbose_name = "Допустимый дисконт от % КМ (опер. бизнес)"
         verbose_name_plural = "Допустимые дисконты от % КМ (опер. бизнес)"
+
+
+from .unit_price_group_settings import UnitPriceGroupSettings  # noqa: E402,F401

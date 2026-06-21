@@ -33,7 +33,7 @@ from register.models import RegEstimationPodgotovka, RegEstimationMCU, RegEstima
 from register.serializers import RegInteractivOcenkaSerializer, RegInteractivOcenkaSoglasovanieSerializer, RegInteractivOcenkaRLK, RegInteractivOcenkaRLKSerializer
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
-from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer, RefUnitSerializer
+from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
 from datetime import datetime, date
 import base64
 from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
@@ -79,6 +79,8 @@ ssl_context.load_verify_locations(localhost_pem)
 
 def send_settings_unit(unit):
     """Отправить настройки подразделения в 1С. Возвращает dict с результатом."""
+    from refs.unit_settings_1c import build_unit_settings_dc_payload
+
     result = {
         'ok': False,
         'status_code': None,
@@ -87,7 +89,7 @@ def send_settings_unit(unit):
         'unit_name': unit.name,
     }
     try:
-        data_unit = RefUnitSerializer(unit, many=False).data
+        data_unit = build_unit_settings_dc_payload(unit)
         js_data = {
             'Type': 'settings_dc',
             'Settings': data_unit,

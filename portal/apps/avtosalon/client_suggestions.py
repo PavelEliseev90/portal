@@ -39,12 +39,24 @@ def get_reference_km_for_car(car):
     return get_car_latest_km_value(car)
 
 
+def _suggestions_filter_label(car):
+    model_name = ''
+    complectation_name = ''
+    if car and car.modification_autoru_id:
+        model_name = car.modification_autoru.model.name
+    if car and car.complectation_autoru_id:
+        complectation_name = car.complectation_autoru.name
+    if model_name and complectation_name:
+        return '{} · {}'.format(model_name, complectation_name)
+    return model_name
+
+
 def _suggestions_base_qs(car, unit_id):
     if not car or not unit_id or not car.modification_autoru_id:
         return RefCarsOrganization.objects.none()
 
     model_id = car.modification_autoru.model_id
-    return RefCarsOrganization.objects.filter(
+    qs = RefCarsOrganization.objects.filter(
         unit_id=unit_id,
         is_new=True,
         quantity__gt=0,
@@ -54,6 +66,9 @@ def _suggestions_base_qs(car, unit_id):
     ).exclude(
         modification_autoru__isnull=True,
     )
+    if car.complectation_autoru_id:
+        qs = qs.filter(complectation_autoru_id=car.complectation_autoru_id)
+    return qs
 
 
 def _annotate_last_km(qs):
@@ -127,14 +142,14 @@ def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_L
     qs = get_client_suggestions_qs(car, unit_id, reference_km)[:limit]
     items = [serialize_client_suggestion(item, reference_km, kvp) for item in qs]
     total = count_client_suggestions(car, unit_id, reference_km)
-    model_name = ''
-    if car.modification_autoru_id:
-        model_name = car.modification_autoru.model.name
+    filter_label = _suggestions_filter_label(car)
     return {
         'items': items,
         'total': total,
         'shown': len(items),
         'reference_km': reference_km,
         'kvp': int(kvp or 0),
-        'model_name': model_name,
+        'model_name': filter_label,
+        'filter_label': filter_label,
+        'same_complectation': bool(car.complectation_autoru_id),
     }
