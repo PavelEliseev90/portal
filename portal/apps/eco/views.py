@@ -4100,7 +4100,7 @@ def doc(request, id):
                 'selected'              : selected,
                 'control_diagnostics'   : estimation.control_diagnostics.all(),
                 'calcs'                 : calcs,
-                'price_recalc_history'  : get_price_recalc_history_for_estimation(estimation),
+                'price_recalc_history'  : get_price_recalc_history_for_estimation(estimation, interactiv_rlk=interactiv_rlk),
             }
     
     elif request.method == "POST":
@@ -4518,6 +4518,14 @@ def doc(request, id):
             interactiv_rlk.save()
             
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_after_kd).replace(',', ' ') + ' ₽' + " " + text, estimation_id= reg_interactiv_ocenka.id)
+            from register.interactive_price_history import record_interactive_price_save_snapshot
+            record_interactive_price_save_snapshot(
+                estimation=reg_interactiv_ocenka,
+                interactiv_rlk=interactiv_rlk,
+                soglasovanie=reg_interactiv_ocenka_soglasovanie,
+                user=request.user,
+                trigger='price_after_kd',
+            )
             return HttpResponseRedirect(request.build_absolute_uri())
         
         if 'type_post' in request.POST:
@@ -4546,6 +4554,13 @@ def doc(request, id):
                 interactiv_rlk.save()
 
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до осмотра автомобиля - ' + '{:0,.2f}'.format(price_remote).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
+                from register.interactive_price_history import record_interactive_price_save_snapshot
+                record_interactive_price_save_snapshot(
+                    estimation=reg_interactiv_ocenka,
+                    interactiv_rlk=interactiv_rlk,
+                    user=request.user,
+                    trigger='price_remote',
+                )
                 return HttpResponseRedirect(request.build_absolute_uri()) 
             
             elif type_post == 'save_auto_price':
@@ -4632,6 +4647,14 @@ def doc(request, id):
                         interactiv_rlk.save()
                         send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
 
+                from register.interactive_price_history import record_interactive_price_save_snapshot
+                record_interactive_price_save_snapshot(
+                    estimation=reg_interactiv_ocenka,
+                    interactiv_rlk=interactiv_rlk,
+                    soglasovanie=reg_interactiv_ocenka_soglasovanie,
+                    user=request.user,
+                    trigger='save_auto_price',
+                )
                 return HttpResponseRedirect(request.build_absolute_uri())
 
             else:
@@ -4644,7 +4667,9 @@ def doc(request, id):
                         reg_interactiv_ocenka_soglasovanie.save()
                         reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
                         reg_interactiv_ocenka.save()
-                        interactiv_rlk.save()
+                        if interactiv_rlk.page_soglasovanie == None:
+                            interactiv_rlk.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
+                            interactiv_rlk.save()
                     else:
                         reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
             
@@ -4734,6 +4759,14 @@ def doc(request, id):
                     interactiv_rlk.save()
                     send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
             
+            from register.interactive_price_history import record_interactive_price_save_snapshot
+            record_interactive_price_save_snapshot(
+                estimation=reg_interactiv_ocenka,
+                interactiv_rlk=interactiv_rlk,
+                soglasovanie=reg_interactiv_ocenka_soglasovanie,
+                user=request.user,
+                trigger='save_custom_price',
+            )
             #send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + str(reg_interactiv_ocenka_soglasovanie.price_after_kd) + " " + text, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())    
 
@@ -8546,6 +8579,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             user=user,
             trigger=trigger,
             save_history=save_history,
+            interactiv_rlk=interactiv_rlk,
         )
 
         return price
