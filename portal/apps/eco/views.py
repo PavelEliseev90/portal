@@ -3817,26 +3817,22 @@ def doc(request, id):
             signal  = Autoteka_signal.objects.filter(vin = estimation.vin)
             refresh = request.GET.get('refresh_data', '')
             if refresh != '':
+                from register.interactive_price_history import record_interactive_price_refresh
                 if refresh == 'autohub':
                     get_info_max(interactiv_rlk, estimation.id)
-                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'znak':
                     get_info_max_znak(interactiv_rlk, estimation.id)
-                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'kors':
                     kors_estimation_data(estimation.id)
-                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'all':
                     get_info_max(interactiv_rlk, estimation.id)
                     kors_estimation_data(estimation.id)
-                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'data1c':
                     from task_manager.views import estimation_send_1c
                     try:
                         estimation_send_1c(interactiv_rlk.rlk.id, interactiv_rlk.estimation.id)
                     except:
                         s= 1
-                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 elif refresh == 'balance_doc':
                     try:
                         from website.views import refresh_estimation_balance_unit
@@ -3851,6 +3847,18 @@ def doc(request, id):
                     except:
                         s= 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                if refresh in ('autohub', 'znak', 'kors', 'all', 'data1c'):
+                    estimation.refresh_from_db()
+                    record_interactive_price_refresh(
+                        interactiv_rlk=interactiv_rlk,
+                        estimation=estimation,
+                        user=request.user,
+                        refresh_kind=refresh,
+                        price_calculation_fn=estimations_price_calculation,
+                        body_info=body,
+                        salon_info=salon,
+                    )
+                return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 
             balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
             if balance_count == 1:
@@ -4430,14 +4438,8 @@ def doc(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())   
 
         if 'price_before_kd' in request.POST:
-            if reg_interactiv_ocenka.page_soglasovanie == None:
-                reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
-                reg_interactiv_ocenka_soglasovanie.save()
-                reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
-                reg_interactiv_ocenka.save()
-                interactiv_rlk.save()
-            else:
-                reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+            from register.interactive_price_history import ensure_page_soglasovanie, record_interactive_price_save_snapshot
+            reg_interactiv_ocenka_soglasovanie = ensure_page_soglasovanie(interactiv_rlk, reg_interactiv_ocenka)
             reg_interactiv_ocenka_soglasovanie.price_before_kd = int(request.POST.get('price_before_kd', '0'))
             reg_interactiv_ocenka_soglasovanie.save()
             reg_interactiv_ocenka.date_s_do_diag = DT.datetime.now()
@@ -4445,18 +4447,20 @@ def doc(request, id):
             interactiv_rlk.save()
             
             send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена до диагностики - ' + '{:0,.2f}'.format(reg_interactiv_ocenka_soglasovanie.price_before_kd).replace(',', ' ') + ' ₽', estimation_id= reg_interactiv_ocenka.id)
+            record_interactive_price_save_snapshot(
+                estimation=reg_interactiv_ocenka,
+                interactiv_rlk=interactiv_rlk,
+                soglasovanie=reg_interactiv_ocenka_soglasovanie,
+                user=request.user,
+                trigger='price_before_kd',
+                force=True,
+            )
             return HttpResponseRedirect(request.build_absolute_uri())
         
         if 'price_after_kd' in request.POST:
             close_task(reg_interactiv_ocenka, request.user)
-            if reg_interactiv_ocenka.page_soglasovanie == None:
-                reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
-                reg_interactiv_ocenka_soglasovanie.save()
-                reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
-                reg_interactiv_ocenka.save()
-                interactiv_rlk.save()
-            else:
-                reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+            from register.interactive_price_history import ensure_page_soglasovanie, record_interactive_price_save_snapshot
+            reg_interactiv_ocenka_soglasovanie = ensure_page_soglasovanie(interactiv_rlk, reg_interactiv_ocenka)
             reg_interactiv_ocenka_soglasovanie.price_after_kd   = int(request.POST.get('price_after_kd', '0'))
             reg_interactiv_ocenka_soglasovanie.price_bcp        = int(request.POST.get('price_bcp', '0'))
             text = ''
@@ -4525,6 +4529,7 @@ def doc(request, id):
                 soglasovanie=reg_interactiv_ocenka_soglasovanie,
                 user=request.user,
                 trigger='price_after_kd',
+                force=True,
             )
             return HttpResponseRedirect(request.build_absolute_uri())
         
@@ -4560,12 +4565,14 @@ def doc(request, id):
                     interactiv_rlk=interactiv_rlk,
                     user=request.user,
                     trigger='price_remote',
+                    force=True,
                 )
                 return HttpResponseRedirect(request.build_absolute_uri()) 
             
             elif type_post == 'save_auto_price':
                 
-                reg_interactiv_ocenka_soglasovanie = interactiv_rlk.page_soglasovanie
+                from register.interactive_price_history import ensure_page_soglasovanie
+                reg_interactiv_ocenka_soglasovanie = ensure_page_soglasovanie(interactiv_rlk, reg_interactiv_ocenka)
 
                 from register.interactive_price_history import interactive_price_history_context
                 with interactive_price_history_context(user=request.user, trigger='save_auto_price'):
@@ -4654,6 +4661,7 @@ def doc(request, id):
                     soglasovanie=reg_interactiv_ocenka_soglasovanie,
                     user=request.user,
                     trigger='save_auto_price',
+                    force=True,
                 )
                 return HttpResponseRedirect(request.build_absolute_uri())
 
@@ -4661,17 +4669,8 @@ def doc(request, id):
 
                 type_post = request.POST.get('type_post', '')
                 
-                if type_post == "save_auto_price":
-                    if reg_interactiv_ocenka.page_soglasovanie == None:
-                        reg_interactiv_ocenka_soglasovanie = RegInteractivOcenkaSoglasovanie()
-                        reg_interactiv_ocenka_soglasovanie.save()
-                        reg_interactiv_ocenka.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
-                        reg_interactiv_ocenka.save()
-                        if interactiv_rlk.page_soglasovanie == None:
-                            interactiv_rlk.page_soglasovanie = reg_interactiv_ocenka_soglasovanie
-                            interactiv_rlk.save()
-                    else:
-                        reg_interactiv_ocenka_soglasovanie = reg_interactiv_ocenka.page_soglasovanie
+                from register.interactive_price_history import ensure_page_soglasovanie
+                reg_interactiv_ocenka_soglasovanie = ensure_page_soglasovanie(interactiv_rlk, reg_interactiv_ocenka)
             
                 reg_interactiv_ocenka_soglasovanie.price_type                      = request.POST.get('type_price', '')
                 reg_interactiv_ocenka_soglasovanie.price_correction                = int(request.POST.get('price_correction', '0'))
@@ -4766,6 +4765,7 @@ def doc(request, id):
                 soglasovanie=reg_interactiv_ocenka_soglasovanie,
                 user=request.user,
                 trigger='save_custom_price',
+                force=True,
             )
             #send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Согласована цена после диагностики - ' + str(reg_interactiv_ocenka_soglasovanie.price_after_kd) + " " + text, estimation_id= reg_interactiv_ocenka.id)
             return HttpResponseRedirect(request.build_absolute_uri())    
