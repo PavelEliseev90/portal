@@ -1,4 +1,6 @@
 """Настройки подразделения по ценовой группе (история: каждое сохранение — новая запись)."""
+from types import SimpleNamespace
+
 from django.db import models
 
 from refs.price_groups import LEGACY_UNIT_FIELD_MAP, get_active_price_groups
@@ -121,9 +123,12 @@ def copy_unit_price_range_to_settings(unit, price_group, target=None):
     )
 
     code = price_group.code
-    row = target or UnitPriceGroupSettings(unit=unit, price_group=price_group)
-    row.unit = unit
-    row.price_group = price_group
+    if target is None:
+        row = SimpleNamespace()
+    else:
+        row = target
+        row.unit = unit
+        row.price_group = price_group
 
     for settings_field, unit_base in LEGACY_UNIT_FIELD_MAP.items():
         unit_field = '{}_{}'.format(unit_base, code)
@@ -145,7 +150,9 @@ def copy_unit_price_range_to_settings(unit, price_group, target=None):
             setattr(row, field_code, getattr(unit, unit_field, None))
     eval_attr = 'eval_type{}'.format(suffix)
     if hasattr(unit, eval_attr):
-        row.eval_type = getattr(unit, eval_attr, None)
+        eval_val = getattr(unit, eval_attr, None)
+        row.eval_type = eval_val
+        row.eval_type_id = getattr(eval_val, 'pk', None)
 
     return row
 
@@ -193,7 +200,11 @@ def sync_settings_row_to_unit(unit, row, price_group_code):
 
 def create_settings_snapshot_from_unit(unit, price_group):
     """Создать новую запись истории из текущих колонок RefUnit."""
-    row = copy_unit_price_range_to_settings(unit, price_group)
+    row = copy_unit_price_range_to_settings(
+        unit,
+        price_group,
+        target=UnitPriceGroupSettings(unit=unit, price_group=price_group),
+    )
     row.save()
     return row
 
