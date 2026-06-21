@@ -1773,6 +1773,13 @@ class RegEstimationsSettings(models.Model):
     to_2_5001    = models.IntegerField('ТО 2 5001',      default=0, null=False, blank=True)
     to_3_5001    = models.IntegerField('ТО 3 5001',      default=0, null=False, blank=True)
 
+    diagnostic_extra_by_price_group = models.JSONField(
+        'Диагностика по доп. ценовым группам (JSON)',
+        default=dict,
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
         return "{}".format(self.name)
 
@@ -3927,13 +3934,20 @@ class RegRegInteractivOcenkaFilesKolesaReception(models.Model):
 
 #Страница История ценнообразования
 class RegInteractivOcenkaPrice(models.Model):
-    date                = models.DateTimeField('Дата', blank=True, null=True)
+    date                = models.DateTimeField('Дата', blank=True, null=True, db_index=True)
     price_calculation   = models.CharField("Тип", max_length=150, default='', null=True, blank=True)
-    page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
-    user                = models.ForeignKey(RefStaff, related_name="history_user", on_delete=models.SET_NULL, null=True, verbose_name="Автор")
-    
+    trigger             = models.CharField("Событие", max_length=150, default='', null=True, blank=True)
+    page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование", related_name='price_recalc_history')
+    estimation          = models.ForeignKey('RegInteractivOcenka', blank=True, null=True, on_delete=models.CASCADE, verbose_name="Оценка", related_name='price_recalc_history')
+    user                = models.ForeignKey(RefStaff, related_name="history_user", on_delete=models.SET_NULL, null=True, verbose_name="Автор (RefStaff)")
+    author              = models.ForeignKey(User, related_name="interactive_price_recalc_history", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Пользователь")
+
     text_json           = models.TextField("Текст", blank=True, null=True)
-    
+    raw_calculation_json = models.JSONField("Ответ расчёта (JSON)", default=dict, blank=True)
+
+    is_success          = models.BooleanField('Успешно', default=True)
+    error_message       = models.TextField('Ошибка', blank=True, default='')
+
     amount_podgotovka   = models.FloatField('Затраты на подготовку', default=0.00, null=True, blank=True)
     amount_ss           = models.FloatField('Затраты на слесарный ремонт', default=0.00, null=True, blank=True)
     amount_mcu          = models.FloatField('Затраты на кузовной ремонт', default=0.00, null=True, blank=True)
@@ -3942,11 +3956,27 @@ class RegInteractivOcenkaPrice(models.Model):
     zna                 = models.FloatField('ЦНА', default=0.00, null=True, blank=True)
     zg                  = models.CharField("ЦГ", max_length=150, default='', null=True, blank=True)
     kf                  = models.CharField("КФ", max_length=150, default='', null=True, blank=True)
-    estimation_price            = models.FloatField('Цена выкупа', default=0.00, null=True, blank=True) 
-    estimation_price_do_kd      = models.FloatField('Цена выкупа до кд', default=0.00, null=True, blank=True) 
-    
+    estimation_price            = models.FloatField('Цена выкупа', default=0.00, null=True, blank=True)
+    estimation_price_do_kd      = models.FloatField('Цена выкупа до кд', default=0.00, null=True, blank=True)
+    discount_torg       = models.FloatField('Скидка торг', default=0.00, null=True, blank=True)
+    finance_price       = models.FloatField('Финансирование', default=0.00, null=True, blank=True)
+    zachita_ot_ubitka   = models.FloatField('Защита от убытка', default=0.00, null=True, blank=True)
+
+    price_auto_1        = models.IntegerField('Автоматическая 1', default=0, null=True, blank=True)
+    price_auto_2        = models.IntegerField('Автоматическая 2', default=0, null=True, blank=True)
+    price_auto_3        = models.IntegerField('Автоматическая 3', default=0, null=True, blank=True)
+    price_auto_bcp_1    = models.IntegerField('БЦП 1', default=0, null=True, blank=True)
+    price_auto_bcp_2    = models.IntegerField('БЦП 2', default=0, null=True, blank=True)
+    price_auto_bcp_3    = models.IntegerField('БЦП 3', default=0, null=True, blank=True)
+    price_zna_1         = models.IntegerField('ЦНА 1', default=0, null=True, blank=True)
+    price_zna_2         = models.IntegerField('ЦНА 2', default=0, null=True, blank=True)
+    price_zna_3         = models.IntegerField('ЦНА 3', default=0, null=True, blank=True)
+    price_before_kd     = models.IntegerField('Согласованная до КД', default=0, null=True, blank=True)
+    price_after_kd      = models.IntegerField('Согласованная после КД', default=0, null=True, blank=True)
+    price_bcp           = models.IntegerField('БЦП согласованный', default=0, null=True, blank=True)
+
     comment   = models.CharField("Комментарий", max_length=1500, default='', null=True, blank=True)
-    
+
     def __str__(self):
         return "{} / {} / {}".format(self.date, self.price_calculation, self.user)
 
@@ -3954,6 +3984,11 @@ class RegInteractivOcenkaPrice(models.Model):
         db_table = 'regInteractivOcenkaPrice'
         verbose_name = "История ценнообразования интерактивной оценки"
         verbose_name_plural = "История ценнообразования интерактивной оценки"
+        ordering = ['-date', '-id']
+        indexes = [
+            models.Index(fields=['estimation', '-date']),
+            models.Index(fields=['page_soglasovanie', '-date']),
+        ]
 
 
 # ========== Контрольная диагностика (слепки входа + результат для сравнения) ==========

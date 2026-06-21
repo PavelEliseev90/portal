@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace, BodyTypeGroup
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace, BodyTypeGroup, RegInteractivOcenkaPrice
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -237,4 +237,16 @@ class BodyTypeGroupAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     ordering = ('order', 'name')
     filter_horizontal = ('body_types',)
-    
+
+
+@admin.register(RegInteractivOcenkaPrice)
+class RegInteractivOcenkaPriceAdmin(admin.ModelAdmin):
+    list_display = (
+        'date', 'estimation', 'price_calculation', 'trigger', 'author', 'estimation_price',
+        'price_auto_1', 'price_auto_2', 'price_auto_3', 'is_success',
+    )
+    list_filter = ('price_calculation', 'trigger', 'is_success', 'date')
+    search_fields = ('estimation__vin', 'estimation__rlk__uin', 'author__username', 'user__name')
+    raw_id_fields = ('estimation', 'page_soglasovanie', 'author', 'user')
+    readonly_fields = ('date', 'text_json', 'raw_calculation_json')
+    ordering = ('-date', '-id')

@@ -1,0 +1,44 @@
+{% if params.price_recalc_history %}
+<div class="portal-panel mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0">История перерасчётов ценообразования</h6>
+    <span class="text-muted small">{{ params.price_recalc_history|length }} записей</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Кто</th>
+          <th>Событие</th>
+          <th>Тип расчёта</th>
+          <th class="text-end">Цена</th>
+          <th class="text-end">БЦП</th>
+          <th class="text-end">auto 1</th>
+          <th class="text-end">auto 2</th>
+          <th class="text-end">auto 3</th>
+          <th class="text-end">до КД</th>
+          <th class="text-end">после КД</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in params.price_recalc_history %}
+        <tr>
+          <td class="text-nowrap">{{ row.date|date:"d.m.Y H:i" }}</td>
+          <td>{{ row.author_name }}</td>
+          <td>{{ row.trigger_label }}</td>
+          <td>{{ row.type_label }}</td>
+          <td class="text-end">{{ row.estimation_price|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.cna_expenses|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.price_auto_1|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.price_auto_2|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.price_auto_3|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.price_before_kd|floatformat:"0g" }}</td>
+          <td class="text-end">{{ row.price_after_kd|floatformat:"0g" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
