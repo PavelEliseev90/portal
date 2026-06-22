@@ -47,8 +47,9 @@ import pathlib
 
 url_websocket_kors  = 'wss://ah.kors-group.com/'
 
-url_hs_kors_auto    = 'http://a01srv1cka/zbusiness/hs/mb'
-#url_hs_kors_auto    = 'http://a01srv1cka/zbusiness030724/hs/mb'
+url_hs_kors_auto        = 'http://a01srv1cka/zbusiness/hs/mb'
+#url_hs_kors_auto       = 'http://a01srv1cka/zbusiness030724/hs/mb'
+url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
 url_auction_kors_portal     = 'https://auction.kors-group.ru'
@@ -2880,7 +2881,11 @@ def estimation_send_1c(rlk_id, id):
         'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
         'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
     }
-    response = requests.post(url_hs_kors_auto, json=js_data)
+    if rlk.unit.ib.alfa:
+        response = requests.post(url_hs_alfa_auto, json=js_data)
+    else:
+        response = requests.post(url_hs_kors_auto, json=js_data)
+
     return response.status_code
     
 
@@ -2901,7 +2906,10 @@ def swap_estimation():
                     'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
                     'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
                 }
-                response = requests.post(url_hs_kors_auto, json=js_data)
+                if rlk.unit.ib.alfa:
+                    response = requests.post(url_hs_alfa_auto, json=js_data)
+                else:
+                    response = requests.post(url_hs_kors_auto, json=js_data)
                 #if response.status_code == 200:
                 info.status_code = 200
                 info.status = 'Ok'
@@ -2917,7 +2925,11 @@ def swap_estimation():
                 'Type'  : 'rlk', 
                 'Rlk'   : DocRLKSerializer(info.rlk, many=False).data        
             }
-            response = requests.post(url_hs_kors_auto, json=js_data)
+            if info.rlk.unit.ib.alfa:
+                response = requests.post(url_hs_alfa_auto, json=js_data)
+            else:
+                response = requests.post(url_hs_kors_auto, json=js_data)
+            #response = requests.post(url_hs_kors_auto, json=js_data)
             if response.status_code == 200:
                 info.status_code = 200
                 info.status = 'Ok'

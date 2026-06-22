@@ -83,7 +83,8 @@ class RefIb(models.Model):
     server  = models.CharField("Сервер", max_length=200, default='')
     base    = models.CharField("База", max_length=200, default='')
     active  = models.BooleanField("Активна", default=True)
-
+    alfa    = models.BooleanField("Альфа", default=True)
+    
     def __str__(self):
         return self.name
 
