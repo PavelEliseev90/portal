@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='carcalculations',
             name='active',
-            field=models.BooleanField(db_index=True, default=True, verbose_name='Активное КП по рабочему листу'),
+            field=models.BooleanField(default=True, verbose_name='Активное КП по рабочему листу'),
         ),
         migrations.AddField(
             model_name='carcalculations',

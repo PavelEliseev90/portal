@@ -291,7 +291,6 @@ class CarCalculations(models.Model):
     active = models.BooleanField(
         'Активное КП по рабочему листу',
         default=True,
-        db_index=True,
     )
     inactive_reason = models.CharField(
         'Причина неактивности',
