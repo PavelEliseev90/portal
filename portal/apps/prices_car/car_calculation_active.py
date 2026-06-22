@@ -5,13 +5,17 @@ from django.utils import timezone
 INACTIVE_REASON_PREFIX = 'Неактивно: есть другое активное коммерческое предложение'
 
 
+def _format_calc_datetime(value):
+    if not value:
+        return '—'
+    if timezone.is_naive(value):
+        return value.strftime('%d.%m.%Y %H:%M')
+    return timezone.localtime(value).strftime('%d.%m.%Y %H:%M')
+
+
 def _format_calc_label(calc):
     number = (calc.number or '').strip() or '—'
-    if calc.date:
-        date_str = timezone.localtime(calc.date).strftime('%d.%m.%Y %H:%M')
-    else:
-        date_str = '—'
-    return '№{} от {}'.format(number, date_str)
+    return '№{} от {}'.format(number, _format_calc_datetime(calc.date))
 
 
 def sync_active_calculations_for_rlk(rlk_id):
