@@ -5098,6 +5098,10 @@ def get_calculation_car(data):
         new_action_detail.amount_comp = action_info['Amount_comp']        
         new_action_detail.save()
 
+    if rlk_object is not None and getattr(rlk_object, 'pk', None):
+        from prices_car.car_calculation_active import sync_active_calculations_for_rlk
+        sync_active_calculations_for_rlk(rlk_object.pk)
+
     return calculation_object
 
 

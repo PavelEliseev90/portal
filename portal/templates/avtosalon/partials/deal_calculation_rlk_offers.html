@@ -18,6 +18,7 @@
         <thead>
           <tr>
             <th></th>
+            <th>Статус</th>
             <th>Номер</th>
             <th>Дата</th>
             <th>Автомобиль</th>
@@ -29,11 +30,21 @@
         </thead>
         <tbody>
           {% for item in params.rlk_calculations %}
-          <tr{% if item.pk == params.calc.pk %} class="table-primary"{% endif %}>
+          <tr{% if item.pk == params.calc.pk %} class="table-primary"{% elif not item.active %} class="text-muted"{% endif %}>
             <td>
               <a href="/cars/deal/calculation/{{ item.pk }}/" class="text-dark" title="Открыть КП">
                 <span class="icon-doc"></span>
               </a>
+            </td>
+            <td class="text-nowrap">
+              {% if item.active %}
+              <span class="badge bg-success">Активно</span>
+              {% else %}
+              <span class="badge bg-secondary">Неактивно</span>
+              {% if item.inactive_reason %}
+              <div class="small text-muted mt-1" style="max-width: 14rem;">{{ item.inactive_reason }}</div>
+              {% endif %}
+              {% endif %}
             </td>
             <td class="text-nowrap">{{ item.number|default:"—" }}</td>
             <td class="text-nowrap">{{ item.date|date:"d.m.Y H:i" }}</td>
@@ -45,7 +56,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted py-3">Нет коммерческих предложений по этому рабочему листу</td>
+            <td colspan="9" class="text-center text-muted py-3">Нет коммерческих предложений по этому рабочему листу</td>
           </tr>
           {% endfor %}
         </tbody>
