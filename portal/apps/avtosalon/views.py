@@ -3713,17 +3713,26 @@ def deal_calculation_doc(request, id):
     params_analytics = _deal_calc_unit_month_analytics(analytics_unit, car=car, sale_type=sale_type)
 
     rlk_calculations = []
+    active_rlk_calculation = None
     if calc.rlk_id:
         rlk_calculations = list(
             CarCalculations.objects.filter(rlk_id=calc.rlk_id)
             .select_related('car', 'unit', 'author', 'staff')
             .order_by('-date', '-pk')
         )
+        if calc.active:
+            active_rlk_calculation = calc
+        else:
+            active_rlk_calculation = next(
+                (c for c in rlk_calculations if c.active),
+                None,
+            )
     
     params.update({
         'car'               : car,
         'calc'              : calc,
         'rlk_calculations'  : rlk_calculations,
+        'active_rlk_calculation': active_rlk_calculation,
         'dop'               : dop,
         'car_price_and_dop' : car_price_and_dop,
         'actions'           : actions,

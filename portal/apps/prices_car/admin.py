@@ -3,7 +3,7 @@ from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount,
 
 @admin.register(CarCalculations)
 class CarCalculationsAdmin(admin.ModelAdmin):
-    list_display = ('date', 'number', 'car', 'kvp', 'km_raschet', 'amount', 'unit', 'price', 'comment',)
+    list_display = ('date', 'number', 'active', 'car', 'kvp', 'km_raschet', 'amount', 'unit', 'price', 'comment',)
     list_filter = ('unit', )
     raw_id_fields = ('rlk', 'unit', 'staff', 'author', 'user', 'car', )
     search_fields = ('rlk__nomer',)

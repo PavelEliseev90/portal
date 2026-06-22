@@ -20,6 +20,16 @@
     {% endfor %}
   </div>
   {% endif %}
+  {% if params.calc.rlk and not params.calc.active %}
+  <div class="alert alert-warning mb-3" role="alert">
+    {{ params.calc.inactive_reason|default:"Неактивно: есть другое активное коммерческое предложение." }}
+    {% if params.active_rlk_calculation and params.active_rlk_calculation.pk != params.calc.pk %}
+    <a href="/cars/deal/calculation/{{ params.active_rlk_calculation.pk }}/" class="alert-link ms-1">
+      Открыть активное КП №{{ params.active_rlk_calculation.number }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
   <div class="portal-header">
     <h2>Калькуляция автомобиля</h2>
     <p>№ {{params.calc.number}} от {{params.calc.date}} </p>    

@@ -288,6 +288,18 @@ class CarCalculations(models.Model):
         blank=True,
     )
 
+    active = models.BooleanField(
+        'Активное КП по рабочему листу',
+        default=True,
+        db_index=True,
+    )
+    inactive_reason = models.CharField(
+        'Причина неактивности',
+        max_length=512,
+        default='',
+        blank=True,
+    )
+
     def detail(self):
         from prices_car.models import CarCalculationsDetail
         return CarCalculationsDetail.objects.filter(calculation = self).order_by('-detail_type__name')
