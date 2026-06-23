@@ -20078,8 +20078,6 @@
                   
                 </div>
 
-                {% include 'lo/partials/price_recalc_history.html' %}
-
                 <main>
                         
                   {% for warning in params.warning_list %}
@@ -22338,6 +22336,7 @@
                     </div>
                   </div>
 
+                  {% include 'lo/partials/price_recalc_history.html' %}
                   
                   <script>
                     $('#auction').change( function() {
