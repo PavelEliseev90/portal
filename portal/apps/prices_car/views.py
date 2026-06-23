@@ -30,7 +30,7 @@ from .calculations_table import (
 import requests
 import json
 
-url_alfa = 'http://k01srv1c05/ralfa01/hs/mb/?type='
+url_alfa = 'http://k01srv1c10/ralfa01/hs/mb/?type='
 time_out_im    = 25
 
 

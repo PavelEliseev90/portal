@@ -621,7 +621,7 @@ def refresh_new_cars(request):
         #car_object.stage_price          = get_stage_price(car['Stage_price'])
         #car_object.group_price          = get_group_price(car['Group_price'])
         #car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
-        #car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
+        car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
         #car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
         #car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
         #car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
@@ -629,7 +629,10 @@ def refresh_new_cars(request):
         #car_object.owners               = car['Owners']
         #car_object.keys                 = car['Keys']
         #car_object.task                 = car['Task']  
-        #car_object.reserve              = car['Reserve']             
+        car_object.reserve              = car['Reserve']             
+        car_object.status_availability  = get_model_object('RefStatusAvailability', car['Status_availability'])
+        car_object.attention            = car['Attention']
+        car_object.note                 = car['Note']
 
         #car_object.days_next_stage      = car['Days_next_stage']
         #car_object.link_avtoteka_web    = car['Link_avtoteka_web']
