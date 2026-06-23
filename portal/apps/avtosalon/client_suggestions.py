@@ -1,5 +1,5 @@
 """Подбор альтернативных автомобилей на складе ДЦ (KMCar)."""
-from django.db.models import OuterRef, Subquery
+from django.db.models import Case, IntegerField, OuterRef, Subquery, Value, When
 
 from prices_car.km_car import get_car_latest_km_value
 from prices_car.models import KMCar
@@ -16,6 +16,16 @@ TYPE_KM_LABELS = {
 }
 
 SUGGESTIONS_LIMIT = 20
+STATUS_AVAILABILITY_GOODS = 'Товарный'
+STATUS_CAR_WAREHOUSE = 'Склад'
+REPORTED_CAR_MIN_YEAR = 2
+
+
+def car_is_reported(car):
+    """Автомобиль отчитан (жёлтый) — заполнена дата рапорта."""
+    if not car or not car.date_report:
+        return False
+    return car.date_report.year >= REPORTED_CAR_MIN_YEAR
 
 
 def deal_needs_client_suggestions(calc, cumulative_data, car):
@@ -61,6 +71,8 @@ def _suggestions_base_qs(car, unit_id):
         is_new=True,
         quantity__gt=0,
         modification_autoru__model_id=model_id,
+        status_availability__name=STATUS_AVAILABILITY_GOODS,
+        status__name=STATUS_CAR_WAREHOUSE,
     ).exclude(
         pk=car.pk,
     ).exclude(
@@ -84,9 +96,15 @@ def get_client_suggestions_qs(car, unit_id, reference_km):
         return RefCarsOrganization.objects.none()
 
     qs = _annotate_last_km(_suggestions_base_qs(car, unit_id))
-    return qs.filter(
+    qs = qs.filter(
         last_km__isnull=False,
         last_km__lt=reference_km,
+    ).annotate(
+        reported_priority=Case(
+            When(date_report__year__gte=REPORTED_CAR_MIN_YEAR, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        ),
     ).select_related(
         'modification_autoru',
         'modification_autoru__model',
@@ -94,7 +112,10 @@ def get_client_suggestions_qs(car, unit_id, reference_km):
         'complectation_autoru',
         'stage_price',
         'unit',
-    ).order_by('last_km', 'price', 'name')
+        'status',
+        'status_availability',
+    ).order_by('reported_priority', 'last_km', 'price', 'name')
+    return qs
 
 
 def count_client_suggestions(car, unit_id, reference_km):
@@ -135,6 +156,11 @@ def serialize_client_suggestion(car, reference_km, kvp):
         'approval_passes': kvp_val > km if kvp_val else False,
         'price_url': '/cars/{}/price/'.format(car.slug) if car.slug else '',
         'car_url': '/cars/{}/'.format(car.slug) if car.slug else '',
+        'is_reported': car_is_reported(car),
+        'status_availability': (
+            car.status_availability.name if car.status_availability_id else ''
+        ),
+        'status': car.status.name if car.status_id else '',
     }
 
 

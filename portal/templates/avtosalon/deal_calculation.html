@@ -157,7 +157,27 @@
   
               <div class="col-12 col-sm-7 align-items-center">
                 <div class="car-info-item">{{params.car.modification_autoru.model.mark.name}} • {{params.car.modification_autoru.model}} • {{params.car.modification_autoru}} • {{params.car.complectation_autoru}}</div>
-                <div class="car-info-item">{{params.car.vin}} • {{params.car.year}} г.в. • {{params.car.run|floatformat:"0g"}} км.</div>    
+                <div class="car-info-item">{{params.car.vin}} • {{params.car.year}} г.в. • {{params.car.run|floatformat:"0g"}} км.</div>
+                <div class="car-info-item">
+                  {{ params.car.status_availability.name|default:"—" }} • {{ params.car.status.name|default:"—" }}
+                </div>
+                {% if params.car.date_report.year > 1 %}
+                <div class="car-info-item mt-1">
+                  <span class="badge text-bg-warning text-dark" title="Дата рапорта {{ params.car.date_report|date:'d.m.Y H:i' }}">
+                    <span class="icon-mbri-alert"></span> Жёлтый автомобиль
+                  </span>
+                </div>
+                {% endif %}
+                {% if params.car.attention %}
+                <div class="car-info-item text-warning-emphasis mt-1">
+                  <span class="icon-mbri-alert"></span> {{ params.car.attention }}
+                </div>
+                {% endif %}
+                {% if params.car.note %}
+                <div class="car-info-item text-muted mt-1">
+                  <span class="icon-mbri-info"></span> {{ params.car.note }}
+                </div>
+                {% endif %}
               </div>
               
               <div class="col-12 col-sm-4">
@@ -561,9 +581,9 @@
             </button>
             <div class="small text-white opacity-75 mt-1">
               {% if params.car.complectation_autoru_id %}
-              Альтернативы той же модели и комплектации на складе ДЦ с более низким расчётным КМ.
+              Альтернативы той же модели и комплектации на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
               {% else %}
-              Альтернативы той же модели на складе ДЦ с более низким расчётным КМ.
+              Альтернативы той же модели на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
               {% endif %}
             </div>
           </div>
@@ -951,6 +971,9 @@
         data.items.forEach(function(item) {
           var tr = document.createElement('tr');
           var title = [item.mark, item.model, item.complectation].filter(Boolean).join(' ');
+          var reportedBadge = item.is_reported
+            ? '<span class="badge text-bg-warning text-dark ms-1" title="Жёлтый автомобиль"><span class="icon-mbri-alert"></span></span>'
+            : '';
           var approvalBadge = item.approval_passes
             ? '<span class="badge bg-success">пройдёт</span>'
             : '<span class="badge bg-secondary">нет</span>';
@@ -962,8 +985,10 @@
             links += '<a class="btn btn-calculate-sm" href="' + item.price_url + '" target="_blank">Ценообразование</a>';
           }
           tr.innerHTML =
-            '<td><div class="fw-semibold">' + (title || item.name || '—') + '</div>' +
-            '<div class="small text-muted">' + (item.vin || '') + '</div></td>' +
+            '<td><div class="fw-semibold">' + (title || item.name || '—') + reportedBadge + '</div>' +
+            '<div class="small text-muted">' + (item.vin || '') +
+            (item.is_reported ? ' · <span class="text-warning-emphasis">жёлтый автомобиль</span>' : '') +
+            '</div></td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.price) + '</td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.km) + '</td>' +
             '<td class="text-end text-nowrap text-success">−' + fmtRub(item.km_delta) + '</td>' +

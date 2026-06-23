@@ -3590,6 +3590,7 @@ def deal_calculation_doc(request, id):
         'rlk', 'rlk__staff', 'rlk__unit',
         'unit', 'car', 'car__unit',
         'car__modification_autoru', 'car__modification_autoru__model', 'car__modification_autoru__model__mark',
+        'car__complectation_autoru', 'car__status', 'car__status_availability',
         'director_approve_user', 'director_approve_user__profiles',
         'uk_approve_user', 'uk_approve_user__profiles',
     ).get(pk=id)
