@@ -3645,6 +3645,16 @@ def control_diagnostic_salon(request, id, cd_id):
 
 
 @login_required
+def express_auction_matrix(request):
+    from register.auction_matrix import charge_bcp_for_price
+    try:
+        client_price = int(request.GET.get('auction_client_price', 0) or 0)
+    except (TypeError, ValueError):
+        client_price = 0
+    return JsonResponse(charge_bcp_for_price(client_price))
+
+
+@login_required
 def doc(request, id):
      
     if not request.user.is_authenticated:
@@ -4063,6 +4073,13 @@ def doc(request, id):
         
         from register.interactive_price_history import get_price_recalc_history_for_estimation
 
+        express_auction_store = None
+        try:
+            from eco.auction_express_lot import _resolve_store
+            express_auction_store = _resolve_store(interactiv_rlk)
+        except Exception:
+            express_auction_store = None
+
         params = {
                 'page'                  : page,
                 'type'                  : 'eco',
@@ -4109,6 +4126,7 @@ def doc(request, id):
                 'control_diagnostics'   : estimation.control_diagnostics.all(),
                 'calcs'                 : calcs,
                 'price_recalc_history'  : get_price_recalc_history_for_estimation(estimation, interactiv_rlk=interactiv_rlk),
+                'express_auction_store' : express_auction_store,
             }
     
     elif request.method == "POST":
@@ -4130,6 +4148,45 @@ def doc(request, id):
                 send_web_socket_message(group = 'rlk_' + str(id), chat=chat, user= user, text='Автоматический аукцион подтвержден - ' + comment_cancel_auction, estimation_id= reg_interactiv_ocenka.id)
             
             return HttpResponseRedirect(request.build_absolute_uri())
+
+        if 'create_express_auction' in request.POST:
+            if not request.user.profiles.eco_page_price_info:
+                return HttpResponseRedirect(request.path_info + '?page=20')
+            from eco.auction_express_lot import (
+                ExpressAuctionError,
+                create_and_send_express_auction,
+            )
+            client_price = int(request.POST.get('auction_client_price', '0') or 0)
+            date_start = None
+            date_start_raw = request.POST.get('express_auction_date_start', '').strip()
+            if date_start_raw:
+                date_start = DT.datetime.strptime(date_start_raw, '%Y-%m-%dT%H:%M')
+            redirect_url = request.path_info + '?page=20'
+            try:
+                auction, matrix_info = create_and_send_express_auction(
+                    interactiv_rlk,
+                    reg_interactiv_ocenka,
+                    request.user,
+                    client_price,
+                    date_start,
+                )
+                lot_label = auction.pk_auction or str(auction.uid)
+                price_str = '{:0,.0f}'.format(matrix_info['auction_start_price']).replace(',', ' ')
+                send_web_socket_message(
+                    group='rlk_' + str(id),
+                    chat=chat,
+                    user=user,
+                    text='Создан экспресс-лот №{} · старт {} ₽'.format(lot_label, price_str),
+                    estimation_id=reg_interactiv_ocenka.id,
+                )
+                redirect_url += '&express_auction_ok=1'
+            except ExpressAuctionError as exc:
+                from urllib.parse import quote
+                redirect_url += '&express_auction_error=' + quote(str(exc))
+            except Exception as exc:
+                from urllib.parse import quote
+                redirect_url += '&express_auction_error=' + quote(str(exc))
+            return HttpResponseRedirect(redirect_url)
 
         add_swap(interactiv_rlk.rlk, reg_interactiv_ocenka)
 

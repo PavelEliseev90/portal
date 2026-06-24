@@ -3207,6 +3207,7 @@ class Auction(models.Model):
     winner_email        = models.TextField('Победитель email', blank=True, null=True, max_length=1000, default='')
     winner_price        = models.IntegerField("Выигрышная цена", default=0, blank=True)
     pk_auction          = models.CharField('№ лота', default='', null=True, max_length=12, blank=False)
+    is_express          = models.BooleanField('Экспресс-лот', default=False, blank=True)
 
     def count_cars(self):
         return AuctionStructure.objects.filter(auction = self).count()
