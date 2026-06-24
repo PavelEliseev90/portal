@@ -48,6 +48,9 @@ def build_unit_settings_dc_payload(unit):
     payload = dict(RefUnitSerializer(unit, many=False).data)
     latest_map = get_latest_settings_map_for_unit(unit)
 
+    payload['direction_name'] = unit.direction.name if unit.direction_id else ''
+    payload['price_group_codes'] = [group.code for group in get_active_price_groups()]
+
     for price_group in get_active_price_groups():
         row = latest_map.get(price_group.code)
         if row is not None:

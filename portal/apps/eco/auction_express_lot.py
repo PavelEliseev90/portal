@@ -107,8 +107,6 @@ def build_express_auction_description(estimation, matrix_info, date_start, custo
     if date_start:
         local_dt = timezone.localtime(date_start) if timezone.is_aware(date_start) else date_start
         lines.append('Старт аукциона: {}'.format(local_dt.strftime('%d.%m.%Y %H:%M')))
-    lines.append('Цена клиента: {} ₽'.format(_format_rub(matrix_info.get('client_price'))))
-    lines.append('Наценка по матрице: {} ₽'.format(_format_rub(matrix_info.get('matrix_charge'))))
     lines.append('Стартовая цена: {} ₽'.format(_format_rub(matrix_info.get('auction_start_price'))))
     price_group = matrix_info.get('price_group')
     if price_group:
