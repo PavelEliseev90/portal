@@ -134,9 +134,83 @@ class RefSpecificationDataAdmin(admin.ModelAdmin):
 
 @admin.register(RefAvitoComplectation)
 class RefAvitoComplectationAdmin(admin.ModelAdmin):
-    list_display    = ('pk', 'name', 'avito_ref', )
-    search_fields   = ('name', ) 
+    list_display    = ('pk', 'name', 'avito_ref', 'avito_id', )
+    search_fields   = ('name', 'avito_id', )
     raw_id_fields   = ('avito_ref', )
+
+
+class RefAvitoChildInline(admin.TabularInline):
+    model = RefAvito
+    fk_name = 'parent'
+    extra = 0
+    show_change_link = True
+    fields = (
+        'name', 'avito_id', 'group', 'year_star', 'year_end',
+        'doors', 'engine_volume', 'engine_power',
+    )
+    verbose_name = 'Дочерний элемент каталога'
+    verbose_name_plural = 'Дочерние элементы каталога'
+
+
+class RefAvitoComplectationInline(admin.TabularInline):
+    model = RefAvitoComplectation
+    fk_name = 'avito_ref'
+    extra = 0
+    show_change_link = True
+    fields = ('name', 'avito_id',)
+    verbose_name = 'Комплектация'
+    verbose_name_plural = 'Комплектации'
+
+
+@admin.register(RefAvito)
+class RefAvitoAdmin(DjangoMpttAdmin):
+    prepopulated_fields = {"slug": ("name", "avito_id",)}
+    raw_id_fields = ('parent', 'kpp', 'engine', 'drive', 'body')
+    search_fields = ('name', 'slug', 'avito_id',)
+    list_display = (
+        'name', 'parent', 'group', 'avito_id',
+        'year_star', 'year_end', 'children_count', 'complectations_count',
+    )
+    list_filter = ('group',)
+    readonly_fields = ('hierarchy_path', 'children_count', 'complectations_count')
+    inlines = (RefAvitoChildInline, RefAvitoComplectationInline)
+    fieldsets = (
+        (None, {
+            'fields': (
+                'name', 'slug', 'parent', 'group', 'avito_id', 'hierarchy_path',
+                'children_count', 'complectations_count',
+            ),
+        }),
+        ('Характеристики', {
+            'fields': (
+                'year_star', 'year_end', 'doors',
+                'engine_volume', 'engine_power',
+                'kpp', 'engine', 'drive', 'body',
+            ),
+        }),
+        ('Изображение', {
+            'fields': ('image_url', 'file',),
+        }),
+    )
+
+    @admin.display(description='Путь в каталоге')
+    def hierarchy_path(self, obj):
+        if obj is None or not obj.pk:
+            return '—'
+        return ' → '.join(node.name or '—' for node in obj.get_ancestors(include_self=True))
+
+    @admin.display(description='Дочерних элементов')
+    def children_count(self, obj):
+        if obj is None or not obj.pk:
+            return 0
+        return obj.get_children().count()
+
+    @admin.display(description='Комплектаций')
+    def complectations_count(self, obj):
+        if obj is None or not obj.pk:
+            return 0
+        return RefAvitoComplectation.objects.filter(avito_ref=obj).count()
+
 
 @admin.register(RefEventCarsOrganization)
 class RefEventCarsOrganizationAdmin(admin.ModelAdmin):
@@ -166,12 +240,6 @@ class RefCarsOrganizationAdmin(admin.ModelAdmin):
     raw_id_fields   = ('organization', 'store', 'unit', 'modification_avito', 'complectation_avito', 'modification_autoru', 'complectation_autoru', 'lo', )
     search_fields   = ('vin', )  
     list_filter     = ("quantity", "reserve", 'store', 'unit', 'group_price',)
-
-@admin.register(RefAvito)
-class RefAvitoAdmin(DjangoMpttAdmin):
-    prepopulated_fields = {"slug": ("name", "avito_id",)}
-    raw_id_fields       = ('parent',)
-    search_fields       = ('name', )
 
 
 @admin.register(RefTypeBody)

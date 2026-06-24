@@ -8777,7 +8777,7 @@ def settings_autopricing_korsavto_unit(request, unit_id):
     """
     Страница редактирования настроек автопереоценки для конкретного подразделения Б/У КорсАвто.
     """
-    unit = get_object_or_404(RefUnit, pk=unit_id, buauto=True)
+    unit = get_object_or_404(get_korsavto_units_qs(), pk=unit_id)
     evaluations = RefTypeEvaluationCarsOrganization.objects.all().order_by('name')
 
     if request.method == 'POST':

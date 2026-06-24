@@ -1,4 +1,6 @@
 """Настройки автопереоценки КорсАвто: применение к подразделениям."""
+from django.db.models import Q
+
 from refs.models import RefTypeEvaluationCarsOrganization, RefUnit
 from refs.price_groups import (
     get_active_price_group_codes,
@@ -77,11 +79,28 @@ AUTOPRICING_LEGACY_FIELD_NAMES = [
 ]
 
 
+AUTOPRICING_ASP_DIRECTION_NAME = 'Отдел продаж АСП'
+
+
+def get_autopricing_units_qs():
+    """
+    Подразделения для страницы автопереоценки:
+    - Б/У КорсАвто (buauto + «КорсАвто» в названии);
+    - отделы продаж АСП (direction = «Отдел продаж АСП»).
+    """
+    return (
+        RefUnit.objects
+        .filter(
+            Q(buauto=True, name__icontains='КорсАвто')
+            | Q(direction__name__iexact=AUTOPRICING_ASP_DIRECTION_NAME)
+        )
+        .select_related('city', 'ib', 'direction')
+        .order_by('name')
+    )
+
+
 def get_korsavto_units_qs():
-    return RefUnit.objects.filter(
-        buauto=True,
-        name__icontains='КорсАвто',
-    ).select_related('city', 'ib').order_by('name')
+    return get_autopricing_units_qs()
 
 
 def price_group_form_suffix(price_group):
