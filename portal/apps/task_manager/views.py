@@ -1371,7 +1371,9 @@ def send_auction(auction):
         'uid'               : str(auction.uid),
         'status'            : status_name,
         'user'              : user_data,
-        'cars_info'         : list_cars
+        'cars_info'         : list_cars,
+        'is_express'        : bool(getattr(auction, 'is_express', False)),
+        'lot_type'          : 'express' if getattr(auction, 'is_express', False) else 'standard',
     }
     
     data_info  = json.dumps(json_doc, default=datetime_handler)
