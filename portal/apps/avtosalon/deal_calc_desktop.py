@@ -85,7 +85,10 @@ def desktop_user_query_suffix(view_user, request_user):
 
 
 def _today():
-    return timezone.localdate()
+    now = timezone.now()
+    if timezone.is_aware(now):
+        return timezone.localtime(now).date()
+    return now.date()
 
 
 def _director_unit_ids(user):
