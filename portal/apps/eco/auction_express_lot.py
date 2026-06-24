@@ -15,6 +15,18 @@ class ExpressAuctionError(Exception):
     pass
 
 
+def _is_placeholder_photo(url):
+    if not url:
+        return True
+    return 'nophoto' in str(url).strip().lower()
+
+
+def _filter_photo_urls(urls):
+    if not urls:
+        return []
+    return [url for url in urls if not _is_placeholder_photo(url)]
+
+
 def _format_works(estimation_id):
     from task_manager.views import list_work
 
@@ -30,19 +42,26 @@ def _collect_photo_lists(estimation_id):
         get_url_int,
     )
 
-    vnesh = get_url_int(estimation_id, 'vnesh_car_all') or []
+    vnesh = _filter_photo_urls(get_url_int(estimation_id, 'vnesh_car_all') or [])
     pered = get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_pered')
-    if pered and pered != '/media/nophoto.png' and pered not in vnesh:
+    if pered and not _is_placeholder_photo(pered) and pered not in vnesh:
         vnesh = [pered] + list(vnesh)
+
+    if pered and not _is_placeholder_photo(pered):
+        files_glav = pered
+    elif vnesh:
+        files_glav = vnesh[0]
+    else:
+        files_glav = ''
 
     return {
         'files_car': json.dumps(vnesh, ensure_ascii=False),
-        'files_salon': json.dumps(get_url_int(estimation_id, 'salon') or [], ensure_ascii=False),
-        'files_damages': json.dumps(get_url_int(estimation_id, 'damage') or [], ensure_ascii=False),
-        'files_kolesa': json.dumps(get_url_int(estimation_id, 'wheel') or [], ensure_ascii=False),
-        'files_diagnostic': json.dumps(get_url_int(estimation_id, 'diagnostic') or [], ensure_ascii=False),
+        'files_salon': json.dumps(_filter_photo_urls(get_url_int(estimation_id, 'salon') or []), ensure_ascii=False),
+        'files_damages': json.dumps(_filter_photo_urls(get_url_int(estimation_id, 'damage') or []), ensure_ascii=False),
+        'files_kolesa': json.dumps(_filter_photo_urls(get_url_int(estimation_id, 'wheel') or []), ensure_ascii=False),
+        'files_diagnostic': json.dumps(_filter_photo_urls(get_url_int(estimation_id, 'diagnostic') or []), ensure_ascii=False),
         'files_shema': json.dumps([], ensure_ascii=False),
-        'files_glav': pered if pered and pered != '/media/nophoto.png' else (vnesh[0] if vnesh else ''),
+        'files_glav': files_glav,
     }
 
 
@@ -357,19 +376,20 @@ def build_express_dop_info_for_car(car, estimation, interactiv_rlk=None):
         diagnostika = interactiv_rlk.page_soglasovanie.comment_diagnostica or ''
 
     pered = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pered')
-    url = pered if pered and pered != '/media/nophoto.png' else ''
+    url = pered if pered and not _is_placeholder_photo(pered) else ''
     if not url:
         try:
             images = get_url_images(car.slug)
-            if isinstance(images, list) and images:
-                url = images[0]
-            elif images:
+            if isinstance(images, list):
+                images = _filter_photo_urls(images)
+                url = images[0] if images else ''
+            elif images and not _is_placeholder_photo(images):
                 url = images
         except Exception:
             url = ''
     if not url:
-        vnesh = get_url_int(estimation.id, 'vnesh_car_all') or []
-        url = vnesh[0] if vnesh else '/media/nophoto.png'
+        vnesh = _filter_photo_urls(get_url_int(estimation.id, 'vnesh_car_all') or [])
+        url = vnesh[0] if vnesh else ''
 
     group_id = car.group_price_id if car.group_price_id else None
 
