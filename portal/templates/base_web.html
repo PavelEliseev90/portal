@@ -102,15 +102,6 @@
                                 </a>
                             </li>
 
-                            {% if request.user.profiles.price_car_new_all or request.user.profiles.price_car_new_director %}
-                            <li class="nav-item">
-                                <a class="nav-link text-{% if params.type == 'new_cars_director_desktop' %}secondary active {% else %}white {% endif %}" href="{% url 'prices_car:new_cars_director_desktop' %}">
-                                    <span class="sidebar-icon bi bi-file-earmark-check"></span>
-                                    КП новых АМ
-                                </a>
-                            </li>
-                            {% endif %}
-                            
                             {% if request.user.is_superuser or request.user.profiles.korsavto_settings_dc %}
                             
                                 <li class="nav-item">

@@ -49,7 +49,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto        = 'http://a01srv1cka/zbusiness/hs/mb'
 #url_hs_kors_auto       = 'http://a01srv1cka/zbusiness030724/hs/mb'
-url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
+#url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
+url_hs_alfa_auto        = 'http://k01srv1c05/ralfa01eliseev/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
 url_auction_kors_portal     = 'https://auction.kors-group.ru'
@@ -95,7 +96,7 @@ def send_settings_unit(unit):
             'Type': 'settings_dc',
             'Settings': data_unit,
         }
-        if unit.ib.alfa_auto:
+        if unit.ib.alfa:
             response = requests.post(url_hs_alfa_auto, json=js_data, timeout=60)
         else:
             response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
