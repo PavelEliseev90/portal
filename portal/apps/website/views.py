@@ -280,6 +280,15 @@ def start(request):
             'info'      : info
         }
 
+        from avtosalon.deal_calc_desktop import (
+            build_desktop_context,
+            user_has_deal_calc_director_desktop_access,
+        )
+        if user_has_deal_calc_director_desktop_access(request.user):
+            params['deal_calc_desktop'] = build_desktop_context(request.user)
+        else:
+            params['deal_calc_desktop'] = None
+
         if request.method == "POST":
             if 'updates_ok' in request.POST:
                 id_update = request.POST['id_update']
