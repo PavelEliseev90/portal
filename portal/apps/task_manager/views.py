@@ -95,6 +95,10 @@ def send_settings_unit(unit):
             'Type': 'settings_dc',
             'Settings': data_unit,
         }
+        if unit.ib.alfa_auto:
+            response = requests.post(url_hs_alfa_auto, json=js_data, timeout=60)
+        else:
+            response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
         response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
         result['status_code'] = response.status_code
         if 200 <= response.status_code < 300:

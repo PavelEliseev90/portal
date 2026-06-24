@@ -91,7 +91,7 @@ def get_autopricing_units_qs():
     return (
         RefUnit.objects
         .filter(
-            Q(buauto=True, name__icontains='КорсАвто')
+            Q(buauto=True, name__icontains='КорсАвто', active_eco=True)
             | Q(direction__name__iexact=AUTOPRICING_ASP_DIRECTION_NAME)
         )
         .select_related('city', 'ib', 'direction')
