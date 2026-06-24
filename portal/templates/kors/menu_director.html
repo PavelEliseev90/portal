@@ -464,6 +464,30 @@
       </div>
     {% endif %}
 
+    {% if request.user.profiles.price_car_new_all or request.user.profiles.price_car_new_director %}
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-icon">📄</div>
+        <h3 class="section-card-title">Коммерческие предложения</h3>
+      </div>
+      <p class="section-card-description">
+        Согласование КП по новым автомобилям: очередь, история, полный список калькуляций
+      </p>
+      <div class="action-buttons">
+        <a href="{% url 'prices_car:new_cars_director_desktop' %}" class="action-btn">
+          <span class="action-btn-icon">🖥️</span>
+          <span class="action-btn-text">Рабочий стол КП</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+        <a href="/prices_car/calculations_list/" class="action-btn">
+          <span class="action-btn-icon">📋</span>
+          <span class="action-btn-text">Все коммерческие предложения</span>
+          <span class="action-btn-arrow">→</span>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Подготовка автомобилей -->
     <div class="section-card">
       <div class="section-card-header">
