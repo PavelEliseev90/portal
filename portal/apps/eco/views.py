@@ -4074,11 +4074,15 @@ def doc(request, id):
         from register.interactive_price_history import get_price_recalc_history_for_estimation
 
         express_auction_store = None
+        express_lots = []
         try:
-            from eco.auction_express_lot import _resolve_store
+            from eco.auction_express_lot import _resolve_store, get_express_lots_for_soglasovanie
             express_auction_store = _resolve_store(interactiv_rlk)
+            if interactiv_rlk.page_soglasovanie_id:
+                express_lots = get_express_lots_for_soglasovanie(interactiv_rlk.page_soglasovanie)
         except Exception:
             express_auction_store = None
+            express_lots = []
 
         params = {
                 'page'                  : page,
@@ -4127,6 +4131,7 @@ def doc(request, id):
                 'calcs'                 : calcs,
                 'price_recalc_history'  : get_price_recalc_history_for_estimation(estimation, interactiv_rlk=interactiv_rlk),
                 'express_auction_store' : express_auction_store,
+                'express_lots'          : express_lots,
             }
     
     elif request.method == "POST":
