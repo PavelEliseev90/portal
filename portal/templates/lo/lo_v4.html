@@ -9938,6 +9938,12 @@
                                           <label for="express_auction_date_start">Дата старта аукциона</label>
                                         </div>
                                       </div>
+                                      <div class="col-12">
+                                        <div class="form-floating">
+                                          <textarea class="form-control form-control-sm" name="express_auction_description" id="express_auction_description" rows="5" style="min-height: 7rem;">{% if params.interactiv_rlk.page_soglasovanie.express_auction %}{{ params.interactiv_rlk.page_soglasovanie.express_auction.description }}{% endif %}</textarea>
+                                          <label for="express_auction_description">Описание лота (в документ аукциона)</label>
+                                        </div>
+                                      </div>
                                     </div>
                                     {% if params.interactiv_rlk.page_soglasovanie.express_auction %}
                                     <div class="mt-2 small">
@@ -9966,6 +9972,9 @@
                                     var chargeInput = document.getElementById('auction_matrix_charge');
                                     var groupInput = document.getElementById('auction_matrix_group');
                                     var dateInput = document.getElementById('express_auction_date_start');
+                                    var descInput = document.getElementById('express_auction_description');
+                                    var estimationVin = '{{ params.estimation.vin|default:""|escapejs }}';
+                                    var descTouched = descInput && descInput.value.trim().length > 0;
                                     if (!clientInput || !startInput) return;
 
                                     function pad(n) { return n < 10 ? '0' + n : String(n); }
@@ -9973,6 +9982,40 @@
                                       var d = new Date();
                                       d.setHours(d.getHours() + 1);
                                       dateInput.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+                                    }
+
+                                    function formatRub(value) {
+                                      return (parseInt(value, 10) || 0).toLocaleString('ru-RU');
+                                    }
+
+                                    function formatDateStart() {
+                                      if (!dateInput || !dateInput.value) return '—';
+                                      var parts = dateInput.value.split('T');
+                                      if (parts.length !== 2) return dateInput.value;
+                                      var dateParts = parts[0].split('-');
+                                      return dateParts[2] + '.' + dateParts[1] + '.' + dateParts[0] + ' ' + parts[1];
+                                    }
+
+                                    function updateExpressDescription() {
+                                      if (!descInput || descTouched) return;
+                                      var lines = [
+                                        'Экспресс-лот из интерактивной оценки',
+                                        'VIN: ' + (estimationVin || '—'),
+                                        'Старт аукциона: ' + formatDateStart(),
+                                        'Цена клиента: ' + formatRub(clientInput.value) + ' ₽',
+                                        'Наценка по матрице: ' + (chargeInput ? chargeInput.value : '0') + ' ₽',
+                                        'Стартовая цена: ' + formatRub(startInput.value) + ' ₽'
+                                      ];
+                                      if (groupInput && groupInput.value && groupInput.value !== '—') {
+                                        lines.push('Ценовая группа: ' + groupInput.value);
+                                      }
+                                      descInput.value = lines.join('\n');
+                                    }
+
+                                    if (descInput) {
+                                      descInput.addEventListener('input', function() {
+                                        descTouched = descInput.value.trim().length > 0;
+                                      });
                                     }
 
                                     function recalcExpressAuction() {
@@ -9984,8 +10027,13 @@
                                           chargeInput.value = (data.matrix_charge || 0).toLocaleString('ru-RU');
                                           groupInput.value = data.price_group || '—';
                                           startInput.value = data.auction_start_price || 0;
+                                          updateExpressDescription();
                                         })
                                         .catch(function() {});
+                                    }
+
+                                    if (dateInput) {
+                                      dateInput.addEventListener('change', updateExpressDescription);
                                     }
 
                                     clientInput.addEventListener('input', recalcExpressAuction);

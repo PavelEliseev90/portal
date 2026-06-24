@@ -1308,6 +1308,15 @@ def datetime_handler(obj):
     if isinstance(obj, (datetime, date, time)):
         return str(obj)
 
+def _loads_auction_files_json(value):
+    if not value:
+        return []
+    try:
+        data = json.loads(value)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    return data if isinstance(data, list) else []
+
 def refresh_auction(auction):
     
     r   = requests.get(url_auction_kors_portal + '/api/get_auction/' + str(auction.uid)  +'/', auth=('Admin_auction', 'Audi80b4'))
@@ -1350,22 +1359,44 @@ def send_auction(auction):
     }
 
     cars_auction = auction.cars()
+    is_express = bool(getattr(auction, 'is_express', False))
+    express_estimation_ctx = None
+    if is_express:
+        try:
+            from eco.auction_express_lot import get_express_estimation_for_auction
+            express_estimation_ctx = get_express_estimation_for_auction(auction)
+        except Exception:
+            express_estimation_ctx = None
+
     for auction_car in cars_auction:
+        dop_info = info_car_auction(auction_car.car.slug)
+        if is_express and (
+            not dop_info
+            or not (dop_info.get('mark_name') or dop_info.get('model_name'))
+        ):
+            if express_estimation_ctx:
+                from eco.auction_express_lot import build_express_dop_info_for_car
+                estimation, interactiv_rlk = express_estimation_ctx
+                dop_info = build_express_dop_info_for_car(
+                    auction_car.car,
+                    estimation,
+                    interactiv_rlk,
+                )
         car_info = {
             'car'           : RefCarsOrganizationSerializer(auction_car.car, many=False).data,
             'description'   : auction_car.description,
-            'dop_info'      : info_car_auction(auction_car.car.slug),
+            'dop_info'      : dop_info,
             'diagnostic'    : auction_car.diagnostic,
             'works'         : auction_car.works,
             'op'            : auction_car.op,
             'podgotovka'    : auction_car.podgotovka,
             'autoteka_prev' : auction_car.autoteka_prev,
-            'files_car'             : json.loads(auction_car.files_car),
-            'files_salon'           : json.loads(auction_car.files_salon),
-            'files_shema'           : json.loads(auction_car.files_shema),
-            'files_damages'         : json.loads(auction_car.files_damages),
-            'files_kolesa'          : json.loads(auction_car.files_kolesa),
-            'files_diagnostic'      : json.loads(auction_car.files_diagnostic)
+            'files_car'             : _loads_auction_files_json(auction_car.files_car),
+            'files_salon'           : _loads_auction_files_json(auction_car.files_salon),
+            'files_shema'           : _loads_auction_files_json(auction_car.files_shema),
+            'files_damages'         : _loads_auction_files_json(auction_car.files_damages),
+            'files_kolesa'          : _loads_auction_files_json(auction_car.files_kolesa),
+            'files_diagnostic'      : _loads_auction_files_json(auction_car.files_diagnostic)
         }
         list_cars.append(car_info)
     
@@ -1459,6 +1490,8 @@ def info_car_auction(slug):
                        model_name   = F('modification_autoru__model__name'),
                        mark_name    = F('modification_autoru__model__mark__name'),
                        url          = F('prev_photo')))
+    if not data:
+        return {}
     for car in data:
         car['url']                  = get_url_images(car['slug'])
         car['market_price']         = get_market_price(car)
