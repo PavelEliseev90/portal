@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('refs', '0136_refgroupprice_metadata_unitpricegroupsettings'),
+        ('refs', '0138_refib_alfa'),
     ]
 
     operations = [
