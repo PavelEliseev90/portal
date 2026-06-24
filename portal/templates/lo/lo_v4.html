@@ -9940,30 +9940,33 @@
                                       </div>
                                       <div class="col-12">
                                         <div class="form-floating">
-                                          <textarea class="form-control form-control-sm" name="express_auction_description" id="express_auction_description" rows="5" style="min-height: 7rem;">{% if params.interactiv_rlk.page_soglasovanie.express_auction %}{{ params.interactiv_rlk.page_soglasovanie.express_auction.description }}{% endif %}</textarea>
+                                          <textarea class="form-control form-control-sm" name="express_auction_description" id="express_auction_description" rows="5" style="min-height: 7rem;"></textarea>
                                           <label for="express_auction_description">Описание лота (в документ аукциона)</label>
                                         </div>
                                       </div>
                                     </div>
-                                    {% if params.interactiv_rlk.page_soglasovanie.express_auction %}
+                                    {% if params.express_lots %}
                                     <div class="mt-2 small">
-                                      Экспресс-лот:
-                                      <a href="/auction/{{ params.interactiv_rlk.page_soglasovanie.express_auction.uid }}/" target="_blank">
-                                        {% if params.interactiv_rlk.page_soglasovanie.express_auction.pk_auction %}
-                                          №{{ params.interactiv_rlk.page_soglasovanie.express_auction.pk_auction }}
-                                        {% else %}
-                                          открыть
-                                        {% endif %}
-                                      </a>
-                                      · старт {{ params.interactiv_rlk.page_soglasovanie.express_auction.start_price|floatformat:"0g" }} ₽
+                                      <div class="fw-semibold mb-1">Созданные экспресс-лоты:</div>
+                                      <ul class="mb-0 ps-3">
+                                        {% for lot in params.express_lots %}
+                                        <li class="mb-1">
+                                          <a href="/auction/{{ lot.uid }}/" target="_blank">
+                                            {% if lot.pk_auction %}№{{ lot.pk_auction }}{% else %}открыть{% endif %}
+                                          </a>
+                                          · старт {{ lot.start_price|floatformat:"0g" }} ₽
+                                          {% if lot.dateStart %}· {{ lot.dateStart|date:"d.m.Y H:i" }}{% endif %}
+                                          {% if lot.rejection_reason %}<span class="text-danger">· отклонён</span>{% endif %}
+                                        </li>
+                                        {% endfor %}
+                                      </ul>
                                     </div>
-                                    {% else %}
+                                    {% endif %}
                                     <div class="mt-3">
                                       <button type="submit" name="create_express_auction" value="1" class="btn btn-calculate-sm" {% if not params.express_auction_store %}disabled title="Не указана стоянка в оценке"{% endif %}>
                                         Создать и отправить экспресс-лот
                                       </button>
                                     </div>
-                                    {% endif %}
                                   </form>
                                   <script>
                                   (function() {

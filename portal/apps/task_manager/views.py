@@ -34,7 +34,7 @@ from register.serializers import RegInteractivOcenkaSerializer, RegInteractivOce
 from documents.serializers import DocRLKSerializer
 from dateutil.relativedelta import relativedelta
 from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
-from datetime import datetime, date
+from datetime import datetime, date, time
 import base64
 from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
 from chats.models import ChatMessage, Chat, ChatSuccesDate
@@ -1305,8 +1305,79 @@ def refresh_list_auction_status():
             refresh_auction(auction)
 
 def datetime_handler(obj):
-    if isinstance(obj, (datetime, date, time)):
-        return str(obj)
+    if isinstance(obj, (datetime, date)):
+        return _format_auction_datetime(obj)
+    if isinstance(obj, time):
+        return obj.replace(microsecond=0).strftime('%H:%M:%S')
+    return str(obj)
+
+
+def _format_auction_datetime(value):
+    """Формат даты для импорта на портал аукциона (без микросекунд и таймзоны)."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, datetime):
+        dt = value
+        try:
+            from django.utils import timezone as dj_timezone
+            if dj_timezone.is_aware(dt):
+                dt = dj_timezone.localtime(dt)
+        except Exception:
+            pass
+        return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S')
+    if isinstance(value, date):
+        return value.strftime('%Y-%m-%d')
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        if '.' in text:
+            text = text.split('.')[0]
+        if '+' in text:
+            text = text.split('+')[0].strip()
+        if ' ' in text and 'T' not in text:
+            text = text.replace(' ', 'T', 1)
+        return text
+    return str(value)
+
+
+_AUCTION_CAR_FK_FIELDS = (
+    'organization', 'unit', 'store', 'status', 'type_sale', 'type_reception',
+    'evaluation', 'modification_avito', 'complectation_avito', 'modification_autoru',
+    'complectation_autoru', 'type_body', 'type_engine', 'type_gear', 'type_drive',
+    'stage_price', 'group_price', 'rating', 'status_ransom', 'status_availability',
+    'min_km_user', 'lo',
+)
+
+
+def _safe_auction_fk_dict(value, default_name=''):
+    if value is None:
+        return {'id': None, 'name': default_name}
+    if isinstance(value, dict):
+        safe = dict(value)
+        if safe.get('name') in (None, ''):
+            safe['name'] = default_name
+        return safe
+    return {'id': None, 'name': default_name}
+
+
+def _sanitize_car_payload_for_auction(car_data):
+    """Подготовка car_info для process_lot_cars на портале аукциона."""
+    if not isinstance(car_data, dict):
+        return car_data
+    car_data = dict(car_data)
+    for field in (
+        'lo_link_date', 'date_refresh', 'date_create',
+        'min_km_date', 'date_report', 'date_reserve',
+    ):
+        if field in car_data:
+            car_data[field] = _format_auction_datetime(car_data.get(field))
+    for field in _AUCTION_CAR_FK_FIELDS:
+        if field not in car_data:
+            continue
+        default_name = 'Аукцион' if field == 'type_sale' else ''
+        car_data[field] = _safe_auction_fk_dict(car_data.get(field), default_name=default_name)
+    return car_data
 
 def _loads_auction_files_json(value):
     if not value:
@@ -1383,7 +1454,9 @@ def send_auction(auction):
                     interactiv_rlk,
                 )
         car_info = {
-            'car'           : RefCarsOrganizationSerializer(auction_car.car, many=False).data,
+            'car'           : _sanitize_car_payload_for_auction(
+                RefCarsOrganizationSerializer(auction_car.car, many=False).data
+            ),
             'description'   : auction_car.description,
             'dop_info'      : dop_info,
             'diagnostic'    : auction_car.diagnostic,

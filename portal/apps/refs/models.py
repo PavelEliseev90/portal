@@ -3208,6 +3208,14 @@ class Auction(models.Model):
     winner_price        = models.IntegerField("Выигрышная цена", default=0, blank=True)
     pk_auction          = models.CharField('№ лота', default='', null=True, max_length=12, blank=False)
     is_express          = models.BooleanField('Экспресс-лот', default=False, blank=True)
+    express_source_soglasovanie = models.ForeignKey(
+        'register.RegInteractivOcenkaSoglasovanie',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='express_lots',
+        verbose_name='Источник: согласование ЕЦО',
+    )
 
     def count_cars(self):
         return AuctionStructure.objects.filter(auction = self).count()

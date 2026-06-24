@@ -143,7 +143,7 @@ def _apply_lo_fields(car, lo, interactiv_rlk=None):
     elif interactiv_rlk and interactiv_rlk.rlk and interactiv_rlk.rlk.nomer:
         car.lo_link_number = interactiv_rlk.rlk.nomer
     if lo.dataTime:
-        car.lo_link_date = lo.dataTime
+        car.lo_link_date = lo.dataTime.replace(microsecond=0)
 
 
 def _build_car_name(estimation):
@@ -287,8 +287,23 @@ def get_or_create_express_car(interactiv_rlk, estimation, client_price, start_pr
     return car
 
 
+def get_express_lots_for_soglasovanie(soglasovanie):
+    lots = (
+        Auction.objects
+        .filter(express_source_soglasovanie=soglasovanie, is_express=True)
+        .order_by('-dataTime', '-id')
+    )
+    if lots.exists():
+        return lots
+    if soglasovanie.express_auction_id:
+        return Auction.objects.filter(pk=soglasovanie.express_auction_id)
+    return Auction.objects.none()
+
+
 def get_express_estimation_for_auction(auction):
-    soglasovanie = auction.express_estimations.first()
+    soglasovanie = auction.express_source_soglasovanie
+    if soglasovanie is None:
+        soglasovanie = auction.express_estimations.first()
     if soglasovanie is None:
         return None
     from register.models import RegInteractivOcenkaRLK
@@ -504,6 +519,7 @@ def create_and_send_express_auction(
             dateStart=date_start,
             description=lot_description,
             is_express=True,
+            express_source_soglasovanie=soglasovanie,
         )
         auction.save()
 
