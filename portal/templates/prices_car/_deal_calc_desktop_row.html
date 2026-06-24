@@ -1,0 +1,40 @@
+{% load custom_template_tags %}
+<tr>
+  <td>
+    <a href="/cars/deal/calculation/{{ item.pk }}/" class="fw-semibold text-decoration-none">
+      #{{ item.number|default:item.pk }}
+    </a>
+  </td>
+  <td>{{ item.date|date:"d.m.Y H:i" }}</td>
+  <td>{{ item.unit.name|default:"—" }}</td>
+  <td>
+    {% if item.car %}
+      {{ item.car.name|default:"—" }}
+      {% if item.car.vin %}<br><small class="text-muted">{{ item.car.vin }}</small>{% endif %}
+    {% else %}—{% endif %}
+  </td>
+  <td>{{ item.kvp|default:"—" }}</td>
+  <td>
+    {% if item.soglasovanie_status == 'director_approved' or item.soglasovanie_status == 'uk_approved' %}
+      <span class="badge bg-success">{{ item.get_soglasovanie_status_display }}</span>
+    {% elif item.soglasovanie_status == 'pending_uk' %}
+      <span class="badge bg-warning text-dark">{{ item.get_soglasovanie_status_display }}</span>
+    {% elif item.soglasovanie_status == 'director_rejected' or item.soglasovanie_status == 'uk_rejected' %}
+      <span class="badge bg-danger">{{ item.get_soglasovanie_status_display }}</span>
+    {% else %}
+      <span class="badge bg-secondary">{{ item.get_soglasovanie_status_display|default:"Ожидает директора ДЦ" }}</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if item.director_approve_user %}
+      {{ item.director_approve_user.get_full_name|default:item.director_approve_user.username }}
+      {% if item.director_approve_date %}<br><small class="text-muted">{{ item.director_approve_date|date:"d.m.Y H:i" }}</small>{% endif %}
+    {% else %}—{% endif %}
+  </td>
+  <td>
+    {% if item.uk_approve_user %}
+      {{ item.uk_approve_user.get_full_name|default:item.uk_approve_user.username }}
+      {% if item.uk_approve_date %}<br><small class="text-muted">{{ item.uk_approve_date|date:"d.m.Y H:i" }}</small>{% endif %}
+    {% else %}—{% endif %}
+  </td>
+</tr>

@@ -1,0 +1,9 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — рабочий стол директора новых АМ {% endblock %}
+{% block title_navbar %} — рабочий стол директора новых АМ {% endblock %}
+
+{% block content %}
+{% include 'prices_car/_new_cars_director_desktop_block.html' with desktop=params.desktop embedded=False %}
+{% endblock %}

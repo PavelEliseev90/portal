@@ -99,6 +99,27 @@ def director_dashboard(request):
 
 
 @login_required
+def new_cars_director_desktop(request):
+    """Рабочий стол директора новых автомобилей: очередь согласования КП и история."""
+    from avtosalon.deal_calc_desktop import (
+        build_desktop_context,
+        user_has_deal_calc_director_desktop_access,
+    )
+
+    if not user_has_deal_calc_director_desktop_access(request.user):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Нет доступа к рабочему столу директора новых автомобилей.')
+
+    desktop = build_desktop_context(request.user)
+    return render(request, 'prices_car/new_cars_director_desktop.html', {
+        'params': {
+            'type': 'new_cars_director_desktop',
+            'desktop': desktop,
+        },
+    })
+
+
+@login_required
 def brands_get_models(request):
     """AJAX: модели по выбранным маркам (для форм брендов, калькуляций и т.п.)."""
     mark_ids = request.GET.getlist('mark_ids[]') or request.GET.getlist('mark_ids')
