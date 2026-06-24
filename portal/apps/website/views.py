@@ -10294,24 +10294,24 @@ def test(request):
 
     #from prices_car.views import refresh_km_cars, send_km_car_1C
     #send_km_car_1C()
-
-
+    from task_manager.views import swap_estimation
+    swap_estimation()
     #refresh_km_cars()
     from prices_car.views import refresh_km_cars, send_km_car_1C
     
-    refresh_km_cars()
-    send_km_car_1C()
+    #refresh_km_cars()
+    #send_km_car_1C()
 
     # from task_manager.views import send_push_car
     
     # send_km_car_1C()
     
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     # refresh_avtoteka_vin()
 

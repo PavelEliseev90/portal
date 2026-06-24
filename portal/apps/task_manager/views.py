@@ -1180,6 +1180,12 @@ def get_info_max(interactiv_rlk, estimation_id):
             "yearTo"        : year_end
         }
         
+        imvFilter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification
+        }
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
         salesFromDate = salesFromDate.replace(day=1, hour=1)
 
@@ -1212,6 +1218,7 @@ def get_info_max(interactiv_rlk, estimation_id):
             'dealerId'          : 2107,
             'marketFilter'      : marketFilter,
             'filter'            : filter,
+            'imvFilter'         : imvFilter,
             'vehicle'           : vehicle 
         }
         
@@ -2906,7 +2913,10 @@ def swap_estimation():
                     'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
                     'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
                 }
-                if rlk.unit.ib.alfa:
+                unit = rlk.unit
+                if unit == None:
+                    unit = rlk.unit_dc
+                if unit.ib.alfa:
                     response = requests.post(url_hs_alfa_auto, json=js_data)
                 else:
                     response = requests.post(url_hs_kors_auto, json=js_data)
@@ -2921,22 +2931,28 @@ def swap_estimation():
             #    s = 1
                 
         elif info.rlk != None:
-            js_data = {
-                'Type'  : 'rlk', 
-                'Rlk'   : DocRLKSerializer(info.rlk, many=False).data        
-            }
-            if info.rlk.unit.ib.alfa:
-                response = requests.post(url_hs_alfa_auto, json=js_data)
-            else:
-                response = requests.post(url_hs_kors_auto, json=js_data)
-            #response = requests.post(url_hs_kors_auto, json=js_data)
-            if response.status_code == 200:
-                info.status_code = 200
-                info.status = 'Ok'
-                info.status_date = DT.datetime.now()
-                info.save()
-            else:
-                s = 1
+            try:
+                js_data = {
+                    'Type'  : 'rlk', 
+                    'Rlk'   : DocRLKSerializer(info.rlk, many=False).data        
+                }
+                unit = info.rlk.unit
+                if unit == None:
+                    unit = info.rlk.unit_dc
+                if unit != None and unit.ib.alfa:
+                    response = requests.post(url_hs_alfa_auto, json=js_data)
+                else:
+                    response = requests.post(url_hs_kors_auto, json=js_data)
+                #response = requests.post(url_hs_kors_auto, json=js_data)
+                if response.status_code == 200:
+                    info.status_code = 200
+                    info.status = 'Ok'
+                    info.status_date = DT.datetime.now()
+                    info.save()
+                else:
+                    s = 1
+            except:
+                s = 1   
 
     s = 1
     
