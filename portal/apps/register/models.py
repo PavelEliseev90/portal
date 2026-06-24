@@ -2474,6 +2474,17 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
     zna_to_amount                   = models.IntegerField('ЦНА - затраты', default=0, null=True, blank=True)
     
     price_auto_auction              = models.BooleanField("Автоматически аукцион", default = False, null=True, blank=True)
+
+    auction_client_price            = models.IntegerField('Цена клиента (экспресс-аукцион)', default=0, null=True, blank=True)
+    auction_start_price             = models.IntegerField('Стартовая цена аукцион', default=0, null=True, blank=True)
+    express_auction                 = models.ForeignKey(
+        'refs.Auction',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='express_estimations',
+        verbose_name='Экспресс-лот аукциона',
+    )
     
     zachita_ot_ubitka               = models.FloatField('Защита от убытка', default=0.00, null=True, blank=True)
     finance_price                   = models.FloatField('Финансирование', default=0.00, null=True, blank=True)
