@@ -4161,6 +4161,7 @@ def doc(request, id):
             date_start_raw = request.POST.get('express_auction_date_start', '').strip()
             if date_start_raw:
                 date_start = DT.datetime.strptime(date_start_raw, '%Y-%m-%dT%H:%M')
+            lot_description = request.POST.get('express_auction_description', '').strip()
             redirect_url = request.path_info + '?page=20'
             try:
                 auction, matrix_info = create_and_send_express_auction(
@@ -4169,6 +4170,7 @@ def doc(request, id):
                     request.user,
                     client_price,
                     date_start,
+                    lot_description=lot_description or None,
                 )
                 lot_label = auction.pk_auction or str(auction.uid)
                 price_str = '{:0,.0f}'.format(matrix_info['auction_start_price']).replace(',', ' ')
