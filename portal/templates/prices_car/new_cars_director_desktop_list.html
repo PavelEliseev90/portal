@@ -1,0 +1,84 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — {{ params.list.section_label }} {% endblock %}
+{% block title_navbar %} — {{ params.list.section_label }} {% endblock %}
+
+{% block content %}
+<style>
+  .ncd-list-page { padding: 1.25rem; }
+  .ncd-list-header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 1rem; margin-bottom: 1.25rem;
+  }
+  .ncd-list-header h1 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin: 0; }
+  .ncd-list-meta { color: #6c7a92; font-size: 0.9rem; }
+  .ncd-list-table-wrap { overflow-x: auto; background: #fff; border-radius: 1rem; border: 1px solid #e8eef5; }
+  .ncd-list-table { width: 100%; font-size: 0.9rem; margin-bottom: 0; }
+  .ncd-list-table th {
+    color: #6c7a92; font-weight: 600; white-space: nowrap;
+    border-bottom: 2px solid #e8eef5; padding: 0.65rem 0.5rem;
+  }
+  .ncd-list-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
+  .ncd-list-empty { padding: 2rem; text-align: center; color: #8ea1ba; }
+</style>
+
+{% with list=params.list %}
+<div class="ncd-list-page">
+  <div class="ncd-list-header">
+    <div>
+      <h1>{{ list.section_label }}</h1>
+      <div class="ncd-list-meta">
+        {{ list.role_label }}
+        {% if list.count_today %}· сегодня: {{ list.count_today }}{% endif %}
+        · всего в списке: {{ list.objects.paginator.count }}
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ list.desktop_url }}" class="btn btn-outline-primary btn-sm">← Рабочий стол</a>
+      <a href="{{ list.calculations_list_url }}" class="btn btn-primary btn-sm">Все КП</a>
+    </div>
+  </div>
+
+  {% if list.objects.paginator.count %}
+  <div class="ncd-list-table-wrap">
+    <table class="ncd-list-table table table-sm table-hover">
+      <thead>
+        <tr>
+          <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
+          <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in list.objects %}
+          {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if list.objects.has_other_pages %}
+  <nav class="mt-3" aria-label="Страницы">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if list.objects.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ list.objects.previous_page_number }}{% if list.user_query_suffix %}&user_id={{ list.view_user_id }}{% endif %}">Назад</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled">
+        <span class="page-link">{{ list.objects.number }} / {{ list.objects.paginator.num_pages }}</span>
+      </li>
+      {% if list.objects.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ list.objects.next_page_number }}{% if list.user_query_suffix %}&user_id={{ list.view_user_id }}{% endif %}">Вперёд</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="ncd-list-empty">Нет коммерческих предложений в этом разделе</div>
+  {% endif %}
+</div>
+{% endwith %}
+{% endblock %}

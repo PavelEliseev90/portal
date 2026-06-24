@@ -31,33 +31,38 @@
   .ncd-block .ncd-btn-primary:hover { background: #f0f4fa; color: #002a5a; }
   .ncd-block .ncd-btn-outline { border: 1px solid rgba(255,255,255,0.5); color: #fff; }
   .ncd-block .ncd-btn-outline:hover { background: rgba(255,255,255,0.12); color: #fff; }
-  .ncd-block .ncd-stat {
-    background: #f8fafc; border-radius: 0.85rem; padding: 1rem 1.15rem;
-    border: 1px solid #e8eef5;
-  }
-  .ncd-block .ncd-stat-value { font-size: 1.75rem; font-weight: 700; color: #002a5a; line-height: 1; }
-  .ncd-block .ncd-stat-label { color: #6c7a92; font-size: 0.85rem; margin-top: 0.25rem; }
-  .ncd-block .ncd-section {
-    background: #fff; border-radius: 0.85rem; padding: 1rem 1.15rem;
-    border: 1px solid #e8eef5; margin-bottom: 1rem;
-  }
-  .ncd-block.ncd-embedded .ncd-section { background: #fafbfd; }
-  .ncd-block .ncd-section h3 {
-    font-size: 1rem; font-weight: 700; color: #002a5a;
-    margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.4rem;
-  }
-  .ncd-block .ncd-table-wrap { overflow-x: auto; }
-  .ncd-block .ncd-table { width: 100%; font-size: 0.85rem; margin-bottom: 0; }
-  .ncd-block .ncd-table th {
-    color: #6c7a92; font-weight: 600; white-space: nowrap;
-    border-bottom: 2px solid #e8eef5; padding: 0.5rem 0.4rem;
-  }
-  .ncd-block .ncd-table td { padding: 0.55rem 0.4rem; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
-  .ncd-block .ncd-empty { color: #8ea1ba; padding: 1rem 0; text-align: center; font-size: 0.9rem; }
   .ncd-block .ncd-badge-role {
     display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px;
     background: rgba(255,255,255,0.2); font-size: 0.8rem; font-weight: 600;
     margin-bottom: 0.35rem;
+  }
+  .ncd-block .ncd-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.85rem;
+  }
+  .ncd-block .ncd-tile {
+    display: flex; flex-direction: column; align-items: flex-start;
+    padding: 1rem 1.1rem; border-radius: 0.9rem;
+    background: #fff; border: 1px solid #e8eef5;
+    text-decoration: none; color: #002a5a;
+    transition: all 0.2s ease; min-height: 110px;
+  }
+  .ncd-block.ncd-embedded .ncd-tile { background: #fafbfd; }
+  .ncd-block .ncd-tile:hover {
+    border-color: #00509d; box-shadow: 0 6px 20px rgba(0, 42, 90, 0.12);
+    transform: translateY(-2px); color: #002a5a;
+  }
+  .ncd-block .ncd-tile-icon { font-size: 1.25rem; margin-bottom: 0.35rem; }
+  .ncd-block .ncd-tile-count {
+    font-size: 2rem; font-weight: 700; line-height: 1; color: #00509d;
+  }
+  .ncd-block .ncd-tile-count-zero { color: #8ea1ba; }
+  .ncd-block .ncd-tile-label {
+    font-size: 0.88rem; font-weight: 600; margin-top: 0.35rem; line-height: 1.3;
+  }
+  .ncd-block .ncd-tile-hint {
+    font-size: 0.75rem; color: #8ea1ba; margin-top: 0.35rem;
   }
   .ncd-block.ncd-page {
     background: linear-gradient(135deg, #f4f7fb 0%, #e8f0f8 100%);
@@ -68,10 +73,6 @@
     box-shadow: 0 16px 40px rgba(0, 42, 90, 0.25);
   }
   .ncd-block.ncd-page .ncd-header h1 { font-size: 1.75rem; }
-  .ncd-block.ncd-page .ncd-section {
-    box-shadow: 0 8px 24px rgba(0, 42, 90, 0.08); border: none;
-    border-radius: 1.25rem; padding: 1.25rem 1.5rem;
-  }
 </style>
 
 <div class="ncd-block {% if embedded %}ncd-embedded{% else %}ncd-page{% endif %}">
@@ -82,154 +83,27 @@
     {% else %}
     <h1>Рабочий стол директора новых автомобилей</h1>
     {% endif %}
-    <p>Согласование коммерческих предложений</p>
+    <p>Согласование коммерческих предложений · счётчики за сегодня</p>
     <div class="ncd-actions">
       <a href="{{ desktop.calculations_list_url }}" class="ncd-btn ncd-btn-primary">
         📋 Все коммерческие предложения
       </a>
-      {% if desktop.pending_count %}
-      <a href="{{ desktop.pending_list_url }}" class="ncd-btn ncd-btn-outline">
-        ⏳ Очередь ({{ desktop.pending_count }})
-      </a>
-      {% endif %}
       {% if embedded %}
-      <a href="{% url 'prices_car:new_cars_director_desktop' %}" class="ncd-btn ncd-btn-outline">
+      <a href="{{ desktop.desktop_url }}" class="ncd-btn ncd-btn-outline">
         ↗ На отдельной странице
       </a>
       {% endif %}
     </div>
   </div>
 
-  <div class="row g-3 mb-3">
-    <div class="col-sm-6 col-lg-4">
-      <div class="ncd-stat">
-        <div class="ncd-stat-value">{{ desktop.pending_count }}</div>
-        <div class="ncd-stat-label">
-          {% if desktop.role == 'uk' %}Ожидают согласования УК{% else %}Ожидают согласования директора{% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="ncd-section">
-    <h3>{% if desktop.role == 'uk' %}⏳ На согласовании УК{% else %}⏳ Требуется согласование директора ДЦ{% endif %}</h3>
-    {% if desktop.pending_queue %}
-    <div class="ncd-table-wrap">
-      <table class="ncd-table table table-sm table-hover">
-        <thead>
-          <tr>
-            <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
-            <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in desktop.pending_queue %}
-            {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% if desktop.pending_count > desktop.pending_queue|length %}
-    <div class="text-end mt-2">
-      <a href="{{ desktop.pending_list_url }}">Показать все в списке →</a>
-    </div>
-    {% endif %}
-    {% else %}
-    <div class="ncd-empty">Нет коммерческих предложений в очереди</div>
-    {% endif %}
-  </div>
-
-  {% if desktop.role == 'uk' %}
-  <div class="ncd-section">
-    <h3>📜 История: дошли до согласования УК</h3>
-    {% if desktop.uk_reached_history %}
-    <div class="ncd-table-wrap">
-      <table class="ncd-table table table-sm table-hover">
-        <thead>
-          <tr>
-            <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
-            <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in desktop.uk_reached_history %}
-            {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="ncd-empty">Пока нет записей</div>
-    {% endif %}
-  </div>
-
-  <div class="ncd-section">
-    <h3>✅ Согласования директорами ДЦ</h3>
-    {% if desktop.director_approvals_history %}
-    <div class="ncd-table-wrap">
-      <table class="ncd-table table table-sm table-hover">
-        <thead>
-          <tr>
-            <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
-            <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in desktop.director_approvals_history %}
-            {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="ncd-empty">Пока нет записей</div>
-    {% endif %}
-  </div>
-  {% else %}
-  <div class="ncd-section">
-    <h3>📜 История согласований по вашим подразделениям</h3>
-    {% if desktop.director_processed_history %}
-    <div class="ncd-table-wrap">
-      <table class="ncd-table table table-sm table-hover">
-        <thead>
-          <tr>
-            <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
-            <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in desktop.director_processed_history %}
-            {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="ncd-empty">Пока нет записей</div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <div class="ncd-section mb-0">
-    <h3>🤖 Автоматически согласованные</h3>
-    {% if desktop.auto_approved_history %}
-    <div class="ncd-table-wrap">
-      <table class="ncd-table table table-sm table-hover">
-        <thead>
-          <tr>
-            <th>КП</th><th>Дата</th><th>ДЦ</th><th>Автомобиль</th>
-            <th>КВ</th><th>Статус</th><th>Директор</th><th>УК</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in desktop.auto_approved_history %}
-            {% include 'prices_car/_deal_calc_desktop_row.html' with item=item %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="ncd-empty">Пока нет автоматически согласованных КП</div>
-    {% endif %}
+  <div class="ncd-tiles">
+    {% for tile in desktop.tiles %}
+    <a href="{{ tile.url }}" class="ncd-tile">
+      <span class="ncd-tile-icon">{{ tile.icon }}</span>
+      <span class="ncd-tile-count {% if not tile.count_today %}ncd-tile-count-zero{% endif %}">{{ tile.count_today }}</span>
+      <span class="ncd-tile-label">{{ tile.label }}</span>
+      <span class="ncd-tile-hint">сегодня · открыть список</span>
+    </a>
+    {% endfor %}
   </div>
 </div>

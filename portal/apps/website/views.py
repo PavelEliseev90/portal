@@ -284,8 +284,8 @@ def start(request):
             build_desktop_context,
             user_has_deal_calc_director_desktop_access,
         )
-        if user_has_deal_calc_director_desktop_access(request.user):
-            params['deal_calc_desktop'] = build_desktop_context(request.user)
+        if user_has_deal_calc_director_desktop_access(user):
+            params['deal_calc_desktop'] = build_desktop_context(user, request_user=request.user)
         else:
             params['deal_calc_desktop'] = None
 

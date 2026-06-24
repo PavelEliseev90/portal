@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('director/', views.director_dashboard, name='director'),
     path('director/kp/', views.new_cars_director_desktop, name='new_cars_director_desktop'),
+    path('director/kp/<slug:section>/', views.new_cars_director_desktop_list, name='new_cars_director_desktop_list'),
     path('calculations_list/', views.calculations_list, name='calculations_list'),
     path('calculations_list/export/', views.calculations_list_export, name='calculations_list_export'),
     path('calculations_list/columns/', views.calculations_list_columns_save, name='calculations_list_columns_save'),

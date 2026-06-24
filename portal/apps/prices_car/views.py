@@ -100,21 +100,70 @@ def director_dashboard(request):
 
 @login_required
 def new_cars_director_desktop(request):
-    """Рабочий стол директора новых автомобилей: очередь согласования КП и история."""
+    """Рабочий стол директора новых автомобилей: плитки со счётчиками."""
     from avtosalon.deal_calc_desktop import (
         build_desktop_context,
-        user_has_deal_calc_director_desktop_access,
+        can_view_desktop_as,
+        resolve_desktop_user,
     )
 
-    if not user_has_deal_calc_director_desktop_access(request.user):
+    view_user = resolve_desktop_user(request)
+    if not can_view_desktop_as(request, view_user):
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden('Нет доступа к рабочему столу директора новых автомобилей.')
 
-    desktop = build_desktop_context(request.user)
+    desktop = build_desktop_context(view_user, request_user=request.user)
+    if desktop is None:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Нет доступа к рабочему столу директора новых автомобилей.')
+
     return render(request, 'prices_car/new_cars_director_desktop.html', {
         'params': {
             'type': 'new_cars_director_desktop',
             'desktop': desktop,
+        },
+    })
+
+
+@login_required
+def new_cars_director_desktop_list(request, section):
+    """Список КП по разделу рабочего стола директора новых АМ."""
+    from avtosalon.deal_calc_desktop import (
+        build_section_list_context,
+        can_view_desktop_as,
+        get_desktop_role,
+        get_section_queryset,
+        resolve_desktop_user,
+        section_allowed_for_role,
+    )
+
+    view_user = resolve_desktop_user(request)
+    if not can_view_desktop_as(request, view_user):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Нет доступа.')
+
+    role = get_desktop_role(view_user)
+    if not role or not section_allowed_for_role(section, role):
+        raise Http404
+
+    objects = get_section_queryset(view_user, role, section)
+    paginator = Paginator(objects, 50)
+    page_number = request.GET.get('page') or 1
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    list_ctx = build_section_list_context(view_user, role, section, request_user=request.user)
+    list_ctx['objects'] = page_obj
+    list_ctx['paginator'] = paginator
+
+    return render(request, 'prices_car/new_cars_director_desktop_list.html', {
+        'params': {
+            'type': 'new_cars_director_desktop',
+            'list': list_ctx,
         },
     })
 
