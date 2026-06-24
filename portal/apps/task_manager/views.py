@@ -1305,15 +1305,15 @@ def refresh_list_auction_status():
             refresh_auction(auction)
 
 def datetime_handler(obj):
+    """Fallback при json.dumps: даты лота без T (как date_start)."""
     if isinstance(obj, (datetime, date)):
-        return _format_auction_datetime(obj)
+        return _format_auction_datetime(obj, 'space')
     if isinstance(obj, time):
         return obj.replace(microsecond=0).strftime('%H:%M:%S')
     return str(obj)
 
 
-def _format_auction_datetime(value):
-    """Формат даты для портала аукциона: YYYY-MM-DD HH:MM:SS (без микросекунд, без T)."""
+def _normalize_auction_dt(value):
     if value is None or value == '':
         return None
     if isinstance(value, datetime):
@@ -1324,22 +1324,58 @@ def _format_auction_datetime(value):
                 dt = dj_timezone.localtime(dt)
         except Exception:
             pass
-        return dt.replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-    if isinstance(value, date):
-        return value.strftime('%Y-%m-%d')
+        return dt.replace(tzinfo=None)
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return datetime.combine(value, time.min)
     if isinstance(value, str):
         text = value.strip()
         if not text:
             return None
-        if '.' in text:
-            text = text.split('.')[0]
-        if '+' in text:
-            text = text.split('+')[0].strip()
-        if 'T' in text:
-            text = text.replace('T', ' ', 1)
-        return text
-    return str(value)
+        text = text.split('+')[0].strip()
+        if text.endswith('Z'):
+            text = text[:-1]
+        for fmt in (
+            '%Y-%m-%dT%H:%M:%S.%f',
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d',
+        ):
+            try:
+                return datetime.strptime(text, fmt)
+            except ValueError:
+                continue
+        try:
+            return datetime.fromisoformat(text)
+        except ValueError:
+            return None
+    return None
 
+
+def _format_auction_datetime(value, fmt='space'):
+    """
+    Форматы под парсинг на портале аукциона:
+    - space:       %Y-%m-%d %H:%M:%S       (date_start, date_end)
+    - iso_t:       %Y-%m-%dT%H:%M:%S       (lo_link_date)
+    - iso_t_micro: %Y-%m-%dT%H:%M:%S.%f    (date_create)
+    """
+    dt = _normalize_auction_dt(value)
+    if dt is None:
+        return None
+    if fmt == 'iso_t':
+        return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S')
+    if fmt == 'iso_t_micro':
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')
+    return dt.replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
+
+
+_AUCTION_CAR_DATE_FORMATS = {
+    'lo_link_date': 'iso_t',
+    'date_create': 'iso_t_micro',
+    'date_refresh': 'iso_t',
+    'min_km_date': 'iso_t',
+    'date_report': 'iso_t',
+    'date_reserve': 'iso_t',
+}
 
 _AUCTION_CAR_FK_FIELDS = (
     'organization', 'unit', 'store', 'status', 'type_sale', 'type_reception',
@@ -1366,12 +1402,9 @@ def _sanitize_car_payload_for_auction(car_data):
     if not isinstance(car_data, dict):
         return car_data
     car_data = dict(car_data)
-    for field in (
-        'lo_link_date', 'date_refresh', 'date_create',
-        'min_km_date', 'date_report', 'date_reserve',
-    ):
+    for field, fmt in _AUCTION_CAR_DATE_FORMATS.items():
         if field in car_data:
-            car_data[field] = _format_auction_datetime(car_data.get(field))
+            car_data[field] = _format_auction_datetime(car_data.get(field), fmt)
     for field in _AUCTION_CAR_FK_FIELDS:
         if field not in car_data:
             continue
@@ -1474,10 +1507,10 @@ def send_auction(auction):
         list_cars.append(car_info)
     
     json_doc = {
-        'date_start'        : auction.dateStart,
+        'date_start'        : _format_auction_datetime(auction.dateStart, 'space'),
         'store'             : store_serializer,
-        'date_create'       : auction.dataTime,
-        'date_end'          : auction.dateEnd,
+        'date_create'       : _format_auction_datetime(auction.dataTime, 'iso_t_micro'),
+        'date_end'          : _format_auction_datetime(auction.dateEnd, 'space'),
         'description'       : auction.description,
         'start_price'       : auction.start_price,
         'uid'               : str(auction.uid),
