@@ -1313,7 +1313,7 @@ def datetime_handler(obj):
 
 
 def _format_auction_datetime(value):
-    """Формат даты для импорта на портал аукциона (без микросекунд и таймзоны)."""
+    """Формат даты для портала аукциона: YYYY-MM-DD HH:MM:SS (без микросекунд, без T)."""
     if value is None or value == '':
         return None
     if isinstance(value, datetime):
@@ -1324,7 +1324,7 @@ def _format_auction_datetime(value):
                 dt = dj_timezone.localtime(dt)
         except Exception:
             pass
-        return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S')
+        return dt.replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
     if isinstance(value, date):
         return value.strftime('%Y-%m-%d')
     if isinstance(value, str):
@@ -1335,8 +1335,8 @@ def _format_auction_datetime(value):
             text = text.split('.')[0]
         if '+' in text:
             text = text.split('+')[0].strip()
-        if ' ' in text and 'T' not in text:
-            text = text.replace(' ', 'T', 1)
+        if 'T' in text:
+            text = text.replace('T', ' ', 1)
         return text
     return str(value)
 
