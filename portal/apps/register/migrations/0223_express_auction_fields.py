@@ -4,8 +4,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('refs', '0136_refgroupprice_metadata_unitpricegroupsettings'),
-        ('register', '0221_reginteractivocenkaprice_history_fields'),
+        ('refs', '0139_auction_is_express'),
+        ('register', '0222_alter_reginteractivocenkaprice_options_and_more'),
     ]
 
     operations = [
