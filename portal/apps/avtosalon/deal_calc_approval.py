@@ -180,31 +180,159 @@ def notify_director_users_calculation_approval(calculation_object, car_object, u
         pass
 
 
-def notify_uk_users_calculation_approval(calc, car_object=None):
-    """Email всем с price_car_new_all («Ценообразование новых всех ДЦ»)."""
+def _actor_display_name(user):
+    if not user:
+        return ''
+    profile = _get_profile(user)
+    if profile and profile.eco_name:
+        return profile.eco_name
+    return user.get_full_name() or user.username
+
+
+def _build_soglasovanie_email_comment(calc, title, result_comment, actor_user=None):
+    number = calc.number or calc.pk
+    parts = ['КП #{}: {}'.format(number, title)]
+    actor_name = _actor_display_name(actor_user)
+    if actor_name:
+        parts.append('Исполнитель: {}'.format(actor_name))
+    text = (result_comment or '').strip()
+    if text:
+        parts.append('Комментарий: {}'.format(text))
+    return '. '.join(parts)
+
+
+def _enqueue_calc_soglasovanie_email(calc, user, comment):
     from prices_car.models import EmailPushCar
 
-    car = car_object or calc.car
-    if not car:
-        return
+    car = calc.car
+    if not car or not user or not (user.email or '').strip():
+        return False
+    EmailPushCar.objects.create(
+        car=car,
+        user=user,
+        email=user.email,
+        comment=comment,
+        price=False,
+        calc=calc,
+    )
+    return True
 
-    try:
-        users_uk = User.objects.filter(
+
+def _collect_calc_result_recipients(calc, actor_user=None, include_director=True):
+    """Автор, менеджер КП и директор, отправивший в УК (без исполнителя действия)."""
+    recipients = []
+    seen = set()
+    actor_id = actor_user.pk if actor_user else None
+
+    def add(user):
+        if not user or not user.is_active or not (user.email or '').strip():
+            return
+        if user.pk in seen or user.pk == actor_id:
+            return
+        seen.add(user.pk)
+        recipients.append(user)
+
+    if calc.user_id:
+        add(calc.user)
+    for staff in (calc.author, calc.staff):
+        if staff and staff.domain_login:
+            add(User.objects.filter(username__iexact=staff.domain_login, is_active=True).first())
+    if include_director and calc.director_approve_user_id:
+        add(calc.director_approve_user)
+    return recipients
+
+
+def _collect_director_approve_email_recipients(calc, actor_user=None):
+    """Автор КП и директора ДЦ подразделения (без исполнителя согласования)."""
+    recipients = []
+    seen = set()
+    actor_id = actor_user.pk if actor_user else None
+
+    def add(user):
+        if not user or not user.is_active or not (user.email or '').strip():
+            return
+        if user.pk in seen or user.pk == actor_id:
+            return
+        seen.add(user.pk)
+        recipients.append(user)
+
+    if calc.author and calc.author.domain_login:
+        add(User.objects.filter(username__iexact=calc.author.domain_login, is_active=True).first())
+    elif calc.user_id:
+        add(calc.user)
+
+    unit_id = get_calc_unit_id(calc)
+    if unit_id:
+        for user in User.objects.filter(
             is_active=True,
-            profiles__price_car_new_all=True,
-        ).distinct()
-        for uusr in users_uk:
-            if uusr.email:
-                new_message = EmailPushCar()
-                new_message.car = car
-                new_message.user = uusr
-                new_message.email = uusr.email
-                new_message.comment = 'Требуется согласование УК'
-                new_message.price = False
-                new_message.calc = calc
-                new_message.save()
+            profiles__price_car_new_director=True,
+            profiles__available_units__pk=unit_id,
+        ).distinct():
+            add(user)
+    return recipients
+
+
+def _trigger_calc_email_send():
+    try:
+        from task_manager.views import start_send_push_car
+        start_send_push_car()
     except Exception:
         pass
+
+
+def notify_calc_soglasovanie_result_email(calc, event, result_comment, actor_user):
+    """
+    Письмо с результатом согласования КП.
+    event: director_approve | director_send_uk | director_reject | uk_approve | uk_reject
+    """
+    titles = {
+        'director_approve': 'Согласовано директором ДЦ',
+        'director_send_uk': 'Отправлено на согласование УК',
+        'director_reject': 'Отказ в согласовании директором ДЦ',
+        'uk_approve': 'Согласовано УК',
+        'uk_reject': 'Отказ в согласовании УК',
+    }
+    title = titles.get(event)
+    if not title or not calc.car_id:
+        return
+
+    comment = _build_soglasovanie_email_comment(calc, title, result_comment, actor_user)
+    sent = False
+
+    try:
+        if event == 'director_send_uk':
+            users_uk = User.objects.filter(
+                is_active=True,
+                profiles__price_car_new_all=True,
+            ).distinct()
+            for user in users_uk:
+                if _enqueue_calc_soglasovanie_email(calc, user, comment):
+                    sent = True
+        elif event == 'director_approve':
+            for user in _collect_director_approve_email_recipients(calc, actor_user=actor_user):
+                if _enqueue_calc_soglasovanie_email(calc, user, comment):
+                    sent = True
+        else:
+            include_director = event in ('uk_approve', 'uk_reject')
+            for user in _collect_calc_result_recipients(
+                calc, actor_user=actor_user, include_director=include_director,
+            ):
+                if _enqueue_calc_soglasovanie_email(calc, user, comment):
+                    sent = True
+        if sent:
+            _trigger_calc_email_send()
+    except Exception:
+        logger.exception('calc soglasovanie email failed calc_id=%s event=%s', calc.pk, event)
+
+
+def notify_uk_users_calculation_approval(calc, car_object=None, result_comment='', actor_user=None):
+    """Email всем с price_car_new_all — устаревший вызов, делегирует в notify_calc_soglasovanie_result_email."""
+    notify_calc_soglasovanie_result_email(
+        calc,
+        'director_send_uk',
+        result_comment or 'Требуется согласование УК',
+        actor_user,
+    )
 
 
 def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
@@ -558,6 +686,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Согласовано директором ДЦ ' + comment,
         )
+        notify_calc_soglasovanie_result_email(calc, 'director_approve', comment, request.user)
         send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Коммерческое предложение согласовано. Дополнительное согласование УК не требуется.')
         return _approval_redirect(calc.pk)
@@ -592,7 +721,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отправлено на согласование директором ДЦ в УК ' + comment,
         )
-        notify_uk_users_calculation_approval(calc)
+        notify_calc_soglasovanie_result_email(calc, 'director_send_uk', comment, request.user)
         messages.success(request, 'Отправлено на согласование в УК.')
         return _approval_redirect(calc.pk)
 
@@ -625,6 +754,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Согласовано УК ' + comment,
         )
+        notify_calc_soglasovanie_result_email(calc, 'uk_approve', comment, request.user)
         send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Коммерческое предложение согласовано УК.')
         return _approval_redirect(calc.pk)
@@ -658,6 +788,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отказ в согласовании директором ДЦ: ' + comment,
         )
+        notify_calc_soglasovanie_result_email(calc, 'director_reject', comment, request.user)
         send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Отказ в согласовании зарегистрирован.')
         return _approval_redirect(calc.pk)
@@ -691,6 +822,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             request.user,
             'Отказ в согласовании УК: ' + comment,
         )
+        notify_calc_soglasovanie_result_email(calc, 'uk_reject', comment, request.user)
         send_calculation_soglasovanie_result_to_1c(calc)
         messages.success(request, 'Отказ в согласовании УК зарегистрирован.')
         return _approval_redirect(calc.pk)
