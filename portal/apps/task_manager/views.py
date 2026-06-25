@@ -286,7 +286,11 @@ def send_matrix_auction():
         'Type'      : 'matrix',
         'Settings'  : list_settings 
     }
+    
     response = requests.post(url_hs_kors_auto, json=js_data)
+    
+    response_alfa = requests.post(url_hs_alfa_auto, json=js_data)
+    
     return response.status_code
 
 
