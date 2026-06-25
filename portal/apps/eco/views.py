@@ -5016,6 +5016,8 @@ def body_estimation(estimation):
             bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'зад')
         elif file.type_file == 'array_images_up':
             bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'верх')
+        elif file.type_file == 'array_images_pol':
+            bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'пол')
         else:
             bodys_info = list()
 
@@ -5350,6 +5352,8 @@ def body_estimation_cd(cd):
             bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'зад')
         elif file.type_file == 'array_images_up':
             bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'верх')
+        elif file.type_file == 'array_images_pol':
+            bodys_info  = RegInfoBody.objects.filter(type_body = 'седан').filter(side = 'пол')
         else:
             bodys_info = list()
 
@@ -7803,7 +7807,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 if info['rzav_strong'] > 0:
                     elem_rzav = elem_rzav + 1
                     elem_rzav_data    = elem_rzav_data + info['name'] + "; "
-                
+                                    
                 if info['replace_add'] > 0:
                     body = modification.typeBody
                     zg_data = zg.replace(' ', '')
@@ -8350,9 +8354,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum 
 
-        if elem_rzav > 3 and estimation.auction_auto_no_user != True:
+        if elem_rzav > 0 and estimation.auction_auto_no_user != True:
             auction = True
-            auction_comment = auction_comment + " " + "3 более элемента с сквозной корозией (" +  elem_rzav_data +  "). "
+            auction_comment = auction_comment + " " + "Элементы с сквозной корозией (" +  elem_rzav_data +  "). "
 
         if amount_ss > 0:
             price           = price - amount_ss

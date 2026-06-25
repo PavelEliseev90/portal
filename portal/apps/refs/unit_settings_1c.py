@@ -35,8 +35,11 @@ def apply_settings_row_to_payload(payload, row, price_group_code):
     for field_code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
         payload['{}{}'.format(field_code, suffix)] = _serialize_value(getattr(row, field_code))
 
-    payload['eval_type{}'.format(suffix)] = row.eval_type_id
-
+    if row.eval_type != None:
+        payload['eval_type{}'.format(suffix)] = row.eval_type.name
+    else: 
+        payload['eval_type{}'.format(suffix)] = ''
+        
     return payload
 
 
