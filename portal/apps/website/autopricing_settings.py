@@ -6,6 +6,7 @@ from refs.price_groups import (
     get_active_price_group_codes,
     get_active_price_groups,
     get_latest_settings_map_for_unit,
+    get_latest_unit_price_group_settings,
 )
 from refs.unit_price_group_settings import (
     UnitPriceGroupSettings,
@@ -525,43 +526,42 @@ def save_autopricing_unit_settings(unit, post_data, price_groups=None):
 
 def copy_autopricing_settings(source_unit, target_unit):
     """Скопировать актуальные настройки с одного ДЦ на другой (новые записи истории)."""
-    latest_map = get_latest_settings_map_for_unit(source_unit)
-    if not latest_map:
-        for price_group in get_active_price_groups():
-            row = copy_unit_price_range_to_settings(
+    for price_group in get_active_price_groups():
+        source_row = get_latest_unit_price_group_settings(source_unit, price_group)
+        if source_row is None:
+            source_row = copy_unit_price_range_to_settings(
                 source_unit,
                 price_group,
                 target=UnitPriceGroupSettings(unit=source_unit, price_group=price_group),
             )
-            row.save()
-        latest_map = get_latest_settings_map_for_unit(source_unit)
-
-    for source_row in latest_map.values():
         new_row = copy_settings_row_to_new_record(source_row, target_unit)
-        sync_settings_row_to_unit(target_unit, new_row, source_row.price_group.code)
-
-    apply_autopricing_post_to_unit(target_unit, _rows_to_post_data(latest_map), price_groups=get_active_price_groups())
+        sync_settings_row_to_unit(target_unit, new_row, price_group.code)
     return target_unit
+
+
+def _row_to_post_data(row):
+    """Собрать pseudo-POST из одной записи истории (все поля, в т.ч. пустые Автохаб)."""
+    post_data = {}
+    suffix = price_group_form_suffix(row.price_group)
+    for code, _label in AUTOPRICING_BOOL_FIELDS:
+        if getattr(row, code):
+            post_data['{}{}'.format(code, suffix)] = 'on'
+    for code, _label in AUTOPRICING_AUTOHUB_FIELDS:
+        post_data['{}{}'.format(code, suffix)] = getattr(row, code) or ''
+    for code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
+        val = getattr(row, code)
+        if val is not None:
+            post_data['{}{}'.format(code, suffix)] = str(val)
+    if row.eval_type_id:
+        post_data['eval_type_{}'.format(row.price_group.code)] = str(row.eval_type_id)
+    return post_data
 
 
 def _rows_to_post_data(latest_map):
     """Собрать pseudo-POST из последних записей (для копирования на RefUnit)."""
     post_data = {}
     for source_row in latest_map.values():
-        suffix = price_group_form_suffix(source_row.price_group)
-        for code, _label in AUTOPRICING_BOOL_FIELDS:
-            if getattr(source_row, code):
-                post_data['{}{}'.format(code, suffix)] = 'on'
-        for code, _label in AUTOPRICING_AUTOHUB_FIELDS:
-            val = getattr(source_row, code) or ''
-            if val:
-                post_data['{}{}'.format(code, suffix)] = val
-        for code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
-            val = getattr(source_row, code)
-            if val is not None:
-                post_data['{}{}'.format(code, suffix)] = str(val)
-        if source_row.eval_type_id:
-            post_data['eval_type_{}'.format(source_row.price_group.code)] = str(source_row.eval_type_id)
+        post_data.update(_row_to_post_data(source_row))
     return post_data
 
 
