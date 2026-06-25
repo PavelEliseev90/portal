@@ -42,6 +42,16 @@
             <tr><th class="text-muted">Сумма</th><td class="fw-bold">{{ item.amount|floatformat:2 }}</td></tr>
             <tr><th class="text-muted">Автор</th><td>{{ item.author|default:"—" }}</td></tr>
             <tr><th class="text-muted">Комментарий</th><td>{{ item.comment|default:"—" }}</td></tr>
+            <tr>
+              <th class="text-muted">Отправлено в 1С</th>
+              <td>
+                {% if item.send_1c %}
+                <span class="badge bg-success">Да</span>
+                {% else %}
+                <span class="badge bg-secondary">Нет</span>
+                {% endif %}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

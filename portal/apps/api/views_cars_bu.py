@@ -12,6 +12,7 @@ from django.db import transaction
 from prices_car_bu.models import CalculatedCumulativeData, IndicatorKVP
 from documents.models import DocCarAgreement, DocCarShipment
 from refs.models import RefUnit, RefCity
+from task_manager.views import send_agreement_cumulative_to_1c
 
 # Поля из 1С → показатель IndicatorKVP (режим ОПФУ)
 _KSO_PAYLOAD = (
@@ -272,13 +273,20 @@ def _upsert_cumulative(agreement, indicator_filter, amount, author, comment):
             'amount': amount,
             'author': author,
             'comment': comment,
+            'send_1c': False,
         },
     )
+    row = CalculatedCumulativeData.objects.select_related(
+        'agreement__unit__ib',
+        'indicatorKVP',
+    ).get(pk=obj.pk)
+    send_result = send_agreement_cumulative_to_1c(row)
     return {
         'indicator': indicator.name or indicator_filter,
         'id': obj.pk,
         'created': created,
         'amount': obj.amount,
+        'send_1c': send_result.get('ok', False),
     }
 
 

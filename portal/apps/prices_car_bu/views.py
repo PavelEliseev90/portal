@@ -12,6 +12,8 @@ from django.utils import timezone
 from documents.models import DocCarAgreement
 from refs.models import RefUnit, RefCarsOrganization
 
+from task_manager.views import delete_agreement_cumulative_from_1c
+
 from .models import CalculatedCumulativeData, IndicatorKVP
 
 
@@ -78,6 +80,7 @@ def cumulative_list(request):
     vin = request.GET.get('vin', '').strip()
     unit_ids = request.GET.getlist('unit')
     indicator_ids = request.GET.getlist('indicator')
+    send_1c_filter = request.GET.get('send_1c', '').strip()
 
     if date_from:
         qs = qs.filter(agreement__dataTime__date__gte=date_from)
@@ -94,6 +97,10 @@ def cumulative_list(request):
         qs = qs.filter(agreement__unit_id__in=unit_ids)
     if indicator_ids:
         qs = qs.filter(indicatorKVP_id__in=indicator_ids)
+    if send_1c_filter == '1':
+        qs = qs.filter(send_1c=True)
+    elif send_1c_filter == '0':
+        qs = qs.filter(send_1c=False)
 
     qs = qs.order_by('-agreement__dataTime', '-id')
 
@@ -156,9 +163,24 @@ def cumulative_detail(request, pk):
 
 @login_required
 def cumulative_delete(request, pk):
-    item = get_object_or_404(CalculatedCumulativeData, pk=pk)
+    item = get_object_or_404(
+        CalculatedCumulativeData.objects.select_related(
+            'agreement__unit__ib',
+            'indicatorKVP',
+        ),
+        pk=pk,
+    )
     if request.method != 'POST':
         return HttpResponseRedirect(reverse('prices_car_bu:cumulative_detail', args=[pk]))
+
+    if item.send_1c:
+        result = delete_agreement_cumulative_from_1c(item)
+        if not result.get('ok'):
+            messages.error(
+                request,
+                'Не удалось удалить в 1С: {}'.format(result.get('error') or 'ошибка'),
+            )
+            return HttpResponseRedirect(reverse('prices_car_bu:cumulative_detail', args=[pk]))
 
     item.delete()
     messages.success(request, 'Запись расчётных данных кумулятива удалена.')
