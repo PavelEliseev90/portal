@@ -1,5 +1,4 @@
 """Ценовые группы: справочник, настройки ДЦ, выбор последней версии."""
-from django.db.models import OuterRef, Subquery
 
 from refs.models import RefGroupPrice, RefUnit
 
@@ -133,24 +132,15 @@ def get_latest_unit_price_group_settings(unit, price_group):
 
 def get_latest_settings_map_for_unit(unit):
     """Последняя запись на каждую ЦГ для подразделения: code -> UnitPriceGroupSettings."""
-    from refs.unit_price_group_settings import UnitPriceGroupSettings
-
     if unit is None:
         return {}
 
-    latest_ids = (
-        UnitPriceGroupSettings.objects
-        .filter(unit_id=unit.pk)
-        .filter(price_group_id=OuterRef('price_group_id'))
-        .order_by('-created_at', '-id')
-        .values('id')[:1]
-    )
-    rows = (
-        UnitPriceGroupSettings.objects
-        .filter(unit_id=unit.pk, id__in=Subquery(latest_ids))
-        .select_related('price_group')
-    )
-    return {row.price_group.code: row for row in rows if row.price_group and row.price_group.code}
+    result = {}
+    for price_group in get_active_price_groups():
+        row = get_latest_unit_price_group_settings(unit, price_group)
+        if row is not None:
+            result[price_group.code] = row
+    return result
 
 
 def seed_price_groups():
