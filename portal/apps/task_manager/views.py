@@ -112,6 +112,97 @@ def send_settings_unit(unit):
         result['error'] = str(exc)
     return result
 
+
+def _indicator_kvp_code(indicator):
+    if indicator is None:
+        return ''
+    for code in ('bu_wheels', 'osago', 'kasko', 'credit', 'gap', 'life'):
+        if getattr(indicator, code, False):
+            return code
+    name = (indicator.name or '').strip()
+    return name or str(indicator.pk)
+
+
+def _agreement_cumulative_1c_url(agreement):
+    unit = agreement.unit if agreement else None
+    if unit and getattr(unit, 'ib_id', None) and unit.ib.alfa:
+        return url_hs_alfa_auto
+    return url_hs_kors_auto
+
+
+def build_agreement_cumulative_1c_payload(row, delete=False):
+    agreement = row.agreement
+    return {
+        'Type': 'agreement_cumulative',
+        'Uin': (agreement.uin or '') if agreement else '',
+        'Indicator': _indicator_kvp_code(row.indicatorKVP),
+        'Amount': row.amount,
+        'Comment': row.comment or '',
+        'Delete': bool(delete),
+    }
+
+
+def send_agreement_cumulative_to_1c(row):
+    """Отправить расчётные данные соглашения в 1С. При успехе выставляет send_1c."""
+    from prices_car_bu.models import CalculatedCumulativeData
+
+    result = {'ok': False, 'status_code': None, 'error': None}
+    agreement = row.agreement
+    if not agreement or not (agreement.uin or '').strip():
+        result['error'] = 'Пустой uin соглашения'
+        return result
+    if not row.indicatorKVP_id:
+        result['error'] = 'Не указан показатель'
+        return result
+    try:
+        js_data = build_agreement_cumulative_1c_payload(row, delete=False)
+        response = requests.post(
+            _agreement_cumulative_1c_url(agreement),
+            json=js_data,
+            timeout=60,
+        )
+        result['status_code'] = response.status_code
+        if 200 <= response.status_code < 300:
+            result['ok'] = True
+            CalculatedCumulativeData.objects.filter(pk=row.pk).update(send_1c=True)
+        else:
+            result['error'] = 'HTTP {}'.format(response.status_code)
+    except requests.RequestException as exc:
+        result['error'] = str(exc)
+    except Exception as exc:
+        result['error'] = str(exc)
+    return result
+
+
+def delete_agreement_cumulative_from_1c(row):
+    """Удалить запись в 1С по ключу uin соглашения + показатель."""
+    result = {'ok': False, 'status_code': None, 'error': None}
+    agreement = row.agreement
+    if not agreement or not (agreement.uin or '').strip():
+        result['error'] = 'Пустой uin соглашения'
+        return result
+    if not row.indicatorKVP_id:
+        result['error'] = 'Не указан показатель'
+        return result
+    try:
+        js_data = build_agreement_cumulative_1c_payload(row, delete=True)
+        response = requests.post(
+            _agreement_cumulative_1c_url(agreement),
+            json=js_data,
+            timeout=60,
+        )
+        result['status_code'] = response.status_code
+        if 200 <= response.status_code < 300:
+            result['ok'] = True
+        else:
+            result['error'] = 'HTTP {}'.format(response.status_code)
+    except requests.RequestException as exc:
+        result['error'] = str(exc)
+    except Exception as exc:
+        result['error'] = str(exc)
+    return result
+
+
 #Отправка информации о матрице бцп аукциона
 def send_matrix_auction():
     

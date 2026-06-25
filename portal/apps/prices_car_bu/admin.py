@@ -11,8 +11,8 @@ class IndicatorKVPAdmin(admin.ModelAdmin):
 
 @admin.register(CalculatedCumulativeData)
 class CalculatedCumulativeDataAdmin(admin.ModelAdmin):
-    list_display = ('agreement', 'indicatorKVP', 'amount', 'author', 'comment',)
-    list_filter = ('indicatorKVP', )
+    list_display = ('agreement', 'indicatorKVP', 'amount', 'author', 'send_1c', 'comment',)
+    list_filter = ('indicatorKVP', 'send_1c',)
     raw_id_fields = ('agreement', 'indicatorKVP', )
     search_fields = ('agreement__nomer',)
     ordering = ('-agreement__dataTime',)

@@ -45,6 +45,14 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label small text-muted mb-1">Отправка в 1С</label>
+        <select class="form-select" name="send_1c">
+          <option value="">Все</option>
+          <option value="1" {% if filters.send_1c == '1' %}selected{% endif %}>Отправлено</option>
+          <option value="0" {% if filters.send_1c == '0' %}selected{% endif %}>Не отправлено</option>
+        </select>
+      </div>
       <div class="col-12 col-lg-1">
         <button type="submit" class="btn btn-primary w-100">
           <span class="icon-mbri-search"></span>
@@ -106,13 +114,20 @@
             <td>{{ row.indicatorKVP.name|default:"—" }}</td>
             <td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
             <td class="small">{{ row.author|default:"—" }}</td>
+            <td>
+              {% if row.send_1c %}
+              <span class="badge bg-success">Да</span>
+              {% else %}
+              <span class="badge bg-secondary">Нет</span>
+              {% endif %}
+            </td>
             <td class="pe-3">
               <a href="{% url 'prices_car_bu:cumulative_detail' row.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted py-4">Нет записей</td>
+            <td colspan="9" class="text-center text-muted py-4">Нет записей</td>
           </tr>
           {% endfor %}
         </tbody>
