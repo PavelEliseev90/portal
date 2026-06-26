@@ -8354,7 +8354,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     list_work_podgotovka.append(dop)
                     amount_podgotovka = amount_podgotovka + diff_sum 
 
-        if elem_rzav > 0 and estimation.auction_auto_no_user != True:
+        if elem_rzav > 2 and estimation.auction_auto_no_user != True:
             auction = True
             auction_comment = auction_comment + " " + "Элементы с сквозной корозией (" +  elem_rzav_data +  "). "
 
