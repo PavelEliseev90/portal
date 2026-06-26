@@ -345,10 +345,13 @@
 <div class="product-page">
   <div class="container-fluid">
     
-    <!-- Кнопка возврата к списку -->
-    <div style="margin-bottom: 1.5rem;">
-      <a href="../" class="btn btn-outline-primary" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-        <span class="icon-mbri-arrow-left"></span> Вернуться к списку товаров
+    <!-- Назад к странице, с которой открыли карточку -->
+    <div style="margin-bottom: 1.5rem;" class="d-flex flex-wrap gap-2">
+      <a href="{{ params.back_url }}" class="btn btn-outline-primary" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        <span class="icon-mbri-arrow-left"></span> Назад
+      </a>
+      <a href="{% url 'website:stok_im_list' %}" class="btn btn-outline-secondary btn-sm" style="border-radius: 0.75rem; padding: 0.5rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        К списку товаров
       </a>
     </div>
     
@@ -464,6 +467,7 @@
                   {% endif %}
                   <form method="post" action="{% url 'website:stok_im_product_photo_delete' photo.id %}" class="d-inline" style="position: absolute; top: 0.35rem; right: 0.35rem;" onsubmit="return confirm('Удалить это фото?');" onclick="event.stopPropagation();">
                     {% csrf_token %}
+                    <input type="hidden" name="return" value="{{ params.back_url }}">
                     <button type="submit" class="photo-delete-btn" title="Удалить фото" aria-label="Удалить">×</button>
                   </form>
                 </div>
@@ -607,8 +611,9 @@
           </div>
           
           <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
-            <form id="uploadFormMCU" action="{% url 'website:stok_im_product' %}?kod={{ params.answer.НоменклатураКод }}" method="POST" enctype="multipart/form-data"> 
+            <form id="uploadFormMCU" action="{{ params.product_url }}" method="POST" enctype="multipart/form-data"> 
               {% csrf_token %}
+              <input type="hidden" name="return" value="{{ params.back_url }}">
               
               <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>
               
