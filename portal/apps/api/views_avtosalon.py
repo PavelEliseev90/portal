@@ -114,6 +114,45 @@ def avtohub_info(request):
     return JsonResponse(info, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+def avtohub_options(request):
+    """Справочник AvtohubOptions (группы AvtohubGroupOptions).
+
+    GET-параметры:
+      modification_id   — id_avtohub модификации Avtohub
+      car_id            — RefCarsOrganization.pk (фильтр по модификации авто)
+      group_id          — pk группы опций
+      group_id_avtohub  — id_avtohub группы
+      id_avtohub        — id_avtohub опции
+      name / q          — поиск по названию
+      format            — grouped (по умолчанию) или flat
+    """
+    from avtosalon.car_options import (
+        build_avtohub_options_groups,
+        get_avtohub_options_queryset,
+        serialize_avtohub_option,
+    )
+
+    qs = get_avtohub_options_queryset(request.GET)
+    response_format = (request.GET.get('format') or 'grouped').strip().lower()
+
+    if response_format == 'flat':
+        items = [serialize_avtohub_option(opt) for opt in qs]
+        return JsonResponse({
+            'ok': True,
+            'count': len(items),
+            'items': items,
+        }, status=status.HTTP_200_OK, safe=False)
+
+    groups = build_avtohub_options_groups(qs)
+    total_count = sum(len(g['options']) for g in groups)
+    return JsonResponse({
+        'ok': True,
+        'count': total_count,
+        'groups': groups,
+    }, status=status.HTTP_200_OK, safe=False)
+
+
 @api_view(['GET', 'POST'])
 def get_image_change(request):
     '''

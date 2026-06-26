@@ -109,6 +109,7 @@ urlpatterns = [
    path('info_personal_data/',      views.info_personal_data),
    
    path('avtohub_info/',            views_avtosalon.avtohub_info),
+   path('avtohub_options/',         views_avtosalon.avtohub_options),
    path('zna_info/',                views_avtosalon.zna_info),
    
    path('get_qrcode/',                                views.get_qrcode),
