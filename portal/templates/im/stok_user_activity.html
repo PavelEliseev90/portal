@@ -98,7 +98,7 @@
             <td>{{ ev.user.username }}{% if ev.user.get_full_name %} <span class="text-muted small">({{ ev.user.get_full_name }})</span>{% endif %}</td>
             <td>{{ ev.get_action_display }}</td>
             <td>
-              <a href="{% url 'website:stok_im_product' %}?kod={{ ev.product.nomenclature_code|urlencode }}">{{ ev.product.nomenclature_code }}</a>
+              <a href="{% url 'website:stok_im_product' %}?kod={{ ev.product.nomenclature_code|urlencode }}&return={{ request.get_full_path|urlencode }}">{{ ev.product.nomenclature_code }}</a>
               <div class="small text-muted text-truncate" style="max-width: 280px;">{{ ev.product.nomenclature|default:ev.product.title|truncatechars:80 }}</div>
             </td>
             <td>{% if ev.photo %}#{{ ev.photo.id }}{% else %}—{% endif %}</td>
