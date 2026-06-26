@@ -92,8 +92,15 @@ def _agreement_field_rows(agreement):
     return rows
 
 
+def _today():
+    now = timezone.now()
+    if timezone.is_aware(now):
+        return timezone.localtime(now).date()
+    return now.date()
+
+
 def _default_list_dates():
-    today = timezone.localdate()
+    today = _today()
     return today.replace(day=1), today
 
 
