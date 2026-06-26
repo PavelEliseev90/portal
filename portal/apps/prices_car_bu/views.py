@@ -10,11 +10,44 @@ from django.urls import reverse
 from django.utils import timezone
 
 from documents.models import DocCarAgreement
-from refs.models import RefUnit, RefCarsOrganization
-
-from task_manager.views import delete_agreement_cumulative_from_1c
+from refs.models import RefUnit
 
 from .models import CalculatedCumulativeData, IndicatorKVP
+
+
+_AGREEMENT_DETAIL_FIELDS = (
+    ('nomer', 'Номер'),
+    ('dataTime', 'Дата'),
+    ('active', 'Проведен'),
+    ('unit', 'Подразделение'),
+    ('organization', 'Организация'),
+    ('client', 'Клиент'),
+    ('clientName', 'Наименование клиента'),
+    ('staff', 'Менеджер'),
+    ('cars', 'Автомобиль'),
+    ('amount', 'Сумма продажи'),
+    ('cost_price', 'Себестоимость'),
+    ('outlay', 'Расходы на АМ'),
+    ('discountAmount', 'Скидка итог'),
+    ('discountAmountTorg', 'Скидка торг'),
+    ('discountAmountTradeIN', 'Скидка трейдин'),
+    ('run', 'Пробег'),
+    ('owners', 'Владельцев'),
+    ('typeSale', 'Тип продажи'),
+    ('bu_wheels_est', 'Расчетные данные бу шины'),
+    ('bu_wheels_actual', 'Фактические данные бу шины'),
+    ('kso_est', 'Расчетные данные ксо'),
+    ('kso_actual', 'Фактические данные ксо'),
+    ('cm_est', 'КМ расчетный'),
+    ('cm_actual', 'КМ фактический'),
+    ('cm_goal', 'КМ целевой'),
+    ('check_estimated', 'Правило расчетное выполнено'),
+    ('check_actual', 'Правило фактическое выполнено'),
+    ('check_text', 'Правило'),
+    ('rlk', 'РЛК'),
+    ('lo', 'Лист оценки'),
+    ('uin', 'uin'),
+)
 
 
 def _parse_date(value):
@@ -30,17 +63,13 @@ def _parse_date(value):
 
 
 def _agreement_field_rows(agreement):
-    """Поля соглашения для детальной карточки."""
+    """Основные поля соглашения для детальной карточки."""
     if not agreement:
         return []
     rows = []
-    for field in DocCarAgreement._meta.get_fields():
-        if field.many_to_many or field.one_to_many:
-            continue
-        if not hasattr(field, 'verbose_name'):
-            continue
+    for field_name, label in _AGREEMENT_DETAIL_FIELDS:
         try:
-            value = getattr(agreement, field.name, None)
+            value = getattr(agreement, field_name, None)
         except Exception:
             continue
         if value is None or value == '':
@@ -56,11 +85,16 @@ def _agreement_field_rows(agreement):
         else:
             display = str(value)
         rows.append({
-            'name': field.name,
-            'label': str(field.verbose_name),
+            'name': field_name,
+            'label': label,
             'value': display,
         })
     return rows
+
+
+def _default_list_dates():
+    today = timezone.localdate()
+    return today.replace(day=1), today
 
 
 @login_required
@@ -69,8 +103,6 @@ def cumulative_list(request):
         'agreement',
         'agreement__unit',
         'agreement__cars',
-        'agreement__staff',
-        'agreement__client',
         'indicatorKVP',
     )
 
@@ -81,6 +113,19 @@ def cumulative_list(request):
     unit_ids = request.GET.getlist('unit')
     indicator_ids = request.GET.getlist('indicator')
     send_1c_filter = request.GET.get('send_1c', '').strip()
+
+    has_explicit_filters = any([
+        request.GET.get('date_from', '').strip(),
+        request.GET.get('date_to', '').strip(),
+        agreement_nomer,
+        vin,
+        unit_ids,
+        indicator_ids,
+        send_1c_filter,
+        request.GET.get('page', '').strip(),
+    ])
+    if not has_explicit_filters:
+        date_from, date_to = _default_list_dates()
 
     if date_from:
         qs = qs.filter(agreement__dataTime__date__gte=date_from)
@@ -107,8 +152,11 @@ def cumulative_list(request):
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    units = RefUnit.objects.all().order_by('name')
+    units = RefUnit.objects.filter(buauto=True).order_by('name')
     indicators = IndicatorKVP.objects.all().order_by('name')
+
+    date_from_str = date_from.strftime('%Y-%m-%d') if date_from else ''
+    date_to_str = date_to.strftime('%Y-%m-%d') if date_to else ''
 
     context = {
         'page_obj': page_obj,
@@ -116,12 +164,13 @@ def cumulative_list(request):
         'units': units,
         'indicators': indicators,
         'filters': {
-            'date_from': request.GET.get('date_from', ''),
-            'date_to': request.GET.get('date_to', ''),
+            'date_from': request.GET.get('date_from', '') or date_from_str,
+            'date_to': request.GET.get('date_to', '') or date_to_str,
             'agreement_nomer': agreement_nomer,
             'vin': vin,
             'unit': unit_ids,
             'indicator': indicator_ids,
+            'send_1c': send_1c_filter,
         },
         'filtered_count': paginator.count,
     }
@@ -148,9 +197,11 @@ def cumulative_detail(request, pk):
     agreement_rows = _agreement_field_rows(agreement)
     same_agreement_items = []
     if agreement:
-        same_agreement_items = CalculatedCumulativeData.objects.filter(
-            agreement=agreement,
-        ).select_related('indicatorKVP').order_by('indicatorKVP__name')
+        same_agreement_items = list(
+            CalculatedCumulativeData.objects.filter(
+                agreement=agreement,
+            ).select_related('indicatorKVP').order_by('indicatorKVP__name')
+        )
 
     context = {
         'item': item,
@@ -162,7 +213,34 @@ def cumulative_detail(request, pk):
 
 
 @login_required
+def cumulative_send_1c(request, pk):
+    from task_manager.views import send_agreement_cumulative_to_1c
+
+    item = get_object_or_404(
+        CalculatedCumulativeData.objects.select_related(
+            'agreement__unit__ib',
+            'indicatorKVP',
+        ),
+        pk=pk,
+    )
+    if request.method != 'POST':
+        return HttpResponseRedirect(reverse('prices_car_bu:cumulative_detail', args=[pk]))
+
+    result = send_agreement_cumulative_to_1c(item)
+    if result.get('ok'):
+        messages.success(request, 'Данные отправлены в 1С.')
+    else:
+        messages.error(
+            request,
+            'Не удалось отправить в 1С: {}'.format(result.get('error') or 'ошибка'),
+        )
+    return HttpResponseRedirect(reverse('prices_car_bu:cumulative_detail', args=[pk]))
+
+
+@login_required
 def cumulative_delete(request, pk):
+    from task_manager.views import delete_agreement_cumulative_from_1c
+
     item = get_object_or_404(
         CalculatedCumulativeData.objects.select_related(
             'agreement__unit__ib',

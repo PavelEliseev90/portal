@@ -137,6 +137,7 @@ def build_agreement_cumulative_1c_payload(row, delete=False):
         'Uin': (agreement.uin or '') if agreement else '',
         'Indicator': _indicator_kvp_code(row.indicatorKVP),
         'Amount': row.amount,
+        'Author': row.author or '',
         'Comment': row.comment or '',
         'Delete': bool(delete),
     }

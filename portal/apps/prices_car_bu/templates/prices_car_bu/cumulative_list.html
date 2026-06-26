@@ -90,12 +90,13 @@
             <th class="text-white border-0">Показатель</th>
             <th class="text-white border-0 text-end">Сумма</th>
             <th class="text-white border-0">Автор</th>
+            <th class="text-white border-0">1С</th>
             <th class="text-white border-0 pe-3"></th>
           </tr>
         </thead>
         <tbody>
           {% for row in items %}
-          <tr>
+          <tr style="cursor: pointer;" onclick="window.location='{% url 'prices_car_bu:cumulative_detail' row.pk %}';">
             <td class="ps-3">
               {% if row.agreement %}{{ row.agreement.dataTime|date:"d.m.Y H:i" }}{% else %}—{% endif %}
             </td>
@@ -121,7 +122,7 @@
               <span class="badge bg-secondary">Нет</span>
               {% endif %}
             </td>
-            <td class="pe-3">
+            <td class="pe-3" onclick="event.stopPropagation();">
               <a href="{% url 'prices_car_bu:cumulative_detail' row.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
             </td>
           </tr>
