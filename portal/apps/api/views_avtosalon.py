@@ -126,12 +126,21 @@ def avtohub_options(request):
       id_avtohub        — id_avtohub опции
       name / q          — поиск по названию
       format            — grouped (по умолчанию) или flat
+
+    Отдельный режим (другой формат ответа):
+      modification_autoru_id / modification_autoru — autoruId модификации
+      complectation_autoru_id / complectation_autoru — autoruId комплектации
     """
     from avtosalon.car_options import (
         build_avtohub_options_groups,
+        get_avtohub_options_autoru_filter,
         get_avtohub_options_queryset,
         serialize_avtohub_option,
     )
+
+    autoru_payload = get_avtohub_options_autoru_filter(request.GET)
+    if autoru_payload is not None:
+        return JsonResponse(autoru_payload, status=status.HTTP_200_OK, safe=False)
 
     qs = get_avtohub_options_queryset(request.GET)
     response_format = (request.GET.get('format') or 'grouped').strip().lower()
