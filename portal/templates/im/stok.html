@@ -428,7 +428,7 @@
                       {{product.Статус|default:"—"}}
                     </div>
                     <div class="product-actions">
-                      <a href="{% url 'website:stok_im_product' %}?kod={{product.НоменклатураКод}}" class="btn-open-card">
+                      <a href="{% url 'website:stok_im_product' %}?kod={{ product.НоменклатураКод|urlencode }}&return={{ request.get_full_path|urlencode }}" class="btn-open-card">
                         <span class="icon-mbri-file"></span> Открыть карточку
                       </a>
                       <button type="button" class="btn-add-photo" data-bs-toggle="modal" data-bs-target="#photoModal{{product.НоменклатураКод}}">
@@ -453,8 +453,9 @@
                   </div>
                   
                   <div class="modal-body" style="padding: 1.5rem; background: #f4f7fb;">
-                    <form id="uploadFormMCU{{product.НоменклатураКод}}" action="{% url 'website:stok_im_product' %}?kod={{product.НоменклатураКод}}" method="POST" enctype="multipart/form-data"> 
+                    <form id="uploadFormMCU{{product.НоменклатураКод}}" action="{% url 'website:stok_im_product' %}?kod={{ product.НоменклатураКод|urlencode }}&return={{ request.get_full_path|urlencode }}" method="POST" enctype="multipart/form-data">
                       {% csrf_token %}
+                      <input type="hidden" name="return" value="{{ request.get_full_path }}">
                       
                       <input type="text" class="form-control" name="dop_mcu_new" value="dop_mcu_new" hidden>
                       

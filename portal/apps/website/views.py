@@ -5070,6 +5070,58 @@ def _stok_im_metric_stats(qs, total):
     return {'count': count, 'percent': percent, 'sum_value': sum_value, 'quantity_sum': quantity_sum}
 
 
+STOK_IM_RETURN_SESSION_KEY = 'stok_im_product_return'
+
+
+def _stok_im_safe_return_url(url):
+    if not url:
+        return None
+    url = url.strip()
+    if not url.startswith('/') or url.startswith('//'):
+        return None
+    if url.split('?')[0].rstrip('/').endswith('/stok_im/product'):
+        return None
+    if not url.startswith('/stok_im'):
+        return None
+    return url
+
+
+def _stok_im_resolve_return_url(request):
+    return_param = (request.GET.get('return') or request.POST.get('return') or '').strip()
+    if return_param:
+        safe = _stok_im_safe_return_url(return_param)
+        if safe:
+            request.session[STOK_IM_RETURN_SESSION_KEY] = safe
+            return safe
+
+    cached = request.session.get(STOK_IM_RETURN_SESSION_KEY)
+    if cached and _stok_im_safe_return_url(cached):
+        return cached
+
+    referer = request.META.get('HTTP_REFERER', '')
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        if parsed.netloc in ('', request.get_host()):
+            path = parsed.path
+            if parsed.query:
+                path += '?' + parsed.query
+            safe = _stok_im_safe_return_url(path)
+            if safe:
+                request.session[STOK_IM_RETURN_SESSION_KEY] = safe
+                return safe
+
+    return reverse('website:stok_im_list')
+
+
+def _stok_im_product_redirect(kod, return_url=None):
+    from urllib.parse import urlencode
+    query = {'kod': kod}
+    if return_url:
+        query['return'] = return_url
+    return reverse('website:stok_im_product') + '?' + urlencode(query)
+
+
 def stok_im_dashboard(request):
     """Главная страница стока интернет-магазина — дашборд с метриками."""
     if not request.user.is_authenticated:
@@ -5255,6 +5307,8 @@ def product(request):
     if not product_obj:
         return HttpResponseRedirect('/stok_im/list/')
 
+    return_url = _stok_im_resolve_return_url(request)
+
     if request.method == "POST":
         file_objects = request.FILES.getlist('files')
         for file_object in file_objects:
@@ -5347,7 +5401,7 @@ def product(request):
                 action=ImProductUserActivity.ACTION_PHOTO_UPLOAD,
                 photo=photo,
             )
-        return HttpResponseRedirect(request.build_absolute_uri())
+        return HttpResponseRedirect(_stok_im_product_redirect(kod, return_url))
 
     ImProductUserActivity.objects.create(
         user=request.user,
@@ -5371,6 +5425,8 @@ def product(request):
         'answer': product_obj.to_dict(),
         'photos': photos,
         'activity_stats': activity_stats,
+        'back_url': return_url,
+        'product_url': _stok_im_product_redirect(kod, return_url),
     }
     return render(request, 'im/product.html', {'params': params})
 
@@ -5382,6 +5438,7 @@ def product_photo_delete(request, photo_id):
     if request.method != 'POST':
         return HttpResponseRedirect('/stok_im/list/')
     from website.models import ImProductPhoto, ImProductUserActivity
+    return_url = _stok_im_resolve_return_url(request)
     photo = ImProductPhoto.objects.filter(id=photo_id).select_related('product').first()
     if not photo:
         return HttpResponseRedirect('/stok_im/list/')
@@ -5393,9 +5450,7 @@ def product_photo_delete(request, photo_id):
         photo=photo,
     )
     photo.delete()
-    return HttpResponseRedirect(
-        request.build_absolute_uri(reverse('website:stok_im_product') + '?kod=' + kod)
-    )
+    return HttpResponseRedirect(_stok_im_product_redirect(kod, return_url))
 
 
 def stok_im_user_activity(request):
