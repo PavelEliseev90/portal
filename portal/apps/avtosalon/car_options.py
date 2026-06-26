@@ -1,11 +1,27 @@
 """
 Опции автомобиля (AvtohubOptions) для карточки price_edit.
 """
+from collections import defaultdict
+
+from django.db.models import Prefetch
+
 from avtosalon.models import (
     AvtohubComplectations,
     AvtohubModifications,
     AvtohubOptions,
     CarsOrganizationEquipment,
+)
+
+_OPTIONS_ORDER = (
+    'groupId__sortOrder',
+    'groupId__name',
+    'sortOrder',
+    'name',
+)
+
+_OPTIONS_PREFETCH = Prefetch(
+    'equipment',
+    queryset=AvtohubOptions.objects.select_related('groupId').order_by(*_OPTIONS_ORDER),
 )
 
 
@@ -131,6 +147,134 @@ def build_avtohub_options_groups(options_qs):
         groups_dict.values(),
         key=lambda g: (g['sort_order'], g['name'] or ''),
     )
+
+
+def serialize_avtohub_modification_brief(mod):
+    return {
+        'id': mod.id,
+        'id_avtohub': mod.id_avtohub,
+        'autoru_id': mod.autoruId,
+        'name': mod.name or '',
+        'year_from': mod.yearFrom,
+        'year_to': mod.yearTo,
+        'is_active': bool(mod.isActive),
+    }
+
+
+def serialize_avtohub_complectation_brief(comp, groups=None):
+    options_count = 0
+    if groups is not None:
+        options_count = sum(len(g['options']) for g in groups)
+    return {
+        'id': comp.id,
+        'id_avtohub': comp.id_avtohub,
+        'autoru_id': comp.autoruId,
+        'name': comp.name or '',
+        'modification_id': comp.modificationId,
+        'is_active': bool(comp.isActive),
+        'options_count': options_count,
+        'groups': groups or [],
+    }
+
+
+def _complectation_option_groups(comp):
+    return build_avtohub_options_groups(comp.equipment.all())
+
+
+def build_avtohub_options_by_complectation_autoru(autoru_id):
+    complectations = list(
+        AvtohubComplectations.objects.filter(autoruId=autoru_id)
+        .prefetch_related(_OPTIONS_PREFETCH)
+        .order_by('name', 'id')
+    )
+    mod_ids = {comp.modificationId for comp in complectations if comp.modificationId}
+    modifications_map = {
+        mod.id_avtohub: serialize_avtohub_modification_brief(mod)
+        for mod in AvtohubModifications.objects.filter(id_avtohub__in=mod_ids)
+    }
+
+    items = []
+    total_options = 0
+    for comp in complectations:
+        groups = _complectation_option_groups(comp)
+        opt_count = sum(len(g['options']) for g in groups)
+        total_options += opt_count
+        item = serialize_avtohub_complectation_brief(comp, groups)
+        item['modification'] = modifications_map.get(comp.modificationId)
+        items.append(item)
+
+    return {
+        'ok': True,
+        'mode': 'complectation_autoru',
+        'autoru_id': autoru_id,
+        'complectations': items,
+        'count': total_options,
+    }
+
+
+def build_avtohub_options_by_modification_autoru(autoru_id):
+    modifications = list(
+        AvtohubModifications.objects.filter(autoruId=autoru_id).order_by('name', 'id')
+    )
+    if not modifications:
+        return {
+            'ok': True,
+            'mode': 'modification_autoru',
+            'autoru_id': autoru_id,
+            'modifications': [],
+            'count': 0,
+        }
+
+    mod_id_avtohub_list = [mod.id_avtohub for mod in modifications]
+    complectations = list(
+        AvtohubComplectations.objects.filter(modificationId__in=mod_id_avtohub_list)
+        .prefetch_related(_OPTIONS_PREFETCH)
+        .order_by('name', 'id')
+    )
+    comp_by_mod = defaultdict(list)
+    for comp in complectations:
+        comp_by_mod[comp.modificationId].append(comp)
+
+    result_modifications = []
+    total_options = 0
+    for mod in modifications:
+        comps_data = []
+        for comp in comp_by_mod.get(mod.id_avtohub, []):
+            groups = _complectation_option_groups(comp)
+            opt_count = sum(len(g['options']) for g in groups)
+            total_options += opt_count
+            comps_data.append(serialize_avtohub_complectation_brief(comp, groups))
+        item = serialize_avtohub_modification_brief(mod)
+        item['complectations'] = comps_data
+        result_modifications.append(item)
+
+    return {
+        'ok': True,
+        'mode': 'modification_autoru',
+        'autoru_id': autoru_id,
+        'modifications': result_modifications,
+        'count': total_options,
+    }
+
+
+def get_avtohub_options_autoru_filter(request_get):
+    comp_autoru = (
+        request_get.get('complectation_autoru_id')
+        or request_get.get('complectation_autoru')
+        or ''
+    ).strip()
+    if comp_autoru.isdigit():
+        return build_avtohub_options_by_complectation_autoru(int(comp_autoru))
+
+    mod_autoru = (
+        request_get.get('modification_autoru_id')
+        or request_get.get('modification_autoru')
+        or ''
+    ).strip()
+    if mod_autoru.isdigit():
+        return build_avtohub_options_by_modification_autoru(int(mod_autoru))
+
+    return None
 
 
 def get_avtohub_options_queryset(request_get):
