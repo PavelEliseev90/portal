@@ -55,13 +55,16 @@ def get_modification_option_ids(avtohub_mod):
     )
 
 
-def get_options_queryset(avtohub_mod=None):
+def get_options_queryset(avtohub_mod=None, modification_id_avtohub=None):
     qs = AvtohubOptions.objects.select_related('groupId').order_by(
         'groupId__sortOrder', 'groupId__name', 'sortOrder', 'name',
     )
+    mod_id = modification_id_avtohub
     if avtohub_mod:
+        mod_id = avtohub_mod.id_avtohub
+    if mod_id:
         qs = qs.filter(
-            avtohubcomplectations__modificationId=avtohub_mod.id_avtohub,
+            avtohubcomplectations__modificationId=mod_id,
         ).distinct()
     return qs
 
@@ -89,6 +92,83 @@ def build_option_groups(options_qs, selected_ids):
         groups_dict.values(),
         key=lambda g: (g['sort_order'], g['name'] or ''),
     )
+
+
+def serialize_avtohub_option(opt):
+    group = opt.groupId
+    return {
+        'id': opt.id,
+        'id_avtohub': opt.id_avtohub,
+        'name': opt.name or '',
+        'sort_order': opt.sortOrder,
+        'key_equipment': bool(opt.keyEquipment),
+        'include': list(opt.include or []),
+        'exclude': list(opt.exclude or []),
+        'group': None if not group else {
+            'id': group.id,
+            'id_avtohub': group.id_avtohub,
+            'name': group.name or '',
+            'sort_order': group.sortOrder,
+        },
+    }
+
+
+def build_avtohub_options_groups(options_qs):
+    groups_dict = {}
+    for opt in options_qs:
+        group = opt.groupId
+        group_key = group.id if group else 0
+        if group_key not in groups_dict:
+            groups_dict[group_key] = {
+                'id': group.id if group else None,
+                'id_avtohub': group.id_avtohub if group else None,
+                'name': group.name if group else 'Без группы',
+                'sort_order': group.sortOrder if group else 999,
+                'options': [],
+            }
+        groups_dict[group_key]['options'].append(serialize_avtohub_option(opt))
+    return sorted(
+        groups_dict.values(),
+        key=lambda g: (g['sort_order'], g['name'] or ''),
+    )
+
+
+def get_avtohub_options_queryset(request_get):
+    """Фильтры GET-параметров для API справочника AvtohubOptions."""
+    from refs.models import RefCarsOrganization
+
+    qs = get_options_queryset(None)
+
+    modification_id = (request_get.get('modification_id') or '').strip()
+    if modification_id.isdigit():
+        qs = get_options_queryset(modification_id_avtohub=int(modification_id))
+
+    car_id = (request_get.get('car_id') or '').strip()
+    if car_id.isdigit():
+        car = RefCarsOrganization.objects.filter(pk=int(car_id)).first()
+        if car:
+            avtohub_mod = get_avtohub_modification(car)
+            qs = get_options_queryset(avtohub_mod)
+            if not qs.exists():
+                qs = get_options_queryset(None)
+
+    group_id = (request_get.get('group_id') or '').strip()
+    if group_id.isdigit():
+        qs = qs.filter(groupId_id=int(group_id))
+
+    group_id_avtohub = (request_get.get('group_id_avtohub') or '').strip()
+    if group_id_avtohub.isdigit():
+        qs = qs.filter(groupId__id_avtohub=int(group_id_avtohub))
+
+    id_avtohub = (request_get.get('id_avtohub') or '').strip()
+    if id_avtohub.isdigit():
+        qs = qs.filter(id_avtohub=int(id_avtohub))
+
+    name = (request_get.get('name') or request_get.get('q') or '').strip()
+    if name:
+        qs = qs.filter(name__icontains=name)
+
+    return qs
 
 
 def save_car_equipment(car, option_ids, user=None):
