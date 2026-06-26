@@ -1,0 +1,3 @@
+# Copy to backup_postgres_config.ps1 and set values.
+$DbPassword = "CHANGE_ME"
+$PgBinDir = "D:\programm\postgres13\13\bin"

@@ -9,3 +9,5 @@
 **/pycache
 
 portal/apps/profiles/__pycache__/models.cpython-311.pyc
+
+scripts/backup_postgres_config.ps1

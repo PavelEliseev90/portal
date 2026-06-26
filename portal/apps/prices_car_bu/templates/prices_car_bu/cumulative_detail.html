@@ -15,8 +15,14 @@
     <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'prices_car_bu:cumulative_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
       {% if agreement %}
-      <a href="/docs_car_agreement/{{ agreement.id }}/" class="btn btn-outline-primary btn-sm" target="_blank">Соглашение в портале</a>
+      <a href="/docs_car_agreement/{{ agreement.id }}/" class="btn btn-primary btn-sm" target="_blank">Открыть соглашение</a>
       {% endif %}
+      <form method="post" action="{% url 'prices_car_bu:cumulative_send_1c' item.id %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-sm">
+          {% if item.send_1c %}Повторить отправку в 1С{% else %}Отправить в 1С{% endif %}
+        </button>
+      </form>
       <form method="post" action="{% url 'prices_car_bu:cumulative_delete' item.id %}" class="d-inline"
             onsubmit="return confirm('Удалить эту запись кумулятива?');">
         {% csrf_token %}
@@ -56,17 +62,17 @@
         </table>
       </div>
 
-      {% if same_agreement_items.count > 1 %}
+      {% if same_agreement_items|length > 1 %}
       <div class="portal-panel mt-3">
         <h6 class="mb-2">Все показатели по этому соглашению</h6>
         <ul class="list-group list-group-flush">
           {% for o in same_agreement_items %}
           <li class="list-group-item d-flex justify-content-between align-items-center px-0 {% if o.id == item.id %}fw-bold{% endif %}">
             <span>{{ o.indicatorKVP.name|default:"—" }}</span>
-            <span>
+            <span class="d-flex align-items-center gap-2">
               {{ o.amount|floatformat:2 }}
               {% if o.id != item.id %}
-              <a href="{% url 'prices_car_bu:cumulative_detail' o.id %}" class="btn btn-link btn-sm p-0 ms-1">открыть</a>
+              <a href="{% url 'prices_car_bu:cumulative_detail' o.id %}" class="btn btn-outline-primary btn-sm">Открыть</a>
               {% endif %}
             </span>
           </li>
