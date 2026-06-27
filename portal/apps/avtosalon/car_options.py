@@ -331,7 +331,7 @@ def save_car_equipment(car, option_ids, user=None):
 
 
 def build_car_options_context(car):
-    """Контекст для вкладки «Опции»."""
+    """Контекст для вкладки «Опции»: полный справочник, отмечены только сохранённые."""
     avtohub_mod = get_avtohub_modification(car)
     avtohub_comp = get_avtohub_complectation(car, avtohub_mod)
 
@@ -339,15 +339,7 @@ def build_car_options_context(car):
     suggested_complectation_ids = get_complectation_option_ids(avtohub_comp)
     suggested_modification_ids = get_modification_option_ids(avtohub_mod)
 
-    auto_prefill_applied = False
-    if not selected_ids and suggested_complectation_ids:
-        selected_ids = set(suggested_complectation_ids)
-        auto_prefill_applied = True
-
-    options_qs = get_options_queryset(avtohub_mod)
-    if not options_qs.exists():
-        options_qs = get_options_queryset(None)
-
+    options_qs = get_options_queryset(None)
     groups = build_option_groups(options_qs, selected_ids)
     total_options = sum(len(g['options']) for g in groups)
     selected_count = sum(1 for g in groups for o in g['options'] if o['checked'])
@@ -364,7 +356,7 @@ def build_car_options_context(car):
         ),
         'suggested_complectation_ids': list(suggested_complectation_ids),
         'suggested_modification_ids': list(suggested_modification_ids),
-        'auto_prefill_applied': auto_prefill_applied,
+        'auto_prefill_applied': False,
         'can_prefill_complectation': bool(suggested_complectation_ids),
         'can_prefill_modification': bool(suggested_modification_ids),
     }
