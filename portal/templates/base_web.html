@@ -64,21 +64,25 @@
         <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
             <div class="container-fluid d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    {% if not estimation_1c_compact_layout %}
                     <button id="menu-toggle"
                             class="menu-toggle-btn d-none d-md-inline-flex"
                             type="button"
                             aria-label="Toggle sidebar"
                             aria-controls="sidebarMenu"
-                            aria-expanded="{% if request.COOKIES.menu == '1' %}false{% else %}true{% endif %}">
-                        <span class="bi {% if request.COOKIES.menu == '1' %}bi-list{% else %}bi-x-lg{% endif %}"></span>
+                            aria-expanded="{% if menu_collapsed %}false{% else %}true{% endif %}">
+                        <span class="bi {% if menu_collapsed %}bi-list{% else %}bi-x-lg{% endif %}"></span>
                     </button>
+                    {% endif %}
 
                     <a class="navbar-brand me-0 px-2 flex-grow-1" href="#">КорсКор - {% block title_navbar %}{% endblock %}</a>
                 </div>
 
+                {% if not estimation_1c_compact_layout %}
                 <button class="navbar-toggler d-md-none collapsed order-last" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+                {% endif %}
             </div>
         </header>
     {% endif %}
@@ -89,7 +93,7 @@
     
         {% if request.user.is_authenticated and request.user.is_staff %}
 
-            <div {% if request.COOKIES.menu == '1' %} class="menu-close-1" {% else %} class="menu-close-0" {% endif %} id="menu" style="transition: 0.5s;">
+            <div {% if menu_collapsed %} class="menu-close-1" {% else %} class="menu-close-0" {% endif %} id="menu" style="transition: 0.5s;">
                 <nav id="sidebarMenu" class="col-md-2 col-lg-2 d-md-block bg-dark text-white sidebar collapse" data-bs-spy="scroll">
 
                     <div class="position-sticky" id="position-sticky">
@@ -564,7 +568,7 @@
         {% endif %}
 
         {% if request.user.is_authenticated %}
-            <main {% if request.COOKIES.menu == '1' %} class="col-md ms-sm col-lg px-md-1" {% else %} class="col-md-10 ms-sm-auto col-lg-10 px-md-1" {% endif %} style="padding-left: 0; padding-right: 0;" id="content">
+            <main {% if menu_collapsed %} class="col-md ms-sm col-lg px-md-1" {% else %} class="col-md-10 ms-sm-auto col-lg-10 px-md-1" {% endif %} style="padding-left: 0; padding-right: 0;" id="content">
         {% else %}
             <main class="col-md ms-sm col-lg px-md-1" id="content"></main>
         {% endif %}
@@ -669,6 +673,7 @@
     });
     
     $(document).ready(function() {
+        const estimation1cCompactLayout = {% if estimation_1c_compact_layout %}true{% else %}false{% endif %};
         const $menu = $('#menu');
         const $content = $('#content');
         const $toggle = $('#menu-toggle');
@@ -690,6 +695,10 @@
         }
 
         function setMenuState(shouldClose) {
+            if (estimation1cCompactLayout && !shouldClose) {
+                return;
+            }
+
             if (shouldClose) {
                 document.cookie = "menu=1; path=/";
                 $menu.attr('class', 'menu-close-1');
@@ -705,17 +714,17 @@
             updateToggle(shouldClose);
         }
 
-        if ($toggle.length) {
+        if ($toggle.length && !estimation1cCompactLayout) {
             $toggle.on('click', function() {
                 const isCurrentlyClosed = $menu.hasClass('menu-close-1');
                 setMenuState(!isCurrentlyClosed);
             });
+        }
 
-            const isInitiallyClosed = $menu.hasClass('menu-close-1');
-            updateToggle(isInitiallyClosed);
-            if (!isInitiallyClosed) {
-                $('body').addClass('menu-open');
-            }
+        const isInitiallyClosed = estimation1cCompactLayout || $menu.hasClass('menu-close-1');
+        updateToggle(isInitiallyClosed);
+        if (!isInitiallyClosed) {
+            $('body').addClass('menu-open');
         }
     });
    

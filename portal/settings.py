@@ -104,6 +104,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'estimations.middleware.Estimation1cUserMiddleware',
     'profiles.middleware.SingleDeviceSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -147,6 +148,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'estimations.context_processors.estimation_1c_layout',
             ],
         'libraries':{
             'custom_template_tags': 'templatetags.custom_template_tags',

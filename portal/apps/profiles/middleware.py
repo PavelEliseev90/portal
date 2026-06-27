@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import logout
 
 from chats.rlk_chat_utils import is_1c_rlk_chat_entry, is_rlk_chat_1c_session, is_rlk_chat_request
+from estimations.estimation_1c_utils import is_1c_estimation_entry, is_estimation_1c_session, is_estimation_request
 
 CURRENT_SESSION_CACHE_KEY = "current_session:{}"
 CURRENT_SESSION_CACHE_TTL = getattr(settings, 'SESSION_COOKIE_AGE', 1209600)
@@ -16,10 +17,14 @@ class SingleDeviceSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Чат 1С — отдельная сессия, не влияет на вход в браузере
+        # Чат и оценка из 1С — отдельные сессии, не влияют на вход в браузере
         if is_rlk_chat_1c_session(request):
             return self.get_response(request)
+        if is_estimation_1c_session(request):
+            return self.get_response(request)
         if is_rlk_chat_request(request) and is_1c_rlk_chat_entry(request):
+            return self.get_response(request)
+        if is_estimation_request(request) and is_1c_estimation_entry(request):
             return self.get_response(request)
 
         if not getattr(request, 'user', None) or not request.user.is_authenticated:

@@ -11,8 +11,10 @@ from .middleware import CURRENT_SESSION_CACHE_KEY, CURRENT_SESSION_CACHE_TTL
 def on_user_logged_in(sender, request, user, **kwargs):
     if not getattr(request, 'session', None):
         return
-    # Сессия чата 1С не должна перезаписывать разрешённый ключ портала
+    # Сессии 1С не должны перезаписывать разрешённый ключ портала
     if request.session.get('rlk_chat_1c_session'):
+        return
+    if request.session.get('estimation_1c_session'):
         return
     if not request.session.session_key:
         request.session.create()
