@@ -105,6 +105,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'estimations.middleware.Estimation1cUserMiddleware',
+    'eco.middleware.Eco1cUserMiddleware',
     'profiles.middleware.SingleDeviceSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',

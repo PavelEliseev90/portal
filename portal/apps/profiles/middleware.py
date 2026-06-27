@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import logout
 
 from chats.rlk_chat_utils import is_1c_rlk_chat_entry, is_rlk_chat_1c_session, is_rlk_chat_request
+from eco.eco_1c_utils import is_1c_eco_entry, is_eco_1c_session, is_eco_request
 from estimations.estimation_1c_utils import is_1c_estimation_entry, is_estimation_1c_session, is_estimation_request
 
 CURRENT_SESSION_CACHE_KEY = "current_session:{}"
@@ -22,9 +23,13 @@ class SingleDeviceSessionMiddleware:
             return self.get_response(request)
         if is_estimation_1c_session(request):
             return self.get_response(request)
+        if is_eco_1c_session(request):
+            return self.get_response(request)
         if is_rlk_chat_request(request) and is_1c_rlk_chat_entry(request):
             return self.get_response(request)
         if is_estimation_request(request) and is_1c_estimation_entry(request):
+            return self.get_response(request)
+        if is_eco_request(request) and is_1c_eco_entry(request):
             return self.get_response(request)
 
         if not getattr(request, 'user', None) or not request.user.is_authenticated:

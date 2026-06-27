@@ -1,0 +1,18 @@
+{% extends 'base_rlk_chat_1c.html' %}
+
+{% block title %}Нет доступа — ECO{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 560px;">
+    <div class="alert alert-danger mb-0">
+        <h5 class="alert-heading mb-2">403 — нет доступа к рабочему листу ECO</h5>
+        <p class="mb-2">
+            Откройте ссылку из 1С с УИН вашего сотрудника
+            или войдите в портал под учётной записью с доступом к ECO.
+        </p>
+        <p class="mb-0 small text-muted">
+            Обычная сессия портала при этом не сбрасывается.
+        </p>
+    </div>
+</div>
+{% endblock %}
