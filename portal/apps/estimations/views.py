@@ -13,6 +13,7 @@ from chats.models import Chat, ChatMessage
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q
 import datetime as DT
 from django.http import Http404, HttpResponseRedirect, HttpResponseNotFound, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User, Group
 from refs.models import RefCars, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefTypeReceptionCarsOrganization, AutoruModification, RefOrganization, RefStaff, RefUnit, RefFilial, RefManufacturer, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefCarsOrganizationFiles
 from PIL import Image
@@ -3006,3 +3007,32 @@ def api_get_estimation_history(request, rlk_id):
         return JsonResponse({'objects': objects[:50], 'objects_count': len(objects)})
     except Exception as e:
         return JsonResponse({'objects': [], 'objects_count': 0, 'error': str(e)})
+
+
+@csrf_exempt
+def estimation_1c_entry(request, staff_uin, rlk_uin, force_start=False):
+    """
+    Вход в интерактивную оценку из 1С по УИН сотрудника и УИН РЛК.
+    Отдельная сессия без login() — обычный вход в портал не сбрасывается.
+    """
+    from estimations.estimation_1c_utils import resolve_estimation_1c_access
+
+    ctx = resolve_estimation_1c_access(request, staff_uin=staff_uin, rlk_uin=rlk_uin)
+    if ctx['error'] == 'uin_auth':
+        return render(request, 'estimation/estimation_1c_uin_auth_error.html')
+    if ctx['error'] == 'login':
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    if ctx['error'] == 'not_found':
+        raise Http404
+    if ctx['error'] == 'access':
+        return render(request, 'estimation/estimation_1c_access_denied.html')
+
+    rlk = ctx['rlk']
+    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).first()
+    has_estimation = bool(
+        interactiv_rlk and interactiv_rlk.estimation_id,
+    )
+
+    if force_start or not has_estimation:
+        return HttpResponseRedirect(f'/estimations/{rlk.pk}/start/')
+    return HttpResponseRedirect(f'/estimations/{rlk.pk}/')

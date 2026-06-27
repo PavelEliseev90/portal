@@ -7,6 +7,9 @@ app_name = 'eco'
 
 urlpatterns = [
 
+    path('1c/<str:staff_uin>/<str:rlk_uin>/',                                  views.estimation_1c_entry, name='estimation_1c'),
+    path('1c/<str:staff_uin>/<str:rlk_uin>/start/',                             views.estimation_1c_entry, {'force_start': True}, name='estimation_1c_start'),
+
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),
     path('kolesa-reception/<int:reception_id>/',                                views_kolesa_reception.kolesa_reception_detail, name='kolesa_reception_detail'),

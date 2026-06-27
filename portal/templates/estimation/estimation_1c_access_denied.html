@@ -1,0 +1,19 @@
+{% extends 'base_rlk_chat_1c.html' %}
+
+{% block title %}Нет доступа — интерактивная оценка{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 560px;">
+    <div class="alert alert-danger mb-0">
+        <h5 class="alert-heading mb-2">403 — нет доступа к интерактивной оценке</h5>
+        <p class="mb-2">
+            Откройте ссылку из 1С с УИН вашего сотрудника
+            или войдите в портал под учётной записью с доступом к оценке.
+        </p>
+        <p class="mb-0 small text-muted">
+            Если вы уже вошли в портал под другим пользователем, обычная сессия не сбрасывается —
+            для работы из 1С используйте ссылку с УИН сотрудника.
+        </p>
+    </div>
+</div>
+{% endblock %}
