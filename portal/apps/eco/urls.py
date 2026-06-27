@@ -6,6 +6,8 @@ app_name = 'eco'
 
 urlpatterns = [
 
+    path('1c/<str:staff_uin>/<str:rlk_ref>/', views.eco_1c_entry, name='eco_1c'),
+
     path('',                                    views.list_eco_online),
     path('funnel/',                             views.tradein_funnel_new, name='tradein_funnel'),
     path('funnel/analytics/',                   views.tradein_funnel_analytics,         name='tradein_funnel_analytics'),

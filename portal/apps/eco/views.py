@@ -3677,16 +3677,19 @@ def doc(request, id):
     if interactiv_rlk.status.id == 2 or interactiv_rlk.status != None and interactiv_rlk.status.id == 9 and interactiv_rlk.estimation.page_remote.end_estimation != None:  
         return HttpResponseRedirect('/estimations/' + str(id) + '/')
     
-    if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not interactiv_rlk.store in request.user.profiles.korsavto_stores.all()):
-        
-        add_log_history_open(estimation, request.user, 403)
-        
-        params = {
-        'type'          : 'eco',
-        'nav_selected'  : 4,
-        'request'       : request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
+    from eco.eco_1c_utils import is_eco_1c_session
+
+    if not is_eco_1c_session(request):
+        if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not interactiv_rlk.store in request.user.profiles.korsavto_stores.all()):
+
+            add_log_history_open(estimation, request.user, 403)
+
+            params = {
+            'type'          : 'eco',
+            'nav_selected'  : 4,
+            'request'       : request,
+            }
+            return render(request, 'errors/403.html', {'params': params})
     
     version     = 3
     try:
@@ -15842,3 +15845,26 @@ def eco_appraisers_performance(request):
 #История изменений (сначала новые) — дубликат для совместимости
 def get_versions(table, id):
 	return ChangeLog.objects.filter(model=table, record_id=id).select_related('user').order_by('-changed')
+
+
+@csrf_exempt
+def eco_1c_entry(request, staff_uin, rlk_ref):
+    """
+    Вход в ECO из 1С по УИН сотрудника и id/uin РЛК.
+    Отдельная сессия без login() — обычный вход в портал не сбрасывается.
+    """
+    from eco.eco_1c_utils import resolve_eco_1c_access
+
+    page = (request.GET.get('page') or '9').strip() or '9'
+    ctx = resolve_eco_1c_access(request, staff_uin=staff_uin, rlk_ref=rlk_ref)
+    if ctx['error'] == 'uin_auth':
+        return render(request, 'eco/eco_1c_uin_auth_error.html')
+    if ctx['error'] == 'login':
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    if ctx['error'] == 'not_found':
+        raise Http404
+    if ctx['error'] == 'access':
+        return render(request, 'eco/eco_1c_access_denied.html')
+
+    rlk = ctx['rlk']
+    return HttpResponseRedirect(f'/eco/{rlk.pk}/?page={page}')
