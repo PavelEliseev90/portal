@@ -105,10 +105,10 @@
       <table class="table table-sm table-bordered deal-table">
         <thead>
           <tr>
-            <th colspan="17">Trade-in / оценка</th>
-            <th colspan="11" class="text-center col-group-op">РЛ ОП (footing)</th>
+            <th colspan="{{ params.tradein_col_count }}">Trade-in / оценка</th>
+            <th colspan="{{ params.op_col_count }}" class="text-center col-group-op">РЛ ОП (footing)</th>
             <th colspan="{{ params.kp_col_count }}" class="text-center col-group-kp">КП</th>
-            <th colspan="3"></th>
+            <th colspan="2"></th>
           </tr>
           <tr>
             <th>РЛ trade-in</th>
@@ -126,8 +126,12 @@
             <th>Продажа оценщик</th>
             <th>До КД</th>
             <th>После КД</th>
-            <th>Авторасчёт</th>
-            <th>Затраты ВР</th>
+            <th>Авторасчёт цена</th>
+            <th>Авторасчёт автотека</th>
+            <th>Итого ВР</th>
+            <th>Подготовка</th>
+            <th>Слесарка</th>
+            <th>Кузовной участок</th>
             <th class="col-group-op">РЛ ОП</th>
             <th class="col-group-op">Дата</th>
             <th class="col-group-op">Менеджер</th>
@@ -135,19 +139,13 @@
             <th class="col-group-op">Архив ОП</th>
             <th class="col-group-op">Коммент. менеджера</th>
             <th class="col-group-op">Коммент. администратора</th>
-            <th class="col-group-op">Соглашение</th>
+            <th class="col-group-op">№ соглашения</th>
+            <th class="col-group-op">Дата соглашения</th>
+            <th class="col-group-op">Сумма соглашения</th>
+            <th class="col-group-op">Себестоимость</th>
             <th class="col-group-op">Отгрузка АМ</th>
             <th class="col-group-kp">КП №</th>
             <th class="col-group-kp">КП дата</th>
-            <th class="col-group-kp">КП итого</th>
-            <th class="col-group-kp">КП цена авто</th>
-            <th class="col-group-kp">КП скидка</th>
-            <th class="col-group-kp">КП trade-in</th>
-            <th class="col-group-kp">КП ОПФУ</th>
-            <th class="col-group-kp">КП колёса</th>
-            <th class="col-group-kp">КП ГРЗ</th>
-            <th class="col-group-kp">КП работы</th>
-            <th class="col-group-kp">КП товары</th>
             <th class="col-group-kp">КП КВП</th>
             <th class="col-group-kp">КП КМ</th>
             <th class="col-group-kp">КП согласование</th>
@@ -160,7 +158,6 @@
             {% endfor %}
             <th>Подразделение</th>
             <th>Источник</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -175,7 +172,7 @@
             <td>{{ item.date_archive|date:"d.m.Y H:i"|default:"—" }}</td>
             <td>
               {% if item.has_estimation %}
-                #{{ item.estimation_id }}
+                <a href="{{ item.estimation_url }}" target="_blank">#{{ item.estimation_id }}</a>
               {% elif item.has_interactiv_rlk %}
                 <span class="text-muted">без оценки</span>
               {% else %}
@@ -198,28 +195,16 @@
             <td>{% if item.price_sale %}{{ item.price_sale|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
             <td>{% if item.price_before_kd %}{{ item.price_before_kd|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
             <td>{% if item.price_after_kd %}{{ item.price_after_kd|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
-            <td>
-              <small>
-                {% if item.price_auto_remote %}Д: {{ item.price_auto_remote|floatformat:"0g" }} ₽<br>{% endif %}
-                {% if item.price_auto_1 %}1: {{ item.price_auto_1|floatformat:"0g" }} ₽<br>{% endif %}
-                {% if item.price_auto_2 %}2: {{ item.price_auto_2|floatformat:"0g" }} ₽<br>{% endif %}
-                {% if item.price_auto_3 %}3: {{ item.price_auto_3|floatformat:"0g" }} ₽{% endif %}
-                {% if not item.price_auto_remote and not item.price_auto_1 and not item.price_auto_2 and not item.price_auto_3 %}—{% endif %}
-              </small>
-            </td>
-            <td>
-              <small>
-                {% if item.cost_recovery %}<strong>Итого: {{ item.cost_recovery|floatformat:"0g" }} ₽</strong><br>{% endif %}
-                Подгот.: {% if item.cost_podgotovka %}{{ item.cost_podgotovka|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                Слесарка: {% if item.cost_ss %}{{ item.cost_ss|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                Кузов: {% if item.cost_mcu %}{{ item.cost_mcu|floatformat:"0g" }} ₽{% else %}—{% endif %}
-                {% if not item.cost_recovery and not item.cost_podgotovka and not item.cost_ss and not item.cost_mcu %}—{% endif %}
-              </small>
-            </td>
+            <td>{% if item.price_auto_2 %}{{ item.price_auto_2|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+            <td>{% if item.price_auto_3 %}{{ item.price_auto_3|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+            <td>{% if item.cost_recovery %}{{ item.cost_recovery|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+            <td>{% if item.cost_podgotovka %}{{ item.cost_podgotovka|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+            <td>{% if item.cost_ss %}{{ item.cost_ss|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+            <td>{% if item.cost_mcu %}{{ item.cost_mcu|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
             <td class="col-group-op">
               {% if item.op_footings %}
                 {% for op in item.op_footings %}
-                  <div class="op-stack"><strong>{{ op.number }}</strong><br><small class="text-muted">id {{ op.id }}</small></div>
+                  <div class="op-stack"><strong>{{ op.number }}</strong></div>
                 {% endfor %}
               {% else %}—{% endif %}
             </td>
@@ -272,16 +257,34 @@
               {% if item.op_footings %}
                 {% for op in item.op_footings %}
                   <div class="op-stack">
-                    {% if op.agreement %}
-                      <strong>№ {{ op.agreement.number }}</strong><br>
-                      <small>{{ op.agreement.date|date:"d.m.Y H:i" }}</small><br>
-                      <small>Сумма: {% if op.agreement.amount %}{{ op.agreement.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</small><br>
-                      <small>Себест.: {% if op.agreement.cost_price %}{{ op.agreement.cost_price|floatformat:"0g" }} ₽{% else %}—{% endif %}</small><br>
-                      <small>Расходы: {% if op.agreement.outlay %}{{ op.agreement.outlay|floatformat:"0g" }} ₽{% else %}—{% endif %}</small><br>
-                      <small>Скидка: {% if op.agreement.discount_amount %}{{ op.agreement.discount_amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</small><br>
-                      <small>Торг: {% if op.agreement.discount_torg %}{{ op.agreement.discount_torg|floatformat:"0g" }} ₽{% else %}—{% endif %}</small><br>
-                      <small>Trade-in: {% if op.agreement.discount_tradein %}{{ op.agreement.discount_tradein|floatformat:"0g" }} ₽{% else %}—{% endif %}</small>
-                    {% else %}—{% endif %}
+                    {% if op.agreement %}{{ op.agreement.number|default:"—" }}{% else %}—{% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="col-group-op">
+              {% if item.op_footings %}
+                {% for op in item.op_footings %}
+                  <div class="op-stack">
+                    {% if op.agreement %}{{ op.agreement.date|date:"d.m.Y H:i"|default:"—" }}{% else %}—{% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="col-group-op">
+              {% if item.op_footings %}
+                {% for op in item.op_footings %}
+                  <div class="op-stack">
+                    {% if op.agreement and op.agreement.amount %}{{ op.agreement.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="col-group-op">
+              {% if item.op_footings %}
+                {% for op in item.op_footings %}
+                  <div class="op-stack">
+                    {% if op.agreement and op.agreement.cost_price %}{{ op.agreement.cost_price|floatformat:"0g" }} ₽{% else %}—{% endif %}
                   </div>
                 {% endfor %}
               {% else %}—{% endif %}
@@ -303,37 +306,10 @@
               {% else %}—{% endif %}
             </td>
             <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp %}<strong>{{ op.kp.number|default:"—" }}</strong><br><small class="text-muted">id {{ op.kp.id }}</small>{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
+              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp %}<strong>{{ op.kp.number|default:"—" }}</strong>{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
             </td>
             <td class="col-group-kp">
               {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp %}{{ op.kp.date|date:"d.m.Y H:i"|default:"—" }}{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.amount %}{{ op.kp.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.price %}{{ op.kp.price|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.discount %}{{ op.kp.discount|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_tradein %}{{ op.kp.custom_tradein|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_opfu %}{{ op.kp.custom_opfu|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_wheels %}{{ op.kp.custom_wheels|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_grz %}{{ op.kp.custom_grz|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_work %}{{ op.kp.custom_work|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp">
-              {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp and op.kp.custom_product %}{{ op.kp.custom_product|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
             </td>
             <td class="col-group-kp">
               {% if item.op_footings %}{% for op in item.op_footings %}<div class="op-stack">{% if op.kp %}{{ op.kp.kvp|default:"—" }}{% else %}—{% endif %}</div>{% endfor %}{% else %}—{% endif %}
@@ -363,13 +339,11 @@
                   <div class="op-stack">
                     {% with cell=op.kp_detail_cells|list_item:forloop.parentloop.counter0 %}
                       {% if cell %}
-                        <small>
-                          Сумма: {% if cell.amount %}{{ cell.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                          ВП: {% if cell.vp %}{{ cell.vp|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                          Показ.: {{ cell.pocazatel|default:"—" }}<br>
-                          Сумма K: {% if cell.amount_k %}{{ cell.amount_k|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                          {% if cell.success %}Применено{% else %}Не применено{% endif %}
-                        </small>
+                        {% if cell.success %}
+                          {% if cell.amount %}{{ cell.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}
+                        {% else %}
+                          {% if cell.vp %}{{ cell.vp|floatformat:"0g" }} ₽{% else %}—{% endif %}
+                        {% endif %}
                       {% else %}—{% endif %}
                     {% endwith %}
                   </div>
@@ -379,11 +353,6 @@
             {% endfor %}
             <td><small>{{ item.unit_name }}</small></td>
             <td><small>{{ item.unit_source_name }}</small></td>
-            <td>
-              {% if item.estimation_id %}
-                <a href="/eco/{{ item.rlk_id }}/?page=9" target="_blank" class="btn btn-sm btn-outline-primary">Оценка</a>
-              {% endif %}
-            </td>
           </tr>
           {% endfor %}
         </tbody>
