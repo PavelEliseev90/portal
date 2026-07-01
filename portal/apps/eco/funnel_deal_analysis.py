@@ -437,11 +437,13 @@ def get_deal_analysis_context(request):
             qs = qs.filter(unit_id__in=group_unit_ids)
 
     funnel_list = list(qs)
-    footing_ids = [r.footing_rlk_id for r in funnel_list if r.footing_rlk_id]
+    op_rlk_map = _resolve_op_rlks_batch(funnel_list)
+    op_rlks = list(op_rlk_map.values())
+    op_ids = [op.id for op in op_rlks if op]
     rlk_ids = [r.rlk_id for r in funnel_list]
 
-    calc_map = _last_calc_map(footing_ids)
-    agreements, shipments = _op_deal_map(footing_ids)
+    calc_map = _last_calc_map_for_ops(op_rlks)
+    agreements, shipments = _op_deal_map(op_ids)
     lo_map = {
         row['rlk_id']: row['active']
         for row in DocLO.objects.filter(rlk_id__in=rlk_ids).values('rlk_id', 'active')
