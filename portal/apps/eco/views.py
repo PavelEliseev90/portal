@@ -1980,7 +1980,7 @@ def tradein_funnel_rejected(request):
 
 
 def tradein_funnel_deal_analysis(request):
-    """Видение сделки: витрина TradeInFunnel + РЛ ОП + последнее КП."""
+    """Видение сделки: этап 1 — РЛ trade-in с отказом, оценка, авто."""
     from eco.funnel_deal_analysis import get_deal_analysis_context
 
     if not request.user.is_authenticated:
