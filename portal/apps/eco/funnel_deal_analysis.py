@@ -7,7 +7,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Exists, OuterRef, Q, Subquery
 
 from documents.models import DocCarAgreement, DocCarShipment, DocRLK
-from prices_car.models import CarCalculations, CarCalculationsDetail
+from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail
 from refs.models import RefStaff, RefTypeReceptionCarsOrganization, RefUnit, RefUnitGroup
 from register.models import RegInteractivOcenkaRLK
 
@@ -22,7 +22,10 @@ TRADEIN_RLK_Q = Q(
 
 SOGLASOVANIE_LABELS = dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES)
 
-KP_MAIN_COLUMN_COUNT = 18
+TRADEIN_COL_COUNT = 21
+OP_COL_COUNT = 12
+KP_MAIN_COLUMN_COUNT = 9
+ESTIMATION_EXCEL_COL = 6
 
 
 def _parse_date(value, default, is_end=False):
@@ -147,15 +150,18 @@ def _detail_to_dict(detail):
     }
 
 
-def _collect_kp_detail_columns(all_ops):
+def _collect_kp_detail_columns(all_ops=None):
     seen = {}
-    for op in all_ops:
+    for dt in CarCalculationsTypeDetail.objects.exclude(name='').order_by('name'):
+        if dt.id:
+            seen[dt.id] = dt.name or ''
+    for op in all_ops or []:
         kp = op.get('kp')
         if not kp:
             continue
         for detail in kp.get('details_list', []):
             tid = detail.get('type_id')
-            if tid:
+            if tid and tid not in seen:
                 seen[tid] = detail.get('type_name') or ''
     return [
         {'id': tid, 'name': seen[tid]}
@@ -355,6 +361,7 @@ def _build_row(doc, op_footings=None):
         'archive_comment': archive_comment,
         'interactiv_rlk_id': doc.interactiv_rlk_id or None,
         'estimation_id': doc.inter_estimation_id or None,
+        'estimation_url': f'/eco/{doc.id}/?page=9' if doc.inter_estimation_id else '',
         'status_name': doc.inter_status_name or '—',
         'start_estimation': doc.inter_start_estimation,
         'end_estimation': doc.inter_end_estimation,
@@ -617,6 +624,8 @@ def get_deal_analysis_context(request):
             'status_options': status_options,
             'kp_detail_columns': kp_detail_columns,
             'kp_col_count': kp_col_count,
+            'tradein_col_count': TRADEIN_COL_COUNT,
+            'op_col_count': OP_COL_COUNT,
         },
     }
 
@@ -661,22 +670,6 @@ def _fmt_op_archive(op):
     return '\n'.join(lines)
 
 
-def _fmt_agreement(agr):
-    if not agr:
-        return ''
-    lines = [
-        f'№ {agr.get("number") or ""}'.strip(),
-        _fmt_excel_dt(agr.get('date')),
-        f'Сумма: {_fmt_excel_money(agr.get("amount"))}' if agr.get('amount') else '',
-        f'Себест.: {_fmt_excel_money(agr.get("cost_price"))}' if agr.get('cost_price') else '',
-        f'Расходы: {_fmt_excel_money(agr.get("outlay"))}' if agr.get('outlay') else '',
-        f'Скидка: {_fmt_excel_money(agr.get("discount_amount"))}' if agr.get('discount_amount') else '',
-        f'Торг: {_fmt_excel_money(agr.get("discount_torg"))}' if agr.get('discount_torg') else '',
-        f'Trade-in: {_fmt_excel_money(agr.get("discount_tradein"))}' if agr.get('discount_tradein') else '',
-    ]
-    return '\n'.join(line for line in lines if line)
-
-
 def _fmt_shipment(sh):
     if not sh:
         return ''
@@ -694,14 +687,9 @@ def _fmt_shipment(sh):
 def _fmt_kp_detail_cell(cell):
     if not cell:
         return ''
-    lines = [
-        f'Сумма: {_fmt_excel_money(cell.get("amount"))}' if cell.get('amount') else 'Сумма: —',
-        f'ВП: {_fmt_excel_money(cell.get("vp"))}' if cell.get('vp') else 'ВП: —',
-        f'Показ.: {cell.get("pocazatel") or "—"}',
-        f'Сумма K: {_fmt_excel_money(cell.get("amount_k"))}' if cell.get('amount_k') else 'Сумма K: —',
-        'Применено' if cell.get('success') else 'Не применено',
-    ]
-    return '\n'.join(lines)
+    if cell.get('success'):
+        return _fmt_excel_money(cell.get('amount'))
+    return _fmt_excel_money(cell.get('vp'))
 
 
 def _deal_analysis_excel_headers(kp_detail_columns):
@@ -709,12 +697,15 @@ def _deal_analysis_excel_headers(kp_detail_columns):
         'РЛ trade-in', 'Дата РЛ', 'Причина отказа', 'Коммент. отказа', 'Дата архива',
         'Оценка', 'Статус', 'Оценщик', 'Тип приёма', 'Автомобиль', 'Модификация',
         'VIN', 'Год', 'Пробег',
-        'Приём оценщик', 'Продажа оценщик', 'До КД', 'После КД', 'Авторасчёт', 'Затраты ВР',
+        'Приём оценщик', 'Продажа оценщик', 'До КД', 'После КД',
+        'Авторасчёт цена', 'Авторасчёт автотека',
+        'Итого ВР', 'Подготовка', 'Слесарка', 'Кузовной участок',
         'РЛ ОП', 'Дата ОП', 'Менеджер ОП', 'Подразделение ОП', 'Архив ОП',
-        'Коммент. менеджера', 'Коммент. администратора', 'Соглашение', 'Отгрузка АМ',
-        'КП №', 'КП дата', 'КП итого', 'КП цена авто', 'КП скидка', 'КП trade-in',
-        'КП ОПФУ', 'КП колёса', 'КП ГРЗ', 'КП работы', 'КП товары', 'КП КВП', 'КП КМ',
-        'КП согласование', 'КП отказ', 'КП автор', 'КП авто', 'КП комментарий',
+        'Коммент. менеджера', 'Коммент. администратора',
+        '№ соглашения', 'Дата соглашения', 'Сумма соглашения', 'Себестоимость соглашения',
+        'Отгрузка АМ',
+        'КП №', 'КП дата', 'КП КВП', 'КП КМ', 'КП согласование', 'КП отказ',
+        'КП автор', 'КП авто', 'КП комментарий',
     ]
     for col in kp_detail_columns:
         headers.append(f'КП {col["name"]}')
@@ -737,23 +728,6 @@ def _deal_analysis_item_to_row(item, kp_detail_columns):
     if car_title == '—':
         car_title = ''
 
-    auto_lines = []
-    if item.get('price_auto_remote'):
-        auto_lines.append(f'Д: {item["price_auto_remote"]}')
-    if item.get('price_auto_1'):
-        auto_lines.append(f'1: {item["price_auto_1"]}')
-    if item.get('price_auto_2'):
-        auto_lines.append(f'2: {item["price_auto_2"]}')
-    if item.get('price_auto_3'):
-        auto_lines.append(f'3: {item["price_auto_3"]}')
-
-    cost_lines = []
-    if item.get('cost_recovery'):
-        cost_lines.append(f'Итого: {item["cost_recovery"]}')
-    cost_lines.append(f'Подгот.: {item.get("cost_podgotovka") or "—"}')
-    cost_lines.append(f'Слесарка: {item.get("cost_ss") or "—"}')
-    cost_lines.append(f'Кузов: {item.get("cost_mcu") or "—"}')
-
     row = [
         item.get('rlk_number') or '',
         _fmt_excel_dt(item.get('rlk_date')),
@@ -773,30 +747,26 @@ def _deal_analysis_item_to_row(item, kp_detail_columns):
         _fmt_excel_money(item.get('price_sale')),
         _fmt_excel_money(item.get('price_before_kd')),
         _fmt_excel_money(item.get('price_after_kd')),
-        '\n'.join(auto_lines),
-        '\n'.join(cost_lines),
-        _join_ops(ops, lambda op: f'{op.get("number") or ""}\nid {op.get("id")}'),
+        _fmt_excel_money(item.get('price_auto_2')),
+        _fmt_excel_money(item.get('price_auto_3')),
+        _fmt_excel_money(item.get('cost_recovery')),
+        _fmt_excel_money(item.get('cost_podgotovka')),
+        _fmt_excel_money(item.get('cost_ss')),
+        _fmt_excel_money(item.get('cost_mcu')),
+        _join_ops(ops, lambda op: op.get('number') or ''),
         _join_ops(ops, lambda op: _fmt_excel_dt(op.get('date'))),
         _join_ops(ops, lambda op: op.get('staff_name') or ''),
         _join_ops(ops, lambda op: op.get('unit_name') or ''),
         _join_ops(ops, _fmt_op_archive),
         _join_ops(ops, lambda op: op.get('comment_manager') or ''),
         _join_ops(ops, lambda op: op.get('comment_administrator') or ''),
-        _join_ops(ops, lambda op: _fmt_agreement(op.get('agreement'))),
+        _join_ops(ops, lambda op: (op.get('agreement') or {}).get('number') or ''),
+        _join_ops(ops, lambda op: _fmt_excel_dt((op.get('agreement') or {}).get('date'))),
+        _join_ops(ops, lambda op: _fmt_excel_money((op.get('agreement') or {}).get('amount'))),
+        _join_ops(ops, lambda op: _fmt_excel_money((op.get('agreement') or {}).get('cost_price'))),
         _join_ops(ops, lambda op: _fmt_shipment(op.get('shipment'))),
-        _join_ops(ops, lambda op: (
-            f'{op["kp"].get("number") or "—"}\nid {op["kp"].get("id")}' if op.get('kp') else ''
-        )),
+        _join_ops(ops, lambda op: (op.get('kp') or {}).get('number') or '' if op.get('kp') else ''),
         _join_ops(ops, lambda op: _fmt_excel_dt(op['kp'].get('date')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('amount')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('price')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('discount')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_tradein')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_opfu')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_wheels')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_grz')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_work')) if op.get('kp') else ''),
-        _join_ops(ops, lambda op: _fmt_excel_money(op['kp'].get('custom_product')) if op.get('kp') else ''),
         _join_ops(ops, lambda op: op['kp'].get('kvp') if op.get('kp') and op['kp'].get('kvp') is not None else ''),
         _join_ops(ops, lambda op: op['kp'].get('km_raschet') if op.get('kp') and op['kp'].get('km_raschet') is not None else ''),
         _join_ops(ops, lambda op: op['kp'].get('soglasovanie') or '' if op.get('kp') else ''),
@@ -824,7 +794,21 @@ def _deal_analysis_item_to_row(item, kp_detail_columns):
     return row
 
 
-def build_deal_analysis_workbook(items, kp_detail_columns):
+def _apply_estimation_hyperlink(ws, row_idx, item, base_url=''):
+    if not item.get('estimation_id') or not item.get('estimation_url'):
+        return
+    from openpyxl.styles import Font
+
+    cell = ws.cell(row=row_idx, column=ESTIMATION_EXCEL_COL)
+    cell.value = f'#{item["estimation_id"]}'
+    url = item['estimation_url']
+    if base_url and not url.startswith('http'):
+        url = base_url.rstrip('/') + url
+    cell.hyperlink = url
+    cell.font = Font(color='0563C1', underline='single')
+
+
+def build_deal_analysis_workbook(items, kp_detail_columns, base_url=''):
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font
 
@@ -838,6 +822,7 @@ def build_deal_analysis_workbook(items, kp_detail_columns):
 
     for item in items:
         ws.append(_deal_analysis_item_to_row(item, kp_detail_columns))
+        _apply_estimation_hyperlink(ws, ws.max_row, item, base_url)
 
     for row in ws.iter_rows(min_row=2):
         for cell in row:

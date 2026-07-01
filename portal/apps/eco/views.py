@@ -2010,7 +2010,8 @@ def tradein_funnel_deal_analysis_export(request):
         return HttpResponseRedirect('/')
 
     items, kp_detail_columns, filters = get_deal_analysis_export_data(request)
-    wb = build_deal_analysis_workbook(items, kp_detail_columns)
+    base_url = request.build_absolute_uri('/').rstrip('/')
+    wb = build_deal_analysis_workbook(items, kp_detail_columns, base_url=base_url)
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
