@@ -19,14 +19,6 @@
     position: sticky; top: 0; z-index: 2;
   }
   .deal-table td { vertical-align: top; }
-  .deal-table .col-group-op { background: #eef4ff; }
-  .deal-table .col-group-est { background: #f8fafc; }
-  .deal-table .col-group-kp { background: #fff8ee; }
-  .deal-table .col-group-out { background: #f0fdf4; }
-  .stage-pill {
-    display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px;
-    background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.75rem;
-  }
   .reason-stat-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .reason-stat-item {
     background: #f8fafc; border: 1px solid #dbe4f0; border-radius: 0.75rem;
@@ -34,13 +26,14 @@
   }
   .reason-stat-item strong { color: #002a5a; }
   .table-scroll { max-height: 72vh; overflow: auto; }
+  .badge-no-est { background: #fee2e2; color: #991b1b; }
 </style>
 
 <div class="kors-funnel-page">
   <div class="kors-funnel-header d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
       <h2>Видение сделки Trade-In</h2>
-      <p class="text-muted mb-0">Витрина оценок + РЛ ОП + последнее КП — где и почему теряем приём</p>
+      <p class="text-muted mb-0">Этап 1: все РЛ trade-in за период → оценка через RegInteractivOcenkaRLK</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'eco:tradein_funnel_rejected' %}?{{ request.GET.urlencode }}" class="btn btn-outline-danger btn-sm">Непринятые</a>
@@ -52,43 +45,29 @@
     <div class="kors-panel__head"><h3>Фильтры</h3></div>
     <form method="get" class="row g-3">
       <div class="col-md-2">
-        <label class="form-label">Дата с</label>
+        <label class="form-label">Дата РЛ с</label>
         <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Дата по</label>
+        <label class="form-label">Дата РЛ по</label>
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Этап потери</label>
-        <select class="form-select" name="loss_stage">
+        <label class="form-label">Причина отказа</label>
+        <select class="form-select" name="reason_archive">
           <option value="">Все</option>
-          {% for stage in params.loss_stage_options %}
-            <option value="{{ stage }}" {% if params.filters.loss_stage == stage %}selected{% endif %}>{{ stage }}</option>
+          {% for reason in params.reason_options %}
+            <option value="{{ reason }}" {% if params.filters.reason_archive == reason %}selected{% endif %}>{{ reason }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label">Сделка ОП</label>
-        <select class="form-select" name="op_deal">
+        <label class="form-label">Статус оценки</label>
+        <select class="form-select" name="status">
           <option value="">Все</option>
-          <option value="yes" {% if params.filters.op_deal == 'yes' %}selected{% endif %}>Есть соглашение/отгрузка</option>
-          <option value="no" {% if params.filters.op_deal == 'no' %}selected{% endif %}>Нет сделки ОП</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Trade-in в КП</label>
-        <select class="form-select" name="kp_tradein">
-          <option value="">Все</option>
-          <option value="yes" {% if params.filters.kp_tradein == 'yes' %}selected{% endif %}>Заложен</option>
-          <option value="no" {% if params.filters.kp_tradein == 'no' %}selected{% endif %}>Не заложен</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Показать</label>
-        <select class="form-select" name="only_lost">
-          <option value="1" {% if params.filters.only_lost == '1' %}selected{% endif %}>Только непринятые</option>
-          <option value="0" {% if params.filters.only_lost == '0' %}selected{% endif %}>Все с оценкой</option>
+          {% for status in params.status_options %}
+            <option value="{{ status }}" {% if params.filters.status == status %}selected{% endif %}>{{ status }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="col-12 d-flex gap-2">
@@ -98,13 +77,13 @@
     </form>
   </div>
 
-  {% if params.loss_stage_stats %}
+  {% if params.reason_stats %}
   <div class="kors-panel">
-    <div class="kors-panel__head"><h3>Этапы потери (в выборке)</h3></div>
+    <div class="kors-panel__head"><h3>Причины отказа (в выборке)</h3></div>
     <div class="reason-stat-grid">
-      {% for stage, count in params.loss_stage_stats %}
-        <a class="reason-stat-item text-decoration-none text-dark" href="?loss_stage={{ stage|urlencode }}&{{ request.GET.urlencode }}">
-          <strong>{{ count }}</strong> — {{ stage }}
+      {% for reason, count in params.reason_stats %}
+        <a class="reason-stat-item text-decoration-none text-dark" href="?reason_archive={{ reason|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}">
+          <strong>{{ count }}</strong> — {{ reason }}
         </a>
       {% endfor %}
     </div>
@@ -120,136 +99,59 @@
       <table class="table table-sm table-bordered deal-table">
         <thead>
           <tr>
-            <th colspan="5">Trade-in / оценка</th>
-            <th colspan="4" class="text-center">РЛ ОП (основание)</th>
-            <th colspan="8" class="text-center">Данные оценки (витрина)</th>
-            <th colspan="7" class="text-center">Последнее КП</th>
-            <th colspan="4" class="text-center">Итог сделки</th>
-          </tr>
-          <tr>
             <th>РЛ trade-in</th>
-            <th>Авто</th>
-            <th>VIN</th>
-            <th>Этап потери</th>
+            <th>Дата РЛ</th>
             <th>Причина отказа</th>
-            <th class="col-group-op">РЛ ОП</th>
-            <th class="col-group-op">Источник</th>
-            <th class="col-group-op">Сделка ОП</th>
-            <th class="col-group-op">Архив ОП</th>
-            <th class="col-group-est">Оценщик</th>
-            <th class="col-group-est">Аналитики</th>
-            <th class="col-group-est">Цена дист./до/после</th>
-            <th class="col-group-est">Авторасчёт</th>
-            <th class="col-group-est">Коридор</th>
-            <th class="col-group-est">Приём / продажа</th>
-            <th class="col-group-est">Даты этапов</th>
-            <th class="col-group-kp">КП №</th>
-            <th class="col-group-kp">Дата</th>
-            <th class="col-group-kp">Сумма / авто</th>
-            <th class="col-group-kp">Trade-in в КП</th>
-            <th class="col-group-kp">Согласование</th>
-            <th class="col-group-kp">Отказ КП</th>
-            <th class="col-group-kp">Автор</th>
-            <th class="col-group-out">Принят</th>
-            <th class="col-group-out">ЛО</th>
-            <th class="col-group-out">Сопоставление</th>
-            <th class="col-group-out">Действия</th>
+            <th>Дата архива</th>
+            <th>Оценка</th>
+            <th>Статус</th>
+            <th>Оценщик</th>
+            <th>Тип приёма</th>
+            <th>Автомобиль</th>
+            <th>VIN</th>
+            <th>Год / пробег</th>
+            <th>Подразделение</th>
+            <th>Источник</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {% for item in params.items %}
           <tr>
-            <td>
-              <strong>{{ item.rlk_number }}</strong>
-              {% if item.lo_number %}<br><small>ЛО {{ item.lo_number }}</small>{% endif %}
-            </td>
-            <td>
-              {{ item.mark_name }} {{ item.model_name }}
-              {% if item.modification_name %}<br><small>{{ item.modification_name }}</small>{% endif %}
-              {% if item.year %}<br><small>{{ item.year }} г., {{ item.run }} км</small>{% endif %}
-            </td>
-            <td><code>{{ item.vin|default:"—" }}</code></td>
-            <td><span class="stage-pill">{{ item.loss_stage }}</span><br><small>{{ item.stage }}</small></td>
+            <td><strong>{{ item.rlk_number }}</strong></td>
+            <td>{{ item.rlk_date|date:"d.m.Y H:i"|default:"—" }}</td>
             <td>
               {% if item.archive_name %}<strong>{{ item.archive_name }}</strong><br>{% endif %}
               <small>{{ item.archive_comment|default:"—" }}</small>
             </td>
-            <td class="col-group-op">
-              {% if item.footing_rlk_number %}
-                <strong>{{ item.footing_rlk_number }}</strong>
-              {% else %}—{% endif %}
+            <td>{{ item.date_archive|date:"d.m.Y H:i"|default:"—" }}</td>
+            <td>
+              {% if item.has_estimation %}
+                #{{ item.estimation_id }}
+              {% elif item.has_interactiv_rlk %}
+                <span class="text-muted">без оценки</span>
+              {% else %}
+                <span class="badge badge-no-est">Нет связи</span>
+              {% endif %}
             </td>
-            <td class="col-group-op">{{ item.unit_source_name|default:"—" }}</td>
-            <td class="col-group-op"><small>{{ item.op_deal_text }}</small></td>
-            <td class="col-group-op">
-              {% if item.op_archive_name %}<strong>{{ item.op_archive_name }}</strong><br>{% endif %}
-              <small>{{ item.op_archive_comment|default:"—" }}</small>
+            <td>{{ item.status_name }}</td>
+            <td>{{ item.staff_name }}</td>
+            <td><small>{{ item.type_reception_name }}</small></td>
+            <td>
+              {{ item.car_title }}
+              {% if item.car_modification %}<br><small>{{ item.car_modification }}</small>{% endif %}
             </td>
-            <td class="col-group-est">{{ item.staff_name|default:"—" }}<br><small>{{ item.type_reception_name }}</small></td>
-            <td class="col-group-est">
-              <small>
-                Д: {{ item.analyst_remote_name|default:"—" }}<br>
-                До: {{ item.analyst_before_name|default:"—" }}<br>
-                После: {{ item.analyst_after_name|default:"—" }}
-              </small>
+            <td><code>{{ item.vin }}</code></td>
+            <td>
+              {% if item.year %}{{ item.year }} г.{% else %}—{% endif %}
+              {% if item.run %}<br>{{ item.run }} км{% endif %}
             </td>
-            <td class="col-group-est">
-              <small>
-                Д: {% if item.price_remote %}{{ item.price_remote|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                До: {% if item.price_before %}{{ item.price_before|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                После: {% if item.price_after %}{{ item.price_after|floatformat:"0g" }} ₽{% else %}—{% endif %}
-              </small>
-            </td>
-            <td class="col-group-est">
-              <small>
-                Д: {% if item.price_auto_remote %}{{ item.price_auto_remote|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                До: {% if item.price_auto_before %}{{ item.price_auto_before|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                После: {% if item.price_auto_after %}{{ item.price_auto_after|floatformat:"0g" }} ₽{% else %}—{% endif %}
-              </small>
-            </td>
-            <td class="col-group-est">
-              <small>
-                {{ item.comparison_remote_type }}<br>
-                {{ item.comparison_before_type }}<br>
-                {{ item.comparison_after_type }}
-              </small>
-            </td>
-            <td class="col-group-est">
-              <small>
-                Приём: {% if item.price_reception_staff %}{{ item.price_reception_staff|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                Продажа: {% if item.price_sale_staff %}{{ item.price_sale_staff|floatformat:"0g" }} ₽{% else %}—{% endif %}
-              </small>
-            </td>
-            <td class="col-group-est">
-              <small>
-                Старт: {{ item.date_start_estimation|date:"d.m.Y H:i"|default:"—" }}<br>
-                До КД: {{ item.date_before_success|date:"d.m.Y H:i"|default:"—" }}<br>
-                После: {{ item.date_after_success|date:"d.m.Y H:i"|default:"—" }}
-              </small>
-            </td>
-            <td class="col-group-kp">{{ item.kp_number|default:"—" }}</td>
-            <td class="col-group-kp">{{ item.kp_date|date:"d.m.Y H:i"|default:"—" }}</td>
-            <td class="col-group-kp">
-              <small>
-                Итого: {% if item.kp_amount %}{{ item.kp_amount|floatformat:"0g" }} ₽{% else %}—{% endif %}<br>
-                Авто: {% if item.kp_price_car %}{{ item.kp_price_car|floatformat:"0g" }} ₽{% else %}—{% endif %}
-              </small>
-            </td>
-            <td class="col-group-kp">
-              {% if item.kp_has_tradein %}
-                <span class="text-success fw-bold">{{ item.kp_tradein|floatformat:"0g" }} ₽</span>
-              {% else %}—{% endif %}
-            </td>
-            <td class="col-group-kp"><small>{{ item.kp_soglasovanie|default:"—" }}</small></td>
-            <td class="col-group-kp"><small>{{ item.kp_rejection|default:"—" }}</small></td>
-            <td class="col-group-kp"><small>{{ item.kp_author|default:"—" }}</small></td>
-            <td class="col-group-out">
-              {% if item.accepted %}<span class="text-success fw-bold">Да</span>{% else %}<span class="text-danger">Нет</span>{% endif %}
-            </td>
-            <td class="col-group-out">{% if item.lo_active %}<span class="text-success">Проведён</span>{% elif item.lo_active == False %}<span class="text-warning">Не проведён</span>{% else %}—{% endif %}</td>
-            <td class="col-group-out"><small>{{ item.tradein_kp_comment }}</small></td>
-            <td class="col-group-out">
-              <a href="/eco/{{ item.rlk_id }}/?page=9" target="_blank" class="btn btn-sm btn-outline-primary">Оценка</a>
+            <td><small>{{ item.unit_name }}</small></td>
+            <td><small>{{ item.unit_source_name }}</small></td>
+            <td>
+              {% if item.estimation_id %}
+                <a href="/eco/{{ item.rlk_id }}/?page=9" target="_blank" class="btn btn-sm btn-outline-primary">Оценка</a>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -270,7 +172,7 @@
     </nav>
     {% endif %}
     {% else %}
-      <p class="text-muted mb-0">Нет данных по выбранным фильтрам.</p>
+      <p class="text-muted mb-0">Нет РЛ trade-in за выбранный период.</p>
     {% endif %}
   </div>
 </div>
