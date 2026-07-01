@@ -765,6 +765,22 @@ def get_estimation_bcp(request):
                 
     return JsonResponse(info, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+def get_estimation_planned_costs(request, estimation_id):
+    """Планируемые затраты оценки: подготовка, слесарка, кузовной участок."""
+    from eco.estimation_planned_costs import get_estimation_planned_costs as load_planned_costs
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    recalculate = (request.GET.get('recalculate') or '').strip().lower() in ('1', 'true', 'yes')
+    data = load_planned_costs(estimation_id, recalculate=recalculate)
+    if data is None:
+        return JsonResponse({'error': 'Estimation not found'}, status=status.HTTP_404_NOT_FOUND)
+    return JsonResponse(data, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 def get_info_estimation_vin(request):
     

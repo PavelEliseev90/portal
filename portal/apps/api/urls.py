@@ -121,6 +121,7 @@ urlpatterns = [
    path('refresh_rlk_bu/',             views.refresh_rlk_bu),
    path('get_estimation_bcp/',       views.get_estimation_bcp),   
    path('get_info_estimation_vin/',  views.get_info_estimation_vin),
+   path('estimation/<int:estimation_id>/planned-costs/', views.get_estimation_planned_costs, name='estimation_planned_costs'),
 
    #Обмен с 1С по формату общего модуля ОбменДаннымиAPI в 1С
    path('exchange/',                views.exchange),
