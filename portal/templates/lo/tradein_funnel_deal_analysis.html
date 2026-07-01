@@ -182,7 +182,8 @@
             <td class="col-group-op">{{ item.unit_source_name|default:"—" }}</td>
             <td class="col-group-op"><small>{{ item.op_deal_text }}</small></td>
             <td class="col-group-op">
-              {% if item.archive_name %}{{ item.archive_name }}{% else %}—{% endif %}
+              {% if item.op_archive_name %}<strong>{{ item.op_archive_name }}</strong><br>{% endif %}
+              <small>{{ item.op_archive_comment|default:"—" }}</small>
             </td>
             <td class="col-group-est">{{ item.staff_name|default:"—" }}<br><small>{{ item.type_reception_name }}</small></td>
             <td class="col-group-est">

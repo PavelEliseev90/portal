@@ -7,7 +7,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 
 from analytics.models import TradeInFunnel
-from documents.models import DocCarAgreement, DocCarShipment, DocLO
+from documents.models import DocCarAgreement, DocCarShipment, DocLO, DocRLK
 from prices_car.models import CarCalculations
 from refs.models import RefStaff, RefTypeReceptionCarsOrganization, RefUnit, RefUnitGroup
 
@@ -140,15 +140,115 @@ def _load_filter_lists(date_start, date_end):
     return units, source_units, staffs, analysts, type_receptions
 
 
-def _last_calc_map(footing_ids):
-    result = {}
-    if not footing_ids:
+def _parse_reason_archive(value):
+    if not value:
+        return '', ''
+    parts = str(value).split(':', 1)
+    name = parts[0].strip()
+    comment = parts[1].strip() if len(parts) > 1 else ''
+    return name, comment
+
+
+def _alfa_unit_ids(unit_ids):
+    if not unit_ids:
+        return set()
+    return set(
+        RefUnit.objects.filter(id__in=unit_ids, ib__alfa=True).values_list('id', flat=True),
+    )
+
+
+def _footing_uins_by_trade_uin(trade_uins):
+    """trade-in uin -> set(footing uin)."""
+    result = defaultdict(set)
+    if not trade_uins:
         return result
-    for calc in CarCalculations.objects.filter(
-        rlk_id__in=footing_ids,
-    ).select_related('author', 'staff', 'car').order_by('rlk_id', '-date', '-id'):
-        if calc.rlk_id not in result:
+    for row in DocRLK.objects.filter(uin__in=trade_uins).exclude(footing__isnull=True).select_related('footing'):
+        trade_uin = (row.uin or '').strip()
+        footing_uin = (row.footing.uin or '').strip() if row.footing else ''
+        if trade_uin and footing_uin:
+            result[trade_uin].add(footing_uin)
+    return result
+
+
+def _resolve_op_rlks_batch(funnel_list):
+    """РЛ ОП: по цепочке footing_uin; для Alfa — eco=False."""
+    unit_ids = set()
+    for row in funnel_list:
+        if row.unit_id:
+            unit_ids.add(row.unit_id)
+        if row.unit_source_id:
+            unit_ids.add(row.unit_source_id)
+    alfa_ids = _alfa_unit_ids(unit_ids)
+
+    trade_uins = []
+    for row in funnel_list:
+        trade_uin = (row.rlk_uin or '').strip()
+        if trade_uin:
+            trade_uins.append(trade_uin)
+    footing_map = _footing_uins_by_trade_uin(trade_uins)
+
+    all_footing_uins = set()
+    for row in funnel_list:
+        trade_uin = (row.rlk_uin or '').strip()
+        footing_uins = footing_map.get(trade_uin, set())
+        if row.footing_rlk_uin:
+            footing_uins = set(footing_uins)
+            footing_uins.add(row.footing_rlk_uin.strip())
+        all_footing_uins.update(footing_uins)
+
+    op_by_uin = {}
+    op_by_uin_eco_false = {}
+    if all_footing_uins:
+        for op in DocRLK.objects.filter(uin__in=all_footing_uins).select_related(
+            'unit', 'unit_dc', 'staff',
+        ).order_by('-dataTime', '-id'):
+            uin = (op.uin or '').strip()
+            if uin and uin not in op_by_uin:
+                op_by_uin[uin] = op
+            if uin and not op.eco and uin not in op_by_uin_eco_false:
+                op_by_uin_eco_false[uin] = op
+
+    result = {}
+    for row in funnel_list:
+        trade_uin = (row.rlk_uin or '').strip()
+        is_alfa = row.unit_id in alfa_ids or row.unit_source_id in alfa_ids
+        footing_uins = list(footing_map.get(trade_uin, set()))
+        if row.footing_rlk_uin and row.footing_rlk_uin.strip() not in footing_uins:
+            footing_uins.append(row.footing_rlk_uin.strip())
+
+        op_rlk = None
+        lookup = op_by_uin_eco_false if is_alfa else op_by_uin
+        for fu in footing_uins:
+            op_rlk = lookup.get(fu)
+            if op_rlk:
+                break
+        if op_rlk is None and row.footing_rlk_id:
+            op_rlk = DocRLK.objects.filter(pk=row.footing_rlk_id).select_related(
+                'unit', 'unit_dc', 'staff',
+            ).first()
+        result[row.rlk_id] = op_rlk
+    return result
+
+
+def _last_calc_map_for_ops(op_rlks):
+    """Последнее КП по разрешённому РЛ ОП (rlk_id и rlk__uin)."""
+    op_list = [op for op in op_rlks if op]
+    if not op_list:
+        return {}
+    ids = [op.id for op in op_list]
+    uins = list({(op.uin or '').strip() for op in op_list if op.uin})
+    result = {}
+    qs = CarCalculations.objects.filter(
+        Q(rlk_id__in=ids) | Q(rlk__uin__in=uins),
+    ).select_related('author', 'staff', 'car', 'rlk').order_by('-date', '-id')
+    for calc in qs:
+        if calc.rlk_id and calc.rlk_id in ids and calc.rlk_id not in result:
             result[calc.rlk_id] = calc
+        ruin = (calc.rlk.uin or '').strip() if calc.rlk else ''
+        if ruin:
+            for op in op_list:
+                if (op.uin or '').strip() == ruin and op.id not in result:
+                    result[op.id] = calc
     return result
 
 
@@ -168,8 +268,13 @@ def _op_deal_map(footing_ids):
     return agreements, shipments
 
 
-def _build_row(funnel_row, calc, agreement, shipment, lo_active):
-    footing_id = funnel_row.footing_rlk_id or 0
+def _build_row(funnel_row, op_rlk, calc, agreement, shipment, lo_active):
+    footing_id = op_rlk.id if op_rlk else (funnel_row.footing_rlk_id or 0)
+    footing_number = op_rlk.nomer if op_rlk else funnel_row.footing_rlk_number
+    footing_uin = op_rlk.uin if op_rlk else funnel_row.footing_rlk_uin
+    op_archive_name, op_archive_comment = _parse_reason_archive(
+        op_rlk.reasonArchive if op_rlk else '',
+    )
     kp_has_tradein = bool(calc and (calc.custom_tradein or 0) > 0)
     accepted = bool(
         funnel_row.date_reception_success
@@ -199,8 +304,10 @@ def _build_row(funnel_row, calc, agreement, shipment, lo_active):
         'rlk_number': funnel_row.rlk_number,
         'lo_number': funnel_row.lo_number,
         'footing_rlk_id': footing_id,
-        'footing_rlk_number': funnel_row.footing_rlk_number,
-        'footing_rlk_uin': funnel_row.footing_rlk_uin,
+        'footing_rlk_number': footing_number,
+        'footing_rlk_uin': footing_uin,
+        'op_archive_name': op_archive_name,
+        'op_archive_comment': op_archive_comment,
         'unit_name': funnel_row.unit_name,
         'unit_source_name': funnel_row.unit_source_name,
         'brand': funnel_row.brand,
@@ -343,12 +450,14 @@ def get_deal_analysis_context(request):
     items = []
     loss_stage_stats = defaultdict(int)
     for row in funnel_list:
-        footing_id = row.footing_rlk_id or 0
+        op_rlk = op_rlk_map.get(row.rlk_id)
+        op_id = op_rlk.id if op_rlk else 0
         item = _build_row(
             row,
-            calc_map.get(footing_id),
-            agreements.get(footing_id),
-            shipments.get(footing_id),
+            op_rlk,
+            calc_map.get(op_id),
+            agreements.get(op_id),
+            shipments.get(op_id),
             lo_map.get(row.rlk_id),
         )
         if loss_stage_filter and item['loss_stage'] != loss_stage_filter:
