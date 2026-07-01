@@ -169,8 +169,15 @@
 
 <div class="kors-funnel-page">
   <div class="kors-funnel-header">
-    <h2>Непринятые автомобили TRADE-IN</h2>
-    <p>Автомобили, которые были осмотрены или прошли диагностику, но не приняты</p>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h2>Непринятые автомобили TRADE-IN</h2>
+        <p class="mb-0">Автомобили, которые были осмотрены или прошли диагностику, но не приняты</p>
+      </div>
+      <a href="{% url 'eco:tradein_funnel_deal_analysis' %}?{{ request.GET.urlencode }}" class="btn btn-outline-primary">
+        Видение сделки (витрина + КП)
+      </a>
+    </div>
   </div>
 
   <div class="kors-panel">

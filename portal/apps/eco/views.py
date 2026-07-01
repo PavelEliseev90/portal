@@ -1979,6 +1979,25 @@ def tradein_funnel_rejected(request):
     return render(request, 'lo/tradein_funnel_rejected.html', {'params': params})
 
 
+def tradein_funnel_deal_analysis(request):
+    """Видение сделки: витрина TradeInFunnel + РЛ ОП + последнее КП."""
+    from eco.funnel_deal_analysis import get_deal_analysis_context
+
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'eco_funnel',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    context = get_deal_analysis_context(request)
+    return render(request, 'lo/tradein_funnel_deal_analysis.html', context)
+
+
 # УДАЛЕНО: функция tradein_funnel больше не используется, заменена на tradein_funnel_new
 # Функция была удалена для освобождения кода и устранения путаницы
 
