@@ -49,8 +49,8 @@ url_websocket_kors  = 'wss://ah.kors-group.com/'
 
 url_hs_kors_auto        = 'http://a01srv1cka/zbusiness/hs/mb'
 #url_hs_kors_auto       = 'http://a01srv1cka/zbusiness030724/hs/mb'
-#url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
-url_hs_alfa_auto        = 'http://k01srv1c05/ralfa01eliseev/hs/mb'
+url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
+#url_hs_alfa_auto        = 'http://k01srv1c05/ralfa01eliseev/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
 url_auction_kors_portal     = 'https://auction.kors-group.ru'
@@ -3461,10 +3461,11 @@ def refresh_wash():
     s = 1
 
 def get_wash(id_wash, header, time_start, time_end):
+     
     data_list   = list() 
     offset      = 0
-    unix_start  = str(int(time.mktime(time_start.timetuple())))
-    unix_end    = str(int(time.mktime(time_end.timetuple())))
+    unix_start  = str(int(datetime.timestamp(time_start)))
+    unix_end    = str(int(datetime.timestamp(time_end)))
     offset_while = True
      
     while offset_while:
@@ -3990,7 +3991,7 @@ def cvc_background():
     
     #records_query   = Records_voice_recorder.objects.filter(pk = 472241).filter(date__gte = date_start).filter(date__lt = date_end).filter(time__gt = 0).order_by('date')
 
-    records_query   = Records_voice_recorder.objects.filter(date__gte = date_start).filter(date__lt = date_end).filter(time__gt = 0).order_by('date')
+    records_query   = Records_voice_recorder.objects.filter(date__gte = date_start).filter(date__lt = date_end).filter(time__gt = 0).order_by('-date')
     subquery        = Subquery(Records_voice_recorder_cvc.objects.filter(records__id = OuterRef(name='id')).values('id')[:1])        
     records_query   = records_query.annotate(send = Count(subquery))
     #records_query   = Records_voice_recorder.objects.filter(pk= 113348)
@@ -4331,12 +4332,12 @@ def cvc_send_record(send_record, fragments):
     params = {
         "master_key"        : "Ga8FQ0dgmALiA1bFr7k7tqIym84rnLM0",
         "category"          : "recorder",
-        "date_call"         : record_query.date.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        "date_call"         : record_query.date.strftime('%Y-%m-%dT%H:%M:%S%z') + '+0300',
         "json_fragments"    : str(info).replace("'", '"'),   
     }
     try:
         with open(record_query.audio.path, 'rb') as f:
-            response = requests.post(url, data = params, files = {"files": (record_query.name, f)}, verify=False)
+            response = requests.post(url, data = params, files = {"files": (record_query.name, f)}, verify=False, timeout=(10, 300))
         
         if response.status_code == 200:
             status_code = response.status_code
@@ -4351,7 +4352,8 @@ def cvc_send_record(send_record, fragments):
             record.records      = record_query
             record.save()
         return status_code
-    except:
+    except Exception as e:
+        error_text = str(e)
         return status_code
 
 def cvc_record_info():
