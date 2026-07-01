@@ -35,6 +35,17 @@ register.filter('formatted_float', formatted_float)
 register.filter('ammont_box_sum', ammont_box_sum)
 
 
+@register.filter
+def list_item(sequence, index):
+    try:
+        return sequence[int(index)]
+    except (IndexError, TypeError, ValueError):
+        return None
+
+
+register.filter('list_item', list_item)
+
+
 def second_to_time(seconds):
     if seconds != None:
         return str(DT.timedelta(seconds=seconds))

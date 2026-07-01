@@ -1998,6 +1998,32 @@ def tradein_funnel_deal_analysis(request):
     return render(request, 'lo/tradein_funnel_deal_analysis.html', context)
 
 
+def tradein_funnel_deal_analysis_export(request):
+    """Выгрузка отчёта «Видение сделки» в Excel."""
+    from django.http import HttpResponse
+    from eco.funnel_deal_analysis import build_deal_analysis_workbook, get_deal_analysis_export_data
+
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        return HttpResponseRedirect('/')
+
+    items, kp_detail_columns, filters = get_deal_analysis_export_data(request)
+    wb = build_deal_analysis_workbook(items, kp_detail_columns)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    filename = (
+        f"deal_analysis_{filters['date_start'].strftime('%Y%m%d')}_"
+        f"{filters['date_end'].strftime('%Y%m%d')}.xlsx"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
 # УДАЛЕНО: функция tradein_funnel больше не используется, заменена на tradein_funnel_new
 # Функция была удалена для освобождения кода и устранения путаницы
 
