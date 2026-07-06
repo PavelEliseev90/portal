@@ -32,6 +32,7 @@ from auction_avito.models import (
     AvitoVenue,
 )
 from auction_avito.services.expiry import expire_overdue_lots
+from auction_avito.services.offer_status import active_lots_q, inactive_lots_q, parse_activity_param
 
 # Подписи для фильтра по типу метки (badgeType из API Авито)
 BADGE_TYPE_LABELS = {
@@ -258,7 +259,7 @@ def lot_list(request):
     qs = _lot_queryset()
 
     search = (request.GET.get('q') or '').strip()
-    activity = (request.GET.get('activity') or 'active').strip()
+    activity = parse_activity_param(request)
     status = (request.GET.get('status') or '').strip()
     badge_type = (request.GET.get('badge') or '').strip()
     trade_in = (request.GET.get('trade_in') or '').strip()
@@ -283,9 +284,9 @@ def lot_list(request):
             pass
 
     if activity == 'active':
-        qs = qs.filter(offers__status_code='inprogress').distinct()
+        qs = qs.filter(active_lots_q()).distinct()
     elif activity == 'inactive':
-        qs = qs.exclude(offers__status_code='inprogress').distinct()
+        qs = qs.filter(inactive_lots_q()).distinct()
 
     if status:
         qs = qs.filter(offers__status_code=status).distinct()

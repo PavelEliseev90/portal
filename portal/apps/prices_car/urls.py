@@ -22,4 +22,5 @@ urlpatterns = [
     path('discount_km/get_complectations/', views.discount_get_complectations, name='discount_get_complectations'),
     path('presentation/', views.presentation_page, name='presentation'),
     path('presentation/<path:asset>', views.presentation_asset, name='presentation_asset'),
+    path('km-lab/', views.km_calculator_lab, name='km_calculator_lab'),
 ]

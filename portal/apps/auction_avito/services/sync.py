@@ -109,7 +109,7 @@ def _upsert_lot(lot_data: dict, *, venue: AvitoVenue | None = None) -> AvitoLot:
     bid_group = lot_data.get('bidGroupV2') or {}
     trade = lot_data.get('tradeIn') or {}
 
-    defaults = {
+    full_defaults = {
         'description': lot_data.get('description') or '',
         'seller_place_name': lot_data.get('sellerPlaceName') or '',
         'min_price': lot_data.get('minPrice'),
@@ -131,13 +131,45 @@ def _upsert_lot(lot_data: dict, *, venue: AvitoVenue | None = None) -> AvitoLot:
         'trade_in_comment': trade.get('comment'),
         'raw_lot_json': lot_data,
     }
+
+    scalar_api_keys = {
+        'description': 'description',
+        'seller_place_name': 'sellerPlaceName',
+        'min_price': 'minPrice',
+        'min_available_bid': 'minAvailableBid',
+        'max_available_bid': 'maxAvailableBid',
+        'max_bid': 'maxBid',
+        'created_at': 'createdAt',
+        'updated_at': 'updatedAt',
+        'finish_at': 'finishAt',
+        'origin_finish_at': 'originFinishAt',
+        'expires_at': 'expiresAt',
+    }
+    defaults = {'raw_lot_json': lot_data}
+    for field, api_key in scalar_api_keys.items():
+        if api_key in lot_data:
+            defaults[field] = full_defaults[field]
+
+    if 'bidGroupV2' in lot_data:
+        defaults['bid_l1'] = full_defaults['bid_l1']
+        defaults['bid_l2'] = full_defaults['bid_l2']
+    if 'imvMarketRange' in lot_data:
+        defaults['imv_low'] = full_defaults['imv_low']
+        defaults['imv_median'] = full_defaults['imv_median']
+        defaults['imv_high'] = full_defaults['imv_high']
+    if 'tradeIn' in lot_data:
+        defaults['trade_in_considers'] = full_defaults['trade_in_considers']
+        defaults['trade_in_looking_for_used'] = full_defaults['trade_in_looking_for_used']
+        defaults['trade_in_comment'] = full_defaults['trade_in_comment']
+
     if venue is not None:
         defaults['venue'] = venue
 
-    lot, _ = AvitoLot.objects.update_or_create(
-        lot_id=lot_id,
-        defaults=defaults,
-    )
+    lot, created = AvitoLot.objects.get_or_create(lot_id=lot_id, defaults=full_defaults)
+    if not created:
+        for key, value in defaults.items():
+            setattr(lot, key, value)
+        lot.save(update_fields=list(defaults.keys()))
     apply_lot_related_data(lot, lot_data)
     return lot
 
@@ -245,13 +277,25 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     status = offer_data.get('status') or {}
     bid_user = offer_data.get('bidMadeByUser') or {}
 
+    status_code = status.get('status') if 'status' in offer_data else None
+    status_name = status.get('name') if 'status' in offer_data else None
+    if status_code is None and existing_offer is not None:
+        status_code = existing_offer.status_code
+        status_name = existing_offer.status_name
+
+    from auction_avito.services.offer_status import normalize_offer_status
+    status_code, status_name = normalize_offer_status(
+        status_code or '',
+        lot.finish_at,
+    )
+
     offer, _ = AvitoLotOffer.objects.update_or_create(
         lot_offer_id=offer_data['lotOfferId'],
         defaults={
             'lot': lot,
             'account': account,
-            'status_code': status.get('status') or '',
-            'status_name': status.get('name') or '',
+            'status_code': status_code,
+            'status_name': status_name or '',
             'bid': offer_data.get('bid'),
             'bid_made_at': _dt(offer_data.get('bidMadeAt')),
             'min_bid_step': offer_data.get('minBidStep'),
