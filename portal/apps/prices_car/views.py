@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from django.conf import settings
 from django.db import transaction
-from django.http import FileResponse, Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -1093,6 +1093,101 @@ def presentation_asset(request, asset):
         raise Http404
     content_type = 'image/svg+xml' if path.endswith('.svg') else 'application/octet-stream'
     return FileResponse(open(path, 'rb'), content_type=content_type)  # noqa: SIM115
+
+
+def _user_can_km_calculator_lab(user):
+    profile = getattr(user, 'profiles', None)
+    if not profile:
+        return False
+    return any([
+        profile.price_car_new,
+        profile.price_car_new_settings,
+        profile.price_car_new_all,
+        profile.price_car_new_director,
+    ])
+
+
+def _km_lab_stock_queryset(user):
+    qs = RefCarsOrganization.objects.filter(
+        is_new=True,
+        quantity__gt=0,
+    ).exclude(
+        modification_autoru__isnull=True,
+    ).select_related(
+        'unit',
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+        'stage_price',
+        'complectation_autoru',
+    ).order_by('unit__name', 'modification_autoru__model__mark__name', 'vin')
+    profile = getattr(user, 'profiles', None)
+    if profile and not profile.price_car_new_all:
+        qs = qs.filter(unit_id__in=profile.available_units.values_list('pk', flat=True))
+    return qs
+
+
+@login_required
+def km_calculator_lab(request):
+    """Тестовая страница расчёта минимального КМ по автомобилю со стока."""
+    if not _user_can_km_calculator_lab(request.user):
+        return HttpResponseForbidden('Нет доступа к калькулятору КМ.')
+
+    stock_qs = _km_lab_stock_queryset(request.user)
+    unit_id = (request.GET.get('unit') or '').strip()
+    car_id = (request.GET.get('car') or '').strip()
+    trade_in = (request.GET.get('trade_in') or '').strip() in ('1', 'true', 'on', 'yes')
+    q = (request.GET.get('q') or '').strip()
+
+    units = RefUnit.objects.filter(
+        pk__in=stock_qs.values_list('unit_id', flat=True).distinct(),
+    ).order_by('name')
+
+    cars_qs = stock_qs
+    if unit_id:
+        try:
+            cars_qs = cars_qs.filter(unit_id=int(unit_id))
+        except ValueError:
+            pass
+    if q:
+        cars_qs = cars_qs.filter(
+            Q(vin__icontains=q)
+            | Q(name__icontains=q)
+            | Q(mark__icontains=q)
+            | Q(model__icontains=q)
+        )
+
+    car = None
+    km_breakdown = None
+    cumulative_data = None
+    if car_id:
+        try:
+            car = stock_qs.get(pk=int(car_id))
+            cumulative_data = car.cumulative_data()
+            from prices_car.km_breakdown import build_km_calculation_breakdown
+            km_breakdown = build_km_calculation_breakdown(
+                car,
+                with_trade_in=trade_in,
+                show_reference_methods=True,
+            )
+        except (ValueError, RefCarsOrganization.DoesNotExist):
+            car = None
+
+    return render(request, 'prices_car/km_calculator_lab.html', {
+        'params': {
+            'units': units,
+            'cars': cars_qs[:400],
+            'car': car,
+            'km_breakdown': km_breakdown or {'available': False},
+            'cumulative_data': cumulative_data or {},
+            'filters': {
+                'unit': unit_id,
+                'car': car_id,
+                'q': q,
+                'trade_in': trade_in,
+            },
+        },
+    })
 
 
 def refresh_km_cars():

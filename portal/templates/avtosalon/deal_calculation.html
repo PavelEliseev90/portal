@@ -563,12 +563,6 @@
             {% endif %}
           </div>
 
-          {% if params.cumulative_data.type_km == 4 %}
-            <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_3.km_description}}</div>
-          {% elif params.cumulative_data.type_km == 5 %}
-            <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_k.km_description}}</div>
-          {% endif %}
-
           {% if params.client_suggestions_enabled %}
           <div class="mt-3" id="clientSuggestionsWrap">
             <button type="button"

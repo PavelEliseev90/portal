@@ -202,8 +202,9 @@ def compute_segment_ratings(
 
 
 def _active_lots_queryset():
+    from auction_avito.services.offer_status import active_lots_q
     return (
-        AvitoLot.objects.filter(offers__status_code='inprogress')
+        AvitoLot.objects.filter(active_lots_q())
         .select_related('vehicle_avito', 'vehicle_autohub', 'venue', 'venue__city')
         .prefetch_related('images', 'offers')
         .distinct()

@@ -51,13 +51,15 @@ def _method_block(
     }
 
 
-def _winner_reason(type_km, with_trade_in=False):
+def _winner_reason(type_km, with_trade_in=False, *, manual_trade_in=False):
     if type_km == 3:
         return 'На автомобиле задан ручной минимальный КМ — он имеет наивысший приоритет.'
     if type_km == 4:
         return 'Применено специальное условие ГК.'
     if type_km == 5:
         if with_trade_in:
+            if manual_trade_in:
+                return 'Метод «АвтоК с trade-in» — включён сценарий trade-in.'
             return 'Метод «АвтоК с trade-in» — по детальному расчёту КП применён показатель trade-in.'
         return 'Метод «АвтоК» (целевая кумулятивная маржа по аналогам).'
     if type_km == 1:
@@ -77,11 +79,14 @@ def get_km_rule_total(cumulative_data, car=None, calc=None, with_trade_in=None):
     return int(total) if total else None
 
 
-def build_km_calculation_breakdown(car, calc=None, show_reference_methods=False):
+def build_km_calculation_breakdown(
+    car, calc=None, show_reference_methods=False, with_trade_in=None,
+):
     """
     Разбор cumulative_data для UI.
     calc — КП (для определения trade-in по детальному расчёту).
-    show_reference_methods — показывать «Авто» и «Авто+» (директор новых всех ДЦ).
+    with_trade_in — явный сценарий (калькулятор / тест), иначе из calc.
+    show_reference_methods — показывать «Авто» и «Авто+».
     """
     if car is None or car.modification_autoru is None:
         return {
@@ -104,7 +109,9 @@ def build_km_calculation_breakdown(car, calc=None, show_reference_methods=False)
     from refs.models import RefCarsOrganization
 
     cumulative = car.cumulative_data()
-    with_trade_in = calculation_has_applied_trade_in(calc) if calc else False
+    manual_trade_in = with_trade_in is not None
+    if with_trade_in is None:
+        with_trade_in = calculation_has_applied_trade_in(calc) if calc else False
     winner_amount, type_km = resolve_km_from_cumulative(
         cumulative, car, with_trade_in=with_trade_in,
     )
@@ -368,7 +375,7 @@ def build_km_calculation_breakdown(car, calc=None, show_reference_methods=False)
             'amount': winner_amount,
             'amount_display': _fmt_rub(winner_amount),
         },
-        'priority_note': _winner_reason(type_km, with_trade_in),
+        'priority_note': _winner_reason(type_km, with_trade_in, manual_trade_in=manual_trade_in),
         'methods': methods,
         'irc': irc,
         'brand_km': brand_km_info,
