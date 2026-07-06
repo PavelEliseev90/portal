@@ -2398,7 +2398,10 @@ class RegInteractivOcenkaProverki(ChangeloggableMixin, models.Model):
     start_estimation    = models.DateTimeField('Дата начала', blank=True, null=True)
     end_estimation      = models.DateTimeField('Дата окончания', blank=True, null=True)
     text_json           = models.TextField("Текст", blank=True, null=True)
-    
+
+    epts          = models.BooleanField("ЭПТС", default = False, null=True, blank=True)
+    epts_success  = models.BooleanField("ЭПТС действующий", default = False, null=True, blank=True)
+     
     car_credit          = models.BooleanField("Автомобиль в залоге / кредите", default = False, null=True, blank=True)
     count_dtp           = models.IntegerField('Количество дтп', default=0, null=True, blank=True)
     
@@ -2674,7 +2677,7 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 
     slug                    = models.SlugField(max_length=512, null=True, blank=True)
     
-    v                       = models.IntegerField('Версия интерактивной оценки', default=4, null=True, blank=True)
+    v                       = models.IntegerField('Версия интерактивной оценки', default=5, null=True, blank=True)
     
     rama                    = models.BooleanField("Рамный", default = False, null=True, blank=True) 
 
@@ -2867,6 +2870,11 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     
     def fotos_gibdd(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'gibdd').order_by('file_number')
+        fotos = fotos.order_by('type_file', 'file_number')
+        return fotos
+    
+    def fotos_epts(self):
+        fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'epts').order_by('file_number')
         fotos = fotos.order_by('type_file', 'file_number')
         return fotos
     

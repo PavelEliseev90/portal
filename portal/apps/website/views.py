@@ -10376,10 +10376,10 @@ def test(request):
     # from task_manager.views import swap_estimation
     # swap_estimation()
     # #refresh_km_cars()
-    # from prices_car.views import refresh_km_cars, send_km_car_1C
+    from prices_car.views import refresh_km_cars, send_km_car_1C
     
-    # refresh_km_cars()
-    # send_km_car_1C()
+    refresh_km_cars()
+    send_km_car_1C()
 
     # # from task_manager.views import send_push_car
     
