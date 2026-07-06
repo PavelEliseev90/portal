@@ -303,7 +303,7 @@
               {% for detail in params.calc.detail %}
                 <div class="col-12 col-sm-4 " >
                   <div class="metric-card-portal h-100 {% if detail.success %} bg-success {% else %} bg-danger {% endif %} bg-opacity-10 bg-gradient">
-                    <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}} </div>
+                    <div class="metric-card-label-portal"><span class="icon-mbri-credit-card"></span> {{detail.detail_type.name}}{% if detail.detail_type.is_trade_in %} <span class="badge text-bg-info">trade-in</span>{% endif %} </div>
                     <div class="metric-card-value-portal"> • {{detail.vp|floatformat:"2g"}} ₽</div>
                   </div>
                   
@@ -558,11 +558,15 @@
               <span class="price-item-value text-white">{{ params.car.min_km|floatformat:"2g" }} ₽</span>
             {% elif params.cumulative_data.type_km == 4 %}
               <span class="price-item-value text-white">{{ params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g" }} ₽</span>
+            {% elif params.cumulative_data.type_km == 5 %}
+              <span class="price-item-value text-white">{{ params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g" }} ₽</span>
             {% endif %}
           </div>
 
           {% if params.cumulative_data.type_km == 4 %}
             <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_3.km_description}}</div>
+          {% elif params.cumulative_data.type_km == 5 %}
+            <div class="metric-card-value fs-7 text-white"> • {{params.cumulative_data.automatic_k.km_description}}</div>
           {% endif %}
 
           {% if params.client_suggestions_enabled %}
@@ -619,7 +623,7 @@
 
           {% for detail in params.calc.detail %}
             <div class="price-item">
-              <span class="price-item-label">{{detail.detail_type.name}}:</span>
+              <span class="price-item-label">{{detail.detail_type.name}}{% if detail.detail_type.is_trade_in %} (trade-in){% endif %}:</span>
               <span class="price-item-value positive">+{{detail.vp|floatformat:"2g"}} ₽</span>
             </div>
           {% endfor %}
@@ -962,7 +966,8 @@
         }
         var filterPrefix = data.filter_label || data.model_name || '';
         var scopeHint = data.same_complectation ? 'той же модели и комплектации' : 'той же модели';
-        summary.textContent = (filterPrefix ? filterPrefix + ' · ' : '') + scopeHint + ' на складе ДЦ с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
+        var dcScope = data.scope_label || (data.allow_dc_transfers ? 'по всем ДЦ бренда' : 'только в вашем подразделении');
+        summary.textContent = (filterPrefix ? filterPrefix + ' · ' : '') + scopeHint + ' (' + dcScope + ') с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
         if (!data.items || !data.items.length) {
           errorEl.textContent = 'Подходящих автомобилей не найдено.';
           errorEl.classList.remove('d-none');
@@ -987,6 +992,7 @@
           tr.innerHTML =
             '<td><div class="fw-semibold">' + (title || item.name || '—') + reportedBadge + '</div>' +
             '<div class="small text-muted">' + (item.vin || '') +
+            (item.unit_name ? ' · ' + item.unit_name : '') +
             (item.is_reported ? ' · <span class="text-warning-emphasis">жёлтый автомобиль</span>' : '') +
             '</div></td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.price) + '</td>' +

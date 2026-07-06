@@ -268,19 +268,34 @@ def settings_km_preview(request):
         x['brand_id']: x['km']
         for x in BrandKM.objects.filter(month=prev_month).values('brand_id', 'km')
     }
-    curr_kms = {
-        x['brand_id']: x['km']
-        for x in BrandKM.objects.filter(month=month_date).values('brand_id', 'km')
+    prev_km_min_dc = {
+        x['brand_id']: x['km_min_dc']
+        for x in BrandKM.objects.filter(month=prev_month).values('brand_id', 'km_min_dc')
+    }
+    prev_allow_dc = {
+        x['brand_id']: x['allow_dc_transfers']
+        for x in BrandKM.objects.filter(month=prev_month).values('brand_id', 'allow_dc_transfers')
+    }
+    curr_rows = {
+        x['brand_id']: x
+        for x in BrandKM.objects.filter(month=month_date).values(
+            'brand_id', 'km', 'km_min_dc', 'allow_dc_transfers',
+        )
     }
 
     out = []
     for b in brands:
         bid = b['id']
+        curr = curr_rows.get(bid) or {}
         out.append({
             'id': bid,
             'name': b['name'],
             'prev_km': prev_kms.get(bid),
-            'current_km': curr_kms.get(bid),
+            'prev_km_min_dc': prev_km_min_dc.get(bid),
+            'prev_allow_dc_transfers': prev_allow_dc.get(bid, False),
+            'current_km': curr.get('km'),
+            'current_km_min_dc': curr.get('km_min_dc'),
+            'current_allow_dc_transfers': curr.get('allow_dc_transfers', False),
         })
 
     return JsonResponse({
@@ -345,10 +360,15 @@ def settings_page(request):
                 for bid in brand_ids:
                     km = _parse_nonneg_int(request.POST.get('km_%s' % bid))
                     km_min_dc = _parse_nonneg_int(request.POST.get('km_min_dc_%s' % bid))
+                    allow_dc_transfers = request.POST.get('allow_dc_transfers_%s' % bid) == 'on'
                     BrandKM.objects.update_or_create(
                         brand_id=bid,
                         month=month_date,
-                        defaults={'km': km, 'km_min_dc': km_min_dc},
+                        defaults={
+                            'km': km,
+                            'km_min_dc': km_min_dc,
+                            'allow_dc_transfers': allow_dc_transfers,
+                        },
                     )
 
             messages.success(

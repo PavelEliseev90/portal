@@ -164,6 +164,14 @@
                placeholder="Марка, модель, лот, город…">
       </div>
       <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Активность</label>
+        <select class="form-select" name="activity">
+          {% for code, label in params.activity_choices %}
+            <option value="{{ code }}" {% if params.filters.activity == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
         <label class="form-label small text-muted mb-1">Статус</label>
         <select class="form-select" name="status">
           <option value="">Все</option>
@@ -323,13 +331,13 @@
         <ul class="pagination pagination-sm justify-content-center">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&activity={{ params.filters.activity }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
             </li>
           {% endif %}
           <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&activity={{ params.filters.activity }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
             </li>
           {% endif %}
         </ul>
@@ -345,4 +353,5 @@
   {% endif %}
 
 </div>
+{% include 'auction_avito/chat_feed_embed.html' %}
 {% endblock %}

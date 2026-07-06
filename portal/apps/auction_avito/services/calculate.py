@@ -172,9 +172,28 @@ def save_calculation_result(
     """
     Сохраняет успешный или неуспешный расчёт в историю лота.
     """
+    ids = _extract_ids(payload)
+    lot_existed = False
+    if ids.get('lot_id'):
+        from auction_avito.models import AvitoLot
+        lot_existed = AvitoLot.objects.filter(lot_id=int(ids['lot_id'])).exists()
+
     lot, offer = upsert_lot_from_calculate_request(payload)
     if lot is None:
         return None
+
+    if not lot_existed and not error_message and isinstance(result, dict):
+        try:
+            from auction_avito.chat_utils import notify_new_lot_in_feed
+            notify_new_lot_in_feed(lot, user=user)
+        except Exception:
+            pass
+
+    try:
+        from auction_avito.services.expiry import expire_overdue_lots
+        expire_overdue_lots()
+    except Exception:
+        pass
 
     vehicle = payload.get('vehicle') or {}
     year_val = vehicle.get('year')

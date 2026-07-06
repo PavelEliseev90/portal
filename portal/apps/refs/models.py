@@ -2284,7 +2284,54 @@ class RefCarsOrganization(models.Model):
                 if km_min_automatic_2 > km_min_automatic:
                     type_km = 2
 
-            km_base_for_discount = max(km_min_automatic, km_min_automatic_2)
+            from prices_car.target_cum import calculate_target_cum
+            km_min_automatic_k = 0
+            km_min_automatic_k_tradein = 0
+
+            def _pack_target_cum(result):
+                if not result:
+                    return None
+                return {
+                    'km_min_automatic': result.get('km_min_automatic') or 0,
+                    'km_description': result.get('km_description', ''),
+                    'median_margin_pct': result.get('median_margin_pct'),
+                    'adjusted_margin_pct': result.get('adjusted_margin_pct'),
+                    'liquidity_multiplier': result.get('liquidity_multiplier'),
+                    'liquidity_label': result.get('liquidity_label'),
+                    'liquidity_ratio': result.get('liquidity_ratio'),
+                    'analog_count': result.get('analog_count'),
+                    'search_label': result.get('search_label'),
+                    'days_in_stock': result.get('days_in_stock'),
+                    'avg_sale_days': result.get('avg_sale_days'),
+                    'car_cost': result.get('car_cost'),
+                    'fallback': result.get('fallback', False),
+                }
+
+            target_cum_plain = calculate_target_cum(
+                self,
+                brand_km=info.get('brand_km'),
+                irc=info.get('irc'),
+                with_trade_in=False,
+            )
+            target_cum_ti = calculate_target_cum(
+                self,
+                brand_km=info.get('brand_km'),
+                irc=info.get('irc'),
+                with_trade_in=True,
+            )
+            if target_cum_plain:
+                info['automatic_k'] = _pack_target_cum(target_cum_plain)
+                km_min_automatic_k = info['automatic_k']['km_min_automatic']
+            if target_cum_ti:
+                info['automatic_k_tradein'] = _pack_target_cum(target_cum_ti)
+                km_min_automatic_k_tradein = info['automatic_k_tradein']['km_min_automatic']
+            if km_min_automatic_k > 0 or km_min_automatic_k_tradein > 0:
+                type_km = 5
+
+            km_base_for_discount = max(
+                km_min_automatic, km_min_automatic_2,
+                km_min_automatic_k, km_min_automatic_k_tradein,
+            )
             km_discount = self._find_applicable_km_discount(brand_car)
             if km_discount and km_base_for_discount > 0:
                 km_min_automatic_3 = round(

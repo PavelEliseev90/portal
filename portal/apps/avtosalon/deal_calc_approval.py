@@ -96,7 +96,7 @@ def kvp_above_km_rule(calc, cumulative_data=None):
 
     if cumulative_data is None:
         cumulative_data, _ = _get_calc_cumulative_data(calc)
-    km_rule = get_km_rule_total(cumulative_data, calc.car)
+    km_rule = get_km_rule_total(cumulative_data, calc.car, calc=calc)
     if km_rule is None:
         return False
     return int(calc.kvp or 0) > int(km_rule)
@@ -399,7 +399,7 @@ def build_calculation_soglasovanie_api_response(calc):
     km_rule_total = None
     if calc.car_id:
         try:
-            km_rule_total = get_km_rule_total(calc.car.cumulative_data(), calc.car)
+            km_rule_total = get_km_rule_total(calc.car.cumulative_data(), calc.car, calc=calc)
         except Exception:
             pass
     return {
@@ -600,7 +600,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     km_rule_total = None
     if cumulative_data:
         from prices_car.km_breakdown import get_km_rule_total
-        km_rule_total = get_km_rule_total(cumulative_data, calc.car)
+        km_rule_total = get_km_rule_total(cumulative_data, calc.car, calc=calc)
 
     return {
         'approval_min_km_dc': min_km_dc,

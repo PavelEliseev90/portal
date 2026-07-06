@@ -3527,6 +3527,7 @@ def deal_calculation(request):
         new_object.custom_grz      = int(request.POST.get('custom_grz', '0'))
         new_object.custom_work     = int(request.POST.get('custom_work', '0'))
         new_object.custom_product  = int(request.POST.get('custom_product', '0'))
+        apply_km_raschet_to_calculation(new_object, car)
         new_object.save()
         
         return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')        
@@ -3614,7 +3615,7 @@ def deal_calculation_doc(request, id):
     }
     
     car     = calc.car
-    if calc.km_raschet is None and car:
+    if car:
         apply_km_raschet_to_calculation(calc, car)
         if calc.km_raschet is not None:
             calc.save(update_fields=['km_raschet'])
@@ -3652,6 +3653,7 @@ def deal_calculation_doc(request, id):
         new_object.custom_grz      = int(request.POST.get('custom_grz', '0'))
         new_object.custom_work     = int(request.POST.get('custom_work', '0'))
         new_object.custom_product  = int(request.POST.get('custom_product', '0'))
+        apply_km_raschet_to_calculation(new_object, car)
         new_object.save()
         
         return HttpResponseRedirect('/cars/deal/calculation/' + str(new_object.pk) + '/')
@@ -3796,7 +3798,10 @@ def deal_calc_client_suggestions_count(request, id):
 
     unit_id = calc.unit_id or (car.unit_id if car else None)
     reference_km = get_reference_km_for_car(car)
-    if reference_km is None or not unit_id:
+    if reference_km is None:
+        return JsonResponse({'ok': True, 'show': False, 'count': 0})
+    from avtosalon.client_suggestions import brand_allows_dc_transfers
+    if not unit_id and not brand_allows_dc_transfers(car):
         return JsonResponse({'ok': True, 'show': False, 'count': 0})
 
     count = count_client_suggestions(car, unit_id, reference_km)
@@ -3827,8 +3832,11 @@ def deal_calc_client_suggestions_list(request, id):
 
     unit_id = calc.unit_id or (car.unit_id if car else None)
     reference_km = get_reference_km_for_car(car)
-    if reference_km is None or not unit_id:
+    if reference_km is None:
         return JsonResponse({'ok': False, 'error': 'no_reference_km'}, status=400)
+    from avtosalon.client_suggestions import brand_allows_dc_transfers
+    if not unit_id and not brand_allows_dc_transfers(car):
+        return JsonResponse({'ok': False, 'error': 'no_unit'}, status=400)
 
     data = list_client_suggestions(car, unit_id, reference_km, calc.kvp)
     return JsonResponse({'ok': True, **data})

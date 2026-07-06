@@ -21,6 +21,7 @@ from auction_avito.lot_tabs import (
 LOT_DETAIL_TABS = (
     'main', 'autoteka', 'calculations', 'stock', 'sales', 'estimations',
 )
+from auction_avito.chat_utils import build_aav_feed_chat_params
 from auction_avito.models import (
     AvitoAutotekaEvent,
     AvitoLot,
@@ -30,6 +31,7 @@ from auction_avito.models import (
     AvitoOfferBadge,
     AvitoVenue,
 )
+from auction_avito.services.expiry import expire_overdue_lots
 
 # Подписи для фильтра по типу метки (badgeType из API Авито)
 BADGE_TYPE_LABELS = {
@@ -251,9 +253,12 @@ def _lot_detail_queryset():
 
 @login_required
 def lot_list(request):
+    expire_overdue_lots()
+
     qs = _lot_queryset()
 
     search = (request.GET.get('q') or '').strip()
+    activity = (request.GET.get('activity') or 'active').strip()
     status = (request.GET.get('status') or '').strip()
     badge_type = (request.GET.get('badge') or '').strip()
     trade_in = (request.GET.get('trade_in') or '').strip()
@@ -276,6 +281,11 @@ def lot_list(request):
             qs = qs.filter(venue__dealer_id=int(venue_dealer))
         except ValueError:
             pass
+
+    if activity == 'active':
+        qs = qs.filter(offers__status_code='inprogress').distinct()
+    elif activity == 'inactive':
+        qs = qs.exclude(offers__status_code='inprogress').distinct()
 
     if status:
         qs = qs.filter(offers__status_code=status).distinct()
@@ -325,12 +335,18 @@ def lot_list(request):
         'page_obj': page_obj,
         'filters': {
             'q': search,
+            'activity': activity,
             'status': status,
             'badge': badge_type,
             'trade_in': trade_in,
             'venue': venue_dealer,
             'sort': sort,
         },
+        'activity_choices': [
+            ('active', 'Активные'),
+            ('inactive', 'Неактивные'),
+            ('', 'Все'),
+        ],
         'badge_choices': _badge_filter_choices(),
         'venue_choices': _venue_filter_choices(),
         'trade_in_choices': [
@@ -345,11 +361,13 @@ def lot_list(request):
             ('lost', 'Проигран'),
         ],
     }
+    params.update(build_aav_feed_chat_params(request))
     return render(request, 'auction_avito/lot_list.html', {'params': params})
 
 
 @login_required
 def lot_detail(request, pk):
+    expire_overdue_lots()
     lot = get_object_or_404(_lot_detail_queryset(), pk=pk)
     autoteka_report = getattr(lot, 'autoteka', None)
     primary_offer = lot.offers.first()
@@ -595,3 +613,28 @@ def buyout_recommendations(request):
 
     ctx = build_buyout_page_context(request)
     return render(request, 'auction_avito/buyout_recommendations.html', {'params': ctx})
+
+
+@login_required
+def feed_chat_send(request):
+    """HTTP-отправка сообщения в общий чат ленты Авито (fallback без WebSocket)."""
+    from django.http import JsonResponse
+
+    from auction_avito.chat_utils import broadcast_aav_feed_message, get_or_create_feed_chat
+    from chats.models import ChatMessage
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method'}, status=405)
+
+    profile = getattr(request.user, 'profiles', None)
+    if profile and profile.user_sb:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    message = (request.POST.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'error': 'empty'}, status=400)
+
+    chat = get_or_create_feed_chat()
+    msg = ChatMessage.objects.create(user=request.user, chat=chat, content=message)
+    broadcast_aav_feed_message(chat, message, request.user)
+    return JsonResponse({'ok': True, 'message_id': msg.pk})

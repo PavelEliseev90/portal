@@ -11,7 +11,7 @@
             <a href="{% url 'prices_car:index' %}" class="text-secondary text-decoration-none">← Управление ценообразованием новых</a>
         </p>
         <h2 class="mb-2">Управление КМ по брендам на месяц</h2>
-        <p class="text-muted mb-4">Укажите значение КМ и минимальное значение КМ ДЦ по бренду на выбранный месяц. Бренды настраиваются в разделе «Бренды».</p>
+        <p class="text-muted mb-4">Укажите значение КМ и минимальное значение КМ ДЦ по бренду на выбранный месяц. Отметьте бренды, для которых возможны перемещения автомобилей между ДЦ. Бренды настраиваются в разделе «Бренды».</p>
 
         {% if messages %}
         <div class="mb-3">
@@ -61,6 +61,7 @@
                             <th>Бренд</th>
                             <th>КМ</th>
                             <th>Мин. КМ ДЦ</th>
+                            <th>Перемещения между ДЦ</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -70,6 +71,13 @@
                             <td data-label="Бренд">{{ item.brand }}</td>
                             <td data-label="КМ" class="text-nowrap">{{ item.km|formatted_number }}</td>
                             <td data-label="Мин. КМ ДЦ" class="text-nowrap">{{ item.km_min_dc|formatted_number }}</td>
+                            <td data-label="Перемещения между ДЦ">
+                                {% if item.allow_dc_transfers %}
+                                    <span class="badge text-bg-success">Да</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Нет</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <form method="post" action="{% url 'prices_car:settings' %}" class="d-inline" onsubmit="return confirm('Удалить запись?');">
                                     {% csrf_token %}
@@ -82,7 +90,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Нет записей за этот месяц. Нажмите «Добавить», чтобы внести КМ по брендам.</td>
+                            <td colspan="5" class="text-center text-muted py-4">Нет записей за этот месяц. Нажмите «Добавить», чтобы внести КМ по брендам.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -116,9 +124,10 @@
                                     <tr>
                                         <th>Бренд</th>
                                         <th class="text-nowrap">КМ (пред. мес.)</th>
-                                        <th >КМ</th>
+                                        <th>КМ</th>
                                         <th class="text-nowrap">Мин. КМ ДЦ (пред. мес.)</th>
-                                        <th >Мин. КМ ДЦ</th>
+                                        <th>Мин. КМ ДЦ</th>
+                                        <th class="text-nowrap" title="Могут быть перемещения между ДЦ">Перемещения</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -133,10 +142,17 @@
                                         <td data-label="Мин. КМ ДЦ" class="text-end">
                                             <input type="text" inputmode="numeric" name="km_min_dc_{{ b.id }}" class="form-control form-control-sm km-min-dc-input int-space-input" value="" placeholder="0" data-brand-id="{{ b.id }}" autocomplete="off">
                                         </td>
+                                        <td data-label="Перемещения" class="text-center">
+                                            <div class="form-check d-inline-block mb-0" title="Могут быть перемещения между ДЦ">
+                                                <input type="checkbox" class="form-check-input allow-dc-input" name="allow_dc_transfers_{{ b.id }}" id="allow_dc_{{ b.id }}" data-brand-id="{{ b.id }}">
+                                                <label class="form-check-label small text-muted" for="allow_dc_{{ b.id }}">Да</label>
+                                            </div>
+                                            <div class="small text-muted prev-allow-dc-cell" data-brand-id="{{ b.id }}"></div>
+                                        </td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">Нет брендов — добавьте их в разделе «Бренды».</td>
+                                        <td colspan="6" class="text-center text-muted">Нет брендов — добавьте их в разделе «Бренды».</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -271,6 +287,20 @@
                 document.querySelectorAll('.km-min-dc-input').forEach(function (inp) {
                     var id = parseInt(inp.getAttribute('data-brand-id'), 10);
                     setFormattedValue(inp, map[id] ? map[id].current_km_min_dc : '');
+                });
+                document.querySelectorAll('.allow-dc-input').forEach(function (inp) {
+                    var id = parseInt(inp.getAttribute('data-brand-id'), 10);
+                    var b = map[id];
+                    inp.checked = !!(b && b.current_allow_dc_transfers);
+                });
+                document.querySelectorAll('.prev-allow-dc-cell').forEach(function (cell) {
+                    var id = parseInt(cell.getAttribute('data-brand-id'), 10);
+                    var b = map[id];
+                    if (!b || b.prev_allow_dc_transfers == null) {
+                        cell.textContent = '';
+                        return;
+                    }
+                    cell.textContent = 'Пред. мес.: ' + (b.prev_allow_dc_transfers ? 'да' : 'нет');
                 });
             })
             .catch(function () {});

@@ -61,7 +61,7 @@ from dateutil.relativedelta import relativedelta
 from requests.auth import HTTPBasicAuth
 from avtosalon.models import AvtohubModifications
 from prices_car.models import CarCalculations, CarCalculationsDetail, CarCalculationsTypeDetail, EmailPushCar
-from prices_car.km_raschet import apply_km_raschet_to_calculation
+from prices_car.km_raschet import apply_km_raschet_to_calculation, refresh_km_raschet_after_details
 from chats.models import Chat
 from profiles.models import Profiles
 
@@ -112,6 +112,8 @@ def calculation_car(request):
         new_cal_detail.pocazatel    = detail_info['Pocazatel']
         new_cal_detail.amount_k     = detail_info['Amount_k']
         new_cal_detail.save()
+    
+    refresh_km_raschet_after_details(calculation_object, car_object, data)
     
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 
@@ -174,6 +176,8 @@ def calculation_car_start_success(request):
         new_cal_detail.pocazatel    = detail_info['Pocazatel']
         new_cal_detail.amount_k     = detail_info['Amount_k']
         new_cal_detail.save()
+    
+    refresh_km_raschet_after_details(calculation_object, car_object, data)
     
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 
@@ -5108,6 +5112,8 @@ def get_calculation_car(data):
         new_cal_detail.pocazatel    = detail_info['Pocazatel']
         new_cal_detail.amount_k     = detail_info['Amount_k']
         new_cal_detail.save()
+    
+    refresh_km_raschet_after_details(calculation_object, car_object, data)
     
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 
