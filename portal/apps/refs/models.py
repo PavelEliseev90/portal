@@ -2247,7 +2247,6 @@ class RefCarsOrganization(models.Model):
                     'km_description'                    : description
                 }
                 info['automatic'] = automatic
-                type_km = 1
             if self.modification_autoru != None:
                 from powerbi.models import Cumulative
                 dt_start = datetime.now().replace(day=1, hour=0, second=1) - timedelta(days=1)
@@ -2281,8 +2280,6 @@ class RefCarsOrganization(models.Model):
                     'km_description'                    : "Проанализированы продажи склада новых АМ по бренду " + self.modification_autoru.model.mark.name + " - " + str(cum_count) + " шт. на сумму РРЦ " + '{:,}'.format(cum_aggregate).replace(',', ' ') + " руб."
                 }
                 info['automatic_2'] = automatic
-                if km_min_automatic_2 > km_min_automatic:
-                    type_km = 2
 
             from prices_car.target_cum import calculate_target_cum
             km_min_automatic_k = 0
@@ -2325,9 +2322,6 @@ class RefCarsOrganization(models.Model):
             if target_cum_ti:
                 info['automatic_k_tradein'] = _pack_target_cum(target_cum_ti)
                 km_min_automatic_k_tradein = info['automatic_k_tradein']['km_min_automatic']
-            if km_min_automatic_k > 0 or km_min_automatic_k_tradein > 0:
-                type_km = 5
-
             km_base_for_discount = max(
                 km_min_automatic, km_min_automatic_2,
                 km_min_automatic_k, km_min_automatic_k_tradein,
@@ -2363,7 +2357,6 @@ class RefCarsOrganization(models.Model):
                     ).replace(',', ' '),
                 }
                 info['automatic_3'] = automatic_3
-                type_km = 4
 
             if self.min_km != 0 and self.min_km != None:
                 km_brand_automatic = self.min_km  / self.price * 100
@@ -2374,9 +2367,9 @@ class RefCarsOrganization(models.Model):
                     'km_description'                    : "На автомобиле установлен минимальный км " + '{:,}'.format(self.min_km).replace(',', ' ') + " руб."
                 }
                 info['custom'] = custom
-                
-                type_km = 3
 
+            from prices_car.km_car import resolve_km_from_cumulative
+            _, type_km = resolve_km_from_cumulative(info, self, with_trade_in=False)
             info['type_km'] = type_km
 
         return info

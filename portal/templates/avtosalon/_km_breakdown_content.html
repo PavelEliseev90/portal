@@ -2,6 +2,9 @@
 <p class="small text-muted mb-3">
   Итог по правилу: <strong>{{ params.km_breakdown.winner.label }}</strong>
   — <strong>{{ params.km_breakdown.winner.amount_display }}</strong>.
+  {% if params.km_breakdown.with_trade_in %}
+    <span class="badge text-bg-info">trade-in по детальному расчёту КП</span>
+  {% endif %}
   {{ params.km_breakdown.priority_note }}
 </p>
 
@@ -25,7 +28,9 @@
               aria-expanded="{% if method.applicable %}true{% else %}false{% endif %}"
               aria-controls="kmMethodCollapse{{ method.id }}">
         <span class="me-2">
-          {% if method.applicable %}
+        {% if method.reference_only %}
+            <span class="badge bg-light text-dark border">справочно</span>
+          {% elif method.applicable %}
             <span class="badge bg-success">Применяется</span>
           {% else %}
             <span class="badge bg-secondary">Справочно</span>
