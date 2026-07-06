@@ -3,15 +3,30 @@ from datetime import datetime
 
 from prices_car.models import KMCar
 
+# type_km: 1 — план на месяц, 3 — ручной, 4 — спец. условие, 5 — АвтоК
+TYPE_KM_LABELS = {
+    0: 'Не рассчитан',
+    1: 'План на месяц',
+    2: 'Авто+',
+    3: 'Ручной КМ',
+    4: 'Спец. условие ГК',
+    5: 'АвтоК',
+}
 
-def resolve_km_car_total(
-    km_manual, km_auto_1, km_auto_2, km_auto_3,
-    km_auto_k=0, km_auto_k_tradein=0, with_trade_in=False,
+
+def resolve_km_priority(
+    km_manual,
+    km_auto_1,
+    km_auto_2,
+    km_auto_3,
+    km_auto_k=0,
+    km_auto_k_tradein=0,
+    with_trade_in=False,
 ):
     """
-    Итог КМ и type_km — приоритет как в cumulative_data():
-    ручной > спец. условие > АвтоК > Авто+ > Авто.
-    Для АвтоК выбирается вариант с trade-in или без.
+    Итог КМ и type_km:
+    ручной > спец. условие > АвтоК (с/без trade-in) > план на месяц.
+    Авто+ (km_auto_2) в цепочку не входит — только справочно.
     """
     manual = int(km_manual or 0)
     if manual > 0:
@@ -27,13 +42,44 @@ def resolve_km_car_total(
     if auto_k > 0:
         return auto_k, 5
 
-    auto1 = int(km_auto_1 or 0)
-    auto2 = int(km_auto_2 or 0)
-    if auto2 > auto1:
-        return auto2, 2
-    if auto1 > 0:
-        return auto1, 1
+    plan = int(km_auto_1 or 0)
+    if plan > 0:
+        return plan, 1
+
     return 0, 0
+
+
+def resolve_km_car_total(
+    km_manual, km_auto_1, km_auto_2, km_auto_3,
+    km_auto_k=0, km_auto_k_tradein=0, with_trade_in=False,
+):
+    """Обратная совместимость: km_auto_2 не участвует в итоге."""
+    return resolve_km_priority(
+        km_manual, km_auto_1, km_auto_2, km_auto_3,
+        km_auto_k, km_auto_k_tradein, with_trade_in,
+    )
+
+
+def resolve_km_from_cumulative(cumulative_data, car=None, with_trade_in=False):
+    """Итог КМ из cumulative_data по правилу приоритетов."""
+    if not cumulative_data:
+        return 0, 0
+
+    manual = 0
+    if car and car.min_km:
+        manual = int(car.min_km)
+
+    auto1 = int((cumulative_data.get('automatic') or {}).get('km_min_automatic') or 0)
+    auto2 = int((cumulative_data.get('automatic_2') or {}).get('km_min_automatic') or 0)
+    auto3 = 0
+    if cumulative_data.get('automatic_3'):
+        auto3 = int(cumulative_data['automatic_3'].get('km_min_automatic') or 0)
+    auto_k = int((cumulative_data.get('automatic_k') or {}).get('km_min_automatic') or 0)
+    auto_k_ti = int((cumulative_data.get('automatic_k_tradein') or {}).get('km_min_automatic') or 0)
+
+    return resolve_km_priority(
+        manual, auto1, auto2, auto3, auto_k, auto_k_ti, with_trade_in,
+    )
 
 
 def _target_cum_value(info, key):

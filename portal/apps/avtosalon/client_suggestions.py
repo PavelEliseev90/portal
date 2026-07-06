@@ -4,20 +4,11 @@ from datetime import date
 from django.db.models import Case, IntegerField, OuterRef, Subquery, Value, When
 from django.utils import timezone
 
-from prices_car.km_car import get_car_latest_km_value
+from prices_car.km_car import TYPE_KM_LABELS, get_car_latest_km_value
 from prices_car.models import BrandKM, KMCar
 from refs.models import RefCarsOrganization
 
 KM_CAR_LAST_QS = KMCar.objects.filter(car_id=OuterRef('pk')).order_by('-date', '-pk')
-
-TYPE_KM_LABELS = {
-    0: '—',
-    1: 'Авто',
-    2: 'Авто+',
-    3: 'Ручной КМ',
-    4: 'Спец. условие',
-    5: 'АвтоК',
-}
 
 SUGGESTIONS_LIMIT = 20
 STATUS_AVAILABILITY_GOODS = 'Товарный'
