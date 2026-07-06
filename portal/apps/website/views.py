@@ -10379,7 +10379,7 @@ def test(request):
     from prices_car.views import refresh_km_cars, send_km_car_1C
     
     refresh_km_cars()
-    send_km_car_1C()
+    #send_km_car_1C()
 
     # # from task_manager.views import send_push_car
     
