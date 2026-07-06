@@ -36,11 +36,8 @@ def active_lots_q(now=None):
     """Активный лот: finish_at в будущем или оффер inprogress, без терминального статуса."""
     now = now or timezone.now()
     return (
-        Q(finish_at__gt=now)
-        | Q(offers__status_code='inprogress')
-    ).exclude(
-        offers__status_code__in=TERMINAL_OFFER_STATUSES,
-    )
+        Q(finish_at__gt=now) | Q(offers__status_code='inprogress')
+    ) & ~Q(offers__status_code__in=TERMINAL_OFFER_STATUSES)
 
 
 def inactive_lots_q(now=None):
