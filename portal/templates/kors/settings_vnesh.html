@@ -14,7 +14,12 @@
       <h2>Внешний осмотр</h2>
       <p>Настройка параметров внешнего осмотра автомобилей по ценовым категориям.</p>
     </div>
-    <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <a href="{% url 'website:settings_vnesh_works_export' %}" class="btn btn-outline-secondary">
+        <span class="icon-doc"></span> Выгрузить работы в Excel
+      </a>
+      <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+    </div>
   </div>
 
   <form method="post">

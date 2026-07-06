@@ -52,6 +52,8 @@ urlpatterns = [
    path('settings/settings_body_type_groups/',              views.settings_body_type_groups, name='settings_body_type_groups'),
    path('settings/settings_vnesh/',                         views.settings_vnesh),
    path('settings/settings_works/',                         views.settings_works),
+   path('settings/settings_works/export/',                views.settings_works_export, name='settings_works_export'),
+   path('settings/settings_vnesh/export/',                views.settings_vnesh_works_export, name='settings_vnesh_works_export'),
    path('settings/settings_unit_groups/',                   views.settings_unit_groups),
    path('settings/settings_unit_groups/<int:group_id>/units/', views.settings_unit_group_units),
    path('settings/settings_autopricing_korsavto/',          views.settings_autopricing_korsavto_units, name='settings_autopricing_korsavto_units'),

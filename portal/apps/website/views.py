@@ -8696,6 +8696,75 @@ def settings_works(request):
     
     return render(request, "kors/settings_works.html", {'params': params})
 
+
+def _export_regpodgotovka_works_xlsx(works_qs, filename_prefix):
+    """Excel-выгрузка всех полей RegPodgotovkaWork."""
+    from datetime import datetime
+
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    columns = [
+        ('id', '№'),
+        ('name_group', 'Группа'),
+        ('name', 'Наименование'),
+        ('type_settings', 'Тип настройки'),
+        ('materials_kf', 'Коэффициент материалов'),
+        ('materials_amount', 'Стоимость материалов'),
+        ('materials_price', 'Материалы цена'),
+        ('normo', 'Н/Ч'),
+        ('price_kors', 'КорсАвто'),
+        ('price_podrad', 'Подряд'),
+    ]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Работы подготовки'
+    ws.append([label for _, label in columns])
+
+    header_fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    for work in works_qs.iterator(chunk_size=500):
+        ws.append([getattr(work, field) for field, _ in columns])
+
+    for col_idx in range(1, len(columns) + 1):
+        column_letter = get_column_letter(col_idx)
+        max_length = len(str(columns[col_idx - 1][1]))
+        for cell in ws[column_letter]:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[column_letter].width = min(max_length + 2, 60)
+
+    filename = '%s_%s.xlsx' % (filename_prefix, datetime.now().strftime('%Y%m%d_%H%M%S'))
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    wb.save(response)
+    return response
+
+
+@login_required
+def settings_works_export(request):
+    """Выгрузка работ по подготовке (type_settings 0, 1) — все поля модели."""
+    works = RegPodgotovkaWork.objects.filter(
+        type_settings__in=[0, 1],
+    ).order_by('name_group', 'name')
+    return _export_regpodgotovka_works_xlsx(works, 'settings_works')
+
+
+@login_required
+def settings_vnesh_works_export(request):
+    """Выгрузка всех работ по подготовке — все поля модели."""
+    works = RegPodgotovkaWork.objects.all().order_by('type_settings', 'name_group', 'name')
+    return _export_regpodgotovka_works_xlsx(works, 'settings_vnesh_works')
+
+
 @login_required
 def settings_unit_groups(request):
     

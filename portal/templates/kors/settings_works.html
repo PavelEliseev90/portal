@@ -14,7 +14,12 @@
       <h2>Работы по подготовке</h2>
       <p>Настройка работ по подготовке автомобилей (внутренний осмотр).</p>
     </div>
-    <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <a href="{% url 'website:settings_works_export' %}" class="btn btn-outline-secondary">
+        <span class="icon-doc"></span> Выгрузить в Excel
+      </a>
+      <a href="/settings/" class="btn btn-link text-decoration-none">&larr; Назад к настройкам</a>
+    </div>
   </div>
 
   <form method="post">
