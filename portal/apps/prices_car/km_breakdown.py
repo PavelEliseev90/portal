@@ -9,6 +9,7 @@ TYPE_KM_LABELS = {
     2: 'Авто+',
     3: 'Ручной КМ',
     4: 'Спец. условие ГК',
+    5: 'АвтоК',
 }
 
 
@@ -53,26 +54,32 @@ def _method_block(method_id, title, result_rub, steps, description, applicable, 
     }
 
 
-def _winner_reason(type_km, km1, km2, has_discount, has_min_km):
+def _winner_reason(type_km, km1, km2, km_k, has_discount, has_min_km):
     if type_km == 3:
         return 'На автомобиле задан ручной минимальный КМ — он имеет наивысший приоритет.'
     if type_km == 4:
-        return 'Применено специальное условие ГК (дисконт к базе max(Авто, Авто+)).'
+        return 'Применено специальное условие ГК (дисконт к базе max(Авто, Авто+, АвтоК)).'
+    if type_km == 5:
+        return 'Метод «АвтоК» (целевая кумулятивная маржа по аналогам) — основной автоматический расчёт.'
     if type_km == 2:
         return 'Метод «Авто+» ({}) выше метода «Авто» ({}).'.format(
             _fmt_rub(km2), _fmt_rub(km1),
         )
     if type_km == 1:
         if has_min_km:
-            return 'Ручной КМ не задан или равен 0; спец. условие не найдено; «Авто+» не превысило «Авто».'
+            return 'Ручной КМ не задан или равен 0; спец. условие не найдено; «АвтоК» и «Авто+» не применены.'
         return 'Использован расчёт по норме бренда и стоку марки (метод «Авто»).'
     return 'Недостаточно данных для расчёта (нет модификации Auto.ru).'
 
 
-def get_km_rule_total(cumulative_data, car=None):
+def get_km_rule_total(cumulative_data, car=None, calc=None, with_trade_in=None):
     """Итог по правилу — победитель cumulative_data (как в блоке «Минимальный КМ»)."""
     if not cumulative_data:
         return None
+    if with_trade_in is None and calc is not None:
+        from prices_car.km_raschet import calculation_has_applied_trade_in
+        with_trade_in = calculation_has_applied_trade_in(calc)
+
     type_km = cumulative_data.get('type_km', 0)
     if type_km == 1:
         value = cumulative_data.get('automatic', {}).get('km_min_automatic')
@@ -82,6 +89,13 @@ def get_km_rule_total(cumulative_data, car=None):
         value = car.min_km if car else cumulative_data.get('custom', {}).get('km_min_automatic')
     elif type_km == 4:
         value = cumulative_data.get('automatic_3', {}).get('km_min_automatic')
+    elif type_km == 5:
+        if with_trade_in:
+            value = cumulative_data.get('automatic_k_tradein', {}).get('km_min_automatic')
+            if value is None:
+                value = cumulative_data.get('automatic_k', {}).get('km_min_automatic')
+        else:
+            value = cumulative_data.get('automatic_k', {}).get('km_min_automatic')
     else:
         return None
     if value is None:
@@ -314,14 +328,74 @@ def build_km_calculation_breakdown(car):
         reason=reason2,
     ))
 
+    # --- Method 5: АвтоК без trade-in ---
+    def _build_target_cum_steps(auto_k_block, title_suffix):
+        steps_local = []
+        km_val = 0
+        desc_local = ''
+        if auto_k_block:
+            km_val = auto_k_block.get('km_min_automatic', 0)
+            steps_local.append(_step('Сегмент сделок', title_suffix, source='Cumulative'))
+            steps_local.append(_step('Себестоимость автомобиля', _fmt_rub(auto_k_block.get('car_cost')), source='Карточка АМ'))
+            steps_local.append(_step('Период анализа', '60 дней', source='Cumulative'))
+            steps_local.append(_step('Сегмент поиска', auto_k_block.get('search_label') or '—', source='Cumulative'))
+            steps_local.append(_step('Сделок после очистки', str(auto_k_block.get('analog_count') or 0), source='Cumulative'))
+            if auto_k_block.get('median_margin_pct') is not None:
+                steps_local.append(_step('Медианная маржа аналогов', _fmt_pct(auto_k_block.get('median_margin_pct'))))
+            steps_local.append(_step('Дней на складе', str(auto_k_block.get('days_in_stock') or 0), source='Карточка АМ'))
+            if auto_k_block.get('avg_sale_days') is not None:
+                steps_local.append(_step('Средний срок продажи аналогов', '{} дн.'.format(auto_k_block.get('avg_sale_days'))))
+            if auto_k_block.get('liquidity_ratio') is not None:
+                steps_local.append(_step('Коэффициент ликвидности', str(auto_k_block.get('liquidity_ratio'))))
+            steps_local.append(_step(
+                'Корректировка ликвидности',
+                auto_k_block.get('liquidity_label') or '—',
+                formula='× {}'.format(auto_k_block.get('liquidity_multiplier')),
+            ))
+            if auto_k_block.get('adjusted_margin_pct') is not None:
+                steps_local.append(_step('Итоговая маржа', _fmt_pct(auto_k_block.get('adjusted_margin_pct'))))
+            steps_local.append(_step('Итого мин. КМ', _fmt_rub(km_val), highlight=True))
+            desc_local = auto_k_block.get('km_description', '')
+            if auto_k_block.get('fallback'):
+                steps_local.insert(2, _step('Источник', 'Целевой КМ на месяц (fallback)', source='BrandKM'))
+        else:
+            steps_local.append(_step('АвтоК', 'не рассчитан', source='target_cum'))
+            desc_local = 'Недостаточно данных для расчёта АвтоК.'
+        return km_val, steps_local, desc_local
+
+    auto_k = cumulative.get('automatic_k') or {}
+    auto_k_ti = cumulative.get('automatic_k_tradein') or {}
+    km_k, steps_k, desc_k = _build_target_cum_steps(auto_k, 'без trade-in')
+    km_k_ti, steps_k_ti, desc_k_ti = _build_target_cum_steps(auto_k_ti, 'с trade-in')
+
+    reason_k = ''
+    if type_km != 5:
+        if type_km == 3:
+            reason_k = 'Перебит ручным КМ'
+        elif type_km == 4:
+            reason_k = 'Применено спец. условие ГК'
+        else:
+            reason_k = 'Не выбран как итоговый метод'
+
+    methods.append(_method_block(
+        5, 'АвтоК без trade-in', km_k, steps_k, desc_k,
+        applicable=type_km == 5,
+        reason=reason_k,
+    ))
+    methods.append(_method_block(
+        51, 'АвтоК с trade-in', km_k_ti, steps_k_ti, desc_k_ti,
+        applicable=False,
+        reason='Используется в КП при применённом показателе trade-in',
+    ))
+
     # --- Method 4: Спец. условие ---
     km4 = 0
     desc4 = ''
     steps4 = []
     auto3 = cumulative.get('automatic_3')
-    km_base = max(km1 or 0, km2 or 0)
+    km_base = max(km1 or 0, km2 or 0, km_k or 0, km_k_ti or 0)
 
-    steps4.append(_step('База для дисконта', _fmt_rub(km_base), formula='max(Авто, Авто+)'))
+    steps4.append(_step('База для дисконта', _fmt_rub(km_base), formula='max(Авто, Авто+, АвтоК)'))
 
     if auto3:
         km4 = auto3.get('km_min_automatic', 0)
@@ -377,6 +451,8 @@ def build_km_calculation_breakdown(car):
         winner_amount = min_km
     elif type_km == 4:
         winner_amount = km4
+    elif type_km == 5:
+        winner_amount = km_k
 
     brand_km_info = None
     if brand_km_obj:
@@ -400,7 +476,7 @@ def build_km_calculation_breakdown(car):
             'amount_display': _fmt_rub(winner_amount),
         },
         'priority_note': _winner_reason(
-            type_km, km1, km2, bool(auto3), bool(min_km),
+            type_km, km1, km2, km_k, bool(auto3), bool(min_km),
         ),
         'methods': methods,
         'irc': irc,

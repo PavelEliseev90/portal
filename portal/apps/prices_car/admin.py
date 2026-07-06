@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, KMCar
+from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, KMCar, CarCalculationsTypeDetail
 
 @admin.register(CarCalculations)
 class CarCalculationsAdmin(admin.ModelAdmin):
@@ -27,7 +27,7 @@ class PriceCarBrandAdmin(admin.ModelAdmin):
 
 @admin.register(BrandKM)
 class BrandKMAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'month', 'km', 'km_min_dc')
+    list_display = ('brand', 'month', 'km', 'km_min_dc', 'allow_dc_transfers')
     list_filter = ('brand', 'month')
     search_fields = ('brand__name',)
     date_hierarchy = 'month'
@@ -43,9 +43,20 @@ class PriceCarStageKMAdmin(admin.ModelAdmin):
     ordering = ('-month', 'stage')
 
 
+@admin.register(CarCalculationsTypeDetail)
+class CarCalculationsTypeDetailAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_trade_in')
+    list_filter = ('is_trade_in',)
+    search_fields = ('name',)
+    ordering = ('name',)
+
+
 @admin.register(KMCar)
 class KMCarAdmin(admin.ModelAdmin):
-    list_display = ('date', 'car', 'km', 'type_km', 'km_manual', 'km_auto_1', 'km_auto_2', 'km_auto_3')
+    list_display = (
+        'date', 'car', 'km', 'type_km', 'km_manual',
+        'km_auto_k', 'km_auto_k_tradein', 'km_auto_1', 'km_auto_2', 'km_auto_3',
+    )
     list_filter = ('date',)
     raw_id_fields = ('car',)
     search_fields = ('car__vin', 'car__name', 'car__slug')

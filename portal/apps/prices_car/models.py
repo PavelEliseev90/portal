@@ -56,6 +56,11 @@ class BrandKM(models.Model):
         default=0,
         help_text='Минимальное значение кумулятивной маржи ДЦ',
     )
+    allow_dc_transfers = models.BooleanField(
+        'Могут быть перемещения между ДЦ',
+        default=False,
+        help_text='Если включено — при подборе альтернатив с более низким КМ учитываются автомобили всех ДЦ бренда',
+    )
     month = models.DateField(
         'Месяц (период)',
         help_text='Месяц, на который устанавливается значение (обычно первый день месяца, напр. 2025-02-01)',
@@ -317,7 +322,12 @@ class CarCalculations(models.Model):
 
 
 class CarCalculationsTypeDetail(models.Model):
-    name =  models.CharField("Наименование", max_length=150, null=True, blank=True)
+    name = models.CharField("Наименование", max_length=150, null=True, blank=True)
+    is_trade_in = models.BooleanField(
+        "Показатель трейд-ин",
+        default=False,
+        help_text='Если включено — применение этого показателя в КП влияет на выбор расчётного КМ (АвтоК с trade-in)',
+    )
 
     class Meta:
         db_table = 'сarCalculationsTypeDetail'
@@ -413,6 +423,8 @@ class KMCar(models.Model):
     km_auto_1           = models.IntegerField("КМ автомобиля авто 1", default=0, null=True, blank=True)
     km_auto_2           = models.IntegerField("КМ автомобиля авто 2", default=0, null=True, blank=True)
     km_auto_3           = models.IntegerField("КМ автомобиля спец. условие", default=0, null=True, blank=True)
+    km_auto_k           = models.IntegerField("КМ АвтоК без trade-in", default=0, null=True, blank=True)
+    km_auto_k_tradein   = models.IntegerField("КМ АвтоК с trade-in", default=0, null=True, blank=True)
     km_manual           = models.IntegerField("КМ ручной (min_km)", default=0, null=True, blank=True)
     type_km             = models.SmallIntegerField("Тип итогового КМ", default=0, null=True, blank=True)
 
@@ -424,6 +436,7 @@ class KMCar(models.Model):
 
         total, type_km = resolve_km_car_total(
             self.km_manual, self.km_auto_1, self.km_auto_2, self.km_auto_3,
+            self.km_auto_k, self.km_auto_k_tradein,
         )
         self.km = total
         self.type_km = type_km

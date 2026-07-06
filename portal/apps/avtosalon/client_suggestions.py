@@ -1,8 +1,11 @@
 """Подбор альтернативных автомобилей на складе ДЦ (KMCar)."""
+from datetime import date
+
 from django.db.models import Case, IntegerField, OuterRef, Subquery, Value, When
+from django.utils import timezone
 
 from prices_car.km_car import get_car_latest_km_value
-from prices_car.models import KMCar
+from prices_car.models import BrandKM, KMCar
 from refs.models import RefCarsOrganization
 
 KM_CAR_LAST_QS = KMCar.objects.filter(car_id=OuterRef('pk')).order_by('-date', '-pk')
@@ -13,6 +16,7 @@ TYPE_KM_LABELS = {
     2: 'Авто+',
     3: 'Ручной КМ',
     4: 'Спец. условие',
+    5: 'АвтоК',
 }
 
 SUGGESTIONS_LIMIT = 20
@@ -37,7 +41,7 @@ def deal_needs_client_suggestions(calc, cumulative_data, car):
         return False
     if is_auto_approved_calculation(calc):
         return False
-    km_rule = get_km_rule_total(cumulative_data, car)
+    km_rule = get_km_rule_total(cumulative_data, car, calc=calc)
     if km_rule is None:
         return False
     if kvp_above_km_rule(calc, cumulative_data):
@@ -47,6 +51,29 @@ def deal_needs_client_suggestions(calc, cumulative_data, car):
 
 def get_reference_km_for_car(car):
     return get_car_latest_km_value(car)
+
+
+def _current_month_first():
+    today = timezone.now().date()
+    return date(today.year, today.month, 1)
+
+
+def _brand_km_for_car(car):
+    from prices_car.brand_resolve import resolve_price_car_brand_for_car
+
+    brand = resolve_price_car_brand_for_car(car)
+    if brand is None:
+        return None, None
+    month_date = _current_month_first()
+    brand_km = BrandKM.objects.filter(brand=brand, month=month_date).first()
+    if brand_km is None:
+        brand_km = BrandKM.objects.filter(brand=brand).order_by('-month').first()
+    return brand, brand_km
+
+
+def brand_allows_dc_transfers(car) -> bool:
+    _, brand_km = _brand_km_for_car(car)
+    return bool(brand_km and brand_km.allow_dc_transfers)
 
 
 def _suggestions_filter_label(car):
@@ -61,16 +88,17 @@ def _suggestions_filter_label(car):
     return model_name
 
 
-def _suggestions_base_qs(car, unit_id):
-    if not car or not unit_id or not car.modification_autoru_id:
-        return RefCarsOrganization.objects.none()
+def _suggestions_scope_label(allow_dc_transfers):
+    if allow_dc_transfers:
+        return 'по всем ДЦ бренда'
+    return 'только в вашем подразделении'
 
-    model_id = car.modification_autoru.model_id
-    qs = RefCarsOrganization.objects.filter(
-        unit_id=unit_id,
+
+def _apply_stock_filters(qs, car):
+    qs = qs.filter(
         is_new=True,
         quantity__gt=0,
-        modification_autoru__model_id=model_id,
+        modification_autoru__model_id=car.modification_autoru.model_id,
         status_availability__name=STATUS_AVAILABILITY_GOODS,
         status__name=STATUS_CAR_WAREHOUSE,
     ).exclude(
@@ -81,6 +109,30 @@ def _suggestions_base_qs(car, unit_id):
     if car.complectation_autoru_id:
         qs = qs.filter(complectation_autoru_id=car.complectation_autoru_id)
     return qs
+
+
+def _suggestions_base_qs(car, unit_id):
+    if not car or not car.modification_autoru_id:
+        return RefCarsOrganization.objects.none()
+
+    allow_all_dc = brand_allows_dc_transfers(car)
+
+    if allow_all_dc:
+        from prices_car.brand_resolve import cars_queryset_for_price_car_brand, resolve_price_car_brand_for_car
+
+        brand = resolve_price_car_brand_for_car(car)
+        if brand is None:
+            if not unit_id:
+                return RefCarsOrganization.objects.none()
+            qs = RefCarsOrganization.objects.filter(unit_id=unit_id)
+        else:
+            qs = cars_queryset_for_price_car_brand(brand)
+    else:
+        if not unit_id:
+            return RefCarsOrganization.objects.none()
+        qs = RefCarsOrganization.objects.filter(unit_id=unit_id)
+
+    return _apply_stock_filters(qs, car)
 
 
 def _annotate_last_km(qs):
@@ -153,6 +205,7 @@ def serialize_client_suggestion(car, reference_km, kvp):
         'rule_label': TYPE_KM_LABELS.get(car.last_km_type or 0, '—'),
         'days_in_stock': car.days_in_stok or 0,
         'stage_price': str(car.stage_price) if car.stage_price_id else '',
+        'unit_name': car.unit.name if car.unit_id else '',
         'approval_passes': kvp_val > km if kvp_val else False,
         'price_url': '/cars/{}/price/'.format(car.slug) if car.slug else '',
         'car_url': '/cars/{}/'.format(car.slug) if car.slug else '',
@@ -165,10 +218,12 @@ def serialize_client_suggestion(car, reference_km, kvp):
 
 
 def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_LIMIT):
+    allow_dc = brand_allows_dc_transfers(car)
     qs = get_client_suggestions_qs(car, unit_id, reference_km)[:limit]
     items = [serialize_client_suggestion(item, reference_km, kvp) for item in qs]
     total = count_client_suggestions(car, unit_id, reference_km)
     filter_label = _suggestions_filter_label(car)
+    scope_label = _suggestions_scope_label(allow_dc)
     return {
         'items': items,
         'total': total,
@@ -178,4 +233,6 @@ def list_client_suggestions(car, unit_id, reference_km, kvp, limit=SUGGESTIONS_L
         'model_name': filter_label,
         'filter_label': filter_label,
         'same_complectation': bool(car.complectation_autoru_id),
+        'allow_dc_transfers': allow_dc,
+        'scope_label': scope_label,
     }

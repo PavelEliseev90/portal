@@ -206,6 +206,11 @@ def _upsert_vehicle_autohub(lot: AvitoLot, ah: dict):
 
 @transaction.atomic
 def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> AvitoLotOffer:
+    existing_offer = AvitoLotOffer.objects.filter(
+        lot_offer_id=offer_data['lotOfferId'],
+    ).first()
+    old_bid = existing_offer.bid if existing_offer else None
+
     lot_data = dict(offer_data['lot'])
     if not lot_data.get('badges') and not lot_data.get('badgesByStyle'):
         if offer_data.get('badges'):
@@ -269,5 +274,19 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     )
 
     sync_offer_badges(offer, offer_data)
+
+    new_bid = offer_data.get('bid')
+    if new_bid is not None and new_bid != old_bid:
+        try:
+            from auction_avito.chat_utils import notify_new_bid_in_feed
+            notify_new_bid_in_feed(offer.lot, new_bid, old_bid)
+        except Exception:
+            pass
+
+    try:
+        from auction_avito.services.expiry import expire_overdue_lots
+        expire_overdue_lots()
+    except Exception:
+        pass
 
     return offer

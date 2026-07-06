@@ -380,6 +380,8 @@
 											<div class="metric-card-value fs-5 text-white"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>
 										{% elif params.cumulative_data.type_km == 4 %}
 											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>
+										{% elif params.cumulative_data.type_km == 5 %}
+											<div class="metric-card-value fs-5 text-white"> • {{params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g"}} ₽</div>
 										{% endif %}																										
 									</div> 								
 								</div>
@@ -550,11 +552,20 @@
 										• Ручной • <div class="metric-card-value fs-5"> • {{params.object.min_km|floatformat:"2g"}} ₽</div>
 										{% elif params.cumulative_data.type_km == 4 %}
 										• Спец. условие • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g"}} ₽</div>
+										{% elif params.cumulative_data.type_km == 5 %}
+										• АвтоК • <div class="metric-card-value fs-5"> • {{params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g"}} ₽</div>
 										{% endif %}
 										
 									</div> 
 								</div>
 								
+								<div class="col-12 col-sm-4 align-self-center">
+									<div class="{% if params.cumulative_data.type_km == 5 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-opacity-10 bg-gradient" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
+										<div class="metric-card-label"><span class="icon-calendar"></span> АвтоК</div>
+										<div class="metric-card-value"> • {{params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g"|default:"--- ---"}} ₽</div>
+									</div>
+								</div>
+
 								<div class="col-12 col-sm-4 align-self-center">
 									<div class="{% if params.cumulative_data.type_km == 1 %} text-bg-success {% else %} text-bg-secondary {% endif %} bg-opacity-10 bg-gradient" style="border-radius: 1rem; padding: 0.5rem; margin: 0.2rem;">
 										<div class="metric-card-label"><span class="icon-calendar"></span> Авто </div>
@@ -582,6 +593,8 @@
 									<div class="metric-card-value fs-6"> • Ручной • {{params.cumulative_data.custom.km_description}} </div>
 								{% elif params.cumulative_data.type_km == 4 %}
 									<div class="metric-card-value fs-6"> • Спец. условие • {{params.cumulative_data.automatic_3.km_description}} </div>
+								{% elif params.cumulative_data.type_km == 5 %}
+									<div class="metric-card-value fs-6"> • АвтоК • {{params.cumulative_data.automatic_k.km_description}} </div>
 								{% endif %}
 							</div>
 						</div>
