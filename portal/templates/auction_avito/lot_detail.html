@@ -780,6 +780,44 @@
       </div>
 
       <div class="portal-panel mb-3">
+        <div class="aav-panel-title d-flex justify-content-between align-items-center">
+          <span><span class="bi bi-clock-history me-1"></span> История наших ставок</span>
+          <span class="text-muted small">{{ params.bid_history|length }} шт.</span>
+        </div>
+        {% if params.bid_history %}
+          <div class="table-responsive portal-radius">
+            <table class="table table-sm table-striped table-hover mb-0">
+              <thead>
+                <tr>
+                  <th style="min-width: 140px;">Дата ставки</th>
+                  <th style="min-width: 120px;">Сумма</th>
+                  <th>Комментарий</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in params.bid_history %}
+                  <tr>
+                    <td>
+                      {% if entry.bid_made_at %}
+                        {{ entry.bid_made_at|date:"d.m.Y H:i" }}
+                      {% else %}
+                        {{ entry.recorded_at|date:"d.m.Y H:i" }}
+                        <span class="text-muted small d-block">зафиксировано</span>
+                      {% endif %}
+                    </td>
+                    <td class="fw-semibold">{{ entry.bid|formatted_number }} ₽</td>
+                    <td class="aav-desc" style="white-space:pre-wrap">{{ entry.comment|default:"—" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted small mb-0">Ставок по этому лоту пока нет.</p>
+        {% endif %}
+      </div>
+
+      <div class="portal-panel mb-3">
         <div class="aav-panel-title"><span class="bi bi-arrow-left-right me-1"></span> Трейд-ин</div>
         <div class="table-responsive portal-radius">
           <table class="table table-sm table-striped table-hover mb-0">
@@ -901,4 +939,5 @@
   </div>
 
 </div>
+{% include 'auction_avito/aav_chat_embed.html' with embed=params.lot_chat %}
 {% endblock %}

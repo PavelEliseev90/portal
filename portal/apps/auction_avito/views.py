@@ -21,7 +21,7 @@ from auction_avito.lot_tabs import (
 LOT_DETAIL_TABS = (
     'main', 'autoteka', 'calculations', 'stock', 'sales', 'estimations',
 )
-from auction_avito.chat_utils import build_aav_feed_chat_params
+from auction_avito.chat_utils import build_aav_feed_embed, build_aav_lot_embed
 from auction_avito.models import (
     AvitoAutotekaEvent,
     AvitoLot,
@@ -31,6 +31,7 @@ from auction_avito.models import (
     AvitoOfferBadge,
     AvitoVenue,
 )
+from auction_avito.services.bid_history import get_lot_bid_history
 from auction_avito.services.expiry import expire_overdue_lots
 from auction_avito.services.offer_status import active_lots_q, inactive_lots_q, parse_activity_param
 
@@ -362,7 +363,7 @@ def lot_list(request):
             ('lost', 'Проигран'),
         ],
     }
-    params.update(build_aav_feed_chat_params(request))
+    params.update({'feed_chat': build_aav_feed_embed(request)})
     return render(request, 'auction_avito/lot_list.html', {'params': params})
 
 
@@ -572,6 +573,8 @@ def lot_detail(request, pk):
         'prices': _lot_price_display(lot, primary_offer),
         'venue': _venue_display(lot, primary_offer),
         'seller_place': _seller_place_display(lot, primary_offer),
+        'lot_chat': build_aav_lot_embed(request, lot),
+        'bid_history': get_lot_bid_history(lot),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
 
@@ -638,4 +641,31 @@ def feed_chat_send(request):
     chat = get_or_create_feed_chat()
     msg = ChatMessage.objects.create(user=request.user, chat=chat, content=message)
     broadcast_aav_feed_message(chat, message, request.user)
+    return JsonResponse({'ok': True, 'message_id': msg.pk})
+
+
+@login_required
+def lot_chat_send(request, pk):
+    """HTTP-отправка сообщения в чат конкретного лота."""
+    from django.http import JsonResponse
+
+    from auction_avito.chat_utils import broadcast_aav_message, get_or_create_lot_chat
+    from auction_avito.models import AvitoLot
+    from chats.models import ChatMessage
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method'}, status=405)
+
+    profile = getattr(request.user, 'profiles', None)
+    if profile and profile.user_sb:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    lot = get_object_or_404(AvitoLot, pk=pk)
+    message = (request.POST.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'error': 'empty'}, status=400)
+
+    chat = get_or_create_lot_chat(lot)
+    msg = ChatMessage.objects.create(user=request.user, chat=chat, content=message)
+    broadcast_aav_message(chat, message, request.user)
     return JsonResponse({'ok': True, 'message_id': msg.pk})

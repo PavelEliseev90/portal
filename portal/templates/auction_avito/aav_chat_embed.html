@@ -1,0 +1,234 @@
+{% with prefix=embed.prefix|default:"aav_feed" %}
+<div class="hidemobile" style="position: fixed; bottom: 0; right: 0; padding: 20px; z-index: 1030;">
+    <button type="button" class="btn bg-dark text-white" id="{{ prefix }}_chat_open" data-bs-toggle="offcanvas" data-bs-target="#{{ prefix }}Offcanvas" aria-controls="{{ prefix }}Offcanvas">
+        <span class="icon-mbri-chat"></span> {{ embed.open_button_label|default:"Чат" }}
+    </button>
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="{{ prefix }}Offcanvas" aria-labelledby="{{ prefix }}OffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="{{ prefix }}OffcanvasLabel">{{ embed.title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+    </div>
+
+    <div id="{{ prefix }}_div_reconect" class="d-none align-items-center align-self-center px-3">
+        <hr>
+        <label class="fs-6 fw-bold">Соединение потеряно...</label>
+        <button class="btn btn-outline-danger" type="button" id="{{ prefix }}_btn_reconect"><span class="icon-mbri-close"></span> Переподключиться</button>
+        <hr>
+    </div>
+
+    <div class="offcanvas-body" style="padding: 0;">
+        <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1" style="padding-bottom: 4rem;">
+            <div class="container" style="padding: 0 0 4rem 0; margin: 0;">
+                <div class="row message-list" id="{{ prefix }}-message-list" style="padding: 0; margin: 0;">
+                    {% if embed.messages %}
+                        {% for message in embed.messages %}
+                            <div class="item-chat-message{% if message.user and message.user.profiles.eco %}-owner text-end{% endif %} col-12{% if embed.clickable_lots and message.aav_lot_pk %} aav-chat-msg-lot{% endif %}"
+                                 style="padding: 0;"
+                                 {% if embed.clickable_lots and message.aav_lot_pk %}data-lot-pk="{{ message.aav_lot_pk }}"{% endif %}>
+                                <div class="item-chat-body{% if message.user and message.user.profiles.eco %}-owner text-end{% endif %}">
+                                    <div class="item-content-chat">
+                                        <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                                            {% autoescape off %}{{ message.aav_display_html }}{% endautoescape %}
+                                        </label>
+                                    </div>
+                                    <p class="item-time-chat{% if message.user == embed.user %}-owner text-end{% endif %}">
+                                        {% if not message.user %}
+                                            Система
+                                        {% elif message.user.profiles.eco_name %}
+                                            {{ message.user.profiles.eco_name }}
+                                        {% else %}
+                                            {{ message.user.last_name }} {{ message.user.first_name }}
+                                        {% endif %}
+                                        / {{ message.date }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12" id="{{ prefix }}-no-message">
+                            <h6 class="item-subtitle mbr-fonts-style display-9 fw-bold px-3">
+                                {{ embed.empty_text|default:"В чате пока нет сообщений." }}
+                            </h6>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        {% if embed.can_send_messages %}
+        <section id="{{ prefix }}_form_send" style="position:absolute; bottom:0.25rem; padding:0; width:-webkit-fill-available; margin-left:0.25rem; margin-right:0.25rem;">
+            <form id="{{ prefix }}-post-form">
+                {% csrf_token %}
+                <div class="position-relative w-100">
+                    <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0;">
+                        <textarea class="form-control border-end-0" name="message" id="{{ prefix }}-message" placeholder="Сообщение…" rows="3" required></textarea>
+                        <button class="btn btn-dark text-white" type="submit" id="{{ prefix }}-form-submit"><span class="icon-mbri-play"></span></button>
+                    </div>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+    </div>
+</div>
+
+<audio id="{{ prefix }}-notif" src="/media_dop/music/vin.mp3"></audio>
+
+<style>
+  .aav-chat-msg-lot { cursor: pointer; }
+  .aav-chat-msg-lot:hover .item-chat-body,
+  .aav-chat-msg-lot:hover .item-chat-body-owner {
+    background: rgba(0, 42, 90, 0.06);
+    border-radius: 8px;
+  }
+</style>
+
+<script>
+(function () {
+    const prefix = '{{ prefix }}';
+    const chat_id = '{{ embed.chat.pk }}';
+    const chatName = '{{ embed.chat.slug }}';
+    const username = '{{ embed.user.username|escapejs }}';
+    const last_name = '{{ embed.user.last_name|escapejs }}';
+    const first_name = '{{ embed.user.first_name|escapejs }}';
+    const psevdo_name = '{{ embed.eco_name|escapejs }}';
+    const eco = {% if embed.user_eco %}true{% else %}false{% endif %};
+    const chatSendUrl = '{{ embed.send_url }}';
+    const clickableLots = {% if embed.clickable_lots %}true{% else %}false{% endif %};
+    const lotDetailUrlTemplate = '{{ embed.lot_detail_url_template|default:"/auction_avito/lots/__pk__/"|escapejs }}';
+    const csrfToken = document.querySelector('#' + prefix + '-post-form [name=csrfmiddlewaretoken]')?.value || '';
+
+    let chatSocket;
+
+    function scrollToBottom() {
+        const list = document.getElementById(prefix + '-message-list');
+        if (list) list.scrollIntoViewIfNeeded();
+    }
+
+    function formatMessage(text) {
+        return (text || '').replace(/\n/g, '<br>');
+    }
+
+    function lotDetailUrl(lotPk) {
+        return lotDetailUrlTemplate.replace('__pk__', String(lotPk));
+    }
+
+    function bindLotClick(el, lotPk) {
+        if (!clickableLots || !lotPk) return;
+        el.classList.add('aav-chat-msg-lot');
+        el.dataset.lotPk = String(lotPk);
+        el.addEventListener('click', function () {
+            window.location.href = lotDetailUrl(lotPk);
+        });
+    }
+
+    function appendMessage(data, isOwner) {
+        const now = new Date();
+        const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+        const author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim() || 'Система';
+        const text = formatMessage(data.message || '');
+        const lotPk = data.lot_pk || null;
+        const ownerClass = isOwner ? '-owner text-end' : '';
+        const list = document.getElementById(prefix + '-message-list');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'item-chat-message' + ownerClass + ' col-12';
+        wrapper.style.padding = '0';
+        wrapper.innerHTML =
+            '<div class="item-chat-body' + ownerClass + '">' +
+                '<div class="item-content-chat">' +
+                    '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + text + '</label>' +
+                '</div>' +
+                '<p class="item-time-chat' + ownerClass + '">' + author + ' / ' + time + '</p>' +
+            '</div>';
+        bindLotClick(wrapper, lotPk);
+        list.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function connectWs() {
+        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+        chatSocket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/rlk_list_eco/');
+
+        chatSocket.onopen = function () {
+            document.getElementById(prefix + '_div_reconect').classList.add('d-none');
+            const formSend = document.getElementById(prefix + '_form_send');
+            if (formSend) formSend.classList.remove('d-none');
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            if (!data.message || String(data.chat_id) !== String(chat_id)) return;
+            const notif = document.getElementById(prefix + '-notif');
+            if (notif) notif.play().catch(function () {});
+            appendMessage(data, !!data.eco);
+        };
+
+        chatSocket.onclose = function () {
+            const formSend = document.getElementById(prefix + '_form_send');
+            if (formSend) formSend.classList.add('d-none');
+            document.getElementById(prefix + '_div_reconect').classList.remove('d-none');
+            setTimeout(connectWs, 3000);
+        };
+    }
+
+    function sendViaHttp(message) {
+        const body = new URLSearchParams();
+        body.append('message', message);
+        if (csrfToken) body.append('csrfmiddlewaretoken', csrfToken);
+        return fetch(chatSendUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        });
+    }
+
+    document.getElementById(prefix + '-post-form')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const ta = document.getElementById(prefix + '-message');
+        const message = ta.value.trim();
+        if (!message) return;
+
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                chat_id: chat_id,
+                name: username,
+                chat: chatName,
+                message: message,
+                username: username,
+                last_name: last_name,
+                first_name: first_name,
+                psevdo_name: psevdo_name,
+                eco: eco
+            }));
+        } else {
+            sendViaHttp(message).catch(function () {});
+        }
+
+        const noMsg = document.getElementById(prefix + '-no-message');
+        if (noMsg) noMsg.remove();
+        ta.value = '';
+    });
+
+    document.getElementById(prefix + '-message')?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById(prefix + '-form-submit')?.click();
+        }
+    });
+
+    document.getElementById(prefix + '_btn_reconect')?.addEventListener('click', connectWs);
+    document.getElementById(prefix + '_chat_open')?.addEventListener('click', scrollToBottom);
+
+    if (clickableLots) {
+        document.querySelectorAll('#' + prefix + '-message-list [data-lot-pk]').forEach(function (el) {
+            bindLotClick(el, el.dataset.lotPk);
+        });
+    }
+
+    connectWs();
+    scrollToBottom();
+})();
+</script>
+{% endwith %}

@@ -140,6 +140,7 @@ urlpatterns = [
    
    path('calculation_car/',               views.calculation_car),
    path('calculation_car_start_success/', views.calculation_car_start_success),
+   path('calculation_car_submit_soglasovanie/', views.calculation_car_submit_soglasovanie),
 
    # Конвертация аудио файлов с диктофона так как там уйня полная
 

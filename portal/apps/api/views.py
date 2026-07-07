@@ -194,9 +194,9 @@ def calculation_car_start_success(request):
     try:
         from avtosalon.deal_calc_approval import (
             build_calculation_soglasovanie_api_response,
-            notify_calculation_soglasovanie_from_1c,
+            prepare_calculation_soglasovanie_from_1c,
         )
-        notify_calculation_soglasovanie_from_1c(
+        prepare_calculation_soglasovanie_from_1c(
             calculation_object, car_object, rlk_object, unit_object,
         )
         soglasovanie_info = build_calculation_soglasovanie_api_response(calculation_object)
@@ -205,7 +205,11 @@ def calculation_car_start_success(request):
             'soglasovanie_status': calculation_object.soglasovanie_status or 'pending',
             'soglasovanie_status_label': '',
             'soglasovanie_auto_approved': False,
+            'requires_soglasovanie_confirm': True,
             'km_raschet': calculation_object.km_raschet,
+            'km_min_dc': None,
+            'km_rule_total': None,
+            'km_min_calculated': None,
             'kvp': calculation_object.kvp,
         }
 
@@ -214,6 +218,50 @@ def calculation_car_start_success(request):
         **soglasovanie_info,
     }
 
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def calculation_car_submit_soglasovanie(request):
+    """Подтверждение отправки КП на согласование из 1С (после показа мин. КМ пользователю)."""
+    from prices_car.models import CarCalculations
+    from avtosalon.deal_calc_approval import (
+        build_calculation_soglasovanie_api_response,
+        submit_calculation_soglasovanie_from_1c,
+    )
+
+    body_unicode = request.body.decode().replace("'", '"')
+    data = json.loads(body_unicode)
+    uin = data.get('Uin') or ''
+    calculation_object = CarCalculations.objects.filter(uin=uin).select_related(
+        'car', 'rlk', 'unit',
+    ).first()
+    if not calculation_object:
+        return JsonResponse({'error': 'calculation not found', 'uin': uin}, status=status.HTTP_404_NOT_FOUND)
+
+    comment = data.get('CommentSoglasovanie')
+    if comment is not None:
+        calculation_object.comment = comment
+        calculation_object.save(update_fields=['comment'])
+
+    car_object = calculation_object.car
+    rlk_object = calculation_object.rlk
+    unit_object = calculation_object.unit
+    if not car_object or not rlk_object or not unit_object:
+        return JsonResponse(
+            {'error': 'calculation incomplete', 'answer': calculation_object.pk},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    submitted = submit_calculation_soglasovanie_from_1c(
+        calculation_object, car_object, rlk_object, unit_object,
+    )
+    soglasovanie_info = build_calculation_soglasovanie_api_response(calculation_object)
+    to_json = {
+        'answer': calculation_object.pk,
+        'submitted': submitted,
+        **soglasovanie_info,
+    }
     return JsonResponse(to_json, status=status.HTTP_200_OK)
        
     
