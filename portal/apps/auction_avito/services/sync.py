@@ -322,6 +322,11 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     new_bid = offer_data.get('bid')
     if new_bid is not None and new_bid != old_bid:
         try:
+            from auction_avito.services.bid_history import record_bid_history
+            record_bid_history(offer, new_bid, offer_data)
+        except Exception:
+            pass
+        try:
             from auction_avito.chat_utils import notify_new_bid_in_feed
             notify_new_bid_in_feed(offer.lot, new_bid, old_bid)
         except Exception:

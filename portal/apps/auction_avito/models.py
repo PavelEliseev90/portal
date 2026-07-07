@@ -479,6 +479,7 @@ class AvitoBidHistory(models.Model):
     bid = models.PositiveIntegerField()
     bid_made_at = models.DateTimeField(null=True, blank=True)
     bid_made_by_avito_user_id = models.PositiveIntegerField(null=True, blank=True)
+    comment = models.TextField('Комментарий', blank=True, default='')
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
