@@ -117,7 +117,11 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
     from prices_car.models import CarCalculations
 
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
-    if status != CarCalculations.SOGLASOVANIE_PENDING:
+    if status not in (
+        CarCalculations.SOGLASOVANIE_PENDING,
+        CarCalculations.SOGLASOVANIE_AWAITING_1C,
+        '',
+    ):
         return False
     if cumulative_data is None:
         cumulative_data, _ = _get_calc_cumulative_data(calc)
@@ -336,19 +340,13 @@ def notify_uk_users_calculation_approval(calc, car_object=None, result_comment='
 
 
 def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
-    """После загрузки КП из 1С: автосогласование или уведомление директоров."""
-    cumulative_data = None
-    if car_object:
-        try:
-            cumulative_data = car_object.cumulative_data()
-        except Exception:
-            pass
-    auto_approved = try_auto_approve_calculation(
-        calculation_object,
-        send_chat=False,
-        cumulative_data=cumulative_data,
+    """Устаревший вызов: делегирует в prepare_calculation_soglasovanie_from_1c."""
+    return prepare_calculation_soglasovanie_from_1c(
+        calculation_object, car_object, rlk_object, unit_object,
     )
 
+
+def _send_auto_approved_soglasovanie_chat(calculation_object, rlk_object):
     try:
         from website.views import send_web_socket_message
 
@@ -357,19 +355,11 @@ def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
             slug='rlk_' + str(rlk_object.id),
         )
         user = User.objects.get(pk=AUTO_APPROVE_USER_ID)
-        if auto_approved:
-            text = (
-                'Коммерческое предложение #'
-                + str(calculation_object.number)
-                + ' согласовано автоматически. КВ выше итога по правилу.'
-            )
-        else:
-            text = (
-                'Коммерческое предложение #'
-                + str(calculation_object.number)
-                + ' отправлено на согласование. '
-                + (calculation_object.comment or '')
-            )
+        text = (
+            'Коммерческое предложение #'
+            + str(calculation_object.number)
+            + ' согласовано автоматически. КВ выше итога по правилу.'
+        )
         send_web_socket_message(
             group='rlk_' + str(rlk_object.id),
             chat=chat,
@@ -379,14 +369,101 @@ def notify_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
     except Exception:
         pass
 
-    if auto_approved:
-        return True
+
+def _send_pending_soglasovanie_notifications(calculation_object, car_object, rlk_object, unit_object):
+    """Чат и email директорам после подтверждения отправки на согласование из 1С."""
+    try:
+        from website.views import send_web_socket_message
+
+        chat, _ = Chat.objects.get_or_create(
+            name=str(rlk_object.id),
+            slug='rlk_' + str(rlk_object.id),
+        )
+        user = User.objects.get(pk=AUTO_APPROVE_USER_ID)
+        text = (
+            'Коммерческое предложение #'
+            + str(calculation_object.number)
+            + ' отправлено на согласование. '
+            + (calculation_object.comment or '')
+        )
+        send_web_socket_message(
+            group='rlk_' + str(rlk_object.id),
+            chat=chat,
+            user=user,
+            text=text,
+        )
+    except Exception:
+        pass
 
     notify_director_users_calculation_approval(
         calculation_object, car_object, unit_object,
     )
 
+
+def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
+    """
+    После загрузки КП из 1С: автосогласование или ожидание подтверждения в 1С.
+    Уведомления директорам и чат — только при автосогласовании или после submit из 1С.
+    """
+    from prices_car.models import CarCalculations
+
+    cumulative_data = None
+    if car_object:
+        try:
+            cumulative_data = car_object.cumulative_data()
+        except Exception:
+            pass
+
+    current_status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    in_approval_pipeline = current_status in {
+        CarCalculations.SOGLASOVANIE_PENDING,
+        CarCalculations.SOGLASOVANIE_PENDING_UK,
+        CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+        CarCalculations.SOGLASOVANIE_UK_APPROVED,
+        CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+        CarCalculations.SOGLASOVANIE_UK_REJECTED,
+    }
+
+    auto_approved = try_auto_approve_calculation(
+        calculation_object,
+        send_chat=False,
+        cumulative_data=cumulative_data,
+    )
+
+    if auto_approved:
+        _send_auto_approved_soglasovanie_chat(calculation_object, rlk_object)
+        return True
+
+    if in_approval_pipeline:
+        return False
+
+    calculation_object.soglasovanie_status = CarCalculations.SOGLASOVANIE_AWAITING_1C
+    calculation_object.save(update_fields=['soglasovanie_status'])
     return False
+
+
+def submit_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
+    """Подтверждение отправки на согласование из 1С — уведомления директорам и чат."""
+    from prices_car.models import CarCalculations
+
+    if is_auto_approved_calculation(calculation_object):
+        return True
+
+    status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    if status == CarCalculations.SOGLASOVANIE_PENDING:
+        return True
+    if status != CarCalculations.SOGLASOVANIE_AWAITING_1C:
+        return False
+
+    now = timezone.now()
+    calculation_object.soglasovanie_status = CarCalculations.SOGLASOVANIE_PENDING
+    calculation_object.date_start_soglasovanie = now
+    calculation_object.save(update_fields=['soglasovanie_status', 'date_start_soglasovanie'])
+
+    _send_pending_soglasovanie_notifications(
+        calculation_object, car_object, rlk_object, unit_object,
+    )
+    return True
 
 
 def build_calculation_soglasovanie_api_response(calc):
@@ -397,19 +474,29 @@ def build_calculation_soglasovanie_api_response(calc):
     calc.refresh_from_db()
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     km_rule_total = None
+    km_min_dc = 0
+    cumulative_data = None
     if calc.car_id:
         try:
-            km_rule_total = get_km_rule_total(calc.car.cumulative_data(), calc.car, calc=calc)
+            cumulative_data = calc.car.cumulative_data()
+            km_rule_total = get_km_rule_total(cumulative_data, calc.car, calc=calc)
+            km_min_dc = get_calc_min_km_dc(cumulative_data, calc.car)
         except Exception:
             pass
+
+    km_min_calculated = km_rule_total if km_rule_total is not None else (km_min_dc or None)
+
     return {
         'soglasovanie_status': status,
         'soglasovanie_status_label': dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(
             status, status,
         ),
         'soglasovanie_auto_approved': is_auto_approved_calculation(calc),
+        'requires_soglasovanie_confirm': status == CarCalculations.SOGLASOVANIE_AWAITING_1C,
         'km_raschet': calc.km_raschet,
+        'km_min_dc': km_min_dc or None,
         'km_rule_total': km_rule_total,
+        'km_min_calculated': km_min_calculated,
         'kvp': calc.kvp,
     }
 
@@ -617,6 +704,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
                 and not director_can_approve
             )
         ),
+        'approval_awaiting_1c': status == CarCalculations.SOGLASOVANIE_AWAITING_1C,
         'approval_final_without_uk': approval_final_without_uk,
         'approval_is_director': is_director,
         'approval_is_uk': is_uk,
