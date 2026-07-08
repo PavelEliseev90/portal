@@ -25,7 +25,7 @@ from auction_avito.models import (
     AvitoOfferBadge,
 )
 from auction_avito.services.badges import sync_lot_badges_records, sync_offer_badges_records
-from auction_avito.services.venues import resolve_venue_from_payload, upsert_venue
+from auction_avito.services.venues import get_or_create_venue_by_dealer, resolve_venue_from_payload
 
 
 def _dt(value):
@@ -162,14 +162,19 @@ def _upsert_lot(lot_data: dict, *, venue: AvitoVenue | None = None) -> AvitoLot:
         defaults['trade_in_looking_for_used'] = full_defaults['trade_in_looking_for_used']
         defaults['trade_in_comment'] = full_defaults['trade_in_comment']
 
+    create_defaults = dict(full_defaults)
     if venue is not None:
-        defaults['venue'] = venue
+        create_defaults['venue'] = venue
 
-    lot, created = AvitoLot.objects.get_or_create(lot_id=lot_id, defaults=full_defaults)
+    lot, created = AvitoLot.objects.get_or_create(lot_id=lot_id, defaults=create_defaults)
     if not created:
         for key, value in defaults.items():
             setattr(lot, key, value)
-        lot.save(update_fields=list(defaults.keys()))
+        update_fields = list(defaults.keys())
+        if venue is not None and not lot.venue_id:
+            lot.venue = venue
+            update_fields.append('venue')
+        lot.save(update_fields=update_fields)
     apply_lot_related_data(lot, lot_data)
     return lot
 
@@ -251,11 +256,7 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
             lot_data['badgesByStyle'] = offer_data.get('badgesByStyle')
     venue = resolve_venue_from_payload(offer_data, lot_data)
     if venue is None and account.dealer_id:
-        venue = upsert_venue({
-            'dealer_id': account.dealer_id,
-            'name': lot_data.get('sellerPlaceName') or '',
-            'city_name': '',
-        })
+        venue = get_or_create_venue_by_dealer(account.dealer_id)
     lot = _upsert_lot(lot_data, venue=venue)
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or {})
     _upsert_vehicle_autohub(lot, lot_data.get('autohubVehicle') or {})
