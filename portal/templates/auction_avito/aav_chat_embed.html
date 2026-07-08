@@ -18,14 +18,16 @@
         <hr>
     </div>
 
-    <div class="offcanvas-body" style="padding: 0;">
-        <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1" style="padding-bottom: 4rem;">
-            <div class="container" style="padding: 0 0 4rem 0; margin: 0;">
+    <div class="offcanvas-body" style="padding: 0; display: flex; flex-direction: column;">
+        <div id="{{ prefix }}-scroll" class="aav-chat-scroll flex-grow-1" style="overflow-y: auto; padding-bottom: 5rem;">
+            <section class="features4 cid-tYUDzoCUDe cid-tYUDzoCUDe-1" style="padding-bottom: 1rem;">
+            <div class="container" style="padding: 0; margin: 0;">
                 <div class="row message-list" id="{{ prefix }}-message-list" style="padding: 0; margin: 0;">
                     {% if embed.messages %}
                         {% for message in embed.messages %}
                             <div class="item-chat-message{% if message.user and message.user.profiles.eco %}-owner text-end{% endif %} col-12{% if embed.clickable_lots and message.aav_lot_pk %} aav-chat-msg-lot{% endif %}"
                                  style="padding: 0;"
+                                 data-message-id="{{ message.pk }}"
                                  {% if embed.clickable_lots and message.aav_lot_pk %}data-lot-pk="{{ message.aav_lot_pk }}"{% endif %}>
                                 <div class="item-chat-body{% if message.user and message.user.profiles.eco %}-owner text-end{% endif %}">
                                     <div class="item-content-chat">
@@ -55,10 +57,14 @@
                     {% endif %}
                 </div>
             </div>
-        </section>
+            </section>
+            <div id="{{ prefix }}-load-older" class="text-center small text-muted py-2{% if not embed.has_more_messages %} d-none{% endif %}">
+                Прокрутите вниз для загрузки…
+            </div>
+        </div>
 
         {% if embed.can_send_messages %}
-        <section id="{{ prefix }}_form_send" style="position:absolute; bottom:0.25rem; padding:0; width:-webkit-fill-available; margin-left:0.25rem; margin-right:0.25rem;">
+        <section id="{{ prefix }}_form_send" style="flex-shrink: 0; padding:0.25rem; width:100%;">
             <form id="{{ prefix }}-post-form">
                 {% csrf_token %}
                 <div class="position-relative w-100">
@@ -96,14 +102,25 @@
     const eco = {% if embed.user_eco %}true{% else %}false{% endif %};
     const chatSendUrl = '{{ embed.send_url }}';
     const clickableLots = {% if embed.clickable_lots %}true{% else %}false{% endif %};
+    const newestFirst = {% if embed.newest_first %}true{% else %}false{% endif %};
+    const messagesUrl = '{{ embed.messages_url|default:""|escapejs }}';
+    const pageSize = {{ embed.page_size|default:0 }};
+    let hasMore = {% if embed.has_more_messages %}true{% else %}false{% endif %};
+    let loadingMore = false;
     const lotDetailUrlTemplate = '{{ embed.lot_detail_url_template|default:"/auction_avito/lots/__pk__/"|escapejs }}';
     const csrfToken = document.querySelector('#' + prefix + '-post-form [name=csrfmiddlewaretoken]')?.value || '';
 
     let chatSocket;
+    const scrollEl = document.getElementById(prefix + '-scroll');
+    const loadOlderEl = document.getElementById(prefix + '-load-older');
 
-    function scrollToBottom() {
-        const list = document.getElementById(prefix + '-message-list');
-        if (list) list.scrollIntoViewIfNeeded();
+    function scrollToRecent() {
+        if (!scrollEl) return;
+        if (newestFirst) {
+            scrollEl.scrollTop = 0;
+        } else {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
     }
 
     function formatMessage(text) {
@@ -123,27 +140,93 @@
         });
     }
 
-    function appendMessage(data, isOwner) {
-        const now = new Date();
-        const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
-        const author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim() || 'Система';
-        const text = formatMessage(data.message || '');
-        const lotPk = data.lot_pk || null;
+    function buildMessageNode(data) {
+        const isOwner = !!data.is_owner;
         const ownerClass = isOwner ? '-owner text-end' : '';
-        const list = document.getElementById(prefix + '-message-list');
         const wrapper = document.createElement('div');
         wrapper.className = 'item-chat-message' + ownerClass + ' col-12';
         wrapper.style.padding = '0';
+        if (data.id) wrapper.dataset.messageId = String(data.id);
+        const html = data.html || formatMessage(data.message || '');
+        const author = data.author || data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim() || 'Система';
+        const time = data.date || (function () {
+            const now = new Date();
+            return now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+        })();
         wrapper.innerHTML =
             '<div class="item-chat-body' + ownerClass + '">' +
                 '<div class="item-content-chat">' +
-                    '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + text + '</label>' +
+                    '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + html + '</label>' +
                 '</div>' +
                 '<p class="item-time-chat' + ownerClass + '">' + author + ' / ' + time + '</p>' +
             '</div>';
-        bindLotClick(wrapper, lotPk);
-        list.appendChild(wrapper);
-        scrollToBottom();
+        bindLotClick(wrapper, data.lot_pk || null);
+        return wrapper;
+    }
+
+    function insertMessage(data, isOwner) {
+        const list = document.getElementById(prefix + '-message-list');
+        if (!list) return;
+        const payload = Object.assign({}, data, { is_owner: isOwner !== undefined ? isOwner : data.is_owner });
+        const node = buildMessageNode(payload);
+        if (newestFirst) {
+            list.insertBefore(node, list.firstChild);
+        } else {
+            list.appendChild(node);
+        }
+        scrollToRecent();
+    }
+
+    function getOldestMessageId() {
+        const list = document.getElementById(prefix + '-message-list');
+        if (!list) return null;
+        const items = list.querySelectorAll('[data-message-id]');
+        if (!items.length) return null;
+        return items[items.length - 1].dataset.messageId;
+    }
+
+    function loadOlderMessages() {
+        if (!newestFirst || !messagesUrl || !hasMore || loadingMore) return;
+        const beforeId = getOldestMessageId();
+        if (!beforeId) return;
+        loadingMore = true;
+        if (loadOlderEl) {
+            loadOlderEl.textContent = 'Загрузка…';
+            loadOlderEl.classList.remove('d-none');
+        }
+        const prevHeight = scrollEl ? scrollEl.scrollHeight : 0;
+        const prevTop = scrollEl ? scrollEl.scrollTop : 0;
+        fetch(messagesUrl + '?before_id=' + encodeURIComponent(beforeId) + '&limit=' + pageSize, {
+            credentials: 'same-origin',
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                const list = document.getElementById(prefix + '-message-list');
+                (data.messages || []).forEach(function (m) {
+                    list.appendChild(buildMessageNode(m));
+                });
+                hasMore = !!data.has_more;
+                if (loadOlderEl) {
+                    if (hasMore) {
+                        loadOlderEl.textContent = 'Прокрутите вниз для загрузки…';
+                    } else {
+                        loadOlderEl.classList.add('d-none');
+                    }
+                }
+                if (scrollEl) {
+                    scrollEl.scrollTop = scrollEl.scrollHeight - prevHeight + prevTop;
+                }
+            })
+            .catch(function () {
+                if (loadOlderEl) loadOlderEl.textContent = 'Ошибка загрузки';
+            })
+            .finally(function () {
+                loadingMore = false;
+            });
+    }
+
+    function appendMessage(data, isOwner) {
+        insertMessage(data, isOwner);
     }
 
     function connectWs() {
@@ -219,7 +302,7 @@
     });
 
     document.getElementById(prefix + '_btn_reconect')?.addEventListener('click', connectWs);
-    document.getElementById(prefix + '_chat_open')?.addEventListener('click', scrollToBottom);
+    document.getElementById(prefix + '_chat_open')?.addEventListener('click', scrollToRecent);
 
     if (clickableLots) {
         document.querySelectorAll('#' + prefix + '-message-list [data-lot-pk]').forEach(function (el) {
@@ -227,8 +310,15 @@
         });
     }
 
+    scrollEl?.addEventListener('scroll', function () {
+        if (!newestFirst || !hasMore) return;
+        if (scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 48) {
+            loadOlderMessages();
+        }
+    });
+
     connectWs();
-    scrollToBottom();
+    scrollToRecent();
 })();
 </script>
 {% endwith %}

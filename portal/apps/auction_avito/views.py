@@ -620,6 +620,43 @@ def buyout_recommendations(request):
 
 
 @login_required
+def feed_chat_messages(request):
+    """Подгрузка сообщений ленты Авито (старые, пагинация при прокрутке)."""
+    from django.http import JsonResponse
+
+    from auction_avito.chat_utils import (
+        AAV_FEED_PAGE_SIZE,
+        get_aav_chat_messages,
+        get_or_create_feed_chat,
+        serialize_aav_chat_message,
+    )
+
+    chat = get_or_create_feed_chat()
+    before_id = request.GET.get('before_id')
+    try:
+        limit = min(int(request.GET.get('limit', AAV_FEED_PAGE_SIZE)), 50)
+    except (TypeError, ValueError):
+        limit = AAV_FEED_PAGE_SIZE
+
+    if before_id:
+        try:
+            before_id = int(before_id)
+        except (TypeError, ValueError):
+            before_id = None
+
+    messages = get_aav_chat_messages(
+        chat,
+        newest_first=True,
+        limit=limit,
+        before_id=before_id,
+    )
+    return JsonResponse({
+        'messages': [serialize_aav_chat_message(m, request.user) for m in messages],
+        'has_more': len(messages) >= limit,
+    })
+
+
+@login_required
 def feed_chat_send(request):
     """HTTP-отправка сообщения в общий чат ленты Авито (fallback без WebSocket)."""
     from django.http import JsonResponse
