@@ -45,6 +45,64 @@ def append_lot_pk(content: str, lot_pk: int) -> str:
     return f'{content}\n@@lot_pk:{lot_pk}@@'
 
 
+AAV_FEED_PAGE_SIZE = 20
+
+
+def get_aav_chat_messages(chat, *, newest_first=False, limit=None, before_id=None):
+    from django.db.models import Q
+
+    qs = (
+        ChatMessage.objects
+        .filter(chat=chat)
+        .select_related('user', 'user__profiles')
+        .order_by('-date', '-id')
+    )
+    if before_id:
+        try:
+            ref = ChatMessage.objects.get(pk=before_id, chat=chat)
+            qs = qs.filter(
+                Q(date__lt=ref.date) | (Q(date=ref.date) & Q(pk__lt=ref.pk)),
+            )
+        except ChatMessage.DoesNotExist:
+            pass
+
+    if limit:
+        messages = list(qs[:limit])
+    else:
+        messages = list(qs)
+        if not newest_first:
+            messages.reverse()
+
+    enrich_chat_messages(messages)
+    return messages
+
+
+def serialize_aav_chat_message(message, current_user=None):
+    if not hasattr(message, 'aav_display_html'):
+        enrich_chat_messages([message])
+    is_owner = bool(
+        message.user
+        and getattr(message.user, 'profiles', None)
+        and message.user.profiles.eco
+    )
+    if not message.user:
+        author = SYSTEM_AUTHOR
+    else:
+        profile = getattr(message.user, 'profiles', None)
+        if profile and profile.eco_name:
+            author = profile.eco_name
+        else:
+            author = f'{message.user.last_name or ""} {message.user.first_name or ""}'.strip() or message.user.username
+    return {
+        'id': message.pk,
+        'html': message.aav_display_html,
+        'lot_pk': message.aav_lot_pk,
+        'is_owner': is_owner,
+        'author': author,
+        'date': message.date.strftime('%d.%m.%Y %H:%M') if message.date else '',
+    }
+
+
 def enrich_chat_messages(messages):
     for message in messages:
         display = strip_lot_metadata(message.content)
@@ -75,8 +133,17 @@ def _lot_feed_label(lot) -> str:
         parts = [vehicle.brand_name, vehicle.model_name or '']
         if vehicle.year:
             parts.append(str(vehicle.year))
-        return f"{' '.join(p for p in parts if p)} (лот {lot.lot_id})"
-    return f"Лот {lot.lot_id}"
+        return ' '.join(p for p in parts if p)
+    return 'Автомобиль'
+
+
+def _lot_feed_venue_label(lot) -> str:
+    venue = getattr(lot, 'venue', None)
+    if venue is not None:
+        label = getattr(venue, 'display_label', None) or venue.name
+        if label:
+            return label
+    return (lot.seller_place_name or '').strip() or '—'
 
 
 def _format_finish_at(lot) -> str:
@@ -156,9 +223,11 @@ def post_aav_lot_message(lot, text, user=None) -> ChatMessage:
 def notify_new_lot_in_feed(lot, *, user=None):
     """Новый лот, поступивший на перерасчёт через API."""
     label = _lot_feed_label(lot)
+    venue = _lot_feed_venue_label(lot)
     finish = _format_finish_at(lot)
     feed_text = (
         f'Новый лот на перерасчёт: {label}\n'
+        f'Площадка: {venue}\n'
         f'Окончание: {finish}'
     )
     lot_text = feed_text
@@ -169,30 +238,40 @@ def notify_new_lot_in_feed(lot, *, user=None):
 def notify_new_bid_in_feed(lot, new_bid, old_bid=None):
     """Новая наша ставка по лоту."""
     label = _lot_feed_label(lot)
+    venue = _lot_feed_venue_label(lot)
     try:
         bid_fmt = f'{int(new_bid):,}'.replace(',', ' ')
     except (TypeError, ValueError):
         bid_fmt = str(new_bid)
-    feed_text = f'Новая ставка {bid_fmt} ₽ по лоту {label}'
+    feed_text = f'Новая ставка {bid_fmt} ₽: {label}\nПлощадка: {venue}'
     if old_bid is not None:
         try:
             old_fmt = f'{int(old_bid):,}'.replace(',', ' ')
-            feed_text = f'Ставка {old_fmt} → {bid_fmt} ₽ по лоту {label}'
+            feed_text = f'Ставка {old_fmt} → {bid_fmt} ₽: {label}\nПлощадка: {venue}'
         except (TypeError, ValueError):
             pass
     post_aav_feed_message(feed_text, lot_pk=lot.pk)
     post_aav_lot_message(lot, feed_text)
 
 
-def _build_chat_params(request, chat):
-    messages = chat.get_last_messages()
-    if len(messages) > 80:
-        messages = messages[-80:]
-    enrich_chat_messages(messages)
+def _build_chat_params(request, chat, *, newest_first=False, initial_limit=None):
+    if newest_first:
+        limit = initial_limit or AAV_FEED_PAGE_SIZE
+        messages = get_aav_chat_messages(chat, newest_first=True, limit=limit)
+        total = ChatMessage.objects.filter(chat=chat).count()
+        has_more = total > len(messages)
+    else:
+        messages = chat.get_last_messages()
+        if len(messages) > 80:
+            messages = messages[-80:]
+        enrich_chat_messages(messages)
+        has_more = False
+
     profile = getattr(request.user, 'profiles', None)
     return {
         'chat': chat,
         'messages': messages,
+        'has_more_messages': has_more,
         'user': request.user,
         'can_send_messages': not (profile and profile.user_sb),
         'user_eco': bool(profile and profile.eco),
@@ -201,7 +280,12 @@ def _build_chat_params(request, chat):
 
 
 def build_aav_feed_chat_params(request):
-    return _build_chat_params(request, get_or_create_feed_chat())
+    return _build_chat_params(
+        request,
+        get_or_create_feed_chat(),
+        newest_first=True,
+        initial_limit=AAV_FEED_PAGE_SIZE,
+    )
 
 
 def build_aav_feed_embed(request):
@@ -210,8 +294,11 @@ def build_aav_feed_embed(request):
         'title': 'Лента Аукцион Авито',
         'open_button_label': 'Чат Авито',
         'send_url': reverse('auction_avito:feed_chat_send'),
+        'messages_url': reverse('auction_avito:feed_chat_messages'),
         'prefix': 'aav_feed',
         'clickable_lots': True,
+        'newest_first': True,
+        'page_size': AAV_FEED_PAGE_SIZE,
         'lot_detail_url_template': '/auction_avito/lots/__pk__/',
         'empty_text': 'В чате пока нет сообщений. Здесь появятся новые лоты и ставки.',
     })

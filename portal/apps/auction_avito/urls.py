@@ -7,6 +7,7 @@ app_name = 'auction_avito'
 urlpatterns = [
     path('', views.lot_list, name='lot_list'),
     path('chat/send/', views.feed_chat_send, name='feed_chat_send'),
+    path('chat/messages/', views.feed_chat_messages, name='feed_chat_messages'),
     path('buyout-recommendations/', views.buyout_recommendations, name='buyout_recommendations'),
     path('lots/<int:pk>/', views.lot_detail, name='lot_detail'),
     path('lots/<int:pk>/chat/send/', views.lot_chat_send, name='lot_chat_send'),
