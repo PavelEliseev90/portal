@@ -290,20 +290,22 @@ def avito_auction_bid_set(request):
 
     from auction_avito.chat_utils import notify_bid_placed
     from auction_avito.models import AvitoLotOffer
+    from auction_avito.services.bid_api import offer_not_found_payload, resolve_or_create_offer_for_bid
     from auction_avito.services.bid_history import record_bid_history
 
     body_unicode = request.body.decode().replace("'", '"')
     data = json.loads(body_unicode)
 
     lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
+    lot_id_raw = data.get('LotId') or data.get('lotId')
     bid_value = data.get('Bid')
     bid_made_at_raw = data.get('BidMadeAt') or data.get('bidMadeAt')
     comment = (data.get('Comment') or data.get('comment') or '').strip()
     bid_user = data.get('BidMadeByUser') or data.get('bidMadeByUser') or {}
 
-    if not lot_offer_id:
+    if not lot_offer_id and not lot_id_raw:
         return JsonResponse(
-            {'error': 'LotOfferId is required'},
+            {'error': 'LotOfferId or LotId is required'},
             status=status.HTTP_400_BAD_REQUEST,
         )
     if bid_value in (None, ''):
@@ -313,23 +315,21 @@ def avito_auction_bid_set(request):
         )
 
     try:
-        lot_offer_id = int(lot_offer_id)
+        if lot_offer_id not in (None, ''):
+            lot_offer_id = int(lot_offer_id)
+        else:
+            lot_offer_id = None
         bid_value = int(round(float(bid_value)))
     except (TypeError, ValueError):
         return JsonResponse(
-            {'error': 'LotOfferId and Bid must be numeric'},
+            {'error': 'LotOfferId/LotId and Bid must be numeric'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    offer = (
-        AvitoLotOffer.objects
-        .select_related('lot', 'account')
-        .filter(lot_offer_id=lot_offer_id)
-        .first()
-    )
+    offer, resolve_note = resolve_or_create_offer_for_bid(data)
     if not offer:
         return JsonResponse(
-            {'error': 'offer not found', 'lotOfferId': lot_offer_id},
+            offer_not_found_payload(data, lot_offer_id),
             status=status.HTTP_404_NOT_FOUND,
         )
 
@@ -380,6 +380,7 @@ def avito_auction_bid_set(request):
         'bid': offer.bid,
         'bidMadeAt': bid_made_at_raw or '',
         'historyId': bid_history.pk if bid_history else None,
+        'resolveNote': resolve_note or 'found',
         'chatMessage': 'Ставка зафиксирована и отправлена в чат.',
     }, status=status.HTTP_200_OK)
        
