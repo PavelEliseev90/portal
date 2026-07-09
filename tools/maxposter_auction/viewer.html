@@ -478,7 +478,6 @@
       base,
       calc: `${base}/api/calculate_car/`,
       bidSet: `${base}/api/avito_auction_bid_set/`,
-      offerGet: `${base}/api/avito_auction_offer_get/`,
       offersState: `${base}/api/avito_auction_offers_state/`,
     };
   }
@@ -514,7 +513,6 @@
   let portalStateRefreshSlice = null;
   /** @type {Map<string, {offer: object, activeInFeed: boolean, lastSeenAt: number, removedAt: number|null}>} */
   const offerStore = new Map();
-  let offerStoreBootstrapped = false;
   let lastFeedTs = null;
   const calcQueue = [];
   let calcQueueRunning = 0;
@@ -564,7 +562,7 @@
       const offer = offerWithViewerMeta(entry);
       const fp = offerSyncFingerprint(offer);
       const cached = calcCache.get(k);
-      if (!cached?.ok){
+      if (!cached?.ok || cached.answer?.estimation_price == null){
         keys.push(k);
         continue;
       }
@@ -579,7 +577,8 @@
     let n = 0;
     for (const key of keys){
       const k = String(key);
-      if (calcCache.get(k)?.ok) continue;
+      const cached = calcCache.get(k);
+      if (cached?.ok && cached.answer?.estimation_price != null) continue;
       if (calcQueue.some((q) => q.key === k)) continue;
       const entry = offerStore.get(k);
       if (!entry) continue;
@@ -670,7 +669,6 @@
         removedAt: null,
       });
     }
-    offerStoreBootstrapped = true;
     return { allKeys, newKeys, changedKeys, feedCount: feed.length };
   }
   function offerWithViewerMeta(entry){
@@ -702,7 +700,6 @@
     offerStore.clear();
     calcCache.clear();
     calcQueue.length = 0;
-    offerStoreBootstrapped = false;
     lastFeedTs = null;
     const empty = { ts: new Date().toISOString(), totalOffers: 0, offers: [], dealerId: window.__DATA__?.dealerId ?? null };
     window.__DATA__ = empty;
@@ -883,14 +880,6 @@
     }
     return bidAmount;
   }
-  function shortJson(v, maxLen = 240){
-    try{
-      const s = JSON.stringify(v);
-      return s.length > maxLen ? `${s.slice(0, maxLen)}…` : s;
-    }catch(_){
-      return String(v ?? "");
-    }
-  }
   function formatBidMadeAt(d = new Date()){
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -961,9 +950,6 @@
     if (payload.lotId == null) delete payload.lotId;
     if (payload.lotOfferId == null) delete payload.lotOfferId;
     return payload;
-  }
-  function buildCalcPayload(offer){
-    return buildOfferSyncPayload(offer);
   }
   function applyPortalSyncToOffer(key, sync, offer){
     if (!sync) return;
@@ -1056,42 +1042,23 @@
       }
     }catch(_){}
   }
-  async function fetchPortalOfferState(offer){
-    const { lotOfferId, lotId } = resolveOfferIds(offer);
-    if (lotOfferId == null && lotId == null) return null;
-    const { offerGet } = getPortalApiUrls();
-    const body = {};
-    if (lotOfferId != null && lotOfferId !== "") body.lotOfferId = Number(lotOfferId);
-    if (lotId != null && lotId !== "") body.lotId = Number(lotId);
-    try{
-      const resp = await fetch(offerGet, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      return data?.ok === false ? null : data;
-    }catch(_){
-      return null;
+  function parseCalculateCarResponse(data){
+    const rawAnswer = data?.answer;
+    let answer = null;
+    let error = null;
+    if (typeof rawAnswer === "object" && rawAnswer !== null) {
+      answer = rawAnswer;
+      if (rawAnswer.error != null && rawAnswer.error !== "" && rawAnswer.estimation_price == null) {
+        error = String(rawAnswer.error);
+      }
+    } else if (typeof rawAnswer === "string" && rawAnswer.trim()) {
+      error = rawAnswer.trim();
+    } else if (rawAnswer == null || rawAnswer === "") {
+      error = "Пустой ответ расчёта";
     }
-  }
-  async function ensureOfferSyncedInPortal(offer){
-    const { calc: calcUrl } = getPortalApiUrls();
-    const resp = await fetch(calcUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(buildCalcPayload(offer)),
-    });
-    if (!resp.ok){
-      const t = await resp.text().catch(() => "");
-      throw new Error(`Синхронизация лота: HTTP ${resp.status}: ${t.slice(0, 300)}`);
-    }
-    const data = await resp.json().catch(() => ({}));
-    const answer = data?.answer;
+    const ok = !error && answer != null && answer.estimation_price != null;
     const sync = (typeof answer === "object" && answer?.avito_sync) ? answer.avito_sync : null;
-    if (sync) applyPortalSyncToOffer(calcKey(offer), sync, offer);
-    return data;
+    return { raw: data, answer, ok, error, sync };
   }
   function buildPortalBidPayload(offer, { bid, bidMadeAt }){
     const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
@@ -1156,7 +1123,8 @@
       const msg = String(err?.message || "").toLowerCase();
       const needSync = err.status === 404 || msg.includes("offer not found") || data?.lot_exists === false;
       if (!needSync) throw err;
-      await ensureOfferSyncedInPortal(offer);
+      const synced = await calculateForOffer(offer);
+      if (synced.sync) applyPortalSyncToOffer(calcKey(offer), synced.sync, offer);
       return await registerBidInPortal(offer, { bid, bidMadeAt });
     }
   }
@@ -1210,7 +1178,6 @@
     }
     const bidMadeAt = formatBidMadeAt();
     try{
-      await ensureOfferSyncedInPortal(offer);
       const portal = await registerBidInPortalWithRetry(offer, {
         bid: Number(finalBid),
         bidMadeAt,
@@ -1236,22 +1203,18 @@
     }
   }
   async function calculateForOffer(offer){
-    const { lotOfferId, lotId } = resolveOfferIds(offer);
-    if (!lotOfferId) throw new Error("Не найден lotOfferId — лот не синхронизируется с порталом.");
-    if (!lotId) throw new Error("Не найден lotId — лот не синхронизируется с порталом.");
     const { calc: calcUrl } = getPortalApiUrls();
     const resp = await fetch(calcUrl, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(buildCalcPayload(offer)),
+      body: JSON.stringify(buildOfferSyncPayload(offer)),
     });
     if (!resp.ok){
       const t = await resp.text().catch(()=> "");
       throw new Error(`HTTP ${resp.status}: ${t.slice(0, 500)}`);
     }
     const data = await resp.json();
-    const answer = typeof data?.answer === "object" ? data.answer : data;
-    return { raw: data, answer };
+    return parseCalculateCarResponse(data);
   }
   function updateRowAfterCalc(key, offer){
     const tr = document.querySelector(`tr[data-key="${CSS.escape(String(key))}"]`);
@@ -1262,10 +1225,12 @@
     tr.querySelector('[data-cell="sale"]').innerHTML = c.sale;
     tr.querySelector('[data-cell="ourbid"]').innerHTML = renderOurBidCell(offer);
     tr.querySelector('[data-cell="action"]').innerHTML = c.action;
-    tr.classList.remove("row-warn", "row-bad", "row-good", "row-offfeed");
     const cached = calcCache.get(key);
     if (cached?.ok) applyRowHighlight(tr, offer, cached.answer);
-    else if (offer._viewer?.activeInFeed === false) tr.classList.add("row-offfeed");
+    else if (offer._viewer?.activeInFeed === false) {
+      tr.classList.remove("row-warn", "row-bad", "row-good", "row-offfeed");
+      tr.classList.add("row-offfeed");
+    }
   }
   async function performCalcOnRow(tr, offer, calcBtn){
     const key = calcKey(offer);
@@ -1277,11 +1242,10 @@
     }
     try{
       const result = await calculateForOffer(offer);
-      let sync = result.answer?.avito_sync || result.raw?.answer?.avito_sync;
-      if (!sync){
-        sync = await fetchPortalOfferState(offer);
+      if (result.sync) applyPortalSyncToOffer(key, result.sync, offer);
+      if (!result.ok) {
+        throw new Error(result.error || "Ошибка расчёта");
       }
-      if (sync) applyPortalSyncToOffer(key, sync, offer);
       calcCache.set(key, {
         ok: true,
         answer: result.answer,
@@ -1361,27 +1325,23 @@
       </div>
     `;
   }
-  function applyRowHighlight(tr, offer, answer){
-    tr.classList.remove("row-warn", "row-bad", "row-good");
+  function rowHighlightClass(offer, answer){
     const est = Number(answer?.estimation_price);
-    if (!Number.isFinite(est)) return;
-    const lot = offer.lot || {};
-    const minPrice = Number(lot.minPrice);
+    if (!Number.isFinite(est)) return "";
+    const lot = offer?.lot || {};
     const minAvail = Number(lot.minAvailableBid);
-    const maxBid = Number(lot.maxBid);
-    // Priority: red -> yellow -> green
-    if (Number.isFinite(minAvail) && est < minAvail){
-      tr.classList.add("row-bad");
-      return;
-    }
-    if (Number.isFinite(minPrice) && est < minPrice){
-      tr.classList.add("row-warn");
-      return;
-    }
-    if (Number.isFinite(maxBid) && est < maxBid){
-      tr.classList.add("row-good");
-      return;
-    }
+    const minP = Number(lot.minPrice);
+    const maxB = Number(lot.maxBid);
+    if (Number.isFinite(minAvail) && est < minAvail) return "row-bad";
+    if (Number.isFinite(minP) && est < minP) return "row-warn";
+    if (Number.isFinite(maxB) && est < maxB) return "row-good";
+    return "";
+  }
+  function applyRowHighlight(tr, offer, answer){
+    tr.classList.remove("row-warn", "row-bad", "row-good", "row-offfeed");
+    const cls = rowHighlightClass(offer, answer);
+    if (cls) tr.classList.add(cls);
+    else if (offer?._viewer?.activeInFeed === false) tr.classList.add("row-offfeed");
   }
   // --- modal ---
   function openModal(offer){
@@ -1550,20 +1510,8 @@
       ].filter(Boolean).join(" · ");
       const c = renderCalcCells(o);
       const key = calcKey(o);
-      // apply highlight for cached results
       const cached = calcCache.get(key);
-      let cls = "";
-      if (cached?.ok) {
-        const est = Number(cached.answer?.estimation_price);
-        if (Number.isFinite(est)) {
-          const minAvail = Number(lot.minAvailableBid);
-          const minP = Number(lot.minPrice);
-          const maxB = Number(lot.maxBid);
-          if (Number.isFinite(minAvail) && est < minAvail) cls = "row-bad";
-          else if (Number.isFinite(minP) && est < minP) cls = "row-warn";
-          else if (Number.isFinite(maxB) && est < maxB) cls = "row-good";
-        }
-      }
+      let cls = cached?.ok ? rowHighlightClass(o, cached.answer) : "";
       if (o._viewer?.activeInFeed === false && !cls) cls = "row-offfeed";
       if (calcQueue.some((q) => q.key === key) && !cached?.ok) cls = (cls ? cls + " " : "") + "row-calc-pending";
       return `
@@ -1592,7 +1540,7 @@
     }).join("");
     $("rows").innerHTML = rows || `<tr><td colspan="16" class="muted">Ничего не найдено по фильтрам.</td></tr>`;
     const calcN = enqueueAutoCalc(feedDelta?.keysToCalc ?? []);
-    if (feedDelta) schedulePortalOffersStateRefresh(displaySlice);
+    if (feedDelta && calcN === 0) schedulePortalOffersStateRefresh(displaySlice);
     if (calcN > 0 && feedDelta){
       const base = $("loadedMeta").textContent || "";
       if (!base.includes("авторасчёт")) {
@@ -1798,15 +1746,17 @@
     let statusTxt = "";
     try{
       const resp = await fetch("/api/dealers/status", { cache: "no-store" });
-      const data = await resp.json().catch(() => ({}));
-      const st = (data?.dealers || []).find((d) => String(d.dealerId) === dealerId) || {};
-      const count = st.count != null ? st.count : (window.__DATA__?.totalOffers ?? "—");
-      const ts = st.fileTs || st.ts;
-      const tsTxt = ts ? _fmtTs(ts) : "нет данных";
-      const ok = st.ok !== false;
-      statusTxt = ` · ${count} лот. · ${tsTxt}${ok ? "" : " · ошибка"}`;
-      if (st.error) el.title = st.error;
-      else el.title = "";
+      if (resp.ok){
+        const data = await resp.json().catch(() => ({}));
+        const st = (data?.dealers || []).find((d) => String(d.dealerId) === dealerId) || {};
+        const count = st.count != null ? st.count : (window.__DATA__?.totalOffers ?? "—");
+        const ts = st.fileTs || st.ts;
+        const tsTxt = ts ? _fmtTs(ts) : "нет данных";
+        const ok = st.ok !== false;
+        statusTxt = ` · ${count} лот. · ${tsTxt}${ok ? "" : " · ошибка"}`;
+        if (st.error) el.title = st.error;
+        else el.title = "";
+      }
     }catch(_){
       statusTxt = "";
     }

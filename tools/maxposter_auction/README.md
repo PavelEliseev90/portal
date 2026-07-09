@@ -38,7 +38,7 @@ python launcher.py
 
 | Действие | API | Код |
 |----------|-----|-----|
-| Синхронизация лота + расчёт | `POST /api/calculate_car/` | `viewer.html` → `buildCalcPayload()` |
+| Синхронизация лота + расчёт | `POST /api/calculate_car/` | `viewer.html` → `buildOfferSyncPayload()` |
 | Фиксация ставки в портале | `POST /api/avito_auction_bid_set/` | `viewer.html` после ставки в Maxposter |
 | Чтение ставки с портала | `POST /api/avito_auction_offer_get/` | один лот |
 | Пакетное чтение ставок | `POST /api/avito_auction_offers_state/` | таблица при загрузке |
