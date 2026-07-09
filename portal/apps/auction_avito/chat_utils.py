@@ -254,6 +254,32 @@ def notify_new_bid_in_feed(lot, new_bid, old_bid=None):
     post_aav_lot_message(lot, feed_text)
 
 
+def notify_bid_placed(lot, bid_amount, bid_made_at=None, *, user=None):
+    """Явная фиксация новой ставки из внешнего API/1С."""
+    label = _lot_feed_label(lot)
+    venue = _lot_feed_venue_label(lot)
+    try:
+        bid_fmt = f'{int(bid_amount):,}'.replace(',', ' ')
+    except (TypeError, ValueError):
+        bid_fmt = str(bid_amount)
+
+    if bid_made_at:
+        try:
+            bid_time = bid_made_at.strftime('%d.%m.%Y %H:%M')
+        except Exception:
+            bid_time = str(bid_made_at)
+    else:
+        bid_time = '—'
+
+    text = (
+        f'Сделана ставка {bid_fmt} ₽: {label}\n'
+        f'Площадка: {venue}\n'
+        f'Время ставки: {bid_time}'
+    )
+    post_aav_feed_message(text, user=user, lot_pk=lot.pk)
+    post_aav_lot_message(lot, text, user=user)
+
+
 def _build_chat_params(request, chat, *, newest_first=False, initial_limit=None):
     if newest_first:
         limit = initial_limit or AAV_FEED_PAGE_SIZE
