@@ -564,11 +564,34 @@ def calculate_car(request):
     auction = False
     info = None
     dc = None
+    early_sync = None
+
+    def _attach_portal_sync(target, calc_obj=None):
+        """Добавляет avito_sync в ответ: из расчёта или из ранней синхронизации лота."""
+        nonlocal early_sync
+        if not isinstance(target, dict):
+            return target
+        from auction_avito.services.calculate import build_calculation_sync_response
+        sync_payload = None
+        if calc_obj:
+            sync_payload = build_calculation_sync_response(calc_obj)
+        if not sync_payload:
+            sync_payload = early_sync
+        if sync_payload:
+            target['avito_sync'] = sync_payload
+            if calc_obj:
+                target['avito_calculation_id'] = calc_obj.pk
+                target['avito_lot_id'] = calc_obj.lot_id
+        return target
 
     try:
         info = json.loads(request.body)
-        from auction_avito.services.calculate import normalize_calculate_car_request
+        from auction_avito.services.calculate import (
+            ensure_lot_synced_from_calculate_request,
+            normalize_calculate_car_request,
+        )
         info = normalize_calculate_car_request(info)
+        early_sync = ensure_lot_synced_from_calculate_request(info)
 
         autohubVehicle  = info['autohubVehicle']
         vehicle         = info['vehicle']
@@ -684,7 +707,7 @@ def calculate_car(request):
             day_sale_all            = analyticsByActualSales['avgDaysInSale']
             
             if zna == 0:
-                return None
+                raise ValueError('Цена рынка (zna) равна 0 — расчёт невозможен')
             
             kf                  = 100
             percent_ss          = 0
@@ -974,33 +997,23 @@ def calculate_car(request):
         }
 
         try:
-            from auction_avito.services.calculate import (
-                build_calculation_sync_response,
-                persist_auction_calculation,
-            )
+            from auction_avito.services.calculate import persist_auction_calculation
             calc = persist_auction_calculation(
                 info,
                 answer,
                 unit=dc, 
                 user=request.user,
             )
-            if calc:
-                answer['avito_calculation_id'] = calc.pk
-                answer['avito_lot_id'] = calc.lot_id
-                sync_payload = build_calculation_sync_response(calc)
-                if sync_payload:
-                    answer['avito_sync'] = sync_payload
+            answer = _attach_portal_sync(answer, calc)
         except Exception:
-            pass
+            if isinstance(answer, dict):
+                answer = _attach_portal_sync(answer, None)
 
     except Exception as e:
         answer = str(e)
         if isinstance(info, dict):
             try:
-                from auction_avito.services.calculate import (
-                    build_calculation_sync_response,
-                    persist_auction_calculation,
-                )
+                from auction_avito.services.calculate import persist_auction_calculation
                 calc = persist_auction_calculation(
                     info,
                     {},
@@ -1008,22 +1021,19 @@ def calculate_car(request):
                     user=request.user,
                     error_message=str(e),
                 )
-                if calc:
-                    sync_payload = build_calculation_sync_response(calc)
-                    if sync_payload and isinstance(answer, str):
-                        answer = {
-                            'error': answer,
-                            'avito_calculation_id': calc.pk,
-                            'avito_lot_id': calc.lot_id,
-                            'avito_sync': sync_payload,
-                        }
-                    elif calc and isinstance(answer, dict):
-                        answer['avito_calculation_id'] = calc.pk
-                        answer['avito_lot_id'] = calc.lot_id
-                        if sync_payload:
-                            answer['avito_sync'] = sync_payload
+                if calc and isinstance(answer, str):
+                    answer = _attach_portal_sync({
+                        'error': answer,
+                    }, calc)
+                elif calc and isinstance(answer, dict):
+                    answer = _attach_portal_sync(answer, calc)
+                elif isinstance(answer, str) and early_sync:
+                    answer = _attach_portal_sync({'error': answer}, None)
             except Exception:
-                pass
+                if isinstance(answer, str) and early_sync:
+                    answer = _attach_portal_sync({'error': answer}, None)
+        elif isinstance(answer, str) and early_sync:
+            answer = _attach_portal_sync({'error': answer}, None)
 
     to_json = {
         'answer'     : answer,
