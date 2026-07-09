@@ -28,6 +28,43 @@ from auction_avito.services.badges import sync_lot_badges_records, sync_offer_ba
 from auction_avito.services.venues import get_or_create_venue_by_dealer, resolve_venue_from_payload
 
 
+# Поля лота: могут приходить на корне offer (парсер) или внутри lot (API Maxposter).
+LOT_MERGE_KEYS = (
+    'vehicle', 'autohubVehicle', 'minPrice', 'minAvailableBid', 'maxAvailableBid',
+    'maxBid', 'autoteka', 'description', 'sellerPlaceName', 'finishAt', 'expiresAt',
+    'originFinishAt', 'images', 'badges', 'badgesByStyle', 'equipment',
+    'imvMarketRange', 'bidGroupV2', 'tradeIn', 'createdAt', 'updatedAt', 'dealerId',
+)
+
+
+def enrich_lot_data_from_payload(payload: dict) -> dict:
+    """
+    Собирает полный lot{} из корня offer и вложенного lot.
+    Нужно для парсера: badgesByStyle/images часто на корне offer, а upsert читает lot.*.
+    """
+    if not isinstance(payload, dict):
+        return {}
+    lot = dict(payload.get('lot') or {})
+    lot_id = payload.get('lotId') or lot.get('lotId')
+    if lot_id is not None:
+        lot['lotId'] = lot_id
+
+    for key in LOT_MERGE_KEYS:
+        root_val = payload.get(key)
+        lot_val = lot.get(key)
+        if root_val in (None, '', [], {}):
+            continue
+        if lot_val in (None, '', [], {}):
+            lot[key] = root_val
+
+    if payload.get('badgesByStyle'):
+        lot['badgesByStyle'] = payload['badgesByStyle']
+    if payload.get('badges') is not None:
+        lot['badges'] = payload['badges']
+
+    return lot
+
+
 def _dt(value):
     if not value:
         return None
@@ -248,12 +285,11 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     ).first()
     old_bid = existing_offer.bid if existing_offer else None
 
-    lot_data = dict(offer_data['lot'])
-    if not lot_data.get('badges') and not lot_data.get('badgesByStyle'):
-        if offer_data.get('badges'):
-            lot_data['badges'] = offer_data.get('badges')
-        if offer_data.get('badgesByStyle'):
-            lot_data['badgesByStyle'] = offer_data.get('badgesByStyle')
+    lot_data = enrich_lot_data_from_payload(offer_data)
+    if not lot_data.get('lotId'):
+        nested = offer_data.get('lot') or {}
+        if nested.get('lotId') is not None:
+            lot_data['lotId'] = nested['lotId']
     venue = resolve_venue_from_payload(offer_data, lot_data)
     if venue is None and account.dealer_id:
         venue = get_or_create_venue_by_dealer(account.dealer_id)

@@ -1,0 +1,1920 @@
+
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Maxposter offers viewer</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#111826; --muted:#8aa0b8; --text:#e7eef7;
+      --accent:#7dd3fc; --accent2:#a7f3d0; --bad:#fda4af; --warn:#fdba74;
+      --line:#243244;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(180deg,#070a0f, var(--bg));
+      color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    .wrap{max-width:1700px; margin:0 auto; padding:22px}
+    .top{
+      display:flex; flex-direction:column; gap:12px;
+      padding:16px; border:1px solid var(--line); border-radius:14px;
+      background:rgba(17,24,38,.75); backdrop-filter: blur(10px);
+    }
+    h1{font-size:18px; margin:0 0 6px 0; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:12px}
+    .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:end}
+    .dealerPick{min-width:280px; flex:1 1 280px}
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)}
+    input, select{
+      background:#0c1220; color:var(--text);
+      border:1px solid var(--line); border-radius:10px; padding:9px 10px; min-width:170px;
+      outline:none;
+    }
+    input:focus,select:focus{border-color:rgba(125,211,252,.9); box-shadow:0 0 0 3px rgba(125,211,252,.15)}
+    .kpis{display:flex; gap:10px; flex-wrap:wrap}
+    .kpi{
+      padding:10px 12px; border:1px solid var(--line); border-radius:12px;
+      background:#0c1220; min-width:160px;
+    }
+    .kpi .v{font-size:18px; font-weight:700}
+    .kpi .t{font-size:12px; color:var(--muted)}
+    .logCard{
+      margin-top:10px; border:1px solid var(--line); border-radius:12px;
+      background:#0c1220; padding:10px 12px;
+    }
+    .logHead{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .logTitle{font-weight:700; font-size:12px; color:var(--muted)}
+    .logList{margin-top:8px; display:flex; flex-direction:column; gap:6px; max-height:180px; overflow:auto; padding-right:4px}
+    .logList.tall{max-height:calc(100vh - 200px)}
+    .pageHead{
+      padding:16px; border:1px solid var(--line); border-radius:14px;
+      background:rgba(17,24,38,.75); margin-bottom:12px;
+    }
+    .tabBar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+    .tabBtn{
+      cursor:pointer; border:1px solid var(--line); border-radius:10px;
+      background:#0c1220; color:var(--muted); padding:9px 14px; font-size:13px;
+    }
+    .tabBtn:hover{border-color:rgba(125,211,252,.45); color:var(--text)}
+    .tabBtn.active{
+      color:var(--text); border-color:rgba(125,211,252,.55);
+      background:rgba(125,211,252,.08); box-shadow:0 0 0 1px rgba(125,211,252,.12);
+    }
+    .tabPanel{display:none}
+    .tabPanel.active{display:block}
+    .settingsCard{
+      border:1px solid var(--line); border-radius:14px; background:rgba(17,24,38,.75);
+      padding:16px;
+    }
+    .settingsTitle{font-size:16px; font-weight:700; margin:0 0 6px 0}
+    .settingsHint{color:var(--muted); font-size:12px; margin-bottom:14px; line-height:1.45}
+    .excludeToolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+    .excludeList{
+      display:flex; flex-direction:column; gap:8px;
+      max-height:calc(100vh - 280px); overflow:auto; padding-right:4px;
+    }
+    .excludeRow{
+      display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+      border:1px solid rgba(36,50,68,.8); border-radius:12px; background:#0c1220;
+      cursor:pointer; font-size:13px; color:var(--text);
+    }
+    .excludeRow input{margin-top:2px; accent-color:var(--accent)}
+    .excludeRow span{flex:1}
+    .dealerBadge.noAuto{opacity:.72; border-style:dashed}
+    .dealerBadge.noAuto .meta::after{content:" · без авто"; color:var(--warn)}
+    .logRow{display:flex; gap:10px; justify-content:space-between; font-size:12px; border:1px solid rgba(36,50,68,.8); border-radius:12px; padding:8px 10px; background:rgba(255,255,255,.02)}
+    .logRow .l{display:flex; gap:10px; flex-wrap:wrap}
+    .logRow .r{white-space:nowrap; color:var(--muted)}
+    .dealerBadgesWrap{
+      margin-top:10px; border:1px solid var(--line); border-radius:12px;
+      background:#0c1220; padding:10px 12px;
+    }
+    .dealerBadgesHead{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
+    .dealerBadgesTitle{font-weight:700; font-size:12px; color:var(--muted)}
+    .dealerBadges{display:flex; flex-wrap:wrap; gap:8px}
+    .dealerBadge{
+      display:flex; flex-direction:column; gap:4px; text-align:left;
+      padding:8px 10px; border-radius:12px; border:1px solid var(--line);
+      background:rgba(255,255,255,.02); cursor:pointer; min-width:140px; max-width:260px;
+      font-size:12px; color:var(--text);
+    }
+    .dealerBadge:hover{border-color:rgba(125,211,252,.35); background:rgba(125,211,252,.06)}
+    .dealerBadge.active{border-color:rgba(125,211,252,.55); box-shadow:0 0 0 1px rgba(125,211,252,.15)}
+    .dealerBadge.ok{border-color:rgba(167,243,208,.35)}
+    .dealerBadge.bad{border-color:rgba(253,164,175,.35)}
+    .dealerBadge .name{font-weight:600; line-height:1.2}
+    .dealerBadge .meta{color:var(--muted); font-size:11px}
+    .dealerBadge .count{font-weight:700; font-size:13px}
+    .tableWrap{
+      margin-top:14px; border:1px solid var(--line); border-radius:14px; overflow:hidden;
+      background:rgba(17,24,38,.65);
+    }
+    table{border-collapse:collapse; width:100%}
+    thead th{
+      text-align:left; font-size:12px; color:var(--muted); font-weight:600;
+      background:#0c1220; padding:10px 12px; border-bottom:1px solid var(--line);
+      position:sticky; top:0; z-index:2;
+    }
+    tbody td{
+      padding:10px 12px; border-bottom:1px solid rgba(36,50,68,.6); vertical-align:top;
+    }
+    tbody tr{cursor:pointer}
+    tbody tr:hover{background:rgba(125,211,252,.06)}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:3px 9px; border-radius:999px; border:1px solid var(--line);
+      background:#0c1220; font-size:12px; color:var(--text);
+    }
+    .pill.ok{border-color:rgba(167,243,208,.4); color:var(--accent2)}
+    .pill.bad{border-color:rgba(253,164,175,.35); color:var(--bad)}
+    .pill.warn{border-color:rgba(253,186,116,.35); color:var(--warn)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:12px; color:var(--muted)}
+    .muted{color:var(--muted)}
+    .right{text-align:right}
+    .nowrap{white-space:nowrap}
+    .small{font-size:12px}
+    .img{
+      width:72px; height:48px; border-radius:10px; object-fit:cover;
+      border:1px solid rgba(36,50,68,.8); background:#0c1220;
+    }
+    .footer{margin-top:12px; color:var(--muted); font-size:12px}
+    .btn{
+      cursor:pointer; border:1px solid var(--line); border-radius:10px;
+      background:#0c1220; color:var(--text); padding:8px 10px;
+      font-size:12px;
+    }
+    .btn:hover{border-color:rgba(125,211,252,.6)}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .spin{
+      display:inline-block; width:12px; height:12px; border-radius:50%;
+      border:2px solid rgba(125,211,252,.25); border-top-color: rgba(125,211,252,.9);
+      animation: spin 0.9s linear infinite; vertical-align:-2px; margin-right:6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Brighter row highlight after calculation */
+    tr.row-warn td {
+      background: rgba(253, 186, 74, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(253, 186, 74, 0.18);
+    }
+    tr.row-bad td  {
+      background: rgba(253, 164, 175, 0.24);
+      box-shadow: inset 0 0 0 1px rgba(253, 164, 175, 0.18);
+    }
+    tr.row-good td {
+      background: rgba(167, 243, 208, 0.20);
+      box-shadow: inset 0 0 0 1px rgba(167, 243, 208, 0.16);
+    }
+    tr.row-warn td:first-child { box-shadow: inset 6px 0 0 rgba(253,186,74,0.80), inset 0 0 0 1px rgba(253,186,74,0.18); }
+    tr.row-bad  td:first-child { box-shadow: inset 6px 0 0 rgba(253,164,175,0.90), inset 0 0 0 1px rgba(253,164,175,0.18); }
+    tr.row-good td:first-child { box-shadow: inset 6px 0 0 rgba(167,243,208,0.85), inset 0 0 0 1px rgba(167,243,208,0.16); }
+    tr.row-warn:hover td { background: rgba(253, 186, 74, 0.28); }
+    tr.row-bad:hover  td { background: rgba(253, 164, 175, 0.30); }
+    tr.row-good:hover td { background: rgba(167, 243, 208, 0.26); }
+    tr.row-offfeed td { opacity: 0.88; }
+    tr.row-offfeed td:first-child { box-shadow: inset 6px 0 0 rgba(138,160,184,0.55), inset 0 0 0 1px rgba(138,160,184,0.2); }
+    tr.row-calc-pending td[data-cell="buy"] .muted { color: var(--accent); }
+    /* badges in list */
+    .badgeRow{display:flex; flex-direction:column; gap:6px; max-width:320px}
+    .badgeItem{
+      position:relative;
+      border:1px solid rgba(36,50,68,.9);
+      background:#0c1220;
+      border-radius:10px;
+      padding:6px 10px;
+      overflow:hidden;
+    }
+    .badgeItem .t{position:relative; z-index:1; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .badgeItem .bar{
+      position:absolute; inset:0;
+      width:0%;
+      background:linear-gradient(90deg, rgba(125,211,252,.18), rgba(167,243,208,.18));
+    }
+    .badgeItem.stock .bar{background:linear-gradient(90deg, rgba(167,243,208,.12), rgba(167,243,208,.30))}
+    .badgeItem.sale .bar{background:linear-gradient(90deg, rgba(125,211,252,.12), rgba(125,211,252,.30))}
+    .badgeItem.market .bar{background:linear-gradient(90deg, rgba(253,186,116,.10), rgba(253,186,116,.26))}
+    .badgeItem.unknown .bar{background:linear-gradient(90deg, rgba(138,160,184,.10), rgba(138,160,184,.18))}
+    /* modal */
+    .modalBack{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center; padding:18px;
+      z-index:1000;
+    }
+    .modal{
+      width:min(1100px, 100%);
+      max-height:min(86vh, 900px);
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(12,18,32,.92);
+      backdrop-filter: blur(12px);
+      box-shadow:0 30px 90px rgba(0,0,0,.5);
+    }
+    .modalTop{
+      position:sticky; top:0; z-index:2;
+      padding:14px 16px; background:rgba(12,18,32,.92);
+      border-bottom:1px solid rgba(36,50,68,.8);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .modalTitle{font-size:16px; font-weight:700; margin:0}
+    .modalClose{min-width:auto}
+    .modalBody{padding:14px 16px}
+    .grid{
+      display:grid; grid-template-columns: 1fr 1fr; gap:12px;
+    }
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+    .card{
+      border:1px solid rgba(36,50,68,.8);
+      background:rgba(17,24,38,.55);
+      border-radius:14px;
+      padding:12px;
+    }
+    .card h3{margin:0 0 8px 0; font-size:13px; color:var(--muted); font-weight:700; letter-spacing:.2px}
+    ul{margin:8px 0 0 18px; padding:0}
+    li{margin:4px 0}
+    .tag{
+      display:inline-flex; padding:2px 8px; border-radius:999px;
+      border:1px solid rgba(36,50,68,.9); background:#0c1220; font-size:12px;
+      margin:2px 6px 2px 0;
+    }
+    .calcBox{display:flex; flex-direction:column; gap:6px}
+    .calcLine{display:flex; gap:10px; align-items:baseline; justify-content:space-between}
+    .calcLine .k{color:var(--muted); font-size:12px}
+    .calcLine .v{font-weight:700}
+    .calcType{font-size:12px; color:var(--muted)}
+    .calcErr{color:var(--bad); font-size:12px}
+    /* modal: calc summary top */
+    .calcModalTop{border:1px solid rgba(125,211,252,.25); background:rgba(125,211,252,.06);}
+    .calcModalTop h3{margin:0 0 10px 0; font-size:14px; color:var(--accent);}
+    .calcModalHint{border-style:dashed; opacity:.9;}
+    .calcBadgesRow{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px}
+    .tag.calcBadge.finance{border-color:rgba(125,211,252,.5); color:var(--accent);}
+    .tag.calcBadge.iznos{border-color:rgba(253,186,116,.45); color:var(--warn);}
+    .tag.calcBadge.auction{border-color:rgba(167,243,208,.45); color:var(--accent2);}
+    .calcKpiGrid{
+      display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap:12px 16px; margin-bottom:14px;
+    }
+    .calcKpiGrid > div .k{display:block; font-size:11px; color:var(--muted); margin-bottom:4px}
+    .calcKpiGrid > div .v{font-size:15px; font-weight:700}
+    .calcSubH{margin:0 0 8px 0; font-size:12px; color:var(--muted); font-weight:700}
+    .calcPriceTable{width:100%; border-collapse:collapse; font-size:12px}
+    .calcPriceTable th,.calcPriceTable td{
+      padding:8px 10px; border:1px solid var(--line); text-align:left;
+    }
+    .calcPriceTable th{background:#0c1220; color:var(--muted); font-weight:600}
+    .calcPriceTable td.right{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+    .tableScroll{
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      max-width:100%;
+    }
+    .tableScroll table{min-width:1100px}
+    .tableHint{
+      display:none; padding:8px 12px; font-size:11px; color:var(--muted);
+      border-bottom:1px solid var(--line); background:#0c1220;
+    }
+
+    @media (max-width: 900px) {
+      .wrap{padding:12px 10px calc(12px + env(safe-area-inset-bottom, 0px))}
+      .top{flex-direction:column; align-items:stretch; padding:12px}
+      .controls{width:100%}
+      .controls label{flex:1 1 100%; min-width:0}
+      .controls input, .controls select{min-width:0; width:100%}
+      .controls .btn{width:100%; min-height:44px; font-size:14px}
+      .kpis{width:100%}
+      .kpi{flex:1 1 calc(50% - 5px); min-width:0}
+      .tableHint{display:block}
+      .img{width:56px; height:38px}
+      thead th{padding:8px 10px; font-size:11px}
+      tbody td{padding:8px 10px; font-size:13px}
+      .modalBack{padding:0; align-items:stretch}
+      .modal{
+        width:100%; max-width:none; max-height:100vh;
+        border-radius:0; border-left:none; border-right:none;
+      }
+      .modalTop{padding:12px 14px}
+      .modalBody{padding:12px 14px}
+      .calcKpiGrid{grid-template-columns:1fr 1fr}
+      .calcPriceTable{display:block; overflow-x:auto; -webkit-overflow-scrolling:touch}
+      .badgeRow{max-width:none}
+    }
+
+    @media (max-width: 520px) {
+      h1{font-size:16px}
+      .kpi{flex:1 1 100%}
+      .calcKpiGrid{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr}
+      .btn{min-height:44px}
+      .modalBody input, .modalBody select{width:100%; box-sizing:border-box; min-height:44px}
+      #bidSubmit{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="pageHead">
+      <h1>Авито — лоты с Аукциона</h1>
+      <div class="sub">Файл данных: <span class="mono">offers_dump.json</span></div>
+      <div class="sub" id="loadedMeta">Загрузка…</div>
+    </div>
+    <nav class="tabBar" role="tablist">
+      <button type="button" class="tabBtn active" id="tabBtnLots" data-tab="Lots" role="tab" aria-selected="true">Лоты</button>
+      <button type="button" class="tabBtn" id="tabBtnLogs" data-tab="Logs" role="tab" aria-selected="false">Логи</button>
+    </nav>
+
+    <div id="tabPanelLots" class="tabPanel active" role="tabpanel">
+    <div class="top">
+      <div class="controls">
+        <label>
+          Поиск (модель/бренд/город/описание)
+          <input id="q" placeholder="Rio / Калуга / Kaiyi" />
+        </label>
+        <label>
+          Статус
+          <select id="status">
+            <option value="any">Любой</option>
+            <option value="inprogress">Активен (inprogress)</option>
+            <option value="ended">Завершён (ended)</option>
+            <option value="canceled">Отменён (canceled)</option>
+          </select>
+        </label>
+        <label class="dealerPick">
+          Площадка
+          <select id="dealerId">
+            <option value="">— выберите площадку —</option>
+          </select>
+        </label>
+        <label>
+          Логин
+          <input id="loginEmail" type="email" placeholder="name@company.com" autocomplete="username" />
+        </label>
+        <label>
+          Пароль
+          <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <label class="dealerPick">
+          Портал (API)
+          <input id="portalBase" type="url" placeholder="https://ah.kors-group.com" autocomplete="off" />
+        </label>
+        <label>
+          Автообновление, сек
+          <input id="autoReloadSec" type="number" min="0" step="1" placeholder="0 = выкл" />
+        </label>
+        <label>
+          Лимит строк
+          <select id="limit">
+            <option value="200">200</option>
+            <option value="500">500</option>
+            <option value="1000">1000</option>
+            <option value="999999">Все</option>
+          </select>
+        </label>
+        <button class="btn" id="reload">Перезагрузить</button>
+        <button class="btn" id="clearLots" title="Очистить лоты в таблице и в offers_dump.json">Удалить все лоты</button>
+      </div>
+      <div class="sub" id="dealerStatusLine">Площадка: —</div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kTotal">—</div><div class="t">Всего</div></div>
+        <div class="kpi"><div class="v" id="kShown">—</div><div class="t">Показано (после фильтров)</div></div>
+        <div class="kpi"><div class="v" id="kActive">—</div><div class="t">Активных</div></div>
+      </div>
+    </div>
+    <div class="tableWrap">
+      <div class="tableHint">← Прокрутите таблицу влево-вправо →</div>
+      <div class="tableScroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:90px">Фото</th>
+            <th>Авто</th>
+            <th style="width:140px">Статус</th>
+            <th style="width:340px">Badges</th>
+            <th style="width:170px">Выкуп</th>
+            <th style="width:170px">Профит</th>
+            <th style="width:190px">Продажа</th>
+            <th style="width:150px" class="right">Наша ставка</th>
+            <th style="width:180px">Действие</th>
+            <th style="width:140px" class="right">Желание продавца</th>
+            <th style="width:140px" class="right">Мин. ставка</th>
+            <th style="width:130px" class="right">Мин. шаг</th>
+            <th style="width:140px" class="right">Макс. по лоту</th>
+            <th style="width:220px">Финиш</th>
+            <th style="width:220px">Город/место</th>
+            <th style="width:200px">Лот</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="16" class="muted">Загрузка…</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="footer">
+      Запуск: <span class="mono">AuctionViewer.exe</span> или <span class="mono">start_server.bat</span> → <span class="mono">http://localhost:8005/viewer.html</span>
+    </div>
+    </div>
+
+    <div id="tabPanelLogs" class="tabPanel" role="tabpanel">
+      <div class="logCard" id="reloadLogCard">
+        <div class="logHead">
+          <div class="logTitle">Лог обновлений площадок</div>
+          <button class="btn" id="clearReloadLog" type="button">Очистить</button>
+        </div>
+        <div class="logList tall" id="reloadLogList"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal -->
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalTop">
+        <div>
+          <div class="modalTitle" id="mTitle">—</div>
+          <div class="sub" id="mSub">—</div>
+        </div>
+        <button class="btn modalClose" id="mClose">Закрыть</button>
+      </div>
+      <div class="modalBody" id="mBody"></div>
+    </div>
+  </div>
+  <div class="modalBack" id="bidModalBack" role="dialog" aria-modal="true">
+    <div class="modal" style="width:min(520px, 100%)">
+      <div class="modalTop">
+        <div>
+          <div class="modalTitle" id="bidTitle">Сделать ставку</div>
+          <div class="sub" id="bidSub">—</div>
+        </div>
+        <button class="btn modalClose" id="bidClose">Закрыть</button>
+      </div>
+      <div class="modalBody">
+        <label>
+          Сумма ставки (bidAmount)
+          <input id="bidAmountModal" type="number" min="1" step="1" placeholder="например: 1800000" />
+        </label>
+        <div class="sub" id="bidHint" style="margin-top:8px">Если поле пустое — берём авторасчёт: minAvailableBid или maxBid + minBidStep.</div>
+        <div style="margin-top:14px; display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn" id="bidSubmit">Отправить ставку</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<script src="dealers.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const DEFAULT_PORTAL_BASE = "https://ah.kors-group.com";
+  function normalizePortalBase(value){
+    const raw = String(value || DEFAULT_PORTAL_BASE).trim() || DEFAULT_PORTAL_BASE;
+    return raw.replace(/\/+$/, "");
+  }
+  function getPortalBase(){
+    const fromField = $("portalBase")?.value;
+    const stored = localStorage.getItem("mp_portal_base");
+    return normalizePortalBase(fromField || stored || DEFAULT_PORTAL_BASE);
+  }
+  function getPortalApiUrls(){
+    const base = getPortalBase();
+    return {
+      base,
+      calc: `${base}/api/calculate_car/`,
+      bidSet: `${base}/api/avito_auction_bid_set/`,
+      offerGet: `${base}/api/avito_auction_offer_get/`,
+      offersState: `${base}/api/avito_auction_offers_state/`,
+    };
+  }
+  const BID_URL = "/api/bid";
+  const BID_COMMENT = "сделано автоматически парсером";
+  let autoReloadTimeout = null;
+  let autoReloadTickRunning = false;
+  let lastAutoReloadFinishedAt = 0;
+  let reloadPromise = null;
+
+  async function fetchJsonWithTimeout(url, options, timeoutMs){
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    try{
+      const resp = await fetch(url, { ...options, signal: ac.signal });
+      const data = await resp.json().catch(() => ({}));
+      return { resp, data };
+    }catch(err){
+      if (err?.name === "AbortError"){
+        throw new Error(`Таймаут запроса (${Math.round(timeoutMs / 60000)} мин). Сервер или Playwright зависли?`);
+      }
+      throw err;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  // results cache: key -> { ok, answer, raw, err }
+  const calcCache = new Map();
+  const portalOfferCache = new Map();
+  let portalStateFetchToken = 0;
+  /** @type {Map<string, {offer: object, activeInFeed: boolean, lastSeenAt: number, removedAt: number|null}>} */
+  const offerStore = new Map();
+  let offerStoreBootstrapped = false;
+  let lastFeedTs = null;
+  const calcQueue = [];
+  let calcQueueRunning = 0;
+  const CALC_CONCURRENCY = 2;
+
+  function drainCalcQueue(){
+    while (calcQueueRunning < CALC_CONCURRENCY && calcQueue.length){
+      const item = calcQueue.shift();
+      calcQueueRunning++;
+      (async () => {
+        try{
+          const tr = document.querySelector(`tr[data-key="${CSS.escape(String(item.key))}"]`);
+          const btn = tr?.querySelector("button[data-calc]") || null;
+          await performCalcOnRow(tr, item.offer, btn);
+        }finally{
+          calcQueueRunning--;
+          drainCalcQueue();
+        }
+      })();
+    }
+  }
+
+  function enqueueAutoCalc(keys){
+    let n = 0;
+    for (const key of keys){
+      const k = String(key);
+      if (calcCache.get(k)?.ok) continue;
+      if (calcQueue.some((q) => q.key === k)) continue;
+      const entry = offerStore.get(k);
+      if (!entry) continue;
+      calcQueue.push({ key: k, offer: offerWithViewerMeta(entry) });
+      n++;
+    }
+    if (n > 0) drainCalcQueue();
+    return n;
+  }
+
+  function fmtMoney(n){
+    if (n === null || n === undefined || n === "") return "—";
+    const v = Number(n);
+    if (Number.isNaN(v)) return String(n);
+    return v.toLocaleString("ru-RU");
+  }
+  function fmtRub(n){
+    if (n === null || n === undefined || n === "") return "—";
+    const v = Number(n);
+    if (Number.isNaN(v)) return String(n);
+    return v.toLocaleString("ru-RU") + " ₽";
+  }
+  function safeGet(obj, path, fallback=null){
+    try{
+      return path.split(".").reduce((a,k)=>a && a[k], obj) ?? fallback;
+    }catch(e){ return fallback; }
+  }
+  function toText(o){ return (o ?? "").toString().toLowerCase(); }
+  function buildSearchBlob(o){
+    const lot = o.lot || {};
+    const veh = lot.vehicle || {};
+    const av = lot.autohubVehicle || {};
+    const parts = [
+      veh?.brand?.name, veh?.model?.name, veh?.generation?.name, veh?.configuration?.name,
+      av?.year, av?.bodyType,
+      lot?.sellerPlaceName,
+      lot?.description
+    ];
+    return parts.filter(Boolean).join(" ").toLowerCase();
+  }
+  function parseISO(s){
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function fmtDateTime(s){
+    const d = parseISO(s);
+    if (!d) return s || "—";
+    return d.toLocaleString("ru-RU");
+  }
+  function statusPill(st){
+    const s = st || "—";
+    const cls = (s === "inprogress") ? "ok" : (s === "canceled" ? "bad" : "");
+    return `<span class="pill ${cls}">${escapeHtml(s)}</span>`;
+  }
+  function offerStatusCell(o){
+    const v = o._viewer;
+    if (v && v.activeInFeed === false){
+      const st = safeGet(o, "status.status", "—");
+      const removed = v.removedAt ? fmtDateTime(new Date(v.removedAt).toISOString()) : "—";
+      return `<div><span class="pill warn">снят с ленты</span></div>
+              <div class="muted small" style="margin-top:4px">было ${statusPill(st)} · ${escapeHtml(removed)}</div>`;
+    }
+    return statusPill(safeGet(o, "status.status", "—"));
+  }
+  function replaceOffersFromFeed(data){
+    const feed = Array.isArray(data?.offers) ? data.offers : [];
+    const now = Date.now();
+    const newKeys = [];
+    offerStore.clear();
+    for (const o of feed){
+      const key = calcKey(o);
+      newKeys.push(key);
+      offerStore.set(key, {
+        offer: o,
+        activeInFeed: true,
+        lastSeenAt: now,
+        removedAt: null,
+      });
+    }
+    offerStoreBootstrapped = true;
+    return { newKeys, feedCount: feed.length };
+  }
+  function offerWithViewerMeta(entry){
+    return {
+      ...entry.offer,
+      _viewer: {
+        activeInFeed: entry.activeInFeed,
+        lastSeenAt: entry.lastSeenAt,
+        removedAt: entry.removedAt,
+      },
+    };
+  }
+  function getAllOffersForDisplay(){
+    return Array.from(offerStore.values()).map(offerWithViewerMeta);
+  }
+  function findOfferByKey(key){
+    const entry = offerStore.get(String(key));
+    if (entry) return offerWithViewerMeta(entry);
+    const k = String(key);
+    for (const o of (window.__DATA__?.offers || [])){
+      if (calcKey(o) === k) return o;
+    }
+    for (const o of (window.__CURRENT_SLICE__ || [])){
+      if (calcKey(o) === k) return o;
+    }
+    return null;
+  }
+  function clearStoredLots(){
+    offerStore.clear();
+    calcCache.clear();
+    calcQueue.length = 0;
+    offerStoreBootstrapped = false;
+    lastFeedTs = null;
+    const empty = { ts: new Date().toISOString(), totalOffers: 0, offers: [], dealerId: window.__DATA__?.dealerId ?? null };
+    window.__DATA__ = empty;
+    render(empty);
+  }
+  async function clearAllLotsOnServer(){
+    const dealerId = getSelectedDealerId() || (window.__DATA__?.dealerId != null ? String(window.__DATA__.dealerId) : "");
+    const resp = await fetch("/api/clear_lots", {
+      method: "POST",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(dealerId ? { dealerId } : {}),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok){
+      throw new Error(data?.error || `HTTP ${resp.status}`);
+    }
+    clearStoredLots();
+    return data;
+  }
+  function autotekaStatusPill(st){
+    const s = st || "—";
+    const cls =
+      (s === "ok" || s === "success") ? "ok" :
+      (s === "warning" || s === "caution") ? "warn" :
+      (s === "incomplete") ? "bad" : "";
+    return `<span class="pill ${cls}">${s}</span>`;
+  }
+  function escapeHtml(s){
+    return (s ?? "").toString()
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  async function loadJson(){
+    const resp = await fetch("offers_dump.json", { cache: "no-store" });
+    if (!resp.ok) throw new Error(`Не удалось загрузить offers_dump.json: HTTP ${resp.status}`);
+    return await resp.json();
+  }
+  // --- badges ---
+  function extractBadgeItems(offer){
+    const items = [];
+    const bbs = offer.badgesByStyle || [];
+    for (const bs of bbs){
+      for (const b of (bs.badges || [])){
+        items.push({ title: b.title || b.badgeType || "badge", badgeType: b.badgeType || "" });
+      }
+    }
+    for (const b of (offer.badges || [])){
+      items.push({ title: b.title || b.badgeType || "badge", badgeType: b.badgeType || "" });
+    }
+    const seen = new Set();
+    return items.filter(x => {
+      const k = `${x.badgeType}@@${x.title}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+  function badgeFill(badgeType){
+    const m = /^(stock|sale)-score-(\d)$/i.exec(badgeType || "");
+    if (m){
+      const kind = m[1].toLowerCase();
+      const lvl = Math.max(1, Math.min(4, Number(m[2]) || 1));
+      return { kind, pct: (lvl / 4) * 100 };
+    }
+    const m2 = /^market-score-(\d)$/i.exec(badgeType || "");
+    if (m2){
+      const lvl = Math.max(0, Math.min(4, Number(m2[1]) || 0));
+      const pct = (lvl / 4) * 100;
+      return { kind:"market", pct };
+    }
+    return { kind:"unknown", pct:0 };
+  }
+  function renderBadgesCell(offer){
+    const items = extractBadgeItems(offer);
+    if (!items.length) return `<div class="muted small">—</div>`;
+    return `
+      <div class="badgeRow">
+        ${items.map(it => {
+          const f = badgeFill(it.badgeType);
+          return `
+            <div class="badgeItem ${f.kind}">
+              <div class="bar" style="width:${f.pct}%"></div>
+              <div class="t" title="${escapeHtml(it.title)}">${escapeHtml(it.title)}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+  // --- calc ---
+  function lotUrl(offer){
+    const lotOfferId = offer?.lotOfferId ?? null;
+    const id = lotOfferId ?? offer?.lot?.lotId ?? offer?.lotId ?? null; // fallback if lotOfferId отсутствует
+    if (!id) return null;
+    const base = `https://app.maxposter.ru/dealer/auction/${encodeURIComponent(String(id))}/view`;
+    return `${base}?tabId=view&utm_source=web-auction-listing&utm_medium=snippet`;
+  }
+  function resolveDealerIdForCalc(offer){
+    const fromOffer = offer?.dealerId;
+    if (fromOffer != null && fromOffer !== "") return String(fromOffer);
+    const fromDump = window.__DATA__?.dealerId;
+    if (fromDump != null && fromDump !== "") return String(fromDump);
+    return getSelectedDealerId() || "";
+  }
+  function calcKey(offer){
+    const lotKey = offer.lotOfferId ?? offer.lot?.lotId ?? "";
+    const dealer = resolveDealerIdForCalc(offer);
+    return dealer ? `${dealer}:${lotKey}` : String(lotKey || Math.random());
+  }
+  function renderCalcCells(offer){
+    const key = calcKey(offer);
+    const cached = calcCache.get(key);
+    if (calcQueue.some((q) => q.key === key) && !cached){
+      return {
+        buy: `<div class="muted small"><span class="spin"></span> расчёт…</div>`,
+        profit: `<div class="muted small">—</div>`,
+        sale: `<div class="muted small">—</div>`,
+        action: `<div style="display:flex; gap:8px; flex-wrap:wrap">
+                  <button class="btn" data-calc="1" data-key="${escapeHtml(key)}" disabled><span class="spin"></span>Считаю…</button>
+                  <button class="btn" data-bid="1" data-key="${escapeHtml(key)}">Сделать ставку</button>
+                </div>`,
+      };
+    }
+    if (!cached){
+      return {
+        buy: `<div class="muted small">—</div>`,
+        profit: `<div class="muted small">—</div>`,
+        sale: `<div class="muted small">—</div>`,
+        action: `<div style="display:flex; gap:8px; flex-wrap:wrap">
+                  <button class="btn" data-calc="1" data-key="${escapeHtml(key)}">Рассчитать выкуп</button>
+                  <button class="btn" data-bid="1" data-key="${escapeHtml(key)}">Сделать ставку</button>
+                </div>`
+      };
+    }
+    if (!cached.ok){
+      return {
+        buy: `<div class="muted small">—</div>`,
+        profit: `<div class="muted small">—</div>`,
+        sale: `<div class="calcErr">Ошибка</div>`,
+        action: `<div class="calcErr small" title="${escapeHtml(cached.err || '')}">${escapeHtml((cached.err || 'Ошибка').slice(0, 140))}</div>
+                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
+                   <button class="btn" data-calc="1" data-key="${escapeHtml(key)}">Повторить</button>
+                   <button class="btn" data-bid="1" data-key="${escapeHtml(key)}">Сделать ставку</button>
+                 </div>`
+      };
+    }
+    const ans = cached.answer || {};
+    const buy = ans.estimation_price;
+    const profit = ans.profit;
+    const salePrice = ans.cna_expenses;
+    const channel = ans.auction ? "Аукцион" : "Розница";
+    return {
+      buy: `<div class="calcBox">
+              <div class="calcLine"><span class="k"></span><span class="v">${escapeHtml(fmtRub(buy))}</span></div>
+            </div>`,
+      profit: `<div class="calcBox">
+                <div class="calcLine"><span class="k"></span><span class="v">${escapeHtml(fmtRub(profit))}</span></div>
+              </div>`,
+      sale: `<div class="calcBox">
+              <div class="calcLine"><span class="k"></span><span class="v">${escapeHtml(fmtRub(salePrice))}</span></div>
+              <div class="calcType">Канал: <strong>${escapeHtml(channel)}</strong></div>
+            </div>`,
+      action: `<div style="display:flex; gap:8px; flex-wrap:wrap">
+                <button class="btn" data-calc="1" data-key="${escapeHtml(key)}">Пересчитать</button>
+                <button class="btn" data-bid="1" data-key="${escapeHtml(key)}">Сделать ставку</button>
+              </div>`
+    };
+  }
+  function getBidAmountFromModal(){
+    const bidAmountRaw = $("bidAmountModal").value.trim();
+    const bidAmount = bidAmountRaw ? Number(bidAmountRaw) : null;
+    if (bidAmountRaw && (!Number.isFinite(bidAmount) || bidAmount <= 0)) {
+      throw new Error("Сумма bidAmount должна быть положительным числом.");
+    }
+    return bidAmount;
+  }
+  function shortJson(v, maxLen = 240){
+    try{
+      const s = JSON.stringify(v);
+      return s.length > maxLen ? `${s.slice(0, maxLen)}…` : s;
+    }catch(_){
+      return String(v ?? "");
+    }
+  }
+  function formatBidMadeAt(d = new Date()){
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  function buildOfferSyncPayload(offer){
+    if (!offer || typeof offer !== "object") return {};
+    const lot = { ...(offer.lot || {}) };
+    const dealerId = resolveDealerIdForCalc(offer);
+    if (dealerId) {
+      const n = Number(dealerId);
+      lot.dealerId = Number.isFinite(n) ? n : dealerId;
+    }
+    if (offer.badgesByStyle) lot.badgesByStyle = offer.badgesByStyle;
+    if (offer.badges) lot.badges = offer.badges;
+    if ((!lot.images || !lot.images.length) && offer.images?.length) {
+      lot.images = offer.images;
+    }
+    const resolvedDealerId = offer.dealerId ?? lot.dealerId ?? (Number(dealerId) || dealerId || 2107);
+    return {
+      ...offer,
+      lot,
+      lotId: lot.lotId ?? offer.lotId,
+      lotOfferId: offer.lotOfferId ?? lot.lotOfferId,
+      bidderId: offer.bidderId ?? 72,
+      dealerId: resolvedDealerId,
+      minPrice: lot.minPrice,
+      minAvailableBid: lot.minAvailableBid,
+      maxAvailableBid: lot.maxAvailableBid,
+      maxBid: lot.maxBid,
+      vehicle: lot.vehicle,
+      autohubVehicle: lot.autohubVehicle,
+      autoteka: lot.autoteka,
+      description: lot.description,
+      sellerPlaceName: lot.sellerPlaceName,
+      finishAt: lot.finishAt,
+      expiresAt: lot.expiresAt,
+      originFinishAt: lot.originFinishAt,
+      images: lot.images,
+      badges: offer.badges ?? lot.badges,
+      badgesByStyle: offer.badgesByStyle ?? lot.badgesByStyle,
+      equipment: lot.equipment,
+      imvMarketRange: lot.imvMarketRange,
+      bidGroupV2: lot.bidGroupV2,
+      tradeIn: lot.tradeIn,
+      status: offer.status,
+      bid: offer.bid,
+      bidMadeAt: offer.bidMadeAt,
+      bidMadeByUser: offer.bidMadeByUser,
+      minBidStep: offer.minBidStep,
+      saleCost: offer.saleCost,
+      presalePreparationCost: offer.presalePreparationCost,
+      gm1Money: offer.gm1Money,
+      gm1Percent: offer.gm1Percent,
+      createdAt: offer.createdAt,
+      updatedAt: offer.updatedAt,
+      hiddenBy: offer.hiddenBy || [],
+      isBuyoutOnSiteAvailable: offer.isBuyoutOnSiteAvailable,
+      isInspectionOnSiteAvailable: offer.isInspectionOnSiteAvailable,
+    };
+  }
+  function buildCalcPayload(offer){
+    return buildOfferSyncPayload(offer);
+  }
+  function applyPortalSyncToOffer(key, sync, offer){
+    if (!sync) return;
+    portalOfferCache.set(key, sync);
+    const targets = [offer, offerStore.get(key)?.offer].filter(Boolean);
+    for (const target of targets){
+      target._portal = sync;
+      if (sync.bid != null && sync.bid !== "") target.bid = sync.bid;
+      if (sync.bidMadeAt) target.bidMadeAt = sync.bidMadeAt;
+    }
+  }
+  function getPortalSyncForOffer(offer){
+    const key = calcKey(offer);
+    return portalOfferCache.get(key) || offer?._portal || null;
+  }
+  function renderOurBidCell(offer){
+    const portal = getPortalSyncForOffer(offer);
+    const mpBid = offer?.bid;
+    const portalBid = portal?.bid;
+    const bid = portalBid != null && portalBid !== "" ? portalBid : mpBid;
+    if (bid == null || bid === "") {
+      return `<div class="muted small">—</div>`;
+    }
+    const time = portal?.bidMadeAt || offer?.bidMadeAt;
+    const mpDiff = portalBid != null && mpBid != null && Number(portalBid) !== Number(mpBid);
+    const hint = mpDiff
+      ? ` title="Maxposter: ${fmtRub(mpBid)} · Портал: ${fmtRub(portalBid)}"`
+      : (time ? ` title="Время: ${fmtDateTime(time)}"` : "");
+    return `<div class="mono nowrap"${hint}><strong>${escapeHtml(fmtRub(bid))}</strong>${mpDiff ? `<div class="muted small">MP ${escapeHtml(fmtRub(mpBid))}</div>` : ""}</div>`;
+  }
+  async function refreshPortalOffersState(offers){
+    const ids = [];
+    const seen = new Set();
+    for (const o of offers || []){
+      const id = o?.lotOfferId;
+      if (id == null || id === "" || seen.has(String(id))) continue;
+      seen.add(String(id));
+      ids.push(Number(id));
+    }
+    if (!ids.length) return;
+    const { offersState } = getPortalApiUrls();
+    const token = ++portalStateFetchToken;
+    try{
+      const resp = await fetch(offersState, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lotOfferIds: ids.slice(0, 120) }),
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (token !== portalStateFetchToken) return;
+      const byOffer = data?.byLotOfferId || {};
+      for (const o of offers || []){
+        const sync = byOffer[String(o.lotOfferId)];
+        if (sync) applyPortalSyncToOffer(calcKey(o), sync, o);
+      }
+    }catch(_){}
+  }
+  async function ensureOfferSyncedInPortal(offer){
+    const { calc: calcUrl } = getPortalApiUrls();
+    const resp = await fetch(calcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(buildCalcPayload(offer)),
+    });
+    if (!resp.ok){
+      const t = await resp.text().catch(() => "");
+      throw new Error(`Синхронизация лота: HTTP ${resp.status}: ${t.slice(0, 300)}`);
+    }
+    const data = await resp.json().catch(() => ({}));
+    const answer = data?.answer;
+    const sync = (typeof answer === "object" && answer?.avito_sync) ? answer.avito_sync : null;
+    if (sync) applyPortalSyncToOffer(calcKey(offer), sync, offer);
+    return data;
+  }
+  function buildPortalBidPayload(offer, { bid, bidMadeAt }){
+    const lot = offer?.lot || {};
+    const payload = {
+      Bid: Math.round(Number(bid)),
+      BidMadeAt: bidMadeAt || formatBidMadeAt(),
+      Comment: BID_COMMENT,
+    };
+    if (offer?.lotOfferId != null && offer.lotOfferId !== "") {
+      payload.LotOfferId = Number(offer.lotOfferId);
+    }
+    if (lot?.lotId != null && lot.lotId !== "") {
+      payload.LotId = Number(lot.lotId);
+    }
+    if (offer?.bidderId != null && offer.bidderId !== "") {
+      payload.BidderId = Number(offer.bidderId);
+    }
+    const dealerId = resolveDealerIdForCalc(offer);
+    if (dealerId) {
+      const n = Number(dealerId);
+      payload.DealerId = Number.isFinite(n) ? n : dealerId;
+    }
+    if (lot?.sellerPlaceName) {
+      payload.SellerPlaceName = String(lot.sellerPlaceName);
+    }
+    payload.Offer = buildOfferSyncPayload(offer);
+    return payload;
+  }
+  function formatPortalBidError(data, status){
+    const parts = [];
+    if (data?.error) parts.push(String(data.error));
+    const hints = Array.isArray(data?.hints) ? data.hints : [];
+    if (hints.length) parts.push(hints[0]);
+    if (!parts.length) parts.push(JSON.stringify(data).slice(0, 300) || `HTTP ${status}`);
+    return parts.join(" · ").slice(0, 500);
+  }
+  async function registerBidInPortal(offer, { bid, bidMadeAt }){
+    const payload = buildPortalBidPayload(offer, { bid, bidMadeAt });
+    if (!payload.LotOfferId && !payload.LotId) {
+      throw new Error("Не найден LotOfferId и LotId для регистрации ставки на портале.");
+    }
+    const { bidSet } = getPortalApiUrls();
+    const resp = await fetch(bidSet, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || data?.ok === false){
+      const err = new Error(formatPortalBidError(data, resp.status));
+      err.portalData = data;
+      err.status = resp.status;
+      throw err;
+    }
+    return data;
+  }
+  async function registerBidInPortalWithRetry(offer, { bid, bidMadeAt }){
+    try{
+      return await registerBidInPortal(offer, { bid, bidMadeAt });
+    }catch(err){
+      const data = err.portalData || {};
+      const msg = String(err?.message || "").toLowerCase();
+      const needSync = err.status === 404 || msg.includes("offer not found") || data?.lot_exists === false;
+      if (!needSync) throw err;
+      await ensureOfferSyncedInPortal(offer);
+      return await registerBidInPortal(offer, { bid, bidMadeAt });
+    }
+  }
+  async function runBidForOffer(offer, { bidAmount = null } = {}){
+    const email = $("loginEmail").value.trim();
+    const password = $("loginPassword").value;
+    if (!email || !password) throw new Error("Заполните логин и пароль перед ставкой.");
+    const lotOfferId = offer?.lotOfferId;
+    const lot = offer?.lot || {};
+    const lotId = lot?.lotId;
+    if (!lotOfferId) throw new Error("Не найден lotOfferId для этого лота.");
+    if (!lotId) throw new Error("Не найден lotId для этого лота.");
+    const minAvailableBid = Number(lot?.minAvailableBid);
+    const maxBid = Number(lot?.maxBid);
+    const minBidStep = Number(offer?.minBidStep);
+    const autoBid = Number.isFinite(minAvailableBid)
+      ? minAvailableBid
+      : (Number.isFinite(maxBid) && Number.isFinite(minBidStep) ? (maxBid + minBidStep) : null);
+    const finalBid = bidAmount ?? autoBid;
+    if (!Number.isFinite(Number(finalBid)) || Number(finalBid) <= 0) {
+      throw new Error("Не удалось определить сумму ставки: заполните bidAmount.");
+    }
+    const bidPayload = {
+      lotId: Number(lotId),
+      avgPriceWithCorrection: null,
+      saleCost: lot?.saleCost ?? lot?.minPrice ?? 0,
+      presalePreparationCost: lot?.presalePreparationCost ?? 0,
+      isBuyoutOnSiteAvailable: Boolean(lot?.isBuyoutOnSiteAvailable),
+      isInspectionOnSiteAvailable: Boolean(lot?.isInspectionOnSiteAvailable),
+      isPriceGuaranteed: Boolean(lot?.isPriceGuaranteed),
+      bid: Number(finalBid),
+    };
+    const dealerId = resolveDealerIdForCalc(offer) || undefined;
+    const resp = await fetch(BID_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        dealerId,
+        lotOfferId,
+        lotId,
+        dryRun: false,
+        bidAmount: Number(finalBid),
+        bidPayload,
+      }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok){
+      const msg = data?.bid_result?.note || data?.error || data?.stderr || data?.stdout || `HTTP ${resp.status}`;
+      throw new Error(String(msg).slice(0, 500));
+    }
+    const bidMadeAt = formatBidMadeAt();
+    try{
+      await ensureOfferSyncedInPortal(offer);
+      const portal = await registerBidInPortalWithRetry(offer, {
+        bid: Number(finalBid),
+        bidMadeAt,
+      });
+      applyPortalSyncToOffer(calcKey(offer), portal, offer);
+      offer.bid = Number(finalBid);
+      offer.bidMadeAt = bidMadeAt;
+      return {
+        ...data,
+        portal_ok: true,
+        portal_result: portal,
+        bidMadeAt,
+        bidAmount: Number(finalBid),
+      };
+    }catch(err){
+      return {
+        ...data,
+        portal_ok: false,
+        portal_error: String(err?.message || err).slice(0, 500),
+        bidMadeAt,
+        bidAmount: Number(finalBid),
+      };
+    }
+  }
+  async function calculateForOffer(offer){
+    const { calc: calcUrl } = getPortalApiUrls();
+    const resp = await fetch(calcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(buildCalcPayload(offer)),
+    });
+    if (!resp.ok){
+      const t = await resp.text().catch(()=> "");
+      throw new Error(`HTTP ${resp.status}: ${t.slice(0, 500)}`);
+    }
+    const data = await resp.json();
+    const answer = typeof data?.answer === "object" ? data.answer : data;
+    return { raw: data, answer };
+  }
+  function updateRowAfterCalc(key, offer){
+    const tr = document.querySelector(`tr[data-key="${CSS.escape(String(key))}"]`);
+    if (!tr) return;
+    const c = renderCalcCells(offer);
+    tr.querySelector('[data-cell="buy"]').innerHTML = c.buy;
+    tr.querySelector('[data-cell="profit"]').innerHTML = c.profit;
+    tr.querySelector('[data-cell="sale"]').innerHTML = c.sale;
+    tr.querySelector('[data-cell="ourbid"]').innerHTML = renderOurBidCell(offer);
+    tr.querySelector('[data-cell="action"]').innerHTML = c.action;
+    tr.classList.remove("row-warn", "row-bad", "row-good", "row-offfeed");
+    const cached = calcCache.get(key);
+    if (cached?.ok) applyRowHighlight(tr, offer, cached.answer);
+    else if (offer._viewer?.activeInFeed === false) tr.classList.add("row-offfeed");
+  }
+  async function performCalcOnRow(tr, offer, calcBtn){
+    const key = calcKey(offer);
+    let prevBtn = "";
+    if (calcBtn){
+      calcBtn.disabled = true;
+      prevBtn = calcBtn.innerHTML;
+      calcBtn.innerHTML = `<span class="spin"></span>Считаю…`;
+    }
+    try{
+      const result = await calculateForOffer(offer);
+      const sync = result.answer?.avito_sync || result.raw?.answer?.avito_sync;
+      if (sync) applyPortalSyncToOffer(key, sync, offer);
+      calcCache.set(key, { ok: true, answer: result.answer, raw: result.raw });
+      updateRowAfterCalc(key, offer);
+    }catch(err){
+      calcCache.set(key, { ok: false, err: String(err?.message || err || "Ошибка") });
+      updateRowAfterCalc(key, offer);
+    }finally{
+      if (calcBtn){
+        calcBtn.disabled = false;
+        calcBtn.innerHTML = prevBtn;
+      }
+    }
+  }
+  function renderModalCalcBlock(offer){
+    const key = calcKey(offer);
+    const cached = calcCache.get(key);
+    if (!cached || !cached.ok || !cached.answer){
+      return `
+        <div class="card calcModalHint" style="grid-column:1/-1">
+          <div class="muted small">Рассчитайте выкуп кнопкой в строке таблицы — здесь появятся цена на рынке, группа, снижения и бейджи (финансирование / износ / аукцион).</div>
+        </div>
+      `;
+    }
+    const ans = cached.answer;
+    function calcBadgeOn(v){
+      if (v === null || v === undefined || v === false || v === "") return false;
+      if (typeof v === "number" && v === 0) return false;
+      return true;
+    }
+    const badges = [];
+    if (ans.auction === true || ans.auction === 1 || ans.auction === "1") badges.push(`<span class="tag calcBadge auction">Аукцион</span>`);
+    const list = Array.isArray(ans.list_info_price) ? ans.list_info_price : [];
+    const listHtml = list.length
+      ? `<table class="calcPriceTable">
+          <thead><tr><th>Этап</th><th class="right">Цена после снижения</th><th class="right">Снижение</th><th>Расшифровка</th></tr></thead>
+          <tbody>
+            ${list.map((r) => {
+              const n = (r && r.name) != null ? String(r.name) : "—";
+              const p = r && r.price;
+              const d = r && r.dif;
+              const c = (r && r.comment) != null ? String(r.comment) : "—";
+              return `<tr>
+                <td>${escapeHtml(n)}</td>
+                <td class="right mono">${escapeHtml(fmtRub(p))}</td>
+                <td class="right mono">${escapeHtml(fmtRub(d))}</td>
+                <td>${escapeHtml(c)}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>`
+      : `<div class="muted small">Нет строк в list_info_price</div>`;
+    const zg = ans.zg;
+    const zgStr = zg != null && zg !== "" ? String(zg) : "—";
+    const hub = ans.hub_price_avg;
+    const hubStr = hub != null && hub !== "" ? String(hub) : "—";
+    return `
+      <div class="card calcModalTop" style="grid-column:1/-1">
+        <h3>Расчёт выкупа</h3>
+        ${badges.length ? `<div class="calcBadgesRow">${badges.join("")}</div>` : ""}
+        <div class="calcKpiGrid">
+          <div><span class="k">Цена на рынке</span><div class="v mono">${escapeHtml(fmtRub(ans.zna))}</div></div>
+          <div><span class="k">Ценовая группа</span><div class="v">${escapeHtml(zgStr)}</div></div>
+          <div><span class="k">Цена выкупа</span><div class="v mono">${escapeHtml(fmtRub(ans.estimation_price))}</div></div>
+          <div><span class="k">Средний срок продажи</span><div class="v mono">${escapeHtml(hubStr)}</div></div>
+          <div><span class="k">Цена продажи</span><div class="v mono">${escapeHtml(fmtRub(ans.price_sale))}</div></div>
+        </div>
+        <h4 class="calcSubH">Снижения цены</h4>
+        ${listHtml}
+
+        ${calcBadgeOn(ans.finance_price) ? `<div class="calcBadgeRow"><span class="tag calcBadge finance">Финансирование</span></div>` : ""}
+        ${calcBadgeOn(ans.iznos_price) ? `<div class="calcBadgeRow"><span class="tag calcBadge iznos">Повышенный износ</span></div>` : ""}
+        ${calcBadgeOn(ans.zachita_ot_ubitka) ? `<div class="calcBadgeRow"><span class="tag calcBadge iznos">Защита от убытка</span></div>` : ""}
+      </div>
+    `;
+  }
+  function applyRowHighlight(tr, offer, answer){
+    tr.classList.remove("row-warn", "row-bad", "row-good");
+    const est = Number(answer?.estimation_price);
+    if (!Number.isFinite(est)) return;
+    const lot = offer.lot || {};
+    const minPrice = Number(lot.minPrice);
+    const minAvail = Number(lot.minAvailableBid);
+    const maxBid = Number(lot.maxBid);
+    // Priority: red -> yellow -> green
+    if (Number.isFinite(minAvail) && est < minAvail){
+      tr.classList.add("row-bad");
+      return;
+    }
+    if (Number.isFinite(minPrice) && est < minPrice){
+      tr.classList.add("row-warn");
+      return;
+    }
+    if (Number.isFinite(maxBid) && est < maxBid){
+      tr.classList.add("row-good");
+      return;
+    }
+  }
+  // --- modal ---
+  function openModal(offer){
+    const lot = offer.lot || {};
+    const veh = lot.vehicle || {};
+    const brand = veh?.brand?.name || "—";
+    const model = veh?.model?.name || "";
+    const year = veh?.year?.name || veh?.year?.id || safeGet(lot, "autohubVehicle.year", "");
+    const place = lot?.sellerPlaceName || "—";
+    const finish = lot?.finishAt || lot?.originFinishAt || lot?.expiresAt;
+    const offerId = offer.lotOfferId ?? "—";
+    const lotId = lot.lotId ?? "—";
+    const dealerId = offer.dealerId ?? "—";
+    const status = safeGet(offer, "status.status", "—");
+    $("mTitle").textContent = `${brand} ${model}`.trim() || "—";
+    $("mSub").innerHTML = `
+      <span class="tag">offerId: <span class="mono">${escapeHtml(offerId)}</span></span>
+      <span class="tag">lotId: <span class="mono">${escapeHtml(lotId)}</span></span>
+      <span class="tag">dealerId: <span class="mono">${escapeHtml(dealerId)}</span></span>
+      <span class="tag">status: ${statusPill(status)}</span>
+      <span class="tag">finish: <span class="mono">${escapeHtml(fmtDateTime(finish))}</span></span>
+      <span class="tag">place: <span class="mono">${escapeHtml(place)}</span></span>
+    `;
+    const badgeItems = extractBadgeItems(offer);
+    const badgesHtml = badgeItems.length
+      ? `<ul>${badgeItems.map(b => {
+          const f = badgeFill(b.badgeType);
+          const extra = b.badgeType ? ` <span class="mono">${escapeHtml(b.badgeType)}</span>` : "";
+          return `<li>${f.pct ? `<span class="mono">${Math.round(f.pct)}%</span> ` : ""}<strong>${escapeHtml(b.title)}</strong>${extra}</li>`;
+        }).join("")}</ul>`
+      : `<div class="muted">Нет badges</div>`;
+    const autoState = safeGet(lot, "autoteka.state.status", null) || safeGet(lot, "autoteka.state", null);
+    const events = safeGet(lot, "autoteka.report.events", []) || [];
+    const autotekaHtml = `
+      <div class="small">Состояние: ${autotekaStatusPill(autoState)}</div>
+      ${events.length ? `<ul>${events.map(e => `<li>${autotekaStatusPill(e.status)} <strong>${escapeHtml(e.description || e.type || "—")}</strong> <span class="mono">${escapeHtml(e.type || "")}</span></li>`).join("")}</ul>` : `<div class="muted">Нет autoteka events</div>`}
+    `;
+    const equipment = lot.equipment || [];
+    const equipmentHtml = equipment.length
+      ? `<ul>${equipment.map(g => `<li><strong>${escapeHtml(g.name || "—")}</strong>${(g.values||[]).length ? `<div class="muted small">${(g.values||[]).map(v=>escapeHtml(v)).join(", ")}</div>` : ""}</li>`).join("")}</ul>`
+      : `<div class="muted">Нет equipment</div>`;
+    const trade = lot.tradeIn || {};
+    const tradeHtml = `
+      <ul>
+        <li>considersTradeIn: <span class="mono">${escapeHtml(trade.considersTradeIn)}</span></li>
+        <li>lookingForUsedCar: <span class="mono">${escapeHtml(trade.lookingForUsedCar)}</span></li>
+        <li>comment: <span class="mono">${escapeHtml(trade.comment ?? "—")}</span></li>
+      </ul>
+    `;
+    const minPrice = lot.minPrice;
+    const maxBid = lot.maxBid;
+    const steps = offer.minBidStep;
+    const calcTopHtml = renderModalCalcBlock(offer);
+    const mainHtml = `
+      <div class="grid">
+        ${calcTopHtml}
+        <div class="card">
+          <h3>Основное</h3>
+          <ul>
+            <li>Год: <span class="mono">${escapeHtml(year)}</span></li>
+            <li>Мин. цена: <span class="mono">${escapeHtml(fmtMoney(minPrice))}</span></li>
+            <li>Макс. по лоту (maxBid): <span class="mono">${escapeHtml(fmtMoney(maxBid))}</span></li>
+            <li>Шаг ставки: <span class="mono">${escapeHtml(fmtMoney(steps))}</span></li>
+            <li>Наша ставка: <span class="mono">${escapeHtml(fmtRub(getPortalSyncForOffer(offer)?.bid ?? offer.bid))}</span></li>
+          </ul>
+          ${lot.description ? `<div class="card" style="margin-top:10px"><h3>Описание</h3><div class="small">${escapeHtml(lot.description).replaceAll("\n","<br>")}</div></div>` : ""}
+        </div>
+        <div class="card">
+          <h3>Badges</h3>
+          ${badgesHtml}
+        </div>
+        <div class="card">
+          <h3>Autoteka</h3>
+          ${autotekaHtml}
+        </div>
+        <div class="card">
+          <h3>Equipment</h3>
+          ${equipmentHtml}
+        </div>
+        <div class="card" style="grid-column: 1 / -1;">
+          <h3>TradeIn</h3>
+          ${tradeHtml}
+        </div>
+      </div>
+    `;
+    $("mBody").innerHTML = mainHtml;
+    $("modalBack").style.display = "flex";
+  }
+  // --- render ---
+  function render(data){
+    const feedTs = data?.ts ?? null;
+    let newKeys = [];
+    let feedCount = Array.isArray(data?.offers) ? data.offers.length : 0;
+    if (feedTs !== lastFeedTs) {
+      const applied = replaceOffersFromFeed(data);
+      newKeys = applied.newKeys;
+      feedCount = applied.feedCount;
+      lastFeedTs = feedTs;
+    }
+    const offers = getAllOffersForDisplay();
+    const total = offers.length;
+    const q = toText($("q").value.trim());
+    const st = $("status").value;
+    const dealer = $("dealerId").value.trim();
+    const lim = Number($("limit").value);
+    const filtered = offers.filter(o => {
+      if (st !== "any") {
+        const s = safeGet(o, "status.status", "");
+        if (s !== st) return false;
+      }
+      if (dealer) {
+        const d = String(o.dealerId ?? "");
+        if (d !== dealer) return false;
+      }
+      if (q) {
+        const blob = buildSearchBlob(o);
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+    const activeCount = offers.filter(o => safeGet(o, "status.status", "") === "inprogress").length;
+    filtered.sort((a,b) => {
+      const da = parseISO(safeGet(a, "lot.finishAt", "")) || parseISO(safeGet(a, "lot.originFinishAt", "")) || new Date(8640000000000000);
+      const db = parseISO(safeGet(b, "lot.finishAt", "")) || parseISO(safeGet(b, "lot.originFinishAt", "")) || new Date(8640000000000000);
+      return da - db;
+    });
+    const displaySlice = filtered.slice(0, lim);
+    window.__CURRENT_SLICE__ = displaySlice;
+    $("kTotal").textContent = total.toLocaleString("ru-RU");
+    $("kShown").textContent = displaySlice.length.toLocaleString("ru-RU");
+    $("kActive").textContent = activeCount.toLocaleString("ru-RU");
+    const rawTs = data?.ts || null;
+    const niceTs = rawTs ? fmtDateTime(rawTs) : "—";
+    $("loadedMeta").textContent = `Загружено: ${niceTs} · лотов: ${feedCount.toLocaleString("ru-RU")}`;
+    $("loadedMeta").title = rawTs ? `ts=${rawTs}` : "";
+    const rows = displaySlice.map((o, idx) => {
+      const lot = o.lot || {};
+      const veh = lot.vehicle || {};
+      const brand = veh?.brand?.name || "—";
+      const model = veh?.model?.name || "";
+      const year = veh?.year?.name || veh?.year?.id || safeGet(lot, "autohubVehicle.year", "");
+      const mileage = veh?.mileage ?? safeGet(lot, "autohubVehicle.kmDistance", null);
+      const place = lot?.sellerPlaceName || "—";
+      const finish = lot?.finishAt || lot?.originFinishAt || lot?.expiresAt;
+      const minPrice = lot?.minPrice;
+      const minAvailableBid = lot?.minAvailableBid;
+      const maxBid = lot?.maxBid;
+      const minBidStep = o?.minBidStep;
+      const offerId = o.lotOfferId ?? "—";
+      const lotLink = lotUrl(o);
+      const lotCell = lotLink
+        ? `<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+             <a class="btn" data-lotlink="1" href="${escapeHtml(lotLink)}" target="_blank" rel="noopener noreferrer">Открыть</a>
+             
+           </div>`
+        : `<div class="mono nowrap">${escapeHtml(offerId)}</div>`;
+      const img = (lot?.images && lot.images[0] && (lot.images[0].urlPreview || lot.images[0].url)) || "";
+      const carTitle = `${brand} ${model}`.trim();
+      const carSub = [
+        year ? `год: ${year}` : null,
+        mileage !== null && mileage !== undefined ? `пробег: ${Number(mileage).toLocaleString("ru-RU")} км` : null,
+      ].filter(Boolean).join(" · ");
+      const c = renderCalcCells(o);
+      const key = calcKey(o);
+      // apply highlight for cached results
+      const cached = calcCache.get(key);
+      let cls = "";
+      if (cached?.ok) {
+        const est = Number(cached.answer?.estimation_price);
+        if (Number.isFinite(est)) {
+          const minAvail = Number(lot.minAvailableBid);
+          const minP = Number(lot.minPrice);
+          const maxB = Number(lot.maxBid);
+          if (Number.isFinite(minAvail) && est < minAvail) cls = "row-bad";
+          else if (Number.isFinite(minP) && est < minP) cls = "row-warn";
+          else if (Number.isFinite(maxB) && est < maxB) cls = "row-good";
+        }
+      }
+      if (o._viewer?.activeInFeed === false && !cls) cls = "row-offfeed";
+      if (calcQueue.some((q) => q.key === key) && !cached?.ok) cls = (cls ? cls + " " : "") + "row-calc-pending";
+      return `
+        <tr class="${cls}" data-i="${idx}" data-key="${escapeHtml(key)}">
+          <td>${img ? `<img class="img" src="${img}" alt="">` : `<div class="muted small">нет</div>`}</td>
+          <td>
+            <div><strong>${escapeHtml(carTitle || "—")}</strong></div>
+            <div class="muted small">${escapeHtml(carSub)}</div>
+          </td>
+          <td class="nowrap">${offerStatusCell(o)}</td>
+          <td>${renderBadgesCell(o)}</td>
+          <td data-cell="buy">${c.buy}</td>
+          <td data-cell="profit">${c.profit}</td>
+          <td data-cell="sale">${c.sale}</td>
+          <td data-cell="ourbid" class="right">${renderOurBidCell(o)}</td>
+          <td data-cell="action">${c.action}</td>
+          <td class="right nowrap">${escapeHtml(fmtMoney(minPrice))}</td>
+          <td class="right nowrap">${escapeHtml(fmtMoney(minAvailableBid))}</td>
+          <td class="right nowrap">${escapeHtml(fmtMoney(minBidStep))}</td>
+          <td class="right nowrap">${escapeHtml(fmtMoney(maxBid))}</td>
+          <td class="nowrap">${escapeHtml(fmtDateTime(finish))}</td>
+          <td>${escapeHtml(place)}</td>
+          <td>${lotCell}</td>
+        </tr>
+      `;
+    }).join("");
+    $("rows").innerHTML = rows || `<tr><td colspan="16" class="muted">Ничего не найдено по фильтрам.</td></tr>`;
+    const calcN = enqueueAutoCalc(newKeys);
+    refreshPortalOffersState(displaySlice).then(() => {
+      if (portalOfferCache.size) render(window.__DATA__);
+    });
+    if (calcN > 0){
+      const base = $("loadedMeta").textContent || "";
+      if (!base.includes("авторасчёт")) {
+        $("loadedMeta").textContent = `${base} · авторасчёт новых: ${calcN}`;
+      }
+    }
+    if (!$("rows").dataset.bound) {
+      $("rows").dataset.bound = "1";
+      $("rows").addEventListener("click", async (e) => {
+        const tr = e.target?.closest?.("tr[data-i]");
+        if (!tr) return;
+        const i = Number(tr.getAttribute("data-i"));
+        const offer = (window.__CURRENT_SLICE__ || [])[i];
+        if (!offer) return;
+
+        const calcBtn = e.target?.closest?.("button[data-calc]");
+        if (calcBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const key = tr.getAttribute("data-key");
+          const o = findOfferByKey(key) || offer;
+          await performCalcOnRow(tr, o, calcBtn);
+          return;
+        }
+
+        const bidBtn = e.target?.closest?.("button[data-bid]");
+        if (bidBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.__PENDING_BID_OFFER__ = offer;
+          $("bidTitle").textContent = "Сделать ставку";
+          $("bidSub").textContent = `lotOfferId=${offer.lotOfferId ?? "—"} · lotId=${offer?.lot?.lotId ?? "—"}`;
+          const autoBid = Number(offer?.lot?.minAvailableBid);
+          $("bidAmountModal").value = Number.isFinite(autoBid) ? String(Math.round(autoBid)) : "";
+          $("bidModalBack").style.display = "flex";
+          $("bidAmountModal").focus();
+          return;
+        }
+
+        if (e.target?.closest?.("a[data-lotlink]")) return;
+        openModal(offer);
+      });
+    }
+  }
+  async function boot(){
+    if (location.protocol === "file:") {
+      $("rows").innerHTML = `<tr><td colspan="15" class="muted">Страница открыта как файл. Запустите start_server.bat (или python server.py) и откройте http://localhost:8005/viewer.html</td></tr>`;
+      $("loadedMeta").textContent = "Нужен локальный сервер — см. start_server.bat";
+      return;
+    }
+    try{
+      const data = await loadJson();
+      window.__DATA__ = data;
+      render(data);
+      await renderDealerStatusLine();
+    }catch(e){
+      $("rows").innerHTML = `<tr><td colspan="15" class="muted">${escapeHtml(e.message)}</td></tr>`;
+      $("loadedMeta").textContent = "Ошибка загрузки";
+    }
+  }
+  function fillDealerSelect(dealers){
+    const sel = $("dealerId");
+    const cur = sel.value || localStorage.getItem("mp_dealer_id") || "";
+    const opts = ['<option value="">— выберите площадку —</option>'];
+    for (const d of dealers || []){
+      const id = String(d.id ?? d.dealerId ?? "").trim();
+      if (!id) continue;
+      const label = String(d.label || d.name || id).trim();
+      opts.push(`<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`);
+    }
+    sel.innerHTML = opts.join("");
+    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+  function getSelectedDealerId(){
+    return $("dealerId").value.trim();
+  }
+  function initAuthFields(){
+    const savedEmail = localStorage.getItem("mp_login_email") || "";
+    const savedPassword = localStorage.getItem("mp_login_password") || "";
+    $("loginEmail").value = savedEmail;
+    $("loginPassword").value = savedPassword;
+    $("loginEmail").addEventListener("input", () => localStorage.setItem("mp_login_email", $("loginEmail").value));
+    $("loginPassword").addEventListener("input", () => localStorage.setItem("mp_login_password", $("loginPassword").value));
+    const savedPortalBase = localStorage.getItem("mp_portal_base") || DEFAULT_PORTAL_BASE;
+    $("portalBase").value = savedPortalBase;
+    $("portalBase").addEventListener("change", () => {
+      const normalized = normalizePortalBase($("portalBase").value);
+      $("portalBase").value = normalized;
+      localStorage.setItem("mp_portal_base", normalized);
+    });
+    const savedDealer = localStorage.getItem("mp_dealer_id") || "";
+    if (savedDealer) $("dealerId").value = savedDealer;
+    $("dealerId").addEventListener("change", () => {
+      localStorage.setItem("mp_dealer_id", $("dealerId").value);
+      render(window.__DATA__);
+      renderDealerStatusLine();
+    });
+    $("autoReloadSec").value = localStorage.getItem("mp_auto_reload_sec") || "";
+    $("autoReloadSec").addEventListener("input", () => {
+      localStorage.setItem("mp_auto_reload_sec", $("autoReloadSec").value);
+      applyAutoReloadFromField();
+    });
+    $("bidAmountModal").value = localStorage.getItem("mp_bid_amount") || "";
+    $("bidAmountModal").addEventListener("input", () => localStorage.setItem("mp_bid_amount", $("bidAmountModal").value));
+  }
+
+  // --- tabs ---
+  const ACTIVE_TAB_KEY = "mp_active_tab_v1";
+  function switchTab(name){
+    const panels = { Lots: "tabPanelLots", Logs: "tabPanelLogs" };
+    const buttons = { Lots: "tabBtnLots", Logs: "tabBtnLogs" };
+    for (const key of Object.keys(panels)){
+      const panel = $(panels[key]);
+      const btn = $(buttons[key]);
+      const on = key === name;
+      if (panel) panel.classList.toggle("active", on);
+      if (btn){
+        btn.classList.toggle("active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      }
+    }
+    localStorage.setItem(ACTIVE_TAB_KEY, name);
+    if (name === "Logs") renderReloadLog();
+  }
+  document.querySelectorAll(".tabBtn").forEach((btn) => {
+    btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab") || "Lots"));
+  });
+
+  // --- reload log ---
+  const RELOAD_LOG_KEY = "mp_reload_log_v1";
+  function _nowIso(){ return new Date().toISOString(); }
+  function _loadReloadLog(){
+    try{ return JSON.parse(localStorage.getItem(RELOAD_LOG_KEY) || "[]") || []; }catch(_){ return []; }
+  }
+  function _saveReloadLog(list){
+    localStorage.setItem(RELOAD_LOG_KEY, JSON.stringify(list.slice(0, 200)));
+  }
+  function addReloadLog(entry){
+    const list = _loadReloadLog();
+    list.unshift({ ts: _nowIso(), ...entry });
+    _saveReloadLog(list);
+    renderReloadLog();
+  }
+  function _fmtTs(iso){
+    try{ return new Date(iso).toLocaleString("ru-RU"); }catch(_){ return String(iso || ""); }
+  }
+  function renderReloadLog(){
+    const el = $("reloadLogList");
+    if (!el) return;
+    const list = _loadReloadLog();
+    if (!list.length){
+      el.innerHTML = `<div class="muted small">Пока пусто.</div>`;
+      return;
+    }
+    el.innerHTML = list.map((it) => {
+      const ok = it.ok === true;
+      const authSkip = it.auth_skip === true;
+      const skipped = it.skipped === true && !authSkip;
+      const cls = ok ? "ok" : ((authSkip || skipped) ? "warn" : "bad");
+      const status = ok ? "OK" : (authSkip ? "403" : (skipped ? "SKIP" : "ERR"));
+      const dealer = it.dealerId ? `dealerId=${escapeHtml(String(it.dealerId))}` : "all";
+      const count = (it.count != null) ? `lots=${escapeHtml(String(it.count))}` : "";
+      const msg = it.msg ? String(it.msg) : "";
+      const right = `${escapeHtml(dealer)} ${count ? " · " + count : ""}`.trim();
+      return `<div class="logRow">
+        <div class="l">
+          <span class="pill ${cls}">${status}</span>
+          <span class="mono">${escapeHtml(_fmtTs(it.ts))}</span>
+          <span class="muted">${escapeHtml(msg).slice(0, 140)}</span>
+        </div>
+        <div class="r">${right}</div>
+      </div>`;
+    }).join("");
+  }
+  async function renderDealerStatusLine(){
+    const el = $("dealerStatusLine");
+    if (!el) return;
+    const selected = getSelectedDealerId();
+    const dumpDealer = window.__DATA__?.dealerId != null ? String(window.__DATA__.dealerId) : "";
+    const dealerId = selected || dumpDealer;
+    if (!dealerId){
+      el.textContent = "Площадка: не выбрана";
+      return;
+    }
+    const known = (window.KNOWN_DEALERS || []).find((d) => String(d.id) === dealerId);
+    const label = known?.label || dealerId;
+    let statusTxt = "";
+    try{
+      const resp = await fetch("/api/dealers/status", { cache: "no-store" });
+      const data = await resp.json().catch(() => ({}));
+      const st = (data?.dealers || []).find((d) => String(d.dealerId) === dealerId) || {};
+      const count = st.count != null ? st.count : (window.__DATA__?.totalOffers ?? "—");
+      const ts = st.fileTs || st.ts;
+      const tsTxt = ts ? _fmtTs(ts) : "нет данных";
+      const ok = st.ok !== false;
+      statusTxt = ` · ${count} лот. · ${tsTxt}${ok ? "" : " · ошибка"}`;
+      if (st.error) el.title = st.error;
+      else el.title = "";
+    }catch(_){
+      statusTxt = "";
+    }
+    if (dumpDealer && selected && dumpDealer !== selected){
+      el.innerHTML = `<span class="pill warn">в файле другая площадка (${escapeHtml(dumpDealer)})</span> · выбрана: ${escapeHtml(label)}${escapeHtml(statusTxt)}`;
+      return;
+    }
+    el.textContent = `Площадка: ${label}${statusTxt}`;
+  }
+  ["q","status","limit"].forEach(id => $(id).addEventListener("input", () => render(window.__DATA__)));
+  function clearAutoReloadTimer(){
+    if (autoReloadTimeout){
+      clearTimeout(autoReloadTimeout);
+      autoReloadTimeout = null;
+    }
+  }
+  function scheduleAutoReload(delayMs){
+    clearAutoReloadTimer();
+    const ms = Math.max(1000, Math.floor(delayMs));
+    autoReloadTimeout = setTimeout(() => runAutoReloadTick(), ms);
+  }
+  function getAutoReloadIntervalSec(){
+    const raw = ($("autoReloadSec")?.value || "").trim();
+    const sec = Number(raw);
+    if (!Number.isFinite(sec) || sec <= 0) return 0;
+    return Math.floor(sec);
+  }
+  function updateAutoReloadMeta(extra = ""){
+    const sec = getAutoReloadIntervalSec();
+    if (!sec) return;
+    const last = lastAutoReloadFinishedAt
+      ? new Date(lastAutoReloadFinishedAt).toLocaleString("ru-RU")
+      : "ещё не было";
+    const base = `Автообновление: каждые ${sec} с · последнее: ${last}`;
+    $("loadedMeta").textContent = extra ? `${base} · ${extra}` : base;
+  }
+  async function runAutoReloadTick(){
+    const sec = getAutoReloadIntervalSec();
+    if (!sec || autoReloadTickRunning) return;
+    clearAutoReloadTimer();
+    autoReloadTickRunning = true;
+    const started = Date.now();
+    try{
+      const dealerId = getSelectedDealerId();
+      if (!dealerId){
+        addReloadLog({ ok: false, skipped: true, dealerId: "auto", msg: "auto: не выбрана площадка" });
+        return;
+      }
+      const result = await reloadFromSiteThenReadFile({ silent: true });
+      if (!result?.skipped){
+        lastAutoReloadFinishedAt = Date.now();
+        updateAutoReloadMeta(result?.ok ? "OK" : "ошибка");
+      } else if (result?.reason === "no_auth"){
+        addReloadLog({ ok: false, skipped: true, dealerId: "auto", msg: "auto: нет логина/пароля" });
+      }
+    }catch(err){
+      const msg = String(err?.message || err).slice(0, 200);
+      addReloadLog({ ok: false, dealerId: "auto", msg: `auto: ${msg}` });
+      $("loadedMeta").textContent = `Автообновление: ошибка — ${msg.slice(0, 160)}`;
+    }finally{
+      autoReloadTickRunning = false;
+      const intervalSec = getAutoReloadIntervalSec();
+      if (!intervalSec) return;
+      const elapsed = Date.now() - started;
+      scheduleAutoReload(Math.max(5000, intervalSec * 1000 - elapsed));
+    }
+  }
+  function applyAutoReloadFromField(){
+    clearAutoReloadTimer();
+    const sec = getAutoReloadIntervalSec();
+    if (!sec) return;
+    updateAutoReloadMeta("ожидание первого цикла…");
+    scheduleAutoReload(sec * 1000);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    const sec = getAutoReloadIntervalSec();
+    if (!sec) return;
+    // После сна ПК / фона вкладки — догоняем, если давно не обновляли
+    if (lastAutoReloadFinishedAt){
+      const overdue = Date.now() - lastAutoReloadFinishedAt > sec * 1000 + 30_000;
+      if (overdue && !autoReloadTickRunning){
+        runAutoReloadTick();
+        return;
+      }
+    }
+    if (!autoReloadTimeout && !autoReloadTickRunning){
+      applyAutoReloadFromField();
+    }
+  });
+
+  async function reloadFromSiteThenReadFile({ silent = false } = {}){
+    if (reloadPromise) {
+      if (!silent) $("loadedMeta").textContent = "Обновление уже выполняется, ждём завершения…";
+      return reloadPromise;
+    }
+    reloadPromise = (async () => {
+      const email = $("loginEmail").value.trim();
+      const password = $("loginPassword").value;
+      if (!email || !password){
+        if (!silent) {
+          $("loadedMeta").textContent = "Обновление с сайта пропущено: укажите логин и пароль.";
+        }
+        return { skipped: true, reason: "no_auth" };
+      }
+      const dealerId = getSelectedDealerId();
+      if (!dealerId){
+        if (!silent) {
+          $("loadedMeta").textContent = "Обновление пропущено: выберите площадку.";
+        }
+        return { skipped: true, reason: "no_dealer" };
+      }
+      const btn = $("reload");
+      const prev = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spin"></span>Обновляю…`;
+      try{
+        const { resp, data } = await fetchJsonWithTimeout(
+          "/api/reload",
+          {
+            method: "POST",
+            cache: "no-store",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email, password, dealerId }),
+          },
+          12 * 60 * 1000,
+        );
+        if (data?.skipped) return { skipped: true, reason: data?.reason || "skipped" };
+        if (resp.status === 409){
+          throw new Error("Обновление уже выполняется, подождите…");
+        }
+        if (!data.ok){
+          const msg = data?.error || data?.stderr || data?.stdout || `HTTP ${resp.status}`;
+          addReloadLog({
+            ok: false,
+            auth_skip: Boolean(data?.auth_skip),
+            skipped: Boolean(data?.skipped),
+            dealerId,
+            count: data?.count ?? null,
+            msg: String(msg).slice(0, 200),
+          });
+          await renderDealerStatusLine();
+          if (data?.auth_skip){
+            if (!silent) {
+              $("loadedMeta").textContent = `403 — площадка ${dealerId} пропущена, остальные не затронуты.`;
+            }
+            return { skipped: true, reason: "auth", ok: false, error: msg };
+          }
+          if (!silent){
+            throw new Error(`Не удалось обновить данные: ${String(msg).slice(0, 500)}`);
+          }
+          return { skipped: false, ok: false, error: msg };
+        }
+        addReloadLog({ ok: true, dealerId, count: data?.count ?? null, msg: "reload" });
+        await boot();
+        return { skipped: false, ok: true };
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
+    })();
+    try{
+      return await reloadPromise;
+    }finally{
+      reloadPromise = null;
+    }
+  }
+  $("reload").addEventListener("click", async () => {
+    try{
+      await reloadFromSiteThenReadFile();
+    }catch(err){
+      $("loadedMeta").textContent = `Ошибка обновления: ${String(err?.message || err).slice(0, 160)}`;
+    }
+  });
+  $("clearReloadLog").addEventListener("click", () => {
+    localStorage.removeItem(RELOAD_LOG_KEY);
+    renderReloadLog();
+  });
+  $("clearLots").addEventListener("click", async () => {
+    if (!offerStore.size && !(window.__DATA__?.offers || []).length) return;
+    if (!confirm("Удалить все лоты из таблицы и из offers_dump.json?")) return;
+    const btn = $("clearLots");
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span>Очищаю…`;
+    try{
+      await clearAllLotsOnServer();
+      await renderDealerStatusLine();
+      $("loadedMeta").textContent = "Лоты удалены. Нажмите «Перезагрузить» для загрузки с сайта.";
+    }catch(err){
+      $("loadedMeta").textContent = `Ошибка очистки: ${String(err?.message || err).slice(0, 160)}`;
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = prev;
+    }
+  });
+  $("bidSubmit").addEventListener("click", async () => {
+    const offer = window.__PENDING_BID_OFFER__;
+    if (!offer) return;
+    let bidAmount = null;
+    try{
+      bidAmount = getBidAmountFromModal();
+    }catch(err){
+      $("loadedMeta").textContent = `Ставка: ошибка — ${String(err?.message || err).slice(0, 160)}`;
+      return;
+    }
+    const btn = $("bidSubmit");
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span>Ставлю…`;
+    try{
+      const result = await runBidForOffer(offer, { bidAmount });
+      const details = result?.bid_result || {};
+      const amount = result?.bidAmount ?? bidAmount;
+      const madeAt = result?.bidMadeAt || "";
+      const portal = result?.portal_result || {};
+      if (result?.portal_ok){
+        const chatMsg = portal.chatMessage ? ` · ${portal.chatMessage}` : "";
+        const resolveNote = portal.resolveNote ? ` · ${portal.resolveNote}` : "";
+        $("loadedMeta").textContent = `Ставка OK: lotId=${portal.lotId ?? offer?.lot?.lotId} · offerId=${portal.lotOfferId ?? offer.lotOfferId} · ${Number(amount).toLocaleString("ru-RU")} ₽ · ${madeAt} · портал OK${resolveNote}${chatMsg}`;
+        $("loadedMeta").title = `Maxposter: ${details.note || "OK"}\nПортал: historyId=${portal.historyId ?? "—"}, lotPk=${portal.lotPk ?? "—"}, lotId=${portal.lotId ?? "—"}, lotOfferId=${portal.lotOfferId ?? "—"}`;
+      }else{
+        $("loadedMeta").textContent = `Ставка в Maxposter OK, но портал не обновлён: ${result?.portal_error || "ошибка"}`;
+        $("loadedMeta").title = `Maxposter: ${details.note || "OK"}\nПортал: ${result?.portal_error || ""}`;
+      }
+      $("bidModalBack").style.display = "none";
+      render(window.__DATA__);
+    }catch(err){
+      $("loadedMeta").textContent = `Ставка: ошибка — ${String(err?.message || err).slice(0, 160)}`;
+      $("loadedMeta").title = "";
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = prev;
+    }
+  });
+  $("mClose").addEventListener("click", () => { $("modalBack").style.display = "none"; });
+  $("bidClose").addEventListener("click", () => { $("bidModalBack").style.display = "none"; });
+  $("modalBack").addEventListener("click", (e) => { if (e.target === $("modalBack")) $("modalBack").style.display = "none"; });
+  $("bidModalBack").addEventListener("click", (e) => { if (e.target === $("bidModalBack")) $("bidModalBack").style.display = "none"; });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      $("modalBack").style.display = "none";
+      $("bidModalBack").style.display = "none";
+    }
+  });
+  initAuthFields();
+  fillDealerSelect(window.KNOWN_DEALERS || []);
+  renderReloadLog();
+  switchTab(localStorage.getItem(ACTIVE_TAB_KEY) || "Lots");
+  applyAutoReloadFromField();
+  boot();
+</script>
+</body>
+</html>

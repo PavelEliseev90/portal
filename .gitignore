@@ -11,3 +11,13 @@
 portal/apps/profiles/__pycache__/models.cpython-311.pyc
 
 scripts/backup_postgres_config.ps1
+
+# Maxposter auction parser (runtime data)
+tools/maxposter_auction/.env
+tools/maxposter_auction/maxposter_session.json
+tools/maxposter_auction/offers_dump.json
+tools/maxposter_auction/offers_dump_*.json
+tools/maxposter_auction/dealers_status.json
+tools/maxposter_auction/build/
+tools/maxposter_auction/dist/
+tools/maxposter_auction/.venv/

@@ -14,6 +14,7 @@ from auction_avito.services.sync import (
     _upsert_lot,
     _upsert_vehicle_autohub,
     _upsert_vehicle_avito,
+    enrich_lot_data_from_payload,
     upsert_offer_from_api,
 )
 from auction_avito.services.venues import resolve_venue_from_payload
@@ -23,10 +24,55 @@ def _extract_ids(payload: dict) -> dict:
     lot_block = payload.get('lot') or {}
     return {
         'lot_id': payload.get('lotId') or lot_block.get('lotId'),
-        'lot_offer_id': payload.get('lotOfferId'),
-        'bidder_id': payload.get('bidderId') or 72,
-        'dealer_id': payload.get('dealerId') or 2107,
+        'lot_offer_id': payload.get('lotOfferId') or lot_block.get('lotOfferId'),
+        'bidder_id': payload.get('bidderId') or lot_block.get('bidderId') or 72,
+        'dealer_id': payload.get('dealerId') or lot_block.get('dealerId') or 2107,
     }
+
+
+def normalize_calculate_car_request(payload: dict) -> dict:
+    """
+    Нормализует тело запроса: полный offer Maxposter или плоский lot.
+    calculate_car ожидает vehicle/autohubVehicle/minPrice на корне.
+    """
+    if not isinstance(payload, dict):
+        return payload
+
+    data = dict(payload)
+    pascal_aliases = (
+        ('lotId', 'LotId'),
+        ('lotOfferId', 'LotOfferId'),
+        ('dealerId', 'DealerId'),
+        ('bidderId', 'BidderId'),
+        ('bid', 'Bid'),
+        ('bidMadeAt', 'BidMadeAt'),
+    )
+    for camel, pascal in pascal_aliases:
+        if data.get(camel) in (None, '') and data.get(pascal) not in (None, ''):
+            data[camel] = data[pascal]
+
+    lot = data.get('lot')
+    if isinstance(lot, dict):
+        root_from_lot = (
+            'vehicle', 'autohubVehicle', 'minPrice', 'minAvailableBid', 'maxAvailableBid',
+            'maxBid', 'autoteka', 'description', 'sellerPlaceName', 'finishAt', 'expiresAt',
+            'originFinishAt', 'images', 'badges', 'badgesByStyle', 'equipment', 'imvMarketRange',
+            'bidGroupV2', 'tradeIn', 'createdAt', 'updatedAt',
+        )
+        for key in root_from_lot:
+            if key in lot and key not in data:
+                data[key] = lot[key]
+
+        if data.get('lotId') in (None, '') and lot.get('lotId') not in (None, ''):
+            data['lotId'] = lot['lotId']
+        if data.get('lotOfferId') in (None, '') and lot.get('lotOfferId') not in (None, ''):
+            data['lotOfferId'] = lot['lotOfferId']
+        if data.get('dealerId') in (None, '') and lot.get('dealerId') not in (None, ''):
+            data['dealerId'] = lot['dealerId']
+
+    data['lot'] = enrich_lot_data_from_payload(data)
+
+    return data
 
 
 def _get_or_create_account(bidder_id: int, dealer_id: int) -> AvitoBidderAccount:
@@ -42,62 +88,37 @@ def _get_or_create_account(bidder_id: int, dealer_id: int) -> AvitoBidderAccount
 
 def _lot_payload_from_calculate_request(payload: dict, lot_id: int) -> dict:
     """Собирает структуру lot для upsert из тела calculate_car."""
-    if payload.get('lot') and isinstance(payload['lot'], dict):
-        data = dict(payload['lot'])
-        data['lotId'] = lot_id
-        return data
-    return {
-        'lotId': lot_id,
-        'minPrice': payload.get('minPrice'),
-        'minAvailableBid': payload.get('minAvailableBid'),
-        'maxAvailableBid': payload.get('maxAvailableBid'),
-        'maxBid': payload.get('maxBid'),
-        'tradeIn': payload.get('tradeIn'),
-        'vehicle': payload.get('vehicle'),
-        'autohubVehicle': payload.get('autohubVehicle'),
-        'autoteka': payload.get('autoteka'),
-        'description': payload.get('description') or '',
-        'sellerPlaceName': payload.get('sellerPlaceName') or '',
-        'imvMarketRange': payload.get('imvMarketRange'),
-        'bidGroupV2': payload.get('bidGroupV2'),
-        'images': payload.get('images') or [],
-        'badges': payload.get('badges') or [],
-        'badgesByStyle': payload.get('badgesByStyle') or [],
-        'equipment': payload.get('equipment') or [],
-        'finishAt': payload.get('finishAt'),
-        'expiresAt': payload.get('expiresAt'),
-    }
+    data = enrich_lot_data_from_payload(payload)
+    data['lotId'] = lot_id
+    return data
+
+
+def build_offer_sync_payload(payload: dict) -> dict | None:
+    """Полный offer для upsert_offer_from_api (расчёт / ставка / парсер)."""
+    payload = normalize_calculate_car_request(payload)
+    ids = _extract_ids(payload)
+    if not ids['lot_offer_id'] or not ids['lot_id']:
+        return None
+
+    lot_data = enrich_lot_data_from_payload(payload)
+    lot_data['lotId'] = int(ids['lot_id'])
+
+    out = dict(payload)
+    out['lotOfferId'] = int(ids['lot_offer_id'])
+    out['lot'] = lot_data
+    out.setdefault('bidderId', ids['bidder_id'])
+    out.setdefault('dealerId', ids['dealer_id'])
+    if not isinstance(out.get('status'), dict):
+        out['status'] = out.get('status') or {}
+    return out
 
 
 def _offer_payload_from_calculate_request(payload: dict, lot_id: int) -> dict | None:
     """Собирает offer для upsert_offer_from_api из тела calculate_car."""
-    lot_offer_id = payload.get('lotOfferId')
-    if not lot_offer_id:
-        return None
-    if payload.get('lot') and isinstance(payload['lot'], dict):
-        return payload
-    return {
-        'lotOfferId': lot_offer_id,
-        'lot': _lot_payload_from_calculate_request(payload, lot_id),
-        'bidderId': payload.get('bidderId'),
-        'dealerId': payload.get('dealerId'),
-        'badges': payload.get('badges') or [],
-        'badgesByStyle': payload.get('badgesByStyle') or [],
-        'status': payload.get('status') or {},
-        'bid': payload.get('bid'),
-        'bidMadeAt': payload.get('bidMadeAt'),
-        'minBidStep': payload.get('minBidStep'),
-        'saleCost': payload.get('saleCost'),
-        'presalePreparationCost': payload.get('presalePreparationCost'),
-        'gm1Money': payload.get('gm1Money'),
-        'gm1Percent': payload.get('gm1Percent'),
-        'createdAt': payload.get('createdAt'),
-        'updatedAt': payload.get('updatedAt'),
-        'hiddenBy': payload.get('hiddenBy') or [],
-        'isBuyoutOnSiteAvailable': payload.get('isBuyoutOnSiteAvailable', False),
-        'isInspectionOnSiteAvailable': payload.get('isInspectionOnSiteAvailable', False),
-        'bidMadeByUser': payload.get('bidMadeByUser') or {},
-    }
+    built = build_offer_sync_payload(payload)
+    if built:
+        return built
+    return None
 
 
 @transaction.atomic
@@ -106,6 +127,7 @@ def upsert_lot_from_calculate_request(payload: dict):
     Создаёт/обновляет лот (и оффер, если передан полный offer) по данным запроса расчёта.
     Возвращает (lot, offer|None) или (None, None) если нет lotId.
     """
+    payload = normalize_calculate_car_request(payload)
     ids = _extract_ids(payload)
     lot_id = ids['lot_id']
     if not lot_id:
@@ -121,13 +143,6 @@ def upsert_lot_from_calculate_request(payload: dict):
         return offer.lot, offer
 
     lot_data = _lot_payload_from_calculate_request(payload, lot_id)
-    if isinstance(payload.get('lot'), dict):
-        lot_block = payload['lot']
-        if lot_block.get('badges') and not lot_data.get('badges'):
-            lot_data['badges'] = lot_block['badges']
-        if lot_block.get('images') and not lot_data.get('images'):
-            lot_data['images'] = lot_block['images']
-
     venue = resolve_venue_from_payload(payload, lot_data)
     lot = _upsert_lot(lot_data, venue=venue)
     _upsert_vehicle_avito(lot, lot_data.get('vehicle') or payload.get('vehicle') or {})
@@ -172,6 +187,7 @@ def save_calculation_result(
     """
     Сохраняет успешный или неуспешный расчёт в историю лота.
     """
+    payload = normalize_calculate_car_request(payload)
     ids = _extract_ids(payload)
     lot_existed = False
     if ids.get('lot_id'):
@@ -258,7 +274,7 @@ def persist_auction_calculation(payload, result, unit=None, user=None, error_mes
         )
     except Exception as exc:
         try:
-            save_calculation_result(
+            return save_calculation_result(
                 payload,
                 result if isinstance(result, dict) else {},
                 unit=unit,
@@ -268,3 +284,33 @@ def persist_auction_calculation(payload, result, unit=None, user=None, error_mes
         except Exception:
             pass
         return None
+
+
+def build_calculation_sync_response(calc) -> dict | None:
+    """Состояние лота/оффера после расчёта для парсера."""
+    if calc is None:
+        return None
+    from auction_avito.services.offer_api import build_offer_state_response
+
+    offer = calc.offer
+    if offer is None and calc.lot_id:
+        offer = (
+            calc.lot.offers
+            .select_related('lot', 'account', 'lot__venue', 'lot__venue__city')
+            .order_by('-updated_at')
+            .first()
+        )
+    if offer is None:
+        lot = calc.lot
+        return {
+            'ok': True,
+            'lotId': lot.lot_id if lot else None,
+            'lotPk': lot.pk if lot else None,
+            'bid': None,
+            'bidMadeAt': '',
+            'calculationId': calc.pk,
+        }
+
+    state = build_offer_state_response(offer)
+    state['calculationId'] = calc.pk
+    return state

@@ -292,9 +292,25 @@ def avito_auction_bid_set(request):
     from auction_avito.models import AvitoLotOffer
     from auction_avito.services.bid_api import offer_not_found_payload, resolve_or_create_offer_for_bid
     from auction_avito.services.bid_history import record_bid_history
+    from auction_avito.services.calculate import (
+        build_offer_sync_payload,
+        normalize_calculate_car_request,
+        upsert_lot_from_calculate_request,
+    )
+    from auction_avito.services.offer_api import build_offer_state_response
 
     body_unicode = request.body.decode().replace("'", '"')
     data = json.loads(body_unicode)
+
+    offer_payload = data.get('Offer') or data.get('offer')
+    if isinstance(offer_payload, dict):
+        built = build_offer_sync_payload(offer_payload)
+        if built:
+            upsert_lot_from_calculate_request(built)
+    elif data.get('lotId') or data.get('LotId') or data.get('lotOfferId') or data.get('LotOfferId'):
+        built = build_offer_sync_payload(normalize_calculate_car_request(data))
+        if built:
+            upsert_lot_from_calculate_request(built)
 
     lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
     lot_id_raw = data.get('LotId') or data.get('lotId')
@@ -372,6 +388,7 @@ def avito_auction_bid_set(request):
     bid_history = record_bid_history(offer, bid_value, raw_offer_json)
     notify_bid_placed(offer.lot, bid_value, bid_made_at)
 
+    state = build_offer_state_response(offer)
     return JsonResponse({
         'ok': True,
         'lotOfferId': offer.lot_offer_id,
@@ -382,7 +399,82 @@ def avito_auction_bid_set(request):
         'historyId': bid_history.pk if bid_history else None,
         'resolveNote': resolve_note or 'found',
         'chatMessage': 'Ставка зафиксирована и отправлена в чат.',
+        **state,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def avito_auction_offer_get(request):
+    """Состояние оффера/ставки на портале по LotOfferId или LotId."""
+    from auction_avito.services.offer_api import build_offer_state_response, resolve_offer_by_ids
+
+    body_unicode = request.body.decode().replace("'", '"')
+    data = json.loads(body_unicode)
+    lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
+    lot_id = data.get('LotId') or data.get('lotId')
+    if not lot_offer_id and not lot_id:
+        return JsonResponse(
+            {'error': 'LotOfferId or LotId is required'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    offer = resolve_offer_by_ids(lot_offer_id=lot_offer_id, lot_id=lot_id)
+    if not offer:
+        return JsonResponse(
+            {
+                'error': 'offer not found',
+                'lotOfferId': lot_offer_id,
+                'lotId': lot_id,
+            },
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    history_limit = data.get('historyLimit') or data.get('history_limit') or 5
+    try:
+        history_limit = max(1, min(20, int(history_limit)))
+    except (TypeError, ValueError):
+        history_limit = 5
+
+    return JsonResponse(
+        build_offer_state_response(offer, history_limit=history_limit),
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['POST'])
+def avito_auction_offers_state(request):
+    """Пакетное чтение ставок/офферов для парсера."""
+    from auction_avito.services.offer_api import build_offers_state_map
+
+    body_unicode = request.body.decode().replace("'", '"')
+    data = json.loads(body_unicode)
+    lot_offer_ids = data.get('lotOfferIds') or data.get('lotOfferId') or []
+    lot_ids = data.get('lotIds') or data.get('lotId') or []
+    if isinstance(lot_offer_ids, (int, str)):
+        lot_offer_ids = [lot_offer_ids]
+    if isinstance(lot_ids, (int, str)):
+        lot_ids = [lot_ids]
+
+    history_limit = data.get('historyLimit') or data.get('history_limit') or 3
+    try:
+        history_limit = max(1, min(10, int(history_limit)))
+    except (TypeError, ValueError):
+        history_limit = 3
+
+    if not lot_offer_ids and not lot_ids:
+        return JsonResponse(
+            {'error': 'lotOfferIds or lotIds is required'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return JsonResponse(
+        build_offers_state_map(
+            lot_offer_ids=lot_offer_ids,
+            lot_ids=lot_ids,
+            history_limit=history_limit,
+        ),
+        status=status.HTTP_200_OK,
+    )
        
     
 def get_car_object(car, unit):
@@ -475,6 +567,8 @@ def calculate_car(request):
 
     try:
         info = json.loads(request.body)
+        from auction_avito.services.calculate import normalize_calculate_car_request
+        info = normalize_calculate_car_request(info)
 
         autohubVehicle  = info['autohubVehicle']
         vehicle         = info['vehicle']
@@ -880,7 +974,10 @@ def calculate_car(request):
         }
 
         try:
-            from auction_avito.services.calculate import persist_auction_calculation
+            from auction_avito.services.calculate import (
+                build_calculation_sync_response,
+                persist_auction_calculation,
+            )
             calc = persist_auction_calculation(
                 info,
                 answer,
@@ -890,6 +987,9 @@ def calculate_car(request):
             if calc:
                 answer['avito_calculation_id'] = calc.pk
                 answer['avito_lot_id'] = calc.lot_id
+                sync_payload = build_calculation_sync_response(calc)
+                if sync_payload:
+                    answer['avito_sync'] = sync_payload
         except Exception:
             pass
 
@@ -897,14 +997,31 @@ def calculate_car(request):
         answer = str(e)
         if isinstance(info, dict):
             try:
-                from auction_avito.services.calculate import persist_auction_calculation
-                persist_auction_calculation(
+                from auction_avito.services.calculate import (
+                    build_calculation_sync_response,
+                    persist_auction_calculation,
+                )
+                calc = persist_auction_calculation(
                     info,
                     {},
                     unit=dc,
                     user=request.user,
                     error_message=str(e),
                 )
+                if calc:
+                    sync_payload = build_calculation_sync_response(calc)
+                    if sync_payload and isinstance(answer, str):
+                        answer = {
+                            'error': answer,
+                            'avito_calculation_id': calc.pk,
+                            'avito_lot_id': calc.lot_id,
+                            'avito_sync': sync_payload,
+                        }
+                    elif calc and isinstance(answer, dict):
+                        answer['avito_calculation_id'] = calc.pk
+                        answer['avito_lot_id'] = calc.lot_id
+                        if sync_payload:
+                            answer['avito_sync'] = sync_payload
             except Exception:
                 pass
 

@@ -306,9 +306,9 @@
                 <span>Шаг <strong>{{ offer.display_min_bid_step|formatted_number }} ₽</strong></span>
               {% endif %}
               {% if offer.bid %}
-                <span>Ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
+                <span>Наша ставка <strong>{{ offer.bid|formatted_number }} ₽</strong></span>
               {% elif lot.display_max_bid is not None %}
-                <span>Ставка лота <strong>{{ lot.display_max_bid|formatted_number }} ₽</strong></span>
+                <span>Макс. по лоту <strong>{{ lot.display_max_bid|formatted_number }} ₽</strong></span>
               {% endif %}
               {% if lot.display_min_price is not None %}
                 <span class="text-muted">Желание {{ lot.display_min_price|formatted_number }} ₽</span>
