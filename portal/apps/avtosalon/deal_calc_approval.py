@@ -161,6 +161,7 @@ def notify_director_users_calculation_approval(calculation_object, car_object, u
     """Email директорам ДЦ (price_car_new_director + unit)."""
     from prices_car.models import EmailPushCar
 
+    sent = False
     try:
         users_soglasovanie = User.objects.filter(
             is_active=True,
@@ -169,19 +170,25 @@ def notify_director_users_calculation_approval(calculation_object, car_object, u
         ).distinct()
         for uusr in users_soglasovanie:
             if uusr.email:
-                new_message = EmailPushCar()
-                new_message.car = car_object
-                new_message.user = uusr
-                new_message.email = uusr.email
-                new_message.comment = (
-                    'Согласование расчета продажи автомобиля #'
-                    + str(calculation_object.number)
+                EmailPushCar.objects.create(
+                    car=car_object,
+                    user=uusr,
+                    email=uusr.email,
+                    comment=(
+                        'Согласование расчета продажи автомобиля #'
+                        + str(calculation_object.number)
+                    ),
+                    price=False,
+                    calc=calculation_object,
                 )
-                new_message.price = False
-                new_message.calc = calculation_object
-                new_message.save()
+                sent = True
+        if sent:
+            _trigger_calc_email_send()
     except Exception:
-        pass
+        logger.exception(
+            'notify_director_users_calculation_approval failed calc_id=%s',
+            calculation_object.pk,
+        )
 
 
 def _actor_display_name(user):
@@ -372,28 +379,21 @@ def _send_auto_approved_soglasovanie_chat(calculation_object, rlk_object):
 
 def _send_pending_soglasovanie_notifications(calculation_object, car_object, rlk_object, unit_object):
     """Чат и email директорам после подтверждения отправки на согласование из 1С."""
+    text = (
+        'Коммерческое предложение #'
+        + str(calculation_object.number)
+        + ' отправлено на согласование. '
+        + (calculation_object.comment or '')
+    )
     try:
-        from website.views import send_web_socket_message
-
-        chat, _ = Chat.objects.get_or_create(
-            name=str(rlk_object.id),
-            slug='rlk_' + str(rlk_object.id),
-        )
         user = User.objects.get(pk=AUTO_APPROVE_USER_ID)
-        text = (
-            'Коммерческое предложение #'
-            + str(calculation_object.number)
-            + ' отправлено на согласование. '
-            + (calculation_object.comment or '')
-        )
-        send_web_socket_message(
-            group='rlk_' + str(rlk_object.id),
-            chat=chat,
-            user=user,
-            text=text,
-        )
+        send_calc_rlk_chat_message(calculation_object, user, text)
     except Exception:
-        pass
+        logger.exception(
+            'pending soglasovanie chat failed calc_id=%s rlk_id=%s',
+            calculation_object.pk,
+            getattr(rlk_object, 'pk', None),
+        )
 
     notify_director_users_calculation_approval(
         calculation_object, car_object, unit_object,
@@ -415,8 +415,9 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
             pass
 
     current_status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    # «pending» — дефолт модели при создании КП, это ещё не отправка директору.
+    # В пайплайне только статусы после реального согласования/отказа.
     in_approval_pipeline = current_status in {
-        CarCalculations.SOGLASOVANIE_PENDING,
         CarCalculations.SOGLASOVANIE_PENDING_UK,
         CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
         CarCalculations.SOGLASOVANIE_UK_APPROVED,
@@ -451,8 +452,14 @@ def submit_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
 
     status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     if status == CarCalculations.SOGLASOVANIE_PENDING:
+        # Уже подтверждено из 1С и отправлено директорам (повторный вызов).
         return True
     if status != CarCalculations.SOGLASOVANIE_AWAITING_1C:
+        logger.warning(
+            'submit_calculation_soglasovanie_from_1c skipped calc_id=%s status=%s',
+            calculation_object.pk,
+            status,
+        )
         return False
 
     now = timezone.now()
