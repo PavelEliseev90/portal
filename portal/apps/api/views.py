@@ -263,6 +263,125 @@ def calculation_car_submit_soglasovanie(request):
         **soglasovanie_info,
     }
     return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def avito_auction_bid_set(request):
+    """
+    Фиксация нашей ставки по лоту Авито из 1С/внешней системы.
+
+    Ожидаемый JSON:
+    {
+        "LotOfferId": 1619670521,
+        "Bid": 875000,
+        "BidMadeAt": "2026-07-09T13:05:00",
+        "Comment": "Ставка отправлена из 1С",
+        "BidMadeByUser": {
+            "id": 72,
+            "email": "user@example.com",
+            "firstName": "Иван",
+            "lastName": "Иванов",
+            "middleName": "Иванович"
+        }
+    }
+    """
+    from django.utils import timezone
+    from django.utils.dateparse import parse_datetime
+
+    from auction_avito.chat_utils import notify_bid_placed
+    from auction_avito.models import AvitoLotOffer
+    from auction_avito.services.bid_history import record_bid_history
+
+    body_unicode = request.body.decode().replace("'", '"')
+    data = json.loads(body_unicode)
+
+    lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
+    bid_value = data.get('Bid')
+    bid_made_at_raw = data.get('BidMadeAt') or data.get('bidMadeAt')
+    comment = (data.get('Comment') or data.get('comment') or '').strip()
+    bid_user = data.get('BidMadeByUser') or data.get('bidMadeByUser') or {}
+
+    if not lot_offer_id:
+        return JsonResponse(
+            {'error': 'LotOfferId is required'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if bid_value in (None, ''):
+        return JsonResponse(
+            {'error': 'Bid is required'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        lot_offer_id = int(lot_offer_id)
+        bid_value = int(round(float(bid_value)))
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {'error': 'LotOfferId and Bid must be numeric'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    offer = (
+        AvitoLotOffer.objects
+        .select_related('lot', 'account')
+        .filter(lot_offer_id=lot_offer_id)
+        .first()
+    )
+    if not offer:
+        return JsonResponse(
+            {'error': 'offer not found', 'lotOfferId': lot_offer_id},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    bid_made_at = parse_datetime(bid_made_at_raw) if bid_made_at_raw else None
+    if bid_made_at and timezone.is_naive(bid_made_at):
+        bid_made_at = timezone.make_aware(
+            bid_made_at,
+            timezone.get_current_timezone(),
+        )
+
+    raw_offer_json = dict(offer.raw_offer_json or {})
+    raw_offer_json['lotOfferId'] = offer.lot_offer_id
+    raw_offer_json['bid'] = bid_value
+    if bid_made_at_raw:
+        raw_offer_json['bidMadeAt'] = bid_made_at_raw
+    if comment:
+        raw_offer_json['bidComment'] = comment
+    if bid_user:
+        raw_offer_json['bidMadeByUser'] = bid_user
+
+    offer.bid = bid_value
+    offer.bid_made_at = bid_made_at
+    offer.bid_made_by_avito_user_id = bid_user.get('id') if bid_user else None
+    offer.bid_made_by_email = bid_user.get('email') or ''
+    offer.bid_made_by_first_name = bid_user.get('firstName') or ''
+    offer.bid_made_by_last_name = bid_user.get('lastName') or ''
+    offer.bid_made_by_middle_name = bid_user.get('middleName') or ''
+    offer.raw_offer_json = raw_offer_json
+    offer.save(update_fields=[
+        'bid',
+        'bid_made_at',
+        'bid_made_by_avito_user_id',
+        'bid_made_by_email',
+        'bid_made_by_first_name',
+        'bid_made_by_last_name',
+        'bid_made_by_middle_name',
+        'raw_offer_json',
+    ])
+
+    bid_history = record_bid_history(offer, bid_value, raw_offer_json)
+    notify_bid_placed(offer.lot, bid_value, bid_made_at)
+
+    return JsonResponse({
+        'ok': True,
+        'lotOfferId': offer.lot_offer_id,
+        'lotId': offer.lot.lot_id,
+        'lotPk': offer.lot_id,
+        'bid': offer.bid,
+        'bidMadeAt': bid_made_at_raw or '',
+        'historyId': bid_history.pk if bid_history else None,
+        'chatMessage': 'Ставка зафиксирована и отправлена в чат.',
+    }, status=status.HTTP_200_OK)
        
     
 def get_car_object(car, unit):
