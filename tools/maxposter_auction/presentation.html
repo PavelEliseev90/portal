@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Аукцион Maxposter — презентация решения</title>
+  <style>
+    :root {
+      --bg-dark: #061428;
+      --bg-mid: #0f2d5c;
+      --bg-blue: #1a5fb4;
+      --bg-gradient: linear-gradient(155deg, var(--bg-dark) 0%, var(--bg-mid) 42%, var(--bg-blue) 100%);
+      --panel: rgba(12, 28, 58, 0.85);
+      --text: #e7eef7;
+      --muted: #94b4d4;
+      --accent: #7dd3fc;
+      --accent2: #a7f3d0;
+      --warn: #fdba74;
+      --line: rgba(125, 180, 230, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text);
+    }
+    .deck { height: 100%; position: relative; }
+    .slide {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column; justify-content: center;
+      padding: 48px 64px 80px;
+      background:
+        radial-gradient(ellipse at 15% 10%, rgba(125, 211, 252, 0.12), transparent 45%),
+        radial-gradient(ellipse at 85% 90%, rgba(37, 99, 235, 0.25), transparent 50%),
+        var(--bg-gradient);
+    }
+    .slide.active { display: flex; }
+    .tag { display: inline-block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+    h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.15; font-weight: 700; max-width: 900px; }
+    h2 { font-size: clamp(22px, 3vw, 32px); margin-bottom: 24px; color: var(--accent); }
+    .sub { font-size: 18px; color: var(--muted); margin-top: 16px; max-width: 720px; line-height: 1.5; }
+    ul { margin: 16px 0 0 24px; max-width: 820px; }
+    li { margin: 10px 0; font-size: 17px; line-height: 1.45; color: var(--text); }
+    li strong { color: var(--accent2); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; max-width: 1000px; }
+    .card {
+      border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px;
+      background: rgba(17,24,38,.75);
+    }
+    .card h3 { font-size: 15px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+    .card p, .card li { font-size: 15px; color: var(--text); }
+    .card ul { margin-left: 18px; }
+    .kpi-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; }
+    .kpi {
+      min-width: 180px; padding: 16px 20px; border-radius: 12px;
+      border: 1px solid var(--line); background: rgba(12,18,32,.8);
+    }
+    .kpi .v { font-size: 26px; font-weight: 700; color: var(--accent2); }
+    .kpi .t { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .flow {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+      margin-top: 24px; font-size: 14px; max-width: 950px;
+    }
+    .flow span {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .flow .arrow { color: var(--muted); border: none; background: none; padding: 0 4px; }
+    .nav {
+      position: fixed; bottom: 24px; right: 32px; display: flex; gap: 10px; align-items: center; z-index: 10;
+    }
+    .nav button {
+      cursor: pointer; border: 1px solid var(--line); background: var(--panel);
+      color: var(--text); padding: 10px 18px; border-radius: 10px; font-size: 14px;
+    }
+    .nav button:hover { border-color: var(--accent); }
+    .progress {
+      position: fixed; bottom: 28px; left: 32px; font-size: 13px; color: var(--muted); z-index: 10;
+    }
+    .highlight { color: var(--warn); }
+    table { width: 100%; max-width: 900px; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
+    th, td { border: 1px solid var(--line); padding: 10px 14px; text-align: left; }
+    th { background: rgba(12,18,32,.9); color: var(--muted); font-weight: 600; }
+    .logo-line { margin-top: 32px; font-size: 13px; color: var(--muted); }
+    .slide-top { justify-content: flex-start; padding-top: 36px; overflow-y: auto; }
+    .slide-top h2 { margin-bottom: 12px; font-size: 26px; }
+    .slide-top .sub { font-size: 14px; margin-top: 0; margin-bottom: 12px; }
+    .caption { font-size: 13px; color: var(--muted); margin-top: 10px; max-width: 1100px; }
+    .caption strong { color: var(--accent); }
+    /* UI mock — как в viewer.html */
+    .ui-mock {
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+      background: rgba(17,24,38,.9); font-size: 11px; max-width: 1180px; width: 100%;
+      box-shadow: 0 24px 80px rgba(0,0,0,.45);
+    }
+    .ui-top { padding: 12px 14px; border-bottom: 1px solid var(--line); background: rgba(12,18,32,.95); }
+    .ui-top h3 { font-size: 14px; margin: 0 0 4px; }
+    .ui-meta { font-size: 10px; color: var(--muted); }
+    .ui-kpis { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .ui-kpi { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #0c1220; min-width: 90px; }
+    .ui-kpi b { display: block; font-size: 14px; }
+    .ui-kpi span { color: var(--muted); font-size: 9px; }
+    .ui-table { width: 100%; border-collapse: collapse; }
+    .ui-table th { text-align: left; padding: 6px 8px; color: var(--muted); font-weight: 600; background: #0c1220; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .ui-table td { padding: 6px 8px; border-bottom: 1px solid rgba(36,50,68,.5); vertical-align: middle; }
+    .ui-table .r { text-align: right; white-space: nowrap; }
+    .pill-m { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px; border: 1px solid var(--line); }
+    .pill-m.ok { color: var(--accent2); border-color: rgba(167,243,208,.4); }
+    .pill-m.bad { color: #fda4af; border-color: rgba(253,164,175,.35); }
+    .btn-m { display: inline-block; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); background: #0c1220; font-size: 10px; }
+    .ui-row-good td { background: rgba(167,243,208,.18); box-shadow: inset 4px 0 0 var(--accent2); }
+    .ui-row-warn td { background: rgba(253,186,116,.15); box-shadow: inset 4px 0 0 var(--warn); }
+    .ui-row-bad td { background: rgba(253,164,175,.18); box-shadow: inset 4px 0 0 #fda4af; }
+    .ui-ph { width: 48px; height: 32px; border-radius: 6px; background: linear-gradient(135deg,#1a2538,#0c1220); border: 1px solid var(--line); }
+    .legend { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; font-size: 12px; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; }
+    .grid-demo { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; max-width: 1180px; width: 100%; margin-top: 8px; }
+    .ui-modal { border: 1px solid var(--line); border-radius: 12px; background: #0c1220; padding: 12px; }
+    .ui-modal h4 { margin: 0 0 8px; font-size: 13px; color: var(--accent); }
+    .ui-modal .row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 11px; }
+    .ui-steps { display: flex; gap: 12px; margin-top: 12px; max-width: 1100px; flex-wrap: wrap; }
+    .step { flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: rgba(17,24,38,.7); }
+    .step .n { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #0b0f14; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 14px; }
+    .step p { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .callout { position: absolute; border: 2px solid var(--accent); border-radius: 8px; pointer-events: none; }
+    .anno { font-size: 11px; color: var(--accent); background: rgba(125,211,252,.12); padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+    .shot {
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+      max-width: 1180px; width: 100%; box-shadow: 0 24px 80px rgba(0,0,0,.45);
+      background: #0c1220;
+    }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot-label { font-size: 11px; color: var(--muted); padding: 8px 12px; border-top: 1px solid var(--line); }
+    .shot-stack { display: flex; flex-direction: column; gap: 12px; max-width: 1180px; width: 100%; }
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin-top: 20px; }
+    .compare-card {
+      border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+      background: rgba(12, 28, 58, 0.55);
+    }
+    .compare-card h3 { font-size: 16px; color: var(--accent); margin-bottom: 8px; }
+    .compare-card p { font-size: 14px; color: var(--muted); line-height: 1.45; margin-bottom: 12px; }
+    .badge-demo {
+      position: relative; border: 1px solid var(--line); border-radius: 10px;
+      padding: 8px 12px; overflow: hidden; background: rgba(6, 20, 40, 0.6); margin: 8px 0;
+      font-size: 12px;
+    }
+    .badge-demo .bar { position: absolute; inset: 0; width: 0; }
+    .badge-demo.stock .bar { width: 25%; background: linear-gradient(90deg, rgba(167,243,208,.15), rgba(167,243,208,.35)); }
+    .badge-demo.sale .bar { width: 50%; background: linear-gradient(90deg, rgba(125,211,252,.15), rgba(125,211,252,.35)); }
+    .badge-demo.market .bar { width: 0%; background: linear-gradient(90deg, rgba(253,186,116,.12), rgba(253,186,116,.28)); }
+    .badge-demo .t { position: relative; z-index: 1; }
+    .compare-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+    .compare-legend span::before {
+      content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px;
+    }
+    .compare-legend .lg-stock::before { background: var(--accent2); }
+    .compare-legend .lg-sale::before { background: var(--accent); }
+    .compare-legend .lg-market::before { background: var(--warn); }
+    .compare-flow {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+      font-size: 13px; max-width: 1000px;
+    }
+    .compare-flow span {
+      padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(12, 28, 58, 0.7);
+    }
+    .compare-flow .arrow { border: none; background: none; color: var(--muted); padding: 0 4px; }
+    .portal-sheet {
+      border: 1px dashed rgba(125, 211, 252, 0.45); border-radius: 12px; padding: 14px 16px;
+      background: rgba(12, 28, 58, 0.5); max-width: 520px; margin-top: 10px;
+    }
+    .portal-sheet h4 { font-size: 13px; color: var(--accent); margin: 0 0 10px; }
+    .portal-sheet .row { font-size: 12px; margin: 5px 0; color: var(--muted); }
+    .portal-sheet .row b { color: var(--text); font-weight: 600; }
+    .portal-badge {
+      display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; background: rgba(167, 243, 208, 0.15); border: 1px solid rgba(167, 243, 208, 0.35);
+      color: var(--accent2);
+    }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+    @media (max-width: 900px) {
+      .slide {
+        padding: 20px 16px calc(88px + env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+      }
+      .slide:not(.slide-top) { padding-top: 28px; }
+      h1 { font-size: clamp(22px, 6vw, 32px); }
+      h2 { font-size: clamp(18px, 5vw, 26px); margin-bottom: 16px; }
+      .sub { font-size: 15px; margin-top: 12px; }
+      li { font-size: 15px; }
+      .grid2, .compare-grid, .grid-demo { grid-template-columns: 1fr; gap: 14px; }
+      .kpi { min-width: 0; flex: 1 1 calc(50% - 8px); }
+      .kpi .v { font-size: 22px; }
+      .flow, .compare-flow { font-size: 12px; }
+      .flow span, .compare-flow span { padding: 6px 10px; }
+      table { font-size: 13px; display: block; }
+      .table-scroll table { display: table; min-width: 520px; }
+      th, td { padding: 8px 10px; }
+      .nav {
+        left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        justify-content: space-between;
+      }
+      .nav button {
+        flex: 1; min-height: 44px; padding: 12px 10px; font-size: 13px;
+      }
+      .progress {
+        left: 16px; right: 16px; bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+        text-align: center;
+      }
+      .slide-top h2 { font-size: 20px; }
+      .step { min-width: 0; flex: 1 1 100%; }
+      .portal-sheet { max-width: none; }
+      .compare-legend { flex-direction: column; gap: 8px; }
+    }
+
+    @media (max-width: 480px) {
+      .slide { padding-left: 12px; padding-right: 12px; }
+      .kpi-row { gap: 10px; }
+      .kpi { flex: 1 1 100%; }
+      .nav button { font-size: 12px; }
+      .caption { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- 1 -->
+    <section class="slide active">
+      <div class="tag">Внутренний инструмент</div>
+      <h1>Рабочее место дилера на аукционе Maxposter</h1>
+      <p class="sub">Единый экран: лоты аукциона, сравнение со <strong>складом</strong> и <strong>продажами</strong> группы Kors, расчёт выкупа и ставки — без ручного обхода сайта.</p>
+      <p class="logo-line">Kors Group · 2026</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide">
+      <div class="tag">Проблема</div>
+      <h2>Что было до решения</h2>
+      <ul>
+        <li>Лоты на аукционе смотрятся вручную на сайте Maxposter — много вкладок и кликов.</li>
+        <li>Расчёт выкупа, сравнение со складом и продажами сети, минимальной ставкой — в разных системах и «в голове» менеджера.</li>
+        <li>Ставка требует входа на сайт, поиска лота, ввода суммы — медленно при большом потоке.</li>
+        <li>Нет единой таблицы с фильтрами, подсветкой «выгодно / риск» и историей обновлений.</li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide">
+      <div class="tag">Решение</div>
+      <h2>Что сделано</h2>
+      <p class="sub">Веб-приложение + сервер автоматизации на базе Playwright и API Maxposter.</p>
+      <div class="flow">
+        <span>Портал / браузер</span>
+        <span class="arrow">→</span>
+        <span>Таблица + бейджи склад / продажи</span>
+        <span class="arrow">→</span>
+        <span>Расчёт выкупа (Kors API)</span>
+        <span class="arrow">→</span>
+        <span>Ставка через API</span>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">1 экран</div><div class="t">аукцион + склад + продажи</div></div>
+        <div class="kpi"><div class="v">API</div><div class="t">обновление и ставки</div></div>
+        <div class="kpi"><div class="v">.exe</div><div class="t">запуск на любом ПК</div></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide">
+      <div class="tag">Функциональность</div>
+      <h2>Ключевые возможности</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Данные и фильтры</h3>
+          <ul>
+            <li>Загрузка активных offers с Maxposter</li>
+            <li>Поиск, статус, дилер, лимит строк</li>
+            <li>Желание продавца, мин. ставка, шаг, макс. ставка</li>
+            <li>Автообновление по таймеру</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Аналитика и действия</h3>
+          <ul>
+            <li>Бейджи <strong>склад</strong> (stock-score) и <strong>продажи группы</strong> (sale-score) в колонке Badges</li>
+            <li>Расчёт выкупа: ценовая группа, средний срок продажи, цена продажи по сети</li>
+            <li>Подсветка строк: риск / норма / выгодно vs мин. ставка</li>
+            <li>Ставка и открытие лота на Maxposter в один клик</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Сравнение с группой -->
+    <section class="slide slide-top">
+      <div class="tag">Kors Group</div>
+      <h2>Сравнение лота с продажами и складом группы</h2>
+      <p class="sub">Данные Autohub / Kors в колонке Badges и в расчёте выкупа — менеджер видит, «наш» ли автомобиль для сети, ещё до ставки.</p>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Склад и стратегия выкупа</h3>
+          <p>Насколько лот подходит под текущий склад и политику закупки сети (stock-score 1–4).</p>
+          <div class="badge-demo stock"><div class="bar"></div><div class="t">Частично подходит под стратегию выкупов салона</div></div>
+          <p class="caption" style="margin:0">Выше балл — ближе к профилю машин, которые сеть успешно продаёт со склада.</p>
+        </div>
+        <div class="compare-card">
+          <h3>Продажи группы компаний</h3>
+          <p>Оценка по истории продаж и поведению продавца в сегменте (sale-score 1–4).</p>
+          <div class="badge-demo sale"><div class="bar"></div><div class="t">Возможно, продавец готов немного уступить</div></div>
+          <p class="caption" style="margin:0">Помогает понять потенциал торга и типичную динамику сделок в группе.</p>
+        </div>
+      </div>
+      <div class="compare-legend">
+        <span class="lg-stock">stock-score — склад / выкуп</span>
+        <span class="lg-sale">sale-score — продажи группы</span>
+        <span class="lg-market">market-score — сегмент рынка</span>
+      </div>
+      <div class="compare-flow">
+        <span>Лот Maxposter</span>
+        <span class="arrow">→</span>
+        <span>Badges в таблице</span>
+        <span class="arrow">→</span>
+        <span>Kors API: группа, срок продажи, price_sale</span>
+        <span class="arrow">→</span>
+        <span>Решение: ставка / пропуск</span>
+      </div>
+    </section>
+
+    <!-- DEMO 1 -->
+    <section class="slide slide-top">
+      <div class="tag">Как выглядит</div>
+      <h2>Главный экран — таблица лотов</h2>
+      <p class="sub">Все активные предложения аукциона в одном месте. Пример на реальных полях Maxposter.</p>
+      <div class="shot">
+        <img src="screenshots/01-table.png" alt="Главный экран viewer.html" />
+        <div class="shot-label">Реальный скриншот · данные из offers_dump.json</div>
+      </div>
+      <div class="ui-mock" style="display:none">
+        <div class="ui-top">
+          <h3>Авито — лоты с Аукциона</h3>
+          <div class="ui-meta">Загружено: 18.05.2026 13:54 · всего 8 · клик по строке — детали</div>
+          <div class="ui-kpis">
+            <div class="ui-kpi"><b>8</b><span>Всего</span></div>
+            <div class="ui-kpi"><b>8</b><span>Показано</span></div>
+            <div class="ui-kpi"><b>8</b><span>Активных</span></div>
+          </div>
+        </div>
+        <table class="ui-table">
+          <thead>
+            <tr>
+              <th></th><th>Авто</th><th>Статус</th><th>Выкуп</th><th>Профит</th>
+              <th class="r">Желание</th><th class="r">Мин. ставка</th><th>Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="ui-row-good">
+              <td><div class="ui-ph"></div></td>
+              <td><b>ВАЗ Niva Legend</b><br><span style="color:var(--muted)">2025 · 2 500 км</span></td>
+              <td><span class="pill-m ok">inprogress</span></td>
+              <td class="r"><b>1 720 000 ₽</b></td>
+              <td class="r"><b>377 800 ₽</b></td>
+              <td class="r">1 150 000</td>
+              <td class="r">685 440</td>
+              <td><span class="btn-m">Ставка</span></td>
+            </tr>
+            <tr>
+              <td><div class="ui-ph"></div></td>
+              <td><b>Kia Rio</b><br><span style="color:var(--muted)">2019 · 89 000 км</span></td>
+              <td><span class="pill-m ok">inprogress</span></td>
+              <td class="r">—</td><td class="r">—</td>
+              <td class="r">1 699 999</td><td class="r">1 189 930</td>
+              <td><span class="btn-m">Рассчитать</span></td>
+            </tr>
+            <tr class="ui-row-warn">
+              <td><div class="ui-ph"></div></td>
+              <td><b>Hyundai Solaris</b><br><span style="color:var(--muted)">2021 · 45 000 км</span></td>
+              <td><span class="pill-m ok">inprogress</span></td>
+              <td class="r"><b>890 000 ₽</b></td>
+              <td class="r"><b>120 000 ₽</b></td>
+              <td class="r">720 000</td><td class="r">504 000</td>
+              <td><span class="btn-m">Ставка</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption"><strong>①</strong> KPI и фильтры · <strong>②</strong> колонка Badges: склад и продажи группы · <strong>③</strong> расчёт и подсветка vs мин. ставка</p>
+    </section>
+
+    <!-- DEMO 2 -->
+    <section class="slide slide-top">
+      <div class="tag">Как работает</div>
+      <h2>Расчёт выкупа и детализация</h2>
+      <p class="sub">«Рассчитать» → API Kors. Клик по строке — карточка лота и таблица снижений: откуда взялась цена выкупа.</p>
+      <div class="shot-stack">
+        <div class="shot">
+          <img src="screenshots/02-calc-row.png" alt="Строка после расчёта выкупа" />
+          <div class="shot-label">В таблице: выкуп, профит, продажа · подсветка строки</div>
+        </div>
+        <div class="shot">
+          <img src="screenshots/04-lot-detail-modal.png" alt="Модалка: детали лота и расшифровка цены" />
+          <div class="shot-label">Клик по строке: лот, цена на рынке, ценовая группа, таблица снижений, бейджи</div>
+        </div>
+      </div>
+      <p class="caption">Менеджер видит <strong>логику снижений</strong> по этапам — не только итоговую цену выкупа.</p>
+      <div class="grid-demo" style="display:none">
+        <div class="ui-mock">
+          <div class="ui-top"><h3>Строка после расчёта</h3></div>
+          <table class="ui-table">
+            <tr class="ui-row-good">
+              <td><div class="ui-ph"></div></td>
+              <td><b>ВАЗ Niva Legend</b></td>
+              <td><span class="pill-m ok">inprogress</span></td>
+              <td class="r"><b style="color:var(--accent2)">1 725 200 ₽</b></td>
+              <td class="r">377 800 ₽</td>
+              <td class="r">2 103 080 ₽</td>
+              <td><span class="btn-m">Пересчитать</span> <span class="btn-m">Ставка</span></td>
+            </tr>
+          </table>
+          <div class="legend">
+            <span><i style="background:var(--accent2)"></i>выкуп выгоден</span>
+            <span><i style="background:var(--warn)"></i>ниже желания</span>
+            <span><i style="background:#fda4af"></i>ниже мин. ставки</span>
+          </div>
+        </div>
+        <div class="ui-modal">
+          <h4>Расчёт выкупа</h4>
+          <div class="row"><span>Цена на рынке</span><b>2 146 000 ₽</b></div>
+          <div class="row"><span>Цена выкупа</span><b style="color:var(--accent2)">1 725 200 ₽</b></div>
+          <div class="row"><span>Ценовая группа</span><b>3 000</b></div>
+          <div class="row"><span>Цена продажи</span><b>2 103 080 ₽</b></div>
+          <hr style="border-color:var(--line);margin:10px 0;opacity:.4">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Снижения:</div>
+          <div class="row"><span>Токсичный сток</span><b>−171 680 ₽</b></div>
+          <div class="row"><span>Защита от убытка</span><b>−39 486 ₽</b></div>
+          <div class="row"><span>Финансирование</span><b>−190 236 ₽</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO 3 -->
+    <section class="slide slide-top">
+      <div class="tag">Как работает</div>
+      <h2>Ставка на лот</h2>
+      <p class="sub">Модальное окно → сумма → API Maxposter bid/change (без кликов на сайте).</p>
+      <div class="shot">
+        <img src="screenshots/03-bid-modal.png" alt="Модальное окно ставки" />
+        <div class="shot-label">lotOfferId + lotId · сумма вручную или авто (minAvailableBid)</div>
+      </div>
+      <div class="grid-demo" style="display:none">
+        <div class="ui-mock">
+          <table class="ui-table">
+            <tr>
+              <td><div class="ui-ph"></div></td>
+              <td><b>Kia Rio</b> · lotOfferId 1604165785</td>
+              <td class="r">Мин. ставка: <b>1 189 930</b></td>
+              <td class="r">Шаг: <b>5 000</b></td>
+              <td><span class="btn-m" style="border-color:var(--accent)">Сделать ставку ▶</span></td>
+            </tr>
+          </table>
+        </div>
+        <div class="ui-modal" style="border-color:rgba(125,211,252,.5)">
+          <h4>Сделать ставку</h4>
+          <div class="ui-meta" style="margin-bottom:10px">lotOfferId · lotId=3758208</div>
+          <label style="display:block;font-size:11px;color:var(--muted)">Сумма ставки</label>
+          <div style="padding:10px;border:1px solid var(--line);border-radius:8px;background:#111826;font-size:18px;font-weight:700;margin-top:4px">1 939 900 ₽</div>
+          <div style="margin-top:14px;text-align:right"><span class="btn-m" style="background:rgba(125,211,252,.2);border-color:var(--accent)">Отправить ставку</span></div>
+          <hr style="border-color:var(--line);margin:12px 0;opacity:.4">
+          <div style="font-size:10px;font-family:monospace;color:var(--muted)">POST …/lots/3758208/bid/change</div>
+        </div>
+      </div>
+      <p class="caption">В статусе показываются <strong>request/response</strong> API — прозрачный контроль.</p>
+    </section>
+
+    <!-- DEMO 4 -->
+    <section class="slide slide-top">
+      <div class="tag">Сценарий</div>
+      <h2>Обновление данных с аукциона</h2>
+      <p class="sub">«Перезагрузить» или автообновление каждые N секунд.</p>
+      <div class="ui-steps">
+        <div class="step"><div class="n">1</div><p><b style="color:var(--text)">Логин</b> в форме</p></div>
+        <div class="step"><div class="n">2</div><p><b style="color:var(--text)">Playwright</b> — сессия Maxposter</p></div>
+        <div class="step"><div class="n">3</div><p><b style="color:var(--text)">API offers/list</b> — все активные лоты</p></div>
+        <div class="step"><div class="n">4</div><p><b style="color:var(--text)">Таблица</b> обновляется в браузере</p></div>
+      </div>
+      <div class="ui-mock" style="margin-top:14px">
+        <div class="ui-top" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px">
+          <span class="btn-m">Перезагрузить</span>
+          <span class="ui-meta" style="color:var(--accent2)">✓ 18.05.2026 13:54 · 8 лотов · авто 120 сек</span>
+        </div>
+      </div>
+      <p class="caption">Без логина обновление <strong>пропускается</strong> — показывается последний сохранённый файл.</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide">
+      <div class="tag">Архитектура</div>
+      <h2>Как устроено технически</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Компонент</th><th>Назначение</th></tr></thead>
+        <tbody>
+          <tr><td>viewer.html</td><td>Интерфейс: таблица, фильтры, модалки, расчёты</td></tr>
+          <tr><td>server.py</td><td>Локальный HTTP-сервер, API для UI</td></tr>
+          <tr><td>script_auction.py</td><td>Логин + выгрузка лотов (Playwright + API)</td></tr>
+          <tr><td>script_bid.py</td><td>Логин + ставка через bid/change API</td></tr>
+          <tr><td>Playwright</td><td>Авторизация и сессия для запросов к Maxposter</td></tr>
+          <tr><td>AuctionViewer.exe</td><td>Сборка «в один файл» для других компьютеров</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide">
+      <div class="tag">Особенности реализации</div>
+      <h2>Технические плюсы</h2>
+      <ul>
+        <li><strong>API вместо кликов по UI</strong> для ставок — стабильнее, быстрее, проще сопровождать.</li>
+        <li><strong>Очередь обновлений</strong> — нет конфликтов при автообновлении и ручной перезагрузке.</li>
+        <li><strong>Кэш расчётов</strong> — повторный расчёт выкупа без лишних запросов.</li>
+        <li><strong>Безопасный режим</strong> — без логина/пароля обновление просто пропускается, приложение не падает.</li>
+        <li><strong>Готовность к порталу</strong> — UI и API можно вынести в корпоративный backend с фоновыми задачами.</li>
+      </ul>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide">
+      <div class="tag">Эффект для компании</div>
+      <h2>Бизнес-результат</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Скорость</h3>
+          <p>Меньше времени на один лот: всё в таблице, ставка из модалки, без лишних переходов по сайту.</p>
+        </div>
+        <div class="card">
+          <h3>Качество решений</h3>
+          <p>Сравнение со складом и продажами группы, расчёт выкупа и подсветка строк снижают риск переплаты и «чужих» лотов.</p>
+        </div>
+        <div class="card">
+          <h3>Масштабирование</h3>
+          <p>На портале — итоги торгов, история и автоматический рабочий лист для связи с клиентом после выигрыша лота.</p>
+        </div>
+        <div class="card">
+          <h3>Снижение ошибок</h3>
+          <p>Явная сумма ставки, min/step в таблице, лог запроса/ответа API — меньше «случайных» кликов.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide">
+      <div class="tag">Сравнение</div>
+      <h2>До и после</h2>
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Критерий</th><th>Ручная работа на сайте</th><th>Наше решение</th></tr></thead>
+        <tbody>
+          <tr><td>Обзор лотов</td><td>Списки на сайте, по одному</td><td>Таблица + фильтры + KPI</td></tr>
+          <tr><td>Склад / продажи группы</td><td>Отдельные отчёты, без связи с лотом</td><td>Badges stock-score и sale-score в таблице</td></tr>
+          <tr><td>Выкуп</td><td>Отдельный расчёт</td><td>В строке + детализация в модалке (Kors API)</td></tr>
+          <tr><td>Ставка</td><td>5–10 действий на лот</td><td>Модалка → подтверждение → API</td></tr>
+          <tr><td>Обновление данных</td><td>Ручное F5</td><td>Кнопка + авто по интервалу</td></tr>
+          <tr><td>Итоги торгов</td><td>Искать вручную на Maxposter</td><td>На портале: победа / проигрыш, финальная цена</td></tr>
+          <tr><td>Связь с клиентом</td><td>Менеджер сам создаёт задачу</td><td>Авто рабочий лист после результата торгов</td></tr>
+          <tr><td>Развёртывание</td><td>—</td><td>exe сейчас · портал — целевая среда</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- Портал -->
+    <section class="slide slide-top">
+      <div class="tag">Портал</div>
+      <h2>После торгов: результаты и работа с клиентом</h2>
+      <p class="sub">На корпоративном портале менеджер видит итог аукциона и сразу получает задачу на связь с продавцом.</p>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Результаты торгов</h3>
+          <p>Статус лота после завершения: выиграли / проиграли, итоговая ставка, дата окончания. История по команде — без повторного входа на Maxposter.</p>
+          <div class="compare-flow" style="margin-top:12px">
+            <span>Торги завершены</span>
+            <span class="arrow">→</span>
+            <span>Итог на портале</span>
+            <span class="arrow">→</span>
+            <span>Отчёт / аналитика</span>
+          </div>
+        </div>
+        <div class="compare-card">
+          <h3>Рабочий лист для менеджера</h3>
+          <p>При выигрыше лота портал <strong>автоматически создаёт рабочий лист</strong> — контакты, авто, сумма, шаг для связи с клиентом.</p>
+          <div class="portal-sheet">
+            <h4>Рабочий лист · лот выигран</h4>
+            <div class="row"><span>Авто:</span> <b>Kia Ceed, 2007</b></div>
+            <div class="row"><span>Итоговая ставка:</span> <b>520 000 ₽</b></div>
+            <div class="row"><span>Продавец:</span> <b>Калуга · Maxposter</b></div>
+            <div class="row"><span>Задача:</span> <b>Связаться с клиентом, согласовать выкуп</b></div>
+            <span class="portal-badge">Создано автоматически</span>
+          </div>
+        </div>
+      </div>
+      <p class="caption">Связка «аукцион → задачи портала» закрывает цикл: от просмотра лота до контакта с продавцом.</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide">
+      <div class="tag">Дорожная карта</div>
+      <h2>Следующие шаги</h2>
+      <ul>
+        <li><strong>Интеграция в корпоративный портал</strong> — единый вход, роли, аудит ставок.</li>
+        <li><strong>Итоги торгов на портале</strong> — победа / проигрыш, финальная цена, история по лотам.</li>
+        <li><strong>Авто рабочий лист</strong> — при выигрыше создаётся задача менеджеру для связи с клиентом (продавцом).</li>
+        <li><strong>База данных</strong> вместо JSON-файла — история, отчёты, аналитика.</li>
+        <li><strong>Фоновые задачи</strong> — worker + статус «обновление идёт» для всей команды.</li>
+        <li><strong>Хранение кредов</strong> в защищённом хранилище, не в браузере.</li>
+        <li><strong>Правила автоставок</strong> — лимиты, стратегии от minAvailableBid / расчёта.</li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide">
+      <div class="tag">Итог</div>
+      <h1>Инструмент превращает аукцион из рутины в управляемый процесс</h1>
+      <p class="sub">MVP работает локально. На портале — команда, итоги торгов и автоматические рабочие листы для связи с клиентом.</p>
+      <div class="kpi-row">
+        <div class="kpi"><div class="v">−время</div><div class="t">на обработку лота</div></div>
+        <div class="kpi"><div class="v">+контроль</div><div class="t">цены и рисков</div></div>
+        <div class="kpi"><div class="v">+CRM</div><div class="t">рабочие листы на портале</div></div>
+      </div>
+      <p class="logo-line" style="margin-top:40px">Демо: http://localhost:8005/viewer.html · Запуск: AuctionViewer.exe / start_server.bat</p>
+    </section>
+
+  </div>
+
+  <div class="progress" id="progress">1 / 16</div>
+  <div class="nav">
+    <button type="button" id="prev">← Назад</button>
+    <button type="button" id="next">Далее →</button>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    let i = 0;
+    const progress = document.getElementById("progress");
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+      progress.textContent = `${i + 1} / ${slides.length}`;
+    }
+    document.getElementById("prev").onclick = () => show(i - 1);
+    document.getElementById("next").onclick = () => show(i + 1);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); show(i + 1); }
+      if (e.key === "ArrowLeft") show(i - 1);
+    });
+    let touchX = null;
+    document.addEventListener("touchstart", (e) => {
+      touchX = e.changedTouches[0]?.screenX ?? null;
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (touchX == null) return;
+      const dx = (e.changedTouches[0]?.screenX ?? touchX) - touchX;
+      touchX = null;
+      if (Math.abs(dx) < 48) return;
+      if (dx < 0) show(i + 1);
+      else show(i - 1);
+    }, { passive: true });
+    show(0);
+  </script>
+</body>
+</html>

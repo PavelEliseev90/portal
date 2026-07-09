@@ -126,15 +126,27 @@ def _venue_display(lot, offer=None) -> dict:
 
 
 def _seller_place_display(lot, offer=None) -> dict:
-    """Место продавца для вкладки «Основная»."""
+    """Место продажи лота (sellerPlaceName) — отдельно от справочника площадки AvitoVenue."""
     venue = _venue_display(lot, offer)
     seller_raw = (lot.seller_place_name or '').strip()
+    seller_name = seller_raw
+    seller_city = ''
+    if seller_raw and ',' in seller_raw:
+        city_part, _, rest = seller_raw.partition(',')
+        if rest.strip():
+            seller_city = city_part.strip()
+            seller_name = rest.strip()
+
+    dealer_id = venue.get('dealer_id')
+    if not dealer_id and offer and getattr(offer, 'account', None):
+        dealer_id = offer.account.dealer_id
+
     return {
-        'dealer_id': venue.get('dealer_id'),
-        'name': venue.get('name') or seller_raw or '—',
-        'city': venue.get('city') or '',
+        'dealer_id': dealer_id,
+        'name': seller_name or '—',
+        'city': seller_city or '',
         'seller_place_raw': seller_raw or '—',
-        'label': venue.get('label') or '—',
+        'label': seller_raw or '—',
         'has_venue': bool(lot.venue_id),
     }
 

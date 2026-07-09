@@ -1,0 +1,9 @@
+.env
+maxposter_session.json
+offers_dump.json
+offers_dump_*.json
+dealers_status.json
+build/
+dist/
+__pycache__/
+*.pyc

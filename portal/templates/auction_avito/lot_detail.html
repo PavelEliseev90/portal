@@ -154,7 +154,8 @@
           {% if params.venue.name %}{{ params.venue.name }}{% endif %}
           {% if params.venue.city %} · {{ params.venue.city }}{% endif %}
           {% if params.venue.dealer_id %} · dealerId {{ params.venue.dealer_id }}{% endif %}
-        {% elif params.lot.seller_place_name %}
+        {% endif %}
+        {% if params.lot.seller_place_name %}
           · <span class="bi bi-geo-alt"></span> {{ params.lot.seller_place_name }}
         {% endif %}
         {% if params.lot.finish_at %} · до {{ params.lot.finish_at|date:"d.m.Y H:i" }}{% endif %}
