@@ -9,7 +9,8 @@ from refs.models import RefCity
 
 def extract_venue_hints(*sources: dict | None) -> dict:
     """
-    Собирает dealerId, наименование и город (строка) из корня offer / lot / calculate_car.
+    Собирает dealerId, наименование и город площадки из корня offer / calculate_car.
+    sellerPlaceName — только место продажи лота, сюда не включаем.
     """
     dealer_id = None
     name = ''
@@ -23,11 +24,11 @@ def extract_venue_hints(*sources: dict | None) -> dict:
                 dealer_id = int(src['dealerId'])
             except (TypeError, ValueError):
                 pass
-        for key in ('sellerPlaceName', 'dealerName', 'placeName', 'sellerPlace'):
+        for key in ('dealerName', 'placeName', 'sellerPlace'):
             val = src.get(key)
             if val and not name:
                 name = str(val).strip()
-        for key in ('sellerPlaceCity', 'dealerCity', 'city', 'placeCity'):
+        for key in ('dealerCity', 'city', 'placeCity'):
             val = src.get(key)
             if val and not city_name:
                 if isinstance(val, dict):
@@ -84,6 +85,15 @@ def upsert_venue(hints: dict) -> AvitoVenue | None:
 
 
 def resolve_venue_from_payload(payload: dict, lot_data: dict | None = None) -> AvitoVenue | None:
+    """dealerId из offer/calculate; lot_data — только dealerId (без sellerPlaceName)."""
     lot_block = lot_data if lot_data is not None else (payload.get('lot') or {})
-    hints = extract_venue_hints(payload, lot_block)
+    lot_hints = {}
+    if lot_block.get('dealerId') is not None:
+        lot_hints = {'dealerId': lot_block['dealerId']}
+    hints = extract_venue_hints(payload, lot_hints or None)
     return upsert_venue(hints)
+
+
+def get_or_create_venue_by_dealer(dealer_id: int) -> AvitoVenue | None:
+    """Площадка по dealerId без подстановки места продажи лота."""
+    return upsert_venue({'dealer_id': dealer_id, 'name': '', 'city_name': ''})
