@@ -30,6 +30,41 @@ def _extract_ids(payload: dict) -> dict:
     }
 
 
+def _int_id(value):
+    if value in (None, ''):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def ensure_lot_synced_from_calculate_request(payload: dict) -> dict | None:
+    """
+    Создаёт/обновляет лот и оффер на портале до расчёта цены.
+    Ключ связки: lotOfferId (оффер) + lotId (лот Maxposter) — оба обязательны.
+    """
+    payload = normalize_calculate_car_request(payload)
+    ids = _extract_ids(payload)
+    lot_id = _int_id(ids['lot_id'])
+    lot_offer_id = _int_id(ids['lot_offer_id'])
+    if not lot_id or not lot_offer_id:
+        return None
+
+    payload['lotId'] = lot_id
+    payload['lotOfferId'] = lot_offer_id
+    lot, offer = upsert_lot_from_calculate_request(payload)
+    if offer is None:
+        return None
+
+    from auction_avito.services.offer_api import build_offer_state_response
+
+    state = build_offer_state_response(offer)
+    state['lotId'] = lot.lot_id
+    state['lotOfferId'] = offer.lot_offer_id
+    return state
+
+
 def normalize_calculate_car_request(payload: dict) -> dict:
     """
     Нормализует тело запроса: полный offer Maxposter или плоский lot.
@@ -97,14 +132,17 @@ def build_offer_sync_payload(payload: dict) -> dict | None:
     """Полный offer для upsert_offer_from_api (расчёт / ставка / парсер)."""
     payload = normalize_calculate_car_request(payload)
     ids = _extract_ids(payload)
-    if not ids['lot_offer_id'] or not ids['lot_id']:
+    lot_id = _int_id(ids['lot_id'])
+    lot_offer_id = _int_id(ids['lot_offer_id'])
+    if not lot_offer_id or not lot_id:
         return None
 
     lot_data = enrich_lot_data_from_payload(payload)
-    lot_data['lotId'] = int(ids['lot_id'])
+    lot_data['lotId'] = lot_id
 
     out = dict(payload)
-    out['lotOfferId'] = int(ids['lot_offer_id'])
+    out['lotId'] = lot_id
+    out['lotOfferId'] = lot_offer_id
     out['lot'] = lot_data
     out.setdefault('bidderId', ids['bidder_id'])
     out.setdefault('dealerId', ids['dealer_id'])
@@ -302,9 +340,14 @@ def build_calculation_sync_response(calc) -> dict | None:
         )
     if offer is None:
         lot = calc.lot
+        lot_offer_id = None
+        raw = calc.raw_request_json if isinstance(calc.raw_request_json, dict) else {}
+        ids = _extract_ids(raw)
+        lot_offer_id = _int_id(ids.get('lot_offer_id'))
         return {
             'ok': True,
             'lotId': lot.lot_id if lot else None,
+            'lotOfferId': lot_offer_id,
             'lotPk': lot.pk if lot else None,
             'bid': None,
             'bidMadeAt': '',
@@ -313,4 +356,6 @@ def build_calculation_sync_response(calc) -> dict | None:
 
     state = build_offer_state_response(offer)
     state['calculationId'] = calc.pk
+    state['lotId'] = offer.lot.lot_id if offer.lot_id else state.get('lotId')
+    state['lotOfferId'] = offer.lot_offer_id
     return state

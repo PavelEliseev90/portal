@@ -510,6 +510,8 @@
   const calcCache = new Map();
   const portalOfferCache = new Map();
   let portalStateFetchToken = 0;
+  let portalStateRefreshTimer = null;
+  let portalStateRefreshSlice = null;
   /** @type {Map<string, {offer: object, activeInFeed: boolean, lastSeenAt: number, removedAt: number|null}>} */
   const offerStore = new Map();
   let offerStoreBootstrapped = false;
@@ -535,6 +537,44 @@
     }
   }
 
+  /** Поля, по которым решаем: нужен повторный пересчёт после reload из Maxposter. */
+  function offerSyncFingerprint(offer){
+    if (!offer || typeof offer !== "object") return "";
+    const lot = offer.lot || {};
+    return JSON.stringify({
+      updatedAt: offer.updatedAt ?? null,
+      status: safeGet(offer, "status.status", null),
+      bid: offer.bid ?? null,
+      minPrice: lot.minPrice ?? null,
+      maxBid: lot.maxBid ?? null,
+      minAvailableBid: lot.minAvailableBid ?? null,
+      maxAvailableBid: lot.maxAvailableBid ?? null,
+      minBidStep: offer.minBidStep ?? null,
+      finishAt: lot.finishAt ?? null,
+    });
+  }
+  function collectKeysNeedingAutoCalc(allKeys, changedKeys){
+    const changedSet = new Set((changedKeys || []).map(String));
+    const keys = [];
+    for (const key of allKeys || []){
+      const k = String(key);
+      if (changedSet.has(k)) calcCache.delete(k);
+      const entry = offerStore.get(k);
+      if (!entry) continue;
+      const offer = offerWithViewerMeta(entry);
+      const fp = offerSyncFingerprint(offer);
+      const cached = calcCache.get(k);
+      if (!cached?.ok){
+        keys.push(k);
+        continue;
+      }
+      if (cached.syncFp !== fp){
+        calcCache.delete(k);
+        keys.push(k);
+      }
+    }
+    return keys;
+  }
   function enqueueAutoCalc(keys){
     let n = 0;
     for (const key of keys){
@@ -608,11 +648,21 @@
   function replaceOffersFromFeed(data){
     const feed = Array.isArray(data?.offers) ? data.offers : [];
     const now = Date.now();
+    const prevStore = new Map(offerStore);
+    const allKeys = [];
     const newKeys = [];
+    const changedKeys = [];
     offerStore.clear();
     for (const o of feed){
       const key = calcKey(o);
-      newKeys.push(key);
+      allKeys.push(key);
+      const fp = offerSyncFingerprint(o);
+      const prev = prevStore.get(key);
+      if (!prev){
+        newKeys.push(key);
+      }else if (offerSyncFingerprint(prev.offer) !== fp){
+        changedKeys.push(key);
+      }
       offerStore.set(key, {
         offer: o,
         activeInFeed: true,
@@ -621,7 +671,7 @@
       });
     }
     offerStoreBootstrapped = true;
-    return { newKeys, feedCount: feed.length };
+    return { allKeys, newKeys, changedKeys, feedCount: feed.length };
   }
   function offerWithViewerMeta(entry){
     return {
@@ -845,9 +895,16 @@
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
+  function resolveOfferIds(offer){
+    const lot = offer?.lot || {};
+    const lotOfferId = offer?.lotOfferId ?? lot?.lotOfferId ?? null;
+    const lotId = lot?.lotId ?? offer?.lotId ?? null;
+    return { lotOfferId, lotId, lot };
+  }
   function buildOfferSyncPayload(offer){
     if (!offer || typeof offer !== "object") return {};
-    const lot = { ...(offer.lot || {}) };
+    const { lotOfferId, lotId, lot: lotSrc } = resolveOfferIds(offer);
+    const lot = { ...lotSrc };
     const dealerId = resolveDealerIdForCalc(offer);
     if (dealerId) {
       const n = Number(dealerId);
@@ -858,12 +915,13 @@
     if ((!lot.images || !lot.images.length) && offer.images?.length) {
       lot.images = offer.images;
     }
+    if (lotId != null && lotId !== "") lot.lotId = Number(lotId);
     const resolvedDealerId = offer.dealerId ?? lot.dealerId ?? (Number(dealerId) || dealerId || 2107);
-    return {
+    const payload = {
       ...offer,
       lot,
-      lotId: lot.lotId ?? offer.lotId,
-      lotOfferId: offer.lotOfferId ?? lot.lotOfferId,
+      lotId: lotId != null && lotId !== "" ? Number(lotId) : undefined,
+      lotOfferId: lotOfferId != null && lotOfferId !== "" ? Number(lotOfferId) : undefined,
       bidderId: offer.bidderId ?? 72,
       dealerId: resolvedDealerId,
       minPrice: lot.minPrice,
@@ -900,6 +958,9 @@
       isBuyoutOnSiteAvailable: offer.isBuyoutOnSiteAvailable,
       isInspectionOnSiteAvailable: offer.isInspectionOnSiteAvailable,
     };
+    if (payload.lotId == null) delete payload.lotId;
+    if (payload.lotOfferId == null) delete payload.lotOfferId;
+    return payload;
   }
   function buildCalcPayload(offer){
     return buildOfferSyncPayload(offer);
@@ -933,33 +994,87 @@
       : (time ? ` title="Время: ${fmtDateTime(time)}"` : "");
     return `<div class="mono nowrap"${hint}><strong>${escapeHtml(fmtRub(bid))}</strong>${mpDiff ? `<div class="muted small">MP ${escapeHtml(fmtRub(mpBid))}</div>` : ""}</div>`;
   }
-  async function refreshPortalOffersState(offers){
-    const ids = [];
-    const seen = new Set();
-    for (const o of offers || []){
-      const id = o?.lotOfferId;
-      if (id == null || id === "" || seen.has(String(id))) continue;
-      seen.add(String(id));
-      ids.push(Number(id));
+  function updateOurBidCellsForSlice(slice){
+    for (const offer of slice || []){
+      const key = calcKey(offer);
+      const tr = document.querySelector(`tr[data-key="${CSS.escape(String(key))}"]`);
+      if (!tr) continue;
+      const cell = tr.querySelector('[data-cell="ourbid"]');
+      if (cell) cell.innerHTML = renderOurBidCell(offer);
     }
-    if (!ids.length) return;
+  }
+  function schedulePortalOffersStateRefresh(slice){
+    if (!slice?.length) return;
+    portalStateRefreshSlice = slice;
+    if (portalStateRefreshTimer) clearTimeout(portalStateRefreshTimer);
+    portalStateRefreshTimer = setTimeout(async () => {
+      portalStateRefreshTimer = null;
+      const target = portalStateRefreshSlice;
+      portalStateRefreshSlice = null;
+      if (!target?.length) return;
+      await refreshPortalOffersState(target);
+      updateOurBidCellsForSlice(target);
+    }, 400);
+  }
+  async function refreshPortalOffersState(offers){
+    const offerIds = [];
+    const lotIds = [];
+    const seenOffer = new Set();
+    const seenLot = new Set();
+    for (const o of offers || []){
+      const { lotOfferId, lotId } = resolveOfferIds(o);
+      if (lotOfferId != null && lotOfferId !== "" && !seenOffer.has(String(lotOfferId))){
+        seenOffer.add(String(lotOfferId));
+        offerIds.push(Number(lotOfferId));
+      }
+      if (lotId != null && lotId !== "" && !seenLot.has(String(lotId))){
+        seenLot.add(String(lotId));
+        lotIds.push(Number(lotId));
+      }
+    }
+    if (!offerIds.length && !lotIds.length) return;
     const { offersState } = getPortalApiUrls();
     const token = ++portalStateFetchToken;
     try{
       const resp = await fetch(offersState, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ lotOfferIds: ids.slice(0, 120) }),
+        body: JSON.stringify({
+          lotOfferIds: offerIds.slice(0, 120),
+          lotIds: lotIds.slice(0, 120),
+        }),
       });
       if (!resp.ok) return;
       const data = await resp.json();
       if (token !== portalStateFetchToken) return;
       const byOffer = data?.byLotOfferId || {};
+      const byLot = data?.byLotId || {};
       for (const o of offers || []){
-        const sync = byOffer[String(o.lotOfferId)];
+        const { lotOfferId, lotId } = resolveOfferIds(o);
+        const sync = byOffer[String(lotOfferId)] || byLot[String(lotId)];
         if (sync) applyPortalSyncToOffer(calcKey(o), sync, o);
       }
     }catch(_){}
+  }
+  async function fetchPortalOfferState(offer){
+    const { lotOfferId, lotId } = resolveOfferIds(offer);
+    if (lotOfferId == null && lotId == null) return null;
+    const { offerGet } = getPortalApiUrls();
+    const body = {};
+    if (lotOfferId != null && lotOfferId !== "") body.lotOfferId = Number(lotOfferId);
+    if (lotId != null && lotId !== "") body.lotId = Number(lotId);
+    try{
+      const resp = await fetch(offerGet, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return data?.ok === false ? null : data;
+    }catch(_){
+      return null;
+    }
   }
   async function ensureOfferSyncedInPortal(offer){
     const { calc: calcUrl } = getPortalApiUrls();
@@ -979,17 +1094,17 @@
     return data;
   }
   function buildPortalBidPayload(offer, { bid, bidMadeAt }){
-    const lot = offer?.lot || {};
+    const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
     const payload = {
       Bid: Math.round(Number(bid)),
       BidMadeAt: bidMadeAt || formatBidMadeAt(),
       Comment: BID_COMMENT,
     };
-    if (offer?.lotOfferId != null && offer.lotOfferId !== "") {
-      payload.LotOfferId = Number(offer.lotOfferId);
+    if (lotOfferId != null && lotOfferId !== "") {
+      payload.LotOfferId = Number(lotOfferId);
     }
-    if (lot?.lotId != null && lot.lotId !== "") {
-      payload.LotId = Number(lot.lotId);
+    if (lotId != null && lotId !== "") {
+      payload.LotId = Number(lotId);
     }
     if (offer?.bidderId != null && offer.bidderId !== "") {
       payload.BidderId = Number(offer.bidderId);
@@ -1050,8 +1165,7 @@
     const password = $("loginPassword").value;
     if (!email || !password) throw new Error("Заполните логин и пароль перед ставкой.");
     const lotOfferId = offer?.lotOfferId;
-    const lot = offer?.lot || {};
-    const lotId = lot?.lotId;
+    const { lotId, lot } = resolveOfferIds(offer);
     if (!lotOfferId) throw new Error("Не найден lotOfferId для этого лота.");
     if (!lotId) throw new Error("Не найден lotId для этого лота.");
     const minAvailableBid = Number(lot?.minAvailableBid);
@@ -1122,6 +1236,9 @@
     }
   }
   async function calculateForOffer(offer){
+    const { lotOfferId, lotId } = resolveOfferIds(offer);
+    if (!lotOfferId) throw new Error("Не найден lotOfferId — лот не синхронизируется с порталом.");
+    if (!lotId) throw new Error("Не найден lotId — лот не синхронизируется с порталом.");
     const { calc: calcUrl } = getPortalApiUrls();
     const resp = await fetch(calcUrl, {
       method: "POST",
@@ -1160,9 +1277,17 @@
     }
     try{
       const result = await calculateForOffer(offer);
-      const sync = result.answer?.avito_sync || result.raw?.answer?.avito_sync;
+      let sync = result.answer?.avito_sync || result.raw?.answer?.avito_sync;
+      if (!sync){
+        sync = await fetchPortalOfferState(offer);
+      }
       if (sync) applyPortalSyncToOffer(key, sync, offer);
-      calcCache.set(key, { ok: true, answer: result.answer, raw: result.raw });
+      calcCache.set(key, {
+        ok: true,
+        answer: result.answer,
+        raw: result.raw,
+        syncFp: offerSyncFingerprint(offer),
+      });
       updateRowAfterCalc(key, offer);
     }catch(err){
       calcCache.set(key, { ok: false, err: String(err?.message || err || "Ошибка") });
@@ -1348,12 +1473,16 @@
   // --- render ---
   function render(data){
     const feedTs = data?.ts ?? null;
-    let newKeys = [];
+    let feedDelta = null;
     let feedCount = Array.isArray(data?.offers) ? data.offers.length : 0;
     if (feedTs !== lastFeedTs) {
       const applied = replaceOffersFromFeed(data);
-      newKeys = applied.newKeys;
       feedCount = applied.feedCount;
+      feedDelta = {
+        newKeys: applied.newKeys,
+        changedKeys: applied.changedKeys,
+        keysToCalc: collectKeysNeedingAutoCalc(applied.allKeys, applied.changedKeys),
+      };
       lastFeedTs = feedTs;
     }
     const offers = getAllOffersForDisplay();
@@ -1462,14 +1591,28 @@
       `;
     }).join("");
     $("rows").innerHTML = rows || `<tr><td colspan="16" class="muted">Ничего не найдено по фильтрам.</td></tr>`;
-    const calcN = enqueueAutoCalc(newKeys);
-    refreshPortalOffersState(displaySlice).then(() => {
-      if (portalOfferCache.size) render(window.__DATA__);
-    });
-    if (calcN > 0){
+    const calcN = enqueueAutoCalc(feedDelta?.keysToCalc ?? []);
+    if (feedDelta) schedulePortalOffersStateRefresh(displaySlice);
+    if (calcN > 0 && feedDelta){
       const base = $("loadedMeta").textContent || "";
       if (!base.includes("авторасчёт")) {
-        $("loadedMeta").textContent = `${base} · авторасчёт новых: ${calcN}`;
+        const changedSet = new Set(feedDelta.changedKeys.map(String));
+        const newSet = new Set(feedDelta.newKeys.map(String));
+        let newN = 0;
+        let changedN = 0;
+        let retryN = 0;
+        for (const k of feedDelta.keysToCalc){
+          const key = String(k);
+          if (newSet.has(key)) newN++;
+          else if (changedSet.has(key)) changedN++;
+          else retryN++;
+        }
+        const parts = [];
+        if (newN) parts.push(`новых: ${newN}`);
+        if (changedN) parts.push(`изменённых: ${changedN}`);
+        if (retryN) parts.push(`повтор: ${retryN}`);
+        const label = parts.length ? parts.join(", ") : String(calcN);
+        $("loadedMeta").textContent = `${base} · авторасчёт (${label})`;
       }
     }
     if (!$("rows").dataset.bound) {
