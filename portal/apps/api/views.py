@@ -285,9 +285,6 @@ def avito_auction_bid_set(request):
         }
     }
     """
-    from django.utils import timezone
-    from django.utils.dateparse import parse_datetime
-
     from auction_avito.chat_utils import notify_bid_placed
     from auction_avito.models import AvitoLotOffer
     from auction_avito.services.bid_api import offer_not_found_payload, resolve_or_create_offer_for_bid
@@ -296,6 +293,7 @@ def avito_auction_bid_set(request):
         build_offer_sync_payload,
         upsert_lot_from_calculate_request,
     )
+    from auction_avito.services.sync import _dt
     from auction_avito.services.offer_api import build_offer_state_response
 
     body_unicode = request.body.decode().replace("'", '"')
@@ -344,12 +342,7 @@ def avito_auction_bid_set(request):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    bid_made_at = parse_datetime(bid_made_at_raw) if bid_made_at_raw else None
-    if bid_made_at and timezone.is_naive(bid_made_at):
-        bid_made_at = timezone.make_aware(
-            bid_made_at,
-            timezone.get_current_timezone(),
-        )
+    bid_made_at = _dt(bid_made_at_raw) if bid_made_at_raw else None
 
     raw_offer_json = dict(offer.raw_offer_json or {})
     raw_offer_json['lotOfferId'] = offer.lot_offer_id
@@ -558,20 +551,16 @@ def calculate_car(request):
         attach_avito_sync_to_answer,
         normalize_calculate_car_request,
         persist_auction_calculation,
-        sync_lot_for_calculate_car,
     )
 
     answer = ''
     auction = False
     info = None
     dc = None
-    early_sync = None
-    sync_error = ''
 
     try:
         info = json.loads(request.body)
         info = normalize_calculate_car_request(info)
-        early_sync, sync_error = sync_lot_for_calculate_car(info)
 
         autohubVehicle  = info['autohubVehicle']
         vehicle         = info['vehicle']
@@ -982,13 +971,11 @@ def calculate_car(request):
             unit=dc, 
             user=request.user,
         )
-        answer = attach_avito_sync_to_answer(answer, calc, early_sync, sync_error)
+        answer = attach_avito_sync_to_answer(answer, calc)
 
     except Exception as e:
         answer = str(e)
         if isinstance(info, dict):
-            if not early_sync:
-                early_sync, sync_error = sync_lot_for_calculate_car(info)
             calc = persist_auction_calculation(
                 info,
                 {},
@@ -997,11 +984,9 @@ def calculate_car(request):
                 error_message=str(e),
             )
             if calc and isinstance(answer, str):
-                answer = attach_avito_sync_to_answer({'error': answer}, calc, early_sync, sync_error)
+                answer = attach_avito_sync_to_answer({'error': answer}, calc)
             elif calc and isinstance(answer, dict):
-                answer = attach_avito_sync_to_answer(answer, calc, early_sync, sync_error)
-            elif isinstance(answer, str):
-                answer = attach_avito_sync_to_answer({'error': answer}, None, early_sync, sync_error)
+                answer = attach_avito_sync_to_answer(answer, calc)
 
     to_json = {
         'answer'     : answer,
