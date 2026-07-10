@@ -7,9 +7,13 @@
     for item in payload['offers']:
         upsert_offer_from_api(account, item)
 """
+import re
+
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+
+_RE_NAIVE_DT = re.compile(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
 
 from auction_avito.models import (
     AvitoAutotekaEvent,
@@ -66,17 +70,29 @@ def enrich_lot_data_from_payload(payload: dict) -> dict:
     return lot
 
 
+def _strip_tz(value):
+    """2026-07-10T12:45:00+03:00 → 2026-07-10T12:45:00"""
+    if value in (None, ''):
+        return value
+    if hasattr(value, 'year') and not isinstance(value, str):
+        value = value.isoformat()
+    s = str(value).strip()
+    m = _RE_NAIVE_DT.match(s)
+    return m.group(1) if m else s
+
+
 def _dt(value):
-    if not value:
+    """Строка или datetime → naive local (USE_TZ=False)."""
+    if value in (None, ''):
         return None
-    if hasattr(value, 'year'):
+    if hasattr(value, 'year') and not isinstance(value, str):
         dt = value
     else:
-        dt = parse_datetime(value)
+        dt = parse_datetime(_strip_tz(value))
     if dt is None:
         return None
-    if timezone.is_naive(dt):
-        return timezone.make_aware(dt, timezone.get_current_timezone())
+    if timezone.is_aware(dt):
+        return timezone.make_naive(dt, timezone.get_current_timezone())
     return dt
 
 

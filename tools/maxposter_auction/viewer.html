@@ -884,6 +884,13 @@
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
+  const PORTAL_DATE_KEYS = ["finishAt", "expiresAt", "originFinishAt", "createdAt", "updatedAt", "bidMadeAt"];
+  /** Убирает +03:00 / Z — портал (USE_TZ=False) ожидает naive: 2026-07-10T12:45:00 */
+  function normalizePortalDatetime(value){
+    if (value == null || value === "") return value;
+    const m = String(value).trim().match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
+    return m ? m[1] : value;
+  }
   function resolveOfferIds(offer){
     const lot = offer?.lot || {};
     const lotOfferId = offer?.lotOfferId ?? lot?.lotOfferId ?? null;
@@ -951,6 +958,11 @@
     };
     if (payload.lotId == null) delete payload.lotId;
     if (payload.lotOfferId == null) delete payload.lotOfferId;
+    for (const k of PORTAL_DATE_KEYS){
+      if (payload[k]) payload[k] = normalizePortalDatetime(payload[k]);
+      if (lot[k]) lot[k] = normalizePortalDatetime(lot[k]);
+    }
+    payload.lot = lot;
     return payload;
   }
   function applyPortalSyncToOffer(key, sync, offer){
@@ -1060,9 +1072,7 @@
     }
     const ok = !error && answer != null && answer.estimation_price != null;
     const sync = (typeof answer === "object" && answer?.avito_sync) ? answer.avito_sync : null;
-    const syncError = (typeof answer === "object" && answer?.avito_sync_error) ? String(answer.avito_sync_error) : "";
-    const portalSynced = Boolean(sync && (sync.lotPk != null || sync.lotId != null));
-    return { raw: data, answer, ok, error, sync, syncError, portalSynced };
+    return { raw: data, answer, ok, error, sync };
   }
   function buildPortalBidPayload(offer, { bid, bidMadeAt }){
     const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
@@ -1249,13 +1259,6 @@
       if (result.sync) applyPortalSyncToOffer(key, result.sync, offer);
       if (!result.ok) {
         throw new Error(result.error || "Ошибка расчёта");
-      }
-      if (!result.portalSynced) {
-        const base = getPortalBase();
-        throw new Error(
-          (result.syncError || "Лот не создан на портале (нет avito_sync).")
-          + ` Проверьте URL портала: ${base}`
-        );
       }
       calcCache.set(key, {
         ok: true,

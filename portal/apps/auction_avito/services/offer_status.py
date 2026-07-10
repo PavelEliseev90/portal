@@ -2,6 +2,8 @@
 from django.db.models import Q
 from django.utils import timezone
 
+from auction_avito.services.sync import _dt
+
 TERMINAL_OFFER_STATUSES = ('finished', 'won', 'lost')
 
 STATUS_NAMES = {
@@ -12,21 +14,13 @@ STATUS_NAMES = {
 }
 
 
-def _aware_datetime(value):
-    if value is None:
-        return None
-    if timezone.is_naive(value):
-        return timezone.make_aware(value, timezone.get_current_timezone())
-    return value
-
-
 def normalize_offer_status(status_code: str, finish_at=None, now=None) -> tuple[str, str]:
     """
     Нормализует status_code оффера с учётом finish_at лота.
     Пустой статус + finish_at в будущем → inprogress.
     """
-    now = _aware_datetime(now) or timezone.now()
-    finish_at = _aware_datetime(finish_at)
+    now = _dt(now) or timezone.now()
+    finish_at = _dt(finish_at)
     code = (status_code or '').strip()
 
     if code in TERMINAL_OFFER_STATUSES:
@@ -43,14 +37,14 @@ def normalize_offer_status(status_code: str, finish_at=None, now=None) -> tuple[
 
 def active_lots_q(now=None):
     """Активный лот: finish_at в будущем или оффер inprogress, без терминального статуса."""
-    now = now or timezone.now()
+    now = _dt(now) or timezone.now()
     return (
         Q(finish_at__gt=now) | Q(offers__status_code='inprogress')
     ) & ~Q(offers__status_code__in=TERMINAL_OFFER_STATUSES)
 
 
 def inactive_lots_q(now=None):
-    now = now or timezone.now()
+    now = _dt(now) or timezone.now()
     return (
         Q(finish_at__lte=now, finish_at__isnull=False)
         | Q(offers__status_code__in=TERMINAL_OFFER_STATUSES)
