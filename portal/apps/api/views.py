@@ -558,16 +558,20 @@ def calculate_car(request):
         attach_avito_sync_to_answer,
         normalize_calculate_car_request,
         persist_auction_calculation,
+        sync_lot_for_calculate_car,
     )
 
     answer = ''
     auction = False
     info = None
     dc = None
+    early_sync = None
+    sync_error = ''
 
     try:
         info = json.loads(request.body)
         info = normalize_calculate_car_request(info)
+        early_sync, sync_error = sync_lot_for_calculate_car(info)
 
         autohubVehicle  = info['autohubVehicle']
         vehicle         = info['vehicle']
@@ -978,11 +982,13 @@ def calculate_car(request):
             unit=dc, 
             user=request.user,
         )
-        answer = attach_avito_sync_to_answer(answer, calc)
+        answer = attach_avito_sync_to_answer(answer, calc, early_sync, sync_error)
 
     except Exception as e:
         answer = str(e)
         if isinstance(info, dict):
+            if not early_sync:
+                early_sync, sync_error = sync_lot_for_calculate_car(info)
             calc = persist_auction_calculation(
                 info,
                 {},
@@ -991,9 +997,11 @@ def calculate_car(request):
                 error_message=str(e),
             )
             if calc and isinstance(answer, str):
-                answer = attach_avito_sync_to_answer({'error': answer}, calc)
+                answer = attach_avito_sync_to_answer({'error': answer}, calc, early_sync, sync_error)
             elif calc and isinstance(answer, dict):
-                answer = attach_avito_sync_to_answer(answer, calc)
+                answer = attach_avito_sync_to_answer(answer, calc, early_sync, sync_error)
+            elif isinstance(answer, str):
+                answer = attach_avito_sync_to_answer({'error': answer}, None, early_sync, sync_error)
 
     to_json = {
         'answer'     : answer,

@@ -548,7 +548,7 @@
       minAvailableBid: lot.minAvailableBid ?? null,
       maxAvailableBid: lot.maxAvailableBid ?? null,
       minBidStep: offer.minBidStep ?? null,
-      finishAt: lot.finishAt ?? null,
+      finishAt: lot.finishAt ?? lot.originFinishAt ?? null,
     });
   }
   function collectKeysNeedingAutoCalc(allKeys, changedKeys){
@@ -905,6 +905,8 @@
       lot.images = offer.images;
     }
     if (lotId != null && lotId !== "") lot.lotId = Number(lotId);
+    if (lotOfferId != null && lotOfferId !== "") lot.lotOfferId = Number(lotOfferId);
+    if (!lot.finishAt && lot.originFinishAt) lot.finishAt = lot.originFinishAt;
     const resolvedDealerId = offer.dealerId ?? lot.dealerId ?? (Number(dealerId) || dealerId || 2107);
     const payload = {
       ...offer,
@@ -922,7 +924,7 @@
       autoteka: lot.autoteka,
       description: lot.description,
       sellerPlaceName: lot.sellerPlaceName,
-      finishAt: lot.finishAt,
+      finishAt: lot.finishAt ?? lot.originFinishAt,
       expiresAt: lot.expiresAt,
       originFinishAt: lot.originFinishAt,
       images: lot.images,
@@ -1058,7 +1060,9 @@
     }
     const ok = !error && answer != null && answer.estimation_price != null;
     const sync = (typeof answer === "object" && answer?.avito_sync) ? answer.avito_sync : null;
-    return { raw: data, answer, ok, error, sync };
+    const syncError = (typeof answer === "object" && answer?.avito_sync_error) ? String(answer.avito_sync_error) : "";
+    const portalSynced = Boolean(sync && (sync.lotPk != null || sync.lotId != null));
+    return { raw: data, answer, ok, error, sync, syncError, portalSynced };
   }
   function buildPortalBidPayload(offer, { bid, bidMadeAt }){
     const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
@@ -1245,6 +1249,13 @@
       if (result.sync) applyPortalSyncToOffer(key, result.sync, offer);
       if (!result.ok) {
         throw new Error(result.error || "Ошибка расчёта");
+      }
+      if (!result.portalSynced) {
+        const base = getPortalBase();
+        throw new Error(
+          (result.syncError || "Лот не создан на портале (нет avito_sync).")
+          + ` Проверьте URL портала: ${base}`
+        );
       }
       calcCache.set(key, {
         ok: true,
@@ -1601,6 +1612,16 @@
       });
     }
   }
+  function warnPortalBaseMismatch(){
+    const base = getPortalBase();
+    const host = location.hostname;
+    const isLocalParser = host === "localhost" || host === "127.0.0.1";
+    const isRemotePortal = !/localhost|127\.0\.0\.1/.test(base);
+    const el = $("portalBase");
+    if (isLocalParser && isRemotePortal && el){
+      el.title = "Парсер локальный, портал удалённый — лоты создаются в БД того сервера, который указан здесь.";
+    }
+  }
   async function boot(){
     if (location.protocol === "file:") {
       $("rows").innerHTML = `<tr><td colspan="15" class="muted">Страница открыта как файл. Запустите start_server.bat (или python server.py) и откройте http://localhost:8005/viewer.html</td></tr>`;
@@ -1611,6 +1632,7 @@
       const data = await loadJson();
       window.__DATA__ = data;
       render(data);
+      warnPortalBaseMismatch();
       await renderDealerStatusLine();
     }catch(e){
       $("rows").innerHTML = `<tr><td colspan="15" class="muted">${escapeHtml(e.message)}</td></tr>`;
@@ -1646,6 +1668,7 @@
       const normalized = normalizePortalBase($("portalBase").value);
       $("portalBase").value = normalized;
       localStorage.setItem("mp_portal_base", normalized);
+      warnPortalBaseMismatch();
     });
     const savedDealer = localStorage.getItem("mp_dealer_id") || "";
     if (savedDealer) $("dealerId").value = savedDealer;

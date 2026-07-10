@@ -125,6 +125,48 @@ def build_offer_sync_payload(payload: dict) -> dict | None:
     return out
 
 
+def build_offer_sync_state(lot, offer) -> dict | None:
+    if offer is None and lot is None:
+        return None
+    if offer is not None:
+        from auction_avito.services.offer_api import build_offer_state_response
+        state = build_offer_state_response(offer)
+        state['lotId'] = lot.lot_id if lot else state.get('lotId')
+        state['lotOfferId'] = offer.lot_offer_id
+        return state
+    return {
+        'ok': True,
+        'lotId': lot.lot_id,
+        'lotPk': lot.pk,
+        'bid': None,
+        'bidMadeAt': '',
+    }
+
+
+def sync_lot_for_calculate_car(payload: dict) -> tuple[dict | None, str]:
+    """
+    Создаёт/обновляет лот на портале до расчёта цены.
+    Возвращает (avito_sync state, error_message).
+    """
+    payload = normalize_calculate_car_request(payload)
+    ids = _extract_ids(payload)
+    if not _int_id(ids.get('lot_id')):
+        return None, 'lotId is required for portal sync'
+    if not _int_id(ids.get('lot_offer_id')):
+        return None, 'lotOfferId is required for portal sync'
+    if not build_offer_sync_payload(payload):
+        return None, 'invalid offer payload (lotId/lotOfferId)'
+
+    try:
+        lot, offer = upsert_lot_from_calculate_request(payload)
+    except Exception as exc:
+        return None, str(exc)
+
+    if lot is None:
+        return None, 'portal upsert returned no lot'
+    return build_offer_sync_state(lot, offer), ''
+
+
 @transaction.atomic
 def upsert_lot_from_calculate_request(payload: dict):
     """
@@ -270,21 +312,28 @@ def persist_auction_calculation(payload, result, unit=None, user=None, error_mes
             user=user,
             error_message=error_message,
         )
-    except Exception as exc:
+    except Exception:
         import logging
         logging.getLogger(__name__).exception('persist_auction_calculation failed')
         return None
 
 
-def attach_avito_sync_to_answer(answer, calc=None):
+def attach_avito_sync_to_answer(answer, calc=None, early_sync=None, sync_error=''):
     """Добавляет avito_sync в ответ calculate_car после сохранения лота и расчёта."""
-    if not isinstance(answer, dict) or calc is None:
+    if not isinstance(answer, dict):
         return answer
-    sync_payload = build_calculation_sync_response(calc)
+    sync_payload = None
+    if calc is not None:
+        sync_payload = build_calculation_sync_response(calc)
+    if not sync_payload:
+        sync_payload = early_sync
     if sync_payload:
         answer['avito_sync'] = sync_payload
-        answer['avito_calculation_id'] = calc.pk
-        answer['avito_lot_id'] = calc.lot_id
+        if calc is not None:
+            answer['avito_calculation_id'] = calc.pk
+            answer['avito_lot_id'] = calc.lot_id
+    elif sync_error:
+        answer['avito_sync_error'] = sync_error
     return answer
 
 
