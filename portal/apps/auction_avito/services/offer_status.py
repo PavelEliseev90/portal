@@ -12,12 +12,21 @@ STATUS_NAMES = {
 }
 
 
+def _aware_datetime(value):
+    if value is None:
+        return None
+    if timezone.is_naive(value):
+        return timezone.make_aware(value, timezone.get_current_timezone())
+    return value
+
+
 def normalize_offer_status(status_code: str, finish_at=None, now=None) -> tuple[str, str]:
     """
     Нормализует status_code оффера с учётом finish_at лота.
     Пустой статус + finish_at в будущем → inprogress.
     """
-    now = now or timezone.now()
+    now = _aware_datetime(now) or timezone.now()
+    finish_at = _aware_datetime(finish_at)
     code = (status_code or '').strip()
 
     if code in TERMINAL_OFFER_STATUSES:

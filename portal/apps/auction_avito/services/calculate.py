@@ -39,32 +39,6 @@ def _int_id(value):
         return None
 
 
-def ensure_lot_synced_from_calculate_request(payload: dict) -> dict | None:
-    """
-    Создаёт/обновляет лот и оффер на портале до расчёта цены.
-    Ключ связки: lotOfferId (оффер) + lotId (лот Maxposter) — оба обязательны.
-    """
-    payload = normalize_calculate_car_request(payload)
-    ids = _extract_ids(payload)
-    lot_id = _int_id(ids['lot_id'])
-    lot_offer_id = _int_id(ids['lot_offer_id'])
-    if not lot_id or not lot_offer_id:
-        return None
-
-    payload['lotId'] = lot_id
-    payload['lotOfferId'] = lot_offer_id
-    lot, offer = upsert_lot_from_calculate_request(payload)
-    if offer is None:
-        return None
-
-    from auction_avito.services.offer_api import build_offer_state_response
-
-    state = build_offer_state_response(offer)
-    state['lotId'] = lot.lot_id
-    state['lotOfferId'] = offer.lot_offer_id
-    return state
-
-
 def normalize_calculate_car_request(payload: dict) -> dict:
     """
     Нормализует тело запроса: полный offer Maxposter или плоский lot.
@@ -151,14 +125,6 @@ def build_offer_sync_payload(payload: dict) -> dict | None:
     return out
 
 
-def _offer_payload_from_calculate_request(payload: dict, lot_id: int) -> dict | None:
-    """Собирает offer для upsert_offer_from_api из тела calculate_car."""
-    built = build_offer_sync_payload(payload)
-    if built:
-        return built
-    return None
-
-
 @transaction.atomic
 def upsert_lot_from_calculate_request(payload: dict):
     """
@@ -175,7 +141,7 @@ def upsert_lot_from_calculate_request(payload: dict):
     account = _get_or_create_account(ids['bidder_id'], ids['dealer_id'])
     offer = None
 
-    offer_payload = _offer_payload_from_calculate_request(payload, lot_id)
+    offer_payload = build_offer_sync_payload(payload)
     if offer_payload:
         offer = upsert_offer_from_api(account, offer_payload)
         return offer.lot, offer
@@ -243,12 +209,6 @@ def save_calculation_result(
         except Exception:
             pass
 
-    try:
-        from auction_avito.services.expiry import expire_overdue_lots
-        expire_overdue_lots()
-    except Exception:
-        pass
-
     vehicle = payload.get('vehicle') or {}
     year_val = vehicle.get('year')
     if isinstance(year_val, dict):
@@ -311,17 +271,21 @@ def persist_auction_calculation(payload, result, unit=None, user=None, error_mes
             error_message=error_message,
         )
     except Exception as exc:
-        try:
-            return save_calculation_result(
-                payload,
-                result if isinstance(result, dict) else {},
-                unit=unit,
-                user=user,
-                error_message=error_message or str(exc),
-            )
-        except Exception:
-            pass
+        import logging
+        logging.getLogger(__name__).exception('persist_auction_calculation failed')
         return None
+
+
+def attach_avito_sync_to_answer(answer, calc=None):
+    """Добавляет avito_sync в ответ calculate_car после сохранения лота и расчёта."""
+    if not isinstance(answer, dict) or calc is None:
+        return answer
+    sync_payload = build_calculation_sync_response(calc)
+    if sync_payload:
+        answer['avito_sync'] = sync_payload
+        answer['avito_calculation_id'] = calc.pk
+        answer['avito_lot_id'] = calc.lot_id
+    return answer
 
 
 def build_calculation_sync_response(calc) -> dict | None:

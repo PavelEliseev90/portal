@@ -8,6 +8,7 @@
         upsert_offer_from_api(account, item)
 """
 from django.db import transaction
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from auction_avito.models import (
@@ -68,7 +69,15 @@ def enrich_lot_data_from_payload(payload: dict) -> dict:
 def _dt(value):
     if not value:
         return None
-    return parse_datetime(value)
+    if hasattr(value, 'year'):
+        dt = value
+    else:
+        dt = parse_datetime(value)
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
 
 
 def sync_lot_images(lot, images: list, *, replace: bool = True) -> int:
@@ -368,11 +377,5 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
             notify_new_bid_in_feed(offer.lot, new_bid, old_bid)
         except Exception:
             pass
-
-    try:
-        from auction_avito.services.expiry import expire_overdue_lots
-        expire_overdue_lots()
-    except Exception:
-        pass
 
     return offer
