@@ -1281,12 +1281,12 @@ def get_info_max(interactiv_rlk, estimation_id):
             "yearTo"        : year_end
         }
         
-        imvFilter = {
-            'brand'         : brand,
-            'model'         : model,
-            'generation'    : generation,
-            'modification'  : modification
-        }
+        # imvFilter = {
+        #     'brand'         : brand,
+        #     'model'         : model,
+        #     'generation'    : generation,
+        #     'modification'  : modification
+        # }
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
         salesFromDate = salesFromDate.replace(day=1, hour=1)
 
@@ -1319,7 +1319,6 @@ def get_info_max(interactiv_rlk, estimation_id):
             'dealerId'          : 2107,
             'marketFilter'      : marketFilter,
             'filter'            : filter,
-            'imvFilter'         : imvFilter,
             'vehicle'           : vehicle 
         }
         
@@ -1357,7 +1356,6 @@ def get_info_max(interactiv_rlk, estimation_id):
             estimation.hub_total                = analyticsByActualSales['usefulSalesTotal']
             estimation.hub_start = DT.datetime.now()
             estimation.save()
-
         else:
             text = r.text
             estimation.hub_start    = DT.datetime.now()
@@ -3130,10 +3128,13 @@ def estimation_send_1c(rlk_id, id):
         'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
         'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
     }
-    if rlk.unit.ib.alfa:
-        response = requests.post(url_hs_alfa_auto, json=js_data)
-    else:
+    if rlk.unit == None:
         response = requests.post(url_hs_kors_auto, json=js_data)
+    else:
+        if rlk.unit.ib.alfa:
+            response = requests.post(url_hs_alfa_auto, json=js_data)
+        else:
+            response = requests.post(url_hs_kors_auto, json=js_data)
 
     return response.status_code
     
