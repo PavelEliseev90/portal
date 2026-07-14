@@ -73,9 +73,11 @@ def kvp_above_min_km_dc(calc, cumulative_data):
 
 
 def director_can_approve_without_uk(calc, cumulative_data):
-    """Директор ДЦ может согласовать сам только если мин. КМ ДЦ задан и КВ его превышает."""
+    """Директор ДЦ может согласовать сам только если мин. КМ ДЦ задан, итог по правилу ≥ мин. КМ ДЦ и КВ его превышает."""
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
     if min_km_dc <= 0:
+        return False
+    if not km_rule_meets_min_dc(cumulative_data, calc.car):
         return False
     return kvp_above_min_km_dc(calc, cumulative_data)
 
@@ -91,7 +93,7 @@ def _get_calc_cumulative_data(calc):
 
 
 def kvp_above_km_rule(calc, cumulative_data=None):
-    """КВ выше итога по правилу — автосогласование без участия директора/УК."""
+    """КВ выше итога по правилу."""
     from prices_car.km_breakdown import get_km_rule_total
 
     if cumulative_data is None:
@@ -100,6 +102,26 @@ def kvp_above_km_rule(calc, cumulative_data=None):
     if km_rule is None:
         return False
     return int(calc.kvp or 0) > int(km_rule)
+
+
+def km_rule_meets_min_dc(cumulative_data, car):
+    """Итог по правилу не ниже мин. КМ ДЦ (иначе только цепочка директор → УК)."""
+    from prices_car.km_breakdown import get_km_rule_total
+
+    km_rule = get_km_rule_total(cumulative_data, car)
+    km_min_dc = get_calc_min_km_dc(cumulative_data, car)
+    if km_rule is None or km_min_dc <= 0:
+        return True
+    return int(km_rule) >= int(km_min_dc)
+
+
+def can_auto_approve_calculation(calc, cumulative_data=None):
+    """Автосогласование: КВ > итога по правилу и итог по правилу ≥ мин. КМ ДЦ."""
+    if cumulative_data is None:
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+    if not kvp_above_km_rule(calc, cumulative_data):
+        return False
+    return km_rule_meets_min_dc(cumulative_data, calc.car)
 
 
 def is_auto_approved_calculation(calc):
@@ -125,7 +147,7 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
         return False
     if cumulative_data is None:
         cumulative_data, _ = _get_calc_cumulative_data(calc)
-    if not kvp_above_km_rule(calc, cumulative_data):
+    if not can_auto_approve_calculation(calc, cumulative_data):
         return False
 
     user = User.objects.filter(pk=AUTO_APPROVE_USER_ID).first()
@@ -154,7 +176,51 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
             'Коммерческое предложение #' + str(number)
             + ' согласовано автоматически. КВ выше итога по правилу.',
         )
+    notify_auto_approved_calculation_email(calc)
     return True
+
+
+def notify_auto_approved_calculation_email(calc):
+    """Письмо директорам ДЦ подразделения об автоматическом согласовании КП."""
+    from prices_car.models import EmailPushCar
+
+    car = calc.car
+    if not car:
+        return
+    unit_id = get_calc_unit_id(calc)
+    if not unit_id:
+        return
+
+    number = calc.number or calc.pk
+    comment = (
+        'Коммерческое предложение #{} согласовано автоматически. '
+        'КВ выше итога по правилу.'
+    ).format(number)
+    sent = False
+    try:
+        for user in User.objects.filter(
+            is_active=True,
+            profiles__price_car_new_director=True,
+            profiles__available_units__pk=unit_id,
+        ).distinct():
+            if not (user.email or '').strip():
+                continue
+            EmailPushCar.objects.create(
+                car=car,
+                user=user,
+                email=user.email,
+                comment=comment,
+                price=False,
+                calc=calc,
+            )
+            sent = True
+        if sent:
+            _trigger_calc_email_send()
+    except Exception:
+        logger.exception(
+            'notify_auto_approved_calculation_email failed calc_id=%s',
+            calc.pk,
+        )
 
 
 def notify_director_users_calculation_approval(calculation_object, car_object, unit_object):
@@ -691,6 +757,8 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
+    approval_km_rule_meets_min_dc = km_rule_meets_min_dc(cumulative_data, calc.car)
+    approval_can_auto_approve = can_auto_approve_calculation(calc, cumulative_data)
     km_rule_total = None
     if cumulative_data:
         from prices_car.km_breakdown import get_km_rule_total
@@ -701,6 +769,8 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         'approval_kvp_ok': kvp_ok,
         'approval_director_can_approve': director_can_approve,
         'approval_kvp_above_km_rule': approval_kvp_above_km_rule,
+        'approval_km_rule_meets_min_dc': approval_km_rule_meets_min_dc,
+        'approval_can_auto_approve': approval_can_auto_approve,
         'approval_km_rule_total': km_rule_total,
         'approval_auto_approved': approval_auto_approved,
         'approval_uk_required': (

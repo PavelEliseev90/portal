@@ -23,15 +23,17 @@
     <p class="text-muted mb-4">Тестирование алгоритмов расчёта: выберите автомобиль со стока и сценарий trade-in.</p>
 
     <div class="km-lab-panel km-lab-filter">
-      <form method="get" class="row g-3 align-items-end">
+      <form method="get" class="row g-3 align-items-end" id="kmLabForm">
         <div class="col-md-3">
           <label class="form-label small text-muted mb-1">Подразделение</label>
-          <select class="form-select" name="unit" onchange="this.form.submit()">
-            <option value="">Все доступные</option>
-            {% for u in params.units %}
-              <option value="{{ u.pk }}" {% if params.filters.unit == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="form-select search-select" name="unit" id="kmLabUnit">
+              <option value="">Все доступные</option>
+              {% for u in params.units %}
+                <option value="{{ u.pk }}" {% if params.filters.unit == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label small text-muted mb-1">Поиск (VIN, название)</label>
@@ -39,19 +41,24 @@
         </div>
         <div class="col-md-4">
           <label class="form-label small text-muted mb-1">Автомобиль на стоке</label>
-          <select class="form-select" name="car" required>
-            <option value="">— выберите —</option>
-            {% for c in params.cars %}
-              <option value="{{ c.pk }}" {% if params.filters.car == c.pk|stringformat:"s" %}selected{% endif %}>
-                {% if c.modification_autoru %}{{ c.modification_autoru.model.mark.name }} {{ c.modification_autoru.model.name }}{% else %}{{ c.mark }} {{ c.model }}{% endif %}
-                · {{ c.vin|default:"без VIN" }}
-                {% if c.unit %}· {{ c.unit.name }}{% endif %}
-                · {{ c.price|formatted_number }} ₽
-              </option>
-            {% endfor %}
-          </select>
+          <div class="search-select-wrapper select2-wrapper">
+            <select class="form-select search-select" name="car" id="kmLabCar">
+              <option value="">— выберите или найдите по VIN —</option>
+              {% for c in params.cars %}
+                <option value="{{ c.pk }}" {% if params.filters.car == c.pk|stringformat:"s" %}selected{% endif %}>
+                  {% if c.modification_autoru %}{{ c.modification_autoru.model.mark.name }} {{ c.modification_autoru.model.name }}{% else %}{{ c.mark }} {{ c.model }}{% endif %}
+                  · {{ c.vin|default:"без VIN" }}
+                  {% if c.unit %}· {{ c.unit.name }}{% endif %}
+                  · {{ c.price|formatted_number }} ₽
+                </option>
+              {% endfor %}
+            </select>
+          </div>
           {% if params.cars|length >= 400 %}
             <div class="form-text">Показаны первые 400 — уточните подразделение или поиск.</div>
+          {% endif %}
+          {% if params.search_hint %}
+            <div class="form-text text-warning">{{ params.search_hint }}</div>
           {% endif %}
         </div>
         <div class="col-md-2">
@@ -186,9 +193,26 @@
     {% else %}
       <div class="km-lab-panel text-center text-muted py-5">
         <span class="bi bi-calculator display-4 d-block mb-3 opacity-50"></span>
-        Выберите автомобиль и нажмите «Рассчитать»
+        {% if params.search_hint %}
+          <p class="mb-2">{{ params.search_hint }}</p>
+        {% endif %}
+        Выберите автомобиль или введите VIN и нажмите «Рассчитать»
       </div>
     {% endif %}
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof $ === 'undefined' || !$.fn.select2) return;
+  var opts = {
+    language: 'ru',
+    placeholder: 'Начните вводить…',
+    allowClear: true,
+    width: '100%',
+  };
+  $('#kmLabUnit').select2(opts);
+  $('#kmLabCar').select2(opts);
+});
+</script>
 {% endblock %}
