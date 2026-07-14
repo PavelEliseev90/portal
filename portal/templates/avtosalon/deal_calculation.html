@@ -452,8 +452,10 @@
           </p>
           {% elif params.approval_awaiting_1c %}
           <p class="small text-muted mb-2">КП загружено из 1С. Ожидается подтверждение отправки на согласование в 1С — уведомления директорам ещё не отправлены.</p>
-          {% elif params.approval_status == 'pending' and params.approval_kvp_above_km_rule %}
+          {% elif params.approval_status == 'pending' and params.approval_can_auto_approve %}
           <p class="small text-muted mb-2">КВ выше итога по правилу — ожидается автосогласование или действие директора.</p>
+          {% elif params.approval_status == 'pending' and params.approval_kvp_above_km_rule and not params.approval_km_rule_meets_min_dc %}
+          <p class="small text-muted mb-2">Итог по правилу ниже мин. КМ ДЦ — автосогласование невозможно. Директор оставляет комментарий и отправляет в УК.</p>
           {% elif params.approval_status == 'pending' and params.approval_director_can_approve %}
           <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
