@@ -1107,6 +1107,37 @@ def _user_can_km_calculator_lab(user):
     ])
 
 
+def _km_lab_units_queryset(user, stock_qs):
+    """Подразделения из доступных пользователю, где есть авто на стоке."""
+    profile = getattr(user, 'profiles', None)
+    if profile and not profile.price_car_new_all:
+        unit_ids = set(profile.available_units.values_list('pk', flat=True))
+        stock_unit_ids = set(stock_qs.values_list('unit_id', flat=True))
+        return RefUnit.objects.filter(
+            pk__in=unit_ids & stock_unit_ids,
+        ).order_by('name')
+    return RefUnit.objects.filter(
+        pk__in=stock_qs.values_list('unit_id', flat=True).distinct(),
+    ).order_by('name')
+
+
+def _km_lab_resolve_car(stock_qs, cars_qs, car_id, q):
+    """Выбор авто: явный id, точный VIN или единственное совпадение поиска."""
+    if car_id:
+        try:
+            return stock_qs.get(pk=int(car_id))
+        except (ValueError, RefCarsOrganization.DoesNotExist):
+            return None
+    if not q:
+        return None
+    exact_vin = cars_qs.filter(vin__iexact=q)
+    if exact_vin.count() == 1:
+        return exact_vin.first()
+    if cars_qs.count() == 1:
+        return cars_qs.first()
+    return None
+
+
 def _km_lab_stock_queryset(user):
     qs = RefCarsOrganization.objects.filter(
         is_new=True,
@@ -1139,9 +1170,7 @@ def km_calculator_lab(request):
     trade_in = (request.GET.get('trade_in') or '').strip() in ('1', 'true', 'on', 'yes')
     q = (request.GET.get('q') or '').strip()
 
-    units = RefUnit.objects.filter(
-        pk__in=stock_qs.values_list('unit_id', flat=True).distinct(),
-    ).order_by('name')
+    units = _km_lab_units_queryset(request.user, stock_qs)
 
     cars_qs = stock_qs
     if unit_id:
@@ -1157,21 +1186,26 @@ def km_calculator_lab(request):
             | Q(model__icontains=q)
         )
 
-    car = None
+    car = _km_lab_resolve_car(stock_qs, cars_qs, car_id, q)
+    resolved_car_id = str(car.pk) if car else car_id
     km_breakdown = None
     cumulative_data = None
-    if car_id:
-        try:
-            car = stock_qs.get(pk=int(car_id))
-            cumulative_data = car.cumulative_data()
-            from prices_car.km_breakdown import build_km_calculation_breakdown
-            km_breakdown = build_km_calculation_breakdown(
-                car,
-                with_trade_in=trade_in,
-                show_reference_methods=True,
-            )
-        except (ValueError, RefCarsOrganization.DoesNotExist):
-            car = None
+    if car:
+        cumulative_data = car.cumulative_data()
+        from prices_car.km_breakdown import build_km_calculation_breakdown
+        km_breakdown = build_km_calculation_breakdown(
+            car,
+            with_trade_in=trade_in,
+            show_reference_methods=True,
+        )
+
+    search_hint = ''
+    if q and not car:
+        match_count = cars_qs.count()
+        if match_count > 1:
+            search_hint = 'Найдено {} автомобилей — выберите из списка.'.format(match_count)
+        elif match_count == 0:
+            search_hint = 'Автомобиль не найден. Проверьте VIN или подразделение.'
 
     return render(request, 'prices_car/km_calculator_lab.html', {
         'params': {
@@ -1182,10 +1216,11 @@ def km_calculator_lab(request):
             'cumulative_data': cumulative_data or {},
             'filters': {
                 'unit': unit_id,
-                'car': car_id,
+                'car': resolved_car_id,
                 'q': q,
                 'trade_in': trade_in,
             },
+            'search_hint': search_hint,
         },
     })
 
