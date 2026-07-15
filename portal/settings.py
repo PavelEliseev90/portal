@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'asp.apps.AspConfig',
     'auction_avito.apps.AuctionAvitoConfig',
     'client_journey.apps.ClientJourneyConfig',
+    'mykors.apps.MykorsConfig',
     'templatetags.custom_template_tags',
     'django_user_agents',
     #'captcha',
@@ -183,7 +184,7 @@ DATABASES = {
 
 LOGIN_URL = '/login/'
 
-# Кэш для одного входа с одного устройства (можно заменить на Redis для нескольких воркеров)
+# ??? ??? ?????? ????? ? ?????? ?????????? (????? ???????? ?? Redis ??? ?????????? ????????)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -208,7 +209,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Доменная авторизация пользователей
+# ???????? ??????????? ?????????????
 # https://stackoverflow.com/questions/47048542/django-auth-ldap-installation-not-working/47054185#47054185
 
 AUTHENTICATION_BACKENDS = [
@@ -324,8 +325,8 @@ DATA_UPLOAD_MAX_MEMORY_SIZE     = None
 FILE_UPLOAD_MAX_MEMORY_SIZE     = 262144000000 
 DATA_UPLOAD_MAX_NUMBER_FIELDS   = 10240
 
-# SMS авторизация (car_new)
-# Доступные провайдеры: 'smsru', 'easysms'
+# SMS ??????????? (car_new)
+# ????????? ??????????: 'smsru', 'easysms'
 SMS_AUTH_PROVIDER = os.getenv('SMS_AUTH_PROVIDER', 'easysms')
 
 # SMS.ru
@@ -338,7 +339,7 @@ EASY_SMS_PASSWORD = os.getenv('EASY_SMS_PASSWORD', 'YmXbwAJF')
 EASY_SMS_CONNECT_ID = os.getenv('EASY_SMS_CONNECT_ID', '3412')
 EASY_SMS_ORIGINATOR = os.getenv('EASY_SMS_ORIGINATOR', 'KorsGroupru')
 
-#+Настройка почтового ящика
+#+????????? ????????? ?????
 EMAIL_HOST = '192.168.168.100'
 EMAIL_PORT = '25'
 EMAIL_USE_SSL = False
@@ -355,13 +356,13 @@ EMAIL_HOST_PASSWORD = 'nw9dRnR$lNd";RuMPWOm'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
-#-Настройка почтового ящика
+#-????????? ????????? ?????
 
 #Shorts_settings
 CHARACTERS      = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz1234567890'
 TOKEN_LENGTH    = 6
 
-#Андроид апп
+#??????? ???
 APP_VERSION_NUMBER  = 4
 APP_VERSION_DATE    = '08.12.2024'
 APP_LINK            = 'https://ah.kors-group.com/media/share/ah_kors_group.apk'
@@ -370,7 +371,20 @@ APP_LINK            = 'https://ah.kors-group.com/media/share/ah_kors_group.apk'
 RECAPTCHA_PUBLIC_KEY = '6LeqkkUrAAAAAPHyHXENqhEg8av-trt9dnEOU4nJ'
 RECAPTCHA_PRIVATE_KEY = '6LeqkkUrAAAAACz_q0VPFS4uKTI0G6jrosc4hTtC'
 
-# Аукцион Авито — опционально, для кнопки «Загрузить фото» с API
+# ??????? ????? ? ???????????, ??? ?????? �????????? ????� ? API
 # AVITO_AUCTION_OFFERS_URL = 'https://api.maxposter.ru/partners-api/.../offers'
 # AVITO_AUCTION_API_USER = 'korsgroup@maxposter.ru'
 # AVITO_AUCTION_API_PASSWORD = ''
+
+# --- MyKors integration (app: mykors) ---
+# Secrets via env, do not commit keys.
+MYKORS_ENABLED = os.getenv('MYKORS_ENABLED', '0') in ('1', 'true', 'True', 'yes')
+MYKORS_API_BASE_URL = os.getenv('MYKORS_API_BASE_URL', 'https://my.kors-group.ru')
+MYKORS_API_KEY = os.getenv('MYKORS_API_KEY', '')
+MYKORS_API_SECRET = os.getenv('MYKORS_API_SECRET', '')
+MYKORS_REQUEST_TIMEOUT = int(os.getenv('MYKORS_REQUEST_TIMEOUT', '15'))
+MYKORS_REQUEST_DELAY_SEC = float(os.getenv('MYKORS_REQUEST_DELAY_SEC', '0.15'))
+MYKORS_EXPORT_BATCH_LIMIT = int(os.getenv('MYKORS_EXPORT_BATCH_LIMIT', '0'))  # 0 = all stock
+MYKORS_SKIP_UNCHANGED = os.getenv('MYKORS_SKIP_UNCHANGED', '1') in ('1', 'true', 'True', 'yes')
+MYKORS_PORTAL_PUBLIC_BASE_URL = os.getenv('MYKORS_PORTAL_PUBLIC_BASE_URL', 'https://ah.kors-group.com')
+MYKORS_PHOTOS_LIMIT = int(os.getenv('MYKORS_PHOTOS_LIMIT', '50'))
