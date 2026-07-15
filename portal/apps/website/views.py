@@ -10424,7 +10424,8 @@ def sb_lo(request):
     
 
 def test(request):
-
+    from mykors.export_cars import export_stock_cars
+    export_stock_cars()
     # date_end        = DT.datetime.now().replace(day=27)
     # date_start      = date_end + DT.timedelta(days=-3)
     
