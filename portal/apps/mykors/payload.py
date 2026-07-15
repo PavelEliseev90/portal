@@ -213,22 +213,15 @@ def _photo_file_url(photo, attr_name: str) -> str:
 
 
 def photo_to_ingest(photo) -> dict:
-    url = _clean_str(getattr(photo, 'url', ''), 512)
-    url_mini = _clean_str(getattr(photo, 'url_mini', ''), 512)
-    if not url:
-        url = _photo_file_url(photo, 'file')
-    else:
-        url = _absolutize_url(url)
-    if not url_mini:
-        url_mini = _photo_file_url(photo, 'file_mini') or url
-    else:
-        url_mini = _absolutize_url(url_mini)
+    """Ссылка на фото — URL файла на портале (ImageField), не CharField url."""
+    url = _photo_file_url(photo, 'file')
+    url_mini = _photo_file_url(photo, 'file_mini') or url
     if not url:
         return {}
     return {
         'id': int(photo.pk) if photo.pk else None,
         'url': url,
-        'url_mini': url_mini or url,
+        'url_mini': url_mini,
         'main': bool(getattr(photo, 'main', False)),
         'name': _clean_str(getattr(photo, 'name', ''), 512),
     }
