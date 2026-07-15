@@ -42,12 +42,16 @@ class MykorsCarSyncState(models.Model):
             self.payload_hash = payload_hash_value
         if remote_id is not None:
             self.remote_id = remote_id
-        self.save(update_fields=[
-            'last_ok',
-            'last_http_status',
-            'last_error',
-            'last_synced_at',
-            'payload_hash',
-            'remote_id',
-            'updated_at',
-        ])
+        # Новая запись ещё без PK — update_fields нельзя
+        if self.pk is None:
+            self.save()
+        else:
+            self.save(update_fields=[
+                'last_ok',
+                'last_http_status',
+                'last_error',
+                'last_synced_at',
+                'payload_hash',
+                'remote_id',
+                'updated_at',
+            ])
