@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'apps'))
 SECRET_KEY = 'django-insecure-5n(8gwhzo$((juk&(oy(+@xztt^69da^0re0fo92y5ey06*5%-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['ah.kors-group.ru',
                     'ah.kors-group.com',
@@ -371,20 +371,20 @@ APP_LINK            = 'https://ah.kors-group.com/media/share/ah_kors_group.apk'
 RECAPTCHA_PUBLIC_KEY = '6LeqkkUrAAAAAPHyHXENqhEg8av-trt9dnEOU4nJ'
 RECAPTCHA_PRIVATE_KEY = '6LeqkkUrAAAAACz_q0VPFS4uKTI0G6jrosc4hTtC'
 
-# ??????? ????? ? ???????????, ??? ?????? «????????? ????» ? API
+# ??????? ????? ? ???????????, ??? ?????? ï¿½????????? ????ï¿½ ? API
 # AVITO_AUCTION_OFFERS_URL = 'https://api.maxposter.ru/partners-api/.../offers'
 # AVITO_AUCTION_API_USER = 'korsgroup@maxposter.ru'
 # AVITO_AUCTION_API_PASSWORD = ''
 
 # --- MyKors integration (app: mykors) ---
 # Secrets via env, do not commit keys.
-MYKORS_ENABLED = os.getenv('MYKORS_ENABLED', '0') in ('1', 'true', 'True', 'yes')
-MYKORS_API_BASE_URL = os.getenv('MYKORS_API_BASE_URL', 'https://my.kors-group.ru')
-MYKORS_API_KEY = os.getenv('MYKORS_API_KEY', '')
-MYKORS_API_SECRET = os.getenv('MYKORS_API_SECRET', '')
-MYKORS_REQUEST_TIMEOUT = int(os.getenv('MYKORS_REQUEST_TIMEOUT', '15'))
-MYKORS_REQUEST_DELAY_SEC = float(os.getenv('MYKORS_REQUEST_DELAY_SEC', '0.15'))
-MYKORS_EXPORT_BATCH_LIMIT = int(os.getenv('MYKORS_EXPORT_BATCH_LIMIT', '0'))  # 0 = all stock
-MYKORS_SKIP_UNCHANGED = os.getenv('MYKORS_SKIP_UNCHANGED', '1') in ('1', 'true', 'True', 'yes')
-MYKORS_PORTAL_PUBLIC_BASE_URL = os.getenv('MYKORS_PORTAL_PUBLIC_BASE_URL', 'https://ah.kors-group.com')
-MYKORS_PHOTOS_LIMIT = int(os.getenv('MYKORS_PHOTOS_LIMIT', '50'))
+MYKORS_ENABLED = True
+MYKORS_API_BASE_URL = 'https://my.kors-group.ru'
+MYKORS_API_KEY = '053ea3ea94792a1652c531fd6de26012c1f1a07237599a249d0e2834feef6bff'
+MYKORS_API_SECRET = 'ab3e4252560c1b14a1db47c3745e06622136a7f8116708ce8dc61faeb997c8ca'
+MYKORS_REQUEST_TIMEOUT = int('15')
+MYKORS_REQUEST_DELAY_SEC = float('0.15')
+MYKORS_EXPORT_BATCH_LIMIT = int('0')  # 0 = all stock
+MYKORS_SKIP_UNCHANGED = '1'
+MYKORS_PORTAL_PUBLIC_BASE_URL = 'https://ah.kors-group.com'
+MYKORS_PHOTOS_LIMIT = int('50')
