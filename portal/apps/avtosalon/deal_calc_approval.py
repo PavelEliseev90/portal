@@ -67,16 +67,14 @@ def get_calc_min_km_dc(cumulative_data, car):
 
 
 def kvp_above_min_km_dc(calc, cumulative_data):
+    """КВП выше минимального КМ ДЦ — условие согласования директором без УК."""
     kvp = int(calc.kvp or 0)
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
-    return kvp > min_km_dc
+    return min_km_dc > 0 and kvp > min_km_dc
 
 
 def director_can_approve_without_uk(calc, cumulative_data):
-    """Директор ДЦ может согласовать сам только если мин. КМ ДЦ задан, итог по правилу ≥ мин. КМ ДЦ и КВ его превышает."""
-    min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
-    if min_km_dc <= 0:
-        return False
+    """Директор согласует без УК, если правило не ниже порога ДЦ и КВП выше порога."""
     if not km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc):
         return False
     return kvp_above_min_km_dc(calc, cumulative_data)
@@ -105,23 +103,26 @@ def kvp_above_km_rule(calc, cumulative_data=None):
 
 
 def km_rule_meets_min_dc(cumulative_data, car, calc=None):
-    """Итог по правилу не ниже мин. КМ ДЦ (иначе только цепочка директор → УК)."""
+    """Правило рассчитано и не нарушает минимальный КМ ДЦ, если порог задан."""
     from prices_car.km_breakdown import get_km_rule_total
 
     km_rule = get_km_rule_total(cumulative_data, car, calc=calc)
     km_min_dc = get_calc_min_km_dc(cumulative_data, car)
-    if km_rule is None or km_min_dc <= 0:
+    if km_rule is None:
+        return False
+    if km_min_dc <= 0:
         return True
     return int(km_rule) >= int(km_min_dc)
 
 
 def can_auto_approve_calculation(calc, cumulative_data=None):
-    """Автосогласование: КВ > итога по правилу и итог по правилу ≥ мин. КМ ДЦ."""
+    """Автосогласование: КВП выше правила, а правило не ниже мин. КМ ДЦ."""
     if cumulative_data is None:
         cumulative_data, _ = _get_calc_cumulative_data(calc)
-    if not kvp_above_km_rule(calc, cumulative_data):
-        return False
-    return km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc)
+    return (
+        kvp_above_km_rule(calc, cumulative_data)
+        and km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc)
+    )
 
 
 def is_auto_approved_calculation(calc):
@@ -545,14 +546,24 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
 
     current_status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     # «pending» — дефолт модели при создании КП, это ещё не отправка директору.
-    # В пайплайне только статусы после реального согласования/отказа.
-    in_approval_pipeline = current_status in {
-        CarCalculations.SOGLASOVANIE_PENDING_UK,
-        CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
-        CarCalculations.SOGLASOVANIE_UK_APPROVED,
-        CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
-        CarCalculations.SOGLASOVANIE_UK_REJECTED,
-    }
+    # После submit тот же статус имеет date_start_soglasovanie и уже означает
+    # реальную очередь директора — повторная загрузка не должна её сбрасывать.
+    in_approval_pipeline = (
+        (
+            current_status == CarCalculations.SOGLASOVANIE_PENDING
+            and calculation_object.date_start_soglasovanie is not None
+        )
+        or current_status in {
+            CarCalculations.SOGLASOVANIE_PENDING_UK,
+            CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+            CarCalculations.SOGLASOVANIE_UK_APPROVED,
+            CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+            CarCalculations.SOGLASOVANIE_UK_REJECTED,
+        }
+    )
+
+    if in_approval_pipeline:
+        return False
 
     auto_approved = try_auto_approve_calculation(
         calculation_object,
@@ -563,9 +574,6 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
     if auto_approved:
         _send_auto_approved_soglasovanie_chat(calculation_object, rlk_object)
         return True
-
-    if in_approval_pipeline:
-        return False
 
     calculation_object.soglasovanie_status = CarCalculations.SOGLASOVANIE_AWAITING_1C
     calculation_object.save(update_fields=['soglasovanie_status'])
@@ -580,10 +588,16 @@ def submit_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
         return True
 
     status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
-    if status == CarCalculations.SOGLASOVANIE_PENDING:
+    if (
+        status == CarCalculations.SOGLASOVANIE_PENDING
+        and calculation_object.date_start_soglasovanie is not None
+    ):
         # Уже подтверждено из 1С и отправлено директорам (повторный вызов).
         return True
-    if status != CarCalculations.SOGLASOVANIE_AWAITING_1C:
+    if status not in (
+        CarCalculations.SOGLASOVANIE_AWAITING_1C,
+        CarCalculations.SOGLASOVANIE_PENDING,
+    ):
         logger.warning(
             'submit_calculation_soglasovanie_from_1c skipped calc_id=%s status=%s',
             calculation_object.pk,
@@ -606,6 +620,7 @@ def build_calculation_soglasovanie_api_response(calc):
     """Данные согласования для ответа API 1С после загрузки КП."""
     from prices_car.models import CarCalculations
     from prices_car.km_breakdown import get_km_rule_total
+    from prices_car.km_raschet import calculation_has_applied_trade_in
 
     calc.refresh_from_db()
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
@@ -620,7 +635,8 @@ def build_calculation_soglasovanie_api_response(calc):
         except Exception:
             pass
 
-    km_min_calculated = km_rule_total if km_rule_total is not None else (km_min_dc or None)
+    # Не подменяем отсутствующий итог правила порогом ДЦ: это разные этапы согласования.
+    km_min_calculated = km_rule_total
 
     return {
         'soglasovanie_status': status,
@@ -633,6 +649,18 @@ def build_calculation_soglasovanie_api_response(calc):
         'km_min_dc': km_min_dc or None,
         'km_rule_total': km_rule_total,
         'km_min_calculated': km_min_calculated,
+        'km_rule_with_trade_in': calculation_has_applied_trade_in(calc),
+        'kvp_above_km_rule': (
+            km_rule_total is not None
+            and int(calc.kvp or 0) > int(km_rule_total)
+        ),
+        'km_rule_meets_min_dc': (
+            km_rule_total is not None
+            and (
+                km_min_dc <= 0
+                or int(km_rule_total) >= int(km_min_dc)
+            )
+        ),
         'kvp': calc.kvp,
     }
 
@@ -791,7 +819,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     is_director = user_is_deal_calc_director_for_calc(user, calc)
     is_uk = user_has_deal_calc_uk_access(user)
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
-    kvp_ok = kvp_above_min_km_dc(calc, cumulative_data)
+    kvp_ok = kvp_above_km_rule(calc, cumulative_data)
     director_can_approve = director_can_approve_without_uk(calc, cumulative_data)
     approval_auto_approved = is_auto_approved_calculation(calc)
 
@@ -820,7 +848,9 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
-    approval_km_rule_meets_min_dc = km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc)
+    approval_km_rule_meets_min_dc = km_rule_meets_min_dc(
+        cumulative_data, calc.car, calc=calc,
+    )
     approval_can_auto_approve = can_auto_approve_calculation(calc, cumulative_data)
     km_rule_total = None
     if cumulative_data:
@@ -889,6 +919,8 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
             if min_km_dc <= 0:
                 messages.error(request, 'Мин. КМ ДЦ не задан или равен 0 — директор ДЦ не может согласовать это КП, отправьте его в УК с комментарием.')
+            elif not km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc):
+                messages.error(request, 'Рассчитанный КМ по правилу ниже мин. КМ ДЦ — отправьте на согласование в УК с комментарием.')
             else:
                 messages.error(request, 'КВП не выше мин. КМ ДЦ — отправьте на согласование в УК.')
             return _approval_redirect(calc.pk)

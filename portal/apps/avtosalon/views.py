@@ -3624,11 +3624,11 @@ def deal_calculation_doc(request, id):
     try_auto_approve_calculation(calc, send_chat=True, cumulative_data=cumulative_data)
     cumulative_data = cumulative_data or {}
     from prices_car.km_breakdown import build_km_calculation_breakdown
-    if user_has_deal_calc_uk_access(request.user) and car:
+    if car:
         km_breakdown = build_km_calculation_breakdown(
             car,
             calc=calc,
-            show_reference_methods=True,
+            show_reference_methods=user_has_deal_calc_uk_access(request.user),
         )
     else:
         km_breakdown = {'available': False}
