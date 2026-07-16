@@ -329,6 +329,89 @@ def car_to_ingest_payload(car) -> dict:
     return payload
 
 
+def _date_to_iso(value):
+    """Дата/время Django → ISO 8601, пустое значение → null в JSON."""
+    if value is None:
+        return None
+    try:
+        return value.isoformat()
+    except (AttributeError, ValueError):
+        return None
+
+
+def _image_field_url(instance, field_name: str) -> str:
+    """Абсолютный URL ImageField без ошибки для пустого или битого файла."""
+    field = getattr(instance, field_name, None)
+    if not field:
+        return ''
+    try:
+        return _absolutize_url(field.url)
+    except (AttributeError, ValueError):
+        return ''
+
+
+def user_to_ingest_payload(user) -> dict:
+    """
+    Django User + Profiles → JSON для MyKors.
+
+    Пароль, is_superuser и current_session_key намеренно не передаются.
+    portal_user_id является стабильным ключом для upsert на стороне MyKors.
+    """
+    payload = {
+        'portal_user_id': int(user.pk),
+        'username': _clean_str(getattr(user, 'username', ''), 150),
+        'email': _clean_str(getattr(user, 'email', ''), 254),
+        'first_name': _clean_str(getattr(user, 'first_name', ''), 150),
+        'last_name': _clean_str(getattr(user, 'last_name', ''), 150),
+        'is_active': bool(getattr(user, 'is_active', False)),
+        'is_staff': bool(getattr(user, 'is_staff', False)),
+        'date_joined': _date_to_iso(getattr(user, 'date_joined', None)),
+    }
+
+    profile = getattr(user, 'profiles', None)
+    if profile is None:
+        payload['profile'] = None
+        return payload
+
+    units = sorted(profile.available_units.all(), key=lambda item: item.pk)
+    stores = sorted(profile.korsavto_stores.all(), key=lambda item: item.pk)
+    profile_payload = {
+        'id': int(profile.pk),
+        'birth_date': _date_to_iso(profile.birth_date),
+        'email': _clean_str(profile.email, 254),
+        'phone': _clean_str(profile.phone, 512),
+        'image_url': _image_field_url(profile, 'image'),
+        'view_checklist': bool(profile.view_checklist),
+        'edit_sms_opros': bool(profile.edit_sms_opros),
+        'eco_name': _clean_str(profile.eco_name, 512),
+        'eco': bool(profile.eco),
+        'eco_visible': bool(profile.eco_visible),
+        'eco_page_price_info': bool(profile.eco_page_price_info),
+        'eco_page_price_auto': bool(profile.eco_page_price_auto),
+        'eco_toast': bool(profile.eco_toast),
+        'korsavto_settings': bool(profile.korsavto_settings),
+        'korsavto_settings_dc': bool(profile.korsavto_settings_dc),
+        'korsavto_city': _clean_str(profile.korsavto_city, 512),
+        'korsavto_auction': bool(profile.korsavto_auction),
+        'user_sb': bool(profile.user_sb),
+        'price_car_new': bool(profile.price_car_new),
+        'price_car_new_director': bool(profile.price_car_new_director),
+        'price_car_new_all': bool(profile.price_car_new_all),
+        'price_car_bu': bool(profile.price_car_bu),
+        'price_car_new_settings': bool(profile.price_car_new_settings),
+        'price_car_bu_settings': bool(profile.price_car_bu_settings),
+        'estimation_settings': bool(profile.estimation_settings),
+        'estimation_report': bool(profile.estimation_report),
+        'eco_report': bool(profile.eco_report),
+        'available_units': [int(unit.pk) for unit in units],
+        'available_units_data': [unit_to_ingest(unit) for unit in units],
+        'korsavto_stores': [int(store.pk) for store in stores],
+        'korsavto_stores_data': [store_to_ingest(store) for store in stores],
+    }
+    payload['profile'] = profile_payload
+    return payload
+
+
 def payload_hash(payload: dict) -> str:
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
