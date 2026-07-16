@@ -445,21 +445,19 @@
           {% if params.approval_final_without_uk %}
           <p class="small text-success mb-2">
             {% if params.approval_auto_approved %}
-            Согласовано автоматически (КВП выше итога по правилу). УК не требуется.
+            Согласовано автоматически: КВП выше итога по правилу и выше мин. КМ ДЦ, если порог задан. УК не требуется.
             {% else %}
             Согласование завершено. Дополнительное согласование УК не требуется.
             {% endif %}
           </p>
           {% elif params.approval_awaiting_1c %}
-          <p class="small text-muted mb-2">{% if params.approval_km_rule_total is None %}КМ по правилу не рассчитан — автоматическое согласование невозможно.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ — автоматическое согласование невозможно.{% else %}КВП не выше рассчитанного КМ по правилу — автоматическое согласование невозможно.{% endif %} Ожидается подтверждение менеджера об отправке на согласование; директор ещё не уведомлён.</p>
+          <p class="small text-muted mb-2">{% if params.approval_km_rule_total is None %}КМ по правилу не рассчитан — автоматическое согласование невозможно.{% elif not params.approval_kvp_ok %}КВП не выше рассчитанного КМ по правилу — автоматическое согласование невозможно.{% elif not params.approval_auto_min_dc_ok %}КВП не выше мин. КМ ДЦ — автоматическое согласование невозможно.{% else %}Условия автосогласования выполнены, но автоматическое согласование не завершено.{% endif %} Ожидается подтверждение менеджера об отправке на согласование; директор ещё не уведомлён.</p>
           {% elif params.approval_status == 'pending' and params.approval_can_auto_approve %}
-          <p class="small text-muted mb-2">КВП выше итога по правилу — ожидается автосогласование или действие директора.</p>
-          {% elif params.approval_status == 'pending' and not params.approval_km_rule_meets_min_dc and params.approval_min_km_dc|default:0 > 0 %}
-          <p class="small text-muted mb-2">Рассчитанный КМ по правилу ниже мин. КМ ДЦ — директор ДЦ должен отправить КП в УК с комментарием.</p>
+          <p class="small text-muted mb-2">КВП выше итога по правилу и выше мин. КМ ДЦ, если порог задан — ожидается автосогласование или действие директора.</p>
           {% elif params.approval_status == 'pending' and params.approval_director_can_approve %}
           <p class="small text-muted mb-2">Автосогласование не выполнено. КВП выше мин. КМ ДЦ — директор ДЦ может согласовать без отправки в УК.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
-          <p class="small text-muted mb-2">Автосогласование не выполнено. {% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0 — директор ДЦ отправляет КП в УК с комментарием.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ — директор ДЦ отправляет КП в УК с комментарием.{% else %}КВП не выше мин. КМ ДЦ — директор ДЦ отправляет КП в УК с комментарием.{% endif %}</p>
+          <p class="small text-muted mb-2">Автосогласование не выполнено. {% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0 — директор ДЦ отправляет КП в УК с комментарием.{% else %}КВП не выше мин. КМ ДЦ — директор ДЦ отправляет КП в УК с комментарием.{% endif %}</p>
           {% elif params.approval_status == 'pending_uk' %}
           <p class="small text-warning mb-2">Директор ДЦ отправил КП в УК. Ожидается согласование управляющей компании.</p>
           {% elif params.approval_status == 'director_rejected' %}
@@ -567,18 +565,18 @@
           <div class="small text-white mt-2">
             КВП {{ params.calc.kvp|floatformat:"0g" }} ₽
             {% if params.approval_kvp_ok %}
-              выше рассчитанного КМ — условие автосогласования выполнено.
+              выше рассчитанного КМ.
+              {% if params.approval_auto_min_dc_ok %}
+                Оба условия автосогласования выполнены.
+              {% else %}
+                КВП не выше мин. КМ ДЦ — автоматическое согласование невозможно.
+              {% endif %}
             {% else %}
               не выше рассчитанного КМ — автоматическое согласование невозможно.
             {% endif %}
           </div>
           {% else %}
           <div class="small text-white mt-2">Рассчитанный КМ по правилу не определён — автоматическое согласование невозможно.</div>
-          {% endif %}
-          {% if params.approval_km_rule_total is not None and not params.approval_km_rule_meets_min_dc %}
-          <div class="small text-white mt-2">
-            Рассчитанный КМ ниже мин. КМ ДЦ — автосогласование заблокировано, требуется цепочка директор ДЦ → УК.
-          </div>
           {% endif %}
 
           {% if user.profiles.price_car_new_all %}
@@ -709,7 +707,7 @@
             <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorUkModal">
               Отправить на согласование в УК
             </button>
-            <p class="small text-muted mt-2 mb-0">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Требуется согласование УК с комментарием директора.</p>
+            <p class="small text-muted mt-2 mb-0">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Требуется согласование УК с комментарием директора.</p>
           </div>
           {% endif %}
 
@@ -798,7 +796,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
           </div>
           <div class="modal-body">
-            <p class="small text-muted">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Укажите обязательный комментарий для УК.</p>
+            <p class="small text-muted">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Укажите обязательный комментарий для УК.</p>
             <label class="form-label" for="director_uk_comment">Комментарий для УК</label>
             <textarea class="form-control" id="director_uk_comment" name="approval_comment" rows="4" required placeholder="Укажите комментарий"></textarea>
           </div>

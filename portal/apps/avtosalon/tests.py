@@ -7,6 +7,7 @@ from avtosalon.deal_calc_approval import (
     can_auto_approve_calculation,
     director_can_approve_without_uk,
     kvp_above_km_rule,
+    kvp_above_min_dc_if_configured,
     kvp_above_min_km_dc,
     prepare_calculation_soglasovanie_from_1c,
     submit_calculation_soglasovanie_from_1c,
@@ -25,7 +26,7 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
             'automatic': {'km_min_automatic': 100},
         }
 
-    def test_auto_approval_blocked_when_rule_is_below_min_dc(self):
+    def test_auto_blocked_when_kvp_does_not_exceed_min_dc(self):
         calc = SimpleNamespace(kvp=151, car=self.car)
         cumulative_data = self.cumulative_data(min_km_dc=200)
 
@@ -34,6 +35,27 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
             return_value=150,
         ):
             self.assertTrue(kvp_above_km_rule(calc, cumulative_data))
+            self.assertFalse(kvp_above_min_dc_if_configured(calc, cumulative_data))
+            self.assertFalse(can_auto_approve_calculation(calc, cumulative_data))
+
+    def test_rule_equal_to_min_does_not_block_auto_when_kvp_above_both(self):
+        calc = SimpleNamespace(kvp=151, car=self.car)
+        cumulative_data = self.cumulative_data(min_km_dc=150)
+
+        with patch(
+            'prices_car.km_breakdown.get_km_rule_total',
+            return_value=150,
+        ):
+            self.assertTrue(can_auto_approve_calculation(calc, cumulative_data))
+
+    def test_auto_blocked_when_kvp_equals_min_dc(self):
+        calc = SimpleNamespace(kvp=151, car=self.car)
+        cumulative_data = self.cumulative_data(min_km_dc=151)
+
+        with patch(
+            'prices_car.km_breakdown.get_km_rule_total',
+            return_value=150,
+        ):
             self.assertFalse(can_auto_approve_calculation(calc, cumulative_data))
 
     def test_auto_approval_when_kvp_above_valid_rule(self):
@@ -66,46 +88,34 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
         ):
             self.assertFalse(can_auto_approve_calculation(calc, self.cumulative_data()))
 
-    def test_director_approval_when_rule_valid_and_kvp_above_min_dc(self):
+    def test_director_approval_when_kvp_above_min_dc(self):
         calc = SimpleNamespace(kvp=120, car=self.car)
         cumulative_data = self.cumulative_data(min_km_dc=100)
 
-        with patch(
-            'prices_car.km_breakdown.get_km_rule_total',
-            return_value=100,
-        ):
-            self.assertTrue(kvp_above_min_km_dc(calc, cumulative_data))
-            self.assertTrue(director_can_approve_without_uk(calc, cumulative_data))
+        self.assertTrue(kvp_above_min_km_dc(calc, cumulative_data))
+        self.assertTrue(director_can_approve_without_uk(calc, cumulative_data))
 
     def test_director_cannot_approve_when_min_dc_missing_or_not_exceeded(self):
         calc = SimpleNamespace(kvp=100, car=self.car)
 
-        with patch(
-            'prices_car.km_breakdown.get_km_rule_total',
-            return_value=100,
-        ):
-            self.assertFalse(
-                director_can_approve_without_uk(
-                    calc, self.cumulative_data(min_km_dc=100),
-                ),
-            )
-            self.assertFalse(
-                director_can_approve_without_uk(
-                    calc, self.cumulative_data(min_km_dc=0),
-                ),
-            )
+        self.assertFalse(
+            director_can_approve_without_uk(
+                calc, self.cumulative_data(min_km_dc=100),
+            ),
+        )
+        self.assertFalse(
+            director_can_approve_without_uk(
+                calc, self.cumulative_data(min_km_dc=0),
+            ),
+        )
 
-    def test_director_must_send_to_uk_when_rule_is_below_min_dc(self):
+    def test_rule_below_min_dc_does_not_block_director_when_kvp_above_min(self):
         calc = SimpleNamespace(kvp=120, car=self.car)
         cumulative_data = self.cumulative_data(min_km_dc=100)
 
-        with patch(
-            'prices_car.km_breakdown.get_km_rule_total',
-            return_value=90,
-        ):
-            self.assertFalse(
-                director_can_approve_without_uk(calc, cumulative_data),
-            )
+        self.assertTrue(
+            director_can_approve_without_uk(calc, cumulative_data),
+        )
 
     def test_rule_uses_trade_in_state_from_calculation(self):
         calc = SimpleNamespace()
