@@ -91,12 +91,6 @@ def calculation_car(request):
     apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
 
-    try:
-        from avtosalon.deal_calc_approval import try_auto_approve_calculation
-        try_auto_approve_calculation(calculation_object)
-    except Exception:
-        pass
-
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
 
     list_detail = data['Detail']
@@ -114,6 +108,13 @@ def calculation_car(request):
         new_cal_detail.save()
     
     refresh_km_raschet_after_details(calculation_object, car_object, data)
+
+    try:
+        from avtosalon.deal_calc_approval import try_auto_approve_calculation
+        # После деталей: иначе trade-in ещё не виден и берётся АвтоК без trade-in
+        try_auto_approve_calculation(calculation_object)
+    except Exception:
+        pass
     
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 
@@ -5339,12 +5340,6 @@ def get_calculation_car(data):
     apply_km_raschet_to_calculation(calculation_object, car_object, data)
     calculation_object.save()
 
-    try:
-        from avtosalon.deal_calc_approval import try_auto_approve_calculation
-        try_auto_approve_calculation(calculation_object)
-    except Exception:
-        pass
-
     CarCalculationsDetail.objects.filter(calculation = calculation_object).delete()
 
     list_detail = data['Detail']
@@ -5362,6 +5357,13 @@ def get_calculation_car(data):
         new_cal_detail.save()
     
     refresh_km_raschet_after_details(calculation_object, car_object, data)
+
+    try:
+        from avtosalon.deal_calc_approval import try_auto_approve_calculation
+        # После деталей: иначе trade-in ещё не виден и берётся АвтоК без trade-in
+        try_auto_approve_calculation(calculation_object)
+    except Exception:
+        pass
     
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 

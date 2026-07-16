@@ -57,6 +57,7 @@ from prices_car.models import EmailPushCar, CarCalculations
 from avtosalon.deal_calc_approval import (
     build_deal_calc_approval_context,
     handle_deal_calc_approval_post,
+    recalculate_deal_calculation_km,
     try_auto_approve_calculation,
     user_can_access_deal_calculation_doc,
     user_has_deal_calc_uk_access,
@@ -3636,6 +3637,15 @@ def deal_calculation_doc(request, id):
         if "send_1C" in request.POST:
             from avtosalon.deal_calc_approval import send_calculation_soglasovanie_result_to_1c
             send_calculation_soglasovanie_result_to_1c(calc)
+            return HttpResponseRedirect('/cars/deal/calculation/' + str(calc.pk) + '/')
+
+        if 'recalculate_km' in request.POST:
+            from django.contrib import messages
+            ok, msg = recalculate_deal_calculation_km(calc, request.user)
+            if ok:
+                messages.success(request, msg)
+            else:
+                messages.error(request, msg)
             return HttpResponseRedirect('/cars/deal/calculation/' + str(calc.pk) + '/')
         
         approval_response = handle_deal_calc_approval_post(

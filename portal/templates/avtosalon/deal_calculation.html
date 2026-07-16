@@ -544,7 +544,7 @@
           
           <div class="price-item">
             <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
-              Итог по правилу:
+              Итог по правилу{% if params.km_breakdown.with_trade_in %} (с trade-in){% endif %}:
               {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
               <button type="button"
                       class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
@@ -556,7 +556,9 @@
               </button>
               {% endif %}
             </span>
-            {% if params.cumulative_data.type_km == 1 %}
+            {% if params.approval_km_rule_total is not None %}
+              <span class="price-item-value text-white">{{ params.approval_km_rule_total|floatformat:"2g" }} ₽</span>
+            {% elif params.cumulative_data.type_km == 1 %}
               <span class="price-item-value text-white">{{ params.cumulative_data.automatic.km_min_automatic|floatformat:"2g" }} ₽</span>
             {% elif params.cumulative_data.type_km == 2 %}
               <span class="price-item-value text-white">{{ params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g" }} ₽</span>
@@ -568,6 +570,17 @@
               <span class="price-item-value text-white">{{ params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g" }} ₽</span>
             {% endif %}
           </div>
+
+          {% if user.profiles.price_car_new_all %}
+          <form method="post" class="mt-2 mb-0">
+            {% csrf_token %}
+            <input type="hidden" name="recalculate_km" value="1">
+            <button type="submit" class="btn btn-sm btn-outline-light w-100"
+                    title="Пересчитать расчётный КМ с учётом trade-in и заново проверить автосогласование">
+              Пересчитать КМ
+            </button>
+          </form>
+          {% endif %}
 
           {% if params.client_suggestions_enabled %}
           <div class="mt-3" id="clientSuggestionsWrap">
