@@ -445,23 +445,23 @@
           {% if params.approval_final_without_uk %}
           <p class="small text-success mb-2">
             {% if params.approval_auto_approved %}
-            Согласовано автоматически (КВ выше итога по правилу). УК не требуется.
+            Согласовано автоматически (КВП выше итога по правилу). УК не требуется.
             {% else %}
             Согласование завершено. Дополнительное согласование УК не требуется.
             {% endif %}
           </p>
           {% elif params.approval_awaiting_1c %}
-          <p class="small text-muted mb-2">КП загружено из 1С. Ожидается подтверждение отправки на согласование в 1С — уведомления директорам ещё не отправлены.</p>
+          <p class="small text-muted mb-2">{% if params.approval_km_rule_total is None %}КМ по правилу не рассчитан — автоматическое согласование невозможно.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ — автоматическое согласование невозможно.{% else %}КВП не выше рассчитанного КМ по правилу — автоматическое согласование невозможно.{% endif %} Ожидается подтверждение менеджера об отправке на согласование; директор ещё не уведомлён.</p>
           {% elif params.approval_status == 'pending' and params.approval_can_auto_approve %}
-          <p class="small text-muted mb-2">КВ выше итога по правилу — ожидается автосогласование или действие директора.</p>
-          {% elif params.approval_status == 'pending' and params.approval_kvp_above_km_rule and not params.approval_km_rule_meets_min_dc %}
-          <p class="small text-muted mb-2">Итог по правилу ниже мин. КМ ДЦ — автосогласование невозможно. Директор оставляет комментарий и отправляет в УК.</p>
+          <p class="small text-muted mb-2">КВП выше итога по правилу — ожидается автосогласование или действие директора.</p>
+          {% elif params.approval_status == 'pending' and not params.approval_km_rule_meets_min_dc and params.approval_min_km_dc|default:0 > 0 %}
+          <p class="small text-muted mb-2">Рассчитанный КМ по правилу ниже мин. КМ ДЦ — директор ДЦ должен отправить КП в УК с комментарием.</p>
           {% elif params.approval_status == 'pending' and params.approval_director_can_approve %}
-          <p class="small text-muted mb-2">КВ выше мин. КМ ДЦ — достаточно согласования директором ДЦ, УК не требуется.</p>
+          <p class="small text-muted mb-2">Автосогласование не выполнено. КВП выше мин. КМ ДЦ — директор ДЦ может согласовать без отправки в УК.</p>
           {% elif params.approval_status == 'pending' and params.approval_uk_required %}
-          <p class="small text-muted mb-2">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0 — директор ДЦ не может согласовать это КП, потребуется согласование УК.{% else %}КВ не выше мин. КМ ДЦ — потребуется согласование УК.{% endif %}</p>
+          <p class="small text-muted mb-2">Автосогласование не выполнено. {% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0 — директор ДЦ отправляет КП в УК с комментарием.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ — директор ДЦ отправляет КП в УК с комментарием.{% else %}КВП не выше мин. КМ ДЦ — директор ДЦ отправляет КП в УК с комментарием.{% endif %}</p>
           {% elif params.approval_status == 'pending_uk' %}
-          <p class="small text-warning mb-2">Ожидается согласование УК.</p>
+          <p class="small text-warning mb-2">Директор ДЦ отправил КП в УК. Ожидается согласование управляющей компании.</p>
           {% elif params.approval_status == 'director_rejected' %}
           <p class="small text-danger mb-2">Согласование отклонено директором ДЦ.</p>
           {% elif params.approval_status == 'uk_rejected' %}
@@ -544,7 +544,7 @@
           
           <div class="price-item">
             <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
-              Итог по правилу{% if params.km_breakdown.with_trade_in %} (с trade-in){% endif %}:
+              Итог по правилу{% if params.km_breakdown.available %} ({% if params.km_breakdown.with_trade_in %}с trade-in{% else %}без trade-in{% endif %}){% endif %}:
               {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
               <button type="button"
                       class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
@@ -558,18 +558,28 @@
             </span>
             {% if params.approval_km_rule_total is not None %}
               <span class="price-item-value text-white">{{ params.approval_km_rule_total|floatformat:"2g" }} ₽</span>
-            {% elif params.cumulative_data.type_km == 1 %}
-              <span class="price-item-value text-white">{{ params.cumulative_data.automatic.km_min_automatic|floatformat:"2g" }} ₽</span>
-            {% elif params.cumulative_data.type_km == 2 %}
-              <span class="price-item-value text-white">{{ params.cumulative_data.automatic_2.km_min_automatic|floatformat:"2g" }} ₽</span>
-            {% elif params.cumulative_data.type_km == 3 %}
-              <span class="price-item-value text-white">{{ params.car.min_km|floatformat:"2g" }} ₽</span>
-            {% elif params.cumulative_data.type_km == 4 %}
-              <span class="price-item-value text-white">{{ params.cumulative_data.automatic_3.km_min_automatic|floatformat:"2g" }} ₽</span>
-            {% elif params.cumulative_data.type_km == 5 %}
-              <span class="price-item-value text-white">{{ params.cumulative_data.automatic_k.km_min_automatic|floatformat:"2g" }} ₽</span>
+            {% else %}
+              <span class="price-item-value text-white">не рассчитан</span>
             {% endif %}
           </div>
+
+          {% if params.approval_km_rule_total is not None %}
+          <div class="small text-white mt-2">
+            КВП {{ params.calc.kvp|floatformat:"0g" }} ₽
+            {% if params.approval_kvp_ok %}
+              выше рассчитанного КМ — условие автосогласования выполнено.
+            {% else %}
+              не выше рассчитанного КМ — автоматическое согласование невозможно.
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="small text-white mt-2">Рассчитанный КМ по правилу не определён — автоматическое согласование невозможно.</div>
+          {% endif %}
+          {% if params.approval_km_rule_total is not None and not params.approval_km_rule_meets_min_dc %}
+          <div class="small text-white mt-2">
+            Рассчитанный КМ ниже мин. КМ ДЦ — автосогласование заблокировано, требуется цепочка директор ДЦ → УК.
+          </div>
+          {% endif %}
 
           {% if user.profiles.price_car_new_all %}
           <form method="post" class="mt-2 mb-0">
@@ -699,7 +709,7 @@
             <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#dealDirectorUkModal">
               Отправить на согласование в УК
             </button>
-            <p class="small text-muted mt-2 mb-0">КВП ниже мин. КМ ДЦ — требуется согласование УК.</p>
+            <p class="small text-muted mt-2 mb-0">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Требуется согласование УК с комментарием директора.</p>
           </div>
           {% endif %}
 
@@ -788,7 +798,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
           </div>
           <div class="modal-body">
-            <p class="small text-muted">КВП ниже мин. КМ ДЦ. Укажите комментарий для УК.</p>
+            <p class="small text-muted">{% if params.approval_min_km_dc|default:0 <= 0 %}Мин. КМ ДЦ не задан или равен 0.{% elif not params.approval_km_rule_meets_min_dc %}Рассчитанный КМ по правилу ниже мин. КМ ДЦ.{% else %}КВП не выше мин. КМ ДЦ.{% endif %} Укажите обязательный комментарий для УК.</p>
             <label class="form-label" for="director_uk_comment">Комментарий для УК</label>
             <textarea class="form-control" id="director_uk_comment" name="approval_comment" rows="4" required placeholder="Укажите комментарий"></textarea>
           </div>
@@ -1035,10 +1045,6 @@
 <script>
 
   let price = {{params.car.price}};
-  let cost  = {{params.car.cost_price}};
-  
-  var min_km = {{ params.approval_min_km_dc|default:0 }};
-  var kvp = {{ params.calc.kvp|default:0 }};
 
   document.addEventListener('readystatechange', () => {    
     if (document.readyState == 'complete') calculate_data();
@@ -1087,18 +1093,8 @@
     $('#grz').text(grz_);
 
     var itog = price  ; 
-    var itog_km = price - cost - parseInt(discount, 10) + parseInt(opfu, 10) + parseInt(tradein_, 10) + parseInt(wheels_, 10) + parseInt(grz_, 10)  ; 
-    
-    if (kvp <= min_km) {
-      $('#km_result').addClass('bg-danger');
-      $('#km_result').removeClass('bg-success');
-    } else {
-      $('#km_result').removeClass('bg-danger');
-      $('#km_result').addClass('bg-success');
-    };
 
     $('#itog').text(new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(itog,) + ' ₽');
-    $('#itog_km').text('КМ расчетный ' + new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(kvp,) + ' ₽');
 
   }
 

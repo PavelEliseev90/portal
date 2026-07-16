@@ -109,13 +109,6 @@ def calculation_car(request):
     
     refresh_km_raschet_after_details(calculation_object, car_object, data)
 
-    try:
-        from avtosalon.deal_calc_approval import try_auto_approve_calculation
-        # После деталей: иначе trade-in ещё не виден и берётся АвтоК без trade-in
-        try_auto_approve_calculation(calculation_object)
-    except Exception:
-        pass
-    
     RefCarsOrganizationAction.objects.filter(car = car_object).delete()
 
     list_action = data['Action']
@@ -128,8 +121,37 @@ def calculation_car(request):
         new_action_detail.amount_comp = action_info['Amount_comp']        
         new_action_detail.save()
 
+    try:
+        from avtosalon.deal_calc_approval import (
+            build_calculation_soglasovanie_api_response,
+            prepare_calculation_soglasovanie_from_1c,
+        )
+        # После деталей: иначе trade-in ещё не виден и берётся АвтоК без trade-in.
+        prepare_calculation_soglasovanie_from_1c(
+            calculation_object, car_object, rlk_object, unit_object,
+        )
+        soglasovanie_info = build_calculation_soglasovanie_api_response(
+            calculation_object,
+        )
+    except Exception:
+        soglasovanie_info = {
+            'soglasovanie_status': calculation_object.soglasovanie_status or 'pending',
+            'soglasovanie_status_label': '',
+            'soglasovanie_auto_approved': False,
+            'requires_soglasovanie_confirm': True,
+            'km_raschet': calculation_object.km_raschet,
+            'km_min_dc': None,
+            'km_rule_total': None,
+            'km_min_calculated': None,
+            'km_rule_with_trade_in': False,
+            'kvp_above_km_rule': False,
+            'km_rule_meets_min_dc': False,
+            'kvp': calculation_object.kvp,
+        }
+
     to_json = {
-        'answer'     : calculation_object.pk,
+        'answer': calculation_object.pk,
+        **soglasovanie_info,
     }
 
     return JsonResponse(to_json, status=status.HTTP_200_OK)
@@ -211,6 +233,9 @@ def calculation_car_start_success(request):
             'km_min_dc': None,
             'km_rule_total': None,
             'km_min_calculated': None,
+            'km_rule_with_trade_in': False,
+            'kvp_above_km_rule': False,
+            'km_rule_meets_min_dc': False,
             'kvp': calculation_object.kvp,
         }
 
