@@ -77,7 +77,7 @@ def director_can_approve_without_uk(calc, cumulative_data):
     min_km_dc = get_calc_min_km_dc(cumulative_data, calc.car)
     if min_km_dc <= 0:
         return False
-    if not km_rule_meets_min_dc(cumulative_data, calc.car):
+    if not km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc):
         return False
     return kvp_above_min_km_dc(calc, cumulative_data)
 
@@ -104,11 +104,11 @@ def kvp_above_km_rule(calc, cumulative_data=None):
     return int(calc.kvp or 0) > int(km_rule)
 
 
-def km_rule_meets_min_dc(cumulative_data, car):
+def km_rule_meets_min_dc(cumulative_data, car, calc=None):
     """Итог по правилу не ниже мин. КМ ДЦ (иначе только цепочка директор → УК)."""
     from prices_car.km_breakdown import get_km_rule_total
 
-    km_rule = get_km_rule_total(cumulative_data, car)
+    km_rule = get_km_rule_total(cumulative_data, car, calc=calc)
     km_min_dc = get_calc_min_km_dc(cumulative_data, car)
     if km_rule is None or km_min_dc <= 0:
         return True
@@ -121,7 +121,7 @@ def can_auto_approve_calculation(calc, cumulative_data=None):
         cumulative_data, _ = _get_calc_cumulative_data(calc)
     if not kvp_above_km_rule(calc, cumulative_data):
         return False
-    return km_rule_meets_min_dc(cumulative_data, calc.car)
+    return km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc)
 
 
 def is_auto_approved_calculation(calc):
@@ -132,6 +132,69 @@ def is_auto_approved_calculation(calc):
         and calc.director_approve_user_id == AUTO_APPROVE_USER_ID
         and calc.director_approve_comment == AUTO_APPROVE_COMMENT
     )
+
+
+def recalculate_deal_calculation_km(calc, user):
+    """
+    Пересчёт расчётного КМ и повторная проверка автосогласования.
+    Только для price_car_new_all. Ручные согласования/отказы не трогаем;
+    ошибочное автосогласование сбрасываем и переоцениваем.
+    """
+    from prices_car.km_raschet import (
+        apply_km_raschet_to_calculation,
+        calculation_has_applied_trade_in,
+    )
+    from prices_car.models import CarCalculations
+
+    if not user_has_deal_calc_uk_access(user):
+        return False, 'Недостаточно прав для пересчёта.'
+
+    car = getattr(calc, 'car', None)
+    if not car:
+        return False, 'У КП не указан автомобиль.'
+
+    apply_km_raschet_to_calculation(calc, car)
+    update_fields = ['km_raschet']
+
+    reset_auto = is_auto_approved_calculation(calc)
+    if reset_auto:
+        calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_PENDING
+        calc.director_approve_user = None
+        calc.director_approve_date = None
+        calc.director_approve_comment = ''
+        update_fields.extend([
+            'soglasovanie_status',
+            'director_approve_user',
+            'director_approve_date',
+            'director_approve_comment',
+        ])
+
+    calc.save(update_fields=update_fields)
+
+    cumulative_data = None
+    try:
+        cumulative_data = car.cumulative_data()
+    except Exception:
+        pass
+
+    auto_ok = try_auto_approve_calculation(
+        calc, send_chat=True, cumulative_data=cumulative_data,
+    )
+
+    with_ti = calculation_has_applied_trade_in(calc)
+    km = calc.km_raschet
+    km_txt = f'{int(km):,}'.replace(',', ' ') if km is not None else '—'
+    ti_txt = 'с trade-in' if with_ti else 'без trade-in'
+    if auto_ok:
+        msg = f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽. Автосогласование применено.'
+    elif reset_auto:
+        msg = (
+            f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽. '
+            'Автосогласование снято — условия больше не выполняются.'
+        )
+    else:
+        msg = f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽.'
+    return True, msg
 
 
 def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
@@ -757,7 +820,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     )
     approval_final_without_uk = status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
-    approval_km_rule_meets_min_dc = km_rule_meets_min_dc(cumulative_data, calc.car)
+    approval_km_rule_meets_min_dc = km_rule_meets_min_dc(cumulative_data, calc.car, calc=calc)
     approval_can_auto_approve = can_auto_approve_calculation(calc, cumulative_data)
     km_rule_total = None
     if cumulative_data:
