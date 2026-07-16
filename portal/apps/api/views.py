@@ -138,6 +138,11 @@ def calculation_car(request):
             'soglasovanie_status': calculation_object.soglasovanie_status or 'pending',
             'soglasovanie_status_label': '',
             'soglasovanie_auto_approved': False,
+            'soglasovanie_prior_uk_approved': False,
+            'uk_min_approved_kvp': None,
+            'kvp_meets_prior_uk_threshold': False,
+            'uk_approval_basis': '',
+            'uk_approval_source_calculation_id': None,
             'requires_soglasovanie_confirm': True,
             'km_raschet': calculation_object.km_raschet,
             'km_min_dc': None,
@@ -229,6 +234,11 @@ def calculation_car_start_success(request):
             'soglasovanie_status': calculation_object.soglasovanie_status or 'pending',
             'soglasovanie_status_label': '',
             'soglasovanie_auto_approved': False,
+            'soglasovanie_prior_uk_approved': False,
+            'uk_min_approved_kvp': None,
+            'kvp_meets_prior_uk_threshold': False,
+            'uk_approval_basis': '',
+            'uk_approval_source_calculation_id': None,
             'requires_soglasovanie_confirm': True,
             'km_raschet': calculation_object.km_raschet,
             'km_min_dc': None,
@@ -5388,9 +5398,27 @@ def get_calculation_car(data):
     refresh_km_raschet_after_details(calculation_object, car_object, data)
 
     try:
-        from avtosalon.deal_calc_approval import try_auto_approve_calculation
+        from avtosalon.deal_calc_approval import (
+            send_calculation_soglasovanie_result_to_1c,
+            try_approve_by_prior_uk_threshold,
+            try_auto_approve_calculation,
+        )
         # После деталей: иначе trade-in ещё не виден и берётся АвтоК без trade-in
-        try_auto_approve_calculation(calculation_object)
+        prior_uk_approved = try_approve_by_prior_uk_threshold(
+            calculation_object,
+            send_to_1c=True,
+        )
+        if not prior_uk_approved:
+            try_auto_approve_calculation(calculation_object)
+            if getattr(
+                calculation_object,
+                '_prior_uk_approval_revoked',
+                False,
+            ):
+                send_calculation_soglasovanie_result_to_1c(
+                    calculation_object,
+                    force=True,
+                )
     except Exception:
         pass
     

@@ -442,7 +442,15 @@
             <span class="badge {% if params.approval_status == 'director_rejected' or params.approval_status == 'uk_rejected' %}bg-danger{% elif params.approval_final_without_uk or params.approval_status == 'uk_approved' %}bg-success{% elif params.approval_status == 'pending_uk' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ params.approval_status_label }}</span>
           </div>
 
-          {% if params.approval_final_without_uk %}
+          {% if params.approval_prior_uk_approved %}
+          <p class="small text-success mb-2">
+            Согласовано автоматически на основании ранее согласованного УК минимального КВП
+            {{ params.approval_prior_uk_threshold|floatformat:"0g" }} ₽
+            {% if params.approval_prior_uk_source_calc %}
+            по КП #{{ params.approval_prior_uk_source_calc.number|default:params.approval_prior_uk_source_calc.pk }}
+            {% endif %}.
+          </p>
+          {% elif params.approval_final_without_uk %}
           <p class="small text-success mb-2">
             {% if params.approval_auto_approved %}
             Согласовано автоматически: КВП выше итога по правилу и выше мин. КМ ДЦ, если порог задан. УК не требуется.
@@ -466,6 +474,13 @@
           <p class="small text-danger mb-2">Согласование отклонено управляющей компанией.</p>
           {% endif %}
 
+          {% if params.approval_prior_uk_threshold and not params.approval_kvp_meets_prior_uk_threshold %}
+          <p class="small text-muted mb-2">
+            Ранее УК согласовало минимальный КВП {{ params.approval_prior_uk_threshold|floatformat:"0g" }} ₽
+            для этого рабочего листа и автомобиля. Текущий КВП ниже порога, поэтому используется обычная цепочка согласования.
+          </p>
+          {% endif %}
+
           {% if params.calc.director_approve_user %}
           <div class="metric-card-portal mb-2">
             <div class="metric-card-label-portal">
@@ -486,7 +501,7 @@
           {% if params.calc.uk_approve_user %}
           <div class="metric-card-portal mb-2">
             <div class="metric-card-label-portal">
-              {% if params.approval_status == 'uk_rejected' %}Отказ УК{% else %}Управляющая компания{% endif %}
+              {% if params.approval_status == 'uk_rejected' %}Отказ УК{% elif params.approval_prior_uk_approved %}Автоматическое согласование УК{% else %}Управляющая компания{% endif %}
             </div>
             <div class="metric-card-value-portal">
               {{ params.calc.uk_approve_user.profiles.eco_name|default:params.calc.uk_approve_user.get_full_name }}
