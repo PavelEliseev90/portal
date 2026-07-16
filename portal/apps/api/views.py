@@ -145,7 +145,8 @@ def calculation_car(request):
             'km_min_calculated': None,
             'km_rule_with_trade_in': False,
             'kvp_above_km_rule': False,
-            'km_rule_meets_min_dc': False,
+            'kvp_above_min_dc': False,
+            'auto_min_dc_ok': False,
             'kvp': calculation_object.kvp,
         }
 
@@ -235,7 +236,8 @@ def calculation_car_start_success(request):
             'km_min_calculated': None,
             'km_rule_with_trade_in': False,
             'kvp_above_km_rule': False,
-            'km_rule_meets_min_dc': False,
+            'kvp_above_min_dc': False,
+            'auto_min_dc_ok': False,
             'kvp': calculation_object.kvp,
         }
 
