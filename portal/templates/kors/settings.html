@@ -28,8 +28,10 @@
 
   <div class="settings-panel">
     <h3>Подготовка</h3>
-    <p>Управление работами и нормативами подготовки автомобиля.</p>
+    <p>Пакеты работ (техкарты) и нормативы подготовки автомобиля.</p>
     <div class="d-flex flex-wrap gap-2">
+      <a class="settings-chip" href="{% url 'estimation_engine:settings_hub' %}">Пакеты работ</a>
+      <a class="settings-chip" href="{% url 'estimation_engine:work_packages_list' %}">Каталог пакетов</a>
       <a class="settings-chip" href="settings_works/">Работы (type_settings: 0, 1)</a>
     </div>
   </div>

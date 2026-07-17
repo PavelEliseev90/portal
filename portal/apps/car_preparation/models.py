@@ -172,6 +172,102 @@ class CarPreparation(ChangeloggableMixin, models.Model):
         ordering = ['-date_created']
 
 
+class CarPreparationPackage(models.Model):
+    """
+    Экземпляр пакета работ на документе подготовки.
+
+    Группирует work_items, пришедшие из согласованного пакета оценки
+    (например «Покраска крыла без ремонта»).
+    """
+
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('in_progress', 'В работе'),
+        ('completed', 'Выполнен'),
+        ('cancelled', 'Отменён'),
+    ]
+
+    ROUTE_IN_HOUSE = 'in_house'
+    ROUTE_CONTRACTOR = 'contractor'
+    ROUTE_MANUAL = 'manual'
+    ROUTE_CHOICES = [
+        (ROUTE_IN_HOUSE, 'Свой цех / ремзона'),
+        (ROUTE_CONTRACTOR, 'Подрядчик'),
+        (ROUTE_MANUAL, 'Ручной выбор'),
+    ]
+
+    preparation = models.ForeignKey(
+        CarPreparation,
+        on_delete=models.CASCADE,
+        related_name='packages',
+        verbose_name='Подготовка',
+    )
+    source_package = models.ForeignKey(
+        'estimation_engine.PreparationWorkPackage',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='preparation_instances',
+        verbose_name='Пакет из каталога',
+    )
+    code = models.CharField('Код', max_length=64, blank=True, default='', db_index=True)
+    name = models.CharField('Наименование', max_length=512, default='')
+    route_type = models.CharField(
+        'Маршрут',
+        max_length=16,
+        choices=ROUTE_CHOICES,
+        default=ROUTE_IN_HOUSE,
+        db_index=True,
+    )
+    repair_zone = models.ForeignKey(
+        'RefRepairZone',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='preparation_packages',
+        verbose_name='Ремзона / цех',
+    )
+    status = models.CharField(
+        'Статус',
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        db_index=True,
+    )
+    is_confirmed = models.BooleanField(
+        'Подтверждён для выполнения',
+        default=False,
+        help_text='Согласование пакета целиком перед планированием',
+    )
+    planned_time = models.IntegerField('Планируемое время (мин)', default=0, blank=True)
+    actual_time = models.IntegerField('Фактическое время (мин)', default=0, blank=True)
+    cost = models.DecimalField(
+        'Стоимость пакета',
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+    )
+    sort_order = models.PositiveIntegerField('Порядок', default=0)
+    comment = models.TextField('Комментарий', max_length=2000, blank=True, default='')
+    date_created = models.DateTimeField('Дата создания', default=datetime.now)
+    date_updated = models.DateTimeField('Дата обновления', auto_now=True)
+
+    def __str__(self):
+        return f'{self.preparation_id}: {self.name or self.code}'
+
+    class Meta:
+        db_table = 'carPreparationPackage'
+        verbose_name = "Пакет на подготовке"
+        verbose_name_plural = "Пакеты на подготовке"
+        ordering = ['sort_order', 'id']
+        indexes = [
+            models.Index(fields=['preparation', 'status']),
+            models.Index(fields=['code']),
+            models.Index(fields=['repair_zone', 'status']),
+        ]
+
+
 class CarPreparationWorkItem(ChangeloggableMixin, models.Model):
     """Пункт работы по подготовке"""
     STATUS_CHOICES = [
@@ -191,6 +287,15 @@ class CarPreparationWorkItem(ChangeloggableMixin, models.Model):
     
     preparation = models.ForeignKey(CarPreparation, on_delete=models.CASCADE,
                                    verbose_name="Подготовка", related_name='work_items')
+    preparation_package = models.ForeignKey(
+        CarPreparationPackage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='work_items',
+        verbose_name='Пакет работ',
+        help_text='Группа, в составе которой согласована эта работа',
+    )
     work = models.ForeignKey(RefCarPreparationWork, on_delete=models.PROTECT,
                             verbose_name="Вид работы")
     
@@ -240,6 +345,7 @@ class CarPreparationWorkItem(ChangeloggableMixin, models.Model):
         verbose_name_plural = "Работы по подготовке"
         indexes = [
             models.Index(fields=['preparation']),
+            models.Index(fields=['preparation_package']),
             models.Index(fields=['status']),
             models.Index(fields=['work']),
         ]
@@ -321,8 +427,13 @@ class CarPreparationChecklist(ChangeloggableMixin, models.Model):
 
 
 class CarPreparationTemplate(models.Model):
-    """Шаблон подготовки автомобиля"""
-    name = models.CharField("Наименование шаблона", max_length=250, default='')
+    """
+    Устарело: стартовый чеклист подготовки.
+
+    Заменён единым каталогом PreparationWorkPackage.
+    Таблицацы сохранены; UI основного потока ведёт на пакеты работ.
+    """
+    name = models.CharField("Наименование", max_length=250, default='')
     description = models.TextField("Описание", max_length=2000, blank=True, default='')
     
     # Условия применения
@@ -338,7 +449,7 @@ class CarPreparationTemplate(models.Model):
                                   verbose_name="Работы")
     
     is_active = models.BooleanField("Активен", default=True)
-    is_default = models.BooleanField("Шаблон по умолчанию", default=False)
+    is_default = models.BooleanField("По умолчанию", default=False)
     
     date_created = models.DateTimeField('Дата создания', default=datetime.now)
     
@@ -347,7 +458,7 @@ class CarPreparationTemplate(models.Model):
 
     def apply_to_preparation(self, preparation, *, auto_confirm=False):
         """
-        Создаёт пункты работ по шаблону. Уже существующие работы не дублируются.
+        Создаёт пункты работ по чеклисту. Уже существующие работы не дублируются.
         Возвращает (created_count, skipped_count).
         """
         created_count = 0
@@ -383,12 +494,12 @@ class CarPreparationTemplate(models.Model):
     
     class Meta:
         db_table = 'carPreparationTemplate'
-        verbose_name = "Шаблон подготовки"
-        verbose_name_plural = "Шаблоны подготовки"
+        verbose_name = "Стартовый чеклист подготовки"
+        verbose_name_plural = "Стартовые чеклисты подготовки"
 
 
 class CarPreparationTemplateWork(models.Model):
-    """Работа в шаблоне подготовки"""
+    """Работа в стартовом чеклисте подготовки"""
     template = models.ForeignKey(CarPreparationTemplate, on_delete=models.CASCADE)
     work = models.ForeignKey(RefCarPreparationWork, on_delete=models.CASCADE)
     
@@ -400,8 +511,8 @@ class CarPreparationTemplateWork(models.Model):
     
     class Meta:
         db_table = 'carPreparationTemplateWork'
-        verbose_name = "Работа в шаблоне"
-        verbose_name_plural = "Работы в шаблонах"
+        verbose_name = "Работа в чеклисте подготовки"
+        verbose_name_plural = "Работы в чеклистах подготовки"
         unique_together = ['template', 'work']
         ordering = ['sort_order']
 
@@ -858,7 +969,13 @@ class RefRepairZone(models.Model):
 
 
 class WorkOrderTemplate(models.Model):
-    """Шаблон заказ-наряда (например, 'мойка перед выдачей')"""
+    """
+    Устарело: шаблон заказ-наряда.
+
+    Новые сценарии используют PreparationWorkPackage (каталог) →
+    CarPreparationPackage на подготовке → WorkOrder из выбранных пакетов.
+    Таблицаца сохранена для старых ЗН с template_id.
+    """
     name = models.CharField("Наименование шаблона", max_length=250, default='')
     description = models.TextField("Описание", max_length=2000, blank=True, default='')
     code = models.CharField("Код", max_length=50, default='', unique=True)

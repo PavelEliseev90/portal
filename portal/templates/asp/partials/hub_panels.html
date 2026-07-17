@@ -34,12 +34,13 @@
     <h3 class="deal-section-title"><span class="bi bi-wrench-adjustable me-1" aria-hidden="true"></span> Подготовка автомобилей</h3>
     <span class="text-muted small">От приёмки до готовности к продаже</span>
   </div>
-  <p class="text-muted small mb-2">Планирование работ, заказ-наряды, чек-листы и контроль сроков подготовки.</p>
+  <p class="text-muted small mb-2">Планирование работ, пакеты, заказ-наряды и контроль сроков подготовки.</p>
   <div class="asp-links">
     <a class="btn-calculate-sm" href="{% url 'car_preparation:dashboard' %}"><span class="icon-doc"></span> Рабочий стол подготовки</a>
     <a class="btn-calculate-sm" href="{% url 'car_preparation:list' %}"><span class="icon-doc"></span> Список подготовок</a>
     <a class="btn-calculate-sm" href="{% url 'car_preparation:calendar' %}"><span class="bi bi-calendar3"></span> Календарь</a>
     <a class="btn-calculate-sm" href="{% url 'car_preparation:performers_works' %}"><span class="bi bi-people"></span> Работы исполнителей</a>
+    <a class="btn-calculate-sm" href="{% url 'estimation_engine:work_packages_list' %}"><span class="bi bi-box"></span> Пакеты работ</a>
   </div>
 </div>
 
@@ -85,5 +86,6 @@
     <a class="btn-calculate-sm" href=""><span class="icon-doc"></span> Автоценка по подразделениям</a>
     <a class="btn-calculate-sm" href="/settings/settings_diagnostic/"><span class="icon-doc"></span> Настройки диагностики</a>
     <a class="btn-calculate-sm" href="/settings/settings_works/"><span class="icon-doc"></span> Нормо-часы и работы</a>
+    <a class="btn-calculate-sm" href="{% url 'estimation_engine:settings_hub' %}"><span class="bi bi-box"></span> Пакеты работ</a>
   </div>
 </div>

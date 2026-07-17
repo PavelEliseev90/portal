@@ -1,0 +1,216 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if package %}Пакет{% else %}Новый пакет{% endif %}{% endblock %}
+{% block title_navbar %} - {% if package %}Пакет{% else %}Новый пакет{% endif %}{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>{% if package %}Редактирование пакета{% else %}Новый пакет работ{% endif %}</h2>
+    <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" id="packageForm">
+    {% csrf_token %}
+    <div class="portal-panel mb-3">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Код *</label>
+          <input type="text" class="form-control" name="code" value="{{ package.code|default:'' }}" required>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Наименование *</label>
+          <input type="text" class="form-control" name="name" value="{{ package.name|default:'' }}" required
+                 placeholder="Например: Покраска крыла без ремонта">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Раздел</label>
+          <select class="form-select" name="section">
+            {% for value, label in section_choices %}
+            <option value="{{ value }}" {% if package.section == value or not package and value == 'common' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Статус</label>
+          <select class="form-select" name="status">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if package.status == value or not package and value == 'published' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Для использования на подготовке лучше сразу «Опубликован».</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Маршрут</label>
+          <select class="form-select" name="route_type" id="route_type">
+            {% for value, label in route_choices %}
+            <option value="{{ value }}" {% if package.route_type == value or not package and value == 'in_house' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Порядок</label>
+          <input type="number" class="form-control" name="sort_order" value="{{ package.sort_order|default:0 }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Ремзона / цех по умолчанию</label>
+          <select class="form-select" name="default_repair_zone_id">
+            <option value="">—</option>
+            {% for zone in zones %}
+            <option value="{{ zone.id }}" {% if package.default_repair_zone_id == zone.id %}selected{% endif %}>{{ zone.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Подряд по умолчанию</label>
+          <select class="form-select" name="default_service_offering_id">
+            <option value="">—</option>
+            {% for off in offerings %}
+            <option value="{{ off.id }}" {% if package.default_service_offering_id == off.id %}selected{% endif %}>{{ off }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Описание</label>
+          <textarea class="form-control" name="description" rows="2">{{ package.description|default:'' }}</textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                   {% if not package or package.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">Активен</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Состав пакета</h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLine()">Добавить строку</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="linesTable">
+          <thead>
+            <tr>
+              <th style="width:140px">Тип</th>
+              <th>Ссылка</th>
+              <th style="width:90px">Кол-во</th>
+              <th style="width:90px">Н/ч</th>
+              <th style="width:100px">Цена ед.</th>
+              <th style="width:120px">Ключ</th>
+              <th style="width:120px">Родитель</th>
+              <th style="width:70px">Обяз.</th>
+              <th style="width:50px"></th>
+            </tr>
+          </thead>
+          <tbody id="linesBody"></tbody>
+        </table>
+      </div>
+      <p class="small text-muted mb-0">
+        Для материалов укажите «Родитель» = coverage_key работы, к которой относится расход.
+      </p>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-outline-secondary">Отмена</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const refsByType = {
+  WORK: [
+    {% for w in works %}{id: {{ w.id }}, label: "{{ w.stage.name|default:''|escapejs }} — {{ w.name|escapejs }}"},{% endfor %}
+  ],
+  MATERIAL: [
+    {% for m in materials %}{id: {{ m.id }}, label: "{{ m.name|escapejs }}"},{% endfor %}
+  ],
+  PART: [
+    {% for p in parts %}{id: {{ p.id }}, label: "{{ p.code|escapejs }} / {{ p.name|escapejs }}"},{% endfor %}
+  ],
+  SERVICE: [
+    {% for o in offerings %}{id: {{ o.id }}, label: "{{ o.code|escapejs }} — {{ o.service.name|escapejs }} / {{ o.provider.name|default:''|escapejs }}"},{% endfor %}
+  ],
+};
+
+const initialLines = [
+  {% for line in lines %}
+  {
+    line_type: "{{ line.line_type }}",
+    ref_id: "{{ line.ref_id }}",
+    quantity: "{{ line.quantity }}",
+    norm_hours: "{{ line.norm_hours }}",
+    coverage_key: "{{ line.coverage_key|escapejs }}",
+    parent_coverage_key: "{{ line.parent_coverage_key|escapejs }}",
+    is_required: {{ line.is_required|yesno:"true,false" }},
+    unit_cost: "{{ line.unit_cost }}"
+  },
+  {% endfor %}
+];
+
+let lineIdx = 0;
+
+function refOptions(type, selected) {
+  const items = refsByType[type] || [];
+  return items.map(i => `<option value="${i.id}" ${String(i.id) === String(selected) ? 'selected' : ''}>${i.label}</option>`).join('');
+}
+
+function addLine(data = null) {
+  const idx = lineIdx++;
+  const type = (data && data.line_type) || 'WORK';
+  const tr = document.createElement('tr');
+  tr.dataset.idx = idx;
+  tr.innerHTML = `
+    <td>
+      <select class="form-select form-select-sm" name="line_type[]" onchange="onTypeChange(this)">
+        <option value="WORK" ${type === 'WORK' ? 'selected' : ''}>Работа</option>
+        <option value="MATERIAL" ${type === 'MATERIAL' ? 'selected' : ''}>Материал</option>
+        <option value="PART" ${type === 'PART' ? 'selected' : ''}>Деталь</option>
+        <option value="SERVICE" ${type === 'SERVICE' ? 'selected' : ''}>Услуга</option>
+      </select>
+    </td>
+    <td>
+      <select class="form-select form-select-sm" name="ref_id[]">
+        <option value="">— выберите —</option>
+        ${refOptions(type, data && data.ref_id)}
+      </select>
+    </td>
+    <td><input class="form-control form-control-sm" name="quantity[]" value="${(data && data.quantity) || 1}"></td>
+    <td><input class="form-control form-control-sm" name="norm_hours[]" value="${(data && data.norm_hours) || 0}"></td>
+    <td><input class="form-control form-control-sm" name="unit_cost[]" value="${(data && data.unit_cost) || 0}" title="Для WORK обычно 0"></td>
+    <td><input class="form-control form-control-sm" name="coverage_key[]" value="${(data && data.coverage_key) || ''}"></td>
+    <td><input class="form-control form-control-sm" name="parent_coverage_key[]" value="${(data && data.parent_coverage_key) || ''}"></td>
+    <td class="text-center">
+      <input type="hidden" name="is_required[]" class="is-required-val" value="${(data ? data.is_required : true) ? '1' : '0'}">
+      <input type="checkbox" ${(data ? data.is_required : true) ? 'checked' : ''}
+             onchange="this.previousElementSibling.value=this.checked?'1':'0'">
+    </td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
+  `;
+  document.getElementById('linesBody').appendChild(tr);
+}
+
+function onTypeChange(selectEl) {
+  const tr = selectEl.closest('tr');
+  const refSelect = tr.querySelector('select[name="ref_id[]"]');
+  refSelect.innerHTML = `<option value="">— выберите —</option>${refOptions(selectEl.value, null)}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (initialLines.length) {
+    initialLines.forEach(addLine);
+  } else {
+    addLine();
+  }
+});
+</script>
+{% endblock %}

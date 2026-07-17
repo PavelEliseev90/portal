@@ -1,0 +1,90 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Настройки оценки и подготовки{% endblock %}
+{% block title_navbar %} - Настройки оценки и подготовки{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Настройки оценки и подготовки</h2>
+    <p class="text-muted mb-0">Пакеты → правила → preview. На подготовке пакеты исполняются через заказ-наряд.</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="portal-panel h-100">
+        <h5 class="mb-2">Пакеты работ</h5>
+        <p class="small text-muted mb-3">Каталог техкарт: состав, маршрут, цены строк (MVP).</p>
+        <p class="mb-3"><strong>{{ packages_published }}</strong> опубл. / {{ packages_count }} всего</p>
+        <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-primary btn-sm">Каталог</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="portal-panel h-100">
+        <h5 class="mb-2">Правила</h5>
+        <p class="small text-muted mb-3">Условия осмотра → какие пакеты применить.</p>
+        <p class="mb-3"><strong>{{ rules_published }}</strong> опубл. / {{ rules_count }} всего</p>
+        <a href="{% url 'estimation_engine:rules_list' %}" class="btn btn-outline-primary btn-sm">Список правил</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="portal-panel h-100">
+        <h5 class="mb-2">Симулятор</h5>
+        <p class="small text-muted mb-3">Preview: сработавшие правила, состав и итог.</p>
+        <a href="{% url 'estimation_engine:rules_preview' %}" class="btn btn-outline-primary btn-sm">Открыть preview</a>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="portal-panel h-100">
+        <h5 class="mb-2">Справочники</h5>
+        <p class="small text-muted mb-3">Элементы схемы (полигоны) и типы повреждений.</p>
+        <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-4">
+    <h5 class="mb-2">Тест: новый UI осмотра кузова</h5>
+    <p class="small text-muted mb-3">
+      Отдельная страница — legacy осмотр не трогаем. Справочники элементов/повреждений, флаг «обязательное фото».
+    </p>
+    <a href="/estimations/osmotr-test/pered/" class="btn btn-outline-dark btn-sm">Открыть тест осмотра</a>
+  </div>
+
+  <div class="portal-panel mb-4">
+    <h5 class="mb-3">Сущности</h5>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Зачем</th>
+            <th>Когда</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in glossary %}
+          <tr>
+            <td><strong>{{ row.name }}</strong></td>
+            <td>{{ row.role }}</td>
+            <td class="text-muted">{{ row.when }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="portal-panel">
+    <h5 class="mb-2">Как считается сумма в MVP</h5>
+    <ul class="mb-0 small">
+      <li>WORK: нормочасы × ставка н/ч правила</li>
+      <li>MATERIAL / PART / SERVICE: количество × цена единицы на строке пакета</li>
+      <li>Либо фикс. стоимость пакета на связи правило↔пакет</li>
+      <li>Одинаковый coverage_key не дублируется</li>
+      <li>Версионные прайсы — следующий этап</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

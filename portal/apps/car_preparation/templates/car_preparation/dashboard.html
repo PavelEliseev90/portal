@@ -219,8 +219,11 @@
         <a href="{% url 'car_preparation:repair_zones_list' %}" class="btn btn-outline-info flex-fill flex-md-grow-0">
           <span class="icon-mbri-setting"></span> <span class="d-none d-sm-inline">Ремонтные зоны</span>
         </a>
-        <a href="{% url 'car_preparation:work_order_templates_list' %}" class="btn btn-outline-success flex-fill flex-md-grow-0">
-          <span class="icon-mbri-file"></span> <span class="d-none d-sm-inline">Шаблоны</span>
+        <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-outline-success flex-fill flex-md-grow-0">
+          <span class="icon-mbri-file"></span> <span class="d-none d-sm-inline">Пакеты работ</span>
+        </a>
+        <a href="{% url 'estimation_engine:settings_hub' %}" class="btn btn-outline-dark flex-fill flex-md-grow-0">
+          <span class="icon-mbri-setting"></span> <span class="d-none d-sm-inline">Настройки</span>
         </a>
       </div>
     </div>

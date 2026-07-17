@@ -77,29 +77,44 @@
     <h3 class="deal-section-title"><span class="bi bi-wrench-adjustable me-1" aria-hidden="true"></span> Подготовка автомобилей</h3>
     <div class="row g-1">
       <div class="col-12 col-sm-auto">
-        <div class="metric-card">
-          <div class="metric-card-value"><span class="icon-mbri-database"></span> Рабочий стол</div>
-          <div class="metric-card-value text-muted fs-8"> Сводные данные по подготовкам</div>          
-        </div>               
+        <a href="{% url 'car_preparation:dashboard' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-mbri-database"></span> Рабочий стол</div>
+            <div class="metric-card-value text-muted fs-8"> Сводные данные по подготовкам</div>
+          </div>
+        </a>
       </div>
       <div class="col-12 col-sm-auto">
-        <div class="metric-card">
-          <div class="metric-card-value"><span class="icon-mbri-database"></span> Список подготовок</div>
-          <div class="metric-card-value text-muted fs-8"> Документы подготовки автомобилей</div>          
-        </div>               
+        <a href="{% url 'car_preparation:list' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-mbri-database"></span> Список подготовок</div>
+            <div class="metric-card-value text-muted fs-8"> Документы подготовки автомобилей</div>
+          </div>
+        </a>
       </div>
       <div class="col-12 col-sm-auto">
-        <div class="metric-card">
-          <div class="metric-card-value"><span class="icon-mbri-database"></span> Календарь</div>
-          <div class="metric-card-value text-muted fs-8"> Запланированые работы</div>          
-        </div>               
+        <a href="{% url 'car_preparation:calendar' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-mbri-database"></span> Календарь</div>
+            <div class="metric-card-value text-muted fs-8"> Запланированые работы</div>
+          </div>
+        </a>
       </div>
-      
       <div class="col-12 col-sm-auto">
-        <div class="metric-card">
-          <div class="metric-card-value"><span class="icon-mbri-database"></span> Работы исполнителей</div>
-          <div class="metric-card-value text-muted fs-8"> Выполняемые работы</div>          
-        </div>               
+        <a href="{% url 'car_preparation:performers_works' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-mbri-database"></span> Работы исполнителей</div>
+            <div class="metric-card-value text-muted fs-8"> Выполняемые работы</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'estimation_engine:work_packages_list' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-mbri-database"></span> Пакеты работ</div>
+            <div class="metric-card-value text-muted fs-8"> Каталог техкарт для оценки и подготовки</div>
+          </div>
+        </a>
       </div>
     </div>
   </div>
@@ -183,6 +198,9 @@
       
       <div class="col-12 col-sm-auto">
         <a class="btn-calculate-sm"><span class="icon-doc"></span> Настройки оценки</a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a class="btn-calculate-sm" href="{% url 'estimation_engine:settings_hub' %}"><span class="icon-doc"></span> Пакеты работ (оценка и подготовка)</a>
       </div>
       <div class="col-12 col-sm-auto">
         <a class="btn-calculate-sm"><span class="icon-doc"></span> Настройки выгрузки</a>

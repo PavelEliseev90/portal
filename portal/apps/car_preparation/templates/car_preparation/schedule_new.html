@@ -818,92 +818,110 @@
         </div>
         {% endif %}
 
-        <!-- Шаблоны подготовки (набор работ в подготовку) -->
+        <!-- Пакеты на подготовке -->
+        {% if preparation_packages %}
+        <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
+          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
+            <h5 class="mb-0" style="color: #fff;">
+              <span class="icon-mbri-file"></span> Пакеты на подготовке ({{ preparation_packages|length }})
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">Подтвердите пакеты, затем создайте заказ-наряд из выбранных.</p>
+            <div class="row g-3">
+              {% for pkg in preparation_packages %}
+              <div class="col-12 col-md-6">
+                <div class="template-card" style="{% if pkg.is_confirmed %}border-color: rgba(22, 163, 74, 0.45);{% endif %}">
+                  <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                    <div>
+                      <div class="form-check mb-1">
+                        <input class="form-check-input prep-package-check" type="checkbox"
+                               value="{{ pkg.id }}" id="prepPkg{{ pkg.id }}"
+                               data-name="{{ pkg.name|escapejs }}"
+                               data-zone="{{ pkg.repair_zone_id|default:'' }}"
+                               {% if pkg.is_confirmed %}{% else %}disabled title="Сначала подтвердите пакет"{% endif %}>
+                        <label class="form-check-label" for="prepPkg{{ pkg.id }}">
+                          <strong style="color: #002a5a;">{{ pkg.name }}</strong>
+                        </label>
+                      </div>
+                      <div class="small text-muted">
+                        {{ pkg.get_route_type_display }}
+                        {% if pkg.repair_zone %} · {{ pkg.repair_zone.name }}{% endif %}
+                        · {{ pkg.work_items.count }} работ
+                      </div>
+                    </div>
+                    <div>
+                      {% if pkg.is_confirmed %}
+                      <span class="badge bg-success">Подтверждён</span>
+                      {% else %}
+                      <span class="badge bg-secondary">Ожидает</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 flex-wrap">
+                    {% if pkg.is_confirmed %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="confirmPrepPackage({{ pkg.id }}, false)">Снять</button>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-success" onclick="confirmPrepPackage({{ pkg.id }}, true)">Подтвердить пакет</button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <button type="button" class="btn btn-primary btn-sm" onclick="createWorkOrderFromSelectedPackages()">
+                Создать ЗН из выбранных пакетов
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Каталог пакетов работ -->
         <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
           <div class="card-header" style="background: linear-gradient(135deg, #0d4d3a 0%, #16a34a 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <h5 class="mb-0" style="color: #fff;">
-                <span class="icon-mbri-file"></span> Шаблоны подготовки
+                <span class="icon-mbri-file"></span> Добавить пакет из каталога
               </h5>
-              <button class="btn btn-sm btn-light" type="button" onclick="showPreparationTemplateModal()">
-                <span class="icon-mbri-search"></span> Все шаблоны
-              </button>
+              <div class="d-flex gap-2">
+                <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-sm btn-light" target="_blank">Каталог</a>
+                <button class="btn btn-sm btn-outline-light" type="button" onclick="showCatalogPackageModal()">Все пакеты</button>
+              </div>
             </div>
           </div>
           <div class="card-body">
-            <p class="text-muted small mb-3">Шаблон заполняет документ подготовки (работы и плановые затраты из шаблона). Подтвердите позиции, затем оформите заказ-наряд в ремзону.</p>
-            {% if preparation_templates %}
+            <p class="text-muted small mb-3">Пакет добавляется на подготовку целиком. После подтверждения из него можно создать заказ-наряд.</p>
+            {% if catalog_packages %}
             <div class="row g-3">
-              {% for pt in preparation_templates|slice:":4" %}
+              {% for pkg in catalog_packages|slice:":6" %}
               <div class="col-12 col-md-6">
                 <div class="template-card" style="border-color: rgba(22, 163, 74, 0.25);">
                   <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0" style="color: #0d4d3a; font-weight: 600;">{{ pt.name }}</h6>
-                    <span class="badge bg-success">{{ pt.works.count }} работ</span>
+                    <h6 class="mb-0" style="color: #0d4d3a; font-weight: 600;">{{ pkg.name }}</h6>
+                    <div>
+                      {% if pkg.status == 'draft' %}<span class="badge bg-warning text-dark">черновик</span>{% endif %}
+                      <span class="badge bg-success">{{ pkg.lines.count }} стр.</span>
+                    </div>
                   </div>
-                  {% if pt.description %}
-                  <p class="text-muted small mb-2">{{ pt.description|truncatewords:12 }}</p>
+                  {% if pkg.description %}
+                  <p class="text-muted small mb-2">{{ pkg.description|truncatewords:12 }}</p>
                   {% endif %}
+                  <div class="small text-muted mb-2">{{ pkg.get_route_type_display }}{% if pkg.default_repair_zone %} · {{ pkg.default_repair_zone.name }}{% endif %}</div>
                   <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-sm btn-success" onclick="applyPreparationTemplate({{ pt.id }}, false)">
-                      Применить
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-success" onclick="applyPreparationTemplate({{ pt.id }}, true)">
-                      Применить и подтвердить все
-                    </button>
+                    <button type="button" class="btn btn-sm btn-success" onclick="addCatalogPackage({{ pkg.id }}, false)">Добавить</button>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="addCatalogPackage({{ pkg.id }}, true)">Добавить и подтвердить</button>
                   </div>
                 </div>
               </div>
               {% endfor %}
             </div>
             {% else %}
-            <p class="text-muted text-center py-3 mb-0">Шаблоны подготовки не настроены (админка → Шаблоны подготовки).</p>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Шаблоны заказ-нарядов -->
-        <div class="card mb-4" style="border-radius: 1.25rem; border: 1px solid rgba(0, 42, 90, 0.1); box-shadow: 0 20px 45px rgba(0, 23, 61, 0.08);">
-          <div class="card-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff; border-radius: 1.25rem 1.25rem 0 0; padding: 1.25rem 1.5rem; border: none;">
-            <div class="d-flex justify-content-between align-items-center">
-              <h5 class="mb-0" style="color: #fff;">
-                <span class="icon-mbri-file"></span> Шаблоны для заказ-наряда (в цех)
-              </h5>
-              <button class="btn btn-sm btn-light" onclick="showTemplateModal()">
-                <span class="icon-mbri-search"></span> Выбрать шаблон
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            {% if templates %}
-            <div class="row g-3" id="templatesGrid">
-              {% for template in templates|slice:":6" %}
-              <div class="col-12 col-md-6">
-                <div class="template-card" onclick="loadTemplate({{ template.id }})">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0" style="color: #002a5a; font-weight: 600;">{{ template.name }}</h6>
-                    <span class="badge bg-primary">{{ template.works.count }} работ</span>
-                  </div>
-                  {% if template.description %}
-                  <p class="text-muted small mb-2">{{ template.description|truncatewords:15 }}</p>
-                  {% endif %}
-                  <div class="text-muted small">
-                    <span class="icon-mbri-clock me-1"></span>
-                    ~{{ template.estimated_duration_minutes }} мин
-                  </div>
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-            {% if templates.count > 6 %}
-            <div class="text-center mt-3">
-              <button class="btn btn-outline-primary" onclick="showTemplateModal()">
-                Показать все шаблоны ({{ templates.count }})
-              </button>
-            </div>
-            {% endif %}
-            {% else %}
-            <p class="text-muted text-center py-4">Шаблоны не созданы</p>
+            <p class="text-muted text-center py-3 mb-0">
+              Нет опубликованных пакетов.
+              <a href="{% url 'estimation_engine:work_package_create' %}">Создать пакет</a>
+            </p>
             {% endif %}
           </div>
         </div>
@@ -1058,76 +1076,46 @@
   </div>
 </div>
 
-<!-- Модальное окно выбора шаблонов -->
-<div class="modal fade" id="templateModal" tabindex="-1">
+<!-- Модальное окно каталога пакетов -->
+<div class="modal fade" id="catalogPackageModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header" style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
-        <h5 class="modal-title">Выбор шаблона заказ-наряда</h5>
+      <div class="modal-header" style="background: linear-gradient(135deg, #0d4d3a 0%, #16a34a 100%); color: #fff;">
+        <h5 class="modal-title">Пакеты работ (каталог)</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-0">
         <div class="template-search">
-          <input type="text" class="form-control" id="templateSearch" 
-                 placeholder="Поиск шаблона..." 
-                 onkeyup="filterTemplates(this.value)">
+          <input type="text" class="form-control" id="catalogPackageSearch"
+                 placeholder="Поиск пакета..."
+                 onkeyup="filterCatalogPackages(this.value)">
         </div>
         <div class="template-modal p-3">
-          <div class="row g-3" id="templatesModalGrid">
-            {% for template in templates %}
-            <div class="col-md-6 template-item" data-template-name="{{ template.name|lower }}" data-template-desc="{{ template.description|lower|default:'' }}">
-              <div class="template-card" onclick="loadTemplate({{ template.id }}); bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();">
+          <div class="row g-3" id="catalogPackagesModalGrid">
+            {% for pkg in catalog_packages %}
+            <div class="col-md-6 template-item" data-template-name="{{ pkg.name|lower }}" data-template-desc="{{ pkg.description|lower|default:'' }}">
+              <div class="template-card" style="border-color: rgba(22, 163, 74, 0.25);">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                  <h6 class="mb-0" style="color: #002a5a; font-weight: 600;">{{ template.name }}</h6>
-                  <span class="badge bg-primary">{{ template.works.count }} работ</span>
+                  <h6 class="mb-0" style="color: #0d4d3a; font-weight: 600;">{{ pkg.name }}</h6>
+                  <span class="badge bg-success">{{ pkg.lines.count }} стр.</span>
                 </div>
-                {% if template.description %}
-                <p class="text-muted small mb-2">{{ template.description|truncatewords:20 }}</p>
+                {% if pkg.description %}
+                <p class="text-muted small mb-2">{{ pkg.description|truncatewords:20 }}</p>
                 {% endif %}
-                <div class="d-flex justify-content-between align-items-center">
-                  <div class="text-muted small">
-                    <span class="icon-mbri-clock me-1"></span>
-                    ~{{ template.estimated_duration_minutes }} мин
-                  </div>
-                  {% if template.is_default %}
-                  <span class="badge bg-warning">По умолчанию</span>
-                  {% endif %}
+                <div class="small text-muted mb-2">{{ pkg.get_route_type_display }}</div>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-sm btn-success" onclick="addCatalogPackage({{ pkg.id }}, false); bootstrap.Modal.getInstance(document.getElementById('catalogPackageModal')).hide();">Добавить</button>
+                  <button type="button" class="btn btn-sm btn-outline-success" onclick="addCatalogPackage({{ pkg.id }}, true); bootstrap.Modal.getInstance(document.getElementById('catalogPackageModal')).hide();">+ подтвердить</button>
                 </div>
               </div>
             </div>
             {% empty %}
             <div class="col-12">
-              <p class="text-muted text-center py-4">Шаблоны не созданы</p>
+              <p class="text-muted text-center py-4">Опубликованных пакетов нет</p>
             </div>
             {% endfor %}
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Модальное окно шаблонов подготовки -->
-<div class="modal fade" id="preparationTemplateModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header" style="background: linear-gradient(135deg, #0d4d3a 0%, #16a34a 100%); color: #fff;">
-        <h5 class="modal-title">Шаблоны подготовки</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-3">
-        {% for pt in preparation_templates %}
-        <div class="template-card mb-2" style="border-color: rgba(22, 163, 74, 0.25);">
-          <h6 class="mb-1">{{ pt.name }}</h6>
-          <p class="text-muted small mb-2">{{ pt.description|default:""|truncatewords:20 }}</p>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-success" onclick="applyPreparationTemplate({{ pt.id }}, false); bootstrap.Modal.getInstance(document.getElementById('preparationTemplateModal')).hide();">Применить</button>
-            <button type="button" class="btn btn-sm btn-outline-success" onclick="applyPreparationTemplate({{ pt.id }}, true); bootstrap.Modal.getInstance(document.getElementById('preparationTemplateModal')).hide();">+ подтвердить все</button>
-          </div>
-        </div>
-        {% empty %}
-        <p class="text-muted text-center">Нет шаблонов</p>
-        {% endfor %}
       </div>
     </div>
   </div>
@@ -1142,11 +1130,12 @@
     </button>
   </div>
   <div class="cart-body" id="cartBody">
-    <p class="text-muted text-center py-4">Выберите подтверждённые работы для выдачи в ремзону</p>
+    <p class="text-muted text-center py-4">Выберите пакеты или подтверждённые работы для выдачи в ремзону</p>
   </div>
   <div class="cart-footer p-3 border-top">
     <form id="workOrderForm">
       <input type="hidden" name="template_id" id="workOrderTemplateId" value="">
+      <div id="selectedPackagesHint" class="small text-muted mb-2" style="display:none;"></div>
       <div class="mb-3">
         <label class="form-label small">Название заказ-наряда</label>
         <input type="text" class="form-control form-control-sm" name="title" placeholder="Например: Мойка перед выдачей" required>
@@ -1190,7 +1179,7 @@
 <script>
 let cart = [];
 let workData = {};
-let selectedWorkOrderTemplateId = null;
+let selectedPackageIds = [];
 const csrfToken = '{{ csrf_token }}';
 
 // Инициализация данных о работах
@@ -1347,11 +1336,11 @@ function toggleWorkConfirm(itemId, confirm) {
   .catch(() => alert('Ошибка подтверждения'));
 }
 
-function applyPreparationTemplate(templateId, autoConfirm) {
+function addCatalogPackage(packageId, confirm) {
   const body = new URLSearchParams();
-  body.append('template_id', templateId);
-  if (autoConfirm) body.append('auto_confirm', '1');
-  fetch('{% url "car_preparation:preparation_apply_template" preparation.id %}', {
+  body.append('package_id', packageId);
+  if (confirm) body.append('confirm', '1');
+  fetch('{% url "car_preparation:preparation_add_package" preparation.id %}', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -1366,10 +1355,60 @@ function applyPreparationTemplate(templateId, autoConfirm) {
       showNotification(data.message, 'success');
       setTimeout(() => location.reload(), 800);
     } else {
-      alert(data.error || 'Ошибка применения шаблона');
+      alert(data.error || 'Ошибка добавления пакета');
     }
   })
-  .catch(() => alert('Ошибка применения шаблона'));
+  .catch(() => alert('Ошибка добавления пакета'));
+}
+
+function confirmPrepPackage(packageId, confirmed) {
+  const body = new URLSearchParams();
+  body.append('confirmed', confirmed ? '1' : '0');
+  fetch(`{% url 'car_preparation:preparation_package_confirm' 0 %}`.replace('0', packageId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: body.toString()
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showNotification(data.message, 'success');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      alert(data.error || 'Ошибка');
+    }
+  })
+  .catch(() => alert('Ошибка подтверждения пакета'));
+}
+
+function createWorkOrderFromSelectedPackages() {
+  const checked = Array.from(document.querySelectorAll('.prep-package-check:checked'));
+  if (!checked.length) {
+    alert('Выберите хотя бы один подтверждённый пакет');
+    return;
+  }
+  selectedPackageIds = checked.map(el => el.value);
+  const names = checked.map(el => el.dataset.name).filter(Boolean);
+  const zoneFromPkg = checked.map(el => el.dataset.zone).find(z => z);
+  const titleInput = document.querySelector('#workOrderForm input[name="title"]');
+  if (titleInput && !titleInput.value) {
+    titleInput.value = names.slice(0, 3).join(', ');
+  }
+  if (zoneFromPkg) {
+    const zoneSelect = document.getElementById('repairZoneSelect');
+    if (zoneSelect && !zoneSelect.value) zoneSelect.value = zoneFromPkg;
+  }
+  const hint = document.getElementById('selectedPackagesHint');
+  if (hint) {
+    hint.style.display = '';
+    hint.textContent = 'Выбрано пакетов: ' + selectedPackageIds.length + ' — ' + names.join(', ');
+  }
+  toggleCart();
+  showNotification('Выбрано пакетов: ' + selectedPackageIds.length + '. Укажите ремзону и время, затем создайте ЗН.', 'success');
 }
 
 function addWorksToPreparation(workIds) {
@@ -1391,8 +1430,8 @@ function addWorksToPreparation(workIds) {
   });
 }
 
-function showPreparationTemplateModal() {
-  new bootstrap.Modal(document.getElementById('preparationTemplateModal')).show();
+function showCatalogPackageModal() {
+  new bootstrap.Modal(document.getElementById('catalogPackageModal')).show();
 }
 
 function saveChecklist(approve) {
@@ -1420,62 +1459,14 @@ function saveChecklist(approve) {
   });
 }
 
-function showTemplateModal() {
-  const modal = new bootstrap.Modal(document.getElementById('templateModal'));
-  modal.show();
-}
-
-function filterTemplates(searchText) {
+function filterCatalogPackages(searchText) {
   const search = searchText.toLowerCase();
-  const items = document.querySelectorAll('.template-item');
-  
+  const items = document.querySelectorAll('#catalogPackagesModalGrid .template-item');
   items.forEach(item => {
     const name = item.dataset.templateName || '';
     const desc = item.dataset.templateDesc || '';
-    
-    if (name.includes(search) || desc.includes(search)) {
-      item.style.display = '';
-    } else {
-      item.style.display = 'none';
-    }
+    item.style.display = (!search || name.includes(search) || desc.includes(search)) ? '' : 'none';
   });
-}
-
-function loadTemplate(templateId) {
-  selectedWorkOrderTemplateId = templateId;
-  document.getElementById('workOrderTemplateId').value = templateId;
-  fetch(`{% url 'car_preparation:work_order_template_works' 0 %}`.replace('0', templateId))
-    .then(response => response.json())
-    .then(data => {
-      if (data.success && data.works) {
-        let added = 0;
-        data.works.forEach(work => {
-          if (!cart.includes(work.id)) {
-            cart.push(work.id);
-            added++;
-          }
-          if (!workData[work.id]) {
-            workData[work.id] = work;
-          }
-          const checkbox = document.querySelector(`.work-checkbox[data-work-id="${work.id}"]`);
-          if (checkbox) {
-            checkbox.checked = true;
-            updateWorkCard(work.id, true);
-          }
-        });
-        updateCartUI();
-        toggleCart();
-        const titleInput = document.querySelector('#workOrderForm input[name="title"]');
-        if (titleInput && !titleInput.value) {
-          titleInput.value = data.template_name || '';
-        }
-        showNotification(`Шаблон ЗН «${data.template_name}»: в корзину ${added} работ`, 'success');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Ошибка загрузки шаблона');
-    });
 }
 
 function saveComment(commentType, commentText) {
@@ -1537,9 +1528,14 @@ document.querySelectorAll('.prep-cost-field').forEach(input => {
 // Обработка формы создания заказ-наряда
 document.getElementById('workOrderForm').addEventListener('submit', function(e) {
   e.preventDefault();
+
+  const checkedPkgs = Array.from(document.querySelectorAll('.prep-package-check:checked')).map(el => el.value);
+  if (checkedPkgs.length) {
+    selectedPackageIds = checkedPkgs;
+  }
   
-  if (cart.length === 0) {
-    alert('Выберите хотя бы одну подтверждённую работу');
+  if (cart.length === 0 && selectedPackageIds.length === 0) {
+    alert('Выберите хотя бы один пакет или подтверждённую работу');
     return;
   }
 
@@ -1552,9 +1548,7 @@ document.getElementById('workOrderForm').addEventListener('submit', function(e) 
   
   const formData = new FormData(this);
   cart.forEach(id => formData.append('work_ids[]', id));
-  if (selectedWorkOrderTemplateId) {
-    formData.set('template_id', selectedWorkOrderTemplateId);
-  }
+  selectedPackageIds.forEach(id => formData.append('package_ids[]', id));
   
   fetch('{% url "car_preparation:work_order_create" preparation.id %}', {
     method: 'POST',
@@ -1569,6 +1563,7 @@ document.getElementById('workOrderForm').addEventListener('submit', function(e) 
     if (data.success) {
       alert('Заказ-наряд создан успешно!');
       cart = [];
+      selectedPackageIds = [];
       updateCartUI();
       this.reset();
       toggleCart();

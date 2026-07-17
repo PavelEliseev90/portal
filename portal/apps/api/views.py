@@ -75,6 +75,9 @@ def calculation_car(request):
     rlk_object      = get_worksheet(data["Rlk"])
     uin             = data['Uin'] 
     calculation_object, created = CarCalculations.objects.filter(uin = uin).get_or_create(uin = uin)
+    if created:
+        # Не заполняем date_start_soglasovanie при создании — только после submit из 1С.
+        calculation_object.date_start_soglasovanie = None
 
     calculation_object.rlk = rlk_object
     calculation_object.car = car_object
@@ -172,6 +175,8 @@ def calculation_car_start_success(request):
     rlk_object      = get_worksheet(data["Rlk"])
     uin             = data['Uin'] 
     calculation_object, created = CarCalculations.objects.filter(uin = uin).get_or_create(uin = uin)
+    if created:
+        calculation_object.date_start_soglasovanie = None
 
     calculation_object.rlk = rlk_object
     calculation_object.car = car_object

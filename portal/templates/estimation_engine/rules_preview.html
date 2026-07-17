@@ -1,0 +1,231 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Preview правил{% endblock %}
+{% block title_navbar %} - Симулятор{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Симулятор правил</h2>
+      <p class="text-muted mb-0 small">Задайте факты осмотра → увидите сработавшие правила, состав пакетов и итог.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'estimation_engine:rules_list' %}" class="btn btn-outline-secondary btn-sm">Правила</a>
+      <a href="{% url 'estimation_engine:settings_hub' %}" class="btn btn-outline-secondary btn-sm">К настройкам</a>
+    </div>
+  </div>
+
+  <form method="post" class="portal-panel mb-3">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Раздел</label>
+        <select class="form-select" name="section">
+          {% for value, label in section_choices %}
+          <option value="{{ value }}" {% if facts.section == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Элемент схемы</label>
+        <select class="form-select" name="element_id">
+          <option value="">— любой —</option>
+          {% for el in elements %}
+          <option value="{{ el.id }}" {% if facts.element_id == el.id|stringformat:"s" %}selected{% endif %}>
+            {{ el.name }} ({{ el.code }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Тип повреждения</label>
+        <select class="form-select" name="damage_type_id">
+          <option value="">— любой —</option>
+          {% for dt in damage_types %}
+          <option value="{{ dt.id }}" {% if facts.damage_type_id == dt.id|stringformat:"s" %}selected{% endif %}>
+            {{ dt.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Кол-во повреждений</label>
+        <input type="number" min="0" class="form-control" name="damage_count" value="{{ facts.damage_count|default:1 }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Тип кузова</label>
+        <input class="form-control" name="body_type" value="{{ facts.body_type }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Ценовая группа</label>
+        <input class="form-control" name="price_group" value="{{ facts.price_group }}" placeholder="2000">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Тип краски</label>
+        <input class="form-control" name="paint_type" value="{{ facts.paint_type }}">
+      </div>
+      <div class="col-md-3">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="under_instrument" id="ui"
+                 {% if facts.under_instrument %}checked{% endif %}>
+          <label class="form-check-label" for="ui">Под прибор</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="include_drafts" id="drafts"
+                 {% if include_drafts %}checked{% endif %}>
+          <label class="form-check-label" for="drafts">Учитывать черновики правил</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Рассчитать preview</button>
+      </div>
+    </div>
+  </form>
+
+  {% if preview %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Итого</h5>
+        <div class="display-6">{{ preview.total_cost }} ₽</div>
+        <div class="text-muted">{{ preview.total_norm_hours }} н/ч</div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="portal-panel h-100">
+        <h5>Объяснение</h5>
+        <ul class="mb-0 small">
+          {% for line in preview.explanation %}
+          <li>{{ line }}</li>
+          {% empty %}
+          <li class="text-muted">Ни одно правило не сработало</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-3">Сработавшие правила ({{ preview.matched_rules|length }})</h5>
+    {% if preview.matched_rules %}
+    <ul class="mb-0">
+      {% for r in preview.matched_rules %}
+      <li>
+        <strong>{{ r.code }}</strong> — {{ r.name }}
+        <span class="text-muted">(приоритет {{ r.priority }}, ставка {{ r.hour_rate }} ₽/нч)</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted mb-0">Нет совпадений. Проверьте условия правил или включите черновики.</p>
+    {% endif %}
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-3">Пакеты</h5>
+    {% if preview.packages %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Правило</th>
+            <th>Пакет</th>
+            <th>Маршрут</th>
+            <th>Н/ч</th>
+            <th>Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in preview.packages %}
+          <tr>
+            <td><code>{{ p.rule_code }}</code></td>
+            <td>{{ p.package_code }} / {{ p.package_name }}</td>
+            <td>{{ p.route_display }}</td>
+            <td>{{ p.norm_hours }}</td>
+            <td>
+              {{ p.cost }} ₽
+              {% if p.fixed_cost %}<span class="badge bg-secondary">фикс</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">Нет пакетов</p>
+    {% endif %}
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-3">Состав строк</h5>
+    {% if preview.lines %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Тип</th>
+            <th>Наименование</th>
+            <th>Пакет</th>
+            <th>Кол-во / нч</th>
+            <th>Сумма</th>
+            <th>Ключ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in preview.lines %}
+          <tr>
+            <td><span class="badge bg-light text-dark">{{ line.line_type }}</span></td>
+            <td>{{ line.name }}</td>
+            <td class="small">{{ line.package_code }}</td>
+            <td class="small">
+              {% if line.line_type == 'WORK' %}{{ line.norm_hours }} нч × {{ line.hour_rate }}{% else %}{{ line.quantity }} × {{ line.unit_cost }}{% endif %}
+            </td>
+            <td>{{ line.cost }} ₽</td>
+            <td class="small text-muted">{{ line.coverage_key|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">Нет строк</p>
+    {% endif %}
+  </div>
+
+  {% if preview.skipped_duplicates %}
+  <div class="portal-panel mb-3">
+    <h5 class="mb-2">Дедупликация (пропущено)</h5>
+    <ul class="small mb-0">
+      {% for d in preview.skipped_duplicates %}
+      <li>{{ d.line_type }} {{ d.name }} — ключ «{{ d.coverage_key }}» уже был ({{ d.from_rule }} / {{ d.from_package }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if preview.suppressed_rules %}
+  <div class="portal-panel mb-3">
+    <h5 class="mb-2">Подавленные (exclusive group)</h5>
+    <ul class="small mb-0">
+      {% for r in preview.suppressed_rules %}
+      <li>{{ r.code }} — {{ r.reason }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if preview.rejected_rules %}
+  <details class="portal-panel">
+    <summary class="mb-2">Отклонённые правила ({{ preview.rejected_rules|length }})</summary>
+    <ul class="small mb-0">
+      {% for r in preview.rejected_rules %}
+      <li>{{ r.code }}: {{ r.reason }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
