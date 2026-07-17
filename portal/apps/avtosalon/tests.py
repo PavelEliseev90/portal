@@ -6,11 +6,14 @@ from django.test import SimpleTestCase
 from avtosalon.deal_calc_approval import (
     can_auto_approve_calculation,
     director_can_approve_without_uk,
+    is_prior_uk_approved_calculation,
     kvp_above_km_rule,
     kvp_above_min_dc_if_configured,
     kvp_above_min_km_dc,
+    kvp_meets_prior_uk_threshold,
     prepare_calculation_soglasovanie_from_1c,
     submit_calculation_soglasovanie_from_1c,
+    try_approve_by_prior_uk_threshold,
 )
 from prices_car.km_breakdown import get_km_rule_total
 
@@ -134,6 +137,126 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
                 170,
             )
 
+    def test_prior_uk_threshold_accepts_equal_or_higher_kvp(self):
+        approval = SimpleNamespace(approved_kvp=100)
+
+        self.assertTrue(
+            kvp_meets_prior_uk_threshold(
+                SimpleNamespace(kvp=100), approval,
+            ),
+        )
+        self.assertTrue(
+            kvp_meets_prior_uk_threshold(
+                SimpleNamespace(kvp=101), approval,
+            ),
+        )
+        self.assertFalse(
+            kvp_meets_prior_uk_threshold(
+                SimpleNamespace(kvp=99), approval,
+            ),
+        )
+
+    def test_prior_uk_threshold_approval_sets_uk_status_and_audit_fields(self):
+        calc = SimpleNamespace(
+            pk=2,
+            soglasovanie_status='awaiting_1c',
+            kvp=100,
+            uk_approval_basis='',
+            uk_approval_reference_id=None,
+            save=Mock(),
+        )
+        source_calc = SimpleNamespace(pk=1, number='OLD-1')
+        approval = SimpleNamespace(
+            pk=10,
+            approved_kvp=100,
+            calculation=source_calc,
+        )
+        system_user = SimpleNamespace(pk=1)
+
+        with (
+            patch(
+                'avtosalon.deal_calc_approval.get_prior_uk_approval',
+                return_value=approval,
+            ),
+            patch(
+                'avtosalon.deal_calc_approval.User.objects.filter',
+            ) as users,
+            patch(
+                'avtosalon.deal_calc_approval.notify_calc_soglasovanie_result_email',
+            ) as notify,
+            patch(
+                'avtosalon.deal_calc_approval.transaction.on_commit',
+                side_effect=lambda callback: callback(),
+            ),
+        ):
+            users.return_value.first.return_value = system_user
+            self.assertTrue(
+                try_approve_by_prior_uk_threshold(calc),
+            )
+
+        self.assertEqual(calc.soglasovanie_status, 'uk_approved')
+        self.assertEqual(calc.uk_approval_basis, 'prior_threshold')
+        self.assertEqual(calc.uk_approval_threshold_kvp, 100)
+        self.assertIs(calc.uk_approval_reference, approval)
+        self.assertIn('OLD-1', calc.uk_approve_comment)
+        calc.save.assert_called_once()
+        notify.assert_called_once()
+        calc.uk_approval_reference_id = approval.pk
+        self.assertTrue(is_prior_uk_approved_calculation(calc))
+
+    def test_prior_uk_threshold_does_not_approve_lower_kvp(self):
+        calc = SimpleNamespace(
+            pk=2,
+            soglasovanie_status='awaiting_1c',
+            kvp=99,
+            save=Mock(),
+        )
+        approval = SimpleNamespace(
+            approved_kvp=100,
+            calculation=SimpleNamespace(pk=1, number='OLD-1'),
+        )
+
+        with patch(
+            'avtosalon.deal_calc_approval.get_prior_uk_approval',
+            return_value=approval,
+        ):
+            self.assertFalse(
+                try_approve_by_prior_uk_threshold(calc),
+            )
+
+        calc.save.assert_not_called()
+
+    def test_prior_uk_approval_is_revoked_when_scope_changes(self):
+        old_approval = SimpleNamespace(
+            pk=10,
+            rlk_id=1,
+            car_id=1,
+        )
+        calc = SimpleNamespace(
+            pk=2,
+            rlk_id=2,
+            car_id=1,
+            soglasovanie_status='uk_approved',
+            kvp=150,
+            uk_approval_basis='prior_threshold',
+            uk_approval_threshold_kvp=100,
+            uk_approval_reference=old_approval,
+            uk_approval_reference_id=old_approval.pk,
+            save=Mock(),
+        )
+
+        with patch(
+            'avtosalon.deal_calc_approval.get_prior_uk_approval',
+            return_value=None,
+        ):
+            self.assertFalse(
+                try_approve_by_prior_uk_threshold(calc),
+            )
+
+        self.assertEqual(calc.soglasovanie_status, 'awaiting_1c')
+        self.assertTrue(calc._prior_uk_approval_revoked)
+        calc.save.assert_called_once()
+
     def test_repeated_load_keeps_calculation_in_director_queue(self):
         calc = SimpleNamespace(
             soglasovanie_status='pending',
@@ -154,6 +277,31 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
         try_auto.assert_not_called()
         calc.save.assert_not_called()
         self.assertEqual(calc.soglasovanie_status, 'pending')
+
+    def test_prepare_prefers_prior_uk_threshold_over_rule_auto(self):
+        calc = SimpleNamespace(
+            soglasovanie_status='awaiting_1c',
+            date_start_soglasovanie=None,
+        )
+        car = SimpleNamespace(cumulative_data=lambda: {})
+
+        with (
+            patch(
+                'avtosalon.deal_calc_approval.try_approve_by_prior_uk_threshold',
+                return_value=True,
+            ) as prior_uk,
+            patch(
+                'avtosalon.deal_calc_approval.try_auto_approve_calculation',
+            ) as rule_auto,
+        ):
+            self.assertTrue(
+                prepare_calculation_soglasovanie_from_1c(
+                    calc, car, SimpleNamespace(), SimpleNamespace(),
+                ),
+            )
+
+        prior_uk.assert_called_once()
+        rule_auto.assert_not_called()
 
     def test_submit_pending_without_start_date_notifies_director(self):
         calc = SimpleNamespace(

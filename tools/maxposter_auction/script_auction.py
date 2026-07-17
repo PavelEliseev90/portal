@@ -578,15 +578,23 @@ def _login(page, ctx, email: str, password: str) -> None:
     """Шаг 1: логин, появление maxsession."""
     print("Шаг 1 — логин")
     page.goto(LOGIN_URL, wait_until="domcontentloaded")
-    page.get_by_placeholder("Почта").fill(email)
-    page.get_by_placeholder("Пароль").fill(password)
-    page.get_by_role("button", name="Войти").click()
+    email_input = page.locator("#signin_email")
+    password_input = page.locator("#signin_password")
+    submit_button = page.locator('button[data-marker="submit"]')
+    email_input.wait_for(state="visible")
+    password_input.wait_for(state="visible")
+    submit_button.wait_for(state="visible")
+    email_input.fill(email)
+    password_input.fill(password)
+    submit_button.click()
     try:
         page.wait_for_url(lambda url: "/login" not in url, timeout=60_000)
     except PWTimeout:
+        form_text = page.locator("form").inner_text(timeout=3000).strip()
         raise RuntimeError(
             f"Не дождались выхода со страницы логина. URL: {page.url}\n"
-            "Проверьте логин и пароль."
+            f"Текст формы: {form_text[:1000]}\n"
+            "Проверьте логин, пароль и сообщения об ошибке на форме."
         )
     _wait_maxsession(ctx, page)
     page.wait_for_timeout(1000)
