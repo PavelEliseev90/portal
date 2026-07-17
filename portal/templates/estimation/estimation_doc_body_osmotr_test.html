@@ -1,0 +1,580 @@
+{% extends 'base_web.html' %}
+
+{% block title %} - тест осмотра кузова{% endblock %}
+{% block title_navbar %} - тест осмотра кузова{% endblock %}
+
+{% block content %}
+<style>
+  .ot-wrap { max-width: 1180px; margin: 0 auto; padding: 0.75rem 1rem 5rem; }
+  .ot-banner {
+    background: linear-gradient(120deg, #1e3a5f 0%, #2d5a87 55%, #3a7ca5 100%);
+    color: #f4f7fb;
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1rem;
+  }
+  .ot-banner .ot-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    margin-right: 0.4rem;
+  }
+  .ot-sides a {
+    text-decoration: none;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    margin: 0 0.25rem 0.35rem 0;
+    display: inline-block;
+  }
+  .ot-sides a.active {
+    background: #1e3a5f;
+    border-color: #1e3a5f;
+    color: #fff;
+  }
+  .ot-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 1rem;
+  }
+  @media (max-width: 900px) {
+    .ot-layout { grid-template-columns: 1fr; }
+  }
+  .ot-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem;
+  }
+  .ot-canvas-box {
+    overflow: auto;
+    background: #0f172a0d;
+    border-radius: 10px;
+    padding: 0.5rem;
+    text-align: center;
+  }
+  #canvas { max-width: 100%; height: auto; border-radius: 8px; cursor: crosshair; touch-action: none; }
+  .ot-hint { color: #64748b; font-size: 0.85rem; margin: 0.4rem 0 0.75rem; }
+  .ot-damage-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+  .ot-dmg {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 0.55rem 0.45rem;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color .15s, background .15s, transform .1s;
+  }
+  .ot-dmg:hover { border-color: #3a7ca5; background: #eff6ff; }
+  .ot-dmg.selected { border-color: #1e3a5f; background: #dbeafe; box-shadow: inset 0 0 0 1px #1e3a5f; }
+  .ot-dmg img { width: 28px; height: 28px; object-fit: contain; background: #fff; border-radius: 50%; padding: 2px; }
+  .ot-dmg .ot-name { display: block; font-size: 0.78rem; margin-top: 0.25rem; line-height: 1.2; color: #0f172a; }
+  .ot-dmg .ot-photo-flag {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    color: #b45309;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    padding: 0.05rem 0.4rem;
+  }
+  .ot-marks { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow: auto; }
+  .ot-mark {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.65rem 0.7rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+  }
+  .ot-mark.incomplete { border-color: #f59e0b; background: #fffbeb; }
+  .ot-mark.complete { border-color: #86efac; background: #f0fdf4; }
+  .ot-mark-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .ot-mark-meta { font-size: 0.75rem; color: #64748b; }
+  .ot-status {
+    display: inline-block;
+    font-size: 0.7rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    margin-left: 0.25rem;
+  }
+  .ot-status.need { background: #fee2e2; color: #991b1b; }
+  .ot-status.ok { background: #dcfce7; color: #166534; }
+  .ot-status.opt { background: #e2e8f0; color: #475569; }
+  .ot-footer {
+    position: sticky;
+    bottom: 0;
+    background: rgba(248,250,252,.96);
+    border-top: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    z-index: 20;
+  }
+  .ot-summary { font-size: 0.85rem; color: #334155; margin-right: auto; }
+  .ot-empty { color: #94a3b8; font-size: 0.85rem; padding: 0.5rem 0; }
+  #photo_preview { max-width: 100%; max-height: 160px; border-radius: 8px; margin-top: 0.5rem; display: none; }
+</style>
+
+<div class="ot-wrap">
+  <div class="ot-banner">
+    <span class="ot-badge">ТЕСТ</span>
+    <span class="ot-badge">не сохраняет в оценку</span>
+    <strong>Осмотр кузова — новый интерфейс</strong>
+    <div class="small mt-1" style="opacity:.9">
+      Элементы и повреждения из справочников. Типы с меткой «фото» требуют снимок перед завершением отметки.
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+    <div>
+      <h3 class="mb-1">{{ params.type_name }}</h3>
+      <div class="ot-sides">
+        {% for s in params.sides_nav %}
+          <a href="{{ s.url }}" class="{% if s.active %}active{% endif %}">{{ s.label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ params.back_url }}">Назад</a>
+  </div>
+
+  <div class="ot-layout">
+    <div class="ot-panel">
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn_zones">Показать зоны</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="btn_zones_hide">Скрыть зоны</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="btn_clear" title="Очистить тестовые отметки">Сбросить отметки</button>
+      </div>
+      <p class="ot-hint">Нажмите на схему → выберите повреждение справа (или в модалке). Если нужен фото — приложите его в карточке отметки.</p>
+      <div class="ot-canvas-box">
+        <canvas id="canvas" width="{{ params.canvas_width }}" height="{{ params.canvas_height }}"></canvas>
+        <img hidden id="photo_1" src="{{ params.image_url }}" alt="">
+      </div>
+      <div class="mt-2 small text-muted" id="hit_element">Элемент: —</div>
+    </div>
+
+    <div class="ot-panel">
+      <h5 class="mb-2">Тип повреждения</h5>
+      <div class="ot-damage-grid" id="damage_grid"></div>
+      <hr>
+      <h5 class="mb-2">Отметки <span class="badge bg-secondary" id="marks_count">0</span></h5>
+      <ul class="ot-marks" id="marks_list">
+        <li class="ot-empty" id="marks_empty">Пока нет отметок — кликните по схеме.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="ot-footer">
+  <div class="ot-summary" id="summary_text">Отметок: 0 · без фото (обязательных): 0</div>
+  <button type="button" class="btn btn-outline-primary btn-sm" id="btn_validate">Проверить комплектность</button>
+  <button type="button" class="btn btn-primary btn-sm" id="btn_done" disabled>Готово (тест)</button>
+</div>
+
+<!-- Модалка выбора повреждения -->
+<div class="modal fade" id="pickModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="pickModalTitle">Выберите повреждение</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="ot-damage-grid" id="damage_grid_modal"></div>
+        <div class="mt-3 d-none" id="tol_block">
+          <label class="form-label">Показание толщиномера</label>
+          <input type="number" class="form-control" id="tol_value" min="0" max="999" placeholder="мкм">
+          <button type="button" class="btn btn-dark btn-sm mt-2" id="btn_tol_ok">Поставить толщиномер</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-outline-dark btn-sm" id="btn_show_tol">Толщиномер</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка фото для отметки -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Фото к отметке</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted" id="photo_modal_hint"></p>
+        <input type="file" class="form-control" id="photo_input" accept="image/*" capture="environment">
+        <img id="photo_preview" alt="preview">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+        <button type="button" class="btn btn-primary" id="btn_photo_apply" disabled>Прикрепить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ELEMENTS = {{ params.elements_body|safe }};
+  var DAMAGES = {{ params.damage_types_json|safe }};
+  var marks = [];
+  var pendingXY = null;
+  var selectedDamage = null;
+  var photoTargetId = null;
+  var photoDataUrl = null;
+  var zonesOn = false;
+
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  var baseImg = document.getElementById('photo_1');
+  var pickModalEl = document.getElementById('pickModal');
+  var photoModalEl = document.getElementById('photoModal');
+  var pickModal = bootstrap.Modal.getOrCreateInstance(pickModalEl);
+  var photoModal = bootstrap.Modal.getOrCreateInstance(photoModalEl);
+
+  var SPECIAL = [
+    { ui_code: 'tol', name: 'Толщиномер', legacy_label: 'толщиномер', requires_photo: false, icon: '', special: true }
+  ];
+
+  function iconSrc(dt) {
+    if (dt.ui_code === 'replace') return '/media_dop/static/estimation/mbri-left-right.png';
+    if (dt.ui_code === 'replace_add') return '/media_dop/static/estimation/replace_element.png';
+    return dt.icon || ('/media_dop/static/estimation/' + dt.ui_code + '.png');
+  }
+
+  function renderDamageButtons(containerId, withSelect) {
+    var el = document.getElementById(containerId);
+    var html = '';
+    DAMAGES.forEach(function (dt) {
+      var sel = withSelect && selectedDamage && selectedDamage.ui_code === dt.ui_code ? ' selected' : '';
+      html += '<div class="ot-dmg' + sel + '" data-ui="' + dt.ui_code + '">';
+      html += '<img src="' + iconSrc(dt) + '" alt="">';
+      html += '<span class="ot-name">' + (dt.name || dt.legacy_label) + '</span>';
+      if (dt.requires_photo) {
+        html += '<span class="ot-photo-flag">фото обязательно</span>';
+      }
+      html += '</div>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('.ot-dmg').forEach(function (node) {
+      node.addEventListener('click', function () {
+        var ui = node.getAttribute('data-ui');
+        var dt = DAMAGES.find(function (d) { return d.ui_code === ui; });
+        if (!dt) return;
+        selectedDamage = dt;
+        renderDamageButtons('damage_grid', true);
+        renderDamageButtons('damage_grid_modal', true);
+        if (pendingXY) {
+          addMark(dt, pendingXY.x, pendingXY.y, '');
+          pendingXY = null;
+          pickModal.hide();
+        }
+      });
+    });
+  }
+
+  function hitElement(x, y) {
+    for (var i = 0; i < ELEMENTS.length; i++) {
+      var e = ELEMENTS[i];
+      if (pointInPoly(x, y, e.coor_x || [], e.coor_y || [])) {
+        return e;
+      }
+    }
+    return null;
+  }
+
+  function pointInPoly(x, y, xs, ys) {
+    y = Math.ceil(y);
+    var inside = false;
+    for (var i = 0, j = xs.length - 1; i < xs.length; j = i++) {
+      var xi = xs[i], yi = ys[i];
+      var xj = xs[j], yj = ys[j];
+      var intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-9) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function uuid() {
+    return 'm-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function addMark(dt, x, y, tolText) {
+    var el = hitElement(x, y);
+    var mark = {
+      id: uuid(),
+      ui_code: dt.ui_code,
+      name: dt.name || dt.legacy_label,
+      legacy: dt.legacy_label || dt.name,
+      requires_photo: !!dt.requires_photo,
+      x: Math.round(x),
+      y: Math.round(y),
+      element_name: el ? (el.name || '') : '',
+      element_id: el ? el.element_id : null,
+      tol: tolText || '',
+      photo_data: null,
+      photo_name: ''
+    };
+    marks.push(mark);
+    redraw();
+    renderMarks();
+    updateSummary();
+    if (mark.requires_photo) {
+      openPhotoModal(mark.id);
+    }
+  }
+
+  function openPhotoModal(markId) {
+    photoTargetId = markId;
+    photoDataUrl = null;
+    document.getElementById('photo_input').value = '';
+    var preview = document.getElementById('photo_preview');
+    preview.style.display = 'none';
+    preview.src = '';
+    document.getElementById('btn_photo_apply').disabled = true;
+    var m = marks.find(function (x) { return x.id === markId; });
+    document.getElementById('photo_modal_hint').textContent = m
+      ? (m.name + (m.requires_photo ? ' — без фото отметка незавершена.' : ' — фото по желанию.'))
+      : '';
+    photoModal.show();
+  }
+
+  function markComplete(m) {
+    if (!m.requires_photo) return true;
+    return !!m.photo_data;
+  }
+
+  function renderMarks() {
+    var list = document.getElementById('marks_list');
+    var empty = document.getElementById('marks_empty');
+    document.getElementById('marks_count').textContent = String(marks.length);
+    if (!marks.length) {
+      list.innerHTML = '<li class="ot-empty" id="marks_empty">Пока нет отметок — кликните по схеме.</li>';
+      return;
+    }
+    var html = '';
+    marks.forEach(function (m, idx) {
+      var ok = markComplete(m);
+      var cls = m.requires_photo ? (ok ? 'complete' : 'incomplete') : '';
+      var st = m.requires_photo
+        ? (ok ? '<span class="ot-status ok">фото есть</span>' : '<span class="ot-status need">нужно фото</span>')
+        : '<span class="ot-status opt">фото не обязательно</span>';
+      html += '<li class="ot-mark ' + cls + '" data-id="' + m.id + '">';
+      html += '<div class="ot-mark-title">#' + (idx + 1) + ' · ' + m.name + ' ' + st + '</div>';
+      html += '<div class="ot-mark-meta">' + (m.element_name || 'элемент не определён') +
+        ' · x' + m.x + ', y' + m.y + (m.tol ? (' · ЛКП ' + m.tol) : '') + '</div>';
+      html += '<div class="mt-2 d-flex flex-wrap gap-1">';
+      html += '<button type="button" class="btn btn-sm btn-outline-primary btn-photo">Фото</button>';
+      html += '<button type="button" class="btn btn-sm btn-outline-danger btn-del">Удалить</button>';
+      html += '</div></li>';
+    });
+    list.innerHTML = html;
+    list.querySelectorAll('.btn-del').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.ot-mark').getAttribute('data-id');
+        marks = marks.filter(function (m) { return m.id !== id; });
+        redraw();
+        renderMarks();
+        updateSummary();
+      });
+    });
+    list.querySelectorAll('.btn-photo').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openPhotoModal(btn.closest('.ot-mark').getAttribute('data-id'));
+      });
+    });
+  }
+
+  function incompleteCount() {
+    return marks.filter(function (m) { return !markComplete(m); }).length;
+  }
+
+  function updateSummary() {
+    var miss = incompleteCount();
+    document.getElementById('summary_text').textContent =
+      'Отметок: ' + marks.length + ' · без фото (обязательных): ' + miss;
+    document.getElementById('btn_done').disabled = marks.length === 0 || miss > 0;
+  }
+
+  function drawBase() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (baseImg.complete) {
+      ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function fillPoly(xs, ys, color) {
+    if (!xs || xs.length < 3) return;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(xs[0], ys[0]);
+    for (var i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i]);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawZones() {
+    var colors = [
+      'rgba(255,99,132,.35)', 'rgba(54,162,235,.35)', 'rgba(255,206,86,.35)',
+      'rgba(75,192,192,.35)', 'rgba(153,102,255,.35)', 'rgba(255,159,64,.35)'
+    ];
+    ELEMENTS.forEach(function (e, i) {
+      fillPoly(e.coor_x, e.coor_y, colors[i % colors.length]);
+      if (!e.name) return;
+      var n = Math.min((e.coor_x || []).length, (e.coor_y || []).length) || 1;
+      var sx = 0, sy = 0;
+      for (var k = 0; k < n; k++) { sx += e.coor_x[k]; sy += e.coor_y[k]; }
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#fff';
+      ctx.strokeText(e.name.slice(0, 28), sx / n, sy / n);
+      ctx.fillStyle = '#111';
+      ctx.fillText(e.name.slice(0, 28), sx / n, sy / n);
+    });
+  }
+
+  function drawMarks() {
+    marks.forEach(function (m, idx) {
+      var img = new Image();
+      img.src = iconSrc({ ui_code: m.ui_code, icon: '/media_dop/static/estimation/' + m.ui_code + '.png' });
+      // sync fallback circle
+      ctx.beginPath();
+      ctx.fillStyle = markComplete(m) ? '#16a34a' : (m.requires_photo ? '#ea580c' : '#334155');
+      ctx.arc(m.x, m.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(idx + 1), m.x, m.y);
+    });
+  }
+
+  function redraw() {
+    drawBase();
+    if (zonesOn) drawZones();
+    drawMarks();
+  }
+
+  function canvasCoords(evt) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    return {
+      x: (evt.clientX - rect.left) * scaleX,
+      y: (evt.clientY - rect.top) * scaleY
+    };
+  }
+
+  canvas.addEventListener('click', function (evt) {
+    var p = canvasCoords(evt);
+    var el = hitElement(p.x, p.y);
+    document.getElementById('hit_element').textContent = 'Элемент: ' + (el && el.name ? el.name : 'не определён');
+    document.getElementById('pickModalTitle').textContent = el && el.name
+      ? ('Повреждение · ' + el.name)
+      : 'Выберите повреждение';
+    pendingXY = p;
+    document.getElementById('tol_block').classList.add('d-none');
+    renderDamageButtons('damage_grid_modal', true);
+    pickModal.show();
+  });
+
+  document.getElementById('btn_zones').addEventListener('click', function () {
+    zonesOn = true; redraw();
+  });
+  document.getElementById('btn_zones_hide').addEventListener('click', function () {
+    zonesOn = false; redraw();
+  });
+  document.getElementById('btn_clear').addEventListener('click', function () {
+    marks = [];
+    redraw();
+    renderMarks();
+    updateSummary();
+  });
+  document.getElementById('btn_show_tol').addEventListener('click', function () {
+    document.getElementById('tol_block').classList.remove('d-none');
+  });
+  document.getElementById('btn_tol_ok').addEventListener('click', function () {
+    if (!pendingXY) return;
+    var v = document.getElementById('tol_value').value || '';
+    addMark(SPECIAL[0], pendingXY.x, pendingXY.y, v);
+    pendingXY = null;
+    pickModal.hide();
+  });
+
+  document.getElementById('photo_input').addEventListener('change', function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      photoDataUrl = reader.result;
+      var preview = document.getElementById('photo_preview');
+      preview.src = photoDataUrl;
+      preview.style.display = 'block';
+      document.getElementById('btn_photo_apply').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('btn_photo_apply').addEventListener('click', function () {
+    if (!photoTargetId || !photoDataUrl) return;
+    marks.forEach(function (m) {
+      if (m.id === photoTargetId) {
+        m.photo_data = photoDataUrl;
+        m.photo_name = 'photo.jpg';
+      }
+    });
+    photoModal.hide();
+    redraw();
+    renderMarks();
+    updateSummary();
+  });
+
+  document.getElementById('btn_validate').addEventListener('click', function () {
+    var miss = incompleteCount();
+    if (!marks.length) {
+      alert('Нет отметок.');
+      return;
+    }
+    if (miss) {
+      alert('Не хватает фото у ' + miss + ' отметки(ок). Типы с «фото обязательно» нужно дозаполнить.');
+    } else {
+      alert('Комплектность OK: все обязательные фото на месте.');
+    }
+  });
+
+  document.getElementById('btn_done').addEventListener('click', function () {
+    alert('Тест OK. Сохранение в оценку пока отключено — следующий шаг.');
+  });
+
+  function boot() {
+    renderDamageButtons('damage_grid', true);
+    renderDamageButtons('damage_grid_modal', true);
+    if (baseImg.complete) {
+      redraw();
+    } else {
+      baseImg.onload = redraw;
+    }
+    updateSummary();
+  }
+  boot();
+})();
+</script>
+{% endblock %}

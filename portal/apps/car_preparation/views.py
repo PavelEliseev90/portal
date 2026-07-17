@@ -125,9 +125,12 @@ def preparation_calendar(request):
 @login_required
 def preparation_schedule(request, preparation_id):
     """Планирование конкретной подготовки с системой заказ-нарядов"""
-    from .models import (RefCarPreparationWork, WorkOrderTemplate, RefRepairZone, 
-                        WorkOrder, WorkOrderItem, CarPreparationResource)
+    from .models import (
+        RefCarPreparationWork, RefRepairZone,
+        WorkOrder, WorkOrderItem, CarPreparationResource, CarPreparationPackage,
+    )
     from django.contrib.auth.models import User
+    from estimation_engine.models import PreparationWorkPackage
     
     preparation = get_object_or_404(CarPreparation, id=preparation_id)
     
@@ -138,6 +141,7 @@ def preparation_schedule(request, preparation_id):
         'work',
         'work__stage',
         'work_order_items__work_order',
+        'preparation_package',
     )
     
     # Получаем доступные ресурсы
@@ -162,13 +166,20 @@ def preparation_schedule(request, preparation_id):
         if not preparation.work_items.filter(work=work).exists():
             works_by_stage[stage_name].append(work)
     
-    # Получаем шаблоны заказ-нарядов
-    templates = WorkOrderTemplate.objects.filter(is_active=True).prefetch_related('works')
-    preparation_templates = CarPreparationTemplate.objects.filter(
-        is_active=True
-    ).filter(
-        Q(unit__isnull=True) | Q(unit=preparation.unit)
-    ).prefetch_related('works')
+    # Каталог пакетов работ (опубликованные + черновики; архив скрыт)
+    catalog_packages = (
+        PreparationWorkPackage.objects.filter(is_active=True)
+        .exclude(status=PreparationWorkPackage.STATUS_ARCHIVED)
+        .select_related('default_repair_zone')
+        .prefetch_related('lines')
+        .order_by('sort_order', 'name')
+    )
+    preparation_packages = (
+        CarPreparationPackage.objects.filter(preparation=preparation)
+        .select_related('source_package', 'repair_zone')
+        .prefetch_related('work_items__work')
+        .order_by('sort_order', 'id')
+    )
     
     # Ремонтные зоны подразделения и общие (unit пустой)
     repair_zones = RefRepairZone.objects.filter(
@@ -258,8 +269,8 @@ def preparation_schedule(request, preparation_id):
         'resources': resources,
         'available_works': available_works,
         'works_by_stage': works_by_stage,
-        'templates': templates,
-        'preparation_templates': preparation_templates,
+        'catalog_packages': catalog_packages,
+        'preparation_packages': preparation_packages,
         'checklist': checklist,
         'repair_zones': repair_zones,
         'work_orders': work_orders,
@@ -800,8 +811,8 @@ def movement_consume(request):
 
 @login_required
 def work_order_create(request, preparation_id):
-    """Создание заказ-наряда из корзины работ"""
-    from .models import RefCarPreparationWork
+    """Создание заказ-наряда из пакетов и/или корзины работ"""
+    from .models import RefCarPreparationWork, CarPreparationPackage
     from django.contrib.auth.models import User
     
     preparation = get_object_or_404(CarPreparation, id=preparation_id)
@@ -812,7 +823,8 @@ def work_order_create(request, preparation_id):
             if request.content_type == 'application/json':
                 data = json.loads(request.body)
                 work_ids = data.get('work_ids', [])
-                template_id = data.get('template_id')
+                package_ids = data.get('package_ids', [])
+                template_id = data.get('template_id')  # legacy, игнорируем для новых сценариев
                 planned_start_str = data.get('planned_start')
                 planned_end_str = data.get('planned_end')
                 repair_zone_id = data.get('repair_zone_id')
@@ -820,15 +832,46 @@ def work_order_create(request, preparation_id):
                 description = data.get('description', '')
             else:
                 work_ids = request.POST.getlist('work_ids[]')
+                package_ids = request.POST.getlist('package_ids[]') or request.POST.getlist('package_ids')
                 template_id = request.POST.get('template_id') or None
                 planned_start_str = request.POST.get('planned_start')
                 planned_end_str = request.POST.get('planned_end')
                 repair_zone_id = request.POST.get('repair_zone_id') or None
                 title = request.POST.get('title', '')
                 description = request.POST.get('description', '')
+
+            prep_packages = []
+            if package_ids:
+                prep_packages = list(
+                    CarPreparationPackage.objects.filter(
+                        preparation=preparation,
+                        id__in=[int(x) for x in package_ids if str(x).isdigit()],
+                    ).prefetch_related('work_items__work')
+                )
+                not_confirmed = [p for p in prep_packages if not p.is_confirmed]
+                if not_confirmed:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Сначала подтвердите пакеты: ' + ', '.join(p.name for p in not_confirmed),
+                    }, status=400)
+                # Работы из пакетов добавляем к work_ids
+                for pkg in prep_packages:
+                    for wi in pkg.work_items.all():
+                        if wi.work_id and str(wi.work_id) not in [str(x) for x in work_ids]:
+                            work_ids.append(wi.work_id)
             
             if not work_ids:
-                return JsonResponse({'success': False, 'error': 'Не выбрано ни одной работы'}, status=400)
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Выберите пакет(ы) или хотя бы одну работу',
+                }, status=400)
+
+            if not repair_zone_id and prep_packages:
+                # Берём ремзону из первого пакета с зоной
+                for pkg in prep_packages:
+                    if pkg.repair_zone_id:
+                        repair_zone_id = pkg.repair_zone_id
+                        break
 
             if not repair_zone_id:
                 return JsonResponse({
@@ -852,17 +895,22 @@ def work_order_create(request, preparation_id):
                     planned_start = datetime.strptime(planned_start_str, '%Y-%m-%dT%H:%M')
                     if timezone.is_naive(planned_start):
                         planned_start = timezone.make_aware(planned_start)
-                except:
+                except Exception:
                     pass
             if planned_end_str:
                 try:
                     planned_end = datetime.strptime(planned_end_str, '%Y-%m-%dT%H:%M')
                     if timezone.is_naive(planned_end):
                         planned_end = timezone.make_aware(planned_end)
-                except:
+                except Exception:
                     pass
+
+            if not title and prep_packages:
+                title = ', '.join(p.name for p in prep_packages[:3])
+                if len(prep_packages) > 3:
+                    title += f' (+{len(prep_packages) - 3})'
             
-            # Создаем заказ-наряд
+            # Создаем заказ-наряд (template_id — только для старых записей, новые без шаблона)
             work_order = WorkOrder.objects.create(
                 car=preparation.car,
                 preparation=preparation,
@@ -882,15 +930,29 @@ def work_order_create(request, preparation_id):
             for work_id in work_ids:
                 try:
                     work = RefCarPreparationWork.objects.get(id=int(work_id))
-                    prep_item, _ = CarPreparationWorkItem.objects.get_or_create(
+                    prep_item_qs = CarPreparationWorkItem.objects.filter(
                         preparation=preparation,
                         work=work,
-                        defaults={
-                            'is_confirmed': True,
-                            'planned_time': work.estimated_time or 0,
-                            'status': 'pending',
-                        },
                     )
+                    if prep_packages:
+                        pkg_ids = [p.id for p in prep_packages]
+                        prep_item = prep_item_qs.filter(
+                            preparation_package_id__in=pkg_ids,
+                        ).order_by('id').first() or prep_item_qs.order_by('id').first()
+                    else:
+                        prep_item = prep_item_qs.order_by('id').first()
+
+                    if prep_item is None:
+                        prep_item = CarPreparationWorkItem.objects.create(
+                            preparation=preparation,
+                            work=work,
+                            is_confirmed=True,
+                            planned_time=work.estimated_time or 0,
+                            status='pending',
+                        )
+                    elif not prep_item.is_confirmed:
+                        prep_item.is_confirmed = True
+                        prep_item.save()
 
                     # Не даём выдать одну и ту же работу в несколько активных ЗН
                     already_in_active = prep_item.work_order_items.filter(
@@ -911,6 +973,18 @@ def work_order_create(request, preparation_id):
                     sort_order += 1
                 except (RefCarPreparationWork.DoesNotExist, ValueError):
                     continue
+
+            if sort_order == 0:
+                work_order.delete()
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Все выбранные работы уже выданы в активные заказ-наряды',
+                }, status=400)
+
+            for pkg in prep_packages:
+                if pkg.status == 'pending':
+                    pkg.status = 'in_progress'
+                    pkg.save(update_fields=['status', 'date_updated'])
 
             preparation.progress_percent = preparation.calculate_progress()
             preparation.save(update_fields=['progress_percent', 'date_updated'])
@@ -1179,7 +1253,10 @@ def preparation_template_works(request, template_id):
 
 @login_required
 def preparation_apply_template(request, preparation_id):
-    """Применить шаблон подготовки — создать пункты работ."""
+    """
+    Legacy: применить стартовый чеклист.
+    Новые сценарии — preparation_add_package.
+    """
     preparation = get_object_or_404(CarPreparation, id=preparation_id)
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
@@ -1203,6 +1280,118 @@ def preparation_apply_template(request, preparation_id):
         'message': f'Добавлено работ: {created}, уже были: {skipped}',
         'created_count': created,
         'skipped_count': skipped,
+    })
+
+
+@login_required
+def preparation_add_package(request, preparation_id):
+    """Добавить пакет из каталога на документ подготовки."""
+    from estimation_engine.models import PreparationWorkPackage
+    from estimation_engine.package_apply import (
+        PackageApplyError,
+        apply_catalog_package_to_preparation,
+    )
+
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+        package_id = data.get('package_id')
+        confirm = data.get('confirm') in (True, 1, '1', 'true', 'on')
+    else:
+        package_id = request.POST.get('package_id')
+        confirm = request.POST.get('confirm') in ('1', 'true', 'on')
+
+    if not package_id:
+        return JsonResponse({'success': False, 'error': 'Не указан пакет'}, status=400)
+
+    catalog = get_object_or_404(PreparationWorkPackage, id=int(package_id))
+    try:
+        prep_package, stats = apply_catalog_package_to_preparation(
+            preparation,
+            catalog,
+            confirm=confirm,
+        )
+    except PackageApplyError as exc:
+        return JsonResponse({'success': False, 'error': str(exc)}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'message': (
+            f'Пакет «{prep_package.name}» добавлен '
+            f'(работ: {stats["created_works"]}, пропущено: {stats["skipped_works"]})'
+        ),
+        'preparation_package_id': prep_package.id,
+        **stats,
+    })
+
+
+@login_required
+def preparation_package_confirm(request, package_id):
+    """Подтвердить / снять подтверждение с пакета на подготовке."""
+    from .models import CarPreparationPackage
+    from estimation_engine.package_apply import confirm_preparation_package
+
+    prep_package = get_object_or_404(CarPreparationPackage, id=package_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+        confirmed = data.get('confirmed', True)
+        if isinstance(confirmed, str):
+            confirmed = confirmed in ('1', 'true', 'on')
+    else:
+        confirmed = request.POST.get('confirmed', '1') in ('1', 'true', 'on')
+
+    confirm_preparation_package(prep_package, confirmed=bool(confirmed))
+    return JsonResponse({
+        'success': True,
+        'package_id': prep_package.id,
+        'is_confirmed': prep_package.is_confirmed,
+        'message': 'Пакет подтверждён' if prep_package.is_confirmed else 'Подтверждение снято',
+    })
+
+
+@login_required
+def catalog_package_works(request, package_id):
+    """API: состав пакета из каталога (для превью)."""
+    from estimation_engine.models import PreparationWorkPackage, PreparationWorkPackageLine
+
+    catalog = get_object_or_404(
+        PreparationWorkPackage.objects.prefetch_related('lines__work'),
+        id=package_id,
+        is_active=True,
+    )
+    works_data = []
+    for line in catalog.lines.filter(
+        is_active=True,
+        line_type=PreparationWorkPackageLine.LINE_WORK,
+    ).select_related('work', 'work__stage').order_by('sort_order'):
+        if not line.work_id or not line.work:
+            continue
+        works_data.append({
+            'id': line.work_id,
+            'name': line.work.name,
+            'estimated_time': int(round(float(line.norm_hours or 0) * 60)) or (line.work.estimated_time or 0),
+            'stage': line.work.stage.name if line.work.stage else 'Без этапа',
+            'is_required': line.is_required,
+        })
+    return JsonResponse({
+        'success': True,
+        'package_id': catalog.id,
+        'package_name': catalog.name,
+        'route_type': catalog.route_type,
+        'default_repair_zone_id': catalog.default_repair_zone_id,
+        'works': works_data,
     })
 
 
@@ -2066,6 +2255,156 @@ def work_order_template_delete(request, template_id):
         return redirect('car_preparation:work_order_templates_list')
     
     return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+# ===========================================
+# СТАРТОВЫЕ ЧЕКЛИСТЫ ПОДГОТОВКИ
+# ===========================================
+
+def _checklist_works_by_stage():
+    works = (
+        RefCarPreparationWork.objects.filter(is_active=True)
+        .select_related('stage')
+        .order_by('stage__sort_order', 'sort_order', 'name')
+    )
+    works_by_stage = {}
+    for work in works:
+        stage_name = work.stage.name if work.stage else 'Без этапа'
+        works_by_stage.setdefault(stage_name, []).append(work)
+    return works, works_by_stage
+
+
+def _save_checklist_works(template, request):
+    from .models import CarPreparationTemplateWork
+
+    template.carpreparationtemplatework_set.all().delete()
+    sort_order = 0
+    for work_id in request.POST.getlist('work_ids[]'):
+        try:
+            work = RefCarPreparationWork.objects.get(id=int(work_id))
+        except (RefCarPreparationWork.DoesNotExist, ValueError, TypeError):
+            continue
+        planned_time = int(request.POST.get(f'work_{work_id}_time', 0) or 0)
+        default_cost = request.POST.get(f'work_{work_id}_cost', 0) or 0
+        is_required = request.POST.get(f'work_{work_id}_required') == 'on'
+        CarPreparationTemplateWork.objects.create(
+            template=template,
+            work=work,
+            sort_order=sort_order,
+            planned_time=planned_time,
+            default_cost=default_cost,
+            is_required=is_required,
+        )
+        sort_order += 1
+
+
+@login_required
+def preparation_checklists_list(request):
+    """Список стартовых чеклистов подготовки"""
+    templates = (
+        CarPreparationTemplate.objects.all()
+        .select_related('unit')
+        .prefetch_related('works')
+        .order_by('name')
+    )
+    return render(request, 'car_preparation/preparation_checklists_list.html', {
+        'templates': templates,
+    })
+
+
+@login_required
+def preparation_checklist_create(request):
+    """Создание стартового чеклиста подготовки"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+
+        template = CarPreparationTemplate.objects.create(
+            name=name,
+            description=request.POST.get('description', '').strip(),
+            unit_id=int(request.POST.get('unit_id')) if request.POST.get('unit_id') else None,
+            car_type=request.POST.get('car_type', '').strip(),
+            is_active=request.POST.get('is_active') == 'on',
+            is_default=request.POST.get('is_default') == 'on',
+        )
+        _save_checklist_works(template, request)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'template_id': template.id,
+                'message': 'Чеклист создан',
+            })
+        return redirect('car_preparation:preparation_checklists_list')
+
+    works, works_by_stage = _checklist_works_by_stage()
+    return render(request, 'car_preparation/preparation_checklist_form.html', {
+        'units': RefUnit.objects.filter(buauto=True).order_by('name'),
+        'works': works,
+        'works_by_stage': works_by_stage,
+        'car_type_choices': [
+            ('', 'Любой'),
+            ('new', 'Новый'),
+            ('used', 'БУ'),
+            ('trade-in', 'Trade-in'),
+        ],
+    })
+
+
+@login_required
+def preparation_checklist_edit(request, template_id):
+    """Редактирование стартового чеклиста подготовки"""
+    template = get_object_or_404(
+        CarPreparationTemplate.objects.prefetch_related('works'),
+        id=template_id,
+    )
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Название обязательно'}, status=400)
+
+        template.name = name
+        template.description = request.POST.get('description', '').strip()
+        template.unit_id = int(request.POST.get('unit_id')) if request.POST.get('unit_id') else None
+        template.car_type = request.POST.get('car_type', '').strip()
+        template.is_active = request.POST.get('is_active') == 'on'
+        template.is_default = request.POST.get('is_default') == 'on'
+        template.save()
+        _save_checklist_works(template, request)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': 'Чеклист обновлён'})
+        return redirect('car_preparation:preparation_checklists_list')
+
+    works, works_by_stage = _checklist_works_by_stage()
+    template_works = template.carpreparationtemplatework_set.all().select_related('work')
+    return render(request, 'car_preparation/preparation_checklist_form.html', {
+        'template': template,
+        'units': RefUnit.objects.filter(buauto=True).order_by('name'),
+        'works': works,
+        'works_by_stage': works_by_stage,
+        'template_works': template_works,
+        'selected_work_ids': [tw.work_id for tw in template_works],
+        'car_type_choices': [
+            ('', 'Любой'),
+            ('new', 'Новый'),
+            ('used', 'БУ'),
+            ('trade-in', 'Trade-in'),
+        ],
+    })
+
+
+@login_required
+def preparation_checklist_delete(request, template_id):
+    """Удаление стартового чеклиста подготовки"""
+    template = get_object_or_404(CarPreparationTemplate, id=template_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+    template.delete()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': 'Чеклист удалён'})
+    return redirect('car_preparation:preparation_checklists_list')
 
 
 # ===========================================

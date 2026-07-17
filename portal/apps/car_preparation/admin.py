@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     RefCarPreparationStage, RefCarPreparationWork, RefCarPreparationStatus,
-    CarPreparation, CarPreparationWorkItem, CarPreparationPhoto,
+    CarPreparation, CarPreparationPackage, CarPreparationWorkItem, CarPreparationPhoto,
     CarPreparationChecklist, CarPreparationTemplate, CarPreparationTemplateWork,
     CarPreparationHistory, CarPreparationNotification,
     CarPreparationWorkSchedule, CarPreparationCalendar, CarPreparationResource,
@@ -38,7 +38,8 @@ class RefCarPreparationStatusAdmin(admin.ModelAdmin):
 class CarPreparationWorkItemInline(admin.TabularInline):
     model = CarPreparationWorkItem
     extra = 0
-    fields = ['work', 'status', 'performer', 'actual_time', 'cost', 'comment']
+    fields = ['preparation_package', 'work', 'status', 'performer', 'actual_time', 'cost', 'comment']
+    raw_id_fields = ['preparation_package']
     readonly_fields = []
 
 
@@ -50,6 +51,29 @@ class CarPreparationPhotoInline(admin.TabularInline):
     max_num = 10
 
 
+class CarPreparationPackageInline(admin.TabularInline):
+    model = CarPreparationPackage
+    extra = 0
+    fields = [
+        'code', 'name', 'route_type', 'repair_zone', 'status',
+        'is_confirmed', 'planned_time', 'cost', 'sort_order',
+    ]
+    raw_id_fields = ['repair_zone', 'source_package']
+    show_change_link = True
+
+
+@admin.register(CarPreparationPackage)
+class CarPreparationPackageAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'preparation', 'name', 'code', 'route_type', 'repair_zone',
+        'status', 'is_confirmed', 'planned_time', 'cost',
+    ]
+    list_filter = ['status', 'route_type', 'is_confirmed']
+    search_fields = ['name', 'code', 'preparation__car__vin']
+    raw_id_fields = ['preparation', 'source_package', 'repair_zone']
+    inlines = [CarPreparationWorkItemInline]
+
+
 @admin.register(CarPreparation)
 class CarPreparationAdmin(admin.ModelAdmin):
     list_display = ['id', 'car', 'unit', 'status', 'current_stage', 'responsible', 
@@ -57,7 +81,7 @@ class CarPreparationAdmin(admin.ModelAdmin):
     list_filter = ['status', 'unit', 'current_stage', 'mobile_created', 'date_start']
     search_fields = ['car__vin', 'car__name', 'qr_code', 'responsible__name']
     readonly_fields = ['date_created', 'date_updated', 'progress_percent', 'qr_code']
-    inlines = [CarPreparationWorkItemInline, CarPreparationPhotoInline]
+    inlines = [CarPreparationPackageInline, CarPreparationWorkItemInline, CarPreparationPhotoInline]
     
     fieldsets = (
         ('Основная информация', {
@@ -84,10 +108,11 @@ class CarPreparationAdmin(admin.ModelAdmin):
 
 @admin.register(CarPreparationWorkItem)
 class CarPreparationWorkItemAdmin(admin.ModelAdmin):
-    list_display = ['preparation', 'work', 'is_confirmed', 'status', 'performer', 
+    list_display = ['preparation', 'preparation_package', 'work', 'is_confirmed', 'status', 'performer', 
                    'actual_time', 'cost', 'date_start', 'date_end']
     list_filter = ['is_confirmed', 'status', 'quality', 'mobile_updated']
-    search_fields = ['preparation__car__vin', 'work__name', 'performer__name']
+    search_fields = ['preparation__car__vin', 'work__name', 'performer__name', 'preparation_package__name']
+    raw_id_fields = ['preparation', 'preparation_package', 'work', 'performer', 'confirmed_by']
     readonly_fields = ['mobile_updated_at', 'confirmed_at']
 
 

@@ -46,6 +46,7 @@ urlpatterns = [
     #Подготовка и работы по авто
     
     path('car_preparation/',    include('car_preparation.urls')),
+    path('estimation-engine/',  include('estimation_engine.urls')),
 
     #PowerBI
     path('checklists/',     include('checklists.urls')),
