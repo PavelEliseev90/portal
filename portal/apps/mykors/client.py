@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 CAR_INGEST_PATH = '/api/portal/v1/cars/ingest/'
 CARS_LIST_PATH = '/api/portal/v1/cars/'
+USER_INGEST_PATH = '/api/portal/v1/users/ingest/'
 
 
 class MykorsClientError(Exception):
@@ -106,6 +107,46 @@ def ingest_car(payload: dict) -> dict:
         logger.warning(
             'MyKors ingest failed vin=%s status=%s body=%s',
             payload.get('vin'),
+            response.status_code,
+            text[:300],
+        )
+    return {
+        'ok': ok,
+        'created': bool(data.get('created')) if ok else False,
+        'status_code': response.status_code,
+        'body': text,
+        'remote_id': data.get('id'),
+        'data': data,
+    }
+
+
+def ingest_user(payload: dict) -> dict:
+    """
+    POST /api/portal/v1/users/ingest/
+    Возвращает dict: ok, created, status_code, body, remote_id.
+    """
+    import json
+
+    body = json.dumps(payload, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+    response = request(
+        'POST',
+        USER_INGEST_PATH,
+        body=body,
+        content_type='application/json',
+    )
+    text = (response.text or '')[:2000]
+    data = {}
+    try:
+        data = response.json()
+    except Exception:
+        pass
+
+    ok = response.status_code in (200, 201)
+    if not ok:
+        logger.warning(
+            'MyKors user ingest failed portal_user_id=%s username=%s status=%s body=%s',
+            payload.get('portal_user_id'),
+            payload.get('username'),
             response.status_code,
             text[:300],
         )

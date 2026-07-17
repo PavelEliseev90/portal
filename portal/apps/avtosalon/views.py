@@ -58,6 +58,7 @@ from avtosalon.deal_calc_approval import (
     build_deal_calc_approval_context,
     handle_deal_calc_approval_post,
     recalculate_deal_calculation_km,
+    try_approve_by_prior_uk_threshold,
     try_auto_approve_calculation,
     user_can_access_deal_calculation_doc,
     user_has_deal_calc_uk_access,
@@ -3595,6 +3596,9 @@ def deal_calculation_doc(request, id):
         'car__complectation_autoru', 'car__status', 'car__status_availability',
         'director_approve_user', 'director_approve_user__profiles',
         'uk_approve_user', 'uk_approve_user__profiles',
+        'uk_approval_reference',
+        'uk_approval_reference__calculation',
+        'uk_approval_reference__approved_by',
     ).get(pk=id)
 
     if not user_can_access_deal_calculation_doc(request.user, calc):
@@ -3621,7 +3625,18 @@ def deal_calculation_doc(request, id):
         if calc.km_raschet is not None:
             calc.save(update_fields=['km_raschet'])
     cumulative_data = car.cumulative_data() if car else None
-    try_auto_approve_calculation(calc, send_chat=True, cumulative_data=cumulative_data)
+    prior_uk_approved = try_approve_by_prior_uk_threshold(
+        calc, send_chat=True, send_to_1c=True,
+    )
+    if not prior_uk_approved:
+        try_auto_approve_calculation(
+            calc, send_chat=True, cumulative_data=cumulative_data,
+        )
+        if getattr(calc, '_prior_uk_approval_revoked', False):
+            from avtosalon.deal_calc_approval import (
+                send_calculation_soglasovanie_result_to_1c,
+            )
+            send_calculation_soglasovanie_result_to_1c(calc, force=True)
     cumulative_data = cumulative_data or {}
     from prices_car.km_breakdown import build_km_calculation_breakdown
     if car:

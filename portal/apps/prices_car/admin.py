@@ -1,5 +1,14 @@
 from django.contrib import admin
-from .models import CarCalculations, PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, KMCar, CarCalculationsTypeDetail
+from .models import (
+    BrandKM,
+    CarCalculations,
+    CarCalculationsTypeDetail,
+    CarCalculationUkApproval,
+    KMCar,
+    PriceCarBrand,
+    PriceCarKmDiscount,
+    PriceCarStageKM,
+)
 
 @admin.register(CarCalculations)
 class CarCalculationsAdmin(admin.ModelAdmin):
@@ -8,6 +17,34 @@ class CarCalculationsAdmin(admin.ModelAdmin):
     raw_id_fields = ('rlk', 'unit', 'staff', 'author', 'user', 'car', )
     search_fields = ('rlk__nomer',)
     ordering = ('-date',)
+
+
+@admin.register(CarCalculationUkApproval)
+class CarCalculationUkApprovalAdmin(admin.ModelAdmin):
+    list_display = (
+        'approved_at', 'rlk', 'car', 'approved_kvp',
+        'approved_by', 'calculation',
+    )
+    list_filter = ('approved_at',)
+    raw_id_fields = ('rlk', 'car', 'approved_by', 'calculation')
+    search_fields = (
+        'rlk__nomer', 'car__vin', 'calculation__number',
+        'approved_by__username',
+    )
+    ordering = ('approved_kvp', '-approved_at')
+    readonly_fields = (
+        'approved_at', 'rlk', 'car', 'approved_kvp',
+        'approved_by', 'calculation', 'comment', 'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.method in ('GET', 'HEAD', 'OPTIONS')
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(PriceCarKmDiscount)

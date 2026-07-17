@@ -4,6 +4,7 @@ import logging
 import requests
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 
@@ -20,6 +21,9 @@ LEGACY_AUTO_APPROVE_COMMENT = 'Автоматическое согласован
 LEGACY_AUTO_APPROVE_COMMENT_RULE_MIN = (
     'Автоматическое согласование: КВП выше итога по правилу, '
     'итог по правилу выше мин. КМ ДЦ'
+)
+PRIOR_UK_APPROVE_COMMENT_PREFIX = (
+    'Автоматическое согласование УК по ранее согласованному минимальному КВП'
 )
 URL_HS_ALFA_AUTO      = 'http://k01srv1c10/ralfa01/hs/mb/'
 
@@ -138,6 +142,271 @@ def is_auto_approved_calculation(calc):
     )
 
 
+def is_prior_uk_approved_calculation(calc):
+    """КП автоматически согласовано по ранее зафиксированному порогу УК."""
+    from prices_car.models import CarCalculations
+
+    return (
+        calc.soglasovanie_status == CarCalculations.SOGLASOVANIE_UK_APPROVED
+        and getattr(calc, 'uk_approval_basis', '')
+        == CarCalculations.UK_APPROVAL_BASIS_PRIOR_THRESHOLD
+        and getattr(calc, 'uk_approval_reference_id', None) is not None
+    )
+
+
+def get_prior_uk_approval(calc):
+    """
+    Минимальный КВП, вручную согласованный УК для того же рабочего листа и автомобиля.
+
+    Используется неизменяемый снимок, а не текущее значение КВП старого КП.
+    """
+    from prices_car.models import CarCalculationUkApproval
+
+    rlk_id = getattr(calc, 'rlk_id', None)
+    car_id = getattr(calc, 'car_id', None)
+    if not rlk_id or not car_id:
+        return None
+
+    queryset = CarCalculationUkApproval.objects.filter(
+        rlk_id=rlk_id,
+        car_id=car_id,
+        approved_kvp__gt=0,
+    )
+    calc_id = getattr(calc, 'pk', None)
+    if calc_id:
+        queryset = queryset.exclude(calculation_id=calc_id)
+    return queryset.select_related(
+        'calculation', 'approved_by',
+    ).order_by(
+        'approved_kvp', '-approved_at', 'pk',
+    ).first()
+
+
+def kvp_meets_prior_uk_threshold(calc, approval):
+    """КВП нового КП не ниже минимального КВП, вручную согласованного УК."""
+    if approval is None:
+        return False
+    return int(getattr(calc, 'kvp', 0) or 0) >= int(approval.approved_kvp)
+
+
+def record_manual_uk_approval(calc, user, comment, approved_at=None):
+    """Фиксирует неизменяемый снимок ручного решения УК."""
+    from prices_car.models import CarCalculationUkApproval
+
+    if not calc.rlk_id or not calc.car_id:
+        raise ValueError('Для фиксации решения УК нужны рабочий лист и автомобиль.')
+    approved_kvp = int(calc.kvp or 0)
+    if approved_kvp <= 0:
+        raise ValueError('Согласованный УК КВП должен быть больше 0.')
+    approved_at = approved_at or timezone.now()
+    defaults = {
+        'rlk_id': calc.rlk_id,
+        'car_id': calc.car_id,
+        'approved_kvp': approved_kvp,
+        'approved_by': user,
+        'approved_at': approved_at,
+        'comment': comment or '',
+    }
+    approval, created = CarCalculationUkApproval.objects.get_or_create(
+        calculation=calc,
+        defaults=defaults,
+    )
+    if not created:
+        unchanged = (
+            approval.rlk_id == defaults['rlk_id']
+            and approval.car_id == defaults['car_id']
+            and approval.approved_kvp == defaults['approved_kvp']
+            and approval.approved_by_id == getattr(user, 'pk', None)
+            and approval.comment == defaults['comment']
+        )
+        if not unchanged:
+            raise ValueError(
+                'Снимок ручного согласования УК уже существует и не может быть изменён.',
+            )
+    return approval
+
+
+def try_approve_by_prior_uk_threshold(
+    calc,
+    send_chat=False,
+    send_to_1c=False,
+    _retry=0,
+):
+    """
+    Согласовывает новое КП как УК, если КВП не ниже минимального КВП,
+    ранее вручную согласованного УК для того же RLK и автомобиля.
+    """
+    from prices_car.models import CarCalculations
+
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    if is_prior_uk_approved_calculation(calc):
+        applied_approval = calc.uk_approval_reference
+        same_scope = (
+            applied_approval is not None
+            and applied_approval.rlk_id == calc.rlk_id
+            and applied_approval.car_id == calc.car_id
+        )
+        applied_threshold = int(calc.uk_approval_threshold_kvp or 0)
+        if (
+            same_scope
+            and applied_threshold > 0
+            and int(calc.kvp or 0) >= applied_threshold
+        ):
+            return True
+
+        # То же КП могло повторно прийти из 1С с уменьшенным КВП.
+        # Снимаем только автоматическое решение по старому порогу и оцениваем заново.
+        expected_reference_id = calc.uk_approval_reference_id
+        current_kvp = int(calc.kvp or 0)
+        current_rlk_id = calc.rlk_id
+        current_car_id = calc.car_id
+        if isinstance(calc, CarCalculations) and calc.pk:
+            updated = CarCalculations.objects.filter(
+                pk=calc.pk,
+                soglasovanie_status=CarCalculations.SOGLASOVANIE_UK_APPROVED,
+                uk_approval_basis=CarCalculations.UK_APPROVAL_BASIS_PRIOR_THRESHOLD,
+                uk_approval_reference_id=expected_reference_id,
+                kvp=current_kvp,
+                rlk_id=current_rlk_id,
+                car_id=current_car_id,
+            ).update(
+                soglasovanie_status=CarCalculations.SOGLASOVANIE_AWAITING_1C,
+                uk_approve_user=None,
+                uk_approve_date=None,
+                uk_approve_comment='',
+                uk_approval_basis='',
+                uk_approval_threshold_kvp=None,
+                uk_approval_reference=None,
+            )
+            if not updated:
+                calc.refresh_from_db()
+                if _retry < 2:
+                    return try_approve_by_prior_uk_threshold(
+                        calc,
+                        send_chat=send_chat,
+                        send_to_1c=send_to_1c,
+                        _retry=_retry + 1,
+                    )
+                raise RuntimeError(
+                    'Не удалось переоценить порог УК из-за конкурентного изменения КП.',
+                )
+
+        calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_AWAITING_1C
+        calc.uk_approve_user = None
+        calc.uk_approve_date = None
+        calc.uk_approve_comment = ''
+        calc.uk_approval_basis = ''
+        calc.uk_approval_threshold_kvp = None
+        calc.uk_approval_reference = None
+        if not (isinstance(calc, CarCalculations) and calc.pk):
+            calc.save(update_fields=[
+                'soglasovanie_status',
+                'uk_approve_user',
+                'uk_approve_date',
+                'uk_approve_comment',
+                'uk_approval_basis',
+                'uk_approval_threshold_kvp',
+                'uk_approval_reference',
+            ])
+        calc._prior_uk_approval_revoked = True
+        status = CarCalculations.SOGLASOVANIE_AWAITING_1C
+
+    if status not in (
+        CarCalculations.SOGLASOVANIE_PENDING,
+        CarCalculations.SOGLASOVANIE_AWAITING_1C,
+        '',
+    ):
+        return False
+
+    approval = get_prior_uk_approval(calc)
+    if not kvp_meets_prior_uk_threshold(calc, approval):
+        return False
+
+    system_user = User.objects.filter(pk=AUTO_APPROVE_USER_ID).first()
+    if not system_user:
+        return False
+
+    source_calc = approval.calculation
+    source_number = (
+        source_calc.number
+        if source_calc and source_calc.number
+        else (source_calc.pk if source_calc else 'удалено')
+    )
+    comment = (
+        '{}: применяется порог {} ₽, зафиксированный по КП #{}.'
+    ).format(
+        PRIOR_UK_APPROVE_COMMENT_PREFIX,
+        int(approval.approved_kvp),
+        source_number,
+    )
+
+    now = timezone.now()
+    calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_APPROVED
+    calc.uk_approve_user = system_user
+    calc.uk_approve_date = now
+    calc.uk_approve_comment = comment
+    calc.uk_approval_basis = CarCalculations.UK_APPROVAL_BASIS_PRIOR_THRESHOLD
+    calc.uk_approval_threshold_kvp = int(approval.approved_kvp)
+    calc.uk_approval_reference = approval
+    calc.date_success = now
+    if isinstance(calc, CarCalculations) and calc.pk:
+        updated = CarCalculations.objects.filter(
+            pk=calc.pk,
+            soglasovanie_status__in=(
+                CarCalculations.SOGLASOVANIE_PENDING,
+                CarCalculations.SOGLASOVANIE_AWAITING_1C,
+                '',
+            ),
+            kvp=int(calc.kvp or 0),
+            rlk_id=calc.rlk_id,
+            car_id=calc.car_id,
+        ).update(
+            soglasovanie_status=CarCalculations.SOGLASOVANIE_UK_APPROVED,
+            uk_approve_user=system_user,
+            uk_approve_date=now,
+            uk_approve_comment=comment,
+            uk_approval_basis=CarCalculations.UK_APPROVAL_BASIS_PRIOR_THRESHOLD,
+            uk_approval_threshold_kvp=int(approval.approved_kvp),
+            uk_approval_reference=approval,
+            date_success=now,
+        )
+        if not updated:
+            calc.refresh_from_db()
+            if _retry < 2:
+                return try_approve_by_prior_uk_threshold(
+                    calc,
+                    send_chat=send_chat,
+                    send_to_1c=send_to_1c,
+                    _retry=_retry + 1,
+                )
+            raise RuntimeError(
+                'Не удалось применить порог УК из-за конкурентного изменения КП.',
+            )
+    else:
+        calc.save(update_fields=[
+            'soglasovanie_status',
+            'uk_approve_user',
+            'uk_approve_date',
+            'uk_approve_comment',
+            'uk_approval_basis',
+            'uk_approval_threshold_kvp',
+            'uk_approval_reference',
+            'date_success',
+        ])
+
+    def notify_after_commit():
+        if send_chat:
+            send_calc_rlk_chat_message(calc, system_user, comment)
+        notify_calc_soglasovanie_result_email(
+            calc, 'uk_approve', comment, system_user,
+        )
+        if send_to_1c:
+            send_calculation_soglasovanie_result_to_1c(calc)
+
+    transaction.on_commit(notify_after_commit)
+    return True
+
+
 def recalculate_deal_calculation_km(calc, user):
     """
     Пересчёт расчётного КМ и повторная проверка автосогласования.
@@ -181,9 +450,19 @@ def recalculate_deal_calculation_km(calc, user):
     except Exception:
         pass
 
-    auto_ok = try_auto_approve_calculation(
-        calc, send_chat=True, cumulative_data=cumulative_data,
+    prior_uk_ok = try_approve_by_prior_uk_threshold(
+        calc, send_chat=True, send_to_1c=True,
     )
+    auto_ok = False
+    if not prior_uk_ok:
+        auto_ok = try_auto_approve_calculation(
+            calc, send_chat=True, cumulative_data=cumulative_data,
+        )
+    if (
+        getattr(calc, '_prior_uk_approval_revoked', False)
+        and not prior_uk_ok
+    ):
+        send_calculation_soglasovanie_result_to_1c(calc, force=True)
 
     with_ti = calculation_has_applied_trade_in(calc)
     km = calc.km_raschet
@@ -191,6 +470,11 @@ def recalculate_deal_calculation_km(calc, user):
     ti_txt = 'с trade-in' if with_ti else 'без trade-in'
     if auto_ok:
         msg = f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽. Автосогласование применено.'
+    elif prior_uk_ok:
+        msg = (
+            f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽. '
+            'Применено ранее согласованное минимальное значение КВП УК.'
+        )
     elif reset_auto:
         msg = (
             f'Пересчитано ({ti_txt}): расч. КМ {km_txt} ₽. '
@@ -537,7 +821,8 @@ def _send_pending_soglasovanie_notifications(calculation_object, car_object, rlk
 
 def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_object, unit_object):
     """
-    После загрузки КП из 1С: автосогласование или ожидание подтверждения в 1С.
+    После загрузки КП из 1С: ранее согласованный порог УК, обычное
+    автосогласование или ожидание подтверждения в 1С.
     Уведомления директорам и чат — только при автосогласовании или после submit из 1С.
     """
     from prices_car.models import CarCalculations
@@ -548,6 +833,16 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
             cumulative_data = car_object.cumulative_data()
         except Exception:
             pass
+
+    # Решение по историческому порогу УК имеет приоритет над директорским auto.
+    # Функция также переоценивает ранее автоматическое решение, если 1С
+    # повторно прислала то же КП с уменьшенным КВП.
+    prior_uk_approved = try_approve_by_prior_uk_threshold(
+        calculation_object,
+        send_chat=True,
+    )
+    if prior_uk_approved:
+        return True
 
     current_status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     # «pending» — дефолт модели при создании КП, это ещё не отправка директору.
@@ -589,7 +884,10 @@ def submit_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
     """Подтверждение отправки на согласование из 1С — уведомления директорам и чат."""
     from prices_car.models import CarCalculations
 
-    if is_auto_approved_calculation(calculation_object):
+    if (
+        is_auto_approved_calculation(calculation_object)
+        or is_prior_uk_approved_calculation(calculation_object)
+    ):
         return True
 
     status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
@@ -629,6 +927,11 @@ def build_calculation_soglasovanie_api_response(calc):
 
     calc.refresh_from_db()
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    prior_uk_approval = (
+        calc.uk_approval_reference
+        if calc.uk_approval_reference_id
+        else get_prior_uk_approval(calc)
+    )
     km_rule_total = None
     km_min_dc = 0
     cumulative_data = None
@@ -649,6 +952,21 @@ def build_calculation_soglasovanie_api_response(calc):
             status, status,
         ),
         'soglasovanie_auto_approved': is_auto_approved_calculation(calc),
+        'soglasovanie_prior_uk_approved': is_prior_uk_approved_calculation(calc),
+        'uk_min_approved_kvp': (
+            int(prior_uk_approval.approved_kvp)
+            if prior_uk_approval
+            else None
+        ),
+        'kvp_meets_prior_uk_threshold': (
+            kvp_meets_prior_uk_threshold(calc, prior_uk_approval)
+        ),
+        'uk_approval_basis': calc.uk_approval_basis or '',
+        'uk_approval_source_calculation_id': (
+            prior_uk_approval.calculation_id
+            if prior_uk_approval
+            else None
+        ),
         'requires_soglasovanie_confirm': status == CarCalculations.SOGLASOVANIE_AWAITING_1C,
         'km_raschet': calc.km_raschet,
         'km_min_dc': km_min_dc or None,
@@ -752,9 +1070,9 @@ def build_calculation_soglasovanie_1c_payload(calc):
     }
 
 
-def send_calculation_soglasovanie_result_to_1c(calc):
-    """Отправка конечного статуса согласования КП в 1С."""
-    if not should_send_calculation_soglasovanie_to_1c(calc):
+def send_calculation_soglasovanie_result_to_1c(calc, force=False):
+    """Отправка статуса согласования КП в 1С."""
+    if not force and not should_send_calculation_soglasovanie_to_1c(calc):
         return False
     if not (calc.uin or '').strip():
         logger.warning('calculation soglasovanie 1C skip: empty uin, calc_id=%s', calc.pk)
@@ -822,6 +1140,12 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     kvp_ok = kvp_above_km_rule(calc, cumulative_data)
     director_can_approve = director_can_approve_without_uk(calc, cumulative_data)
     approval_auto_approved = is_auto_approved_calculation(calc)
+    approval_prior_uk_approved = is_prior_uk_approved_calculation(calc)
+    prior_uk_approval = (
+        calc.uk_approval_reference
+        if calc.uk_approval_reference_id
+        else get_prior_uk_approval(calc)
+    )
 
     can_director_approve = (
         is_director
@@ -864,6 +1188,20 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         'approval_can_auto_approve': approval_can_auto_approve,
         'approval_km_rule_total': km_rule_total,
         'approval_auto_approved': approval_auto_approved,
+        'approval_prior_uk_approved': approval_prior_uk_approved,
+        'approval_prior_uk_threshold': (
+            int(prior_uk_approval.approved_kvp)
+            if prior_uk_approval
+            else None
+        ),
+        'approval_kvp_meets_prior_uk_threshold': (
+            kvp_meets_prior_uk_threshold(calc, prior_uk_approval)
+        ),
+        'approval_prior_uk_source_calc': (
+            prior_uk_approval.calculation
+            if prior_uk_approval
+            else None
+        ),
         'approval_uk_required': (
             status == CarCalculations.SOGLASOVANIE_PENDING_UK
             or (
@@ -991,20 +1329,40 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
         comment = _require_comment(request, comment)
         if comment is None:
             return _approval_redirect(calc.pk)
+        if int(calc.kvp or 0) <= 0:
+            messages.error(
+                request,
+                'Нельзя согласовать УК: КВП должен быть больше 0.',
+            )
+            return _approval_redirect(calc.pk)
 
         now = timezone.now()
-        calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_APPROVED
-        calc.uk_approve_user = request.user
-        calc.uk_approve_date = now
-        calc.uk_approve_comment = comment
-        calc.date_success = now
-        calc.save(update_fields=[
-            'soglasovanie_status',
-            'uk_approve_user',
-            'uk_approve_date',
-            'uk_approve_comment',
-            'date_success',
-        ])
+        with transaction.atomic():
+            calc = CarCalculations.objects.select_for_update().get(pk=calc.pk)
+            if calc.soglasovanie_status != CarCalculations.SOGLASOVANIE_PENDING_UK:
+                messages.error(request, 'КП уже обработано другим пользователем.')
+                return _approval_redirect(calc.pk)
+            approval = record_manual_uk_approval(
+                calc, request.user, comment, approved_at=now,
+            )
+            calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_APPROVED
+            calc.uk_approve_user = request.user
+            calc.uk_approve_date = now
+            calc.uk_approve_comment = comment
+            calc.uk_approval_basis = CarCalculations.UK_APPROVAL_BASIS_MANUAL
+            calc.uk_approval_threshold_kvp = int(calc.kvp or 0)
+            calc.uk_approval_reference = approval
+            calc.date_success = now
+            calc.save(update_fields=[
+                'soglasovanie_status',
+                'uk_approve_user',
+                'uk_approve_date',
+                'uk_approve_comment',
+                'uk_approval_basis',
+                'uk_approval_threshold_kvp',
+                'uk_approval_reference',
+                'date_success',
+            ])
         send_calc_rlk_chat_message(
             calc,
             request.user,
@@ -1067,11 +1425,17 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
         calc.uk_approve_user = request.user
         calc.uk_approve_date = now
         calc.uk_approve_comment = comment
+        calc.uk_approval_basis = ''
+        calc.uk_approval_threshold_kvp = None
+        calc.uk_approval_reference = None
         calc.save(update_fields=[
             'soglasovanie_status',
             'uk_approve_user',
             'uk_approve_date',
             'uk_approve_comment',
+            'uk_approval_basis',
+            'uk_approval_threshold_kvp',
+            'uk_approval_reference',
         ])
         send_calc_rlk_chat_message(
             calc,

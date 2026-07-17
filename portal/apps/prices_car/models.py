@@ -238,6 +238,12 @@ class CarCalculations(models.Model):
     SOGLASOVANIE_UK_APPROVED = 'uk_approved'
     SOGLASOVANIE_DIRECTOR_REJECTED = 'director_rejected'
     SOGLASOVANIE_UK_REJECTED = 'uk_rejected'
+    UK_APPROVAL_BASIS_MANUAL = 'manual'
+    UK_APPROVAL_BASIS_PRIOR_THRESHOLD = 'prior_threshold'
+    UK_APPROVAL_BASIS_CHOICES = (
+        (UK_APPROVAL_BASIS_MANUAL, 'Ручное согласование УК'),
+        (UK_APPROVAL_BASIS_PRIOR_THRESHOLD, 'Ранее согласованный минимальный КВП УК'),
+    )
     SOGLASOVANIE_STATUS_CHOICES = (
         (SOGLASOVANIE_AWAITING_1C, 'Ожидает подтверждения из 1С'),
         (SOGLASOVANIE_PENDING, 'Ожидает директора ДЦ'),
@@ -294,6 +300,26 @@ class CarCalculations(models.Model):
         null=True,
         blank=True,
     )
+    uk_approval_basis = models.CharField(
+        'Основание согласования УК',
+        max_length=32,
+        choices=UK_APPROVAL_BASIS_CHOICES,
+        default='',
+        blank=True,
+    )
+    uk_approval_threshold_kvp = models.IntegerField(
+        'Применённый минимальный КВП УК',
+        null=True,
+        blank=True,
+    )
+    uk_approval_reference = models.ForeignKey(
+        'CarCalculationUkApproval',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='derived_calculations',
+        verbose_name='Основание из истории согласований УК',
+    )
 
     active = models.BooleanField(
         'Активное КП по рабочему листу',
@@ -321,6 +347,63 @@ class CarCalculations(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+
+class CarCalculationUkApproval(models.Model):
+    """Неизменяемый снимок ручного согласования УК для повторных КП."""
+
+    calculation = models.OneToOneField(
+        CarCalculations,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='manual_uk_approval_snapshot',
+        verbose_name='Исходное коммерческое предложение',
+    )
+    rlk = models.ForeignKey(
+        DocRLK,
+        on_delete=models.CASCADE,
+        related_name='car_calculation_uk_approvals',
+        verbose_name='Рабочий лист',
+    )
+    car = models.ForeignKey(
+        RefCarsOrganization,
+        on_delete=models.CASCADE,
+        related_name='calculation_uk_approvals',
+        verbose_name='Автомобиль',
+    )
+    approved_kvp = models.PositiveIntegerField('Согласованный КВП')
+    approved_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='manual_car_calculation_uk_approvals',
+        verbose_name='Согласовал УК',
+    )
+    approved_at = models.DateTimeField('Дата ручного согласования УК')
+    comment = models.CharField(
+        'Комментарий УК',
+        max_length=2048,
+        default='',
+        blank=True,
+    )
+    created_at = models.DateTimeField('Дата фиксации', auto_now_add=True)
+
+    class Meta:
+        db_table = 'carCalculationUkApproval'
+        verbose_name = 'Ручное согласование КВП управляющей компанией'
+        verbose_name_plural = 'Ручные согласования КВП управляющей компанией'
+        ordering = ['approved_kvp', '-approved_at', 'pk']
+        indexes = [
+            models.Index(
+                fields=['rlk', 'car', 'approved_kvp'],
+                name='calc_uk_rlk_car_kvp_idx',
+            ),
+        ]
+
+    def __str__(self):
+        return '{} / {} / КВП {}'.format(self.rlk, self.car, self.approved_kvp)
 
 
 class CarCalculationsTypeDetail(models.Model):
