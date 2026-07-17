@@ -10424,8 +10424,13 @@ def sb_lo(request):
     
 
 def test(request):
-    from mykors.export_cars import export_stock_cars
-    export_stock_cars()
+    usrs = User.objects.filter(is_staff = False).exclude(username__icontains = 'phone_')
+    for us in usrs:
+        us.is_staff = True
+        us.save()
+
+    #from mykors.export_cars import export_stock_cars
+    #export_stock_cars()
     # date_end        = DT.datetime.now().replace(day=27)
     # date_start      = date_end + DT.timedelta(days=-3)
     
@@ -10446,9 +10451,9 @@ def test(request):
     # from task_manager.views import swap_estimation
     # swap_estimation()
     # #refresh_km_cars()
-    from prices_car.views import refresh_km_cars, send_km_car_1C
+    #from prices_car.views import refresh_km_cars, send_km_car_1C
     
-    refresh_km_cars()
+    #refresh_km_cars()
     #send_km_car_1C()
 
     # # from task_manager.views import send_push_car
