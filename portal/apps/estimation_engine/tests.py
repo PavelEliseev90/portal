@@ -207,6 +207,165 @@ class RulesEngineSimpleTests(SimpleTestCase):
         self.assertFalse(ok)
         self.assertIn('повреждение', reason)
 
+    def test_body_types_multi_match(self):
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(
+            code='BODY',
+            name='Седан/хэтч',
+            min_damage_count=0,
+            body_type='Седан, Хэтчбек',
+        )
+        self.assertTrue(rule_matches(rule, {'body_type': 'седан'})[0])
+        self.assertTrue(rule_matches(rule, {'body_type': 'Хэтчбек'})[0])
+        ok, reason = rule_matches(rule, {'body_type': 'универсал'})
+        self.assertFalse(ok)
+        self.assertIn('кузов', reason)
+
+        rule2 = EstimationRule(code='BODY2', name='IDs', min_damage_count=0)
+        rule2._body_types = [
+            {'id': 1, 'name': 'Седан'},
+            {'id': 2, 'name': 'Хэтчбек'},
+        ]
+        self.assertTrue(rule_matches(rule2, {'body_type_id': 2})[0])
+        self.assertFalse(rule_matches(rule2, {'body_type_id': 9, 'body_type': 'купе'})[0])
+
+    def test_condition_scratch_gt3_and_no_dents(self):
+        from .models import EstimationRuleCondition
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(
+            code='SCR',
+            name='Много царапин без вмятин',
+            min_damage_count=0,
+        )
+        rule._conditions = [
+            EstimationRuleCondition(
+                join_op='and',
+                field='damage_type_count',
+                damage_type='scratch',
+                operator='gt',
+                value='3',
+                is_active=True,
+            ),
+            EstimationRuleCondition(
+                join_op='and',
+                field='damage_type_count',
+                damage_type='dent',
+                operator='absent',
+                value='',
+                is_active=True,
+            ),
+        ]
+
+        ok, _ = rule_matches(rule, {
+            'damage_counts': {'scratch': 4, 'dent': 0},
+        })
+        self.assertTrue(ok)
+
+        ok, reason = rule_matches(rule, {
+            'damage_counts': {'scratch': 4, 'dent': 1},
+        })
+        self.assertFalse(ok)
+        self.assertIn('условия', reason)
+
+        ok, _ = rule_matches(rule, {
+            'damage_counts': {'scratch': 3, 'dent': 0},
+        })
+        self.assertFalse(ok)
+
+    def test_condition_or_chain(self):
+        from .models import EstimationRuleCondition
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(code='OR1', name='OR', min_damage_count=0)
+        rule._conditions = [
+            EstimationRuleCondition(
+                field='damage_type_count',
+                damage_type='scratch',
+                operator='gte',
+                value='5',
+                join_op='and',
+                is_active=True,
+            ),
+            EstimationRuleCondition(
+                field='damage_type_count',
+                damage_type='dent',
+                operator='gte',
+                value='2',
+                join_op='or',
+                is_active=True,
+            ),
+        ]
+        self.assertTrue(rule_matches(rule, {'damage_counts': {'scratch': 5, 'dent': 0}})[0])
+        self.assertTrue(rule_matches(rule, {'damage_counts': {'scratch': 0, 'dent': 2}})[0])
+        self.assertFalse(rule_matches(rule, {'damage_counts': {'scratch': 1, 'dent': 1}})[0])
+
+    def test_windshield_flags_four_variants(self):
+        from .rules_engine import rule_matches
+
+        base = dict(
+            code='WS',
+            name='Лобовое',
+            element_code='windshield',
+            damage_type='crack',
+            min_damage_count=0,
+        )
+        plain = EstimationRule(
+            **base,
+            windshield_heat='no',
+            windshield_projection='no',
+        )
+        heat = EstimationRule(
+            **base,
+            windshield_heat='yes',
+            windshield_projection='no',
+        )
+        hud = EstimationRule(
+            **base,
+            windshield_heat='no',
+            windshield_projection='yes',
+        )
+        both = EstimationRule(
+            **base,
+            windshield_heat='yes',
+            windshield_projection='yes',
+        )
+
+        facts_both = {
+            'element_code': 'windshield',
+            'damage_type': 'crack',
+            'damage_count': 1,
+            'windshield_heat': True,
+            'windshield_projection': True,
+        }
+        self.assertTrue(rule_matches(both, facts_both)[0])
+        self.assertFalse(rule_matches(plain, facts_both)[0])
+        self.assertFalse(rule_matches(heat, facts_both)[0])
+        self.assertFalse(rule_matches(hud, facts_both)[0])
+
+        facts_heat = dict(facts_both, windshield_projection=False)
+        self.assertTrue(rule_matches(heat, facts_heat)[0])
+        self.assertFalse(rule_matches(both, facts_heat)[0])
+        self.assertFalse(rule_matches(plain, facts_heat)[0])
+
+        # «Любое» не фильтрует по флагу
+        any_heat = EstimationRule(**base, windshield_heat='', windshield_projection='yes')
+        self.assertTrue(rule_matches(any_heat, {
+            'element_code': 'windshield',
+            'damage_type': 'crack',
+            'damage_count': 1,
+            'windshield_heat': False,
+            'windshield_projection': True,
+        })[0])
+        self.assertTrue(rule_matches(any_heat, {
+            'element_code': 'windshield',
+            'damage_type': 'crack',
+            'damage_count': 1,
+            'windshield_heat': True,
+            'windshield_projection': True,
+        })[0])
+
     def test_line_cost_work_uses_hour_rate(self):
         from .rules_engine import _line_cost
 

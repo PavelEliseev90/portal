@@ -1,0 +1,79 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if item %}Тип повреждения{% else %}Новый тип повреждения{% endif %}{% endblock %}
+{% block title_navbar %} - Повреждения{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h2 class="mb-0">{% if item %}Редактирование типа{% else %}Новый тип повреждения{% endif %}</h2>
+    <a href="{% url 'estimation_engine:damage_types_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" class="portal-panel">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Код *</label>
+        <input class="form-control" name="code" value="{{ item.code|default:'' }}" required
+               placeholder="scratch_strong">
+        <div class="form-text">Латиница, без пробелов. На код ссылаются правила и осмотр.</div>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Наименование *</label>
+        <input class="form-control" name="name" value="{{ item.name|default:'' }}" required
+               placeholder="Царапина сильная">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Раздел</label>
+        <select class="form-select" name="section">
+          {% for value, label in section_choices %}
+          <option value="{{ value }}" {% if item.section == value or not item and value == 'exterior' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Legacy-метка</label>
+        <input class="form-control" name="legacy_label" value="{{ item.legacy_label|default:'' }}"
+               placeholder="царапина сильная">
+        <div class="form-text">Как пишется в старом осмотре (`type_point`).</div>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Тяжесть</label>
+        <input type="number" min="1" class="form-control" name="severity" value="{{ item.severity|default:1 }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Порядок</label>
+        <input type="number" min="0" class="form-control" name="sort_order" value="{{ item.sort_order|default:0 }}">
+      </div>
+      <div class="col-md-4 d-flex flex-column justify-content-end gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="requires_photo" id="requires_photo"
+                 {% if item.requires_photo %}checked{% endif %}>
+          <label class="form-check-label" for="requires_photo">Обязательное фото</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                 {% if not item or item.is_active %}checked{% endif %}>
+          <label class="form-check-label" for="is_active">Активен</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary">{% if item %}Сохранить{% else %}Создать{% endif %}</button>
+      <a href="{% url 'estimation_engine:damage_types_list' %}" class="btn btn-outline-secondary">Отмена</a>
+      {% if item %}
+      <a href="{% url 'estimation_engine:damage_type_delete' item.id %}" class="btn btn-outline-danger ms-auto">Удалить</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

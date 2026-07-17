@@ -1,0 +1,98 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Полигоны RegInfoBody{% endblock %}
+{% block title_navbar %} - Полигоны{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Полигоны кузова / салона</h2>
+      <p class="text-muted mb-0 small">
+        Справочник <code>RegInfoBody</code> — зоны на схеме осмотра. После правок можно синхронизировать элементы схемы.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'estimation_engine:info_body_create' %}" class="btn btn-primary btn-sm">Добавить</a>
+      <form method="post" action="{% url 'estimation_engine:sync_elements_from_polygons' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-primary btn-sm">Синхронизировать элементы</button>
+      </form>
+      <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-secondary btn-sm">Справочники</a>
+    </div>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="get" class="portal-panel mb-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Тип кузова</label>
+        <select class="form-select" name="type_body">
+          <option value="">— все —</option>
+          {% for tb in type_bodies %}
+          <option value="{{ tb }}" {% if filter_type_body == tb %}selected{% endif %}>{{ tb }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Сторона</label>
+        <select class="form-select" name="side">
+          <option value="">— все —</option>
+          {% for s in sides %}
+          <option value="{{ s }}" {% if filter_side == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Поиск</label>
+        <input class="form-control" name="q" value="{{ filter_q }}" placeholder="элемент, наименование…">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">Фильтр</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="portal-panel">
+    <p class="small text-muted mb-2">Показано до 500 из {{ items_total }}.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Тип кузова</th>
+            <th>Сторона</th>
+            <th>Элемент</th>
+            <th>Наименование</th>
+            <th>Точек</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td class="text-muted">{{ item.id }}</td>
+            <td>{{ item.type_body }}</td>
+            <td>{{ item.side }}</td>
+            <td><code>{{ item.body_element }}</code></td>
+            <td>{{ item.body_elem_name|default:"—" }}</td>
+            <td>{{ item.point_count }}</td>
+            <td class="text-end">
+              <a href="{% url 'estimation_engine:info_body_edit' item.id %}" class="btn btn-outline-primary btn-sm">Изменить</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-muted">Нет записей по фильтру.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

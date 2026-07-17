@@ -8,7 +8,10 @@
 <div class="portal-page">
   <div class="portal-header d-flex justify-content-between align-items-center">
     <h2>{% if package %}Редактирование пакета{% else %}Новый пакет работ{% endif %}</h2>
-    <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+    <div class="d-flex gap-2">
+      <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-secondary btn-sm">Справочники</a>
+      <a href="{% url 'estimation_engine:work_packages_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+    </div>
   </div>
 
   {% if messages %}
@@ -45,7 +48,6 @@
             <option value="{{ value }}" {% if package.status == value or not package and value == 'published' %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
-          <div class="form-text">Для использования на подготовке лучше сразу «Опубликован».</div>
         </div>
         <div class="col-md-3">
           <label class="form-label">Маршрут</label>
@@ -70,12 +72,15 @@
         </div>
         <div class="col-md-6">
           <label class="form-label">Подряд по умолчанию</label>
-          <select class="form-select" name="default_service_offering_id">
+          <select class="form-select" name="default_service_offering_id" id="default_offering">
             <option value="">—</option>
-            {% for off in offerings %}
-            <option value="{{ off.id }}" {% if package.default_service_offering_id == off.id %}selected{% endif %}>{{ off }}</option>
-            {% endfor %}
+            {% if default_offering %}
+            <option value="{{ default_offering.id }}" selected>
+              {{ default_offering.code }} — {{ default_offering.service.name }} / {{ default_offering.provider.name }}
+            </option>
+            {% endif %}
           </select>
+          <div class="form-text">Поиск по услуге / исполнителю (не весь список).</div>
         </div>
         <div class="col-12">
           <label class="form-label">Описание</label>
@@ -101,7 +106,7 @@
           <thead>
             <tr>
               <th style="width:140px">Тип</th>
-              <th>Ссылка</th>
+              <th>Ссылка (поиск)</th>
               <th style="width:90px">Кол-во</th>
               <th style="width:90px">Н/ч</th>
               <th style="width:100px">Цена ед.</th>
@@ -115,7 +120,11 @@
         </table>
       </div>
       <p class="small text-muted mb-0">
-        Для материалов укажите «Родитель» = coverage_key работы, к которой относится расход.
+        Подбор через поиск, без загрузки всего справочника.
+        Справочники: <a href="{% url 'estimation_engine:works_list' %}">работы</a>,
+        <a href="{% url 'estimation_engine:materials_list' %}">материалы</a>,
+        <a href="{% url 'estimation_engine:parts_list' %}">детали</a>,
+        <a href="{% url 'estimation_engine:services_list' %}">услуги</a>.
       </p>
     </div>
 
@@ -127,19 +136,12 @@
 </div>
 
 <script>
-const refsByType = {
-  WORK: [
-    {% for w in works %}{id: {{ w.id }}, label: "{{ w.stage.name|default:''|escapejs }} — {{ w.name|escapejs }}"},{% endfor %}
-  ],
-  MATERIAL: [
-    {% for m in materials %}{id: {{ m.id }}, label: "{{ m.name|escapejs }}"},{% endfor %}
-  ],
-  PART: [
-    {% for p in parts %}{id: {{ p.id }}, label: "{{ p.code|escapejs }} / {{ p.name|escapejs }}"},{% endfor %}
-  ],
-  SERVICE: [
-    {% for o in offerings %}{id: {{ o.id }}, label: "{{ o.code|escapejs }} — {{ o.service.name|escapejs }} / {{ o.provider.name|default:''|escapejs }}"},{% endfor %}
-  ],
+const SEARCH_URLS = {
+  WORK: "{{ search_urls.WORK }}",
+  MATERIAL: "{{ search_urls.MATERIAL }}",
+  PART: "{{ search_urls.PART }}",
+  SERVICE: "{{ search_urls.SERVICE }}",
+  OFFERING: "{{ search_urls.OFFERING }}"
 };
 
 const initialLines = [
@@ -147,6 +149,7 @@ const initialLines = [
   {
     line_type: "{{ line.line_type }}",
     ref_id: "{{ line.ref_id }}",
+    ref_label: "{{ line.ref_label|escapejs }}",
     quantity: "{{ line.quantity }}",
     norm_hours: "{{ line.norm_hours }}",
     coverage_key: "{{ line.coverage_key|escapejs }}",
@@ -159,19 +162,51 @@ const initialLines = [
 
 let lineIdx = 0;
 
-function refOptions(type, selected) {
-  const items = refsByType[type] || [];
-  return items.map(i => `<option value="${i.id}" ${String(i.id) === String(selected) ? 'selected' : ''}>${i.label}</option>`).join('');
+function initAjaxSelect($el, url, placeholder) {
+  if (!$el.length || typeof $el.select2 !== 'function') return;
+  if ($el.hasClass('select2-hidden-accessible')) {
+    $el.select2('destroy');
+  }
+  $el.select2({
+    placeholder: placeholder || 'Начните вводить…',
+    allowClear: true,
+    width: '100%',
+    ajax: {
+      url: url,
+      dataType: 'json',
+      delay: 250,
+      data: function (params) {
+        return { q: params.term || '', limit: 30 };
+      },
+      processResults: function (data) {
+        return { results: data.results || [] };
+      }
+    },
+    minimumInputLength: 0
+  });
 }
 
-function addLine(data = null) {
+function bindRefSelect(tr, type, selectedId, selectedLabel) {
+  const $sel = $(tr).find('select[name="ref_id[]"]');
+  $sel.empty();
+  if (selectedId) {
+    const opt = new Option(selectedLabel || ('#' + selectedId), selectedId, true, true);
+    $sel.append(opt);
+  } else {
+    $sel.append(new Option('', '', true, true));
+  }
+  initAjaxSelect($sel, SEARCH_URLS[type] || SEARCH_URLS.WORK, 'Поиск…');
+}
+
+function addLine(data) {
+  data = data || null;
   const idx = lineIdx++;
   const type = (data && data.line_type) || 'WORK';
   const tr = document.createElement('tr');
   tr.dataset.idx = idx;
   tr.innerHTML = `
     <td>
-      <select class="form-select form-select-sm" name="line_type[]" onchange="onTypeChange(this)">
+      <select class="form-select form-select-sm" name="line_type[]">
         <option value="WORK" ${type === 'WORK' ? 'selected' : ''}>Работа</option>
         <option value="MATERIAL" ${type === 'MATERIAL' ? 'selected' : ''}>Материал</option>
         <option value="PART" ${type === 'PART' ? 'selected' : ''}>Деталь</option>
@@ -179,14 +214,11 @@ function addLine(data = null) {
       </select>
     </td>
     <td>
-      <select class="form-select form-select-sm" name="ref_id[]">
-        <option value="">— выберите —</option>
-        ${refOptions(type, data && data.ref_id)}
-      </select>
+      <select class="form-select form-select-sm ref-ajax" name="ref_id[]" style="width:100%"></select>
     </td>
     <td><input class="form-control form-control-sm" name="quantity[]" value="${(data && data.quantity) || 1}"></td>
     <td><input class="form-control form-control-sm" name="norm_hours[]" value="${(data && data.norm_hours) || 0}"></td>
-    <td><input class="form-control form-control-sm" name="unit_cost[]" value="${(data && data.unit_cost) || 0}" title="Для WORK обычно 0"></td>
+    <td><input class="form-control form-control-sm" name="unit_cost[]" value="${(data && data.unit_cost) || 0}"></td>
     <td><input class="form-control form-control-sm" name="coverage_key[]" value="${(data && data.coverage_key) || ''}"></td>
     <td><input class="form-control form-control-sm" name="parent_coverage_key[]" value="${(data && data.parent_coverage_key) || ''}"></td>
     <td class="text-center">
@@ -194,18 +226,25 @@ function addLine(data = null) {
       <input type="checkbox" ${(data ? data.is_required : true) ? 'checked' : ''}
              onchange="this.previousElementSibling.value=this.checked?'1':'0'">
     </td>
-    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLine(this)">×</button></td>
   `;
   document.getElementById('linesBody').appendChild(tr);
+  const typeSel = tr.querySelector('select[name="line_type[]"]');
+  typeSel.addEventListener('change', function () {
+    bindRefSelect(tr, typeSel.value, null, '');
+  });
+  bindRefSelect(tr, type, data && data.ref_id, data && data.ref_label);
 }
 
-function onTypeChange(selectEl) {
-  const tr = selectEl.closest('tr');
-  const refSelect = tr.querySelector('select[name="ref_id[]"]');
-  refSelect.innerHTML = `<option value="">— выберите —</option>${refOptions(selectEl.value, null)}`;
+function removeLine(btn) {
+  const tr = btn.closest('tr');
+  const $sel = $(tr).find('select.ref-ajax');
+  if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+  tr.remove();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
+  initAjaxSelect($('#default_offering'), SEARCH_URLS.OFFERING, 'Поиск подрядного предложения…');
   if (initialLines.length) {
     initialLines.forEach(addLine);
   } else {

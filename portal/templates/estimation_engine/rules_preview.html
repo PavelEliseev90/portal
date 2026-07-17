@@ -51,12 +51,36 @@
         </select>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Кол-во повреждений</label>
-        <input type="number" min="0" class="form-control" name="damage_count" value="{{ facts.damage_count|default:1 }}">
+        <label class="form-label">Кол-во всего (опц.)</label>
+        <input type="number" min="0" class="form-control" name="damage_count" value="{{ facts.damage_count|default_if_none:'' }}" placeholder="сумма счётчиков">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Счётчики по типам повреждений</label>
+        <div class="table-responsive">
+          <table class="table table-sm" id="countTable">
+            <thead>
+              <tr>
+                <th>Тип</th>
+                <th style="width:120px">Кол-во</th>
+                <th style="width:50px"></th>
+              </tr>
+            </thead>
+            <tbody id="countBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addCountRow()">+ тип</button>
+        <div class="form-text">Нужно для условий вроде «царапин &gt; 3 и нет вмятин».</div>
       </div>
       <div class="col-md-3">
         <label class="form-label">Тип кузова</label>
-        <input class="form-control" name="body_type" value="{{ facts.body_type }}">
+        <select class="form-select" name="body_type_id">
+          <option value="">— любой / не задан —</option>
+          {% for bt in body_type_choices %}
+          <option value="{{ bt.id }}" {% if facts.body_type_id == bt.id|stringformat:"s" %}selected{% endif %}>
+            {{ bt.name }}
+          </option>
+          {% endfor %}
+        </select>
       </div>
       <div class="col-md-3">
         <label class="form-label">Ценовая группа</label>
@@ -71,6 +95,16 @@
           <input class="form-check-input" type="checkbox" name="under_instrument" id="ui"
                  {% if facts.under_instrument %}checked{% endif %}>
           <label class="form-check-label" for="ui">Под прибор</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="windshield_heat" id="wh"
+                 {% if facts.windshield_heat %}checked{% endif %}>
+          <label class="form-check-label" for="wh">Подогрев лобового</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="windshield_projection" id="wp"
+                 {% if facts.windshield_projection %}checked{% endif %}>
+          <label class="form-check-label" for="wp">Проекция на лобовое</label>
         </div>
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="include_drafts" id="drafts"
@@ -228,4 +262,34 @@
   {% endif %}
   {% endif %}
 </div>
+
+<script>
+const previewDamageOptions = `
+  <option value="">— тип —</option>
+  {% for dt in damage_types %}
+  <option value="{{ dt.id }}">{{ dt.name|escapejs }}</option>
+  {% endfor %}
+`;
+const initialCountRows = [
+  {% for row in facts.damage_count_rows %}
+  {type_id: "{{ row.type_id }}", n: "{{ row.n }}"},
+  {% endfor %}
+];
+
+function addCountRow(data = null) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select class="form-select form-select-sm" name="damage_count_type_id[]">${previewDamageOptions}</select></td>
+    <td><input type="number" min="0" class="form-control form-control-sm" name="damage_count_n[]" value="${(data && data.n) || '0'}"></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
+  `;
+  document.getElementById('countBody').appendChild(tr);
+  if (data && data.type_id) tr.querySelector('select').value = String(data.type_id);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (initialCountRows.length) initialCountRows.forEach(addCountRow);
+  else addCountRow();
+});
+</script>
 {% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base_web.html' %}
+
+{% block title %} - Удаление типа повреждения{% endblock %}
+{% block title_navbar %} - Повреждения{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Удалить тип повреждения?</h2>
+  </div>
+  <div class="portal-panel">
+    <p class="mb-3">
+      Будет удалён тип <strong>{{ item.name }}</strong> (<code>{{ item.code }}</code>).
+      В правилах ссылка на него обнулится (SET NULL).
+    </p>
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      <a href="{% url 'estimation_engine:damage_type_edit' item.id %}" class="btn btn-outline-secondary">Отмена</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
