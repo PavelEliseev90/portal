@@ -197,7 +197,13 @@ class CarCalculations(models.Model):
     date                    = models.DateTimeField('Дата', default=datetime.now, blank=False)
     date_success            = models.DateTimeField('Дата согласования', default=datetime.now, blank=False)
     date_refresh            = models.DateTimeField('Дата обновления', default=datetime.now, blank=False)
-    date_start_soglasovanie = models.DateTimeField('Дата начала согласования', default=datetime.now, blank=False)
+    date_start_soglasovanie = models.DateTimeField(
+        'Дата начала согласования',
+        null=True,
+        blank=True,
+        default=None,
+        help_text='Заполняется при подтверждении отправки на согласование из 1С.',
+    )
     rejection               = models.CharField("Причина отказа", max_length=1024, null=True, blank=True)
     number              = models.CharField("Номер", max_length=15, null=True, blank=True)
     amount              = models.IntegerField("Сумма итого", default=0, null=True, blank=True)

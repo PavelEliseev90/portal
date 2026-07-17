@@ -846,8 +846,10 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
 
     current_status = calculation_object.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     # «pending» — дефолт модели при создании КП, это ещё не отправка директору.
-    # После submit тот же статус имеет date_start_soglasovanie и уже означает
+    # После submit тот же статус имеет date_start_soglasovanie (не null) и уже означает
     # реальную очередь директора — повторная загрузка не должна её сбрасывать.
+    # Важно: у date_start не должно быть default=now, иначе prepare/submit ложно
+    # считают КП уже отправленным (нет чата, письма и смены статуса).
     in_approval_pipeline = (
         (
             current_status == CarCalculations.SOGLASOVANIE_PENDING
@@ -876,7 +878,8 @@ def prepare_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk
         return True
 
     calculation_object.soglasovanie_status = CarCalculations.SOGLASOVANIE_AWAITING_1C
-    calculation_object.save(update_fields=['soglasovanie_status'])
+    calculation_object.date_start_soglasovanie = None
+    calculation_object.save(update_fields=['soglasovanie_status', 'date_start_soglasovanie'])
     return False
 
 

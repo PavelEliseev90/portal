@@ -327,3 +327,77 @@ class DealCalculationApprovalRulesTests(SimpleTestCase):
         self.assertIsNotNone(calc.date_start_soglasovanie)
         calc.save.assert_called_once()
         notify.assert_called_once()
+
+    def test_submit_skips_when_already_in_director_queue(self):
+        calc = SimpleNamespace(
+            soglasovanie_status='pending',
+            date_start_soglasovanie=object(),
+            save=Mock(),
+        )
+
+        with patch(
+            'avtosalon.deal_calc_approval._send_pending_soglasovanie_notifications',
+        ) as notify:
+            self.assertTrue(
+                submit_calculation_soglasovanie_from_1c(
+                    calc,
+                    SimpleNamespace(),
+                    SimpleNamespace(),
+                    SimpleNamespace(),
+                ),
+            )
+
+        calc.save.assert_not_called()
+        notify.assert_not_called()
+
+    def test_prepare_sets_awaiting_when_pending_without_start_date(self):
+        calc = SimpleNamespace(
+            soglasovanie_status='pending',
+            date_start_soglasovanie=None,
+            save=Mock(),
+        )
+        car = SimpleNamespace(cumulative_data=lambda: {})
+
+        with (
+            patch(
+                'avtosalon.deal_calc_approval.try_approve_by_prior_uk_threshold',
+                return_value=False,
+            ),
+            patch(
+                'avtosalon.deal_calc_approval.try_auto_approve_calculation',
+                return_value=False,
+            ),
+        ):
+            self.assertFalse(
+                prepare_calculation_soglasovanie_from_1c(
+                    calc, car, SimpleNamespace(), SimpleNamespace(),
+                ),
+            )
+
+        self.assertEqual(calc.soglasovanie_status, 'awaiting_1c')
+        self.assertIsNone(calc.date_start_soglasovanie)
+        calc.save.assert_called_once()
+
+    def test_submit_from_awaiting_notifies_and_sets_pending(self):
+        calc = SimpleNamespace(
+            soglasovanie_status='awaiting_1c',
+            date_start_soglasovanie=None,
+            save=Mock(),
+        )
+
+        with patch(
+            'avtosalon.deal_calc_approval._send_pending_soglasovanie_notifications',
+        ) as notify:
+            self.assertTrue(
+                submit_calculation_soglasovanie_from_1c(
+                    calc,
+                    SimpleNamespace(),
+                    SimpleNamespace(),
+                    SimpleNamespace(),
+                ),
+            )
+
+        self.assertEqual(calc.soglasovanie_status, 'pending')
+        self.assertIsNotNone(calc.date_start_soglasovanie)
+        calc.save.assert_called_once()
+        notify.assert_called_once()
