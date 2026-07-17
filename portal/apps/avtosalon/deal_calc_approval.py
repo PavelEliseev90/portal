@@ -1012,8 +1012,8 @@ def should_send_calculation_soglasovanie_to_1c(calc):
     status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
     if status not in FINAL_SOGLASOVANIE_STATUSES_FOR_1C:
         return False
-    if status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED:
-        return not is_auto_approved_calculation(calc)
+    # if status == CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED:
+    #     return is_auto_approved_calculation(calc)
     return True
 
 

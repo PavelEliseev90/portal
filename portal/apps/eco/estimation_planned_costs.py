@@ -110,12 +110,15 @@ def get_estimation_planned_costs(estimation_id, recalculate=False):
     :param recalculate: пересчитать через estimations_price_calculation
     :return: dict или None если оценка не найдена
     """
-    estimation = RegInteractivOcenka.objects.filter(
-        pk=estimation_id,
+    estimation_rlk = RegInteractivOcenkaRLK.objects.filter(
+        rlk__id=estimation_id,
     ).select_related('page_soglasovanie').first()
+    
+    estimation = estimation_rlk.estimation
+
     if not estimation:
         return None
-
+    
     source = 'saved'
     podgotovka_items, ss_items, mcu_items = _load_saved_items(estimation_id)
     calc_amounts = None

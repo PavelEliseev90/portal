@@ -10424,27 +10424,48 @@ def sb_lo(request):
     
 
 def test(request):
+    usrs = User.objects.filter(is_staff = False).exclude(username__icontains = 'phone_')
+    for us in usrs:
+        us.is_staff = True
+        us.save()
 
+    #from mykors.export_cars import export_stock_cars
+    #export_stock_cars()
+    # date_end        = DT.datetime.now().replace(day=27)
+    # date_start      = date_end + DT.timedelta(days=-3)
+    
+    # #if date_end.hour > 22 or date_end.hour < 6:
+    
+    # recs = Records_voice_recorder_cvc_checklist.objects.filter(rlk__dataTime__lt = date_start).filter(success = False)
+    # for rec in recs:
+    #     rec.success = False
+    #     rec.save()
+
+    # from task_manager.views import cvc_background
+    # cvc_background()
+    # cvc_send
+    #from task_manager.views import refresh_wash
+    #refresh_wash()
     #from prices_car.views import refresh_km_cars, send_km_car_1C
     #send_km_car_1C()
-    from task_manager.views import swap_estimation
-    swap_estimation()
-    #refresh_km_cars()
-    from prices_car.views import refresh_km_cars, send_km_car_1C
+    # from task_manager.views import swap_estimation
+    # swap_estimation()
+    # #refresh_km_cars()
+    #from prices_car.views import refresh_km_cars, send_km_car_1C
     
     #refresh_km_cars()
     #send_km_car_1C()
 
-    # from task_manager.views import send_push_car
+    # # from task_manager.views import send_push_car
     
-    # send_km_car_1C()
+    # # send_km_car_1C()
     
     
-    from background_task.models import Task
-    task = Task.objects.all()
-    for ts in task:
-        ts.locked_by = ''
-        ts.save()
+    # from background_task.models import Task
+    # task = Task.objects.all()
+    # for ts in task:
+    #     ts.locked_by = ''
+    #     ts.save()
 
     # refresh_avtoteka_vin()
 

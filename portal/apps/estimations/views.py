@@ -1219,11 +1219,36 @@ def estimation_rlk(request, rlk_id):
             reg_interactiv_ocenka_proverki.count_dtp    = int(request.POST.get('count_dtp', '0'))
             reg_interactiv_ocenka_proverki.car_credit   = 'car_credit' in request.POST
             
+            epts_int = int(request.POST.get('epts', '0'))
+            if epts_int == 1:
+                reg_interactiv_ocenka_proverki.epts    = True
+            else:
+                reg_interactiv_ocenka_proverki.epts    = False
+
+            epts_success_int = int(request.POST.get('epts_success', '0'))
+            if epts_success_int == 1:
+                reg_interactiv_ocenka_proverki.epts_success    = True
+            else:
+                reg_interactiv_ocenka_proverki.epts_success    = False    
+            
             type_point  = ''
             text        = ''
             x = 0
             y = 0
             
+            files_gibdd = request.FILES.getlist('file_epts')
+            for file_object in files_gibdd: 
+                name = file_object.name.lower()
+                new_estimation_files, created       = RegRegInteractivOcenkaFiles.objects.get_or_create(estimation = reg_interactiv_ocenka, type_file = 'epts', type_point = type_point, text = text, cor_x = x, cor_y = y, name = name)
+                new_estimation_files.name           = name
+                new_estimation_files.text           = text
+                new_estimation_files.type_point     = type_point
+                new_estimation_files.cor_x          = x
+                new_estimation_files.cor_y          = y
+                new_estimation_files.file           = file_object
+                new_estimation_files.user           = request.user
+                new_estimation_files.save() 
+
             files_gibdd = request.FILES.getlist('file_gibdd')
             for file_object in files_gibdd: 
                 name = file_object.name.lower()
