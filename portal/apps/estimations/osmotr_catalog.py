@@ -10,7 +10,7 @@ import json
 
 from register.models import RegInfoBody
 
-# ui_code → иконка /media_dop/static/estimation/{ui_code}.png и id кнопки в UI
+# code DamageType → ui_code (файл /media_dop/static/estimation/{ui_code}.png)
 DAMAGE_UI_CODE = {
     'dent': 'vmyat',
     'dent_strong': 'vmyat_strong',
@@ -19,6 +19,7 @@ DAMAGE_UI_CODE = {
     'rust': 'rzav',
     'rust_through': 'rzav_strong',
     'chip': 'skol',
+    'paint': 'skol',  # «окрас» в справочнике — та же иконка, что скол ЛКП
     'crack': 'tr',
     'replace': 'replace',
     'replaced': 'replace',
@@ -30,6 +31,12 @@ DAMAGE_UI_CODE = {
     'sticker': 'stiker',
     'tint': 'toner',
     'polish': 'poly',
+}
+
+# Файлы иконок, которые в legacy называются не как ui_code.png
+DAMAGE_ICON_SRC = {
+    'replace': '/media_dop/static/estimation/mbri-left-right.png',
+    'replace_add': '/media_dop/static/estimation/replace_element.png',
 }
 
 BODY_SIDE_BY_TYPE = {
@@ -169,7 +176,10 @@ def serialize_damage_types(*, section: str) -> list[dict]:
             'ui_code': ui_code,
             'severity': dt.severity,
             'requires_photo': bool(getattr(dt, 'requires_photo', False)),
-            'icon': f'/media_dop/static/estimation/{ui_code}.png',
+            'icon': DAMAGE_ICON_SRC.get(
+                ui_code,
+                f'/media_dop/static/estimation/{ui_code}.png',
+            ),
         })
     return items
 

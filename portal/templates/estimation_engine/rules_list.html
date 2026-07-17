@@ -44,8 +44,18 @@
             <td class="small">
               {% if rule.element %}{{ rule.element.name }}{% elif rule.element_code %}{{ rule.element_code }}{% else %}любой элемент{% endif %}
               {% if rule.damage_type_ref %} · {{ rule.damage_type_ref.name }}{% elif rule.damage_type %} · {{ rule.damage_type }}{% endif %}
+              {% if rule.body_type %} · кузов: {{ rule.body_type }}{% endif %}
               {% if rule.price_group %} · ЦГ {{ rule.price_group }}{% endif %}
-              · ≥{{ rule.min_damage_count }}
+              {% if rule.min_damage_count %} · ≥{{ rule.min_damage_count }}{% endif %}
+              {% if rule.windshield_heat %} · подогрев: {{ rule.get_windshield_heat_display }}{% endif %}
+              {% if rule.windshield_projection %} · проекция: {{ rule.get_windshield_projection_display }}{% endif %}
+              {% with conds=rule.conditions.all %}
+              {% if conds %}
+              <div class="text-muted">
+                +{{ conds|length }} усл.
+              </div>
+              {% endif %}
+              {% endwith %}
             </td>
             <td class="small">
               {% for link in rule.rule_packages.all %}

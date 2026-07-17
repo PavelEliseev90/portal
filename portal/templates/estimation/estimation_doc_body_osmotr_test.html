@@ -229,6 +229,8 @@
   </div>
 </div>
 
+<div id="icon_preload" class="d-none" aria-hidden="true"></div>
+
 <script>
 (function () {
   var ELEMENTS = {{ params.elements_body|safe }};
@@ -239,6 +241,7 @@
   var photoTargetId = null;
   var photoDataUrl = null;
   var zonesOn = false;
+  var iconCache = {};
 
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -249,13 +252,47 @@
   var photoModal = bootstrap.Modal.getOrCreateInstance(photoModalEl);
 
   var SPECIAL = [
-    { ui_code: 'tol', name: 'Толщиномер', legacy_label: 'толщиномер', requires_photo: false, icon: '', special: true }
+    { ui_code: 'tol', name: 'Толщиномер', legacy_label: 'толщиномер', requires_photo: false, icon: '', special: true, severity: 1 }
   ];
 
   function iconSrc(dt) {
-    if (dt.ui_code === 'replace') return '/media_dop/static/estimation/mbri-left-right.png';
-    if (dt.ui_code === 'replace_add') return '/media_dop/static/estimation/replace_element.png';
-    return dt.icon || ('/media_dop/static/estimation/' + dt.ui_code + '.png');
+    if (!dt) return '';
+    // URL приходит из справочника (serialize_damage_types → icon)
+    return dt.icon || ('/media_dop/static/estimation/' + (dt.ui_code || '') + '.png');
+  }
+
+  function preloadIcons(done) {
+    var urls = {};
+    DAMAGES.forEach(function (dt) {
+      if (dt.ui_code) urls[dt.ui_code] = iconSrc(dt);
+    });
+    var keys = Object.keys(urls);
+    var left = keys.length;
+    var box = document.getElementById('icon_preload');
+    if (!keys.length) { if (done) done(); return; }
+    keys.forEach(function (ui) {
+      var src = urls[ui];
+      if (!src) {
+        left -= 1;
+        if (left <= 0 && done) done();
+        return;
+      }
+      var img = new Image();
+      img.onload = img.onerror = function () {
+        left -= 1;
+        if (left <= 0 && done) done();
+      };
+      img.src = src;
+      iconCache[ui] = img;
+      if (box) box.appendChild(img);
+    });
+  }
+
+  function formatMarkDate(d) {
+    d = d || new Date();
+    return '' + ('0' + d.getDate()).slice(-2) + '-' +
+      ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear() + ' ' +
+      ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
 
   function renderDamageButtons(containerId, withSelect) {
@@ -317,19 +354,23 @@
 
   function addMark(dt, x, y, tolText) {
     var el = hitElement(x, y);
+    var now = new Date();
     var mark = {
       id: uuid(),
       ui_code: dt.ui_code,
       name: dt.name || dt.legacy_label,
       legacy: dt.legacy_label || dt.name,
       requires_photo: !!dt.requires_photo,
+      severity: dt.severity || 1,
       x: Math.round(x),
       y: Math.round(y),
       element_name: el ? (el.name || '') : '',
       element_id: el ? el.element_id : null,
       tol: tolText || '',
       photo_data: null,
-      photo_name: ''
+      photo_name: '',
+      created_at: now,
+      date_str: formatMarkDate(now)
     };
     marks.push(mark);
     redraw();
@@ -362,7 +403,6 @@
 
   function renderMarks() {
     var list = document.getElementById('marks_list');
-    var empty = document.getElementById('marks_empty');
     document.getElementById('marks_count').textContent = String(marks.length);
     if (!marks.length) {
       list.innerHTML = '<li class="ot-empty" id="marks_empty">Пока нет отметок — кликните по схеме.</li>';
@@ -378,7 +418,8 @@
       html += '<li class="ot-mark ' + cls + '" data-id="' + m.id + '">';
       html += '<div class="ot-mark-title">#' + (idx + 1) + ' · ' + m.name + ' ' + st + '</div>';
       html += '<div class="ot-mark-meta">' + (m.element_name || 'элемент не определён') +
-        ' · x' + m.x + ', y' + m.y + (m.tol ? (' · ЛКП ' + m.tol) : '') + '</div>';
+        ' · ' + (m.date_str || '') +
+        (m.tol ? (' · ЛКП ' + m.tol) : '') + '</div>';
       html += '<div class="mt-2 d-flex flex-wrap gap-1">';
       html += '<button type="button" class="btn btn-sm btn-outline-primary btn-photo">Фото</button>';
       html += '<button type="button" class="btn btn-sm btn-outline-danger btn-del">Удалить</button>';
@@ -407,8 +448,9 @@
 
   function updateSummary() {
     var miss = incompleteCount();
+    var last = marks.length ? marks[marks.length - 1].date_str : '—';
     document.getElementById('summary_text').textContent =
-      'Отметок: ' + marks.length + ' · без фото (обязательных): ' + miss;
+      'Отметок: ' + marks.length + ' · без фото (обязательных): ' + miss + ' · последняя: ' + last;
     document.getElementById('btn_done').disabled = marks.length === 0 || miss > 0;
   }
 
@@ -442,6 +484,7 @@
       for (var k = 0; k < n; k++) { sx += e.coor_x[k]; sy += e.coor_y[k]; }
       ctx.font = 'bold 11px Arial';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.lineWidth = 3;
       ctx.strokeStyle = '#fff';
       ctx.strokeText(e.name.slice(0, 28), sx / n, sy / n);
@@ -450,21 +493,97 @@
     });
   }
 
+  function drawMarkIcon(m, idx) {
+    var i_text = String(idx + 1);
+    var strong = (m.severity || 1) > 1;
+
+    if (m.ui_code === 'tol') {
+      ctx.font = '12px Arial';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 5;
+      var text = m.tol || '0';
+      ctx.strokeText(text, m.x, m.y);
+      ctx.fillStyle = 'white';
+      ctx.fillText(text, m.x, m.y);
+    } else {
+      var img = iconCache[m.ui_code];
+      // как в legacy: иконка 32×32, центр в точке отметки
+      if (img && img.complete && img.naturalWidth) {
+        ctx.drawImage(img, m.x - 16, m.y - 16);
+      } else {
+        ctx.beginPath();
+        ctx.fillStyle = markComplete(m) ? '#16a34a' : (m.requires_photo ? '#ea580c' : '#334155');
+        ctx.arc(m.x, m.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.font = '12px Arial';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = strong ? 'red' : 'black';
+    ctx.strokeText(i_text, m.x - 12, m.y - 12);
+    ctx.fillStyle = 'white';
+    ctx.fillText(i_text, m.x - 12, m.y - 12);
+  }
+
+  function drawLegendAndTime() {
+    if (!marks.length) return;
+
+    var used = {};
+    var lastDate = '';
+    marks.forEach(function (m) {
+      if (!used[m.ui_code]) {
+        used[m.ui_code] = {
+          ui_code: m.ui_code,
+          // расшифровка = метка из справочника (legacy_label / name)
+          label: m.legacy || m.name || m.ui_code,
+          img: iconCache[m.ui_code]
+        };
+      }
+      if (m.date_str) lastDate = m.date_str;
+    });
+
+    var start = 1;
+    var hei = 20;
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'black';
+    ctx.lineWidth = 1;
+
+    Object.keys(used).forEach(function (ui) {
+      var u = used[ui];
+      if (ui === 'tol') {
+        ctx.fillText('- толщиномер', start + 4, hei);
+        start += 100;
+      } else if (u.img && u.img.complete && u.img.naturalWidth) {
+        ctx.drawImage(u.img, start, hei - 19);
+        ctx.fillText('- ' + u.label, start + 35, hei);
+        start += Math.max(87, 40 + ctx.measureText('- ' + u.label).width);
+      } else {
+        ctx.fillText('- ' + u.label, start + 4, hei);
+        start += Math.max(80, 20 + ctx.measureText('- ' + u.label).width);
+      }
+      // перенос строки легенды, как на боевом осмотре при нехватке места
+      if (start > canvas.width - 120) {
+        start = 1;
+        hei += 28;
+      }
+    });
+
+    // время последней отметки — как на кузове/салоне (левый нижний угол схемы)
+    if (lastDate) {
+      ctx.font = '14px Arial';
+      ctx.fillStyle = 'black';
+      ctx.fillText(lastDate, 1, canvas.height >= 330 ? 330 : (canvas.height - 12));
+    }
+  }
+
   function drawMarks() {
     marks.forEach(function (m, idx) {
-      var img = new Image();
-      img.src = iconSrc({ ui_code: m.ui_code, icon: '/media_dop/static/estimation/' + m.ui_code + '.png' });
-      // sync fallback circle
-      ctx.beginPath();
-      ctx.fillStyle = markComplete(m) ? '#16a34a' : (m.requires_photo ? '#ea580c' : '#334155');
-      ctx.arc(m.x, m.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 11px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(idx + 1), m.x, m.y);
+      drawMarkIcon(m, idx);
     });
+    drawLegendAndTime();
   }
 
   function redraw() {
@@ -567,11 +686,13 @@
   function boot() {
     renderDamageButtons('damage_grid', true);
     renderDamageButtons('damage_grid_modal', true);
-    if (baseImg.complete) {
-      redraw();
-    } else {
-      baseImg.onload = redraw;
-    }
+    preloadIcons(function () {
+      if (baseImg.complete) {
+        redraw();
+      } else {
+        baseImg.onload = redraw;
+      }
+    });
     updateSummary();
   }
   boot();

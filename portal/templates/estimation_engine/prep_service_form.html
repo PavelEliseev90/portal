@@ -1,0 +1,62 @@
+{% extends 'base_web.html' %}
+{% block title %} - {% if item %}Услуга{% else %}Новая услуга{% endif %}{% endblock %}
+{% block title_navbar %} - Услуга{% endblock %}
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>{% if item %}Редактирование услуги{% else %}Новая услуга{% endif %}</h2>
+    <a href="{% url 'estimation_engine:services_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+  {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+
+  <form method="post" class="portal-panel mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+    <div class="row g-3">
+      <div class="col-md-3"><label class="form-label">Код *</label><input class="form-control" name="code" value="{{ item.code|default:'' }}" required></div>
+      <div class="col-md-6"><label class="form-label">Наименование *</label><input class="form-control" name="name" value="{{ item.name|default:'' }}" required></div>
+      <div class="col-md-3"><label class="form-label">Категория</label><input class="form-control" name="category" value="{{ item.category|default:'' }}"></div>
+      <div class="col-md-3"><label class="form-label">Порядок</label><input type="number" class="form-control" name="sort_order" value="{{ item.sort_order|default:0 }}"></div>
+      <div class="col-12"><label class="form-label">Описание</label><textarea class="form-control" name="description" rows="2">{{ item.description|default:'' }}</textarea></div>
+      <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="is_active" id="ia" {% if not item or item.is_active %}checked{% endif %}><label class="form-check-label" for="ia">Активна</label></div></div>
+    </div>
+    <div class="mt-3"><button class="btn btn-primary" type="submit">Сохранить услугу</button></div>
+  </form>
+
+  {% if item %}
+  <div class="portal-panel">
+    <h5 class="mb-3">Предложения исполнителей</h5>
+    <table class="table table-sm">
+      <thead><tr><th>Код</th><th>Исполнитель</th><th>Статус</th></tr></thead>
+      <tbody>
+        {% for o in offerings %}
+        <tr>
+          <td><code>{{ o.code }}</code></td>
+          <td>{{ o.provider.name }}</td>
+          <td>{% if o.is_active %}активно{% else %}выкл{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-muted">Пока нет предложений — добавьте ниже</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" class="row g-2 align-items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_offering">
+      <div class="col-md-3"><label class="form-label">Код предложения</label><input class="form-control" name="offering_code" required placeholder="OFF-001"></div>
+      <div class="col-md-5">
+        <label class="form-label">Исполнитель</label>
+        <select class="form-select" name="provider_id" required>
+          <option value="">— выберите —</option>
+          {% for p in providers %}
+          <option value="{{ p.id }}">{{ p.code }} / {{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit">Добавить</button></div>
+    </form>
+    <p class="small text-muted mt-2 mb-0">Исполнителей заведите в <a href="{% url 'estimation_engine:providers_list' %}">справочнике</a>.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

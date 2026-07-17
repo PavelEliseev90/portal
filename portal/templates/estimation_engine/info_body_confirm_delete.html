@@ -1,0 +1,25 @@
+{% extends 'base_web.html' %}
+
+{% block title %} - Удаление полигона{% endblock %}
+{% block title_navbar %} - Полигоны{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Удалить полигон?</h2>
+  </div>
+  <div class="portal-panel">
+    <p class="mb-2">
+      <strong>{{ item.type_body }}</strong> / {{ item.side }} /
+      {{ item.body_elem_name|default:item.body_element }}
+      <span class="text-muted">(id {{ item.id }})</span>
+    </p>
+    <p class="small text-muted mb-3">Связи SchemeElementPolygon с этим полигоном будут удалены (CASCADE).</p>
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Удалить</button>
+      <a href="{% url 'estimation_engine:info_body_edit' item.id %}" class="btn btn-outline-secondary">Отмена</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

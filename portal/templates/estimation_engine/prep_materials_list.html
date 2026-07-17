@@ -1,0 +1,42 @@
+{% extends 'base_web.html' %}
+{% block title %} - Материалы{% endblock %}
+{% block title_navbar %} - Материалы{% endblock %}
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Материалы подготовки</h2>
+      <p class="text-muted mb-0 small">Складской справочник. Создание/редактирование — в модуле подготовки. Найдено: {{ total }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ cp_add_url }}" class="btn btn-primary btn-sm">Добавить в подготовке</a>
+      <a href="{{ cp_list_url }}" class="btn btn-outline-primary btn-sm">Полный редактор</a>
+      <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-secondary btn-sm">Справочники</a>
+    </div>
+  </div>
+  <form method="get" class="portal-panel mb-3">
+    <div class="input-group">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Поиск…">
+      <button class="btn btn-outline-primary" type="submit">Найти</button>
+    </div>
+  </form>
+  <div class="portal-panel">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Код</th><th>Наименование</th><th>Ед.</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><code>{{ item.code|default:"—" }}</code></td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.uom }}</td>
+          <td>{% if item.is_active %}<span class="badge bg-success">активен</span>{% else %}<span class="badge bg-secondary">выкл</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/car_preparation/materials/{{ item.id }}/edit/">Изменить</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Ничего не найдено</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
