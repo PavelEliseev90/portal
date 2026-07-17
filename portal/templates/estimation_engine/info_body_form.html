@@ -1,0 +1,80 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if item %}Полигон{% else %}Новый полигон{% endif %}{% endblock %}
+{% block title_navbar %} - Полигоны{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h2 class="mb-0">{% if item %}Редактирование полигона #{{ item.id }}{% else %}Новый полигон RegInfoBody{% endif %}</h2>
+    <a href="{% url 'estimation_engine:info_body_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post" class="portal-panel mb-3">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Тип кузова *</label>
+        <input class="form-control" name="type_body" list="type_body_list"
+               value="{{ item.type_body|default:'седан' }}" required>
+        <datalist id="type_body_list">
+          {% for tb in type_bodies %}<option value="{{ tb }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Сторона *</label>
+        <input class="form-control" name="side" list="side_list"
+               value="{{ item.side|default:'' }}" required
+               placeholder="перед / водительская / салон…">
+        <datalist id="side_list">
+          {% for s in sides %}<option value="{{ s }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Код элемента *</label>
+        <input class="form-control" name="body_element" value="{{ item.body_element|default:'' }}" required
+               placeholder="крыло_переднее_левое">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Наименование элемента</label>
+        <input class="form-control" name="body_elem_name" value="{{ item.body_elem_name|default:'' }}"
+               placeholder="Крыло переднее левое">
+        <div class="form-text">Если пусто — подставится код элемента.</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Полигон (x1,y1,x2,y2,…)</label>
+        <textarea class="form-control font-monospace" name="polygon" rows="4"
+                  placeholder="120,80,200,80,200,140,120,140">{{ item.polygon|default:'' }}</textarea>
+        <div class="form-text">Минимум 3 точки. Координаты в пикселях схемы осмотра.</div>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+      <button type="submit" class="btn btn-primary">{% if item %}Сохранить{% else %}Создать{% endif %}</button>
+      <a href="{% url 'estimation_engine:info_body_list' %}" class="btn btn-outline-secondary">К списку</a>
+      {% if item %}
+      <a href="{% url 'estimation_engine:info_body_delete' item.id %}" class="btn btn-outline-danger ms-auto">Удалить</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if item and linked_elements %}
+  <div class="portal-panel">
+    <h5 class="mb-2">Связанные элементы схемы</h5>
+    <ul class="mb-0">
+      {% for el in linked_elements %}
+      <li><code>{{ el.code }}</code> — {{ el.name }}</li>
+      {% endfor %}
+    </ul>
+    <p class="small text-muted mt-2 mb-0">Связи появляются после «Синхронизировать элементы».</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

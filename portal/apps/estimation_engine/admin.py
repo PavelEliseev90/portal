@@ -7,6 +7,7 @@ from .models import (
     EstimationPlanSnapshot,
     EstimationPreparationTransfer,
     EstimationRule,
+    EstimationRuleCondition,
     EstimationRulePackage,
     LegacyWorkMapping,
     PreparationMaterialProfile,
@@ -457,17 +458,33 @@ class EstimationRulePackageInline(admin.TabularInline):
     fields = ('package', 'fixed_cost', 'sort_order', 'is_active')
 
 
+class EstimationRuleConditionInline(admin.TabularInline):
+    model = EstimationRuleCondition
+    extra = 0
+    autocomplete_fields = ('damage_type_ref',)
+    fields = (
+        'sort_order', 'join_op', 'field', 'damage_type_ref',
+        'operator', 'value', 'is_active',
+    )
+
+
 @admin.register(EstimationRule)
 class EstimationRuleAdmin(admin.ModelAdmin):
     list_display = (
         'code', 'name', 'priority', 'status', 'section',
-        'element', 'damage_type_ref', 'hour_rate', 'is_active',
+        'element', 'damage_type_ref',
+        'windshield_heat', 'windshield_projection',
+        'hour_rate', 'is_active',
     )
-    list_filter = ('status', 'is_active', 'section', 'exclusive_group')
-    search_fields = ('code', 'name', 'element_code', 'damage_type')
+    list_filter = (
+        'status', 'is_active', 'section', 'exclusive_group',
+        'windshield_heat', 'windshield_projection',
+    )
+    search_fields = ('code', 'name', 'element_code', 'damage_type', 'body_type')
     autocomplete_fields = ('element', 'damage_type_ref')
-    inlines = [EstimationRulePackageInline]
-    readonly_fields = ('created_at', 'updated_at', 'element_code', 'damage_type')
+    filter_horizontal = ('body_types',)
+    inlines = [EstimationRuleConditionInline, EstimationRulePackageInline]
+    readonly_fields = ('created_at', 'updated_at', 'element_code', 'damage_type', 'body_type')
 
 
 @admin.register(EstimationRulePackage)

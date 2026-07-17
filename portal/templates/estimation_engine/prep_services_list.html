@@ -1,0 +1,42 @@
+{% extends 'base_web.html' %}
+{% block title %} - Услуги{% endblock %}
+{% block title_navbar %} - Услуги{% endblock %}
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Подрядные услуги</h2>
+      <p class="text-muted mb-0 small">В пакете выбирается предложение (услуга + исполнитель). Найдено: {{ total }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'estimation_engine:service_create' %}" class="btn btn-primary btn-sm">Добавить услугу</a>
+      <a href="{% url 'estimation_engine:providers_list' %}" class="btn btn-outline-primary btn-sm">Исполнители</a>
+      <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-secondary btn-sm">Справочники</a>
+    </div>
+  </div>
+  <form method="get" class="portal-panel mb-3">
+    <div class="input-group">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Поиск…">
+      <button class="btn btn-outline-primary" type="submit">Найти</button>
+    </div>
+  </form>
+  <div class="portal-panel">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Код</th><th>Наименование</th><th>Категория</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><code>{{ item.code }}</code></td>
+          <td>{{ item.name }}</td>
+          <td class="small">{{ item.category|default:"—" }}</td>
+          <td>{% if item.is_active %}<span class="badge bg-success">активна</span>{% else %}<span class="badge bg-secondary">выкл</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'estimation_engine:service_edit' item.id %}">Изменить</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Пусто</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

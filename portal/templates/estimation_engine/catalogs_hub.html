@@ -6,26 +6,75 @@
 
 {% block content %}
 <div class="portal-page">
-  <div class="portal-header">
-    <h2>Справочники для правил</h2>
-    <p class="text-muted mb-0">Элементы схемы (из полигонов) и типы повреждений — выбор в правилах, не свободный текст.</p>
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Справочники</h2>
+      <p class="text-muted mb-0">Осмотр, правила и состав пакетов подготовки. В формах пакетов — поиск, не полный список.</p>
+    </div>
+    <a href="{% url 'estimation_engine:settings_hub' %}" class="btn btn-outline-secondary btn-sm">К настройкам</a>
   </div>
 
-  <div class="row g-3">
-    <div class="col-md-6">
+  <h5 class="mt-2 mb-2">Осмотр и правила</h5>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
       <div class="portal-panel h-100">
         <h5>Элементы схемы</h5>
         <p class="small text-muted">Канонические элементы. Полигоны `RegInfoBody` привязываются синхронизацией.</p>
-        <p class="mb-3"><strong>{{ elements_count }}</strong> активных · связей с полигонами у {{ polygon_links }} элементов</p>
+        <p class="mb-3"><strong>{{ elements_count }}</strong> активных · связей у {{ polygon_links }}</p>
         <a href="{% url 'estimation_engine:elements_list' %}" class="btn btn-primary btn-sm">Открыть</a>
       </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="portal-panel h-100">
         <h5>Типы повреждений</h5>
-        <p class="small text-muted">Вмятина, царапина, ржавчина и т.д. — единый справочник для правил и (позже) осмотра.</p>
+        <p class="small text-muted">Вмятина, царапина… Флаг обязательного фото.</p>
         <p class="mb-3"><strong>{{ damage_types_count }}</strong> активных</p>
         <a href="{% url 'estimation_engine:damage_types_list' %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Полигоны RegInfoBody</h5>
+        <p class="small text-muted">Зоны на схемах кузова и салона.</p>
+        <p class="mb-3"><strong>{{ info_body_count }}</strong> · {{ info_body_sides }} сторон</p>
+        <a href="{% url 'estimation_engine:info_body_list' %}" class="btn btn-outline-dark btn-sm">Редактор</a>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="mb-2">Состав пакетов</h5>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Работы</h5>
+        <p class="small text-muted">`RefCarPreparationWork` — строки типа WORK в пакете.</p>
+        <p class="mb-3"><strong>{{ works_count }}</strong> активных</p>
+        <a href="{% url 'estimation_engine:works_list' %}" class="btn btn-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Материалы</h5>
+        <p class="small text-muted">Складской справочник подготовки. Редактирование — в модуле подготовки.</p>
+        <p class="mb-3"><strong>{{ materials_count }}</strong> активных</p>
+        <a href="{% url 'estimation_engine:materials_list' %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Детали</h5>
+        <p class="small text-muted">Стёкла, крылья, фары… OEM / аналог.</p>
+        <p class="mb-3"><strong>{{ parts_count }}</strong> активных</p>
+        <a href="{% url 'estimation_engine:parts_list' %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="portal-panel h-100">
+        <h5>Услуги (подряд)</h5>
+        <p class="small text-muted">Каталог услуг + предложения исполнителей для строк SERVICE.</p>
+        <p class="mb-3"><strong>{{ services_count }}</strong> услуг · {{ offerings_count }} предложений</p>
+        <a href="{% url 'estimation_engine:services_list' %}" class="btn btn-outline-primary btn-sm">Услуги</a>
+        <a href="{% url 'estimation_engine:providers_list' %}" class="btn btn-outline-secondary btn-sm">Исполнители</a>
       </div>
     </div>
   </div>

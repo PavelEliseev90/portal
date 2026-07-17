@@ -103,12 +103,9 @@
           </select>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Мин. кол-во</label>
-          <input type="number" min="1" class="form-control" name="min_damage_count" value="{{ rule.min_damage_count|default:1 }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Тип кузова</label>
-          <input class="form-control" name="body_type" value="{{ rule.body_type|default:'' }}">
+          <label class="form-label">Мин. кол-во (всего)</label>
+          <input type="number" min="0" class="form-control" name="min_damage_count" value="{{ rule.min_damage_count|default:0 }}">
+          <div class="form-text">0 = не проверять. Счётчики по типам — ниже.</div>
         </div>
         <div class="col-md-3">
           <label class="form-label">Ценовая группа</label>
@@ -125,6 +122,74 @@
             <label class="form-check-label" for="under_instrument">Только «под прибор»</label>
           </div>
         </div>
+        <div class="col-md-3">
+          <label class="form-label">Подогрев лобового</label>
+          <select class="form-select" name="windshield_heat">
+            {% for value, label in flag_choices %}
+            <option value="{{ value }}" {% if rule.windshield_heat == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Проекция на лобовое</label>
+          <select class="form-select" name="windshield_projection">
+            {% for value, label in flag_choices %}
+            <option value="{{ value }}" {% if rule.windshield_projection == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Типы кузова</label>
+          <div class="border rounded p-2" style="max-height: 180px; overflow: auto;">
+            <div class="row g-1">
+              {% for bt in body_type_choices %}
+              <div class="col-md-4 col-sm-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="body_type_ids[]"
+                         id="bt_{{ bt.id }}" value="{{ bt.id }}"
+                         {% if bt.id in selected_body_type_ids %}checked{% endif %}>
+                  <label class="form-check-label" for="bt_{{ bt.id }}">{{ bt.name }}</label>
+                </div>
+              </div>
+              {% empty %}
+              <div class="col-12 text-muted small">Справочник типов кузова пуст.</div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="form-text">Можно отметить несколько. Ничего не выбрано = любой тип кузова.</div>
+        </div>
+        <div class="col-12">
+          <div class="form-text">
+            Базовые поля выше всегда через <strong>И</strong>.
+            Для лобового: пара Да/Нет + группа <code>windshield</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Доп. условия (И / ИЛИ)</h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCondRow()">Добавить условие</button>
+      </div>
+      <p class="small text-muted">
+        Пример: царапин &gt; 3 <strong>И</strong> вмятин «нет».
+        Связка считается слева направо: <code>(A И B) ИЛИ C</code>.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="condTable">
+          <thead>
+            <tr>
+              <th style="width:90px">Связка</th>
+              <th>Поле</th>
+              <th>Тип повреждения</th>
+              <th style="width:130px">Оператор</th>
+              <th style="width:110px">Значение</th>
+              <th style="width:50px"></th>
+            </tr>
+          </thead>
+          <tbody id="condBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -155,33 +220,158 @@
 </div>
 
 <script>
-const packageOptions = `
-  <option value="">— выберите —</option>
-  {% for p in packages %}
-  <option value="{{ p.id }}">{{ p.code }} — {{ p.name|escapejs }}</option>
+const PACKAGE_SEARCH_URL = "{{ package_search_url }}";
+const damageTypeOptions = `
+  <option value="">— тип —</option>
+  {% for dt in damage_types %}
+  <option value="{{ dt.id }}">{{ dt.name|escapejs }} ({{ dt.code }})</option>
+  {% endfor %}
+`;
+const fieldOptions = `
+  {% for value, label in condition_field_choices %}
+  <option value="{{ value }}">{{ label|escapejs }}</option>
+  {% endfor %}
+`;
+const operatorOptions = `
+  {% for value, label in condition_operator_choices %}
+  <option value="{{ value }}">{{ label|escapejs }}</option>
+  {% endfor %}
+`;
+const joinOptions = `
+  {% for value, label in condition_join_choices %}
+  <option value="{{ value }}">{{ label|escapejs }}</option>
   {% endfor %}
 `;
 const initialLinks = [
   {% for link in links %}
-  {package_id: "{{ link.package_id }}", fixed_cost: "{{ link.fixed_cost|default_if_none:'' }}"},
+  {
+    package_id: "{{ link.package_id }}",
+    package_label: "{{ link.package.code|escapejs }} — {{ link.package.name|escapejs }}",
+    fixed_cost: "{{ link.fixed_cost|default_if_none:'' }}"
+  },
+  {% endfor %}
+];
+const initialConditions = [
+  {% for c in conditions %}
+  {
+    join_op: "{{ c.join_op }}",
+    field: "{{ c.field }}",
+    damage_type_id: "{{ c.damage_type_ref_id|default_if_none:'' }}",
+    operator: "{{ c.operator }}",
+    value: "{{ c.value|escapejs }}"
+  },
   {% endfor %}
 ];
 
+function initPackageSelect($sel, selectedId, selectedLabel) {
+  if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+  $sel.empty();
+  if (selectedId) {
+    $sel.append(new Option(selectedLabel || ('#' + selectedId), selectedId, true, true));
+  } else {
+    $sel.append(new Option('', '', true, true));
+  }
+  $sel.select2({
+    placeholder: 'Поиск пакета…',
+    allowClear: true,
+    width: '100%',
+    ajax: {
+      url: PACKAGE_SEARCH_URL,
+      dataType: 'json',
+      delay: 250,
+      data: function (params) { return { q: params.term || '', limit: 30 }; },
+      processResults: function (data) { return { results: data.results || [] }; }
+    },
+    minimumInputLength: 0
+  });
+}
+
 function addPkgRow(data = null) {
   const tr = document.createElement('tr');
-  const pid = data ? String(data.package_id) : '';
   tr.innerHTML = `
-    <td><select class="form-select form-select-sm" name="package_id[]">${packageOptions}</select></td>
+    <td><select class="form-select form-select-sm pkg-ajax" name="package_id[]" style="width:100%"></select></td>
     <td><input class="form-control form-control-sm" name="fixed_cost[]" value="${(data && data.fixed_cost) || ''}" placeholder="опционально"></td>
-    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removePkgRow(this)">×</button></td>
   `;
   document.getElementById('pkgBody').appendChild(tr);
-  if (pid) tr.querySelector('select').value = pid;
+  initPackageSelect(
+    $(tr).find('select.pkg-ajax'),
+    data && data.package_id,
+    data && data.package_label
+  );
+}
+
+function removePkgRow(btn) {
+  const tr = btn.closest('tr');
+  const $sel = $(tr).find('select.pkg-ajax');
+  if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+  tr.remove();
+}
+
+function refreshCondJoins() {
+  const rows = document.querySelectorAll('#condBody tr');
+  rows.forEach((tr, idx) => {
+    const join = tr.querySelector('[name="cond_join_op[]"]');
+    if (!join) return;
+    join.disabled = idx === 0;
+    if (idx === 0) join.value = 'and';
+  });
+}
+
+function toggleCondDamageSelect(tr) {
+  const field = tr.querySelector('[name="cond_field[]"]');
+  const dt = tr.querySelector('[name="cond_damage_type_id[]"]');
+  if (!field || !dt) return;
+  const need = field.value === 'damage_type_count';
+  dt.disabled = !need;
+  if (!need) dt.value = '';
+}
+
+function addCondRow(data = null) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <select class="form-select form-select-sm" name="cond_join_op[]">${joinOptions}</select>
+    </td>
+    <td>
+      <select class="form-select form-select-sm" name="cond_field[]">${fieldOptions}</select>
+    </td>
+    <td>
+      <select class="form-select form-select-sm" name="cond_damage_type_id[]">${damageTypeOptions}</select>
+    </td>
+    <td>
+      <select class="form-select form-select-sm" name="cond_operator[]">${operatorOptions}</select>
+    </td>
+    <td>
+      <input class="form-control form-control-sm" name="cond_value[]" value="${(data && data.value) || ''}" placeholder="3">
+    </td>
+    <td>
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove(); refreshCondJoins();">×</button>
+    </td>
+  `;
+  document.getElementById('condBody').appendChild(tr);
+  const fieldSel = tr.querySelector('[name="cond_field[]"]');
+  const opSel = tr.querySelector('[name="cond_operator[]"]');
+  const joinSel = tr.querySelector('[name="cond_join_op[]"]');
+  const dtSel = tr.querySelector('[name="cond_damage_type_id[]"]');
+  if (data) {
+    if (data.field) fieldSel.value = data.field;
+    if (data.operator) opSel.value = data.operator;
+    if (data.join_op) joinSel.value = data.join_op;
+    if (data.damage_type_id) dtSel.value = String(data.damage_type_id);
+  } else {
+    fieldSel.value = 'damage_type_count';
+    opSel.value = 'gt';
+  }
+  fieldSel.addEventListener('change', () => toggleCondDamageSelect(tr));
+  toggleCondDamageSelect(tr);
+  refreshCondJoins();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   if (initialLinks.length) initialLinks.forEach(addPkgRow);
   else addPkgRow();
+  if (initialConditions.length) initialConditions.forEach(addCondRow);
 });
 </script>
 {% endblock %}

@@ -1130,9 +1130,9 @@ class EstimationRule(TimeStampedModel):
     """
     Правило: факты осмотра → пакет(ы) работ.
 
-    MVP: простые AND-условия по полям. Версионных прайсов нет —
-    сумма в preview = н/ч × ставка правила + unit_cost строк пакета,
-    либо fixed_cost на связи правило↔пакет.
+    Базовые поля (раздел, элемент, …) всегда связываются через И.
+    Дополнительно — цепочка EstimationRuleCondition с И/ИЛИ между строками.
+    Сумма в preview = н/ч × ставка + unit_cost строк, либо fixed_cost на связи.
     """
 
     STATUS_DRAFT = 'draft'
@@ -1210,8 +1210,25 @@ class EstimationRule(TimeStampedModel):
         default='',
         help_text='Заполняется из справочника.',
     )
-    min_damage_count = models.PositiveIntegerField('Мин. кол-во повреждений', default=1)
-    body_type = models.CharField('Тип кузова', max_length=64, blank=True, default='')
+    min_damage_count = models.PositiveIntegerField(
+        'Мин. кол-во повреждений (всего)',
+        default=0,
+        help_text='0 = не проверять общий счётчик. Для счётчиков по типам используйте доп. условия.',
+    )
+    body_type = models.CharField(
+        'Типы кузова (кэш)',
+        max_length=512,
+        blank=True,
+        default='',
+        help_text='Кэш названий из body_types; пусто = любой. Не редактировать вручную.',
+    )
+    body_types = models.ManyToManyField(
+        'refs.RefTypeBody',
+        blank=True,
+        related_name='estimation_rules',
+        verbose_name='Типы кузова',
+        help_text='Можно выбрать несколько. Пусто = любой тип кузова.',
+    )
     price_group = models.CharField(
         'Ценовая группа',
         max_length=32,
@@ -1224,6 +1241,33 @@ class EstimationRule(TimeStampedModel):
         'Только «под прибор»',
         default=False,
         help_text='Если включено — правило срабатывает только при факте under_instrument=true.',
+    )
+
+    # Опции комплектации (лобовое и т.п.): пусто = не проверять, yes/no = строгое совпадение.
+    FLAG_ANY = ''
+    FLAG_YES = 'yes'
+    FLAG_NO = 'no'
+    FLAG_CHOICES = (
+        (FLAG_ANY, 'Любое'),
+        (FLAG_YES, 'Да'),
+        (FLAG_NO, 'Нет'),
+    )
+    windshield_heat = models.CharField(
+        'Подогрев лобового',
+        max_length=8,
+        blank=True,
+        default=FLAG_ANY,
+        choices=FLAG_CHOICES,
+        help_text='Условие по комплектации. Для 4 вариантов стекла задайте yes/no '
+                  'и одну exclusive_group (например windshield).',
+    )
+    windshield_projection = models.CharField(
+        'Проекция на лобовое',
+        max_length=8,
+        blank=True,
+        default=FLAG_ANY,
+        choices=FLAG_CHOICES,
+        help_text='HUD / проекция. Пусто = не учитывать в условии.',
     )
 
     hour_rate = models.DecimalField(
@@ -1264,14 +1308,163 @@ class EstimationRule(TimeStampedModel):
         if self.damage_type_ref_id:
             self.damage_type = self.damage_type_ref.code
 
+    def sync_body_type_cache(self):
+        """Кэш названий выбранных типов кузова (после M2M save)."""
+        if not self.pk:
+            return
+        names = list(self.body_types.order_by('name').values_list('name', flat=True))
+        cache = ', '.join(names)[:512]
+        if self.body_type != cache:
+            type(self).objects.filter(pk=self.pk).update(body_type=cache)
+            self.body_type = cache
+
     def clean(self):
         if self.hour_rate is not None and self.hour_rate < 0:
             raise ValidationError({'hour_rate': 'Ставка не может быть отрицательной.'})
-        if self.min_damage_count < 1:
-            raise ValidationError({'min_damage_count': 'Минимум 1.'})
+        if self.min_damage_count is not None and self.min_damage_count < 0:
+            raise ValidationError({'min_damage_count': 'Не может быть отрицательным.'})
 
     def save(self, *args, **kwargs):
         self.sync_condition_codes()
+        super().save(*args, **kwargs)
+
+
+class EstimationRuleCondition(TimeStampedModel):
+    """
+    Строка условия правила.
+
+    Первая строка — без join; у следующих join_op связывает с результатом слева
+    (левоассоциативно: A И B ИЛИ C = (A И B) ИЛИ C).
+    """
+
+    JOIN_AND = 'and'
+    JOIN_OR = 'or'
+    JOIN_CHOICES = (
+        (JOIN_AND, 'И'),
+        (JOIN_OR, 'ИЛИ'),
+    )
+
+    FIELD_DAMAGE_TYPE_COUNT = 'damage_type_count'
+    FIELD_DAMAGE_COUNT = 'damage_count'
+    FIELD_ELEMENT = 'element_code'
+    FIELD_SECTION = 'section'
+    FIELD_PRICE_GROUP = 'price_group'
+    FIELD_BODY_TYPE = 'body_type'
+    FIELD_PAINT_TYPE = 'paint_type'
+    FIELD_UNDER_INSTRUMENT = 'under_instrument'
+    FIELD_WINDSHIELD_HEAT = 'windshield_heat'
+    FIELD_WINDSHIELD_PROJECTION = 'windshield_projection'
+    FIELD_CHOICES = (
+        (FIELD_DAMAGE_TYPE_COUNT, 'Кол-во по типу повреждения'),
+        (FIELD_DAMAGE_COUNT, 'Кол-во повреждений (всего)'),
+        (FIELD_ELEMENT, 'Код элемента'),
+        (FIELD_SECTION, 'Раздел'),
+        (FIELD_PRICE_GROUP, 'Ценовая группа'),
+        (FIELD_BODY_TYPE, 'Тип кузова'),
+        (FIELD_PAINT_TYPE, 'Тип краски'),
+        (FIELD_UNDER_INSTRUMENT, 'Под прибор'),
+        (FIELD_WINDSHIELD_HEAT, 'Подогрев лобового'),
+        (FIELD_WINDSHIELD_PROJECTION, 'Проекция на лобовое'),
+    )
+
+    OP_EQ = 'eq'
+    OP_NE = 'ne'
+    OP_GT = 'gt'
+    OP_GTE = 'gte'
+    OP_LT = 'lt'
+    OP_LTE = 'lte'
+    OP_ABSENT = 'absent'
+    OP_PRESENT = 'present'
+    OPERATOR_CHOICES = (
+        (OP_EQ, '='),
+        (OP_NE, '≠'),
+        (OP_GT, '>'),
+        (OP_GTE, '≥'),
+        (OP_LT, '<'),
+        (OP_LTE, '≤'),
+        (OP_ABSENT, 'нет (0 / ложь)'),
+        (OP_PRESENT, 'есть (>0 / истина)'),
+    )
+
+    rule = models.ForeignKey(
+        EstimationRule,
+        on_delete=models.CASCADE,
+        related_name='conditions',
+        verbose_name='Правило',
+    )
+    sort_order = models.PositiveIntegerField('Порядок', default=0)
+    join_op = models.CharField(
+        'Связка с предыдущим',
+        max_length=8,
+        choices=JOIN_CHOICES,
+        default=JOIN_AND,
+        help_text='Для первой строки не используется.',
+    )
+    field = models.CharField(
+        'Поле',
+        max_length=32,
+        choices=FIELD_CHOICES,
+        default=FIELD_DAMAGE_TYPE_COUNT,
+    )
+    damage_type_ref = models.ForeignKey(
+        DamageType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='rule_conditions',
+        verbose_name='Тип повреждения',
+        help_text='Нужен для поля «Кол-во по типу повреждения».',
+    )
+    damage_type = models.CharField(
+        'Код повреждения (кэш)',
+        max_length=64,
+        blank=True,
+        default='',
+    )
+    operator = models.CharField(
+        'Оператор',
+        max_length=16,
+        choices=OPERATOR_CHOICES,
+        default=OP_GTE,
+    )
+    value = models.CharField(
+        'Значение',
+        max_length=64,
+        blank=True,
+        default='',
+        help_text='Число или текст. Для «нет/есть» можно оставить пустым.',
+    )
+    is_active = models.BooleanField('Активно', default=True)
+
+    class Meta:
+        db_table = 'ee_estimation_rule_condition'
+        verbose_name = 'Условие правила'
+        verbose_name_plural = 'Условия правил'
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return f'{self.rule_id}: {self.field} {self.operator} {self.value}'
+
+    def sync_codes(self):
+        if self.damage_type_ref_id:
+            self.damage_type = self.damage_type_ref.code
+
+    def clean(self):
+        if self.field == self.FIELD_DAMAGE_TYPE_COUNT and not (
+            self.damage_type_ref_id or self.damage_type
+        ):
+            raise ValidationError({
+                'damage_type_ref': 'Укажите тип повреждения для счётчика.',
+            })
+        if self.operator in (self.OP_GT, self.OP_GTE, self.OP_LT, self.OP_LTE, self.OP_EQ, self.OP_NE):
+            if self.field in (
+                self.FIELD_DAMAGE_TYPE_COUNT,
+                self.FIELD_DAMAGE_COUNT,
+            ) and str(self.value or '').strip() == '':
+                raise ValidationError({'value': 'Укажите число для сравнения.'})
+
+    def save(self, *args, **kwargs):
+        self.sync_codes()
         super().save(*args, **kwargs)
 
 

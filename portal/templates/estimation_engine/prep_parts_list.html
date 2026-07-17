@@ -1,0 +1,43 @@
+{% extends 'base_web.html' %}
+{% block title %} - Детали{% endblock %}
+{% block title_navbar %} - Детали{% endblock %}
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Детали</h2>
+      <p class="text-muted mb-0 small">Строки пакета типа «Деталь». Найдено: {{ total }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'estimation_engine:part_create' %}" class="btn btn-primary btn-sm">Добавить</a>
+      <a href="{% url 'estimation_engine:catalogs_hub' %}" class="btn btn-outline-secondary btn-sm">Справочники</a>
+    </div>
+  </div>
+  <form method="get" class="portal-panel mb-3">
+    <div class="input-group">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Код, название, OEM…">
+      <button class="btn btn-outline-primary" type="submit">Найти</button>
+    </div>
+  </form>
+  <div class="portal-panel">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Код</th><th>Наименование</th><th>OEM</th><th>Категория</th><th>Тип</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><code>{{ item.code }}</code></td>
+          <td>{{ item.name }}</td>
+          <td class="small">{{ item.oem_number|default:"—" }}</td>
+          <td class="small">{{ item.category|default:"—" }}</td>
+          <td>{{ item.get_kind_display }}</td>
+          <td>{% if item.is_active %}<span class="badge bg-success">активна</span>{% else %}<span class="badge bg-secondary">выкл</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'estimation_engine:part_edit' item.id %}">Изменить</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted">Пусто</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
