@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django_mptt_admin',
     #'mail_templated',
     'car_preparation.apps.CarPreparationConfig',
+    'estimation_engine.apps.EstimationEngineConfig',
     'api.apps.ApiConfig',
     'refs.apps.RefsConfig',
     'documents.apps.DocumentsConfig',

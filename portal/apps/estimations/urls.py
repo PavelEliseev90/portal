@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_kolesa_reception
-from django.views.generic import TemplateView
+from . import views_osmotr_test
 
 app_name = 'eco'
 
@@ -14,6 +14,11 @@ urlpatterns = [
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),
     path('kolesa-reception/<int:reception_id>/',                                views_kolesa_reception.kolesa_reception_detail, name='kolesa_reception_detail'),
 
+    # Тестовый UI осмотра кузова (не трогает legacy osmotr)
+    path('osmotr-test/',                                                       views_osmotr_test.osmotr_body_test, {'side': 'pered'}, name='osmotr_body_test'),
+    path('osmotr-test/<slug:side>/',                                           views_osmotr_test.osmotr_body_test, name='osmotr_body_test_side'),
+    path('<slug:rlk_id>/<slug:rl_id>/osmotr-test/<slug:side>/',                views_osmotr_test.osmotr_body_test, name='osmotr_body_test_est'),
+
     path('',                                                                    views.estimation),
     path('<slug:rlk_id>/',                                                      views.estimation_rlk, name='slug'),
     path('<slug:rlk_id>/start/',                                                views.estimation_start, name='slug'),
@@ -23,7 +28,7 @@ urlpatterns = [
     path('<slug:rlk_id>/s/<slug:years>/',                                       views.catalog, name='slug'),
     path('<slug:rlk_id>/s/<slug:years>/<slug:mark_id>/',                        views.models, name='slug'),
     path('<slug:rlk_id>/s/<slug:years>/<slug:mark_id>/<slug:model_id>/',        views.modifications, name='slug'),
-    
+
     # API endpoints для новой страницы начала оценки
     path('<slug:rlk_id>/api/marks/',                                           views.api_get_marks_by_year, name='api_marks'),
     path('<slug:rlk_id>/api/models/',                                          views.api_get_models_by_mark, name='api_models'),

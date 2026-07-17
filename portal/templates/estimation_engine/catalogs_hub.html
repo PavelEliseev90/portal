@@ -1,0 +1,33 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Справочники оценки{% endblock %}
+{% block title_navbar %} - Справочники{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Справочники для правил</h2>
+    <p class="text-muted mb-0">Элементы схемы (из полигонов) и типы повреждений — выбор в правилах, не свободный текст.</p>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="portal-panel h-100">
+        <h5>Элементы схемы</h5>
+        <p class="small text-muted">Канонические элементы. Полигоны `RegInfoBody` привязываются синхронизацией.</p>
+        <p class="mb-3"><strong>{{ elements_count }}</strong> активных · связей с полигонами у {{ polygon_links }} элементов</p>
+        <a href="{% url 'estimation_engine:elements_list' %}" class="btn btn-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="portal-panel h-100">
+        <h5>Типы повреждений</h5>
+        <p class="small text-muted">Вмятина, царапина, ржавчина и т.д. — единый справочник для правил и (позже) осмотра.</p>
+        <p class="mb-3"><strong>{{ damage_types_count }}</strong> активных</p>
+        <a href="{% url 'estimation_engine:damage_types_list' %}" class="btn btn-outline-primary btn-sm">Открыть</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

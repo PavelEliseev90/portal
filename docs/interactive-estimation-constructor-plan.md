@@ -1,8 +1,9 @@
 # Конструктор правил интерактивной оценки
 
-Статус: согласованная концепция, реализация ещё не начата.
+Статус: этап 1–2 в работе (изолированные каталоги, шаблоны, snapshot и handoff в подготовку).
+Текущий расчёт оценки не переключён.
 
-Дата фиксации: 16.07.2026.
+Дата фиксации: 16.07.2026. Обновление: 17.07.2026.
 
 ## Цель
 
@@ -516,7 +517,78 @@ Mobile — для осмотра, фото и быстрого внесения 
 - Snapshot не меняется после публикации нового прайса.
 - Новый расчёт прошёл shadow-сравнение на пилотных подразделениях.
 
+## Стык с `car_preparation` (зафиксировано 17.07.2026)
+
+Единица согласования — **пакет работ** (`PreparationWorkPackage`), например
+«Покраска крыла без ремонта».
+
+```text
+Каталог: PreparationWorkPackage
+  ├─ строки WORK / MATERIAL / PART / SERVICE
+  └─ маршрут: ремзона / подряд / вручную
+→ EstimationPlanPackage (согласовали пакет целиком)
+→ transfer_snapshot_to_preparation()
+→ CarPreparationPackage + CarPreparationWorkItem
+→ подтверждение пакета планировщиком → расписание / ЗН → plan/fact
+```
+
+Правила стыка:
+
+1. Автоматического создания подготовки из legacy-расчёта нет и не включаем.
+2. Согласовывают пакет, а не отдельные нормочасы.
+3. WORK раскрывается в `CarPreparationWorkItem` внутри `CarPreparationPackage`, `is_confirmed=False`.
+4. MATERIAL → `PlannedMaterialConsumption` при привязке к WORK через `parent_coverage_key`.
+5. PART / SERVICE остаются в снимке до подбора детали / подрядного ЗН.
+6. `WorkOrder` и `CarPreparationWorkSchedule` handoff не создаёт.
+7. Повторная передача идемпотентна.
+
+Код: `estimation_engine.transfer.transfer_snapshot_to_preparation`.
+
+### Осмотр на справочниках (17.07.2026)
+
+- **Legacy osmotr / osmotr_salon не меняем.**
+- Тестовый UI: `/estimations/osmotr-test/<side>/` (и с контекстом оценки: `/estimations/<est>/<rlk>/osmotr-test/<side>/`).
+- Элементы: `SchemeElement` + полигоны; повреждения: `DamageType`.
+- Флаг `DamageType.requires_photo` — без фото отметка незавершена; «Готово» блокируется.
+- Сохранение в оценку пока отключено (только проверка комплектности).
+- Миграции: `0006` (section), `0007` (requires_photo).
+
+### MVP правил и preview (17.07.2026)
+
+- Модели: `EstimationRule`, `EstimationRulePackage`; на строке пакета — `unit_cost`.
+- Справочники: `SchemeElement` (+ связь `SchemeElementPolygon` → `RegInfoBody`), `DamageType`.
+- В правилах элемент и тип повреждения выбираются из справочников (не free-text).
+- Синхронизация элементов из полигонов: `/estimation-engine/catalogs/elements/sync/`.
+- Движок: `estimation_engine.rules_engine.preview_from_facts`.
+- UI: `/estimation-engine/rules/`, `/estimation-engine/rules/preview/`, `/estimation-engine/catalogs/`.
+- Сумма MVP: WORK = н/ч × ставка правила; MATERIAL/PART/SERVICE = qty × unit_cost; опционально фикс на связи правило↔пакет.
+- Exclusive group и дедуп по `coverage_key` поддерживаются.
+- Версионные прайсы — следующий этап.
+
+### UI и единая модель (17.07.2026)
+
+Точка входа: `/estimation-engine/` (`estimation_engine:settings_hub`).
+
+Единый каталог — **пакет работ** (`PreparationWorkPackage`).
+
+| Уровень | Модель | Роль |
+|---------|--------|------|
+| Каталог | `PreparationWorkPackage` | Техкарта: WORK/MATERIAL/PART/SERVICE + маршрут |
+| Документ | `CarPreparation` | Авто на складе |
+| Экземпляр | `CarPreparationPackage` | Пакет на конкретном авто (из оценки или вручную) |
+| Исполнение | `WorkOrder` | Создаётся из выбранных подтверждённых пакетов |
+
+Устаревшие сущности (таблицы сохранены, UI убран из основного потока):
+
+- `WorkOrderTemplate` — шаблон ЗН
+- `CarPreparationTemplate` — стартовый чеклист
+
+Ручное добавление пакета: `estimation_engine.package_apply.apply_catalog_package_to_preparation`.
+API: `car_preparation:preparation_add_package`, `preparation_package_confirm`.
+ЗН: `work_order_create` принимает `package_ids[]`.
+
 ## С чего начать завтра
+
 
 1. Утвердить список типов отметок для трёх блоков.
 2. Утвердить канонические коды элементов схем.

@@ -1,0 +1,187 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if rule %}Правило{% else %}Новое правило{% endif %}{% endblock %}
+{% block title_navbar %} - Правило{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>{% if rule %}Редактирование правила{% else %}Новое правило{% endif %}</h2>
+    <a href="{% url 'estimation_engine:rules_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="portal-panel mb-3">
+      <h5 class="mb-3">Основное</h5>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Код *</label>
+          <input class="form-control" name="code" value="{{ rule.code|default:'' }}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Наименование *</label>
+          <input class="form-control" name="name" value="{{ rule.name|default:'' }}" required
+                 placeholder="Вмятина + царапина на крыле → покраска">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Статус</label>
+          <select class="form-select" name="status">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if rule.status == value or not rule and value == 'published' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Приоритет</label>
+          <input type="number" class="form-control" name="priority" value="{{ rule.priority|default:100 }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Группа взаимоисключения</label>
+          <input class="form-control" name="exclusive_group" value="{{ rule.exclusive_group|default:'' }}"
+                 placeholder="paint-wing">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Ставка н/ч, ₽</label>
+          <input class="form-control" name="hour_rate" value="{{ rule.hour_rate|default:1500 }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Описание</label>
+          <input class="form-control" name="description" value="{{ rule.description|default:'' }}">
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                   {% if not rule or rule.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">Активно</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
+      <h5 class="mb-3">Условия (пустые = любое; между полями — И)</h5>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Раздел</label>
+          <select class="form-select" name="section">
+            {% for value, label in section_choices %}
+            <option value="{{ value }}" {% if rule.section == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Элемент схемы</label>
+          <select class="form-select" name="element_id">
+            <option value="">— любой —</option>
+            {% for el in elements %}
+            <option value="{{ el.id }}" {% if rule.element_id == el.id %}selected{% endif %}>
+              {{ el.name }} ({{ el.code }})
+            </option>
+            {% endfor %}
+          </select>
+          {% if not elements %}
+          <div class="form-text text-warning">Справочник пуст — <a href="{% url 'estimation_engine:elements_list' %}">синхронизируйте полигоны</a>.</div>
+          {% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Тип повреждения</label>
+          <select class="form-select" name="damage_type_id">
+            <option value="">— любой —</option>
+            {% for dt in damage_types %}
+            <option value="{{ dt.id }}" {% if rule.damage_type_ref_id == dt.id %}selected{% endif %}>
+              {{ dt.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Мин. кол-во</label>
+          <input type="number" min="1" class="form-control" name="min_damage_count" value="{{ rule.min_damage_count|default:1 }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Тип кузова</label>
+          <input class="form-control" name="body_type" value="{{ rule.body_type|default:'' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Ценовая группа</label>
+          <input class="form-control" name="price_group" value="{{ rule.price_group|default:'' }}" placeholder="2000">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Тип краски</label>
+          <input class="form-control" name="paint_type" value="{{ rule.paint_type|default:'' }}">
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" name="under_instrument" id="under_instrument"
+                   {% if rule.under_instrument %}checked{% endif %}>
+            <label class="form-check-label" for="under_instrument">Только «под прибор»</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Пакеты работ</h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPkgRow()">Добавить пакет</button>
+      </div>
+      <table class="table table-sm" id="pkgTable">
+        <thead>
+          <tr>
+            <th>Пакет</th>
+            <th style="width:160px">Фикс. сумма, ₽</th>
+            <th style="width:50px"></th>
+          </tr>
+        </thead>
+        <tbody id="pkgBody"></tbody>
+      </table>
+      <p class="small text-muted mb-0">Фикс. сумма опциональна: если пусто — WORK × ставка н/ч + unit_cost материалов/деталей.</p>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="{% url 'estimation_engine:rules_list' %}" class="btn btn-outline-secondary">Отмена</a>
+      <a href="{% url 'estimation_engine:rules_preview' %}" class="btn btn-outline-primary">Открыть симулятор</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const packageOptions = `
+  <option value="">— выберите —</option>
+  {% for p in packages %}
+  <option value="{{ p.id }}">{{ p.code }} — {{ p.name|escapejs }}</option>
+  {% endfor %}
+`;
+const initialLinks = [
+  {% for link in links %}
+  {package_id: "{{ link.package_id }}", fixed_cost: "{{ link.fixed_cost|default_if_none:'' }}"},
+  {% endfor %}
+];
+
+function addPkgRow(data = null) {
+  const tr = document.createElement('tr');
+  const pid = data ? String(data.package_id) : '';
+  tr.innerHTML = `
+    <td><select class="form-select form-select-sm" name="package_id[]">${packageOptions}</select></td>
+    <td><input class="form-control form-control-sm" name="fixed_cost[]" value="${(data && data.fixed_cost) || ''}" placeholder="опционально"></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">×</button></td>
+  `;
+  document.getElementById('pkgBody').appendChild(tr);
+  if (pid) tr.querySelector('select').value = pid;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (initialLinks.length) initialLinks.forEach(addPkgRow);
+  else addPkgRow();
+});
+</script>
+{% endblock %}

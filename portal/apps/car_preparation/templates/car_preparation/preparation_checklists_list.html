@@ -1,0 +1,91 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Стартовые чеклисты подготовки {% endblock %}
+{% block title_navbar %} - Стартовые чеклисты {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h2 class="mb-1">Стартовые чеклисты подготовки</h2>
+      <p class="text-muted mb-0 small">
+        Быстрый набор обычных работ на документ подготовки.
+        Не путать с пакетом работ оценки и шаблоном заказ-наряда.
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'estimation_engine:settings_hub' %}" class="btn btn-outline-secondary btn-sm">К настройкам</a>
+      <a href="{% url 'car_preparation:preparation_checklist_create' %}" class="btn btn-primary btn-sm">Создать чеклист</a>
+    </div>
+  </div>
+
+  <div class="alert alert-warning mt-3">
+    Устарело: используйте <a href="{% url 'estimation_engine:work_packages_list' %}">пакеты работ</a>.
+    На подготовке пакет добавляется из каталога и из него создаётся ЗН.
+  </div>
+
+  <div class="portal-panel">
+    {% if templates %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Наименование</th>
+            <th>Подразделение</th>
+            <th>Тип авто</th>
+            <th>Работ</th>
+            <th>Статус</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for template in templates %}
+          <tr>
+            <td>
+              <strong>{{ template.name }}</strong>
+              {% if template.is_default %}<span class="badge bg-warning text-dark ms-1">по умолчанию</span>{% endif %}
+            </td>
+            <td>{{ template.unit.name|default:"Все" }}</td>
+            <td>{{ template.car_type|default:"Любой" }}</td>
+            <td>{{ template.works.count }}</td>
+            <td>
+              {% if template.is_active %}
+              <span class="badge bg-success">Активен</span>
+              {% else %}
+              <span class="badge bg-secondary">Выкл</span>
+              {% endif %}
+            </td>
+            <td class="text-end text-nowrap">
+              <a href="{% url 'car_preparation:preparation_checklist_edit' template.id %}" class="btn btn-sm btn-outline-primary">Изменить</a>
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                      onclick="deleteChecklist({{ template.id }}, '{{ template.name|escapejs }}')">Удалить</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-3">Чеклисты ещё не созданы.</p>
+    <a href="{% url 'car_preparation:preparation_checklist_create' %}" class="btn btn-primary">Создать первый</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function deleteChecklist(id, name) {
+  if (!confirm(`Удалить чеклист «${name}»?`)) return;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `{% url 'car_preparation:preparation_checklist_delete' 0 %}`.replace('0', id);
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden';
+  csrf.name = 'csrfmiddlewaretoken';
+  csrf.value = '{{ csrf_token }}';
+  form.appendChild(csrf);
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endblock %}

@@ -13,6 +13,11 @@
     </a>
   </div>
 
+  <div class="alert alert-warning">
+    Устарело: используйте <a href="{% url 'estimation_engine:work_packages_list' %}">пакеты работ</a>.
+    ЗН создаётся из пакетов на подготовке.
+  </div>
+
   <div class="portal-panel">
     <div class="row g-3">
       {% for template in templates %}

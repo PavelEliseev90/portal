@@ -1,0 +1,153 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - {% if template %}Чеклист{% else %}Новый чеклист{% endif %} {% endblock %}
+{% block title_navbar %} - {% if template %}Чеклист{% else %}Новый чеклист{% endif %} {% endblock %}
+
+{% block content %}
+<style>
+.work-item-select {
+  border: 1px solid rgba(0, 42, 90, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+.work-item-select:hover { background: #f8f9fa; border-color: #00509d; }
+.work-item-select.selected { background: #e7f3ff; border-color: #00509d; }
+</style>
+
+<div class="portal-page">
+  <div class="portal-header d-flex justify-content-between align-items-center">
+    <h2>{% if template %}Редактирование чеклиста{% else %}Новый стартовый чеклист{% endif %}</h2>
+    <a href="{% url 'car_preparation:preparation_checklists_list' %}" class="btn btn-outline-secondary btn-sm">К списку</a>
+  </div>
+
+  <div class="portal-panel">
+    <form method="post" id="checklistForm">
+      {% csrf_token %}
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label">Название *</label>
+          <input type="text" class="form-control" name="name" value="{{ template.name|default:'' }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Подразделение</label>
+          <select class="form-select" name="unit_id">
+            <option value="">Все подразделения</option>
+            {% for unit in units %}
+            <option value="{{ unit.id }}" {% if template.unit_id == unit.id %}selected{% endif %}>{{ unit.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Тип автомобиля</label>
+          <select class="form-select" name="car_type">
+            {% for value, label in car_type_choices %}
+            <option value="{{ value }}" {% if template.car_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Описание</label>
+          <textarea class="form-control" name="description" rows="2">{{ template.description|default:'' }}</textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                   {% if not template or template.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">Активен</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" name="is_default" id="is_default"
+                   {% if template.is_default %}checked{% endif %}>
+            <label class="form-check-label" for="is_default">По умолчанию</label>
+          </div>
+        </div>
+      </div>
+
+      <h5 class="mb-3">Работы в чеклисте</h5>
+      <p class="small text-muted">Только обычные работы из справочника подготовки. Материалы и детали сюда не входят — для этого пакет работ оценки.</p>
+      <div class="mb-3" style="max-height: 500px; overflow-y: auto; border: 1px solid rgba(0, 42, 90, 0.1); border-radius: 0.5rem; padding: 1rem;">
+        {% for stage_name, stage_works in works_by_stage.items %}
+        <div class="mb-4">
+          <h6 class="border-bottom pb-2 mb-3">{{ stage_name }}</h6>
+          {% for work in stage_works %}
+          <div class="work-item-select" onclick="toggleWork({{ work.id }})">
+            <div class="form-check">
+              <input class="form-check-input work-checkbox" type="checkbox"
+                     id="work_{{ work.id }}" name="work_ids[]" value="{{ work.id }}"
+                     {% if template and work.id in selected_work_ids %}checked{% endif %}
+                     onchange="updateWorkDetails({{ work.id }})">
+              <label class="form-check-label w-100" for="work_{{ work.id }}">
+                <strong>{{ work.name }}</strong>
+                {% if work.estimated_time %}
+                <small class="text-muted">({{ work.estimated_time }} мин)</small>
+                {% endif %}
+              </label>
+            </div>
+            <div class="work-details mt-2" id="workDetails_{{ work.id }}"
+                 style="display: {% if template and work.id in selected_work_ids %}block{% else %}none{% endif %};">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <input type="number" class="form-control form-control-sm"
+                         name="work_{{ work.id }}_time" placeholder="Время (мин)" min="0"
+                         value="{% if template %}{% for tw in template_works %}{% if tw.work_id == work.id %}{{ tw.planned_time }}{% endif %}{% endfor %}{% else %}{{ work.estimated_time|default:0 }}{% endif %}">
+                </div>
+                <div class="col-md-3">
+                  <input type="number" step="0.01" class="form-control form-control-sm"
+                         name="work_{{ work.id }}_cost" placeholder="Стоимость"
+                         value="{% if template %}{% for tw in template_works %}{% if tw.work_id == work.id %}{{ tw.default_cost }}{% endif %}{% endfor %}{% else %}0{% endif %}">
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="work_{{ work.id }}_required" id="work_{{ work.id }}_required"
+                           {% if template %}{% for tw in template_works %}{% if tw.work_id == work.id and tw.is_required %}checked{% endif %}{% endfor %}{% else %}checked{% endif %}>
+                    <label class="form-check-label small" for="work_{{ work.id }}_required">Обязательна</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-3">Нет доступных работ</p>
+        {% endfor %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'car_preparation:preparation_checklists_list' %}" class="btn btn-outline-secondary">Отмена</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleWork(workId) {
+  const checkbox = document.getElementById('work_' + workId);
+  checkbox.checked = !checkbox.checked;
+  updateWorkDetails(workId);
+}
+function updateWorkDetails(workId) {
+  const checkbox = document.getElementById('work_' + workId);
+  const details = document.getElementById('workDetails_' + workId);
+  const item = checkbox.closest('.work-item-select');
+  if (checkbox.checked) {
+    details.style.display = 'block';
+    item.classList.add('selected');
+  } else {
+    details.style.display = 'none';
+    item.classList.remove('selected');
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.work-checkbox').forEach(function(checkbox) {
+    updateWorkDetails(checkbox.value);
+  });
+});
+</script>
+{% endblock %}

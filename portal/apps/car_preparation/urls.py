@@ -30,7 +30,10 @@ urlpatterns = [
     path('work_order/material/<int:material_id>/delete/', views.work_order_item_material_delete, name='work_order_item_material_delete'),
     path('api/templates/<int:template_id>/works/', views.work_order_template_works, name='work_order_template_works'),
     path('api/preparation-templates/<int:template_id>/works/', views.preparation_template_works, name='preparation_template_works'),
+    path('api/catalog-packages/<int:package_id>/works/', views.catalog_package_works, name='catalog_package_works'),
     path('preparation/<int:preparation_id>/apply-template/', views.preparation_apply_template, name='preparation_apply_template'),
+    path('preparation/<int:preparation_id>/add-package/', views.preparation_add_package, name='preparation_add_package'),
+    path('preparation/package/<int:package_id>/confirm/', views.preparation_package_confirm, name='preparation_package_confirm'),
     path('preparation/<int:preparation_id>/add-works/', views.preparation_add_works, name='preparation_add_works'),
     path('preparation/work-item/<int:item_id>/update/', views.preparation_work_item_update, name='preparation_work_item_update'),
     path('preparation/work-item/<int:item_id>/confirm/', views.preparation_work_item_confirm, name='preparation_work_item_confirm'),
@@ -47,6 +50,11 @@ urlpatterns = [
     path('work-order-templates/create/', views.work_order_template_create, name='work_order_template_create'),
     path('work-order-templates/<int:template_id>/edit/', views.work_order_template_edit, name='work_order_template_edit'),
     path('work-order-templates/<int:template_id>/delete/', views.work_order_template_delete, name='work_order_template_delete'),
+    # Стартовые чеклисты подготовки
+    path('preparation-checklists/', views.preparation_checklists_list, name='preparation_checklists_list'),
+    path('preparation-checklists/create/', views.preparation_checklist_create, name='preparation_checklist_create'),
+    path('preparation-checklists/<int:template_id>/edit/', views.preparation_checklist_edit, name='preparation_checklist_edit'),
+    path('preparation-checklists/<int:template_id>/delete/', views.preparation_checklist_delete, name='preparation_checklist_delete'),
     # Отчеты
     path('reports/performers/', views.performers_report, name='performers_report'),
     path('notifications/', views_notifications.notifications_list, name='notifications_list'),
