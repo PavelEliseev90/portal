@@ -236,6 +236,7 @@ class PreparationWorkPackageAdmin(admin.ModelAdmin):
         'section',
         'route_type',
         'default_repair_zone',
+        'estimation_reduction_amount',
         'status',
         'is_active',
         'sort_order',
@@ -474,11 +475,15 @@ class EstimationRuleAdmin(admin.ModelAdmin):
         'code', 'name', 'priority', 'status', 'section',
         'element', 'damage_type_ref',
         'windshield_heat', 'windshield_projection',
+        'cleaning_level', 'salon_type',
+        'diagnostic_system', 'diagnostic_status',
         'hour_rate', 'is_active',
     )
     list_filter = (
         'status', 'is_active', 'section', 'exclusive_group',
         'windshield_heat', 'windshield_projection',
+        'cleaning_level', 'salon_type',
+        'diagnostic_system', 'diagnostic_status',
     )
     search_fields = ('code', 'name', 'element_code', 'damage_type', 'body_type')
     autocomplete_fields = ('element', 'damage_type_ref')

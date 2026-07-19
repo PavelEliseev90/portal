@@ -27,6 +27,7 @@
             <th>Наименование</th>
             <th>Раздел</th>
             <th>Маршрут</th>
+            <th class="text-end">Снижение оценки</th>
             <th>Строк</th>
             <th>Статус</th>
             <th></th>
@@ -35,23 +36,32 @@
         <tbody>
           {% for package in packages %}
           <tr>
-            <td><code>{{ package.code }}</code></td>
-            <td>
+            <td data-label="Код"><code>{{ package.code }}</code></td>
+            <td data-label="Наименование">
               <strong>{{ package.name }}</strong>
               {% if not package.is_active %}<span class="badge bg-secondary ms-1">выкл</span>{% endif %}
             </td>
-            <td>{{ package.get_section_display }}</td>
-            <td>
+            <td data-label="Раздел">{{ package.get_section_display }}</td>
+            <td data-label="Маршрут">
               {{ package.get_route_type_display }}
               {% if package.default_repair_zone %}
               <div class="small text-muted">{{ package.default_repair_zone.name }}</div>
               {% endif %}
             </td>
-            <td>{{ package.lines.count }}</td>
-            <td>{{ package.get_status_display }}</td>
-            <td class="text-end text-nowrap">
+            <td class="text-end" data-label="Снижение оценки">
+              {% if package.estimation_reduction_amount %}
+              {{ package.estimation_reduction_amount }} ₽
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td data-label="Строк">{{ package.lines.count }}</td>
+            <td data-label="Статус">{{ package.get_status_display }}</td>
+            <td class="text-end text-nowrap" data-label="Действия">
+              <div class="d-flex flex-column flex-sm-row gap-1 justify-content-sm-end">
               <a href="{% url 'estimation_engine:work_package_edit' package.id %}" class="btn btn-sm btn-outline-primary">Изменить</a>
               <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletePackage({{ package.id }}, '{{ package.name|escapejs }}')">Удалить</button>
+              </div>
             </td>
           </tr>
           {% endfor %}

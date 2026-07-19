@@ -461,6 +461,13 @@ class PreparationWorkPackage(TimeStampedModel):
         related_name='default_for_packages',
         verbose_name='Подряд по умолчанию',
     )
+    estimation_reduction_amount = models.DecimalField(
+        'Сумма снижения оценки, ₽',
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        help_text='На сколько снижается оценка автомобиля при применении этого пакета.',
+    )
     is_active = models.BooleanField('Активен', default=True, db_index=True)
     sort_order = models.PositiveIntegerField('Порядок', default=0)
 
@@ -1270,6 +1277,87 @@ class EstimationRule(TimeStampedModel):
         help_text='HUD / проекция. Пусто = не учитывать в условии.',
     )
 
+    # Химчистка / вариант салона — коды как в page_salon.cleaning_int / type_salon_int.
+    CLEANING_ANY = ''
+    CLEANING_NONE = '0'
+    CLEANING_HARD = '1'
+    CLEANING_MEDIUM = '2'
+    CLEANING_LIGHT = '3'
+    CLEANING_CHOICES = (
+        (CLEANING_ANY, 'Любая'),
+        (CLEANING_NONE, 'Не требуется'),
+        (CLEANING_LIGHT, 'Лёгкая'),
+        (CLEANING_MEDIUM, 'Средняя'),
+        (CLEANING_HARD, 'Сложная'),
+    )
+    SALON_ANY = ''
+    SALON_FABRIC = '0'
+    SALON_LEATHER = '1'
+    SALON_TYPE_CHOICES = (
+        (SALON_ANY, 'Любой'),
+        (SALON_FABRIC, 'Ткань'),
+        (SALON_LEATHER, 'Кожа'),
+    )
+    cleaning_level = models.CharField(
+        'Степень химчистки',
+        max_length=8,
+        blank=True,
+        default=CLEANING_ANY,
+        choices=CLEANING_CHOICES,
+        help_text='Как cleaning_int в осмотре салона. Пусто = не учитывать.',
+    )
+    salon_type = models.CharField(
+        'Вариант салона',
+        max_length=8,
+        blank=True,
+        default=SALON_ANY,
+        choices=SALON_TYPE_CHOICES,
+        help_text='Как type_salon_int: 0 — ткань, 1 — кожа. Пусто = не учитывать.',
+    )
+
+    # Диагностика — коды как в page_test_drive (engine/gear/…).
+    DIAG_SYSTEM_ANY = ''
+    DIAG_SYSTEM_ENGINE = 'engine'
+    DIAG_SYSTEM_SYSTEM_OG = 'system_og'
+    DIAG_SYSTEM_GEAR = 'gear'
+    DIAG_SYSTEM_SUSPENSION = 'suspension'
+    DIAG_SYSTEM_CONDITIONER = 'conditioner'
+    DIAG_SYSTEM_CHOICES = (
+        (DIAG_SYSTEM_ANY, 'Любая система'),
+        (DIAG_SYSTEM_ENGINE, 'Двигатель'),
+        (DIAG_SYSTEM_SYSTEM_OG, 'Система выпуска ОГ'),
+        (DIAG_SYSTEM_GEAR, 'КПП'),
+        (DIAG_SYSTEM_SUSPENSION, 'Подвеска'),
+        (DIAG_SYSTEM_CONDITIONER, 'Кондиционер'),
+    )
+    DIAG_STATUS_ANY = ''
+    DIAG_STATUS_BROKEN = '0'
+    DIAG_STATUS_OK = '1'
+    DIAG_STATUS_REMARKS = '2'
+    DIAG_STATUS_CHOICES = (
+        (DIAG_STATUS_ANY, 'Любой статус'),
+        (DIAG_STATUS_OK, 'Исправен'),
+        (DIAG_STATUS_BROKEN, 'Не исправен'),
+        (DIAG_STATUS_REMARKS, 'Есть замечания'),
+    )
+    diagnostic_system = models.CharField(
+        'Система диагностики',
+        max_length=32,
+        blank=True,
+        default=DIAG_SYSTEM_ANY,
+        choices=DIAG_SYSTEM_CHOICES,
+        help_text='Узел из тест-драйва / диагностики. Пусто = не учитывать.',
+    )
+    diagnostic_status = models.CharField(
+        'Статус диагностики',
+        max_length=8,
+        blank=True,
+        default=DIAG_STATUS_ANY,
+        choices=DIAG_STATUS_CHOICES,
+        help_text='0 — не исправен, 1 — исправен, 2 — есть замечания. '
+                  'Имеет смысл вместе с системой.',
+    )
+
     hour_rate = models.DecimalField(
         'Ставка н/ч, ₽',
         max_digits=12,
@@ -1354,6 +1442,10 @@ class EstimationRuleCondition(TimeStampedModel):
     FIELD_UNDER_INSTRUMENT = 'under_instrument'
     FIELD_WINDSHIELD_HEAT = 'windshield_heat'
     FIELD_WINDSHIELD_PROJECTION = 'windshield_projection'
+    FIELD_CLEANING_LEVEL = 'cleaning_level'
+    FIELD_SALON_TYPE = 'salon_type'
+    FIELD_DIAGNOSTIC_SYSTEM = 'diagnostic_system'
+    FIELD_DIAGNOSTIC_STATUS = 'diagnostic_status'
     FIELD_CHOICES = (
         (FIELD_DAMAGE_TYPE_COUNT, 'Кол-во по типу повреждения'),
         (FIELD_DAMAGE_COUNT, 'Кол-во повреждений (всего)'),
@@ -1365,6 +1457,10 @@ class EstimationRuleCondition(TimeStampedModel):
         (FIELD_UNDER_INSTRUMENT, 'Под прибор'),
         (FIELD_WINDSHIELD_HEAT, 'Подогрев лобового'),
         (FIELD_WINDSHIELD_PROJECTION, 'Проекция на лобовое'),
+        (FIELD_CLEANING_LEVEL, 'Степень химчистки'),
+        (FIELD_SALON_TYPE, 'Вариант салона'),
+        (FIELD_DIAGNOSTIC_SYSTEM, 'Система диагностики'),
+        (FIELD_DIAGNOSTIC_STATUS, 'Статус диагностики'),
     )
 
     OP_EQ = 'eq'

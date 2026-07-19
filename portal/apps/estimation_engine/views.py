@@ -246,6 +246,9 @@ def work_package_create(request):
             description=request.POST.get('description', '').strip(),
             default_repair_zone_id=request.POST.get('default_repair_zone_id') or None,
             default_service_offering_id=request.POST.get('default_service_offering_id') or None,
+            estimation_reduction_amount=_parse_decimal(
+                request.POST.get('estimation_reduction_amount'),
+            ),
             is_active=request.POST.get('is_active') == 'on',
             sort_order=int(request.POST.get('sort_order') or 0),
         )
@@ -296,6 +299,9 @@ def work_package_edit(request, package_id):
         package.description = request.POST.get('description', '').strip()
         package.default_repair_zone_id = request.POST.get('default_repair_zone_id') or None
         package.default_service_offering_id = request.POST.get('default_service_offering_id') or None
+        package.estimation_reduction_amount = _parse_decimal(
+            request.POST.get('estimation_reduction_amount'),
+        )
         package.is_active = request.POST.get('is_active') == 'on'
         package.sort_order = int(request.POST.get('sort_order') or 0)
         try:
@@ -385,6 +391,30 @@ def _parse_flag_choice(value):
     return EstimationRule.FLAG_ANY
 
 
+def _parse_cleaning_level(value):
+    allowed = {c for c, _ in EstimationRule.CLEANING_CHOICES}
+    v = str(value or '').strip()
+    return v if v in allowed else EstimationRule.CLEANING_ANY
+
+
+def _parse_salon_type(value):
+    allowed = {c for c, _ in EstimationRule.SALON_TYPE_CHOICES}
+    v = str(value or '').strip()
+    return v if v in allowed else EstimationRule.SALON_ANY
+
+
+def _parse_diagnostic_system(value):
+    allowed = {c for c, _ in EstimationRule.DIAG_SYSTEM_CHOICES}
+    v = str(value or '').strip()
+    return v if v in allowed else EstimationRule.DIAG_SYSTEM_ANY
+
+
+def _parse_diagnostic_status(value):
+    allowed = {c for c, _ in EstimationRule.DIAG_STATUS_CHOICES}
+    v = str(value or '').strip()
+    return v if v in allowed else EstimationRule.DIAG_STATUS_ANY
+
+
 def _facts_from_request(request):
     src = request.POST if request.method == 'POST' else request.GET
     count_type_ids = src.getlist('damage_count_type_id[]') if hasattr(src, 'getlist') else []
@@ -421,7 +451,19 @@ def _facts_from_request(request):
         'under_instrument': src.get('under_instrument') in ('1', 'true', 'on', True),
         'windshield_heat': src.get('windshield_heat') in ('1', 'true', 'on', 'yes', True),
         'windshield_projection': src.get('windshield_projection') in ('1', 'true', 'on', 'yes', True),
+        'cleaning_level': (src.get('cleaning_level') or src.get('cleaning_int') or '').strip(),
+        'salon_type': (src.get('salon_type') or src.get('type_salon_int') or '').strip(),
+        'diagnostic_system': (src.get('diagnostic_system') or '').strip(),
+        'diagnostic_status': (src.get('diagnostic_status') or '').strip(),
     }
+    # карта систем из формы preview: diag_engine, diag_system_og, ...
+    diag_map = {}
+    for key in ('engine', 'system_og', 'gear', 'suspension', 'conditioner'):
+        raw = src.get(f'diag_{key}') or src.get(key)
+        if raw not in (None, '', '10'):
+            diag_map[key] = str(raw).strip()
+    if diag_map:
+        facts['diagnostic_statuses'] = diag_map
     # для повторного отображения формы preview
     facts['damage_count_rows'] = [
         {
@@ -529,6 +571,10 @@ def _rule_form_context(rule=None):
         'status_choices': EstimationRule.STATUS_CHOICES,
         'section_choices': EstimationRule.SECTION_CHOICES,
         'flag_choices': EstimationRule.FLAG_CHOICES,
+        'cleaning_choices': EstimationRule.CLEANING_CHOICES,
+        'salon_type_choices': EstimationRule.SALON_TYPE_CHOICES,
+        'diagnostic_system_choices': EstimationRule.DIAG_SYSTEM_CHOICES,
+        'diagnostic_status_choices': EstimationRule.DIAG_STATUS_CHOICES,
         'condition_field_choices': EstimationRuleCondition.FIELD_CHOICES,
         'condition_operator_choices': EstimationRuleCondition.OPERATOR_CHOICES,
         'condition_join_choices': EstimationRuleCondition.JOIN_CHOICES,
@@ -580,6 +626,10 @@ def rule_create(request):
             under_instrument=request.POST.get('under_instrument') == 'on',
             windshield_heat=_parse_flag_choice(request.POST.get('windshield_heat')),
             windshield_projection=_parse_flag_choice(request.POST.get('windshield_projection')),
+            cleaning_level=_parse_cleaning_level(request.POST.get('cleaning_level')),
+            salon_type=_parse_salon_type(request.POST.get('salon_type')),
+            diagnostic_system=_parse_diagnostic_system(request.POST.get('diagnostic_system')),
+            diagnostic_status=_parse_diagnostic_status(request.POST.get('diagnostic_status')),
             hour_rate=_parse_decimal(request.POST.get('hour_rate'), '0'),
             is_active=request.POST.get('is_active') == 'on',
         )
@@ -630,6 +680,10 @@ def rule_edit(request, rule_id):
         rule.under_instrument = request.POST.get('under_instrument') == 'on'
         rule.windshield_heat = _parse_flag_choice(request.POST.get('windshield_heat'))
         rule.windshield_projection = _parse_flag_choice(request.POST.get('windshield_projection'))
+        rule.cleaning_level = _parse_cleaning_level(request.POST.get('cleaning_level'))
+        rule.salon_type = _parse_salon_type(request.POST.get('salon_type'))
+        rule.diagnostic_system = _parse_diagnostic_system(request.POST.get('diagnostic_system'))
+        rule.diagnostic_status = _parse_diagnostic_status(request.POST.get('diagnostic_status'))
         rule.hour_rate = _parse_decimal(request.POST.get('hour_rate'), '0')
         rule.is_active = request.POST.get('is_active') == 'on'
         try:
@@ -679,6 +733,10 @@ def rules_preview(request):
         'preview': preview,
         'include_drafts': include_drafts,
         'section_choices': EstimationRule.SECTION_CHOICES,
+        'cleaning_choices': EstimationRule.CLEANING_CHOICES,
+        'salon_type_choices': EstimationRule.SALON_TYPE_CHOICES,
+        'diagnostic_system_choices': EstimationRule.DIAG_SYSTEM_CHOICES,
+        'diagnostic_status_choices': EstimationRule.DIAG_STATUS_CHOICES,
         'elements': SchemeElement.objects.filter(is_active=True).order_by('sort_order', 'name'),
         'damage_types': DamageType.objects.filter(is_active=True).order_by('sort_order', 'name'),
         'body_type_choices': RefTypeBody.objects.all().order_by('name'),

@@ -302,3 +302,45 @@ def create_work_completed_notification(work_item):
     )
     return notification
 
+
+def create_quality_check_notification(preparation):
+    """Уведомление: подготовка готова к контролю качества."""
+    if not preparation:
+        return None
+    car_name = preparation.car.name if preparation.car else 'Автомобиль'
+    car_vin = preparation.car.vin if preparation.car else ''
+    recipients = []
+    if preparation.inspector_id:
+        recipients.append(preparation.inspector)
+    if preparation.responsible_id and preparation.responsible_id not in {
+        r.id for r in recipients if r
+    }:
+        recipients.append(preparation.responsible)
+    if not recipients:
+        return None
+
+    created = []
+    for recipient in recipients:
+        if not recipient:
+            continue
+        recent = CarPreparationNotification.objects.filter(
+            preparation=preparation,
+            recipient=recipient,
+            notification_type='quality_check',
+            read=False,
+        ).exists()
+        if recent:
+            continue
+        created.append(CarPreparationNotification.objects.create(
+            preparation=preparation,
+            notification_type='quality_check',
+            priority='high',
+            message=(
+                f'Требуется контроль качества: {car_name} '
+                f'(VIN: {car_vin}). Все работы по подготовке завершены.'
+            ),
+            recipient=recipient,
+            auto_created=True,
+        ))
+    return created
+

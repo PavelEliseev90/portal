@@ -848,7 +848,31 @@
                         {{ pkg.get_route_type_display }}
                         {% if pkg.repair_zone %} · {{ pkg.repair_zone.name }}{% endif %}
                         · {{ pkg.work_items.count }} работ
+                        · {{ pkg.get_status_display }}
+                        {% if pkg.composition.estimation_reduction_amount and pkg.composition.estimation_reduction_amount != '0' and pkg.composition.estimation_reduction_amount != '0.00' %}
+                        · снижение оценки {{ pkg.composition.estimation_reduction_amount }} ₽
+                        {% endif %}
                       </div>
+                      {% if pkg.composition.lines %}
+                      <details class="mt-2 small">
+                        <summary class="text-primary" style="cursor:pointer">
+                          Состав:
+                          {{ pkg.composition.works }} раб. /
+                          {{ pkg.composition.materials }} мат. /
+                          {{ pkg.composition.parts }} дет. /
+                          {{ pkg.composition.services }} усл.
+                        </summary>
+                        <ul class="mb-0 mt-1 ps-3">
+                          {% for line in pkg.composition.lines %}
+                          <li>
+                            <span class="badge bg-light text-dark border">{{ line.line_type }}</span>
+                            {{ line.label }}
+                            {% if line.quantity and line.quantity != '1' and line.quantity != '1.000' %}×{{ line.quantity }}{% endif %}
+                          </li>
+                          {% endfor %}
+                        </ul>
+                      </details>
+                      {% endif %}
                     </div>
                     <div>
                       {% if pkg.is_confirmed %}
@@ -1806,4 +1830,5 @@ function showNotification(message, type) {
   }, 3000);
 }
 </script>
+{% include 'car_preparation/prep_chat_embed.html' %}
 {% endblock %}

@@ -33,8 +33,8 @@ urlpatterns = [
 
 
    path('post_info/',                         views.post_info),
-   # API подготовки автомобилей (подключаем urls приложения)
-   #path('car_preparation/', include('car_preparation.api_urls')),
+   # API подготовки автомобилей
+   path('car_preparation/', include('car_preparation.api_urls')),
    
    # мобильное приложение андроид версии 1
    path('a/v1/user_desctop/',                         views_mobile_android_api_v1.user_desctop),

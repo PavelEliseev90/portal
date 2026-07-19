@@ -59,11 +59,78 @@ def _flag_matches(required: str, fact_value) -> bool:
     return True
 
 
+def _enum_matches(required: str, fact_value) -> bool:
+    """Пустое условие = любое; иначе строгое совпадение кодов (0/1/2/3)."""
+    req = str(required or '').strip()
+    if not req:
+        return True
+    fact = str(fact_value if fact_value is not None else '').strip()
+    if fact == '':
+        return False
+    return req == fact
+
+
+def _fact_cleaning_level(facts: dict[str, Any]) -> str:
+    raw = facts.get('cleaning_level', facts.get('cleaning_int', ''))
+    if raw in (None, ''):
+        return ''
+    return str(raw).strip()
+
+
+def _fact_salon_type(facts: dict[str, Any]) -> str:
+    raw = facts.get('salon_type', facts.get('type_salon_int', ''))
+    if raw in (None, ''):
+        return ''
+    return str(raw).strip()
+
+
+_DIAG_SYSTEM_KEYS = (
+    'engine',
+    'system_og',
+    'gear',
+    'suspension',
+    'conditioner',
+)
+
+
+def _fact_diagnostic_statuses(facts: dict[str, Any]) -> dict[str, str]:
+    """Карта система → статус (0/1/2). Игнорирует «нет действия» (10 и пусто)."""
+    out: dict[str, str] = {}
+    raw_map = facts.get('diagnostic_statuses') or facts.get('diag_statuses') or {}
+    if isinstance(raw_map, dict):
+        for key, val in raw_map.items():
+            code = _norm(key)
+            if not code:
+                continue
+            s = str(val if val is not None else '').strip()
+            if s in ('', '10'):
+                continue
+            out[code] = s
+    for key in _DIAG_SYSTEM_KEYS:
+        if key in out:
+            continue
+        if key in facts and facts.get(key) not in (None, '', 10, '10'):
+            out[key] = str(facts.get(key)).strip()
+    # одиночные поля формы preview
+    single_sys = _norm(facts.get('diagnostic_system'))
+    single_st = str(facts.get('diagnostic_status') if facts.get('diagnostic_status') is not None else '').strip()
+    if single_sys and single_st and single_st not in ('', '10'):
+        out[single_sys] = single_st
+    return out
+
+
+def _fact_diagnostic_status_for(facts: dict[str, Any], system: str) -> str:
+    statuses = _fact_diagnostic_statuses(facts)
+    return statuses.get(_norm(system), '')
+
+
 def normalize_facts(facts: dict[str, Any]) -> dict[str, Any]:
     """
     Приводит факты к единому виду:
     - damage_counts: {code: int}
     - damage_count: итог (если не задан явно — сумма счётчиков / одиночный тип)
+    - cleaning_level / salon_type: коды как в page_salon
+    - diagnostic_statuses: {system: status}
     """
     out = dict(facts or {})
     counts: dict[str, int] = {}
@@ -97,6 +164,14 @@ def normalize_facts(facts: dict[str, Any]) -> dict[str, Any]:
     else:
         out['damage_count'] = _as_int(out.get('damage_count'), 0)
 
+    out['cleaning_level'] = _fact_cleaning_level(out)
+    out['salon_type'] = _fact_salon_type(out)
+    out['diagnostic_statuses'] = _fact_diagnostic_statuses(out)
+    if out.get('diagnostic_system'):
+        out['diagnostic_system'] = _norm(out.get('diagnostic_system'))
+    if out.get('diagnostic_status') not in (None,):
+        out['diagnostic_status'] = str(out.get('diagnostic_status') or '').strip()
+
     return out
 
 
@@ -119,6 +194,17 @@ def _condition_left_value(cond: EstimationRuleCondition, facts: dict[str, Any]):
         return _fact_damage_type_count(facts, code)
     if field == EstimationRuleCondition.FIELD_DAMAGE_COUNT:
         return _as_int(facts.get('damage_count'), 0)
+    if field == EstimationRuleCondition.FIELD_CLEANING_LEVEL:
+        return _fact_cleaning_level(facts)
+    if field == EstimationRuleCondition.FIELD_SALON_TYPE:
+        return _fact_salon_type(facts)
+    if field == EstimationRuleCondition.FIELD_DIAGNOSTIC_SYSTEM:
+        return _norm(facts.get('diagnostic_system'))
+    if field == EstimationRuleCondition.FIELD_DIAGNOSTIC_STATUS:
+        sys = _norm(facts.get('diagnostic_system'))
+        if sys:
+            return _fact_diagnostic_status_for(facts, sys)
+        return str(facts.get('diagnostic_status') or '').strip()
     if field in (
         EstimationRuleCondition.FIELD_UNDER_INSTRUMENT,
         EstimationRuleCondition.FIELD_WINDSHIELD_HEAT,
@@ -347,6 +433,37 @@ def rule_matches(rule: EstimationRule, facts: dict[str, Any]) -> tuple[bool, str
     if not _flag_matches(proj_req, facts.get('windshield_projection')):
         need = 'да' if _norm(proj_req) == EstimationRule.FLAG_YES else 'нет'
         return False, f'проекция на лобовое: нужно «{need}»'
+
+    cleaning_req = getattr(rule, 'cleaning_level', '') or ''
+    if not _enum_matches(cleaning_req, facts.get('cleaning_level')):
+        need = dict(EstimationRule.CLEANING_CHOICES).get(cleaning_req, cleaning_req)
+        fact = facts.get('cleaning_level') or '—'
+        return False, f'химчистка: нужно «{need}», факт «{fact}»'
+
+    salon_req = getattr(rule, 'salon_type', '') or ''
+    if not _enum_matches(salon_req, facts.get('salon_type')):
+        need = dict(EstimationRule.SALON_TYPE_CHOICES).get(salon_req, salon_req)
+        fact = facts.get('salon_type') or '—'
+        return False, f'салон: нужно «{need}», факт «{fact}»'
+
+    diag_sys = getattr(rule, 'diagnostic_system', '') or ''
+    diag_st = getattr(rule, 'diagnostic_status', '') or ''
+    if diag_sys or diag_st:
+        statuses = facts.get('diagnostic_statuses') or _fact_diagnostic_statuses(facts)
+        if diag_sys and diag_st:
+            fact_st = str(statuses.get(_norm(diag_sys), '')).strip()
+            if fact_st != str(diag_st).strip():
+                need_sys = dict(EstimationRule.DIAG_SYSTEM_CHOICES).get(diag_sys, diag_sys)
+                need_st = dict(EstimationRule.DIAG_STATUS_CHOICES).get(diag_st, diag_st)
+                return False, f'диагностика: нужно «{need_sys} / {need_st}», факт «{fact_st or "—"}»'
+        elif diag_sys:
+            if _norm(diag_sys) not in statuses:
+                need_sys = dict(EstimationRule.DIAG_SYSTEM_CHOICES).get(diag_sys, diag_sys)
+                return False, f'диагностика: нет факта по «{need_sys}»'
+        elif diag_st:
+            if str(diag_st).strip() not in {str(v).strip() for v in statuses.values()}:
+                need_st = dict(EstimationRule.DIAG_STATUS_CHOICES).get(diag_st, diag_st)
+                return False, f'диагностика: нет системы со статусом «{need_st}»'
 
     conditions = _rule_conditions(rule)
     if conditions:
