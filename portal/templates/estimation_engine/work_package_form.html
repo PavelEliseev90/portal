@@ -61,7 +61,7 @@
           <label class="form-label">Порядок</label>
           <input type="number" class="form-control" name="sort_order" value="{{ package.sort_order|default:0 }}">
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label class="form-label">Ремзона / цех по умолчанию</label>
           <select class="form-select" name="default_repair_zone_id">
             <option value="">—</option>
@@ -70,7 +70,7 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label class="form-label">Подряд по умолчанию</label>
           <select class="form-select" name="default_service_offering_id" id="default_offering">
             <option value="">—</option>
@@ -81,6 +81,13 @@
             {% endif %}
           </select>
           <div class="form-text">Поиск по услуге / исполнителю (не весь список).</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Сумма снижения оценки, ₽</label>
+          <input type="number" class="form-control" name="estimation_reduction_amount"
+                 step="0.01" min="0"
+                 value="{{ package.estimation_reduction_amount|default:0 }}">
+          <div class="form-text">На сколько снижается оценка при применении пакета.</div>
         </div>
         <div class="col-12">
           <label class="form-label">Описание</label>

@@ -26,6 +26,8 @@ urlpatterns = [
     path('work_order/item/<int:item_id>/start/', views.work_order_item_start, name='work_order_item_start'),
     path('work_order/item/<int:item_id>/complete/', views.work_order_item_complete, name='work_order_item_complete'),
     path('work_order/item/<int:item_id>/photo/', views.work_order_item_photo_upload, name='work_order_item_photo_upload'),
+    path('work_order/item/<int:item_id>/update/', views.work_order_item_update, name='work_order_item_update'),
+    path('work_order/photo/<int:photo_id>/delete/', views.work_order_item_photo_delete, name='work_order_item_photo_delete'),
     path('work_order/item/<int:item_id>/material/', views.work_order_item_material_add, name='work_order_item_material_add'),
     path('work_order/material/<int:material_id>/delete/', views.work_order_item_material_delete, name='work_order_item_material_delete'),
     path('api/templates/<int:template_id>/works/', views.work_order_template_works, name='work_order_template_works'),
@@ -70,5 +72,8 @@ urlpatterns = [
     path('movements/', views.movements_list, name='movements_list'),
     path('movements/receipt/', views.movement_receipt, name='movement_receipt'),
     path('movements/consume/', views.movement_consume, name='movement_consume'),
+    # Чаты подготовки
+    path('chat/<int:preparation_id>/send/', views.prep_chat_send, name='prep_chat_send'),
+    path('js/get_chats_list_preps/', views.prep_chats_list_api, name='prep_chats_list_api'),
 ]
 

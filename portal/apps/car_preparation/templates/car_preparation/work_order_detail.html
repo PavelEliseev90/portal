@@ -584,20 +584,58 @@ function uploadPhoto(itemId, file) {
 }
 
 function updatePerformer(itemId, performerId) {
-  // TODO: Реализовать обновление исполнителя через API
-  console.log('Update performer', itemId, performerId);
+  const body = new URLSearchParams();
+  body.append('performer_id', performerId || '');
+  fetch(`{% url 'car_preparation:work_order_item_update' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) alert('Ошибка: ' + (data.error || 'не удалось сохранить исполнителя'));
+  })
+  .catch(() => alert('Ошибка сети при сохранении исполнителя'));
 }
 
 function updateComment(itemId, comment) {
-  // TODO: Реализовать обновление комментария через API
-  console.log('Update comment', itemId, comment);
+  const body = new URLSearchParams();
+  body.append('comment', comment || '');
+  fetch(`{% url 'car_preparation:work_order_item_update' 0 %}`.replace('0', itemId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) alert('Ошибка: ' + (data.error || 'не удалось сохранить комментарий'));
+  })
+  .catch(() => alert('Ошибка сети при сохранении комментария'));
 }
 
 function deletePhoto(photoId, itemId) {
   if (!confirm('Удалить фотографию?')) return;
-  
-  // TODO: Реализовать удаление фотографии через API
-  console.log('Delete photo', photoId);
+  fetch(`{% url 'car_preparation:work_order_item_photo_delete' 0 %}`.replace('0', photoId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) location.reload();
+    else alert('Ошибка: ' + (data.error || 'не удалось удалить'));
+  })
+  .catch(() => alert('Ошибка сети при удалении фото'));
 }
 
 function showMaterialForm(itemId) {

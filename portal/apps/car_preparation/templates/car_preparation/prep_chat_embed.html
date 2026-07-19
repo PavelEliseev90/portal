@@ -1,0 +1,158 @@
+{# Чат конкретной подготовки — offcanvas + WS + HTTP send #}
+{% if prep_chat %}
+<div style="position: fixed; bottom: 0; right: 0; padding: 20px; z-index: 1030;">
+  <button type="button" class="btn bg-dark text-white" data-bs-toggle="offcanvas"
+          data-bs-target="#prepChatOffcanvas" aria-controls="prepChatOffcanvas">
+    <span class="icon-mbri-chat"></span> Чат подготовки
+  </button>
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
+     id="prepChatOffcanvas" aria-labelledby="prepChatOffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="prepChatOffcanvasLabel">
+      Чат — подготовка #{{ preparation.id }}
+      {% if preparation.car %} · {{ preparation.car.vin }}{% endif %}
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+  </div>
+  <div id="prep_chat_reconnect" class="d-none px-3">
+    <hr>
+    <label class="fs-6 fw-bold">Соединение потеряно...</label>
+    <button class="btn btn-outline-danger btn-sm" type="button" id="prep_chat_btn_reconnect">Переподключиться</button>
+    <hr>
+  </div>
+  <div class="offcanvas-body" style="padding: 0;">
+    <div class="container" style="padding: 0 0 5rem 0;">
+      <div class="row message-list" id="prep-chat-message-list" style="margin: 0;">
+        {% for message in prep_chat_messages %}
+        <div class="item-chat-message{% if message.user == request.user %}-owner text-end{% endif %} col-12" style="padding: 0;">
+          <div class="item-chat-body{% if message.user == request.user %}-owner text-end{% endif %}">
+            <div class="item-content-chat">
+              <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
+                {% autoescape off %}{{ message.content_html }}{% endautoescape %}
+              </label>
+            </div>
+            <p class="item-time-chat{% if message.user == request.user %}-owner text-end{% endif %}">
+              {% if message.user %}
+                {% if message.user.profiles.eco_name %}{{ message.user.profiles.eco_name }}{% else %}{{ message.user.last_name }} {{ message.user.first_name }}{% endif %}
+              {% else %}Система{% endif %}
+              / {{ message.date|date:"d.m.Y H:i" }}
+            </p>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12" id="prep-chat-empty">
+          <h6 class="px-3">В чате пока нет сообщений. События подготовки появятся здесь автоматически.</h6>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <section style="position:absolute; bottom:0.25rem; padding:0; width:-webkit-fill-available; margin:0 0.25rem;">
+      <form id="prep-chat-form">
+        {% csrf_token %}
+        <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding:0;">
+          <textarea class="form-control border-end-0" name="message" id="prep-chat-input"
+                    placeholder="Сообщение в чат подготовки" rows="2" required></textarea>
+          <button class="btn btn-dark text-white" type="submit"><span class="icon-mbri-play"></span></button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<audio id="prep-chat-notif" src="/media_dop/music/vin.mp3"></audio>
+
+<script>
+(function () {
+  const chatId = '{{ prep_chat.pk }}';
+  const chatSlug = '{{ prep_chat.slug|escapejs }}';
+  const sendUrl = '{% url "car_preparation:prep_chat_send" preparation.id %}';
+  const username = '{{ request.user.username|escapejs }}';
+  const lastName = '{{ request.user.last_name|escapejs }}';
+  const firstName = '{{ request.user.first_name|escapejs }}';
+  const psevdo = '{% if request.user.profiles.eco_name %}{{ request.user.profiles.eco_name|escapejs }}{% endif %}';
+  let socket;
+
+  function scrollBottom() {
+    const list = document.getElementById('prep-chat-message-list');
+    if (list) list.lastElementChild && list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function appendMsg(text, author, isOwner) {
+    const empty = document.getElementById('prep-chat-empty');
+    if (empty) empty.remove();
+    const now = new Date();
+    const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+    const htmlText = (text || '').replace(/\n/g, '<br>');
+    const wrap = document.createElement('div');
+    wrap.className = 'item-chat-message' + (isOwner ? '-owner text-end' : '') + ' col-12';
+    wrap.style.padding = '0';
+    wrap.innerHTML =
+      '<div class="item-chat-body' + (isOwner ? '-owner text-end' : '') + '"><div class="item-content-chat">' +
+      '<label class="item-subtitle mbr-fonts-style display-9 fw-bold">' + htmlText + '</label>' +
+      '<p class="item-time-chat' + (isOwner ? '-owner text-end' : '') + '">' + (author || '') + ' / ' + time + '</p>' +
+      '</div></div>';
+    document.getElementById('prep-chat-message-list').appendChild(wrap);
+    scrollBottom();
+  }
+
+  function connectWs() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try {
+      socket = new WebSocket(proto + '//' + location.host + '/ws/rlk_list_eco/');
+    } catch (e) {
+      document.getElementById('prep_chat_reconnect').classList.remove('d-none');
+      return;
+    }
+    socket.onopen = function () {
+      document.getElementById('prep_chat_reconnect').classList.add('d-none');
+    };
+    socket.onclose = function () {
+      document.getElementById('prep_chat_reconnect').classList.remove('d-none');
+    };
+    socket.onmessage = function (e) {
+      try {
+        const data = JSON.parse(e.data);
+        if (String(data.chat_id) !== String(chatId) && data.chat !== chatSlug) return;
+        const isOwner = data.username === username;
+        const author = data.psevdo_name || ((data.last_name || '') + ' ' + (data.first_name || '')).trim() || data.username;
+        appendMsg(data.message, author, isOwner);
+        try { document.getElementById('prep-chat-notif').play(); } catch (err) {}
+      } catch (err) {}
+    };
+  }
+
+  document.getElementById('prep_chat_btn_reconnect').addEventListener('click', connectWs);
+  connectWs();
+  scrollBottom();
+
+  document.getElementById('prep-chat-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    const input = document.getElementById('prep-chat-input');
+    const text = (input.value || '').trim();
+    if (!text) return;
+    const fd = new FormData();
+    fd.append('message', text);
+    fd.append('csrfmiddlewaretoken', document.querySelector('#prep-chat-form [name=csrfmiddlewaretoken]').value);
+    fetch(sendUrl, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd,
+      credentials: 'same-origin',
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          input.value = '';
+          // сообщение придёт и по WS; на всякий случай рисуем сразу
+          appendMsg(text, psevdo || (lastName + ' ' + firstName).trim() || username, true);
+        } else {
+          alert(data.error || 'Не удалось отправить');
+        }
+      })
+      .catch(() => alert('Ошибка сети'));
+  });
+})();
+</script>
+{% endif %}

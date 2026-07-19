@@ -91,6 +91,46 @@
         <input class="form-control" name="paint_type" value="{{ facts.paint_type }}">
       </div>
       <div class="col-md-3">
+        <label class="form-label">Степень химчистки</label>
+        <select class="form-select" name="cleaning_level">
+          {% for value, label in cleaning_choices %}
+          <option value="{{ value }}" {% if facts.cleaning_level == value %}selected{% endif %}>
+            {% if value %}{{ label }}{% else %}— не задано —{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Вариант салона</label>
+        <select class="form-select" name="salon_type">
+          {% for value, label in salon_type_choices %}
+          <option value="{{ value }}" {% if facts.salon_type == value %}selected{% endif %}>
+            {% if value %}{{ label }}{% else %}— не задано —{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Система диагностики</label>
+        <select class="form-select" name="diagnostic_system">
+          {% for value, label in diagnostic_system_choices %}
+          <option value="{{ value }}" {% if facts.diagnostic_system == value %}selected{% endif %}>
+            {% if value %}{{ label }}{% else %}— не задано —{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Статус диагностики</label>
+        <select class="form-select" name="diagnostic_status">
+          {% for value, label in diagnostic_status_choices %}
+          <option value="{{ value }}" {% if facts.diagnostic_status == value %}selected{% endif %}>
+            {% if value %}{{ label }}{% else %}— не задано —{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
         <div class="form-check mt-4">
           <input class="form-check-input" type="checkbox" name="under_instrument" id="ui"
                  {% if facts.under_instrument %}checked{% endif %}>

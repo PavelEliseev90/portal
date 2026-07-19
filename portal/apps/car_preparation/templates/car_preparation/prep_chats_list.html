@@ -1,0 +1,58 @@
+{# Общая лента чатов по подготовкам — на списке подготовок #}
+<div class="hidemobile" style="position: fixed; bottom: 0; right: 72px; padding: 20px; z-index: 1030;">
+  <button type="button" class="btn bg-dark text-white" data-bs-toggle="offcanvas"
+          data-bs-target="#prepChatsListOffcanvas" aria-controls="prepChatsListOffcanvas">
+    <span class="icon-mbri-chat"></span> Чаты подготовок
+  </button>
+</div>
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
+     id="prepChatsListOffcanvas" aria-labelledby="prepChatsListOffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="prepChatsListOffcanvasLabel">Чаты по подготовкам</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+  </div>
+  <div class="offcanvas-body" style="padding: 0;">
+    <div class="container" style="padding: 0;">
+      <div class="row message-list" id="prep-chats-list" style="margin: 0;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var listUrl = '{% url "car_preparation:prep_chats_list_api" %}';
+  function refresh() {
+    var el = document.getElementById('prep-chats-list');
+    if (!el) return;
+    el.innerHTML = '<p class="text-muted px-3">Загрузка…</p>';
+    fetch(listUrl, { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!Array.isArray(data) || !data.length) {
+          el.innerHTML = '<p class="text-muted px-3">Пока нет сообщений в чатах подготовок.</p>';
+          return;
+        }
+        el.innerHTML = '';
+        data.forEach(function (obj) {
+          var href = obj.href || ('/car_preparation/schedule/' + (obj.prep_id || '') + '/');
+          var date = obj.max_date ? new Date(obj.max_date).toLocaleString() : '';
+          var html = '<a href="' + href + '" class="text-dark text-decoration-none d-block px-2 py-2 border-bottom">';
+          html += '<div class="fw-semibold">' + (obj.title || ('Подготовка #' + obj.prep_id)) + '</div>';
+          html += '<div class="small text-muted">' + (obj.unit || '') + (obj.vin ? ' · ' + obj.vin : '') + '</div>';
+          html += '<div class="small">' + (obj.content || '').substring(0, 160) + '</div>';
+          html += '<div class="small text-muted">' + (obj.user_name || 'Система') + ' / ' + date + '</div>';
+          html += '</a>';
+          el.insertAdjacentHTML('beforeend', html);
+        });
+      })
+      .catch(function () {
+        el.innerHTML = '<p class="text-danger px-3">Не удалось загрузить чаты</p>';
+      });
+  }
+  var off = document.getElementById('prepChatsListOffcanvas');
+  if (off) {
+    off.addEventListener('show.bs.offcanvas', refresh);
+  }
+})();
+</script>

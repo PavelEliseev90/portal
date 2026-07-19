@@ -366,6 +366,58 @@ class RulesEngineSimpleTests(SimpleTestCase):
             'windshield_projection': True,
         })[0])
 
+    def test_cleaning_level_and_salon_type(self):
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(
+            code='CLN',
+            name='Химчистка кожа',
+            cleaning_level=EstimationRule.CLEANING_HARD,
+            salon_type=EstimationRule.SALON_LEATHER,
+        )
+        self.assertTrue(rule_matches(rule, {
+            'cleaning_level': '1',
+            'salon_type': '1',
+        })[0])
+        self.assertTrue(rule_matches(rule, {
+            'cleaning_int': 1,
+            'type_salon_int': 1,
+        })[0])
+        self.assertFalse(rule_matches(rule, {
+            'cleaning_level': '3',
+            'salon_type': '1',
+        })[0])
+        self.assertFalse(rule_matches(rule, {
+            'cleaning_level': '1',
+            'salon_type': '0',
+        })[0])
+
+        any_rule = EstimationRule(code='ANY', name='Любая химчистка')
+        self.assertTrue(rule_matches(any_rule, {'cleaning_level': '2', 'salon_type': '0'})[0])
+
+    def test_diagnostic_system_and_status(self):
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(
+            code='ENG',
+            name='Двигатель замечания',
+            diagnostic_system=EstimationRule.DIAG_SYSTEM_ENGINE,
+            diagnostic_status=EstimationRule.DIAG_STATUS_REMARKS,
+        )
+        self.assertTrue(rule_matches(rule, {
+            'diagnostic_system': 'engine',
+            'diagnostic_status': '2',
+        })[0])
+        self.assertTrue(rule_matches(rule, {
+            'engine': 2,
+        })[0])
+        self.assertFalse(rule_matches(rule, {
+            'engine': 0,
+        })[0])
+        self.assertFalse(rule_matches(rule, {
+            'gear': 2,
+        })[0])
+
     def test_line_cost_work_uses_hour_rate(self):
         from .rules_engine import _line_cost
 

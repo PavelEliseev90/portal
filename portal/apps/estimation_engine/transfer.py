@@ -402,4 +402,19 @@ def transfer_snapshot_to_preparation(
     if status == EstimationPreparationTransfer.STATUS_FAILED:
         raise TransferError(error_message or 'Передача не выполнена.')
 
+    try:
+        from car_preparation.chat_utils import notify_preparation_created, post_prep_system_event
+        if created_prep:
+            notify_preparation_created(preparation)
+        post_prep_system_event(
+            preparation,
+            (
+                f'Передано из плана оценки #{snapshot.estimation_id}\n'
+                f'Пакетов: {created_packages}, работ: {created_work_items}, '
+                f'материалов: {created_materials}'
+            ),
+        )
+    except Exception:
+        pass
+
     return transfer

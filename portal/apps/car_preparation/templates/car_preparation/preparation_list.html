@@ -13,6 +13,9 @@
         <a href="{% url 'car_preparation:performer_dashboard' %}" class="btn btn-outline-warning">
           <span class="icon-mbri-setting2"></span> Мои работы
         </a>
+        <a href="?status_code=quality_check" class="btn btn-outline-danger">
+          <span class="icon-mbri-preview"></span> На контроль качества
+        </a>
         <a href="{% url 'car_preparation:performers_works' %}" class="btn btn-outline-info">
           <span class="icon-mbri-users"></span> График по сотрудникам
         </a>
@@ -218,7 +221,7 @@
                   <span class="icon-mbri-file"></span>
                 </a>
                 {% if prep.qr_code %}
-                <a href="{% url 'car_preparation:mobile_checklist' prep.id %}" class="btn btn-sm btn-outline-warning" title="Мобильный интерфейс">
+                <a href="{% url 'car_preparation:performer_dashboard' %}?preparation_id={{ prep.id }}" class="btn btn-sm btn-outline-warning" title="Рабочий стол цеха">
                   <span class="icon-mbri-mobile"></span>
                 </a>
                 {% endif %}
@@ -290,4 +293,5 @@
     });
   {% endif %}
 </script>
+{% include 'car_preparation/prep_chats_list.html' %}
 {% endblock %}

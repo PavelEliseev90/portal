@@ -138,6 +138,39 @@
             {% endfor %}
           </select>
         </div>
+        <div class="col-md-3">
+          <label class="form-label">Степень химчистки</label>
+          <select class="form-select" name="cleaning_level">
+            {% for value, label in cleaning_choices %}
+            <option value="{{ value }}" {% if rule.cleaning_level == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Вариант салона</label>
+          <select class="form-select" name="salon_type">
+            {% for value, label in salon_type_choices %}
+            <option value="{{ value }}" {% if rule.salon_type == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Система диагностики</label>
+          <select class="form-select" name="diagnostic_system">
+            {% for value, label in diagnostic_system_choices %}
+            <option value="{{ value }}" {% if rule.diagnostic_system == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Статус диагностики</label>
+          <select class="form-select" name="diagnostic_status">
+            {% for value, label in diagnostic_status_choices %}
+            <option value="{{ value }}" {% if rule.diagnostic_status == value or not rule and value == '' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Пример: Двигатель + Есть замечания.</div>
+        </div>
         <div class="col-12">
           <label class="form-label">Типы кузова</label>
           <div class="border rounded p-2" style="max-height: 180px; overflow: auto;">
@@ -162,6 +195,8 @@
           <div class="form-text">
             Базовые поля выше всегда через <strong>И</strong>.
             Для лобового: пара Да/Нет + группа <code>windshield</code>.
+            Химчистка и вариант салона — коды как в осмотре салона.
+            Диагностика: система + статус (как в тест-драйве).
           </div>
         </div>
       </div>

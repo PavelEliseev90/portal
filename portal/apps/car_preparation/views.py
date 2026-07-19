@@ -4,6 +4,7 @@ from django.db.models import Q, Count, Sum, Avg, Case, When, IntegerField, F, Ex
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import JsonResponse
+from django.urls import reverse
 from datetime import datetime, timedelta
 from calendar import monthrange
 import json
@@ -13,24 +14,26 @@ from .models import (
     WorkOrderTemplate, CarPreparationTemplate, CarPreparationChecklist,
     RefRepairZone, WorkOrderItemPhoto, WorkOrderItemMaterial,
     RefCarPreparationStage, RefCarPreparationWork, RefPreparationMaterial,
-    CarPreparationComment, CarPreparationCommentFile
+    CarPreparationComment, CarPreparationCommentFile, CarPreparationPackage,
+    PlannedMaterialConsumption,
 )
 from refs.models import RefUnit
 from django.shortcuts import redirect
 from .forms import CarPreparationResourceForm, RefPreparationMaterialForm, PreparationMaterialMovementForm
 from .models import CarPreparationResource, RefPreparationMaterial, PreparationMaterialStock, PreparationMaterialMovement
-
+from .lifecycle import (
+    catalog_package_composition,
+    copy_planned_materials_to_work_order_item,
+    maybe_move_preparation_to_quality_check,
+    sync_preparation_package_status,
+)
 
 @login_required
 def mobile_checklist(request, preparation_id):
-    """Мобильный интерфейс для выполнения работ по подготовке"""
-    preparation = get_object_or_404(CarPreparation, id=preparation_id)
-    
-    context = {
-        'preparation': preparation,
-    }
-    
-    return render(request, 'car_preparation/mobile_checklist.html', context)
+    """Редирект на рабочий стол исполнителя (старый mobile_checklist отключён)."""
+    get_object_or_404(CarPreparation, id=preparation_id)
+    url = reverse('car_preparation:performer_dashboard')
+    return redirect(f'{url}?preparation_id={preparation_id}')
 
 
 @login_required
@@ -166,20 +169,33 @@ def preparation_schedule(request, preparation_id):
         if not preparation.work_items.filter(work=work).exists():
             works_by_stage[stage_name].append(work)
     
-    # Каталог пакетов работ (опубликованные + черновики; архив скрыт)
+    # Каталог пакетов работ — по умолчанию опубликованные
     catalog_packages = (
-        PreparationWorkPackage.objects.filter(is_active=True)
-        .exclude(status=PreparationWorkPackage.STATUS_ARCHIVED)
+        PreparationWorkPackage.objects.filter(
+            is_active=True,
+            status=PreparationWorkPackage.STATUS_PUBLISHED,
+        )
         .select_related('default_repair_zone')
         .prefetch_related('lines')
         .order_by('sort_order', 'name')
     )
-    preparation_packages = (
+    preparation_packages = list(
         CarPreparationPackage.objects.filter(preparation=preparation)
         .select_related('source_package', 'repair_zone')
-        .prefetch_related('work_items__work')
+        .prefetch_related(
+            'work_items__work',
+            'work_items__planned_materials__material',
+            'source_package__lines__work',
+            'source_package__lines__material',
+            'source_package__lines__part',
+            'source_package__lines__service',
+            'source_package__lines__service_offering__service',
+            'source_package__lines__service_offering__provider',
+        )
         .order_by('sort_order', 'id')
     )
+    for pkg in preparation_packages:
+        pkg.composition = catalog_package_composition(pkg.source_package)
     
     # Ремонтные зоны подразделения и общие (unit пустой)
     repair_zones = RefRepairZone.objects.filter(
@@ -261,6 +277,16 @@ def preparation_schedule(request, preparation_id):
         print(traceback.format_exc())
 
     checklist, _ = CarPreparationChecklist.objects.get_or_create(preparation=preparation)
+
+    # Чат подготовки
+    prep_chat = None
+    prep_chat_messages = []
+    try:
+        from .chat_utils import get_or_create_prep_chat, get_prep_chat_messages
+        prep_chat = get_or_create_prep_chat(preparation)
+        prep_chat_messages = get_prep_chat_messages(prep_chat, limit=150)
+    except Exception:
+        pass
     
     context = {
         'preparation': preparation,
@@ -283,6 +309,8 @@ def preparation_schedule(request, preparation_id):
         'planned_works_cost': planned_works_cost,
         'materials_cost': materials_cost,
         'total_estimated_cost': total_estimated_cost,
+        'prep_chat': prep_chat,
+        'prep_chat_messages': prep_chat_messages,
     }
     
     return render(request, 'car_preparation/schedule_new.html', context)
@@ -294,6 +322,7 @@ def preparation_list(request):
     # Параметры фильтрации
     unit_id = request.GET.get('unit_id', None)
     status_id = request.GET.get('status_id', None)
+    status_code = request.GET.get('status_code', None)
     search = request.GET.get('search', '')
     date_from = request.GET.get('date_from', None)
     date_to = request.GET.get('date_to', None)
@@ -312,6 +341,8 @@ def preparation_list(request):
     # Фильтрация по статусу
     if status_id:
         queryset = queryset.filter(status_id=status_id)
+    elif status_code:
+        queryset = queryset.filter(status__code=status_code)
     
     # Поиск по VIN, названию автомобиля
     if search:
@@ -442,6 +473,7 @@ def performer_dashboard(request):
 
     status_filter = request.GET.get('status', 'active')
     zone_filter = request.GET.get('zone_id')
+    preparation_id = request.GET.get('preparation_id')
 
     work_orders = WorkOrder.objects.filter(
         repair_zone_id__in=zone_ids,
@@ -451,6 +483,12 @@ def performer_dashboard(request):
         'items__performer',
         'items__photos',
     )
+
+    if preparation_id:
+        try:
+            work_orders = work_orders.filter(preparation_id=int(preparation_id))
+        except ValueError:
+            pass
 
     if zone_filter:
         try:
@@ -488,6 +526,7 @@ def performer_dashboard(request):
         'completed_items': completed_items,
         'status_filter': status_filter,
         'zone_filter': zone_filter,
+        'preparation_id': preparation_id or '',
         'now': timezone.now(),
     }
     return render(request, 'car_preparation/performer_dashboard.html', context)
@@ -867,24 +906,30 @@ def work_order_create(request, preparation_id):
                 }, status=400)
 
             if not repair_zone_id and prep_packages:
-                # Берём ремзону из первого пакета с зоной
                 for pkg in prep_packages:
                     if pkg.repair_zone_id:
                         repair_zone_id = pkg.repair_zone_id
                         break
 
-            if not repair_zone_id:
+            # Подряд: ремзона не обязательна, если все выбранные пакеты — contractor
+            all_contractor = bool(prep_packages) and all(
+                p.route_type == CarPreparationPackage.ROUTE_CONTRACTOR for p in prep_packages
+            )
+
+            if not repair_zone_id and not all_contractor:
                 return JsonResponse({
                     'success': False,
                     'error': 'Укажите ремонтную зону — без неё заказ-наряд не создаётся',
                 }, status=400)
 
-            repair_zone = get_object_or_404(RefRepairZone, id=int(repair_zone_id), is_active=True)
-            if repair_zone.unit_id and preparation.unit_id and repair_zone.unit_id != preparation.unit_id:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Ремонтная зона не относится к подразделению автомобиля',
-                }, status=400)
+            repair_zone = None
+            if repair_zone_id:
+                repair_zone = get_object_or_404(RefRepairZone, id=int(repair_zone_id), is_active=True)
+                if repair_zone.unit_id and preparation.unit_id and repair_zone.unit_id != preparation.unit_id:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Ремонтная зона не относится к подразделению автомобиля',
+                    }, status=400)
             
             # Парсим даты
             planned_start = None
@@ -915,7 +960,7 @@ def work_order_create(request, preparation_id):
                 car=preparation.car,
                 preparation=preparation,
                 template_id=int(template_id) if template_id else None,
-                repair_zone_id=repair_zone.id,
+                repair_zone_id=repair_zone.id if repair_zone else None,
                 title=title or 'Заказ-наряд',
                 description=description,
                 planned_start=planned_start,
@@ -961,7 +1006,7 @@ def work_order_create(request, preparation_id):
                     if already_in_active:
                         continue
 
-                    WorkOrderItem.objects.create(
+                    wo_item = WorkOrderItem.objects.create(
                         work_order=work_order,
                         work=work,
                         sort_order=sort_order,
@@ -970,6 +1015,7 @@ def work_order_create(request, preparation_id):
                         planned_end=planned_end,
                         preparation_work_item=prep_item,
                     )
+                    copy_planned_materials_to_work_order_item(wo_item, prep_item)
                     sort_order += 1
                 except (RefCarPreparationWork.DoesNotExist, ValueError):
                     continue
@@ -985,9 +1031,16 @@ def work_order_create(request, preparation_id):
                 if pkg.status == 'pending':
                     pkg.status = 'in_progress'
                     pkg.save(update_fields=['status', 'date_updated'])
-
+                else:
+                    sync_preparation_package_status(pkg)
             preparation.progress_percent = preparation.calculate_progress()
             preparation.save(update_fields=['progress_percent', 'date_updated'])
+
+            try:
+                from .chat_utils import notify_work_order_created
+                notify_work_order_created(preparation, work_order, user=request.user)
+            except Exception:
+                pass
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -1060,6 +1113,13 @@ def work_order_item_start(request, item_id):
             work_order.status = 'in_progress'
             work_order.actual_start = timezone.now()
             work_order.save()
+
+        try:
+            from .chat_utils import notify_work_started
+            if work_order.preparation_id:
+                notify_work_started(work_order.preparation, item, user=request.user)
+        except Exception:
+            pass
         
         return JsonResponse({
             'success': True,
@@ -1097,6 +1157,9 @@ def work_order_item_complete(request, item_id):
             prep = prep_item.preparation
             prep.progress_percent = prep.calculate_progress()
             prep.save(update_fields=['progress_percent', 'date_updated'])
+            if prep_item.preparation_package_id:
+                sync_preparation_package_status(prep_item.preparation_package)
+            maybe_move_preparation_to_quality_check(prep)
         
         # Проверяем, все ли работы выполнены
         work_order = item.work_order
@@ -1106,7 +1169,17 @@ def work_order_item_complete(request, item_id):
             work_order.status = 'completed'
             work_order.actual_end = timezone.now()
             work_order.save()
-        
+            if work_order.preparation_id:
+                maybe_move_preparation_to_quality_check(work_order.preparation)
+
+        try:
+            from .chat_utils import notify_work_completed
+            prep_for_chat = work_order.preparation
+            if prep_for_chat:
+                notify_work_completed(prep_for_chat, item, user=request.user)
+        except Exception:
+            pass
+
         return JsonResponse({
             'success': True,
             'message': 'Работа завершена',
@@ -1158,6 +1231,13 @@ def work_order_item_photo_upload(request, item_id):
             )
             prep_item.has_photos = True
             prep_item.save(update_fields=['has_photos'])
+
+        try:
+            from .chat_utils import notify_photo_uploaded
+            if item.work_order.preparation_id:
+                notify_photo_uploaded(item.work_order.preparation, item, user=request.user)
+        except Exception:
+            pass
         
         return JsonResponse({
             'success': True,
@@ -1170,6 +1250,57 @@ def work_order_item_photo_upload(request, item_id):
         })
     
     return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+
+
+@login_required
+def work_order_item_update(request, item_id):
+    """Обновление исполнителя / комментария строки ЗН."""
+    from refs.models import RefStaff
+
+    item = get_object_or_404(WorkOrderItem, id=item_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+    else:
+        data = request.POST
+
+    changed = []
+    if 'performer_id' in data:
+        raw = data.get('performer_id')
+        if raw in (None, '', '0'):
+            item.performer = None
+        else:
+            try:
+                item.performer = RefStaff.objects.filter(pk=int(raw)).first()
+            except (TypeError, ValueError):
+                return JsonResponse({'success': False, 'error': 'Некорректный исполнитель'}, status=400)
+        changed.append('performer')
+    if 'comment' in data:
+        item.comment = (data.get('comment') or '')[:2000]
+        changed.append('comment')
+    if changed:
+        item.save()
+    return JsonResponse({'success': True, 'changed': changed})
+
+
+@login_required
+def work_order_item_photo_delete(request, photo_id):
+    """Удаление фото строки ЗН."""
+    photo = get_object_or_404(WorkOrderItemPhoto, id=photo_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+    item = photo.work_order_item
+    photo.delete()
+    if item.preparation_work_item_id:
+        prep_item = item.preparation_work_item
+        prep_item.has_photos = item.photos.exists() or prep_item.photos.exists()
+        prep_item.save(update_fields=['has_photos'])
+    return JsonResponse({'success': True})
 
 
 @login_required
@@ -1320,6 +1451,14 @@ def preparation_add_package(request, preparation_id):
     except PackageApplyError as exc:
         return JsonResponse({'success': False, 'error': str(exc)}, status=400)
 
+    try:
+        from .chat_utils import notify_package_added, notify_package_confirmed
+        notify_package_added(preparation, prep_package, stats=stats, user=request.user)
+        if confirm:
+            notify_package_confirmed(preparation, prep_package, confirmed=True, user=request.user)
+    except Exception:
+        pass
+
     return JsonResponse({
         'success': True,
         'message': (
@@ -1353,6 +1492,16 @@ def preparation_package_confirm(request, package_id):
         confirmed = request.POST.get('confirmed', '1') in ('1', 'true', 'on')
 
     confirm_preparation_package(prep_package, confirmed=bool(confirmed))
+    try:
+        from .chat_utils import notify_package_confirmed
+        notify_package_confirmed(
+            prep_package.preparation,
+            prep_package,
+            confirmed=bool(confirmed),
+            user=request.user,
+        )
+    except Exception:
+        pass
     return JsonResponse({
         'success': True,
         'package_id': prep_package.id,
@@ -1363,34 +1512,47 @@ def preparation_package_confirm(request, package_id):
 
 @login_required
 def catalog_package_works(request, package_id):
-    """API: состав пакета из каталога (для превью)."""
-    from estimation_engine.models import PreparationWorkPackage, PreparationWorkPackageLine
+    """API: полный состав пакета из каталога (для превью)."""
+    from estimation_engine.models import PreparationWorkPackage
 
     catalog = get_object_or_404(
-        PreparationWorkPackage.objects.prefetch_related('lines__work'),
+        PreparationWorkPackage.objects.prefetch_related(
+            'lines__work', 'lines__material', 'lines__part',
+            'lines__service', 'lines__service_offering__service',
+            'lines__service_offering__provider',
+        ),
         id=package_id,
         is_active=True,
     )
-    works_data = []
-    for line in catalog.lines.filter(
-        is_active=True,
-        line_type=PreparationWorkPackageLine.LINE_WORK,
-    ).select_related('work', 'work__stage').order_by('sort_order'):
-        if not line.work_id or not line.work:
-            continue
-        works_data.append({
-            'id': line.work_id,
-            'name': line.work.name,
-            'estimated_time': int(round(float(line.norm_hours or 0) * 60)) or (line.work.estimated_time or 0),
-            'stage': line.work.stage.name if line.work.stage else 'Без этапа',
-            'is_required': line.is_required,
-        })
+    composition = catalog_package_composition(catalog)
+    works_data = [
+        {
+            'id': None,
+            'name': line['label'],
+            'estimated_time': int(round(float(line['norm_hours'] or 0) * 60)),
+            'stage': line['line_type'],
+            'is_required': line['is_required'],
+            'line_type': line['line_type'],
+            'quantity': line['quantity'],
+            'unit_cost': line['unit_cost'],
+        }
+        for line in composition['lines']
+        if line['line_type'] == 'WORK'
+    ]
     return JsonResponse({
         'success': True,
         'package_id': catalog.id,
         'package_name': catalog.name,
         'route_type': catalog.route_type,
         'default_repair_zone_id': catalog.default_repair_zone_id,
+        'estimation_reduction_amount': composition['estimation_reduction_amount'],
+        'counts': {
+            'works': composition['works'],
+            'materials': composition['materials'],
+            'parts': composition['parts'],
+            'services': composition['services'],
+        },
+        'lines': composition['lines'],
         'works': works_data,
     })
 
@@ -1559,6 +1721,11 @@ def preparation_checklist_save(request, preparation_id):
             preparation.date_end = timezone.now()
             preparation.progress_percent = 100
             preparation.save()
+            try:
+                from .chat_utils import notify_preparation_completed
+                notify_preparation_completed(preparation, user=request.user)
+            except Exception:
+                pass
 
     checklist.save()
     return JsonResponse({'success': True, 'message': 'Чек-лист сохранён'})
@@ -1648,6 +1815,12 @@ def preparation_comment_add(request, preparation_id):
                 'url': comment_file.file.url if comment_file.file else '',
                 'size': comment_file.file_size,
             })
+
+        try:
+            from .chat_utils import notify_user_comment
+            notify_user_comment(preparation, comment_text, user=request.user)
+        except Exception:
+            pass
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -2505,4 +2678,91 @@ def performers_report(request):
     }
     
     return render(request, 'car_preparation/performers_report.html', context)
+
+
+@login_required
+def prep_chat_send(request, preparation_id):
+    """Отправка сообщения в чат подготовки."""
+    preparation = get_object_or_404(CarPreparation, id=preparation_id)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Метод не разрешён'}, status=405)
+    text = (request.POST.get('message') or '').strip()
+    if not text:
+        return JsonResponse({'success': False, 'error': 'Пустое сообщение'}, status=400)
+    try:
+        from .chat_utils import post_prep_message
+        msg = post_prep_message(preparation, text, user=request.user, also_feed=True)
+    except Exception as exc:
+        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
+    return JsonResponse({
+        'success': True,
+        'message_id': msg.id,
+        'date': msg.date.strftime('%d.%m.%Y %H:%M') if msg.date else '',
+    })
+
+
+@login_required
+def prep_chats_list_api(request):
+    """API: список чатов prep_* с последним сообщением (для общей ленты)."""
+    from django.db.models import OuterRef, Subquery
+    from chats.models import Chat, ChatMessage
+    from .chat_utils import strip_prep_metadata
+
+    subq_msg_date = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk')).order_by('-date').values('date')[:1]
+    )
+    subq_msg_content = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk')).order_by('-date').values('content')[:1]
+    )
+    subq_msg_user = Subquery(
+        ChatMessage.objects.filter(chat_id=OuterRef('pk')).order_by('-date').values('user__profiles__eco_name')[:1]
+    )
+    chats = (
+        Chat.objects.filter(slug__startswith='prep_')
+        .exclude(slug='prep_feed')
+        .annotate(max_date=subq_msg_date, content=subq_msg_content, user_name=subq_msg_user)
+        .exclude(max_date__isnull=True)
+        .order_by('-max_date')[:100]
+    )
+    result = []
+    for c in chats:
+        prep_id = None
+        try:
+            prep_id = int((c.slug or '').replace('prep_', '', 1))
+        except (TypeError, ValueError):
+            prep_id = None
+        prep = None
+        if prep_id:
+            prep = (
+                CarPreparation.objects.filter(pk=prep_id)
+                .select_related('car', 'unit')
+                .first()
+            )
+        vin = ''
+        title = c.name or f'Подготовка #{prep_id or c.pk}'
+        unit = ''
+        if prep:
+            if prep.car_id:
+                vin = prep.car.vin or ''
+                title = prep.car.name or title
+                mark = getattr(prep.car, 'mark', None) or ''
+                model = getattr(prep.car, 'model', None) or ''
+                if mark or model:
+                    title = f'{mark} {model}'.strip() or title
+            if prep.unit_id:
+                unit = prep.unit.name or ''
+        content = strip_prep_metadata(c.content or '') if c.content else ''
+        result.append({
+            'pk': c.pk,
+            'prep_id': prep_id,
+            'slug': c.slug or '',
+            'title': title,
+            'vin': vin,
+            'unit': unit,
+            'content': content[:200],
+            'user_name': (c.user_name or '')[:100] if c.user_name else 'Система',
+            'max_date': c.max_date.strftime('%Y-%m-%dT%H:%M:%S') if c.max_date else '',
+            'href': f'/car_preparation/schedule/{prep_id}/' if prep_id else '',
+        })
+    return JsonResponse(result, safe=False)
 
