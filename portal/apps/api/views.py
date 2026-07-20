@@ -1074,6 +1074,116 @@ def get_estimation_planned_costs(request, estimation_id):
     return JsonResponse(data, status=status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+def worksheet_upsert(request):
+    """
+    Приём одного рабочего листа из 1С (создание/обновление через get_worksheet).
+    Тело — объект РЛК как в Worksheets обмена, либо {"Worksheet": {...}} / {"Rlk": {...}}.
+    Ответ: Uin (ид в 1С), Id (pk портала), Version (если передана).
+    """
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Expected JSON object'}, status=status.HTTP_400_BAD_REQUEST)
+
+    worksheet = data.get('Worksheet') or data.get('Rlk') or data
+    if not isinstance(worksheet, dict) or not worksheet.get('Number'):
+        return JsonResponse(
+            {'error': 'Worksheet payload required (Number, Unit, Type, ...)'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        rlk = get_worksheet(worksheet)
+    except Exception as exc:
+        _log_exchange_1c_error('Worksheet', worksheet, exc)
+        return JsonResponse(
+            {'error': '{}: {}'.format(type(exc).__name__, exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    to_json = {
+        'Uin': rlk.uin,
+        'Id': rlk.id,
+        'Number': rlk.nomer,
+    }
+    if 'Version' in worksheet:
+        to_json['Version'] = worksheet['Version']
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def estimation_by_worksheet(request, rlk_uin=None):
+    """
+    Оценка по УИН рабочего листа — тот же состав, что уходит в 1С с Type=estimation.
+    GET: /api/estimation/by_worksheet/<rlk_uin>/ или ?rlk_uin= / ?Uin=
+    POST: {"Uin": "..."} / {"RlkUin": "..."} / {"Worksheet": {"Uin": "..."}}
+    """
+    from documents.serializers import DocRLKSerializer
+    from register.models import RegInteractivOcenkaRLK
+    from register.serializers import (
+        RegInteractivOcenkaRLKSerializer,
+        RegInteractivOcenkaSerializer,
+        RegInteractivOcenkaSoglasovanieSerializer,
+    )
+
+    uin = (rlk_uin or '').strip()
+    if not uin:
+        uin = (
+            request.GET.get('rlk_uin')
+            or request.GET.get('Uin')
+            or request.GET.get('uin')
+            or ''
+        ).strip()
+    if not uin and request.method == 'POST' and request.body:
+        data, parse_error = _parse_1c_exchange_body(request)
+        if parse_error is not None:
+            return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+        if isinstance(data, dict):
+            nested = data.get('Worksheet') or data.get('Rlk') or {}
+            if isinstance(nested, dict):
+                uin = (nested.get('Uin') or nested.get('uin') or '').strip()
+            if not uin:
+                uin = (
+                    data.get('Uin')
+                    or data.get('uin')
+                    or data.get('RlkUin')
+                    or data.get('rlk_uin')
+                    or ''
+                ).strip()
+
+    if not uin:
+        return JsonResponse({'error': 'rlk_uin required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    interactiv_rlk = (
+        RegInteractivOcenkaRLK.objects
+        .filter(rlk__uin=uin)
+        .select_related('rlk', 'estimation', 'page_soglasovanie')
+        .first()
+    )
+    if interactiv_rlk is None or interactiv_rlk.estimation_id is None:
+        return JsonResponse(
+            {'error': 'Estimation not found for worksheet', 'Uin': uin},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    soglasovanie = None
+    if interactiv_rlk.page_soglasovanie_id:
+        soglasovanie = RegInteractivOcenkaSoglasovanieSerializer(
+            interactiv_rlk.page_soglasovanie, many=False,
+        ).data
+
+    to_json = {
+        'Type': 'estimation',
+        'Rlk': DocRLKSerializer(interactiv_rlk.rlk, many=False).data,
+        'Estimation': RegInteractivOcenkaSerializer(interactiv_rlk.estimation, many=False).data,
+        'Soglasovanie': soglasovanie,
+        'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
+    }
+    return JsonResponse(to_json, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 def get_info_estimation_vin(request):
     

@@ -123,6 +123,11 @@ urlpatterns = [
    path('get_info_estimation_vin/',  views.get_info_estimation_vin),
    path('estimation/<int:estimation_id>/planned-costs/', views.get_estimation_planned_costs, name='estimation_planned_costs'),
 
+   # Рабочий лист / оценка для точечного обмена с 1С
+   path('worksheet/', views.worksheet_upsert, name='worksheet_upsert'),
+   path('estimation/by_worksheet/', views.estimation_by_worksheet, name='estimation_by_worksheet'),
+   path('estimation/by_worksheet/<str:rlk_uin>/', views.estimation_by_worksheet, name='estimation_by_worksheet_uin'),
+
    #Обмен с 1С по формату общего модуля ОбменДаннымиAPI в 1С
    path('exchange/',                views.exchange),
 
