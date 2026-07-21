@@ -506,8 +506,141 @@ def avito_auction_offers_state(request):
         ),
         status=status.HTTP_200_OK,
     )
-       
-    
+
+
+@api_view(['GET', 'POST'])
+def avito_auction_settings(request):
+    """Чтение настроек автоставок / коэффициентов для парсера и UI."""
+    from auction_avito.models import AvitoAuctionSettings
+
+    s = AvitoAuctionSettings.get_solo()
+    return JsonResponse({
+        'auto_bid_enabled': s.auto_bid_enabled,
+        'mileage_min': s.mileage_min,
+        'mileage_max': s.mileage_max,
+        'year_min': s.year_min,
+        'year_max': s.year_max,
+        'block_taxi': s.block_taxi,
+        'block_carsharing': s.block_carsharing,
+        'block_mileage_twisted': s.block_mileage_twisted,
+        'bid_round_to': s.bid_round_to,
+        'weight_test_price': float(s.weight_test_price),
+        'weight_rdo': float(s.weight_rdo),
+        'weight_kor': float(s.weight_kor),
+        'weight_txt': float(s.weight_txt),
+        'updated_at': s.updated_at.isoformat() if s.updated_at else None,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def avito_auction_auto_bid_decide(request):
+    """
+    Решение: ставить ли автоставку по лоту.
+
+    JSON (пример):
+    {
+      "lotId": 123,
+      "lotOfferId": 456,
+      "buyoutPrice": 950000,
+      "minAvailableBid": 800000,
+      "maxBid": 820000,
+      "minBidStep": 5000,
+      "ourBid": 0,
+      "year": 2019,
+      "mileage": 85000,
+      "taxi": false,
+      "carsharing": false,
+      "mileageTwisted": false,
+      "autoteka": {...}
+    }
+    """
+    from auction_avito.models import AvitoAuctionSettings, AvitoLot, AvitoLotOffer
+    from auction_avito.services.auto_bid import (
+        decide_auto_bid,
+        extract_risk_flags_from_lot,
+        extract_risk_flags_from_payload,
+    )
+
+    try:
+        data = json.loads(request.body.decode().replace("'", '"'))
+    except Exception:
+        data = {}
+
+    settings_obj = AvitoAuctionSettings.get_solo()
+    lot = None
+    offer = None
+    lot_id = data.get('lotId') or data.get('LotId')
+    lot_offer_id = data.get('lotOfferId') or data.get('LotOfferId')
+
+    if lot_offer_id:
+        try:
+            offer = AvitoLotOffer.objects.select_related('lot').filter(
+                lot_offer_id=int(lot_offer_id),
+            ).first()
+        except (TypeError, ValueError):
+            offer = None
+        if offer:
+            lot = offer.lot
+    if lot is None and lot_id:
+        try:
+            lot = AvitoLot.objects.filter(lot_id=int(lot_id)).first()
+        except (TypeError, ValueError):
+            lot = None
+
+    risk = extract_risk_flags_from_payload(data)
+    if lot is not None:
+        for k, v in extract_risk_flags_from_lot(lot).items():
+            risk[k] = risk.get(k) or v
+
+    year = data.get('year')
+    mileage = data.get('mileage')
+    buyout = data.get('buyoutPrice') or data.get('estimation_price') or data.get('buyout')
+    min_avail = data.get('minAvailableBid')
+    max_bid = data.get('maxBid')
+    min_step = data.get('minBidStep')
+    our_bid = data.get('ourBid') or data.get('bid')
+
+    if lot is not None:
+        vehicle = getattr(lot, 'vehicle_avito', None) or getattr(lot, 'vehicle_autohub', None)
+        if year in (None, '') and vehicle is not None:
+            year = getattr(vehicle, 'year', None)
+        if mileage in (None, '') and vehicle is not None:
+            mileage = getattr(vehicle, 'mileage', None)
+        if max_bid in (None, ''):
+            max_bid = lot.max_bid
+        if offer is None:
+            offer = lot.offers.order_by('-id').first()
+        if offer is not None:
+            if min_step in (None, ''):
+                min_step = offer.min_bid_step
+            if our_bid in (None, ''):
+                our_bid = offer.bid
+            if min_avail in (None, ''):
+                min_avail = (offer.raw_offer_json or {}).get('minAvailableBid') or (
+                    (offer.raw_offer_json or {}).get('lot') or {}
+                ).get('minAvailableBid')
+        if buyout in (None, ''):
+            last_calc = lot.calculations.filter(is_success=True).order_by('-calculated_at').first()
+            if last_calc:
+                buyout = last_calc.estimation_price
+
+    decision = decide_auto_bid(
+        settings_obj,
+        buyout_price=buyout,
+        min_available_bid=min_avail,
+        max_bid=max_bid,
+        min_bid_step=min_step,
+        our_bid=our_bid,
+        year=year,
+        mileage=mileage,
+        risk_flags=risk,
+    )
+    decision['risk_flags'] = risk
+    decision['lot_id'] = getattr(lot, 'lot_id', None) or lot_id
+    decision['lot_offer_id'] = getattr(offer, 'lot_offer_id', None) or lot_offer_id
+    return JsonResponse(decision, status=status.HTTP_200_OK)
+
+
 def get_car_object(car, unit):
         
     uin          = car.get('Uin', '').upper()

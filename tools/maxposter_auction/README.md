@@ -42,9 +42,28 @@ python launcher.py
 | Фиксация ставки в портале | `POST /api/avito_auction_bid_set/` | `viewer.html` после ставки в Maxposter |
 | Чтение ставки с портала | `POST /api/avito_auction_offer_get/` | один лот |
 | Пакетное чтение ставок | `POST /api/avito_auction_offers_state/` | таблица при загрузке |
+| Настройки автоставок | `GET/POST /api/avito_auction_settings/` | UI `/auction_avito/settings/` |
+| Решение автоставки | `POST /api/avito_auction_auto_bid_decide/` | после расчёта в viewer |
 
 URL портала настраивается в viewer (поле «Портал (API)»), по умолчанию `https://ah.kors-group.com`.
 
+### Автоставки
+
+Условия и глобальный выключатель — на портале: `/auction_avito/settings/`
+
+- пробег / год выпуска (от–до)
+- блок taxi / carsharing / mileageTwisted
+- округление ставки вверх (обычно до 1000)
+- коэффициенты рекомендаций выкупа (тест-прайс / РДО / коррекция / ТХТ)
+
+Алгоритм после успешного `calculate_car`:
+
+1. фильтры настроек;
+2. выкуп > `minAvailableBid` и выкуп > `maxBid`;
+3. `maxBid` не наша (`ourBid != maxBid`);
+4. `ceil((maxBid + minBidStep) / round_to) * round_to` < выкупа → ставка этой суммой.
+
+В viewer локальный переключатель «Автоставки после расчёта» должен быть **Вкл**; иначе выполняется только расчёт.
 ### Авто-пересчёт при обновлении ленты
 
 После «Перезагрузить» (или автообновления) парсер сравнивает каждый оффер с предыдущей версией по полям:

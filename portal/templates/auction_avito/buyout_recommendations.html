@@ -109,9 +109,14 @@
         Полный рейтинг — в таблице ниже; витрина ТОП — для быстрого выбора и подбора лотов Avito.
       </p>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">
-      <span class="bi bi-arrow-left"></span> К лотам
-    </a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:auction_settings' %}">
+        <span class="bi bi-gear"></span> Настройки
+      </a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">
+        <span class="bi bi-arrow-left"></span> К лотам
+      </a>
+    </div>
   </div>
 
   <div class="portal-panel mb-3">
@@ -159,7 +164,8 @@
   <div class="portal-panel mb-3">
     <h6 class="mb-2 padding-title">Формула рейтинга</h6>
     <p class="small text-muted padding-title mb-2">
-      Для каждой пары марка/модель считаем взвешенную долю этапов:
+      Для каждой пары марка/модель считаем взвешенную долю этапов
+      (<a href="{% url 'auction_avito:auction_settings' %}">настроить коэффициенты</a>):
       {% for s in params.stage_meta %}
       <span class="badge bg-light text-dark border me-1">{{ s.label }} × {{ s.weight }}</span>
       {% endfor %}
