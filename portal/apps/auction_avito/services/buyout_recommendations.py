@@ -27,13 +27,40 @@ STAGE_RDO = 2
 STAGE_KOR = 3
 STAGE_TXT = 1
 
-STAGE_META = (
+# Дефолты (если настроек ещё нет / миграция не применена)
+_DEFAULT_STAGE_META = (
     (STAGE_TEST_PRICE, 'test', 'Тест-прайс', 1.0),
     (STAGE_RDO, 'rdo', 'РДО', 0.55),
     (STAGE_KOR, 'kor', 'Коррекция', 0.25),
     (STAGE_TXT, 'txt', 'ТХТ', 0.05),
 )
 
+
+def get_stage_meta():
+    """Веса этапов УС из AvitoAuctionSettings (с fallback на дефолты)."""
+    try:
+        from auction_avito.models import AvitoAuctionSettings
+        s = AvitoAuctionSettings.get_solo()
+        return (
+            (STAGE_TEST_PRICE, 'test', 'Тест-прайс', float(s.weight_test_price)),
+            (STAGE_RDO, 'rdo', 'РДО', float(s.weight_rdo)),
+            (STAGE_KOR, 'kor', 'Коррекция', float(s.weight_kor)),
+            (STAGE_TXT, 'txt', 'ТХТ', float(s.weight_txt)),
+        )
+    except Exception:
+        return _DEFAULT_STAGE_META
+
+
+def get_stage_weight_by_id():
+    return {sid: weight for sid, _key, _label, weight in get_stage_meta()}
+
+
+def get_stage_label_by_id():
+    return {sid: label for sid, _key, label, _weight in get_stage_meta()}
+
+
+# Обратная совместимость для импортов STAGE_META / STAGE_WEIGHT_BY_ID
+STAGE_META = _DEFAULT_STAGE_META
 STAGE_WEIGHT_BY_ID = {sid: weight for sid, _key, _label, weight in STAGE_META}
 STAGE_LABEL_BY_ID = {sid: label for sid, _key, label, _weight in STAGE_META}
 
@@ -127,11 +154,12 @@ def build_shipments_queryset(date_from, date_to, unit_ids=None):
 def _segment_score(cnt_test, cnt_rdo, cnt_kor, cnt_txt, total):
     if total <= 0:
         return 0.0
+    weights = get_stage_weight_by_id()
     weighted = (
-        cnt_test * STAGE_WEIGHT_BY_ID[STAGE_TEST_PRICE]
-        + cnt_rdo * STAGE_WEIGHT_BY_ID[STAGE_RDO]
-        + cnt_kor * STAGE_WEIGHT_BY_ID[STAGE_KOR]
-        + cnt_txt * STAGE_WEIGHT_BY_ID[STAGE_TXT]
+        cnt_test * weights.get(STAGE_TEST_PRICE, 1.0)
+        + cnt_rdo * weights.get(STAGE_RDO, 0.55)
+        + cnt_kor * weights.get(STAGE_KOR, 0.25)
+        + cnt_txt * weights.get(STAGE_TXT, 0.05)
     )
     return weighted / total
 
@@ -438,6 +466,6 @@ def build_buyout_page_context(request) -> dict:
         'bu_units': bu_units,
         'stage_meta': [
             {'id': sid, 'key': key, 'label': label, 'weight': weight}
-            for sid, key, label, weight in STAGE_META
+            for sid, key, label, weight in get_stage_meta()
         ],
     }

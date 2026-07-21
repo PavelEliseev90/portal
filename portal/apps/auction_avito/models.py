@@ -597,3 +597,112 @@ class AvitoSyncLog(models.Model):
         verbose_name = 'Синхронизация Авито'
         verbose_name_plural = 'Синхронизации Авито'
         ordering = ['-started_at']
+
+
+class AvitoAuctionSettings(models.Model):
+    """
+    Единые настройки раздела «Аукцион Авито»:
+    фильтры автоставок + веса этапов УС для рекомендаций выкупа.
+    Хранится одна запись (pk=1).
+    """
+
+    auto_bid_enabled = models.BooleanField(
+        'Автоставки включены',
+        default=False,
+        help_text='Глобальный выключатель. Парсер/воркер ставит только если включено.',
+    )
+    mileage_min = models.PositiveIntegerField(
+        'Пробег от, км',
+        null=True,
+        blank=True,
+        help_text='Пусто = без нижней границы.',
+    )
+    mileage_max = models.PositiveIntegerField(
+        'Пробег до, км',
+        null=True,
+        blank=True,
+        help_text='Пусто = без верхней границы.',
+    )
+    year_min = models.PositiveSmallIntegerField(
+        'Год выпуска от',
+        null=True,
+        blank=True,
+    )
+    year_max = models.PositiveSmallIntegerField(
+        'Год выпуска до',
+        null=True,
+        blank=True,
+    )
+    block_taxi = models.BooleanField(
+        'Не ставить на такси (taxi)',
+        default=True,
+    )
+    block_carsharing = models.BooleanField(
+        'Не ставить на каршеринг (carsharing)',
+        default=True,
+    )
+    block_mileage_twisted = models.BooleanField(
+        'Не ставить при скрученном пробеге (mileageTwisted)',
+        default=True,
+    )
+    bid_round_to = models.PositiveIntegerField(
+        'Округление ставки вверх до',
+        default=1000,
+        help_text='maxBid + minBidStep округляется вверх до этого шага (обычно 1000).',
+    )
+
+    weight_test_price = models.DecimalField(
+        'Вес этапа «Тест-прайс»',
+        max_digits=6,
+        decimal_places=3,
+        default=1,
+    )
+    weight_rdo = models.DecimalField(
+        'Вес этапа «РДО»',
+        max_digits=6,
+        decimal_places=3,
+        default='0.55',
+    )
+    weight_kor = models.DecimalField(
+        'Вес этапа «Коррекция»',
+        max_digits=6,
+        decimal_places=3,
+        default='0.25',
+    )
+    weight_txt = models.DecimalField(
+        'Вес этапа «ТХТ»',
+        max_digits=6,
+        decimal_places=3,
+        default='0.05',
+    )
+
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        db_table = 'avitoAuctionSettings'
+        verbose_name = 'Настройки аукциона Авито'
+        verbose_name_plural = 'Настройки аукциона Авито'
+
+    def __str__(self):
+        return 'Настройки аукциона Авито'
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.mileage_min is not None and self.mileage_max is not None:
+            if self.mileage_min > self.mileage_max:
+                raise ValidationError({'mileage_max': '«Пробег до» не может быть меньше «от».'})
+        if self.year_min is not None and self.year_max is not None:
+            if self.year_min > self.year_max:
+                raise ValidationError({'year_max': '«Год до» не может быть меньше «от».'})
+        if self.bid_round_to is not None and self.bid_round_to < 1:
+            raise ValidationError({'bid_round_to': 'Шаг округления должен быть ≥ 1.'})
+        for field in ('weight_test_price', 'weight_rdo', 'weight_kor', 'weight_txt'):
+            val = getattr(self, field)
+            if val is not None and val < 0:
+                raise ValidationError({field: 'Вес не может быть отрицательным.'})

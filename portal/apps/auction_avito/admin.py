@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    AvitoAuctionSettings,
     AvitoAutotekaEvent,
     AvitoAutotekaReport,
     AvitoBidderAccount,
@@ -100,3 +101,20 @@ class AvitoLotCalculationAdmin(admin.ModelAdmin):
 class AvitoSyncLogAdmin(admin.ModelAdmin):
     list_display = ('started_at', 'account', 'success', 'offers_count')
     list_filter = ('success',)
+
+
+@admin.register(AvitoAuctionSettings)
+class AvitoAuctionSettingsAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'auto_bid_enabled',
+        'mileage_min',
+        'mileage_max',
+        'year_min',
+        'year_max',
+        'block_taxi',
+        'block_carsharing',
+        'block_mileage_twisted',
+        'updated_at',
+    )
+    readonly_fields = ('updated_at',)

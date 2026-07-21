@@ -361,6 +361,13 @@
           Автообновление, сек
           <input id="autoReloadSec" type="number" min="0" step="1" placeholder="0 = выкл" />
         </label>
+        <label class="dealerPick" title="Условия и глобальный выключатель — на портале /auction_avito/settings/">
+          Автоставки после расчёта
+          <select id="autoBidLocal">
+            <option value="0">Выкл (только расчёт)</option>
+            <option value="1">Вкл (по правилам портала)</option>
+          </select>
+        </label>
         <label>
           Лимит строк
           <select id="limit">
@@ -479,10 +486,13 @@
       calc: `${base}/api/calculate_car/`,
       bidSet: `${base}/api/avito_auction_bid_set/`,
       offersState: `${base}/api/avito_auction_offers_state/`,
+      autoBidDecide: `${base}/api/avito_auction_auto_bid_decide/`,
+      settings: `${base}/api/avito_auction_settings/`,
     };
   }
   const BID_URL = "/api/bid";
   const BID_COMMENT = "сделано автоматически парсером";
+  const autoBidInFlight = new Set();
   let autoReloadTimeout = null;
   let autoReloadTickRunning = false;
   let lastAutoReloadFinishedAt = 0;
@@ -1267,6 +1277,8 @@
         syncFp: offerSyncFingerprint(offer),
       });
       updateRowAfterCalc(key, offer);
+      // автоставка: после успешного расчёта (условия — на портале)
+      maybeAutoBidAfterCalc(offer, result.answer).catch(() => {});
     }catch(err){
       calcCache.set(key, { ok: false, err: String(err?.message || err || "Ошибка") });
       updateRowAfterCalc(key, offer);
@@ -1275,6 +1287,77 @@
         calcBtn.disabled = false;
         calcBtn.innerHTML = prevBtn;
       }
+    }
+  }
+  function isLocalAutoBidEnabled(){
+    return String($("autoBidLocal")?.value || "0") === "1";
+  }
+  function buildAutoBidDecidePayload(offer, answer){
+    const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
+    const veh = lot?.vehicle || {};
+    const year = veh?.year?.name || veh?.year?.id || safeGet(lot, "autohubVehicle.year", null);
+    const mileage = veh?.mileage ?? safeGet(lot, "autohubVehicle.kmDistance", null);
+    const portalSync = getPortalSyncForOffer(offer);
+    return {
+      lotId: lotId != null && lotId !== "" ? Number(lotId) : null,
+      lotOfferId: lotOfferId != null && lotOfferId !== "" ? Number(lotOfferId) : null,
+      buyoutPrice: answer?.estimation_price,
+      minAvailableBid: lot?.minAvailableBid,
+      maxBid: lot?.maxBid,
+      minBidStep: offer?.minBidStep,
+      ourBid: portalSync?.bid ?? offer?.bid ?? 0,
+      year,
+      mileage,
+      autoteka: lot?.autoteka || null,
+    };
+  }
+  async function decideAutoBidOnPortal(offer, answer){
+    const { autoBidDecide } = getPortalApiUrls();
+    const resp = await fetch(autoBidDecide, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(buildAutoBidDecidePayload(offer, answer)),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok){
+      throw new Error(data?.error || `decide HTTP ${resp.status}`);
+    }
+    return data;
+  }
+  function logAutoBid(msg){
+    try{
+      addReloadLog({ ok: true, msg: `автоставка: ${msg}`, dealerId: getSelectedDealerId() || null });
+    }catch(_){}
+    console.log("[auto-bid]", msg);
+  }
+  async function maybeAutoBidAfterCalc(offer, answer){
+    if (!isLocalAutoBidEnabled()) return;
+    const key = calcKey(offer);
+    if (autoBidInFlight.has(key)) return;
+    autoBidInFlight.add(key);
+    try{
+      const decision = await decideAutoBidOnPortal(offer, answer);
+      if (!decision?.should_bid){
+        logAutoBid(`лот ${offer?.lot?.lotId || key}: пропуск — ${decision?.reason || "нет решения"}`);
+        return;
+      }
+      const amount = Number(decision.bid_amount);
+      if (!Number.isFinite(amount) || amount <= 0){
+        logAutoBid(`лот ${offer?.lot?.lotId || key}: некорректная сумма`);
+        return;
+      }
+      logAutoBid(`лот ${offer?.lot?.lotId || key}: ставка ${amount} ₽ (${decision.reason || "ok"})`);
+      const bidResult = await runBidForOffer(offer, { bidAmount: amount });
+      if (bidResult?.portal_ok === false){
+        logAutoBid(`лот ${offer?.lot?.lotId || key}: Maxposter ok, портал: ${bidResult.portal_error || "ошибка"}`);
+      } else {
+        logAutoBid(`лот ${offer?.lot?.lotId || key}: ставка ${amount} ₽ принята`);
+      }
+      updateRowAfterCalc(key, offer);
+    }catch(err){
+      logAutoBid(`лот ${offer?.lot?.lotId || key}: ошибка — ${String(err?.message || err).slice(0, 200)}`);
+    }finally{
+      autoBidInFlight.delete(key);
     }
   }
   function renderModalCalcBlock(offer){
@@ -1685,6 +1768,13 @@
       localStorage.setItem("mp_auto_reload_sec", $("autoReloadSec").value);
       applyAutoReloadFromField();
     });
+    const savedAutoBid = localStorage.getItem("mp_auto_bid_local") || "0";
+    if ($("autoBidLocal")) {
+      $("autoBidLocal").value = savedAutoBid === "1" ? "1" : "0";
+      $("autoBidLocal").addEventListener("change", () => {
+        localStorage.setItem("mp_auto_bid_local", $("autoBidLocal").value);
+      });
+    }
     $("bidAmountModal").value = localStorage.getItem("mp_bid_amount") || "";
     $("bidAmountModal").addEventListener("input", () => localStorage.setItem("mp_bid_amount", $("bidAmountModal").value));
   }

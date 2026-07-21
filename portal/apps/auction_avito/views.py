@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from auction_avito.services.badges import collect_badges_for_display, ensure_badges_synced
 from auction_avito.lot_tabs import (
@@ -23,6 +23,7 @@ LOT_DETAIL_TABS = (
 )
 from auction_avito.chat_utils import build_aav_feed_embed, build_aav_lot_embed
 from auction_avito.models import (
+    AvitoAuctionSettings,
     AvitoAutotekaEvent,
     AvitoLot,
     AvitoLotBadge,
@@ -629,6 +630,46 @@ def buyout_recommendations(request):
 
     ctx = build_buyout_page_context(request)
     return render(request, 'auction_avito/buyout_recommendations.html', {'params': ctx})
+
+
+def _parse_optional_int(raw):
+    raw = (raw or '').strip()
+    if raw == '':
+        return None
+    return int(raw)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def auction_settings(request):
+    """Настройки автоставок и коэффициентов рекомендаций выкупа."""
+    settings_obj = AvitoAuctionSettings.get_solo()
+
+    if request.method == 'POST':
+        try:
+            settings_obj.auto_bid_enabled = request.POST.get('auto_bid_enabled') == 'on'
+            settings_obj.mileage_min = _parse_optional_int(request.POST.get('mileage_min'))
+            settings_obj.mileage_max = _parse_optional_int(request.POST.get('mileage_max'))
+            settings_obj.year_min = _parse_optional_int(request.POST.get('year_min'))
+            settings_obj.year_max = _parse_optional_int(request.POST.get('year_max'))
+            settings_obj.block_taxi = request.POST.get('block_taxi') == 'on'
+            settings_obj.block_carsharing = request.POST.get('block_carsharing') == 'on'
+            settings_obj.block_mileage_twisted = request.POST.get('block_mileage_twisted') == 'on'
+            settings_obj.bid_round_to = max(1, int(request.POST.get('bid_round_to') or 1000))
+            settings_obj.weight_test_price = request.POST.get('weight_test_price') or 1
+            settings_obj.weight_rdo = request.POST.get('weight_rdo') or '0.55'
+            settings_obj.weight_kor = request.POST.get('weight_kor') or '0.25'
+            settings_obj.weight_txt = request.POST.get('weight_txt') or '0.05'
+            settings_obj.full_clean()
+            settings_obj.save()
+            messages.success(request, 'Настройки сохранены.')
+            return redirect('auction_avito:auction_settings')
+        except Exception as exc:
+            messages.error(request, str(exc))
+
+    return render(request, 'auction_avito/auction_settings.html', {
+        'settings': settings_obj,
+    })
 
 
 @login_required
