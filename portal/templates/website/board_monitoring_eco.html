@@ -1,495 +1,241 @@
 {% extends 'base_web.html' %}
 {% load static %}
 
-{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
+{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %}
 
 {% block title %} - мониторинг интерактивных оценок {% endblock %}
 
 {% block title_navbar %} - мониторинг интерактивных оценок {% endblock %}
-    
+
 {% block content %}
 
 <style>
   .kors-monitoring-page {
-    padding: 1rem 1.5rem 3rem;
-    background: #f4f7fb;
+    --ok-bg: #e7f6ed;
+    --ok-fg: #146c3b;
+    --ok-muted: #3d8f5f;
+    --warn-bg: #fff4df;
+    --warn-fg: #9a6700;
+    --warn-muted: #b8860b;
+    --bad-bg: #fde8e8;
+    --bad-fg: #b42318;
+    --bad-muted: #c75048;
+    --ink: #1a2b3c;
+    --muted: #6b7c8f;
+    --line: rgba(26, 43, 60, 0.08);
+    padding: 0.65rem 0.85rem 1.5rem;
+    background: #eef2f6;
     min-height: 100vh;
+    font-size: 0.82rem;
   }
 
+  .kors-monitoring-header { margin-bottom: 0.75rem; }
   .kors-monitoring-header h2 {
-    font-size: 1.6rem;
-    font-weight: 600;
-    margin-bottom: 0.35rem;
-    color: #002a5a;
+    font-size: 1.05rem; font-weight: 650; margin: 0 0 0.15rem; color: var(--ink);
   }
+  .kors-monitoring-header p { color: var(--muted); margin: 0; font-size: 0.78rem; }
 
-  .kors-monitoring-header p {
-    color: #6c7a92;
-    margin-bottom: 1.5rem;
+  .section-title {
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 0.85rem 0 0.4rem; padding: 0; border: 0;
   }
 
   .kors-metric-card {
-    background: #fff;
-    border-radius: 1.3rem;
-    padding: 1.25rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: #fff; border-radius: 0.55rem; padding: 0.5rem 0.65rem;
+    border: 1px solid var(--line); box-shadow: none; height: 100%;
+    display: flex; flex-direction: column; gap: 0.15rem;
+    text-decoration: none !important; color: inherit;
   }
-
-  .kors-metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 30px 55px rgba(0, 23, 61, 0.12);
-  }
-
+  .kors-metric-card:hover { border-color: rgba(26, 43, 60, 0.16); }
   .kors-metric-card h3 {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: #8ea1ba;
-    margin: 0;
+    font-size: 0.65rem; font-weight: 650; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted); margin: 0; line-height: 1.25;
   }
-
   .kors-metric-card .metric-value {
-    font-size: 2.2rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin: 0.5rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    font-size: 1.05rem; font-weight: 700; color: var(--ink); margin: 0; line-height: 1.2;
+  }
+  .kors-metric-card .metric-label { color: var(--muted); font-size: 0.68rem; line-height: 1.3; }
+  .kors-metric-card .metric-links {
+    margin-top: 0.25rem; max-height: 5.5rem; overflow: auto;
+    font-size: 0.68rem; line-height: 1.35;
+  }
+  .kors-metric-card .metric-links a {
+    color: inherit; text-decoration: underline; text-underline-offset: 2px;
   }
 
-  .kors-metric-card .metric-label {
-    color: #6c7a92;
-    font-size: 0.85rem;
-  }
+  .kors-metric-card.status-success { background: var(--ok-bg); border-color: transparent; }
+  .kors-metric-card.status-success h3,
+  .kors-metric-card.status-success .metric-label { color: var(--ok-muted); }
+  .kors-metric-card.status-success .metric-value { color: var(--ok-fg); }
 
-  .kors-metric-card.status-success {
-    border-left: 4px solid #22c55e;
-  }
+  .kors-metric-card.status-warning { background: var(--warn-bg); border-color: transparent; }
+  .kors-metric-card.status-warning h3,
+  .kors-metric-card.status-warning .metric-label { color: var(--warn-muted); }
+  .kors-metric-card.status-warning .metric-value { color: var(--warn-fg); }
 
-  .kors-metric-card.status-warning {
-    border-left: 4px solid #f59e0b;
-  }
-
-  .kors-metric-card.status-danger {
-    border-left: 4px solid #ef4444;
-  }
+  .kors-metric-card.status-danger { background: var(--bad-bg); border-color: transparent; }
+  .kors-metric-card.status-danger h3,
+  .kors-metric-card.status-danger .metric-label { color: var(--bad-muted); }
+  .kors-metric-card.status-danger .metric-value { color: var(--bad-fg); }
 
   .kors-panel {
-    background: #fff;
-    border-radius: 1.3rem;
-    padding: 1.25rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 25px 45px rgba(0, 23, 61, 0.08);
-    margin-bottom: 1.5rem;
+    background: #fff; border-radius: 0.55rem; padding: 0.55rem 0.7rem;
+    border: 1px solid var(--line); box-shadow: none; margin-bottom: 0.5rem;
   }
-
   .kors-panel__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
+    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+    margin-bottom: 0.4rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--line);
   }
-
-  .kors-panel__head h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin: 0;
-  }
-
-  .kors-panel__body {
-    padding-top: 0.5rem;
-  }
-
-  .status-icon {
-    font-size: 1.5rem;
-  }
-
-  .status-icon.success {
-    color: #22c55e;
-  }
-
-  .status-icon.warning {
-    color: #f59e0b;
-  }
-
-  .status-icon.danger {
-    color: #ef4444;
-  }
-
-  .kors-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .kors-table th {
-    text-align: left;
-    padding: 0.75rem;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #8ea1ba;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
-  }
-
-  .kors-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
-    color: #002a5a;
-  }
-
-  .kors-table tbody tr:hover {
-    background: rgba(0, 42, 90, 0.02);
-  }
+  .kors-panel__head h3 { font-size: 0.78rem; font-weight: 650; color: var(--ink); margin: 0; }
 
   .kors-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
+    display: inline-flex; align-items: center; padding: 0.12rem 0.45rem;
+    border-radius: 0.35rem; font-size: 0.68rem; font-weight: 650;
+    text-decoration: none; line-height: 1.3;
   }
-
-  .kors-badge-success {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .kors-badge-warning {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .kors-badge-danger {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .kors-btn-toggle {
-    background: transparent;
-    border: 1px solid rgba(0, 42, 90, 0.15);
-    border-radius: 0.75rem;
-    padding: 0.5rem 1rem;
-    color: #002a5a;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .kors-btn-toggle:hover {
-    background: rgba(0, 42, 90, 0.05);
-    border-color: rgba(0, 42, 90, 0.25);
-  }
-
-  .kors-btn-toggle.danger {
-    border-color: #ef4444;
-    color: #ef4444;
-  }
-
-  .kors-btn-toggle.danger:hover {
-    background: #fee2e2;
-  }
-
-  .kors-refresh-card {
-    background: #fff;
-    border-radius: 1rem;
-    border: 1px solid rgba(0, 42, 90, 0.08);
-    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.06);
-    padding: 1.25rem;
-    transition: all 0.2s ease;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .kors-refresh-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 23, 61, 0.12);
-    border-color: rgba(0, 42, 90, 0.15);
-  }
-
-  .kors-refresh-card__header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
-  }
-
-  .kors-refresh-card__date {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin-bottom: 0.5rem;
-  }
-
-  .kors-refresh-card__date .icon-mbri-calendar {
-    font-size: 1.1rem;
-    color: #6c7a92;
-  }
-
-  .kors-refresh-card__unit {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    color: #6c7a92;
-  }
-
-  .kors-refresh-card__unit .icon-mbri-home {
-    font-size: 1rem;
-    color: #8ea1ba;
-  }
-
-  .kors-refresh-card__body {
-    flex: 1;
-  }
-
-  .kors-refresh-card__stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .kors-refresh-card__stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 0.75rem;
-    background: rgba(0, 42, 90, 0.02);
-    transition: all 0.2s ease;
-  }
-
-  .kors-refresh-card__stat-item:hover {
-    background: rgba(0, 42, 90, 0.05);
-  }
-
-  .kors-refresh-card__stat-item--success {
-    border-left: 3px solid #22c55e;
-  }
-
-  .kors-refresh-card__stat-item--danger {
-    border-left: 3px solid #ef4444;
-  }
-
-  .kors-refresh-card__stat-item--info {
-    border-left: 3px solid #3b82f6;
-  }
-
-  .kors-refresh-card__stat-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.5rem;
-    flex-shrink: 0;
-  }
-
-  .kors-refresh-card__stat-item--success .kors-refresh-card__stat-icon {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-  }
-
-  .kors-refresh-card__stat-item--danger .kors-refresh-card__stat-icon {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-  }
-
-  .kors-refresh-card__stat-item--info .kors-refresh-card__stat-icon {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-  }
-
-  .kors-refresh-card__stat-icon .icon-mbri-plus,
-  .kors-refresh-card__stat-icon .icon-mbri-minus,
-  .kors-refresh-card__stat-icon .icon-mbri-play {
-    font-size: 1.2rem;
-  }
-
-  .kors-refresh-card__stat-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .kors-refresh-card__stat-label {
-    font-size: 0.75rem;
-    color: #6c7a92;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
-  }
-
-  .kors-refresh-card__stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #002a5a;
-    line-height: 1.2;
-  }
-  }
-
-  .kors-btn-toggle.success {
-    border-color: #22c55e;
-    color: #22c55e;
-  }
-
-  .kors-btn-toggle.success:hover {
-    background: #dcfce7;
-  }
-
-  .section-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin: 2rem 0 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba(0, 42, 90, 0.1);
-  }
-
-  .section-title:first-child {
-    margin-top: 0;
-  }
+  a.kors-badge:hover { filter: brightness(0.97); text-decoration: none; }
+  .kors-badge-success { background: var(--ok-bg); color: var(--ok-fg); }
+  .kors-badge-warning { background: var(--warn-bg); color: var(--warn-fg); }
+  .kors-badge-danger { background: var(--bad-bg); color: var(--bad-fg); }
+  .kors-chip-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
   @media (max-width: 768px) {
-    .kors-monitoring-page {
-      padding: 0.75rem 1rem 2rem;
-    }
-
-    .kors-metric-card .metric-value {
-      font-size: 1.8rem;
-    }
+    .kors-monitoring-page { padding: 0.5rem 0.6rem 1.25rem; }
   }
 </style>
 
 <div class="kors-monitoring-page">
-  
+
   <div class="kors-monitoring-header">
-    <h2>Панель мониторинга системы интерактивных оценок</h2>
-    <p>Мониторинг состояния интеграций и сервисов</p>
+    <h2>Мониторинг интерактивных оценок</h2>
+    <p>Очереди Автотеки, Автохаба и отправки в 1С</p>
   </div>
 
-  <!-- Основные статусы интеграций -->
-  <h3 class="section-title">Статус интеграций</h3>
-  
-
-  <div class="row g-1">
-    
-    <div class="col-12 col-sm-3">
-      <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
-        <h3>Автотека получение </h3>
-        <div class="metric-value">{{params.autoteka_count_1}}</div>
-        <div class="metric-label">previews</div>
-        {% for avtoteka_1 in params.autoteka_1 %}
-           <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}} {{avtoteka_1.modification.model.mark.name}} {{avtoteka_1.modification.model.name}} {{avtoteka_1.modification.name}}</a> <br>
-        {% endfor %}
-
+  <h3 class="section-title">Автотека / Автохаб</h3>
+  <div class="row g-2 mb-2">
+    <div class="col-6 col-lg-3">
+      <div class="kors-metric-card {% if params.autoteka_count_1 > 5 %}status-danger{% elif params.autoteka_count_1 > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Автотека · preview</h3>
+        <div class="metric-value">{{ params.autoteka_count_1 }}</div>
+        <div class="metric-label">ожидают previews</div>
+        {% if params.autoteka_1 %}
+        <div class="metric-links">
+          {% for item in params.autoteka_1 %}
+            <a href="?avtoteka_id={{ item.id }}">{{ item.vin }}{% if item.modification %} · {{ item.modification.model.mark.name }} {{ item.modification.model.name }}{% endif %}</a><br>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </div>
 
-    <div class="col-12 col-sm-3">
-      <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
-        <h3>Автотека получение previews</h3>
-        <div class="metric-value">{{params.autoteka_count_2}}</div>
-        <div class="metric-label">task</div>
-        {% for avtoteka_1 in params.autoteka_2 %}
-          <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}}</a> <br>
-        {% endfor %}
+    <div class="col-6 col-lg-3">
+      <div class="kors-metric-card {% if params.autoteka_count_2 > 5 %}status-danger{% elif params.autoteka_count_2 > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Автотека · task</h3>
+        <div class="metric-value">{{ params.autoteka_count_2 }}</div>
+        <div class="metric-label">ожидают task</div>
+        {% if params.autoteka_2 %}
+        <div class="metric-links">
+          {% for item in params.autoteka_2 %}
+            <a href="?avtoteka_id={{ item.id }}">{{ item.vin }}</a><br>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </div>
 
-    <div class="col-12 col-sm-3">
-      <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
-        <h3>Автотека получение previews</h3>
-        <div class="metric-value">{{params.autoteka_count_3}}</div>
-        <div class="metric-label">report</div>
-        {% for avtoteka_1 in params.autoteka_3 %}
-          <a href="?avtoteka_id={{avtoteka_1.id}}"><span class="icon-mbri-preview"></span> {{avtoteka_1.vin}}</a> <br>
-        {% endfor %}
+    <div class="col-6 col-lg-3">
+      <div class="kors-metric-card {% if params.autoteka_count_3 > 5 %}status-danger{% elif params.autoteka_count_3 > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Автотека · report</h3>
+        <div class="metric-value">{{ params.autoteka_count_3 }}</div>
+        <div class="metric-label">ожидают report</div>
+        {% if params.autoteka_3 %}
+        <div class="metric-links">
+          {% for item in params.autoteka_3 %}
+            <a href="?avtoteka_id={{ item.id }}">{{ item.vin }}</a><br>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </div>
 
-    <div class="col-12 col-sm-3">
-      <div class="kors-metric-card {% if params.now|date:'d' == catalog.max_date|date:'d' %}status-success{% else %}status-danger{% endif %}">
+    <div class="col-6 col-lg-3">
+      <a class="kors-metric-card {% if params.autohub_count > 5 %}status-danger{% elif params.autohub_count > 0 %}status-warning{% else %}status-success{% endif %}"
+         href="/monitorings/queue/autohub/?back=/monitorings_eco/">
         <h3>Автохаб / ЦНА</h3>
-        <div class="metric-value">{{params.autohub_count}}</div>
-        <div class="metric-label">report</div>
-        {% for avtoteka_1 in params.autoteka_33 %}
-          {{avtoteka_1.vin}} <br>
-        {% endfor %}
+        <div class="metric-value">{{ params.autohub_count }}</div>
+        <div class="metric-label">открыть список · снять из очереди</div>
+      </a>
+    </div>
+  </div>
+
+  <h3 class="section-title">1С и оповещения</h3>
+  <div class="row g-2 mb-2">
+    <div class="col-6 col-md-3">
+      <a class="kors-metric-card {% if params.send_1c > 5 %}status-danger{% elif params.send_1c > 0 %}status-warning{% else %}status-success{% endif %}"
+         href="/monitorings/queue/send_1c/?back=/monitorings_eco/">
+        <h3>Отправка в 1С</h3>
+        <div class="metric-value">{{ params.send_1c }}</div>
+        <div class="metric-label">status_code = 60</div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="kors-metric-card {% if params.estimation_1c > 5 %}status-danger{% elif params.estimation_1c > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>1С склад</h3>
+        <div class="metric-value">{{ params.estimation_1c }}</div>
+        <div class="metric-label">без kors_start_store</div>
       </div>
     </div>
-    
-  
-  </div>
-
-
-  <!-- Статус обновлений -->
-  <h3 class="section-title">1С</h3>
-  <div class="row g-3 mb-4">
-    <span class="kors-badge kors-badge-danger">1C - {{params.estimation_1c}}</span>
-
-    {{params.send_1c}}
-
-  </div>
-
-  <!-- Детальная информация -->
-  <div class="row g-3">
-    
-  
-    <div class="col-12 col-lg-4">
-      
-      
-
-      <div class="kors-panel mt-3">
-        <div class="kors-panel__head">
-          <h3>Интерактивная оценка</h3>
-        </div>
-        <div class="kors-panel__body">
-          <div class="d-flex flex-wrap gap-2">
-            {% if params.estimation_1c > 5 %}
-              <span class="kors-badge kors-badge-danger">1C - {{params.estimation_1c}}</span>
-            {% else %}
-              <span class="kors-badge kors-badge-success">1C - {{params.estimation_1c}}</span>
-            {% endif %}
-            {% if params.autoteka_count_1 > 5 %}
-              <span class="kors-badge kors-badge-danger">Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}}</span>
-            {% else %}
-              <span class="kors-badge kors-badge-success">Автотека - {{params.autoteka_count_1}} / {{params.autoteka_count_2}} / {{params.autoteka_count_3}}</span>
-            {% endif %}
-            {% if params.autohub_count > 5 %}
-              <span class="kors-badge kors-badge-danger">Автохаб - {{params.autohub_count}}</span>
-            {% else %}
-              <span class="kors-badge kors-badge-success">Автохаб - {{params.autohub_count}}</span>
-            {% endif %}
-            {% if params.push_count > 5 %}
-              <span class="kors-badge kors-badge-danger">Оповещения - {{params.push_count}}</span>
-            {% else %}
-              <span class="kors-badge kors-badge-success">Оповещения - {{params.push_count}}</span>
-            {% endif %}
-            {% if params.send_1c > 5 %}
-              <span class="kors-badge kors-badge-danger">Отправка в 1С - {{params.send_1c}}</span>
-            {% else %}
-              <span class="kors-badge kors-badge-success">Отправка в 1С - {{params.send_1c}}</span>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      
+    <div class="col-6 col-md-3">
+      <a class="kors-metric-card {% if params.push_count > 5 %}status-danger{% elif params.push_count > 0 %}status-warning{% else %}status-success{% endif %}"
+         href="/monitorings/queue/push/?back=/monitorings_eco/">
+        <h3>Оповещения</h3>
+        <div class="metric-value">{{ params.push_count }}</div>
+        <div class="metric-label">не отправлены</div>
+      </a>
     </div>
-
+    <div class="col-6 col-md-3">
+      <div class="kors-metric-card {% if params.task_price_count > 5 %}status-danger{% elif params.task_price_count > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Прайс-листы</h3>
+        <div class="metric-value">{{ params.task_price_count }}</div>
+        <div class="metric-label">в обработке</div>
+      </div>
+    </div>
   </div>
 
-  
+  <div class="kors-panel">
+    <div class="kors-panel__head">
+      <h3>Интерактивная оценка · сводка</h3>
+    </div>
+    <div class="kors-chip-row">
+      {% if params.estimation_1c > 5 %}
+        <span class="kors-badge kors-badge-danger">1C — {{ params.estimation_1c }}</span>
+      {% else %}
+        <span class="kors-badge kors-badge-success">1C — {{ params.estimation_1c }}</span>
+      {% endif %}
+      {% if params.autoteka_count_1 > 5 %}
+        <span class="kors-badge kors-badge-danger">Автотека — {{ params.autoteka_count_1 }} / {{ params.autoteka_count_2 }} / {{ params.autoteka_count_3 }}</span>
+      {% else %}
+        <span class="kors-badge kors-badge-success">Автотека — {{ params.autoteka_count_1 }} / {{ params.autoteka_count_2 }} / {{ params.autoteka_count_3 }}</span>
+      {% endif %}
+      {% if params.autohub_count > 5 %}
+        <a class="kors-badge kors-badge-danger" href="/monitorings/queue/autohub/?back=/monitorings_eco/">Автохаб — {{ params.autohub_count }}</a>
+      {% else %}
+        <a class="kors-badge kors-badge-success" href="/monitorings/queue/autohub/?back=/monitorings_eco/">Автохаб — {{ params.autohub_count }}</a>
+      {% endif %}
+      {% if params.push_count > 5 %}
+        <a class="kors-badge kors-badge-danger" href="/monitorings/queue/push/?back=/monitorings_eco/">Оповещения — {{ params.push_count }}</a>
+      {% else %}
+        <a class="kors-badge kors-badge-success" href="/monitorings/queue/push/?back=/monitorings_eco/">Оповещения — {{ params.push_count }}</a>
+      {% endif %}
+      {% if params.send_1c > 5 %}
+        <a class="kors-badge kors-badge-danger" href="/monitorings/queue/send_1c/?back=/monitorings_eco/">Отправка в 1С — {{ params.send_1c }}</a>
+      {% else %}
+        <a class="kors-badge kors-badge-success" href="/monitorings/queue/send_1c/?back=/monitorings_eco/">Отправка в 1С — {{ params.send_1c }}</a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

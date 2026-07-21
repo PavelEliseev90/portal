@@ -1,0 +1,104 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} — {{ params.title }} {% endblock %}
+{% block title_navbar %} — {{ params.title }} {% endblock %}
+
+{% block content %}
+<style>
+  .kors-monitoring-page {
+    --ok-bg: #e7f6ed; --ok-fg: #146c3b;
+    --bad-bg: #fde8e8; --bad-fg: #b42318;
+    --ink: #1a2b3c; --muted: #6b7c8f; --line: rgba(26, 43, 60, 0.08);
+    padding: 0.65rem 0.85rem 1.5rem; background: #eef2f6; min-height: 100vh; font-size: 0.82rem;
+  }
+  .kors-panel {
+    background: #fff; border-radius: 0.55rem; padding: 0.55rem 0.7rem;
+    border: 1px solid var(--line); box-shadow: none;
+  }
+  .kors-queue-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .kors-queue-table th, .kors-queue-table td {
+    padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: middle;
+  }
+  .kors-queue-table th {
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.65rem;
+  }
+  .kors-badge {
+    display: inline-flex; align-items: center; padding: 0.1rem 0.4rem;
+    border-radius: 0.3rem; font-size: 0.65rem; font-weight: 650;
+  }
+  .kors-badge-remote { background: #fff4df; color: #9a6700; }
+  .kors-badge-local { background: #e8f1fb; color: #1d4e89; }
+</style>
+
+<div class="kors-monitoring-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <h2 class="mb-0" style="font-size:1.05rem;font-weight:650;color:var(--ink)">{{ params.title }}</h2>
+      <p class="mb-0" style="color:var(--muted);font-size:0.75rem">В очереди: <strong>{{ params.count }}</strong>. {{ params.hint }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{{ params.back }}">← Назад</a>
+      {% if params.count %}
+      <form method="post" action="/monitorings/queue/{{ params.kind }}/dismiss/"
+            onsubmit="return confirm('Убрать все {{ params.count }} записей из очереди?');">
+        {% csrf_token %}
+        <input type="hidden" name="back" value="{{ params.back }}">
+        <input type="hidden" name="dismiss_all" value="1">
+        <button type="submit" class="btn btn-outline-danger btn-sm">Убрать все</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="kors-panel">
+    {% if params.rows %}
+    <div class="table-responsive">
+      <table class="kors-queue-table">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Документ</th>
+            <th>Детали</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.rows %}
+          <tr>
+            <td class="text-nowrap">{{ row.date|date:"d.m.Y H:i"|default:"—" }}</td>
+            <td>
+              {% if row.source_label %}
+                <span class="kors-badge {% if row.source == 'remote' %}kors-badge-remote{% else %}kors-badge-local{% endif %} me-1">
+                  {{ row.source_label }}
+                </span>
+              {% endif %}
+              {% if row.rlk_id %}
+                <a href="/eco/{{ row.rlk_id }}/" target="_blank" rel="noopener">{{ row.title }}</a>
+              {% else %}
+                {{ row.title }}
+              {% endif %}
+              <div style="font-size:0.68rem;color:var(--muted)">id={{ row.id }}{% if row.rlk_id %} · рлк={{ row.rlk_id }}{% endif %}</div>
+            </td>
+            <td style="font-size:0.72rem;color:var(--muted)">{{ row.extra }}</td>
+            <td class="text-end text-nowrap">
+              <form method="post" action="/monitorings/queue/{{ params.kind }}/dismiss/" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="back" value="{{ params.back }}">
+                <input type="hidden" name="id" value="{{ row.id }}">
+                {% if row.source %}<input type="hidden" name="source" value="{{ row.source }}">{% endif %}
+                <button type="submit" class="btn btn-sm btn-outline-danger py-0"
+                        onclick="return confirm('Убрать из очереди?');">Убрать</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div style="color:var(--muted)">Очередь пуста.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
