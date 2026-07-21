@@ -669,6 +669,9 @@ class RefUnit(models.Model):
 
     def save(self, *args, **kwargs):
         self.name_search = self.name.upper()
+        if self.direction != None:
+            if self.direction.name == "Отдел продаж АСП":
+                self.active_eco = True
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -687,20 +690,7 @@ class RefUnit(models.Model):
 
 
 #Организации (Фирмы)
-class RefFilial(models.Model):
-    uin             = models.CharField("uin", max_length=200, default='')
-    name            = models.CharField("Наименование", max_length=250, default='')
-    organization    = models.ForeignKey(RefOrganization, null=True, on_delete=models.SET_NULL, verbose_name='Организация')
-    active_eco      = models.BooleanField("Доступен для оценки", default=False)
-    unit            = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL, verbose_name='Подразделение')
 
-    def __str__(self):
-        return "{} - {} / {}".format(self.name, self.active_eco, self.organization)
-
-    class Meta:
-        db_table = 'refFilial'
-        verbose_name = "Филиал"
-        verbose_name_plural = "Филиалы"
 
 
 # Группы подразделений
@@ -1664,7 +1654,22 @@ class RefStore(models.Model):
         verbose_name = "Склад / Стоянки"
         verbose_name_plural = "Склады / Стоянки"
 
+class RefFilial(models.Model):
+    uin             = models.CharField("uin", max_length=200, default='')
+    name            = models.CharField("Наименование", max_length=250, default='')
+    organization    = models.ForeignKey(RefOrganization, null=True, on_delete=models.SET_NULL, verbose_name='Организация')
+    active_eco      = models.BooleanField("Доступен для оценки", default=False)
+    unit            = models.ForeignKey(RefUnit, null=True, on_delete=models.SET_NULL, verbose_name='Подразделение')
+    store           = models.ForeignKey(RefStore, null=True, on_delete=models.SET_NULL, verbose_name='Стоянка/склад')
+    
+    def __str__(self):
+        return "{} - {} / {}".format(self.name, self.active_eco, self.organization)
 
+    class Meta:
+        db_table = 'refFilial'
+        verbose_name = "Филиал"
+        verbose_name_plural = "Филиалы"
+        
 # Ценовые группы автомобилей
 class RefGroupPrice(models.Model):
     name = models.CharField("Наименование", max_length=200, default='')

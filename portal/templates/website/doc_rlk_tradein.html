@@ -30,7 +30,7 @@
 	
 	<div class="portal-header">
 		<h2>Рабочий лист</h2>
-		<p>№ {{params.object.nomer}} от {{params.object.dataTime}}</p>
+		<p> {% if params.object.unit.ib.alfa %} Альфа - авто {% endif %} № {{params.object.nomer}} от {{params.object.dataTime}}  </p>  
 	</div>
 
 	<div class="row">

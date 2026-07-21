@@ -5589,6 +5589,8 @@ def get_filial(json_filial):
             filial.unit = get_unit(json_filial['Unit'])
         else:
             filial.unit = None
+    if "Store" in json_filial:
+        filial.store = get_store(json_filial['Store'])
 
     if len(json_filial['Organization']) > 0:
         filial.organization   = get_organization(json_filial['Organization'])

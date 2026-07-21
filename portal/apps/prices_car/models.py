@@ -378,7 +378,7 @@ class CarCalculationUkApproval(models.Model):
         related_name='calculation_uk_approvals',
         verbose_name='Автомобиль',
     )
-    approved_kvp = models.PositiveIntegerField('Согласованный КВП')
+    approved_kvp = models.IntegerField('Согласованный КВП')
     approved_by = models.ForeignKey(
         User,
         null=True,

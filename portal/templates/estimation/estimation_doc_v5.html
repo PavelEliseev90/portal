@@ -577,7 +577,7 @@
                             <select class="search-select kors-form-control" id="store_id" name="store_id">
                               <option selected></option>
                               {% for store in params.selected.stores %}
-                                <option value="{{store.slug}}" {% if params.interactiv_rlk.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
+                                <option value="{{store.slug_store}}" {% if params.interactiv_rlk.store.id == store.slug_store %} selected {% endif %}> {{store.slug_name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="store_id">Стоянка</label>
@@ -5444,7 +5444,7 @@
                         <select class="search-select" id="filial_id" name="filial_id" placeholder="-" required>
                           <option selected></option>
                           {% for filial in params.selected.filials %}
-                            <option value="{{filial.slug}}" {% if params.interactiv_rlk.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} </option>
+                            <option value="{{filial.slug}}" {% if params.interactiv_rlk.filial.id == filial.slug %} selected {% endif %}> {{filial.name}} ({{filial.unit__ib__name}}) </option>
                           {% endfor %}
                         </select>
                     
@@ -5468,16 +5468,14 @@
                   
                       </div>
                   
-                      
-
                       <div class="col-sm-6">
-                  
+                        
                         <label class="fs-6">Стоянка</label><br>
 
                         <select class="search-select" id="store_id" name="store_id" placeholder="-" required>
                           <option selected></option>
                           {% for store in params.selected.stores %}
-                            <option value="{{store.slug}}" {% if params.interactiv_rlk.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
+                            <option value="{{store.slug_store}}" {% if params.interactiv_rlk.store.id == store.slug_store %} selected {% endif %}> {{store.slug_name}} </option>
                           {% endfor %}
                         </select>
                     
