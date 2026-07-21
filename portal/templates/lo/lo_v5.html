@@ -6405,7 +6405,10 @@
                               <div class="card-body">
                                 <label class="fs-5">Обновить</label><br>
                                 <a class="btn btn-outline-secondary btn-sm" href="{{request.get_full_path}}&refresh_data=avtoteka"> <span class="icon-mbri-update"></span> Обновить автотеку</a>
-                                
+                                <a class="btn btn-outline-danger btn-sm mt-1" href="{{request.get_full_path}}&refresh_data=avtoteka_reset"
+                                   onclick="return confirm('Сбросить preview и task? Автотека начнёт запрашиваться заново.');">
+                                  <span class="icon-mbri-close"></span> Сбросить
+                                </a>
                               </div>
                             </div>
                           </div>

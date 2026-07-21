@@ -4055,6 +4055,13 @@ def doc(request, id):
                     from task_manager.views import refresh_avtoteka_data
                     refresh_avtoteka_data(estimation.id)
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
+                if refresh == 'avtoteka_reset':
+                    RegInteractivOcenka.objects.filter(pk=estimation.pk).update(
+                        avtoteka_preview=None,
+                        avtoteka_task=None,
+                    )
+                    estimation.refresh_from_db(fields=['avtoteka_preview', 'avtoteka_task'])
+                    return HttpResponseRedirect(request.path_info + '?page=' + str(page))
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
         if page == 9:

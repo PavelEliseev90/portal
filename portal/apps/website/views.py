@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from openpyxl import Workbook, load_workbook
 from documents.models import DocSMS, DocCarAgreement, DocZNWork, DocZNProduct, DocLO, DocZN, DocZNPerformers, DocOprosZN, DocCarShipment, DocOprosZN, DocOprosCarShipment, DoсRecomendation, DocRecomendationFiles, DocRLK, DocRLKEvents, DoсRecomendationMCU, DocRecomendationFilesMCU, ResourcePlanning, DocZNKA
 import datetime as DT
@@ -20,6 +20,7 @@ from rest_framework import status
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
@@ -46,7 +47,7 @@ from django.apps import apps
 from avtosalon.models import RefreshCarsLog
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from register.models import RegInfoRefreshEstimationCarsExpress, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaRLK, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
+from register.models import RegInfoRefreshEstimationCarsExpress, RegEstimationRefCarsOrganizations, SettingsMatrixAuction, RegEstimationBalanceUnit, RegSwapKors, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegInteractivOcenkaRLK, RegInteractivOcenkaTestDrive, RegPodgotovkaWork, RegRegInteractivOcenkaFiles, RegInfoBody, RegEstimationsSettings, RegInteractivOcenkaKorsStoreSale, RegInteractivOcenkaKorsStore, RegInteractivOcenkaTask, RegInteractivOcenkaEmailPush, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenka, SettingsRegPrices, TaskRegPrices, RegPrices, RegInfoRefreshCatalog, RegUnitMonthlyPlan, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection
 from chats.models import Chat, ChatMessage
 from register.serializers import RegInteractivOcenkaSerializer
 import urllib
@@ -1909,16 +1910,14 @@ def board_monitoring(request):
     modifications_count     = modifications.filter(spec = 0).count()
     
     # Проверка интерактивных оценок
-    object_estimations_report_autohub_remote    = object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
-    object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
-    autohub_count           = object_estimations_report_autohub_remote + object_estimations_report_autohub 
+    autohub_count           = _monitoring_qs_autohub_remote().count() + _monitoring_qs_autohub_local().count()
     start_autoteka          = DT.datetime.now().replace(hour = 1) - DT.timedelta(days=1)
     autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.exclude(vin = '').exclude(vin = ' ').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = start_autoteka).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
     #autoteka_count_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 7, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 4, 1)).filter(avtoteka_web = '').filter(avtoteka_preview = '').filter(avtoteka_task = '').count()
     autoteka_count_2        = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = start_autoteka).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = '').count() + RegInteractivOcenka.objects.exclude(vin__icontains = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(vin__regex = r'^.{17}.*').filter(start_estimation__gt = start_autoteka).filter(avtoteka_web = '').exclude(avtoteka_preview = '').filter(avtoteka_task = None).count()
     autoteka_count_3        = RegInteractivOcenka.objects.exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(start_estimation__gt = start_autoteka).filter(avtoteka_web = '').exclude(avtoteka_preview = '').exclude(avtoteka_task = '').exclude(avtoteka_task = None).count()
-    push_count              = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
-    send_1c                 = RegSwapKors.objects.filter(status_code = 60).count()
+    push_count              = _monitoring_qs_push().count()
+    send_1c                 = _monitoring_qs_send_1c().count()
     task_price_count        = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
     estimation_1c           = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
     
@@ -1930,7 +1929,15 @@ def board_monitoring(request):
     count_reg_estimations_exress = RegInfoRefreshEstimationCarsExpress.objects.all().count()
     data_info_express_estimation_stok = None
     if count_reg_estimations_exress > 0:
-        data_info_express_estimation_stok = RegInfoRefreshEstimationCarsExpress.objects.all().order_by('-date')
+        data_info_express_estimation_stok = RegInfoRefreshEstimationCarsExpress.objects.all().order_by('-date').first()
+
+    now_dt = DT.datetime.now()
+    express_since_24h = now_dt - DT.timedelta(hours=24)
+    express_cars_agg = RegEstimationRefCarsOrganizations.objects.aggregate(max_date=Max('date'))
+    express_cars_max_date = express_cars_agg.get('max_date')
+    express_cars_count_24h = RegEstimationRefCarsOrganizations.objects.filter(
+        date__gte=express_since_24h,
+    ).count()
 
     params = {
         'type'                  : 'monitorings',
@@ -1965,7 +1972,9 @@ def board_monitoring(request):
         'task_price_count'      : task_price_count,
         'signal_last_date'      : signal_last_date,
         'data_info_express_estimation_stok' : data_info_express_estimation_stok,
-        'now'                   : DT.datetime.now()
+        'express_cars_max_date' : express_cars_max_date,
+        'express_cars_count_24h': express_cars_count_24h,
+        'now'                   : now_dt
 
     }
     
@@ -1992,9 +2001,7 @@ def board_monitoring_eco(request):
     modifications_count     = modifications.filter(spec = 0).count()
     
     # Проверка интерактивных оценок
-    object_estimations_report_autohub_remote    = object_estimations_report_autohub = RegInteractivOcenka.objects.exclude(year = 0).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).exclude(page_remote = None).exclude(page_remote__price_sale = 0).exclude(page_remote__run = 0).filter(page_remote__hub_avg = 0).order_by('-start_estimation').values('pk').count()
-    object_estimations_report_autohub           = RegInteractivOcenka.objects.exclude(year = 0).exclude(end_estimation = None).filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(page_soglasovanie = None).exclude(page_salon__run = None).exclude(modification = None).filter(hub_start = None).order_by('-start_estimation').values('pk').count()
-    autohub_count           = object_estimations_report_autohub_remote + object_estimations_report_autohub 
+    autohub_count           = _monitoring_qs_autohub_remote().count() + _monitoring_qs_autohub_local().count()
     start_autoteka          = DT.datetime.now().replace(hour = 1) - DT.timedelta(days=1)
     
     autoteka_1        = RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = None) | RegInteractivOcenka.objects.filter(start_estimation__gt = start_autoteka).exclude(vin = ' ').exclude(vin = '').exclude(vin__icontains = '*').exclude(vin__icontains = 'отсут').filter(avtoteka_web = '')
@@ -2008,8 +2015,8 @@ def board_monitoring_eco(request):
     autoteka_count_2        = autoteka_2.count()
     autoteka_count_3        = autoteka_3.count()
     
-    push_count              = RegInteractivOcenkaEmailPush.objects.exclude(send = True).exclude(user__email = '').count()
-    send_1c                 = RegSwapKors.objects.filter(status_code = 60).count()
+    push_count              = _monitoring_qs_push().count()
+    send_1c                 = _monitoring_qs_send_1c().count()
     task_price_count        = TaskRegPrices.objects.exclude(status = 'Обработан').exclude(status = 'Ошибка').count()
     estimation_1c           = RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store = None).count() + RegInteractivOcenka.objects.filter(start_estimation__gt = DT.date(2025, 3, 1)).exclude(modification = None).filter(kors_start_store__lt = DT.date(2025, 3, 1)).count()
     
@@ -2040,6 +2047,249 @@ def board_monitoring_eco(request):
     
     return render(request, 'website/board_monitoring_eco.html', {"params": params}) 
 
+
+MONITORING_AUTOHUB_SINCE = DT.date(2025, 3, 1)
+
+
+def _monitoring_qs_autohub_remote():
+    return (
+        RegInteractivOcenka.objects.exclude(year=0)
+        .filter(start_estimation__gt=MONITORING_AUTOHUB_SINCE)
+        .exclude(modification=None)
+        .exclude(page_remote=None)
+        .exclude(page_remote__price_sale=0)
+        .exclude(page_remote__run=0)
+        .filter(page_remote__hub_avg=0)
+        .select_related('modification', 'modification__model', 'modification__model__mark', 'page_remote', 'rlk')
+        .order_by('-start_estimation')
+    )
+
+
+def _monitoring_qs_autohub_local():
+    return (
+        RegInteractivOcenka.objects.exclude(year=0)
+        .exclude(end_estimation=None)
+        .filter(start_estimation__gt=MONITORING_AUTOHUB_SINCE)
+        .exclude(page_soglasovanie=None)
+        .exclude(page_salon__run=None)
+        .exclude(modification=None)
+        .filter(hub_start=None)
+        .select_related('modification', 'modification__model', 'modification__model__mark', 'rlk', 'page_salon')
+        .order_by('-start_estimation')
+    )
+
+
+def _monitoring_qs_push():
+    return (
+        RegInteractivOcenkaEmailPush.objects.exclude(send=True)
+        .exclude(user__email='')
+        .select_related('estimation', 'estimation__rlk', 'rlk', 'user')
+        .order_by('-date')
+    )
+
+
+def _monitoring_qs_send_1c():
+    return (
+        RegSwapKors.objects.filter(status_code=60)
+        .select_related('estimation', 'estimation__rlk', 'rlk')
+        .order_by('-date')
+    )
+
+
+def _monitoring_queue_back_url(request):
+    back = (request.GET.get('back') or request.POST.get('back') or '').strip()
+    if back in ('/monitorings/', '/monitorings_eco/'):
+        return back
+    return '/monitorings_eco/'
+
+
+def _monitoring_dismiss_autohub(estimation_id, source):
+    """
+    Убрать из очереди Autohub без новых полей:
+    - remote: page_remote.hub_avg = -1 (фильтр ищет hub_avg=0)
+    - local: hub_start = now (фильтр ищет hub_start is null)
+    """
+    estimation = RegInteractivOcenka.objects.select_related('page_remote').filter(pk=estimation_id).first()
+    if estimation is None:
+        return False
+    if source == 'remote':
+        page_remote = estimation.page_remote
+        if page_remote is not None and page_remote.hub_avg == 0:
+            page_remote.hub_avg = -1
+            page_remote.save(update_fields=['hub_avg'])
+            return True
+    elif source == 'local':
+        if estimation.hub_start is None:
+            estimation.hub_start = DT.datetime.now()
+            estimation.save(update_fields=['hub_start'])
+            return True
+    return False
+
+
+def _monitoring_dismiss_push(push_id):
+    push = RegInteractivOcenkaEmailPush.objects.filter(pk=push_id).first()
+    if push is None:
+        return False
+    if push.send:
+        return True
+    push.send = True
+    push.save(update_fields=['send'])
+    return True
+
+
+def _monitoring_dismiss_send_1c(swap_id):
+    """status_code=60 — очередь; 0 — снято вручную с мониторинга."""
+    swap = RegSwapKors.objects.filter(pk=swap_id).first()
+    if swap is None:
+        return False
+    if swap.status_code != 60:
+        return True
+    swap.status_code = 0
+    swap.status = 'skipped_monitoring'
+    swap.status_date = DT.datetime.now()
+    comment = (swap.comment or '').strip()
+    note = 'снято с мониторинга'
+    swap.comment = f'{comment}; {note}' if comment else note
+    swap.save(update_fields=['status_code', 'status', 'status_date', 'comment'])
+    return True
+
+
+def _monitoring_estimation_title(estimation):
+    if estimation is None:
+        return '—'
+    parts = []
+    try:
+        mark = estimation.modification.model.mark.name
+        model = estimation.modification.model.name
+        parts.append(f'{mark} {model}'.strip())
+    except Exception:
+        pass
+    if estimation.vin:
+        parts.append(estimation.vin)
+    if estimation.year:
+        parts.append(str(estimation.year))
+    return ' · '.join(parts) if parts else f'оценка #{estimation.pk}'
+
+
+@login_required
+def board_monitoring_queue(request, kind):
+    """Детальный список очередей мониторинга: autohub / push / send_1c."""
+    kind = (kind or '').strip().lower()
+    back = _monitoring_queue_back_url(request)
+    titles = {
+        'autohub': 'Очередь Автохаб / ЦНА',
+        'push': 'Очередь оповещений',
+        'send_1c': 'Очередь отправки в 1С',
+    }
+    if kind not in titles:
+        raise Http404
+
+    rows = []
+    if kind == 'autohub':
+        for est in _monitoring_qs_autohub_remote()[:500]:
+            rlk_id = getattr(est.rlk, 'id', None)
+            rows.append({
+                'id': est.pk,
+                'source': 'remote',
+                'source_label': 'удалённая',
+                'date': est.start_estimation,
+                'title': _monitoring_estimation_title(est),
+                'rlk_id': rlk_id,
+                'extra': f'hub_avg={getattr(est.page_remote, "hub_avg", "—")}',
+            })
+        for est in _monitoring_qs_autohub_local()[:500]:
+            rlk_id = getattr(est.rlk, 'id', None)
+            rows.append({
+                'id': est.pk,
+                'source': 'local',
+                'source_label': 'салон',
+                'date': est.start_estimation,
+                'title': _monitoring_estimation_title(est),
+                'rlk_id': rlk_id,
+                'extra': 'hub_start пустой',
+            })
+        rows.sort(key=lambda r: r['date'] or DT.datetime.min, reverse=True)
+    elif kind == 'push':
+        for push in _monitoring_qs_push()[:500]:
+            est = push.estimation
+            rlk = push.rlk or (est.rlk if est else None)
+            rows.append({
+                'id': push.pk,
+                'source': '',
+                'source_label': '',
+                'date': push.date,
+                'title': _monitoring_estimation_title(est),
+                'rlk_id': getattr(rlk, 'id', None),
+                'extra': f'{getattr(push.user, "email", "") or push.email or "—"} · {(push.comment or "")[:80]}',
+            })
+    else:
+        for swap in _monitoring_qs_send_1c()[:500]:
+            est = swap.estimation
+            rlk = swap.rlk or (est.rlk if est else None)
+            rows.append({
+                'id': swap.pk,
+                'source': '',
+                'source_label': '',
+                'date': swap.date,
+                'title': _monitoring_estimation_title(est) if est else (f'РЛК {rlk.id}' if rlk else f'#{swap.pk}'),
+                'rlk_id': getattr(rlk, 'id', None),
+                'extra': f'status_code={swap.status_code} · {(swap.comment or "")[:80]}',
+            })
+
+    params = {
+        'type': 'monitorings',
+        'kind': kind,
+        'title': titles[kind],
+        'back': back,
+        'rows': rows,
+        'count': len(rows),
+        'hint': {
+            'autohub': 'Снятие: удалённая — page_remote.hub_avg=-1; салон — hub_start=сейчас. Повторный запрос Autohub не пойдёт.',
+            'push': 'Снятие: send=True (как после успешной отправки письма).',
+            'send_1c': 'Снятие: status_code=0, status=skipped_monitoring (из очереди status_code=60).',
+        }.get(kind, ''),
+    }
+    return render(request, 'website/board_monitoring_queue.html', {'params': params})
+
+
+@login_required
+@require_http_methods(['POST'])
+def board_monitoring_queue_dismiss(request, kind):
+    kind = (kind or '').strip().lower()
+    back = _monitoring_queue_back_url(request)
+    item_id = request.POST.get('id', '').strip()
+    source = (request.POST.get('source') or '').strip()
+    dismiss_all = request.POST.get('dismiss_all') == '1'
+
+    if kind not in ('autohub', 'push', 'send_1c'):
+        raise Http404
+
+    if dismiss_all:
+        if kind == 'autohub':
+            for est in _monitoring_qs_autohub_remote():
+                _monitoring_dismiss_autohub(est.pk, 'remote')
+            for est in _monitoring_qs_autohub_local():
+                _monitoring_dismiss_autohub(est.pk, 'local')
+        elif kind == 'push':
+            for push in _monitoring_qs_push():
+                _monitoring_dismiss_push(push.pk)
+        else:
+            for swap in _monitoring_qs_send_1c():
+                _monitoring_dismiss_send_1c(swap.pk)
+    elif item_id:
+        try:
+            pk = int(item_id)
+        except (TypeError, ValueError):
+            pk = None
+        if pk is not None:
+            if kind == 'autohub':
+                _monitoring_dismiss_autohub(pk, source or 'local')
+            elif kind == 'push':
+                _monitoring_dismiss_push(pk)
+            else:
+                _monitoring_dismiss_send_1c(pk)
+
+    return HttpResponseRedirect(f'/monitorings/queue/{kind}/?back={back}')
 
 
 def get_free_space_mb(folder):
@@ -10321,6 +10571,15 @@ def refresh_estimation_analitik(estimation_rlk_id):
                                        'status_soglasovanie_posle_kd'
             ]) 
         #
+
+
+# Старые QR ведут на /es/<slug>/ — редирект на /est/<slug>/ без перевыпуска кодов.
+def customer_est_es_redirect(request, slug):
+    target = reverse('website:slug', kwargs={'slug': slug})
+    query = request.META.get('QUERY_STRING')
+    if query:
+        target = f'{target}?{query}'
+    return redirect(target, permanent=True)
 
 
 #оценка автомобиля клиентом на основании рлк оп
