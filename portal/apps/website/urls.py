@@ -12,6 +12,7 @@ urlpatterns = [
    path('login/',             views.loging),
    path('logout/',            views.logout),
    
+   path('es/<slug:slug>/',       views.customer_est_es_redirect, name='customer_est_es_redirect'),
    path('est/<slug:slug>/',      views.customer_est, name='slug'),
    path('stok_im/',              views.stok_im_dashboard, name='stok_im'),
    path('stok_im/list/',         views.stok_im, name='stok_im_list'),
@@ -40,6 +41,8 @@ urlpatterns = [
    # Мониторинг
    path('monitorings/',             views.board_monitoring),
    path('monitorings_eco/',         views.board_monitoring_eco),
+   path('monitorings/queue/<str:kind>/', views.board_monitoring_queue, name='board_monitoring_queue'),
+   path('monitorings/queue/<str:kind>/dismiss/', views.board_monitoring_queue_dismiss, name='board_monitoring_queue_dismiss'),
 
    # Справочники
    path('refs/',                 views.refs),
