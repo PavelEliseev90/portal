@@ -9,6 +9,7 @@ urlpatterns = [
     path('chat/send/', views.feed_chat_send, name='feed_chat_send'),
     path('chat/messages/', views.feed_chat_messages, name='feed_chat_messages'),
     path('buyout-recommendations/', views.buyout_recommendations, name='buyout_recommendations'),
+    path('analytics/', views.analytics, name='analytics'),
     path('settings/', views.auction_settings, name='auction_settings'),
     path('lots/<int:pk>/', views.lot_detail, name='lot_detail'),
     path('lots/<int:pk>/chat/send/', views.lot_chat_send, name='lot_chat_send'),

@@ -250,12 +250,19 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _send_json(self, code: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(code)
-        self.send_header("content-type", "application/json; charset=utf-8")
-        self.send_header("content-length", str(len(body)))
-        self.send_header("cache-control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(code)
+            self.send_header("content-type", "application/json; charset=utf-8")
+            self.send_header("content-length", str(len(body)))
+            self.send_header("cache-control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as exc:
+            # Клиент закрыл вкладку / оборвал fetch по таймауту — это не ошибка скрипта.
+            print(
+                f"[{self.log_date_time_string()}] client disconnected "
+                f"while sending {self.path}: {type(exc).__name__}"
+            )
 
     def _read_json_body(self):
         content_len = int(self.headers.get("content-length", "0") or "0")
@@ -391,12 +398,16 @@ class Handler(SimpleHTTPRequestHandler):
                         result_payload = candidate
                         break
                 ok = proc.returncode == 0 and bool(result_payload and result_payload.get("ok") is not False)
+                if result_payload is None and proc.returncode != 0:
+                    err_tail = ((proc.stderr or "") + "\n" + (proc.stdout or "")).strip()[-500:]
+                    result_payload = {"ok": False, "error": err_tail or f"script exit {proc.returncode}"}
                 self._send_json(200 if ok else 500, {
                     "ok": ok,
                     "returncode": proc.returncode,
                     "stdout": (proc.stdout or "")[-12000:],
                     "stderr": (proc.stderr or "")[-8000:],
                     "outcome_result": result_payload or {},
+                    "error": None if ok else (result_payload or {}).get("error") or (proc.stderr or "")[-400:],
                 })
             finally:
                 _outcome_lock.release()

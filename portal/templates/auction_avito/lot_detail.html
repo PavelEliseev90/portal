@@ -161,10 +161,19 @@
         {% if params.lot.finish_at %} · до {{ params.lot.finish_at|date:"d.m.Y H:i" }}{% endif %}
       </p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
       <a href="{% url 'auction_avito:lot_list' %}" class="btn btn-outline-secondary btn-sm">
         <span class="bi bi-arrow-left"></span> К списку
       </a>
+      {% if params.primary_offer and params.primary_offer.lot_offer_id %}
+        <a href="https://app.maxposter.ru/dealer/auction/{{ params.primary_offer.lot_offer_id }}/view"
+           class="btn btn-outline-primary btn-sm"
+           target="_blank"
+           rel="noopener noreferrer"
+           title="Открыть карточку лота в Maxposter (Avito)">
+          <span class="bi bi-box-arrow-up-right"></span> Открыть лот в Avito
+        </a>
+      {% endif %}
       {% if params.primary_offer %}
         <span class="badge {% if params.primary_offer.status_code == 'inprogress' %}bg-success{% elif params.primary_offer.status_code == 'won' %}bg-success{% elif params.primary_offer.status_code == 'lost' %}bg-danger{% else %}bg-secondary{% endif %}">
           {{ params.primary_offer.status_name|default:params.primary_offer.status_code }}

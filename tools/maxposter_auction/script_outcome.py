@@ -279,20 +279,50 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
     }
 
 
-def _load_items() -> list[dict]:
+def _load_items() -> tuple[list[dict], dict]:
+    """Возвращает (items, meta) — meta нужна viewer'у при пустой очереди."""
+    meta: dict = {
+        "enabled": True,
+        "queueCount": 0,
+        "filteredCount": 0,
+        "dealerId": _env(DEALER_ID_ENV) or None,
+        "portalBase": _portal_base(),
+    }
     raw = _env(OUTCOME_ITEMS_ENV)
     if raw:
         data = json.loads(raw)
         if isinstance(data, dict) and "items" in data:
-            return list(data.get("items") or [])
-        if isinstance(data, list):
-            return data
+            items = list(data.get("items") or [])
+        elif isinstance(data, list):
+            items = data
+        else:
+            items = []
+        meta["queueCount"] = len(items)
+        dealer_id = meta["dealerId"]
+        if dealer_id:
+            items = [
+                i for i in items
+                if not i.get("dealerId") or str(i.get("dealerId")) == str(dealer_id)
+            ]
+        meta["filteredCount"] = len(items)
+        return items, meta
+
     limit = int(_env(OUTCOME_LIMIT_ENV, "20") or "20")
     queue = fetch_outcome_queue(limit=limit)
-    if not queue.get("enabled", True):
+    meta["enabled"] = bool(queue.get("enabled", True))
+    if not meta["enabled"]:
         print("Outcome poll disabled on portal")
-        return []
-    return list(queue.get("items") or [])
+        return [], meta
+    items = list(queue.get("items") or [])
+    meta["queueCount"] = len(items)
+    dealer_id = meta["dealerId"]
+    if dealer_id:
+        items = [
+            i for i in items
+            if not i.get("dealerId") or str(i.get("dealerId")) == str(dealer_id)
+        ]
+    meta["filteredCount"] = len(items)
+    return items, meta
 
 
 def main():
@@ -300,12 +330,24 @@ def main():
     password = _env_required(PASSWORD_ENV)
     dealer_id = _env(DEALER_ID_ENV)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    items = _load_items()
-    print(f"OUTCOME_QUEUE count={len(items)} portal={_portal_base()}")
+    items, queue_meta = _load_items()
+    print(
+        f"OUTCOME_QUEUE enabled={queue_meta.get('enabled')} "
+        f"queue={queue_meta.get('queueCount')} filtered={queue_meta.get('filteredCount')} "
+        f"dealer={dealer_id or '-'} portal={_portal_base()}"
+    )
 
     results = []
     if not items:
-        print(json.dumps({"ok": True, "count": 0, "results": []}, ensure_ascii=False))
+        reason = "disabled" if not queue_meta.get("enabled") else "empty"
+        print(json.dumps({
+            "ok": True,
+            "count": 0,
+            "okCount": 0,
+            "results": [],
+            "reason": reason,
+            **queue_meta,
+        }, ensure_ascii=False))
         return
 
     with sync_playwright() as p:
@@ -359,7 +401,13 @@ def main():
             browser.close()
 
     ok_n = sum(1 for r in results if r.get("ok"))
-    payload = {"ok": ok_n == len(results), "count": len(results), "okCount": ok_n, "results": results}
+    payload = {
+        "ok": ok_n == len(results),
+        "count": len(results),
+        "okCount": ok_n,
+        "results": results,
+        **queue_meta,
+    }
     print(json.dumps(payload, ensure_ascii=False))
 
 

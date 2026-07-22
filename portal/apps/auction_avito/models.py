@@ -758,3 +758,56 @@ class AvitoAuctionSettings(models.Model):
             val = getattr(self, field)
             if val is not None and val < 0:
                 raise ValidationError({field: 'Вес не может быть отрицательным.'})
+
+
+class AvitoAutoBidDecision(models.Model):
+    """
+    Журнал решений автоставки (каждый вызов decide API).
+    Нужен для аналитики: почему не ставили / сколько разрешили.
+    """
+    lot = models.ForeignKey(
+        AvitoLot,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='auto_bid_decisions',
+    )
+    offer = models.ForeignKey(
+        AvitoLotOffer,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='auto_bid_decisions',
+    )
+    lot_id_ext = models.BigIntegerField('lotId', null=True, blank=True, db_index=True)
+    lot_offer_id_ext = models.BigIntegerField('lotOfferId', null=True, blank=True, db_index=True)
+
+    should_bid = models.BooleanField(default=False, db_index=True)
+    filters_ok = models.BooleanField(default=False)
+    reason = models.CharField(max_length=500, blank=True, default='')
+    reason_category = models.CharField(max_length=40, blank=True, default='', db_index=True)
+    mode = models.CharField(max_length=30, blank=True, default='')
+
+    buyout_price = models.PositiveIntegerField(null=True, blank=True)
+    min_available_bid = models.PositiveIntegerField(null=True, blank=True)
+    max_bid = models.PositiveIntegerField(null=True, blank=True)
+    our_bid = models.PositiveIntegerField(null=True, blank=True)
+    next_bid = models.PositiveIntegerField(null=True, blank=True)
+    bid_amount = models.PositiveIntegerField(null=True, blank=True)
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
+    mileage = models.PositiveIntegerField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'avitoAutoBidDecision'
+        verbose_name = 'Решение автоставки'
+        verbose_name_plural = 'Решения автоставок'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at', 'reason_category']),
+            models.Index(fields=['should_bid', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f'auto-bid {"OK" if self.should_bid else "skip"} {self.reason_category} @ {self.created_at}'

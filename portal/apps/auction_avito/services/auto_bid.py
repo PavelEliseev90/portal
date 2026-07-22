@@ -16,10 +16,94 @@ def _as_int(value, default=None):
         return default
 
 
-def round_up_to(value: int, step: int) -> int:
-    step = max(1, int(step or 1))
-    value = int(value)
-    return int(math.ceil(value / float(step)) * step)
+def categorize_auto_bid_reason(reason: str, *, should_bid: bool = False, filters_ok: bool = True) -> str:
+    """
+    Стабильный код причины для аналитики.
+    Группы: disabled | filter_* | economics_* | already_* | ok | other
+    """
+    if should_bid:
+        return 'ok'
+    text = (reason or '').strip().lower()
+    if not text:
+        return 'other'
+    if 'выключен' in text:
+        return 'disabled'
+    if text.startswith('фильтр:'):
+        body = text[len('фильтр:'):].strip()
+        if body.startswith('год'):
+            return 'filter_year'
+        if body.startswith('пробег'):
+            return 'filter_mileage'
+        if 'такси' in body or 'taxi' in body:
+            return 'filter_taxi'
+        if 'каршеринг' in body or 'carsharing' in body:
+            return 'filter_carsharing'
+        if 'скруч' in body or 'mileagetwisted' in body:
+            return 'filter_mileage_twisted'
+        return 'filter_other'
+    if not filters_ok:
+        return 'filter_other'
+    if 'нет рассчитанного выкупа' in text:
+        return 'no_buyout'
+    if 'minavailablebid' in text and 'нет минимальной' in text:
+        return 'no_min_bid'
+    if '≤ minavailablebid' in text or '<= minavailablebid' in text:
+        return 'buyout_le_min'
+    if '≤ maxbid' in text or '<= maxbid' in text:
+        return 'buyout_le_max'
+    if 'уже наша' in text or 'уже есть наша ставка' in text:
+        return 'already_ours'
+    if '≥ выкупа' in text or '>= выкупа' in text:
+        return 'next_ge_buyout'
+    if text.startswith('ok'):
+        return 'ok'
+    return 'other'
+
+
+REASON_CATEGORY_LABELS = {
+    'ok': 'Ставка разрешена',
+    'disabled': 'Автоставки выключены',
+    'filter_year': 'Фильтр: год',
+    'filter_mileage': 'Фильтр: пробег',
+    'filter_taxi': 'Фильтр: такси',
+    'filter_carsharing': 'Фильтр: каршеринг',
+    'filter_mileage_twisted': 'Фильтр: скрутка пробега',
+    'filter_other': 'Фильтр: прочее',
+    'no_buyout': 'Нет выкупа',
+    'no_min_bid': 'Нет minAvailableBid',
+    'buyout_le_min': 'Выкуп ≤ minAvailableBid',
+    'buyout_le_max': 'Выкуп ≤ maxBid',
+    'already_ours': 'Уже наша ставка / мы лидируем',
+    'next_ge_buyout': 'След. ставка ≥ выкупа',
+    'other': 'Прочее',
+}
+
+REASON_CATEGORY_GROUP = {
+    'disabled': 'system',
+    'filter_year': 'filters',
+    'filter_mileage': 'filters',
+    'filter_taxi': 'filters',
+    'filter_carsharing': 'filters',
+    'filter_mileage_twisted': 'filters',
+    'filter_other': 'filters',
+    'no_buyout': 'economics',
+    'no_min_bid': 'economics',
+    'buyout_le_min': 'economics',
+    'buyout_le_max': 'economics',
+    'next_ge_buyout': 'economics',
+    'already_ours': 'already',
+    'ok': 'ok',
+    'other': 'other',
+}
+
+REASON_GROUP_LABELS = {
+    'system': 'Система',
+    'filters': 'Не прошли фильтры настроек',
+    'economics': 'Экономика / выкуп',
+    'already': 'Уже в торгах',
+    'ok': 'Разрешено ставить',
+    'other': 'Прочее',
+}
 
 
 def extract_risk_flags_from_payload(payload: dict | None) -> dict:
@@ -125,6 +209,7 @@ def decide_auto_bid(
         'should_bid': False,
         'bid_amount': None,
         'reason': '',
+        'reason_category': 'other',
         'buyout_price': _as_int(buyout_price),
         'min_available_bid': _as_int(min_available_bid),
         'max_bid': _as_int(max_bid),
@@ -137,6 +222,7 @@ def decide_auto_bid(
 
     if not getattr(settings, 'auto_bid_enabled', False):
         result['reason'] = 'автоставки выключены в настройках'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'], should_bid=False)
         return result
 
     ok, reason = settings_pass_filters(
@@ -148,6 +234,9 @@ def decide_auto_bid(
     result['filters_ok'] = ok
     if not ok:
         result['reason'] = f'фильтр: {reason}'
+        result['reason_category'] = categorize_auto_bid_reason(
+            result['reason'], should_bid=False, filters_ok=False,
+        )
         return result
 
     buyout = result['buyout_price']
@@ -159,13 +248,16 @@ def decide_auto_bid(
 
     if not buyout or buyout <= 0:
         result['reason'] = 'нет рассчитанного выкупа'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
     if min_avail is None:
         result['reason'] = 'нет минимальной доступной ставки (minAvailableBid)'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
 
     if buyout <= min_avail:
         result['reason'] = f'выкуп {buyout} ≤ minAvailableBid {min_avail}'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
 
     round_to = _as_int(getattr(settings, 'bid_round_to', 1000), 1000) or 1000
@@ -175,6 +267,7 @@ def decide_auto_bid(
         result['mode'] = 'first_from_min'
         if our is not None and our > 0 and our >= min_avail:
             result['reason'] = 'уже есть наша ставка при пустом maxBid — ждём обновления лота'
+            result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
         next_bid = round_up_to(min_avail + max(step, 0), round_to)
         result['next_bid'] = next_bid
@@ -182,21 +275,25 @@ def decide_auto_bid(
             result['reason'] = (
                 f'первая ставка {next_bid} (minAvailableBid+шаг↑{round_to}) ≥ выкупа {buyout}'
             )
+            result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
         result['should_bid'] = True
         result['bid_amount'] = next_bid
         result['reason'] = 'ok (первая ставка: min+шаг)'
+        result['reason_category'] = 'ok'
         return result
 
     # Есть maxBid по лоту
     result['mode'] = 'raise_max'
     if buyout <= max_bid_v:
         result['reason'] = f'выкуп {buyout} ≤ maxBid {max_bid_v}'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
 
     max_is_ours = our is not None and our > 0 and our == max_bid_v
     if max_is_ours:
         result['reason'] = 'максимальная ставка по лоту уже наша'
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
 
     next_bid = round_up_to(max_bid_v + max(step, 0), round_to)
@@ -206,6 +303,7 @@ def decide_auto_bid(
         result['reason'] = (
             f'следующая ставка {next_bid} (maxBid+шаг↑{round_to}) ≥ выкупа {buyout}'
         )
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
     if next_bid < min_avail:
         next_bid = round_up_to(min_avail + max(step, 0), round_to)
@@ -214,9 +312,11 @@ def decide_auto_bid(
             result['reason'] = (
                 f'после выравнивания к minAvailableBid {next_bid} ≥ выкупа {buyout}'
             )
+            result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
 
     result['should_bid'] = True
     result['bid_amount'] = next_bid
     result['reason'] = 'ok'
+    result['reason_category'] = 'ok'
     return result
