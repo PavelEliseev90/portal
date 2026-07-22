@@ -68,6 +68,8 @@ def _script_subprocess_env(env: dict) -> dict:
 
 
 def _run_script(script_path: str, module_name: str, env: dict, *, timeout: int = 600) -> _ScriptResult:
+    env = dict(env)
+    env.setdefault("APP_DIR", HERE)
     if is_frozen():
         return _run_script_module(module_name, env)
     run_env = _script_subprocess_env(env)
@@ -401,6 +403,31 @@ class Handler(SimpleHTTPRequestHandler):
                 if result_payload is None and proc.returncode != 0:
                     err_tail = ((proc.stderr or "") + "\n" + (proc.stdout or "")).strip()[-500:]
                     result_payload = {"ok": False, "error": err_tail or f"script exit {proc.returncode}"}
+
+                # Дублируем лог опроса в файл рядом с сервером (удобно смотреть без viewer).
+                try:
+                    log_path = os.path.join(HERE, "outcome_poll.log")
+                    with open(log_path, "a", encoding="utf-8") as fh:
+                        fh.write(f"\n----- /api/outcomes {datetime.now().isoformat(timespec='seconds')} dealer={dealer_id} -----\n")
+                        if proc.stdout:
+                            fh.write(proc.stdout)
+                            if not proc.stdout.endswith("\n"):
+                                fh.write("\n")
+                        if proc.stderr:
+                            fh.write("--- stderr ---\n")
+                            fh.write(proc.stderr)
+                            if not proc.stderr.endswith("\n"):
+                                fh.write("\n")
+                    summary = (result_payload or {}).get("summary") or {}
+                    by = summary.get("byOutcome") or {}
+                    print(
+                        f"[outcomes] ok={ok} count={summary.get('total', (result_payload or {}).get('count'))} "
+                        f"by={by} log={log_path}",
+                        flush=True,
+                    )
+                except Exception as log_exc:
+                    print(f"[outcomes] log write failed: {log_exc}", flush=True)
+
                 self._send_json(200 if ok else 500, {
                     "ok": ok,
                     "returncode": proc.returncode,
@@ -408,6 +435,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "stderr": (proc.stderr or "")[-8000:],
                     "outcome_result": result_payload or {},
                     "error": None if ok else (result_payload or {}).get("error") or (proc.stderr or "")[-400:],
+                    "log_path": os.path.join(HERE, "outcome_poll.log"),
                 })
             finally:
                 _outcome_lock.release()

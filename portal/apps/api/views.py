@@ -545,6 +545,8 @@ def avito_auction_outcome_queue(request):
 
     settings_obj = AvitoAuctionSettings.get_solo()
     if not settings_obj.outcome_poll_enabled:
+        import logging
+        logging.getLogger(__name__).info('avito outcome queue: enabled=0 (disabled in settings)')
         return JsonResponse({
             'ok': True,
             'enabled': False,
@@ -580,6 +582,17 @@ def avito_auction_outcome_queue(request):
             recheck_hours=recheck_hours,
         )
     ]
+    import logging
+    logging.getLogger(__name__).info(
+        'avito outcome queue: enabled=1 count=%s limit=%s lookback_days=%s',
+        len(items), limit, lookback_days,
+    )
+    for it in items:
+        logging.getLogger(__name__).info(
+            'avito outcome queue item: lotOfferId=%s lotId=%s bid=%s prev=%s car=%s',
+            it.get('lotOfferId'), it.get('lotId'), it.get('bid'),
+            it.get('outcomeCode') or '-', it.get('car'),
+        )
     return JsonResponse({
         'ok': True,
         'enabled': True,
