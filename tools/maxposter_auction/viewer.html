@@ -390,6 +390,13 @@
             <option value="1">Вкл (по правилам портала)</option>
           </select>
         </label>
+        <label class="dealerPick" title="После обновления лотов, когда очередь расчётов и автоставок опустеет — опросить итоги завершённых лотов">
+          Итоги после обновления
+          <select id="autoOutcomesLocal">
+            <option value="0">Выкл (только кнопка)</option>
+            <option value="1">Вкл (после расчётов/ставок)</option>
+          </select>
+        </label>
         <label>
           Лимит строк
           <select id="limit">
@@ -524,6 +531,8 @@
   let autoReloadTimeout = null;
   let autoReloadTickRunning = false;
   let outcomePollRunning = false;
+  let outcomesAfterReloadPending = false;
+  let outcomesIdleTimer = null;
   let lastAutoReloadFinishedAt = 0;
   let reloadPromise = null;
 
@@ -569,9 +578,11 @@
         }finally{
           calcQueueRunning--;
           drainCalcQueue();
+          maybeScheduleOutcomesAfterPipeline();
         }
       })();
     }
+    maybeScheduleOutcomesAfterPipeline();
   }
 
   /** Поля, по которым решаем: нужен повторный пересчёт после reload из Maxposter. */
@@ -1307,7 +1318,7 @@
       });
       updateRowAfterCalc(key, offer);
       // автоставка: после успешного расчёта (условия — на портале)
-      maybeAutoBidAfterCalc(offer, result.answer).catch(() => {});
+      await maybeAutoBidAfterCalc(offer, result.answer);
     }catch(err){
       calcCache.set(key, { ok: false, err: String(err?.message || err || "Ошибка") });
       updateRowAfterCalc(key, offer);
@@ -1320,6 +1331,35 @@
   }
   function isLocalAutoBidEnabled(){
     return String($("autoBidLocal")?.value || "0") === "1";
+  }
+  function isLocalOutcomesAutoEnabled(){
+    return String($("autoOutcomesLocal")?.value || "0") === "1";
+  }
+  function isCalcAutoBidPipelineIdle(){
+    return calcQueue.length === 0 && calcQueueRunning === 0 && autoBidInFlight.size === 0;
+  }
+  function markOutcomesAfterReload(){
+    if (!isLocalOutcomesAutoEnabled()){
+      outcomesAfterReloadPending = false;
+      return;
+    }
+    outcomesAfterReloadPending = true;
+    maybeScheduleOutcomesAfterPipeline();
+  }
+  function maybeScheduleOutcomesAfterPipeline(){
+    if (!outcomesAfterReloadPending || !isLocalOutcomesAutoEnabled()) return;
+    if (outcomePollRunning) return;
+    if (outcomesIdleTimer) clearTimeout(outcomesIdleTimer);
+    outcomesIdleTimer = setTimeout(() => {
+      outcomesIdleTimer = null;
+      if (!outcomesAfterReloadPending || !isLocalOutcomesAutoEnabled()) return;
+      if (!isCalcAutoBidPipelineIdle()){
+        maybeScheduleOutcomesAfterPipeline();
+        return;
+      }
+      outcomesAfterReloadPending = false;
+      runOutcomePoll({ silent: true, reason: "после обновления / расчётов / автоставок" });
+    }, 1200);
   }
   /** Пустой/0 maxBid = ставок ещё нет → в decide уходит null (первая ставка от min). */
   function normalizeMaxBidForDecide(v){
@@ -1429,6 +1469,7 @@
       logAutoBid(`лот ${lotLabel}: ошибка — ${errText}`);
     }finally{
       autoBidInFlight.delete(key);
+      maybeScheduleOutcomesAfterPipeline();
     }
   }
   function renderModalCalcBlock(offer){
@@ -1849,6 +1890,13 @@
         localStorage.setItem("mp_auto_bid_local", $("autoBidLocal").value);
       });
     }
+    const savedAutoOutcomes = localStorage.getItem("mp_auto_outcomes_local") || "0";
+    if ($("autoOutcomesLocal")) {
+      $("autoOutcomesLocal").value = savedAutoOutcomes === "1" ? "1" : "0";
+      $("autoOutcomesLocal").addEventListener("change", () => {
+        localStorage.setItem("mp_auto_outcomes_local", $("autoOutcomesLocal").value);
+      });
+    }
     $("bidAmountModal").value = localStorage.getItem("mp_bid_amount") || "";
     $("bidAmountModal").addEventListener("input", () => localStorage.setItem("mp_bid_amount", $("bidAmountModal").value));
   }
@@ -2103,6 +2151,7 @@
         }
         addReloadLog({ ok: true, dealerId, count: data?.count ?? null, msg: "reload" });
         await boot();
+        markOutcomesAfterReload();
         return { skipped: false, ok: true };
       }finally{
         btn.disabled = false;
@@ -2144,7 +2193,7 @@
       btn.innerHTML = prev;
     }
   });
-  $("pollOutcomes").addEventListener("click", async () => {
+  async function runOutcomePoll({ silent = false, reason = "" } = {}){
     const email = ($("loginEmail")?.value || "").trim();
     const password = $("loginPassword")?.value || "";
     const dealerId = getSelectedDealerId();
@@ -2165,32 +2214,43 @@
     };
 
     if (!email || !password){
-      setOutcomeStatus("Итоги: укажите логин и пароль Maxposter");
-      logOutcome({ ok: false, msg: "Итоги: нет логина/пароля" });
-      try{ switchTab("Logs"); }catch(_){}
-      return;
+      if (!silent){
+        setOutcomeStatus("Итоги: укажите логин и пароль Maxposter");
+        logOutcome({ ok: false, msg: "Итоги: нет логина/пароля" });
+        try{ switchTab("Logs"); }catch(_){}
+      }
+      return { ok: false, reason: "no_auth" };
     }
     if (!dealerId){
-      setOutcomeStatus("Итоги: выберите площадку");
-      logOutcome({ ok: false, msg: "Итоги: не выбрана площадка" });
-      try{ switchTab("Logs"); }catch(_){}
-      return;
+      if (!silent){
+        setOutcomeStatus("Итоги: выберите площадку");
+        logOutcome({ ok: false, msg: "Итоги: не выбрана площадка" });
+        try{ switchTab("Logs"); }catch(_){}
+      }
+      return { ok: false, reason: "no_dealer" };
     }
     if (outcomePollRunning){
-      setOutcomeStatus("Итоги: уже выполняется…");
-      return;
+      if (!silent) setOutcomeStatus("Итоги: уже выполняется…");
+      return { ok: false, reason: "busy" };
     }
 
     const btn = $("pollOutcomes");
-    const prev = btn.innerHTML;
+    const prev = btn ? btn.innerHTML : "";
     outcomePollRunning = true;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spin"></span>Итоги…`;
-    try{ switchTab("Logs"); }catch(_){}
+    if (btn){
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spin"></span>Итоги…`;
+    }
+    if (!silent){
+      try{ switchTab("Logs"); }catch(_){}
+    }
 
     try{
-      setOutcomeStatus("Итоги: читаю очередь с портала…");
-      logOutcome({ ok: true, skipped: true, msg: "Итоги: запрос очереди с портала…" });
+      const startMsg = reason
+        ? `Итоги: старт (${reason})…`
+        : "Итоги: читаю очередь с портала…";
+      setOutcomeStatus(startMsg);
+      logOutcome({ ok: true, skipped: true, msg: startMsg });
 
       const queueUrl = `${getPortalApiUrls().outcomeQueue}?limit=20`;
       const qResp = await fetch(queueUrl, { cache: "no-store" });
@@ -2202,7 +2262,7 @@
         const msg = "Итоги: опрос выключен в настройках портала";
         setOutcomeStatus(msg);
         logOutcome({ ok: false, skipped: true, msg });
-        return;
+        return { ok: false, reason: "disabled" };
       }
 
       let items = Array.isArray(qData.items) ? qData.items.slice() : [];
@@ -2211,12 +2271,12 @@
         const msg = `Итоги: очередь пуста (портал: ${qData.count ?? 0}, площадка ${dealerId}: 0)`;
         setOutcomeStatus(msg);
         logOutcome({ ok: true, skipped: true, msg });
-        return;
+        return { ok: true, count: 0 };
       }
 
       logOutcome({
         ok: true,
-        msg: `Итоги: в очереди ${items.length} лот(ов), опрашиваю по одному (сессия Maxposter без перелогина)…`,
+        msg: `Итоги: в очереди ${items.length} лот(ов), опрашиваю по одному…`,
         count: items.length,
       });
 
@@ -2230,7 +2290,7 @@
         const car = item.car ? ` «${item.car}»` : "";
         const progress = `${i + 1}/${items.length}`;
         setOutcomeStatus(`Итоги: ${progress} lotId=${item.lotId ?? "—"}…`);
-        btn.innerHTML = `<span class="spin"></span>${progress}`;
+        if (btn) btn.innerHTML = `<span class="spin"></span>${progress}`;
         logOutcome({
           ok: true,
           skipped: true,
@@ -2283,7 +2343,6 @@
           });
         }
 
-        // Пауза: UI/логи успевают отрисоваться, Maxposter не долбим подряд.
         await sleep(700);
       }
 
@@ -2291,15 +2350,22 @@
       const msg = `Итоги готовы: ok=${okN}, ошибок=${failN}${wonN ? `, выиграно=${wonN}` : ""}${byTxt ? ` · ${byTxt}` : ""}`;
       setOutcomeStatus(msg);
       logOutcome({ ok: failN === 0, msg, count: okN + failN });
+      return { ok: failN === 0, count: okN + failN };
     }catch(err){
       const msg = `Итоги: ошибка — ${String(err?.message || err).slice(0, 280)}`;
       setOutcomeStatus(msg);
       logOutcome({ ok: false, msg });
+      return { ok: false, error: msg };
     }finally{
       outcomePollRunning = false;
-      btn.disabled = false;
-      btn.innerHTML = prev;
+      if (btn){
+        btn.disabled = false;
+        btn.innerHTML = prev;
+      }
     }
+  }
+  $("pollOutcomes").addEventListener("click", () => {
+    runOutcomePoll({ silent: false });
   });
   $("bidSubmit").addEventListener("click", async () => {
     const offer = window.__PENDING_BID_OFFER__;
