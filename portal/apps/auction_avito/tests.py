@@ -196,6 +196,24 @@ class OutcomeClassifyTests(SimpleTestCase):
         self.assertEqual(d['outcome_code'], 'lost')
         self.assertEqual(d['status_code'], 'lost')
 
+    def test_lost_chose_another_buyer(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён',
+            detail='Выбрали другого покупателя',
+        )
+        self.assertEqual(d['outcome_code'], 'lost')
+
+    def test_won_dealer_offer_selected(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён Лот не выкупили',
+            detail='продавец автомобиля выбрал предложение вашего дилерского центра среди прочих',
+        )
+        self.assertEqual(d['outcome_code'], 'won')
+
     def test_seller_chose_nobody(self):
         from auction_avito.services.outcome import classify_outcome_text
 
