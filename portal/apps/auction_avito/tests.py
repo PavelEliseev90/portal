@@ -195,3 +195,14 @@ class OutcomeClassifyTests(SimpleTestCase):
         )
         self.assertEqual(d['outcome_code'], 'lost')
         self.assertEqual(d['status_code'], 'lost')
+
+    def test_seller_chose_nobody(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершен',
+            detail='Продавец никого не выбрал',
+        )
+        self.assertEqual(d['outcome_code'], 'no_selection')
+        self.assertEqual(d['status_code'], 'finished')
+        self.assertIn('никого', d['outcome_detail'].lower())

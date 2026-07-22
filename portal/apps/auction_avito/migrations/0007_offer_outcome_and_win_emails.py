@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 db_index=True,
                 default='',
-                help_text='waiting_seller | won | lost | canceled | unknown',
+                help_text='waiting_seller | won | lost | no_selection | canceled | unknown',
                 max_length=40,
                 verbose_name='Код итога',
             ),

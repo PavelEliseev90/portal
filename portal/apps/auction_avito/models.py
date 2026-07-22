@@ -442,7 +442,7 @@ class AvitoLotOffer(models.Model):
         blank=True,
         default='',
         db_index=True,
-        help_text='waiting_seller | won | lost | canceled | unknown',
+        help_text='waiting_seller | won | lost | no_selection | canceled | unknown',
     )
     outcome_title = models.CharField(
         'Заголовок итога',

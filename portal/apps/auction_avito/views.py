@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
+from urllib.parse import urlencode
 
 from auction_avito.services.badges import collect_badges_for_display, ensure_badges_synced
 from auction_avito.lot_tabs import (
@@ -275,10 +276,15 @@ def lot_list(request):
     search = (request.GET.get('q') or '').strip()
     activity = parse_activity_param(request)
     status = (request.GET.get('status') or '').strip()
+    outcome = (request.GET.get('outcome') or '').strip()
     badge_type = (request.GET.get('badge') or '').strip()
     trade_in = (request.GET.get('trade_in') or '').strip()
     venue_dealer = (request.GET.get('venue') or '').strip()
     sort = (request.GET.get('sort') or '-finish_at').strip()
+
+    # Фильтр по итогу обычно смотрит завершённые лоты — не режем «активными».
+    if outcome and 'activity' not in request.GET:
+        activity = ''
 
     if search:
         qs = qs.filter(
@@ -304,6 +310,9 @@ def lot_list(request):
 
     if status:
         qs = qs.filter(offers__status_code=status).distinct()
+
+    if outcome:
+        qs = qs.filter(offers__outcome_code=outcome).distinct()
 
     if badge_type:
         qs = qs.filter(
@@ -340,10 +349,13 @@ def lot_list(request):
         latest_calc_at=Subquery(latest_calc.values('calculated_at')[:1]),
     ).order_by(sort)
 
+    from auction_avito.services.outcome import OUTCOME_FILTER_CHOICES, offer_list_badge
+
     page_obj = Paginator(qs, 24).get_page(request.GET.get('page') or 1)
     for lot in page_obj.object_list:
         offers = list(lot.offers.all())
         ensure_badges_synced(lot, offers[0] if offers else None)
+        lot.list_badge = offer_list_badge(offers[0] if offers else None)
 
     params = {
         'type': 'auction_avito_list',
@@ -352,6 +364,7 @@ def lot_list(request):
             'q': search,
             'activity': activity,
             'status': status,
+            'outcome': outcome,
             'badge': badge_type,
             'trade_in': trade_in,
             'venue': venue_dealer,
@@ -375,6 +388,17 @@ def lot_list(request):
             ('won', 'Выигран'),
             ('lost', 'Проигран'),
         ],
+        'outcome_choices': OUTCOME_FILTER_CHOICES,
+        'filter_qs': urlencode({
+            'q': search,
+            'activity': activity,
+            'status': status,
+            'outcome': outcome,
+            'badge': badge_type,
+            'venue': venue_dealer,
+            'trade_in': trade_in,
+            'sort': sort,
+        }),
     }
     params.update({'feed_chat': build_aav_feed_embed(request)})
     return render(request, 'auction_avito/lot_list.html', {'params': params})

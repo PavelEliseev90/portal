@@ -173,7 +173,7 @@
     </div>
     {% if params.primary_offer and params.primary_offer.outcome_code %}
       <div class="w-100 mt-2">
-        <div class="alert {% if params.primary_offer.outcome_code == 'won' %}alert-success{% elif params.primary_offer.outcome_code == 'lost' %}alert-danger{% elif params.primary_offer.outcome_code == 'waiting_seller' %}alert-warning{% else %}alert-secondary{% endif %} mb-0 py-2">
+        <div class="alert {% if params.primary_offer.outcome_code == 'won' %}alert-success{% elif params.primary_offer.outcome_code == 'lost' %}alert-danger{% elif params.primary_offer.outcome_code == 'waiting_seller' %}alert-warning{% elif params.primary_offer.outcome_code == 'no_selection' %}alert-secondary{% else %}alert-secondary{% endif %} mb-0 py-2">
           <div class="fw-semibold">
             {% if params.primary_offer.outcome_title %}{{ params.primary_offer.outcome_title }}{% else %}Итог лота{% endif %}
           </div>

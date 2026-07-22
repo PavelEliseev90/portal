@@ -40,7 +40,7 @@ OUTCOME_ITEMS_ENV = "OUTCOME_ITEMS_JSON"
 OUTCOME_LIMIT_ENV = "OUTCOME_LIMIT"
 
 INTERESTING_TEXT_RE = re.compile(
-    r"аукцион|решени|продавц|выигр|выбран|проигра|отмен|ждём|ждем|день|побед",
+    r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого",
     re.I,
 )
 
@@ -150,7 +150,8 @@ def _pick_title_detail(texts: list[str]) -> tuple[str, str]:
             title = t
             continue
         if not detail and (
-            "решени" in low or "выигр" in low or "выбран" in low or "проигра" in low or "ждём" in low or "ждем" in low
+            "решени" in low or "выигр" in low or "выбран" in low or "выбрал" in low
+            or "проигра" in low or "ждём" in low or "ждем" in low or "никого" in low
         ):
             detail = t
             continue
@@ -236,7 +237,7 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
                 if (!el || el.children.length > 4) continue;
                 const t = (el.innerText || '').replace(/\\s+/g, ' ').trim();
                 if (t.length < 8 || t.length > 280) continue;
-                if (!/аукцион|решени|продавц|выигр|выбран|проигра|отмен|ждём|ждем|день|побед/i.test(t)) continue;
+                if (!/аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого/i.test(t)) continue;
                 if (seen.has(t)) continue;
                 seen.add(t);
                 out.push(t);
