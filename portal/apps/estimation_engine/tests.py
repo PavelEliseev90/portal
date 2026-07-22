@@ -230,6 +230,19 @@ class RulesEngineSimpleTests(SimpleTestCase):
         self.assertTrue(rule_matches(rule2, {'body_type_id': 2})[0])
         self.assertFalse(rule_matches(rule2, {'body_type_id': 9, 'body_type': 'купе'})[0])
 
+    def test_empty_body_types_match_any(self):
+        """Пустой список кузовов в правиле = применяется ко всем (в т.ч. без кузова в фактах)."""
+        from .rules_engine import rule_matches
+
+        rule = EstimationRule(code='ANY', name='Любой кузов', min_damage_count=0, body_type='')
+        rule._body_types = []
+        self.assertTrue(rule_matches(rule, {})[0])
+        self.assertTrue(rule_matches(rule, {'body_type': 'седан'})[0])
+        self.assertTrue(rule_matches(rule, {'body_type_id': 5, 'body_type': 'купе'})[0])
+
+        rule2 = EstimationRule(code='ANY2', name='Без M2M', min_damage_count=0, body_type='')
+        self.assertTrue(rule_matches(rule2, {})[0])
+
     def test_condition_scratch_gt3_and_no_dents(self):
         from .models import EstimationRuleCondition
         from .rules_engine import rule_matches
