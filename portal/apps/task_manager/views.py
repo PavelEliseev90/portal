@@ -2102,6 +2102,44 @@ def refresh_estimation_cars_organization_run():
 def start_refresh_avtoteka_vin():
     refresh_avtoteka_vin()
 
+
+def calc_avtoteka_run_metrics(json_autoteka):
+    """
+    По eventsOthersHistory (как в eco):
+    - avtoteka_last_run — последний заполненный пробег (source != Audatex);
+    - avtoteka_warning_run — сумма скачков вниз > 1000 км (возможная скрутка).
+    """
+    last_run = 0
+    run_sum = 0
+    if not isinstance(json_autoteka, dict):
+        return last_run, run_sum
+    events = json_autoteka.get('eventsOthersHistory') or []
+    run_other = 0
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        if event.get('source') == 'Audatex':
+            continue
+        try:
+            mileage = int(event.get('mileage') or 0)
+        except (TypeError, ValueError):
+            continue
+        if mileage > 0:
+            run = mileage
+            if run_other > run and (run_other - run) > 1000:
+                run_sum += (run_other - run)
+            run_other = run
+            last_run = run
+    return last_run, run_sum
+
+
+def apply_avtoteka_run_fields(object_estimation, json_autoteka):
+    last_run, warning_run = calc_avtoteka_run_metrics(json_autoteka)
+    object_estimation.avtoteka_last_run = last_run or 0
+    object_estimation.avtoteka_warning_run = warning_run or 0
+    return last_run, warning_run
+
+
 def refresh_avtoteka_data(interactiv_ocenka_id):
     token = ''
     header = {
@@ -2166,6 +2204,7 @@ def refresh_avtoteka_data(interactiv_ocenka_id):
                         try:
                             json_autoteka = json.loads(response_report_data.text)['result']['report']['data']
                             object_estimation.count_dtp                     = len(json_autoteka['accidents']['crashesHistory'])
+                            apply_avtoteka_run_fields(object_estimation, json_autoteka)
                             
                             sum_audex = 0
                             for service_info in json_autoteka['eventsOthersHistory']:
@@ -2218,6 +2257,8 @@ def refresh_avtoteka_data(interactiv_ocenka_id):
                                                     'avito_price_market_max',
                                                     'avito_price_min',
                                                     'avito_price_max',
+                                                    'avtoteka_last_run',
+                                                    'avtoteka_warning_run',
                                                 ])                 
 
 
@@ -2345,6 +2386,7 @@ def refresh_avtoteka_vin():
                             try:
                                 json_autoteka = json.loads(response_report_data.text)['result']['report']['data']
                                 object_estimation.count_dtp                     = len(json_autoteka['accidents']['crashesHistory'])
+                                apply_avtoteka_run_fields(object_estimation, json_autoteka)
                                 
                                 sum_audex = 0
                                 for service_info in json_autoteka['eventsOthersHistory']:
@@ -2397,6 +2439,8 @@ def refresh_avtoteka_vin():
                                                         'avito_price_market_max',
                                                         'avito_price_min',
                                                         'avito_price_max',
+                                                        'avtoteka_last_run',
+                                                        'avtoteka_warning_run',
                                                     ])                 
 
 
