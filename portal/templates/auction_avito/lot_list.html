@@ -247,7 +247,7 @@
         <a class="aav-card" href="{% url 'auction_avito:lot_detail' lot.pk %}">
           <div class="aav-card-photo">
             {% if offer %}
-              <span class="aav-status {% if offer.status_code == 'inprogress' %}aav-status-inprogress{% endif %}">
+              <span class="aav-status {% if offer.status_code == 'inprogress' %}aav-status-inprogress{% elif offer.status_code == 'won' %}aav-status-inprogress{% endif %}">
                 {{ offer.status_name|default:offer.status_code|default:"—" }}
               </span>
             {% endif %}
@@ -269,6 +269,12 @@
                 Лот {{ lot.lot_id }}
               {% endif %}
             </div>
+            {% if offer and offer.outcome_code %}
+              <div class="small {% if offer.outcome_code == 'won' %}text-success{% elif offer.outcome_code == 'lost' %}text-danger{% else %}text-muted{% endif %} mb-1">
+                {% if offer.outcome_title %}{{ offer.outcome_title }}{% endif %}
+                {% if offer.outcome_detail %} — {{ offer.outcome_detail|truncatechars:80 }}{% endif %}
+              </div>
+            {% endif %}
             <div class="aav-card-meta">
               {% if vehicle %}
                 {% if vehicle.mileage %}{{ vehicle.mileage|formatted_number }} км{% endif %}

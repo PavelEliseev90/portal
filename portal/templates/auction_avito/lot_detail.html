@@ -166,11 +166,26 @@
         <span class="bi bi-arrow-left"></span> К списку
       </a>
       {% if params.primary_offer %}
-        <span class="badge {% if params.primary_offer.status_code == 'inprogress' %}bg-success{% else %}bg-secondary{% endif %}">
+        <span class="badge {% if params.primary_offer.status_code == 'inprogress' %}bg-success{% elif params.primary_offer.status_code == 'won' %}bg-success{% elif params.primary_offer.status_code == 'lost' %}bg-danger{% else %}bg-secondary{% endif %}">
           {{ params.primary_offer.status_name|default:params.primary_offer.status_code }}
         </span>
       {% endif %}
     </div>
+    {% if params.primary_offer and params.primary_offer.outcome_code %}
+      <div class="w-100 mt-2">
+        <div class="alert {% if params.primary_offer.outcome_code == 'won' %}alert-success{% elif params.primary_offer.outcome_code == 'lost' %}alert-danger{% elif params.primary_offer.outcome_code == 'waiting_seller' %}alert-warning{% else %}alert-secondary{% endif %} mb-0 py-2">
+          <div class="fw-semibold">
+            {% if params.primary_offer.outcome_title %}{{ params.primary_offer.outcome_title }}{% else %}Итог лота{% endif %}
+          </div>
+          {% if params.primary_offer.outcome_detail %}
+            <div class="small mt-1">{{ params.primary_offer.outcome_detail }}</div>
+          {% endif %}
+          {% if params.primary_offer.outcome_synced_at %}
+            <div class="small text-muted mt-1">обновлено {{ params.primary_offer.outcome_synced_at|date:"d.m.Y H:i" }}</div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
     {% if params.all_badges %}
       <div class="aav-hero-badges w-100">
         {% for badge in params.all_badges %}

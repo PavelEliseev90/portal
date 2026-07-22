@@ -280,6 +280,27 @@ def notify_bid_placed(lot, bid_amount, bid_made_at=None, *, user=None):
     post_aav_lot_message(lot, text, user=user)
 
 
+def notify_auction_won(offer, *, user=None):
+    """Продавец выбрал нашу ставку — уведомление в чаты."""
+    lot = offer.lot
+    label = _lot_feed_label(lot)
+    venue = _lot_feed_venue_label(lot)
+    try:
+        bid_fmt = f'{int(offer.bid):,}'.replace(',', ' ')
+    except (TypeError, ValueError):
+        bid_fmt = str(offer.bid or '—')
+    detail = (offer.outcome_detail or offer.outcome_title or '').strip()
+    text = (
+        f'Выигран лот: {label}\n'
+        f'Площадка: {venue}\n'
+        f'Наша ставка: {bid_fmt} ₽'
+    )
+    if detail:
+        text += f'\n{detail}'
+    post_aav_feed_message(text, user=user, lot_pk=lot.pk)
+    post_aav_lot_message(lot, text, user=user)
+
+
 def _build_chat_params(request, chat, *, newest_first=False, initial_limit=None):
     if newest_first:
         limit = initial_limit or AAV_FEED_PAGE_SIZE

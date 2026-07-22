@@ -11,6 +11,15 @@ STATUS_NAMES = {
     'finished': 'Завершён',
     'won': 'Выигран',
     'lost': 'Проигран',
+    'ended': 'Завершён',
+    'canceled': 'Отменён',
+    'cancelled': 'Отменён',
+}
+
+# Сырые коды Maxposter → портальные.
+STATUS_ALIASES = {
+    'ended': 'finished',
+    'cancelled': 'canceled',
 }
 
 
@@ -18,12 +27,20 @@ def normalize_offer_status(status_code: str, finish_at=None, now=None) -> tuple[
     """
     Нормализует status_code оффера с учётом finish_at лота.
     Пустой статус + finish_at в будущем → inprogress.
+    won/lost сохраняются; ended → finished.
     """
     now = _dt(now) or timezone.now()
     finish_at = _dt(finish_at)
     code = (status_code or '').strip()
+    code = STATUS_ALIASES.get(code, code)
 
-    if code in TERMINAL_OFFER_STATUSES:
+    if code in ('won', 'lost'):
+        return code, STATUS_NAMES.get(code, code)
+
+    if code in TERMINAL_OFFER_STATUSES or code == 'canceled':
+        # canceled показываем как finished в фильтрах активности
+        if code == 'canceled':
+            return 'finished', STATUS_NAMES.get('canceled', 'Отменён')
         return code, STATUS_NAMES.get(code, code)
 
     if finish_at is not None and finish_at <= now:

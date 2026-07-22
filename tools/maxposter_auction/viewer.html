@@ -400,6 +400,7 @@
           </select>
         </label>
         <button class="btn" id="reload">Перезагрузить</button>
+        <button class="btn" id="pollOutcomes" title="Опросить Maxposter по завершённым лотам со ставкой (итог продавца)">Итоги лотов</button>
         <button class="btn" id="clearLots" title="Очистить лоты в таблице и в offers_dump.json">Удалить все лоты</button>
       </div>
       <div class="sub" id="dealerStatusLine">Площадка: —</div>
@@ -510,6 +511,8 @@
       offersState: `${base}/api/avito_auction_offers_state/`,
       autoBidDecide: `${base}/api/avito_auction_auto_bid_decide/`,
       settings: `${base}/api/avito_auction_settings/`,
+      outcomeQueue: `${base}/api/avito_auction_outcome_queue/`,
+      outcomeSet: `${base}/api/avito_auction_outcome_set/`,
     };
   }
   const BID_URL = "/api/bid";
@@ -2134,6 +2137,55 @@
       $("loadedMeta").textContent = "Лоты удалены. Нажмите «Перезагрузить» для загрузки с сайта.";
     }catch(err){
       $("loadedMeta").textContent = `Ошибка очистки: ${String(err?.message || err).slice(0, 160)}`;
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = prev;
+    }
+  });
+  $("pollOutcomes")?.addEventListener("click", async () => {
+    const email = ($("loginEmail")?.value || "").trim();
+    const password = $("loginPassword")?.value || "";
+    const dealerId = getSelectedDealerId();
+    if (!email || !password){
+      $("loadedMeta").textContent = "Итоги: укажите логин и пароль Maxposter";
+      return;
+    }
+    if (!dealerId){
+      $("loadedMeta").textContent = "Итоги: выберите площадку";
+      return;
+    }
+    const btn = $("pollOutcomes");
+    const prev = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span>Итоги…`;
+    try{
+      const { resp, data } = await fetchJsonWithTimeout("/api/outcomes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          dealerId,
+          portalBase: getPortalBase(),
+          limit: 15,
+        }),
+      }, 20 * 60 * 1000);
+      const result = data?.outcome_result || {};
+      const n = result.okCount ?? result.count ?? 0;
+      if (!resp.ok || data?.ok === false){
+        throw new Error(data?.error || result.error || `HTTP ${resp.status}`);
+      }
+      const won = (result.results || []).filter((r) => r?.portal?.becameWon).length;
+      $("loadedMeta").textContent = `Итоги: обработано ${n}${won ? `, выиграно сейчас: ${won}` : ""}`;
+      try{
+        addReloadLog({
+          ok: true,
+          msg: `итоги лотов: ok=${n}, won=${won}`,
+          dealerId,
+        });
+      }catch(_){}
+    }catch(err){
+      $("loadedMeta").textContent = `Итоги: ошибка — ${String(err?.message || err).slice(0, 200)}`;
     }finally{
       btn.disabled = false;
       btn.innerHTML = prev;

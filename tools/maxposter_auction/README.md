@@ -44,8 +44,21 @@ python launcher.py
 | Пакетное чтение ставок | `POST /api/avito_auction_offers_state/` | таблица при загрузке |
 | Настройки автоставок | `GET/POST /api/avito_auction_settings/` | UI `/auction_avito/settings/` |
 | Решение автоставки | `POST /api/avito_auction_auto_bid_decide/` | после расчёта в viewer |
+| Очередь итогов | `GET /api/avito_auction_outcome_queue/` | завершённые лоты со ставкой |
+| Запись итога | `POST /api/avito_auction_outcome_set/` | `script_outcome.py` / кнопка «Итоги лотов» |
 
 URL портала настраивается в viewer (поле «Портал (API)»), по умолчанию `https://ah.kors-group.com`.
+
+### Итоги завершённых лотов
+
+Активная лента Maxposter (`statusGroup=1`) не содержит завершённые лоты. Для офферов с нашей ставкой парсер:
+
+1. берёт очередь с портала (`outcome_queue`);
+2. открывает [страницу лота](https://app.maxposter.ru/dealer/auction/1624513305/view) (`…/view`);
+3. читает блок статуса («Аукцион завершен», «Ждём решения продавца…» и т.п.);
+4. пишет итог на портал; при **won** — чат + email (адреса в `/auction_avito/settings/`).
+
+В viewer: кнопка **«Итоги лотов»** → `POST /api/outcomes`.
 
 ### Автоставки
 

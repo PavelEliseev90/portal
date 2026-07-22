@@ -98,6 +98,13 @@ def build_offer_state_response(offer: AvitoLotOffer, *, history_limit: int = 5) 
             'status': offer.status_code or '',
             'name': offer.status_name or '',
         },
+        'outcome': {
+            'code': offer.outcome_code or '',
+            'title': offer.outcome_title or '',
+            'detail': offer.outcome_detail or '',
+            'syncedAt': _format_dt(offer.outcome_synced_at),
+            'winEmailSentAt': _format_dt(offer.win_email_sent_at),
+        },
         'dealerId': offer.account.dealer_id if offer.account_id else None,
         'bidderId': offer.account.bidder_id if offer.account_id else None,
         'venueLabel': venue_label,

@@ -660,6 +660,8 @@ def auction_settings(request):
             settings_obj.weight_rdo = request.POST.get('weight_rdo') or '0.55'
             settings_obj.weight_kor = request.POST.get('weight_kor') or '0.25'
             settings_obj.weight_txt = request.POST.get('weight_txt') or '0.05'
+            settings_obj.outcome_poll_enabled = request.POST.get('outcome_poll_enabled') == 'on'
+            settings_obj.win_notify_emails = (request.POST.get('win_notify_emails') or '').strip()
             settings_obj.full_clean()
             settings_obj.save()
             messages.success(request, 'Настройки сохранены.')
