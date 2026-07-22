@@ -77,8 +77,10 @@
         <label class="form-check-label" for="block_mileage_twisted">Не ставить при скрученном пробеге (<code>mileageTwisted</code>)</label>
       </div>
       <p class="small text-muted mt-3 mb-0">
-        Алгоритм: фильтры → выкуп &gt; minAvailableBid и &gt; maxBid → maxBid не наша →
-        <code>ceil((maxBid + minBidStep) / round) * round</code> &lt; выкуп → ставка.
+        Алгоритм: фильтры → выкуп &gt; minAvailableBid →
+        если maxBid нет: <code>ceil((min + шаг) / round) * round</code> &lt; выкуп (первая ставка);
+        если maxBid есть и не наша: <code>ceil((maxBid + шаг) / round) * round</code> &lt; выкуп → ставка.
+        После каждого обновления ленты лоты пересчитываются и решение принимается заново.
       </p>
     </div>
 

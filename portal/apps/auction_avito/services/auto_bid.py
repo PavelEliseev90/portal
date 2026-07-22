@@ -110,9 +110,16 @@ def decide_auto_bid(
     """
     Алгоритм:
     1) фильтры настроек (пробег/год/такси/каршеринг/скрутка);
-    2) выкуп > minAvailableBid и выкуп > maxBid;
-    3) maxBid не наша;
-    4) round_up(maxBid + minBidStep) < выкуп → ставим эту сумму.
+    2) выкуп > minAvailableBid;
+    3) нет maxBid (ставок ещё нет):
+         next = round_up(minAvailableBid + minBidStep);
+         ставим, если next < выкупа;
+    4) есть maxBid:
+         maxBid не наша и выкуп > maxBid;
+         next = round_up(maxBid + minBidStep);
+         ставим, если next < выкупа.
+
+    После каждого обновления ленты парсер заново считает и вызывает этот decide.
     """
     result = {
         'should_bid': False,
@@ -125,6 +132,7 @@ def decide_auto_bid(
         'our_bid': _as_int(our_bid),
         'next_bid': None,
         'filters_ok': False,
+        'mode': None,
     }
 
     if not getattr(settings, 'auto_bid_enabled', False):
@@ -147,6 +155,7 @@ def decide_auto_bid(
     max_bid_v = result['max_bid']
     step = result['min_bid_step']
     our = result['our_bid']
+    no_max_bid = max_bid_v is None or max_bid_v <= 0
 
     if not buyout or buyout <= 0:
         result['reason'] = 'нет рассчитанного выкупа'
@@ -154,13 +163,33 @@ def decide_auto_bid(
     if min_avail is None:
         result['reason'] = 'нет минимальной доступной ставки (minAvailableBid)'
         return result
-    if max_bid_v is None:
-        result['reason'] = 'нет максимальной ставки по лоту (maxBid)'
-        return result
 
     if buyout <= min_avail:
         result['reason'] = f'выкуп {buyout} ≤ minAvailableBid {min_avail}'
         return result
+
+    round_to = _as_int(getattr(settings, 'bid_round_to', 1000), 1000) or 1000
+
+    if no_max_bid:
+        # Ставок ещё нет — первая ставка от минимума + шаг.
+        result['mode'] = 'first_from_min'
+        if our is not None and our > 0 and our >= min_avail:
+            result['reason'] = 'уже есть наша ставка при пустом maxBid — ждём обновления лота'
+            return result
+        next_bid = round_up_to(min_avail + max(step, 0), round_to)
+        result['next_bid'] = next_bid
+        if next_bid >= buyout:
+            result['reason'] = (
+                f'первая ставка {next_bid} (minAvailableBid+шаг↑{round_to}) ≥ выкупа {buyout}'
+            )
+            return result
+        result['should_bid'] = True
+        result['bid_amount'] = next_bid
+        result['reason'] = 'ok (первая ставка: min+шаг)'
+        return result
+
+    # Есть maxBid по лоту
+    result['mode'] = 'raise_max'
     if buyout <= max_bid_v:
         result['reason'] = f'выкуп {buyout} ≤ maxBid {max_bid_v}'
         return result
@@ -170,7 +199,6 @@ def decide_auto_bid(
         result['reason'] = 'максимальная ставка по лоту уже наша'
         return result
 
-    round_to = _as_int(getattr(settings, 'bid_round_to', 1000), 1000) or 1000
     next_bid = round_up_to(max_bid_v + max(step, 0), round_to)
     result['next_bid'] = next_bid
 
@@ -180,11 +208,12 @@ def decide_auto_bid(
         )
         return result
     if next_bid < min_avail:
-        # не ниже минимально доступной
-        next_bid = round_up_to(min_avail, round_to)
+        next_bid = round_up_to(min_avail + max(step, 0), round_to)
         result['next_bid'] = next_bid
         if next_bid >= buyout:
-            result['reason'] = f'после выравнивания к minAvailableBid {next_bid} ≥ выкупа {buyout}'
+            result['reason'] = (
+                f'после выравнивания к minAvailableBid {next_bid} ≥ выкупа {buyout}'
+            )
             return result
 
     result['should_bid'] = True
