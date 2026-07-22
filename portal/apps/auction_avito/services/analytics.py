@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, time, timedelta
 
+from django.conf import settings
 from django.db.models import Avg, Count, Q
 from django.utils import timezone
 
@@ -31,8 +32,13 @@ def _parse_date(raw, default):
         return default
 
 
+def _today():
+    # localdate() падает при naive now (USE_TZ=False)
+    return timezone.now().date()
+
+
 def resolve_period(request, *, default_days: int = 30):
-    today = timezone.localdate()
+    today = _today()
     date_to = _parse_date(request.GET.get('date_to'), today)
     date_from = _parse_date(
         request.GET.get('date_from'),
@@ -43,9 +49,17 @@ def resolve_period(request, *, default_days: int = 30):
     return date_from, date_to
 
 
+def _aware(dt: datetime) -> datetime:
+    if timezone.is_aware(dt):
+        return dt
+    if getattr(settings, 'USE_TZ', False):
+        return timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+
 def _day_bounds(date_from, date_to):
-    start = timezone.make_aware(datetime.combine(date_from, time.min))
-    end = timezone.make_aware(datetime.combine(date_to, time.max))
+    start = _aware(datetime.combine(date_from, time.min))
+    end = _aware(datetime.combine(date_to, time.max))
     return start, end
 
 
