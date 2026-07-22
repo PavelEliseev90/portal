@@ -523,6 +523,7 @@
   const AUTOBID_COLSPAN = 16;
   let autoReloadTimeout = null;
   let autoReloadTickRunning = false;
+  let outcomePollRunning = false;
   let lastAutoReloadFinishedAt = 0;
   let reloadPromise = null;
 
@@ -1984,7 +1985,7 @@
   }
   async function runAutoReloadTick(){
     const sec = getAutoReloadIntervalSec();
-    if (!sec || autoReloadTickRunning) return;
+    if (!sec || autoReloadTickRunning || outcomePollRunning) return;
     clearAutoReloadTimer();
     autoReloadTickRunning = true;
     const started = Date.now();
@@ -2142,22 +2143,37 @@
       btn.innerHTML = prev;
     }
   });
-  $("pollOutcomes")?.addEventListener("click", async () => {
+  $("pollOutcomes").addEventListener("click", async () => {
     const email = ($("loginEmail")?.value || "").trim();
     const password = $("loginPassword")?.value || "";
     const dealerId = getSelectedDealerId();
+    const setOutcomeStatus = (text, { alertToo = false } = {}) => {
+      if ($("loadedMeta")) $("loadedMeta").textContent = text;
+      if ($("dealerStatusLine")) {
+        const prev = $("dealerStatusLine").dataset.base || $("dealerStatusLine").textContent || "";
+        if (!$("dealerStatusLine").dataset.base) $("dealerStatusLine").dataset.base = prev;
+        $("dealerStatusLine").textContent = text;
+      }
+      if (alertToo) window.alert(text);
+    };
     if (!email || !password){
-      $("loadedMeta").textContent = "Итоги: укажите логин и пароль Maxposter";
+      setOutcomeStatus("Итоги: укажите логин и пароль Maxposter", { alertToo: true });
       return;
     }
     if (!dealerId){
-      $("loadedMeta").textContent = "Итоги: выберите площадку";
+      setOutcomeStatus("Итоги: выберите площадку", { alertToo: true });
+      return;
+    }
+    if (outcomePollRunning){
+      setOutcomeStatus("Итоги: уже выполняется, подождите…", { alertToo: true });
       return;
     }
     const btn = $("pollOutcomes");
     const prev = btn.innerHTML;
+    outcomePollRunning = true;
     btn.disabled = true;
     btn.innerHTML = `<span class="spin"></span>Итоги…`;
+    setOutcomeStatus("Итоги: запускаю опрос Maxposter (может занять несколько минут)…");
     try{
       const { resp, data } = await fetchJsonWithTimeout("/api/outcomes", {
         method: "POST",
@@ -2172,21 +2188,41 @@
       }, 20 * 60 * 1000);
       const result = data?.outcome_result || {};
       const n = result.okCount ?? result.count ?? 0;
-      if (!resp.ok || data?.ok === false){
-        throw new Error(data?.error || result.error || `HTTP ${resp.status}`);
+      if (resp.status === 409){
+        throw new Error("Опрос итогов уже выполняется на сервере");
       }
-      const won = (result.results || []).filter((r) => r?.portal?.becameWon).length;
-      $("loadedMeta").textContent = `Итоги: обработано ${n}${won ? `, выиграно сейчас: ${won}` : ""}`;
+      if (!resp.ok || data?.ok === false){
+        const detail = data?.error || result.error || data?.stderr || data?.stdout || `HTTP ${resp.status}`;
+        throw new Error(String(detail).slice(0, 400));
+      }
+      let msg;
+      if (result.enabled === false || result.reason === "disabled"){
+        msg = "Итоги: опрос выключен в настройках портала (галочка «Опрашивать Maxposter…»)";
+      } else if (!n){
+        const q = result.queueCount ?? 0;
+        const f = result.filteredCount ?? 0;
+        msg = `Итоги: нечего опрашивать (очередь портала: ${q}, по площадке ${dealerId}: ${f}). Нужны завершённые лоты со ставкой без финального итога.`;
+      } else {
+        const won = (result.results || []).filter((r) => r?.portal?.becameWon).length;
+        const fail = (result.results || []).filter((r) => r?.ok === false).length;
+        msg = `Итоги: обработано ${n}${won ? `, выиграно: ${won}` : ""}${fail ? `, ошибок: ${fail}` : ""}`;
+      }
+      setOutcomeStatus(msg, { alertToo: true });
       try{
         addReloadLog({
           ok: true,
-          msg: `итоги лотов: ok=${n}, won=${won}`,
+          msg: msg.slice(0, 220),
           dealerId,
         });
       }catch(_){}
     }catch(err){
-      $("loadedMeta").textContent = `Итоги: ошибка — ${String(err?.message || err).slice(0, 200)}`;
+      const msg = `Итоги: ошибка — ${String(err?.message || err).slice(0, 280)}`;
+      setOutcomeStatus(msg, { alertToo: true });
+      try{
+        addReloadLog({ ok: false, msg: msg.slice(0, 220), dealerId });
+      }catch(_){}
     }finally{
+      outcomePollRunning = false;
       btn.disabled = false;
       btn.innerHTML = prev;
     }

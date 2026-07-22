@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules
 
-hiddenimports = ['playwright', 'playwright.sync_api', 'script_auction', 'script_bid']
+hiddenimports = ['playwright', 'playwright.sync_api', 'script_auction', 'script_bid', 'script_outcome']
 hiddenimports += collect_submodules('playwright')
 
 
