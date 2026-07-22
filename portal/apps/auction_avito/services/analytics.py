@@ -63,9 +63,26 @@ def _day_bounds(date_from, date_to):
     return start, end
 
 
+def _pct(part, whole) -> float:
+    try:
+        part_n = float(part or 0)
+        whole_n = float(whole or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    if whole_n <= 0:
+        return 0.0
+    return round(100.0 * part_n / whole_n, 1)
+
+
 def build_analytics_context(request) -> dict:
+    from django.urls import reverse
+
     date_from, date_to = resolve_period(request)
     start, end = _day_bounds(date_from, date_to)
+    lot_list_base = reverse('auction_avito:lot_list')
+    period_qs = (
+        f'date_from={date_from.isoformat()}&date_to={date_to.isoformat()}'
+    )
 
     lots_qs = AvitoLot.objects.filter(
         Q(finish_at__gte=start, finish_at__lte=end)
@@ -104,20 +121,31 @@ def build_analytics_context(request) -> dict:
             'code': code,
             'label': OUTCOME_NAMES.get(code, code),
             'count': row['cnt'],
+            'pct': 0,
+            'list_url': f'{lot_list_base}?outcome={code}&activity=&{period_qs}',
+            'filter_kind': 'outcome',
         })
     # Также status won/lost без outcome
-    status_extra = (
+    status_extra = list(
         offers_in_period
         .filter(outcome_code='', status_code__in=('won', 'lost', 'finished'))
         .values('status_code')
         .annotate(cnt=Count('id'))
     )
     for row in status_extra:
+        code = row['status_code']
         outcome_counters.append({
-            'code': row['status_code'],
-            'label': f'Статус: {row["status_code"]}',
+            'code': code,
+            'label': f'Статус: {code}',
             'count': row['cnt'],
+            'pct': 0,
+            'list_url': f'{lot_list_base}?status={code}&activity=&{period_qs}',
+            'filter_kind': 'status',
         })
+    # Пересчитать % для всех карточек от общей суммы
+    outcomes_sum = sum(o['count'] for o in outcome_counters) or 0
+    for o in outcome_counters:
+        o['pct'] = _pct(o['count'], outcomes_sum)
 
     # Автоставки: журнал решений
     decisions = AvitoAutoBidDecision.objects.filter(created_at__gte=start, created_at__lte=end)
@@ -144,6 +172,7 @@ def build_analytics_context(request) -> dict:
             'count': row['cnt'],
             'lots': row['lots'] or 0,
             'group': REASON_CATEGORY_GROUP.get(cat, 'other'),
+            'pct': _pct(row['cnt'], decisions_skip),
         }
         skip_categories.append(item)
         g = item['group']
@@ -157,6 +186,7 @@ def build_analytics_context(request) -> dict:
             'label': REASON_GROUP_LABELS.get(code, code),
             'count': data['count'],
             'lots': data['lots'],
+            'pct': _pct(data['count'], decisions_skip),
             'items': data['items'],
         }
         for code, data in skip_groups.items()
@@ -194,12 +224,9 @@ def build_analytics_context(request) -> dict:
         row['model'] = row.pop('vehicle_avito__model_name') or '—'
         row['avg_mileage'] = int(row['avg_mileage'] or 0)
         row['avg_year'] = int(row['avg_year'] or 0) if row['avg_year'] else None
+        row['pct'] = _pct(row['cnt'], lots_total)
+        row['bid_pct'] = _pct(row['with_bid'], row['cnt'])
 
-    mileage_buckets = []
-    vehicles = lots_qs.filter(
-        vehicle_avito__mileage__isnull=False,
-        vehicle_avito__mileage__gt=0,
-    ).values_list('vehicle_avito__mileage', flat=True)
     buckets = {
         '0–50 тыс.': 0,
         '50–100 тыс.': 0,
@@ -207,6 +234,10 @@ def build_analytics_context(request) -> dict:
         '150–200 тыс.': 0,
         '200+ тыс.': 0,
     }
+    vehicles = lots_qs.filter(
+        vehicle_avito__mileage__isnull=False,
+        vehicle_avito__mileage__gt=0,
+    ).values_list('vehicle_avito__mileage', flat=True)
     for m in vehicles:
         try:
             m = int(m)
@@ -222,7 +253,11 @@ def build_analytics_context(request) -> dict:
             buckets['150–200 тыс.'] += 1
         else:
             buckets['200+ тыс.'] += 1
-    mileage_buckets = [{'label': k, 'count': v} for k, v in buckets.items() if v]
+    mileage_base = sum(buckets.values()) or 0
+    mileage_buckets = [
+        {'label': k, 'count': v, 'pct': _pct(v, mileage_base)}
+        for k, v in buckets.items() if v
+    ]
 
     year_stats = list(
         lots_qs
@@ -231,8 +266,16 @@ def build_analytics_context(request) -> dict:
         .annotate(cnt=Count('id'))
         .order_by('-vehicle_avito__year')[:15]
     )
+    year_base = sum(row['cnt'] for row in year_stats) or 0
+    # Полная база по годам (не только топ-15) для корректного %
+    year_base_all = (
+        lots_qs
+        .filter(vehicle_avito__year__isnull=False, vehicle_avito__year__gt=0)
+        .count()
+    ) or year_base
     for row in year_stats:
         row['year'] = row.pop('vehicle_avito__year')
+        row['pct'] = _pct(row['cnt'], year_base_all)
 
     avg_mileage_all = lots_qs.filter(
         vehicle_avito__mileage__gt=0,
@@ -241,8 +284,8 @@ def build_analytics_context(request) -> dict:
         vehicle_avito__year__gt=0,
     ).aggregate(v=Avg('vehicle_avito__year'))['v']
 
-    bid_share = round(100.0 * lots_with_bids / lots_total, 1) if lots_total else 0
-    ok_share = round(100.0 * decisions_ok / decisions_total, 1) if decisions_total else 0
+    bid_share = _pct(lots_with_bids, lots_total)
+    ok_share = _pct(decisions_ok, decisions_total)
 
     return {
         'type': 'auction_avito_analytics',
@@ -262,6 +305,9 @@ def build_analytics_context(request) -> dict:
             'decisions_ok': decisions_ok,
             'decisions_skip': decisions_skip,
             'ok_share': ok_share,
+            'outcomes_total': outcomes_sum,
+            'mileage_total': mileage_base,
+            'years_total': year_base_all,
         },
         'outcomes': outcome_counters,
         'auto_bid': {

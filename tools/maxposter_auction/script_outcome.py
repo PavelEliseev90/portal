@@ -57,18 +57,19 @@ def _app_dir() -> str:
 
 
 def _log(msg: str) -> None:
-    """Пишет в stdout и в outcome_poll.log рядом с сервером."""
+    """Пишет в stdout (viewer забирает в «Лог обновлений»). Файл — только опционально."""
     line = str(msg).rstrip()
     print(line, flush=True)
     _LOG_LINES.append(line)
-    try:
-        path = os.path.join(_app_dir(), OUTCOME_LOG_NAME)
-        with open(path, "a", encoding="utf-8") as fh:
-            from datetime import datetime
+    if _env("OUTCOME_WRITE_FILE") == "1":
+        try:
+            path = os.path.join(_app_dir(), OUTCOME_LOG_NAME)
+            with open(path, "a", encoding="utf-8") as fh:
+                from datetime import datetime
 
-            fh.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {line}\n")
-    except Exception:
-        pass
+                fh.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {line}\n")
+        except Exception:
+            pass
 
 
 def _fmt_item(item: dict) -> str:
@@ -130,7 +131,8 @@ def push_outcome(item: dict, extracted: dict) -> dict:
 def _warm_headers(page, session_headers: dict | None = None) -> dict:
     headers = dict(session_headers or {})
     try:
-        page.goto(AUCTION_URL, wait_until="load", timeout=60_000)
+        page.goto(AUCTION_URL, wait_until="domcontentloaded", timeout=45_000)
+        page.wait_for_timeout(400)
         headers.update(_extract_authorization_header(page))
     except Exception as exc:
         print(f"Прогрев outcome: {exc}")
@@ -213,7 +215,7 @@ def _extract_status_from_json(payload: dict) -> str:
 
 
 def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
-    """Открыть страницу лота, собрать тексты из API + DOM."""
+    """Открыть страницу лота, собрать тексты из API + DOM (быстро, без networkidle)."""
     url = VIEW_URL_TPL.format(lot_offer_id=lot_offer_id)
     captured: list[dict] = []
 
@@ -235,17 +237,24 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
 
     page.on("response", on_response)
     try:
-        page.goto(url, wait_until="networkidle", timeout=90_000)
-    except PWTimeout:
-        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
-        page.wait_for_timeout(2500)
+        # networkidle на Maxposter часто висит ~1–1.5 мин — не используем.
+        page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+        try:
+            page.wait_for_function(
+                """() => /аукцион|продавц|решени|выигр|выбран|выбрал|никого/i.test(
+                    (document.body && document.body.innerText) || ''
+                )""",
+                timeout=8_000,
+            )
+        except PWTimeout:
+            page.wait_for_timeout(900)
     finally:
         try:
             page.remove_listener("response", on_response)
         except Exception:
             pass
 
-    page.wait_for_timeout(1500)
+    page.wait_for_timeout(400)
 
     api_texts: list[str] = []
     status_code = ""
@@ -268,7 +277,7 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
                 if (!el || el.children.length > 4) continue;
                 const t = (el.innerText || '').replace(/\\s+/g, ' ').trim();
                 if (t.length < 8 || t.length > 280) continue;
-                if (!/аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого/i.test(t)) continue;
+                if (!/аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого|покупател|не выкупил/i.test(t)) continue;
                 if (seen.has(t)) continue;
                 seen.add(t);
                 out.push(t);
@@ -308,6 +317,60 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
         "raw": raw,
         "texts": texts,
     }
+
+
+def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
+    """Опрос одного лота на уже открытой сессии Maxposter."""
+    lot_offer_id = item.get("lotOfferId")
+    if not lot_offer_id:
+        return {"ok": False, "lotOfferId": None, "error": "no lotOfferId", "car": item.get("car") or ""}
+
+    print(f"OUTCOME_CHECK[{idx}/{total}] {_fmt_item(item)}", flush=True)
+    extracted = extract_outcome_from_view(page, lot_offer_id)
+    title = (extracted.get("title") or "").strip()
+    detail = (extracted.get("detail") or "").strip()
+    print(
+        f"OUTCOME_EXTRACT[{idx}] lotOfferId={lot_offer_id} "
+        f"title={title!r} detail={detail!r} texts={len(extracted.get('texts') or [])}",
+        flush=True,
+    )
+    portal = push_outcome(item, extracted)
+    code = portal.get("outcomeCode") or "?"
+    status = portal.get("statusCode") or "?"
+    prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
+    row = {
+        "ok": True,
+        "lotOfferId": lot_offer_id,
+        "lotId": item.get("lotId") or portal.get("lotId"),
+        "lotPk": item.get("lotPk"),
+        "car": item.get("car") or "",
+        "bid": item.get("bid"),
+        "extracted": {
+            "title": title,
+            "detail": detail,
+            "status": extracted.get("status"),
+            "texts": (extracted.get("texts") or [])[:8],
+        },
+        "portal": {
+            "outcomeCode": code,
+            "outcomeTitle": portal.get("outcomeTitle"),
+            "outcomeDetail": portal.get("outcomeDetail"),
+            "statusCode": status,
+            "prevOutcome": prev,
+            "becameWon": portal.get("becameWon"),
+            "email": portal.get("email"),
+        },
+        "msg": (
+            f"лот {item.get('lotId')} / offer {lot_offer_id}: "
+            f"{prev} → {code} ({title}; {detail})"
+        ),
+    }
+    print(
+        f"OUTCOME_OK[{idx}] lotOfferId={lot_offer_id} lotId={item.get('lotId')} "
+        f"«{item.get('car') or '—'}» {prev} → {code}/{status} becameWon={bool(portal.get('becameWon'))}",
+        flush=True,
+    )
+    return row
 
 
 def _load_items() -> tuple[list[dict], dict]:
@@ -427,74 +490,25 @@ def main():
                 raise
 
             for idx, item in enumerate(items, 1):
-                lot_offer_id = item.get("lotOfferId")
-                if not lot_offer_id:
-                    _log(f"OUTCOME_SKIP[{idx}] нет lotOfferId")
-                    results.append({"ok": False, "lotOfferId": None, "error": "no lotOfferId", "car": item.get("car")})
-                    continue
-                _log(f"OUTCOME_CHECK[{idx}/{len(items)}] {_fmt_item(item)}")
                 try:
-                    extracted = extract_outcome_from_view(page, lot_offer_id)
-                    title = (extracted.get("title") or "").strip()
-                    detail = (extracted.get("detail") or "").strip()
-                    _log(
-                        f"OUTCOME_EXTRACT[{idx}] lotOfferId={lot_offer_id} "
-                        f"title={title!r} detail={detail!r} "
-                        f"texts={len(extracted.get('texts') or [])}"
-                    )
-                    portal = push_outcome(item, extracted)
-                    code = portal.get("outcomeCode") or "?"
-                    status = portal.get("statusCode") or "?"
-                    prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
-                    row = {
-                        "ok": True,
-                        "lotOfferId": lot_offer_id,
-                        "lotId": item.get("lotId") or portal.get("lotId"),
-                        "lotPk": item.get("lotPk"),
-                        "car": item.get("car") or "",
-                        "bid": item.get("bid"),
-                        "extracted": {
-                            "title": title,
-                            "detail": detail,
-                            "status": extracted.get("status"),
-                            "texts": (extracted.get("texts") or [])[:8],
-                        },
-                        "portal": {
-                            "outcomeCode": code,
-                            "outcomeTitle": portal.get("outcomeTitle"),
-                            "outcomeDetail": portal.get("outcomeDetail"),
-                            "statusCode": status,
-                            "prevOutcome": prev,
-                            "becameWon": portal.get("becameWon"),
-                            "email": portal.get("email"),
-                        },
-                        "msg": (
-                            f"лот {item.get('lotId')} / offer {lot_offer_id}: "
-                            f"{prev} → {code} ({title}; {detail})"
-                        ),
-                    }
+                    row = process_item(page, item, idx=idx, total=len(items))
                     results.append(row)
-                    _log(
-                        f"OUTCOME_OK[{idx}] lotOfferId={lot_offer_id} lotId={item.get('lotId')} "
-                        f"«{item.get('car') or '—'}» {prev} → {code}/{status} "
-                        f"title={title!r} detail={detail!r} "
-                        f"becameWon={bool(portal.get('becameWon'))}"
-                    )
+                    _log(row.get("msg") or f"OUTCOME row {idx}")
                 except MaxposterAuthError:
                     if dealer_id:
                         clear_session(script_dir, email, dealer_id)
                     raise
                 except Exception as exc:
                     err = str(exc)[:300]
-                    _log(f"OUTCOME_ERR[{idx}] lotOfferId={lot_offer_id}: {err}")
+                    _log(f"OUTCOME_ERR[{idx}] lotOfferId={item.get('lotOfferId')}: {err}")
                     results.append({
                         "ok": False,
-                        "lotOfferId": lot_offer_id,
+                        "lotOfferId": item.get("lotOfferId"),
                         "lotId": item.get("lotId"),
                         "lotPk": item.get("lotPk"),
                         "car": item.get("car") or "",
                         "error": err,
-                        "msg": f"лот {item.get('lotId')} / offer {lot_offer_id}: ошибка — {err}",
+                        "msg": f"лот {item.get('lotId')} / offer {item.get('lotOfferId')}: ошибка — {err}",
                     })
         finally:
             browser.close()

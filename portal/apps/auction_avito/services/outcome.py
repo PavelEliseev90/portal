@@ -124,7 +124,8 @@ MAXPOSTER_STATUS_MAP = {
 
 _WON_RE = re.compile(
     r'вас\s+выбрали|вы\s+выиграл|выбран[аы]?\s+ваш[аеи]|поздравляем|'
-    r'лот\s+ваш|вы\s+победил|продавец\s+выбрал\s+вас|winner|you\s+won',
+    r'лот\s+ваш|вы\s+победил|продавец\s+выбрал\s+вас|'
+    r'предложение\s+ваш|вашего\s+дилерск|winner|you\s+won',
     re.I,
 )
 _NO_SELECTION_RE = re.compile(
@@ -133,7 +134,7 @@ _NO_SELECTION_RE = re.compile(
     re.I,
 )
 _LOST_RE = re.compile(
-    r'выбран\s+друг|другой\s+участник|проиграл|'
+    r'выбрал[аи]?\s+друго|выбран\s+друг|другого\s+покупател|другой\s+участник|проиграл|'
     r'лот\s+достался|продавец\s+выбрал\s+друг|you\s+lost|another\s+bidder',
     re.I,
 )
@@ -248,14 +249,19 @@ def offers_needing_outcome_poll(
     recheck_hours: int = 6,
 ) -> QuerySet:
     """
-    Офферы со ставкой по завершённым лотам, где итог ещё не финальный
-    или waiting_seller пора перепроверить.
+    Офферы со ставкой по завершённым лотам, где итог ещё не финальный.
+
+    waiting_seller («Ждём решения продавца») всегда остаётся в очереди —
+    при следующем опросе состояние проверяется снова, пока продавец не выберет итог.
+    unknown / пустой — тоже, с опциональной паузой recheck_hours только для unknown
+    после недавней синхронизации не требуется (unknown тоже сразу в очереди).
     """
     from auction_avito.models import AvitoLotOffer
 
     now = timezone.now()
     since = now - timedelta(days=max(1, int(lookback_days)))
-    recheck_before = now - timedelta(hours=max(1, int(recheck_hours)))
+    # recheck_hours оставлен для совместимости API; waiting_seller без паузы.
+    _ = recheck_hours
 
     qs = (
         AvitoLotOffer.objects
@@ -270,7 +276,7 @@ def offers_needing_outcome_poll(
             Q(outcome_synced_at__isnull=True)
             | Q(outcome_code='')
             | Q(outcome_code=OUTCOME_UNKNOWN)
-            | Q(outcome_code=OUTCOME_WAITING, outcome_synced_at__lte=recheck_before)
+            | Q(outcome_code=OUTCOME_WAITING)
         )
         .order_by('outcome_synced_at', 'lot__finish_at')
     )

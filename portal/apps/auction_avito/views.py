@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
+from datetime import datetime, time as dt_time
 from urllib.parse import urlencode
 
 from auction_avito.services.badges import collect_badges_for_display, ensure_badges_synced
@@ -281,6 +282,8 @@ def lot_list(request):
     trade_in = (request.GET.get('trade_in') or '').strip()
     venue_dealer = (request.GET.get('venue') or '').strip()
     sort = (request.GET.get('sort') or '-finish_at').strip()
+    date_from_raw = (request.GET.get('date_from') or '').strip()
+    date_to_raw = (request.GET.get('date_to') or '').strip()
 
     # Фильтр по итогу обычно смотрит завершённые лоты — не режем «активными».
     if outcome and 'activity' not in request.GET:
@@ -314,6 +317,25 @@ def lot_list(request):
     if outcome:
         qs = qs.filter(offers__outcome_code=outcome).distinct()
 
+    # Период (из аналитики): по finish_at, иначе synced_at
+    date_from = date_to = None
+    try:
+        if date_from_raw:
+            date_from = datetime.strptime(date_from_raw, '%Y-%m-%d').date()
+        if date_to_raw:
+            date_to = datetime.strptime(date_to_raw, '%Y-%m-%d').date()
+    except ValueError:
+        date_from = date_to = None
+    if date_from or date_to:
+        from auction_avito.services.analytics import _aware, _today
+        d0 = date_from or date_to
+        d1 = date_to or date_from or _today()
+        start = _aware(datetime.combine(d0, dt_time.min))
+        end = _aware(datetime.combine(d1, dt_time.max))
+        qs = qs.filter(
+            Q(finish_at__gte=start, finish_at__lte=end)
+            | Q(finish_at__isnull=True, synced_at__gte=start, synced_at__lte=end)
+        )
     if badge_type:
         qs = qs.filter(
             Q(offers__badges__badge_type=badge_type)
@@ -369,6 +391,8 @@ def lot_list(request):
             'trade_in': trade_in,
             'venue': venue_dealer,
             'sort': sort,
+            'date_from': date_from_raw,
+            'date_to': date_to_raw,
         },
         'activity_choices': [
             ('active', 'Активные'),
@@ -398,6 +422,8 @@ def lot_list(request):
             'venue': venue_dealer,
             'trade_in': trade_in,
             'sort': sort,
+            'date_from': date_from_raw,
+            'date_to': date_to_raw,
         }),
     }
     params.update({'feed_chat': build_aav_feed_embed(request)})
