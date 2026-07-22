@@ -13,6 +13,7 @@ from app_paths import app_dir, bundle_dir, is_frozen
 HERE = app_dir()
 SCRIPT_PATH = os.path.join(bundle_dir(), "script_auction.py")
 SCRIPT_BID_PATH = os.path.join(bundle_dir(), "script_bid.py")
+SCRIPT_OUTCOME_PATH = os.path.join(bundle_dir(), "script_outcome.py")
 OUT_JSON = os.path.join(HERE, "offers_dump.json")
 DEALERS_STATUS_JSON = os.path.join(HERE, "dealers_status.json")
 
@@ -40,6 +41,10 @@ def _run_script_module(module_name: str, env: dict) -> _ScriptResult:
                 import script_bid
 
                 script_bid.main()
+            elif module_name == "script_outcome":
+                import script_outcome
+
+                script_outcome.main()
             else:
                 raise RuntimeError(f"Unknown module: {module_name}")
         return _ScriptResult(0, buf_out.getvalue(), buf_err.getvalue())
@@ -62,7 +67,7 @@ def _script_subprocess_env(env: dict) -> dict:
     return out
 
 
-def _run_script(script_path: str, module_name: str, env: dict) -> _ScriptResult:
+def _run_script(script_path: str, module_name: str, env: dict, *, timeout: int = 600) -> _ScriptResult:
     if is_frozen():
         return _run_script_module(module_name, env)
     run_env = _script_subprocess_env(env)
@@ -75,18 +80,19 @@ def _run_script(script_path: str, module_name: str, env: dict) -> _ScriptResult:
             encoding="utf-8",
             errors="replace",
             env=run_env,
-            timeout=600,
+            timeout=timeout,
         )
     except subprocess.TimeoutExpired as e:
         out = (e.stdout or "") if e.stdout else ""
         err = (e.stderr or "") if e.stderr else ""
-        err = f"{err}\nТаймаут 600 сек.".strip()
+        err = f"{err}\nТаймаут {timeout} сек.".strip()
         return _ScriptResult(1, out, err)
     return _ScriptResult(proc.returncode, proc.stdout or "", proc.stderr or "")
 
 
 _reload_lock = threading.Lock()
 _bid_lock = threading.Lock()
+_outcome_lock = threading.Lock()
 _status_lock = threading.Lock()
 
 
@@ -273,7 +279,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.rstrip("/")
-        if route not in {"/api/reload", "/api/bid", "/api/clear_lots"}:
+        if route not in {"/api/reload", "/api/bid", "/api/clear_lots", "/api/outcomes"}:
             self._send_json(404, {"ok": False, "error": "Not found"})
             return
 
@@ -351,6 +357,49 @@ class Handler(SimpleHTTPRequestHandler):
                 })
             finally:
                 _reload_lock.release()
+            return
+
+        if route == "/api/outcomes":
+            if not is_frozen() and not os.path.exists(SCRIPT_OUTCOME_PATH):
+                self._send_json(500, {"ok": False, "error": f"Script not found: {SCRIPT_OUTCOME_PATH}"})
+                return
+            if not _outcome_lock.acquire(blocking=False):
+                self._send_json(409, {"ok": False, "error": "Outcome poll already running"})
+                return
+            try:
+                limit = body.get("limit", 20)
+                try:
+                    limit = max(1, min(50, int(limit)))
+                except (TypeError, ValueError):
+                    limit = 20
+                if body.get("portalBase"):
+                    env["PORTAL_BASE"] = str(body.get("portalBase")).rstrip("/")
+                env["OUTCOME_LIMIT"] = str(limit)
+                if isinstance(body.get("items"), list) and body.get("items"):
+                    env["OUTCOME_ITEMS_JSON"] = json.dumps(body.get("items"), ensure_ascii=False)
+                proc = _run_script(SCRIPT_OUTCOME_PATH, "script_outcome", env, timeout=1200)
+                result_payload = None
+                for line in reversed((proc.stdout or "").splitlines()):
+                    line = line.strip()
+                    if not line.startswith("{"):
+                        continue
+                    try:
+                        candidate = json.loads(line)
+                    except Exception:
+                        continue
+                    if "results" in candidate or "count" in candidate or candidate.get("ok") is not None:
+                        result_payload = candidate
+                        break
+                ok = proc.returncode == 0 and bool(result_payload and result_payload.get("ok") is not False)
+                self._send_json(200 if ok else 500, {
+                    "ok": ok,
+                    "returncode": proc.returncode,
+                    "stdout": (proc.stdout or "")[-12000:],
+                    "stderr": (proc.stderr or "")[-8000:],
+                    "outcome_result": result_payload or {},
+                })
+            finally:
+                _outcome_lock.release()
             return
 
         if not is_frozen() and not os.path.exists(SCRIPT_BID_PATH):

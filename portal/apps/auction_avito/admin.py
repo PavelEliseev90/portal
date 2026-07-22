@@ -66,13 +66,15 @@ class AvitoLotOfferAdmin(admin.ModelAdmin):
         'lot',
         'account',
         'status_name',
+        'outcome_code',
         'bid',
         'gm1_money',
         'updated_at',
     )
-    list_filter = ('status_code', 'account')
+    list_filter = ('status_code', 'outcome_code', 'account')
     search_fields = ('lot_offer_id',)
     raw_id_fields = ('lot', 'account', 'car', 'bid_made_by_user')
+    readonly_fields = ('outcome_synced_at', 'win_email_sent_at')
 
 
 @admin.register(AvitoAutotekaReport)
@@ -108,6 +110,7 @@ class AvitoAuctionSettingsAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'auto_bid_enabled',
+        'outcome_poll_enabled',
         'mileage_min',
         'mileage_max',
         'year_min',

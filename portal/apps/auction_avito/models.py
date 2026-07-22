@@ -435,6 +435,45 @@ class AvitoLotOffer(models.Model):
         verbose_name='Автомобиль на складе',
     )
 
+    # Итог после завершения аукциона (решение продавца на Maxposter)
+    outcome_code = models.CharField(
+        'Код итога',
+        max_length=40,
+        blank=True,
+        default='',
+        db_index=True,
+        help_text='waiting_seller | won | lost | no_selection | canceled | unknown',
+    )
+    outcome_title = models.CharField(
+        'Заголовок итога',
+        max_length=300,
+        blank=True,
+        default='',
+        help_text='Как на Maxposter: «Аукцион завершен» и т.п.',
+    )
+    outcome_detail = models.TextField(
+        'Подробности итога',
+        blank=True,
+        default='',
+        help_text='Напр. «Ждём решения продавца…»',
+    )
+    outcome_raw = models.TextField(
+        'Сырой текст/JSON итога',
+        blank=True,
+        default='',
+    )
+    outcome_synced_at = models.DateTimeField(
+        'Итог синхронизирован',
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    win_email_sent_at = models.DateTimeField(
+        'Письмо о победе отправлено',
+        null=True,
+        blank=True,
+    )
+
     raw_offer_json = models.JSONField('JSON оффера (сырой)', default=dict, blank=True)
 
     class Meta:
@@ -445,6 +484,7 @@ class AvitoLotOffer(models.Model):
         indexes = [
             models.Index(fields=['status_code', 'account']),
             models.Index(fields=['lot', 'account']),
+            models.Index(fields=['outcome_code', 'outcome_synced_at']),
         ]
 
     def __str__(self):
@@ -674,6 +714,18 @@ class AvitoAuctionSettings(models.Model):
         max_digits=6,
         decimal_places=3,
         default='0.05',
+    )
+
+    win_notify_emails = models.TextField(
+        'Email при выигрыше лота',
+        blank=True,
+        default='',
+        help_text='Адреса через запятую или с новой строки. Письмо уходит один раз при outcome=won.',
+    )
+    outcome_poll_enabled = models.BooleanField(
+        'Опрашивать итоги завершённых лотов',
+        default=True,
+        help_text='Парсер забирает очередь лотов со ставкой и обновляет статус решения продавца.',
     )
 
     updated_at = models.DateTimeField('Обновлено', auto_now=True)

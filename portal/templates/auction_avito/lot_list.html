@@ -120,6 +120,34 @@
     border: 1px solid rgba(0, 42, 90, 0.12);
   }
   .aav-status-inprogress { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+  .aav-status-won { background: #dcfce7; color: #14532d; border-color: #86efac; }
+  .aav-status-lost { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+  .aav-status-waiting_seller { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+  .aav-status-no_selection { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+  .aav-status-canceled { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+  .aav-status-finished { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+  .aav-status-unknown,
+  .aav-status-muted { background: rgba(255, 255, 255, 0.92); color: #002a5a; border-color: rgba(0, 42, 90, 0.12); }
+  .aav-outcome-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    margin: 0 0.2rem 0.25rem 0;
+    border: 1px solid transparent;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+  .aav-outcome-pill.aav-status-won { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+  .aav-outcome-pill.aav-status-lost { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .aav-outcome-pill.aav-status-waiting_seller { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .aav-outcome-pill.aav-status-no_selection { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+  .aav-outcome-pill.aav-status-canceled { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+  .aav-outcome-pill.aav-status-unknown { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
   .aav-finish {
     position: absolute;
     top: 0.5rem;
@@ -180,6 +208,15 @@
           <option value="">Все</option>
           {% for code, label in params.status_choices %}
             <option value="{{ code }}" {% if params.filters.status == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Итог</label>
+        <select class="form-select" name="outcome">
+          <option value="">Все итоги</option>
+          {% for code, label in params.outcome_choices %}
+            <option value="{{ code }}" {% if params.filters.outcome == code %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
@@ -246,9 +283,9 @@
         {% with vehicle=lot.vehicle_avito offer=lot.offers.first img=lot.images.first %}
         <a class="aav-card" href="{% url 'auction_avito:lot_detail' lot.pk %}">
           <div class="aav-card-photo">
-            {% if offer %}
-              <span class="aav-status {% if offer.status_code == 'inprogress' %}aav-status-inprogress{% endif %}">
-                {{ offer.status_name|default:offer.status_code|default:"—" }}
+            {% if lot.list_badge %}
+              <span class="aav-status aav-status-{{ lot.list_badge.css }}" title="{{ lot.list_badge.code }}">
+                {{ lot.list_badge.label }}
               </span>
             {% endif %}
             {% if lot.finish_at %}
@@ -269,6 +306,17 @@
                 Лот {{ lot.lot_id }}
               {% endif %}
             </div>
+            {% if offer and offer.outcome_code %}
+              <div class="aav-card-badges mb-1">
+                <span class="aav-outcome-pill aav-status-{{ offer.outcome_code }}"
+                      title="{% if offer.outcome_detail %}{{ offer.outcome_detail }}{% else %}{{ offer.outcome_title }}{% endif %}">
+                  {% if offer.outcome_title %}{{ offer.outcome_title|truncatechars:36 }}{% else %}{{ offer.outcome_code }}{% endif %}
+                </span>
+                {% if offer.outcome_detail %}
+                  <span class="small text-muted">{{ offer.outcome_detail|truncatechars:70 }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
             <div class="aav-card-meta">
               {% if vehicle %}
                 {% if vehicle.mileage %}{{ vehicle.mileage|formatted_number }} км{% endif %}
@@ -334,13 +382,13 @@
         <ul class="pagination pagination-sm justify-content-center">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&q={{ params.filters.q }}&activity={{ params.filters.activity }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">←</a>
+              <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&{{ params.filter_qs }}">←</a>
             </li>
           {% endif %}
           <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span></li>
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&q={{ params.filters.q }}&activity={{ params.filters.activity }}&status={{ params.filters.status }}&badge={{ params.filters.badge }}&venue={{ params.filters.venue }}&trade_in={{ params.filters.trade_in }}&sort={{ params.filters.sort }}">→</a>
+              <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&{{ params.filter_qs }}">→</a>
             </li>
           {% endif %}
         </ul>
