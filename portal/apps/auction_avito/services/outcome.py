@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import timedelta
 from typing import Any
@@ -21,6 +22,8 @@ from django.utils import timezone
 from django.utils.html import escape
 
 from auction_avito.services.offer_status import STATUS_NAMES, TERMINAL_OFFER_STATUSES
+
+logger = logging.getLogger(__name__)
 
 OUTCOME_WAITING = 'waiting_seller'
 OUTCOME_WON = 'won'
@@ -490,7 +493,7 @@ def apply_offer_outcome(
                 email_result = {'sent': False, 'reason': str(exc)}
 
     offer.save(update_fields=update_fields)
-    return {
+    result = {
         'ok': True,
         'lotOfferId': offer.lot_offer_id,
         'lotId': offer.lot.lot_id if offer.lot_id else None,
@@ -505,3 +508,16 @@ def apply_offer_outcome(
         'email': email_result,
         'outcomeSyncedAt': now.isoformat(),
     }
+    logger.info(
+        'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r becameWon=%s',
+        offer.lot_offer_id,
+        offer.lot.lot_id if offer.lot_id else None,
+        prev_outcome or '-',
+        prev_status or '-',
+        offer.outcome_code,
+        offer.status_code,
+        offer.outcome_title,
+        offer.outcome_detail,
+        became_won,
+    )
+    return result

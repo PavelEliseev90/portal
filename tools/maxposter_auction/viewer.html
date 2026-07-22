@@ -1882,7 +1882,7 @@
     try{ return JSON.parse(localStorage.getItem(RELOAD_LOG_KEY) || "[]") || []; }catch(_){ return []; }
   }
   function _saveReloadLog(list){
-    localStorage.setItem(RELOAD_LOG_KEY, JSON.stringify(list.slice(0, 200)));
+    localStorage.setItem(RELOAD_LOG_KEY, JSON.stringify(list.slice(0, 400)));
   }
   function addReloadLog(entry){
     const list = _loadReloadLog();
@@ -1909,13 +1909,14 @@
       const status = ok ? "OK" : (authSkip ? "403" : (skipped ? "SKIP" : "ERR"));
       const dealer = it.dealerId ? `dealerId=${escapeHtml(String(it.dealerId))}` : "all";
       const count = (it.count != null) ? `lots=${escapeHtml(String(it.count))}` : "";
+      const msgLimit = it.kind === "outcome" ? 320 : 140;
       const msg = it.msg ? String(it.msg) : "";
       const right = `${escapeHtml(dealer)} ${count ? " · " + count : ""}`.trim();
       return `<div class="logRow">
         <div class="l">
           <span class="pill ${cls}">${status}</span>
           <span class="mono">${escapeHtml(_fmtTs(it.ts))}</span>
-          <span class="muted">${escapeHtml(msg).slice(0, 140)}</span>
+          <span class="muted" title="${escapeHtml(msg)}">${escapeHtml(msg).slice(0, msgLimit)}</span>
         </div>
         <div class="r">${right}</div>
       </div>`;
@@ -2196,6 +2197,11 @@
         throw new Error(String(detail).slice(0, 400));
       }
       let msg;
+      const summary = result.summary || {};
+      const by = summary.byOutcome || {};
+      const byTxt = Object.keys(by).length
+        ? Object.entries(by).map(([k, v]) => `${k}=${v}`).join(", ")
+        : "";
       if (result.enabled === false || result.reason === "disabled"){
         msg = "Итоги: опрос выключен в настройках портала (галочка «Опрашивать Maxposter…»)";
       } else if (!n){
@@ -2203,23 +2209,45 @@
         const f = result.filteredCount ?? 0;
         msg = `Итоги: нечего опрашивать (очередь портала: ${q}, по площадке ${dealerId}: ${f}). Нужны завершённые лоты со ставкой без финального итога.`;
       } else {
-        const won = (result.results || []).filter((r) => r?.portal?.becameWon).length;
-        const fail = (result.results || []).filter((r) => r?.ok === false).length;
-        msg = `Итоги: обработано ${n}${won ? `, выиграно: ${won}` : ""}${fail ? `, ошибок: ${fail}` : ""}`;
+        const won = summary.becameWon ?? (result.results || []).filter((r) => r?.portal?.becameWon).length;
+        const fail = summary.fail ?? (result.results || []).filter((r) => r?.ok === false).length;
+        msg = `Итоги: обработано ${n}${won ? `, выиграно: ${won}` : ""}${fail ? `, ошибок: ${fail}` : ""}${byTxt ? ` · ${byTxt}` : ""}`;
       }
+      if (data?.log_path) msg += ` · лог: ${data.log_path}`;
       setOutcomeStatus(msg, { alertToo: true });
       try{
         addReloadLog({
           ok: true,
-          msg: msg.slice(0, 220),
+          kind: "outcome",
+          msg,
           dealerId,
+          count: n,
         });
+        for (const row of (result.results || [])) {
+          const car = row.car ? ` «${row.car}»` : "";
+          const portal = row.portal || {};
+          const line = row.msg || (
+            row.ok
+              ? `лот ${row.lotId ?? "—"} / offer ${row.lotOfferId}: ${(portal.prevOutcome || "-")} → ${portal.outcomeCode || "?"} (${(row.extracted || {}).title || ""}; ${(row.extracted || {}).detail || ""})`
+              : `лот ${row.lotId ?? "—"} / offer ${row.lotOfferId}: ошибка — ${row.error || "?"}`
+          );
+          addReloadLog({
+            ok: row.ok !== false,
+            kind: "outcome",
+            msg: `${line}${car}`,
+            dealerId,
+            count: null,
+          });
+        }
+        // Показать вкладку с логом, если есть.
+        try{ switchTab("Logs"); }catch(_){}
       }catch(_){}
     }catch(err){
       const msg = `Итоги: ошибка — ${String(err?.message || err).slice(0, 280)}`;
       setOutcomeStatus(msg, { alertToo: true });
       try{
-        addReloadLog({ ok: false, msg: msg.slice(0, 220), dealerId });
+        addReloadLog({ ok: false, kind: "outcome", msg: msg.slice(0, 320), dealerId });
+        try{ switchTab("Logs"); }catch(_){}
       }catch(_){}
     }finally{
       outcomePollRunning = false;

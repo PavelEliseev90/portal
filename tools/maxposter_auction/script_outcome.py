@@ -38,15 +38,46 @@ DEALER_ID_ENV = "MAXPOSTER_DEALER_ID"
 PORTAL_BASE_ENV = "PORTAL_BASE"
 OUTCOME_ITEMS_ENV = "OUTCOME_ITEMS_JSON"
 OUTCOME_LIMIT_ENV = "OUTCOME_LIMIT"
+OUTCOME_LOG_NAME = "outcome_poll.log"
 
 INTERESTING_TEXT_RE = re.compile(
     r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого",
     re.I,
 )
 
+_LOG_LINES: list[str] = []
+
 
 def _env(name: str, default: str = "") -> str:
     return (os.environ.get(name) or default).strip()
+
+
+def _app_dir() -> str:
+    return _env("APP_DIR") or os.path.dirname(os.path.abspath(__file__))
+
+
+def _log(msg: str) -> None:
+    """Пишет в stdout и в outcome_poll.log рядом с сервером."""
+    line = str(msg).rstrip()
+    print(line, flush=True)
+    _LOG_LINES.append(line)
+    try:
+        path = os.path.join(_app_dir(), OUTCOME_LOG_NAME)
+        with open(path, "a", encoding="utf-8") as fh:
+            from datetime import datetime
+
+            fh.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {line}\n")
+    except Exception:
+        pass
+
+
+def _fmt_item(item: dict) -> str:
+    car = (item.get("car") or "").strip() or "—"
+    return (
+        f"lotOfferId={item.get('lotOfferId')} lotId={item.get('lotId')} "
+        f"pk={item.get('lotPk')} dealer={item.get('dealerId') or '-'} "
+        f"bid={item.get('bid')} prev={item.get('outcomeCode') or '-'} «{car}»"
+    )
 
 
 def _env_required(name: str) -> str:
@@ -325,30 +356,63 @@ def _load_items() -> tuple[list[dict], dict]:
     return items, meta
 
 
+def _build_summary(results: list[dict]) -> dict:
+    by_code: dict[str, int] = {}
+    fail = 0
+    won_now = 0
+    for r in results:
+        if not r.get("ok"):
+            fail += 1
+            by_code["error"] = by_code.get("error", 0) + 1
+            continue
+        code = (r.get("portal") or {}).get("outcomeCode") or "unknown"
+        by_code[code] = by_code.get(code, 0) + 1
+        if (r.get("portal") or {}).get("becameWon"):
+            won_now += 1
+    return {
+        "total": len(results),
+        "ok": sum(1 for r in results if r.get("ok")),
+        "fail": fail,
+        "becameWon": won_now,
+        "byOutcome": by_code,
+    }
+
+
 def main():
+    global _LOG_LINES
+    _LOG_LINES = []
     email = _env_required(EMAIL_ENV)
     password = _env_required(PASSWORD_ENV)
     dealer_id = _env(DEALER_ID_ENV)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     items, queue_meta = _load_items()
-    print(
-        f"OUTCOME_QUEUE enabled={queue_meta.get('enabled')} "
+    _log("=" * 72)
+    _log(
+        f"OUTCOME_START enabled={queue_meta.get('enabled')} "
         f"queue={queue_meta.get('queueCount')} filtered={queue_meta.get('filteredCount')} "
-        f"dealer={dealer_id or '-'} portal={_portal_base()}"
+        f"dealer={dealer_id or '-'} portal={_portal_base()} "
+        f"log={os.path.join(_app_dir(), OUTCOME_LOG_NAME)}"
     )
 
     results = []
     if not items:
         reason = "disabled" if not queue_meta.get("enabled") else "empty"
-        print(json.dumps({
+        _log(f"OUTCOME_EMPTY reason={reason} — лотов для опроса нет")
+        payload = {
             "ok": True,
             "count": 0,
             "okCount": 0,
             "results": [],
             "reason": reason,
+            "summary": _build_summary([]),
+            "logLines": list(_LOG_LINES),
             **queue_meta,
-        }, ensure_ascii=False))
+        }
+        print(json.dumps(payload, ensure_ascii=False), flush=True)
         return
+
+    for idx, item in enumerate(items, 1):
+        _log(f"OUTCOME_QUEUE[{idx}/{len(items)}] {_fmt_item(item)}")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -362,58 +426,108 @@ def main():
                     clear_session(script_dir, email, dealer_id)
                 raise
 
-            for item in items:
+            for idx, item in enumerate(items, 1):
                 lot_offer_id = item.get("lotOfferId")
                 if not lot_offer_id:
+                    _log(f"OUTCOME_SKIP[{idx}] нет lotOfferId")
+                    results.append({"ok": False, "lotOfferId": None, "error": "no lotOfferId", "car": item.get("car")})
                     continue
-                print(f"OUTCOME_CHECK lotOfferId={lot_offer_id} lotId={item.get('lotId')}")
+                _log(f"OUTCOME_CHECK[{idx}/{len(items)}] {_fmt_item(item)}")
                 try:
                     extracted = extract_outcome_from_view(page, lot_offer_id)
+                    title = (extracted.get("title") or "").strip()
+                    detail = (extracted.get("detail") or "").strip()
+                    _log(
+                        f"OUTCOME_EXTRACT[{idx}] lotOfferId={lot_offer_id} "
+                        f"title={title!r} detail={detail!r} "
+                        f"texts={len(extracted.get('texts') or [])}"
+                    )
                     portal = push_outcome(item, extracted)
-                    results.append({
+                    code = portal.get("outcomeCode") or "?"
+                    status = portal.get("statusCode") or "?"
+                    prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
+                    row = {
                         "ok": True,
                         "lotOfferId": lot_offer_id,
+                        "lotId": item.get("lotId") or portal.get("lotId"),
+                        "lotPk": item.get("lotPk"),
+                        "car": item.get("car") or "",
+                        "bid": item.get("bid"),
                         "extracted": {
-                            "title": extracted.get("title"),
-                            "detail": extracted.get("detail"),
+                            "title": title,
+                            "detail": detail,
                             "status": extracted.get("status"),
                             "texts": (extracted.get("texts") or [])[:8],
                         },
                         "portal": {
-                            "outcomeCode": portal.get("outcomeCode"),
-                            "statusCode": portal.get("statusCode"),
+                            "outcomeCode": code,
+                            "outcomeTitle": portal.get("outcomeTitle"),
+                            "outcomeDetail": portal.get("outcomeDetail"),
+                            "statusCode": status,
+                            "prevOutcome": prev,
                             "becameWon": portal.get("becameWon"),
                             "email": portal.get("email"),
                         },
-                    })
-                    print(
-                        f"OUTCOME_OK lotOfferId={lot_offer_id} "
-                        f"→ {portal.get('outcomeCode')} / {portal.get('statusCode')}"
+                        "msg": (
+                            f"лот {item.get('lotId')} / offer {lot_offer_id}: "
+                            f"{prev} → {code} ({title}; {detail})"
+                        ),
+                    }
+                    results.append(row)
+                    _log(
+                        f"OUTCOME_OK[{idx}] lotOfferId={lot_offer_id} lotId={item.get('lotId')} "
+                        f"«{item.get('car') or '—'}» {prev} → {code}/{status} "
+                        f"title={title!r} detail={detail!r} "
+                        f"becameWon={bool(portal.get('becameWon'))}"
                     )
                 except MaxposterAuthError:
                     if dealer_id:
                         clear_session(script_dir, email, dealer_id)
                     raise
                 except Exception as exc:
-                    print(f"OUTCOME_ERR lotOfferId={lot_offer_id}: {exc}")
-                    results.append({"ok": False, "lotOfferId": lot_offer_id, "error": str(exc)[:300]})
+                    err = str(exc)[:300]
+                    _log(f"OUTCOME_ERR[{idx}] lotOfferId={lot_offer_id}: {err}")
+                    results.append({
+                        "ok": False,
+                        "lotOfferId": lot_offer_id,
+                        "lotId": item.get("lotId"),
+                        "lotPk": item.get("lotPk"),
+                        "car": item.get("car") or "",
+                        "error": err,
+                        "msg": f"лот {item.get('lotId')} / offer {lot_offer_id}: ошибка — {err}",
+                    })
         finally:
             browser.close()
 
-    ok_n = sum(1 for r in results if r.get("ok"))
+    summary = _build_summary(results)
+    by = summary.get("byOutcome") or {}
+    by_txt = ", ".join(f"{k}={v}" for k, v in sorted(by.items())) or "—"
+    _log(
+        f"OUTCOME_DONE ok={summary['ok']}/{summary['total']} fail={summary['fail']} "
+        f"becameWon={summary['becameWon']} by=[{by_txt}]"
+    )
+    _log("=" * 72)
+    ok_n = summary["ok"]
     payload = {
-        "ok": ok_n == len(results),
+        "ok": ok_n == len(results) and summary["fail"] == 0,
         "count": len(results),
         "okCount": ok_n,
         "results": results,
+        "summary": summary,
+        "logLines": list(_LOG_LINES),
         **queue_meta,
     }
-    print(json.dumps(payload, ensure_ascii=False))
+    print(json.dumps(payload, ensure_ascii=False), flush=True)
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
+        _log(f"OUTCOME_FATAL: {exc}")
+        print(json.dumps({
+            "ok": False,
+            "error": str(exc),
+            "logLines": list(_LOG_LINES),
+        }, ensure_ascii=False), flush=True)
         raise SystemExit(1) from exc
