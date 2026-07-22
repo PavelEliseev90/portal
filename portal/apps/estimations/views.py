@@ -1635,15 +1635,28 @@ def estimation_rlk(request, rlk_id):
             list_organizations = RefOrganization.objects.filter(active_eco = True).order_by('name').values(
                 slug            = F('id')           
                 ).values('slug', 'name')
-            list_filials = RefFilial.objects.filter(active_eco = True).order_by('name').values(
-                    slug            = F('id')           
-                    ).values('slug', 'name')
-            list_stores = RefStore.objects.filter(active_eco = True).order_by('name').values(
-                    slug            = F('id')           
-                    ).values('slug', 'name')
-            list_units = RefUnit.objects.filter(active_eco = True).order_by('name').values(
-                    slug            = F('id')           
-                    ).values('slug', 'name')
+            if object.unit != None and object.unit.ib != None and object.unit.ib.alfa:
+                list_filials = RefFilial.objects.filter(active_eco = True).filter(unit__ib__alfa = True).order_by('name').values(
+                        slug            = F('id')           
+                        ).values('slug', 'name', 'unit__ib__name')
+                list_stores = RefFilial.objects.filter(active_eco = True).filter(unit__ib__alfa = True).exclude(store = None).distinct().order_by('store__name').values(
+                        slug_store            = F('store__id'), 
+                        slug_name            = F('store__name')           
+                        ).values('slug_store', 'slug_name')
+                list_units = RefUnit.objects.filter(active_eco = True).filter(ib__alfa = True).order_by('name').values(
+                        slug            = F('id'),            
+                        ).values('slug', 'name')
+            else:
+                list_filials = RefFilial.objects.filter(active_eco = True).order_by('name').values(
+                        slug            = F('id')           
+                        ).values('slug', 'name', 'unit__ib__name')
+                list_stores = RefStore.objects.filter(active_eco = True).order_by('name').values(
+                        slug_store            = F('id'),
+                        slug_name            = F('name'),           
+                        ).values('slug_store', 'slug_name')
+                list_units = RefUnit.objects.filter(active_eco = True).order_by('name').values(
+                        slug            = F('id'),            
+                        ).values('slug', 'name')
             
             type_receptions = RefTypeReceptionCarsOrganization.objects.all().order_by('name').values(
                     slug            = F('id')           

@@ -3926,7 +3926,7 @@ def doc(request, id):
             if DocLO.objects.filter(rlk = interactiv_rlk.rlk).count() > 0:
                 lo  = DocLO.objects.filter(rlk = interactiv_rlk.rlk)[0]  
                 if RefCarsOrganization.objects.filter(lo = lo).count() > 0:
-                    car = RefCarsOrganization.objects.get(lo = lo)
+                    car = RefCarsOrganization.objects.filter(lo = lo).order_by('-date_refresh').first()
                     if car.quantity == 0:
                         agreements_car = DocCarAgreement.objects.filter(lo = lo).filter(active = True).count()
                         if agreements_car > 0:
