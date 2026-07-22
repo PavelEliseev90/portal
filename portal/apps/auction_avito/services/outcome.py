@@ -409,15 +409,19 @@ def apply_offer_outcome(
     outcome_code: str = '',
     raw: str = '',
     send_email: bool = True,
+    notify_chat: bool = True,
 ) -> dict[str, Any]:
     """
     Сохраняет итог на оффере, при необходимости меняет status_code,
-    шлёт письмо и чат при первом переходе в won.
+    шлёт письмо и чат при первом переходе в won,
+    пишет итог в чат лота при смене outcome.
     """
-    from auction_avito.chat_utils import notify_auction_won
+    from auction_avito.chat_utils import notify_auction_won, notify_lot_outcome
 
     prev_outcome = (offer.outcome_code or '').strip()
     prev_status = (offer.status_code or '').strip()
+    prev_title = (offer.outcome_title or '').strip()
+    prev_detail = (offer.outcome_detail or '').strip()
 
     if outcome_code in FINAL_OUTCOMES or outcome_code in (
         OUTCOME_WAITING, OUTCOME_UNKNOWN,
@@ -479,16 +483,32 @@ def apply_offer_outcome(
     ]
 
     email_result = {'sent': False, 'reason': 'skipped'}
+    chat_result = {'sent': False, 'reason': 'skipped'}
     became_won = (
         offer.outcome_code == OUTCOME_WON
         and prev_outcome != OUTCOME_WON
         and offer.win_email_sent_at is None
     )
-    if became_won:
+    new_code = (offer.outcome_code or '').strip()
+    outcome_changed = bool(new_code) and (
+        new_code != prev_outcome
+        or (offer.outcome_title or '').strip() != prev_title
+        or (offer.outcome_detail or '').strip() != prev_detail
+    )
+    # Повторный опрос того же waiting_seller без смены текста — в чат не дублируем.
+    if (
+        new_code == prev_outcome == OUTCOME_WAITING
+        and (offer.outcome_title or '').strip() == prev_title
+        and (offer.outcome_detail or '').strip() == prev_detail
+    ):
+        outcome_changed = False
+
+    if notify_chat and became_won:
         try:
             notify_auction_won(offer)
+            chat_result = {'sent': True, 'kind': 'won'}
         except Exception as exc:
-            email_result = {'sent': False, 'reason': f'chat error: {exc}'}
+            chat_result = {'sent': False, 'reason': f'chat error: {exc}'}
         if send_email:
             try:
                 email_result = send_win_email(offer)
@@ -497,6 +517,13 @@ def apply_offer_outcome(
                     update_fields.append('win_email_sent_at')
             except Exception as exc:
                 email_result = {'sent': False, 'reason': str(exc)}
+    elif notify_chat and outcome_changed:
+        try:
+            notify_lot_outcome(offer, prev_outcome=prev_outcome)
+            chat_result = {'sent': True, 'kind': 'outcome', 'code': new_code}
+        except Exception as exc:
+            chat_result = {'sent': False, 'reason': f'chat error: {exc}'}
+            logger.warning('avito outcome chat failed lotOfferId=%s: %s', offer.lot_offer_id, exc)
 
     offer.save(update_fields=update_fields)
     result = {
@@ -512,10 +539,11 @@ def apply_offer_outcome(
         'statusName': offer.status_name,
         'becameWon': became_won,
         'email': email_result,
+        'chat': chat_result,
         'outcomeSyncedAt': now.isoformat(),
     }
     logger.info(
-        'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r becameWon=%s',
+        'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r becameWon=%s chat=%s',
         offer.lot_offer_id,
         offer.lot.lot_id if offer.lot_id else None,
         prev_outcome or '-',
@@ -525,5 +553,6 @@ def apply_offer_outcome(
         offer.outcome_title,
         offer.outcome_detail,
         became_won,
+        chat_result,
     )
     return result

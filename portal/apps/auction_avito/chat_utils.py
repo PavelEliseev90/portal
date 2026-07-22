@@ -301,6 +301,40 @@ def notify_auction_won(offer, *, user=None):
     post_aav_lot_message(lot, text, user=user)
 
 
+def notify_lot_outcome(offer, *, prev_outcome: str = '', user=None):
+    """
+    Итог торгов Maxposter → чат лота.
+    Вызывается при смене outcome_code (в т.ч. первый опрос).
+    """
+    from auction_avito.services.outcome import OUTCOME_NAMES
+
+    lot = offer.lot
+    if lot is None:
+        return None
+    code = (offer.outcome_code or '').strip() or 'unknown'
+    name = OUTCOME_NAMES.get(code, code)
+    label = _lot_feed_label(lot)
+    venue = _lot_feed_venue_label(lot)
+    title = (offer.outcome_title or '').strip()
+    detail = (offer.outcome_detail or '').strip()
+    try:
+        bid_fmt = f'{int(offer.bid):,}'.replace(',', ' ')
+    except (TypeError, ValueError):
+        bid_fmt = str(offer.bid or '—')
+
+    lines = [f'Итог лота: {name}', f'{label}', f'Площадка: {venue}', f'Наша ставка: {bid_fmt} ₽']
+    if prev_outcome and prev_outcome != code:
+        prev_name = OUTCOME_NAMES.get(prev_outcome, prev_outcome)
+        lines.insert(1, f'{prev_name} → {name}')
+    if title and title.lower() not in name.lower():
+        lines.append(title)
+    if detail and detail != title:
+        lines.append(detail)
+
+    text = '\n'.join(lines)
+    return post_aav_lot_message(lot, text, user=user)
+
+
 def _build_chat_params(request, chat, *, newest_first=False, initial_limit=None):
     if newest_first:
         limit = initial_limit or AAV_FEED_PAGE_SIZE
