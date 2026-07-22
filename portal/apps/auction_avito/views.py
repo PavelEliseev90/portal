@@ -656,6 +656,15 @@ def buyout_recommendations(request):
     return render(request, 'auction_avito/buyout_recommendations.html', {'params': ctx})
 
 
+@login_required
+def analytics(request):
+    """Дашборд работы аукциона: лоты, ставки, итоги, причины пропуска автоставок."""
+    from auction_avito.services.analytics import build_analytics_context
+
+    ctx = build_analytics_context(request)
+    return render(request, 'auction_avito/analytics.html', {'params': ctx})
+
+
 def _parse_optional_int(raw):
     raw = (raw or '').strip()
     if raw == '':
@@ -694,7 +703,7 @@ def auction_settings(request):
             messages.error(request, str(exc))
 
     return render(request, 'auction_avito/auction_settings.html', {
-        'settings': settings_obj,
+        'auction_settings': settings_obj,
     })
 
 

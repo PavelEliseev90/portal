@@ -755,7 +755,50 @@ def avito_auction_auto_bid_decide(request):
     decision['risk_flags'] = risk
     decision['lot_id'] = getattr(lot, 'lot_id', None) or lot_id
     decision['lot_offer_id'] = getattr(offer, 'lot_offer_id', None) or lot_offer_id
+
+    try:
+        from auction_avito.models import AvitoAutoBidDecision
+        from auction_avito.services.auto_bid import categorize_auto_bid_reason
+
+        reason = decision.get('reason') or ''
+        category = decision.get('reason_category') or categorize_auto_bid_reason(
+            reason,
+            should_bid=bool(decision.get('should_bid')),
+            filters_ok=bool(decision.get('filters_ok')),
+        )
+        decision['reason_category'] = category
+        AvitoAutoBidDecision.objects.create(
+            lot=lot,
+            offer=offer,
+            lot_id_ext=decision.get('lot_id'),
+            lot_offer_id_ext=decision.get('lot_offer_id'),
+            should_bid=bool(decision.get('should_bid')),
+            filters_ok=bool(decision.get('filters_ok')),
+            reason=str(reason)[:500],
+            reason_category=str(category)[:40],
+            mode=str(decision.get('mode') or '')[:30],
+            buyout_price=decision.get('buyout_price'),
+            min_available_bid=decision.get('min_available_bid'),
+            max_bid=decision.get('max_bid'),
+            our_bid=decision.get('our_bid'),
+            next_bid=decision.get('next_bid'),
+            bid_amount=decision.get('bid_amount'),
+            year=_as_int_local(year),
+            mileage=_as_int_local(mileage),
+        )
+    except Exception:
+        pass
+
     return JsonResponse(decision, status=status.HTTP_200_OK)
+
+
+def _as_int_local(value):
+    if value in (None, ''):
+        return None
+    try:
+        return int(float(str(value).replace(' ', '').replace(',', '.')))
+    except (TypeError, ValueError):
+        return None
 
 
 def get_car_object(car, unit):

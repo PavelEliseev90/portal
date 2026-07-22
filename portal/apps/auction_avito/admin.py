@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AvitoAuctionSettings,
+    AvitoAutoBidDecision,
     AvitoAutotekaEvent,
     AvitoAutotekaReport,
     AvitoBidderAccount,
@@ -103,6 +104,22 @@ class AvitoLotCalculationAdmin(admin.ModelAdmin):
 class AvitoSyncLogAdmin(admin.ModelAdmin):
     list_display = ('started_at', 'account', 'success', 'offers_count')
     list_filter = ('success',)
+
+
+@admin.register(AvitoAutoBidDecision)
+class AvitoAutoBidDecisionAdmin(admin.ModelAdmin):
+    list_display = (
+        'created_at',
+        'should_bid',
+        'reason_category',
+        'lot_id_ext',
+        'lot_offer_id_ext',
+        'reason',
+    )
+    list_filter = ('should_bid', 'reason_category', 'filters_ok')
+    search_fields = ('reason', 'lot_id_ext', 'lot_offer_id_ext')
+    readonly_fields = ('created_at',)
+    raw_id_fields = ('lot', 'offer')
 
 
 @admin.register(AvitoAuctionSettings)

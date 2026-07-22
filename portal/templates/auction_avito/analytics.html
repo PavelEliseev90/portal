@@ -1,0 +1,285 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Аналитика аукциона Авито {% endblock %}
+{% block title_navbar %} — Аналитика аукциона {% endblock %}
+
+{% block head %}
+<style>
+  .aav-an-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: linear-gradient(135deg, #eef4fb 0%, #fff 48%, #f8fafc 100%);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+  .aav-an-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
+  .aav-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  .aav-kpi {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    background: #fff;
+    padding: 0.85rem 1rem;
+  }
+  .aav-kpi .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8ea1ba;
+    margin-bottom: 0.2rem;
+  }
+  .aav-kpi .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
+  .aav-kpi .hint { font-size: 0.78rem; color: #6c7a92; margin-top: 0.15rem; }
+  .aav-counter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.65rem;
+  }
+  .aav-counter {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    padding: 0.75rem 0.9rem;
+    background: #f8fafc;
+  }
+  .aav-counter.won { background: #ecfdf5; border-color: #bbf7d0; }
+  .aav-counter.lost { background: #fef2f2; border-color: #fecaca; }
+  .aav-counter.waiting_seller { background: #fff7ed; border-color: #fed7aa; }
+  .aav-counter.no_selection { background: #f1f5f9; border-color: #e2e8f0; }
+  .aav-counter .c-label { font-size: 0.8rem; color: #475569; }
+  .aav-counter .c-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; }
+  .aav-group {
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #fff;
+  }
+  .aav-group h6 { margin: 0 0 0.5rem; color: #002a5a; font-weight: 650; }
+  .aav-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+  .aav-bar-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+  .aav-bar-fill {
+    height: 100%;
+    background: #00509d;
+    border-radius: 999px;
+  }
+  .aav-bar-fill.filters { background: #f59e0b; }
+  .aav-bar-fill.economics { background: #ef4444; }
+  .aav-bar-fill.already { background: #64748b; }
+  .aav-bar-fill.system { background: #94a3b8; }
+  .aav-table { font-size: 0.88rem; }
+  .aav-table th { color: #8ea1ba; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="aav-an-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h2><span class="bi bi-bar-chart-line me-2"></span>Аналитика работы</h2>
+      <p class="text-muted small mb-0">Лоты, ставки, итоги торгов и причины пропуска автоставок за период.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:auction_settings' %}">Настройки</a>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-1">С</label>
+        <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-1">По</label>
+        <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Показать</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="aav-kpi-grid mb-3">
+    <div class="aav-kpi">
+      <div class="label">Всего лотов</div>
+      <div class="value">{{ params.kpis.lots_total }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Лотов со ставками</div>
+      <div class="value">{{ params.kpis.lots_with_bids }}</div>
+      <div class="hint">{{ params.kpis.bid_share }}% от лотов</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Всего ставок</div>
+      <div class="value">{{ params.kpis.bids_total }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. ставок на лот</div>
+      <div class="value">{{ params.kpis.avg_bids_per_lot }}</div>
+      <div class="hint">только лоты со ставками</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. пробег</div>
+      <div class="value">{% if params.kpis.avg_mileage %}{{ params.kpis.avg_mileage|formatted_number }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. год</div>
+      <div class="value">{{ params.kpis.avg_year|default:"—" }}</div>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-3">Итоги торгов</h5>
+    {% if params.outcomes %}
+    <div class="aav-counter-grid">
+      {% for o in params.outcomes %}
+      <div class="aav-counter {{ o.code }}">
+        <div class="c-label">{{ o.label }}</div>
+        <div class="c-value">{{ o.count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">За период нет зафиксированных итогов (outcome). Они появятся после опроса завершённых лотов.</p>
+    {% endif %}
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-1">Автоставки: почему не ставили</h5>
+    <p class="small text-muted mb-3">
+      Решения decide API за период:
+      всего {{ params.kpis.decisions_total }},
+      разрешено {{ params.kpis.decisions_ok }} ({{ params.kpis.ok_share }}%),
+      пропуск {{ params.kpis.decisions_skip }}.
+    </p>
+    {% if params.auto_bid.has_data %}
+      {% for g in params.auto_bid.groups %}
+      <div class="aav-group">
+        <h6>{{ g.label }} <span class="text-muted fw-normal">· {{ g.count }} решений · {{ g.lots }} лотов</span></h6>
+        {% for item in g.items %}
+        <div class="aav-bar">
+          <div style="min-width:11rem">{{ item.label }}</div>
+          <div class="aav-bar-track">
+            {% widthratio item.count params.kpis.decisions_skip 100 as pct %}
+            <div class="aav-bar-fill {{ g.code }}" style="width:{% if pct %}{{ pct }}{% else %}0{% endif %}%"></div>
+          </div>
+          <strong style="min-width:3rem;text-align:right">{{ item.count }}</strong>
+          <span class="text-muted" style="min-width:4.5rem">{{ item.lots }} лот.</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      {% if params.auto_bid.top_reasons %}
+      <h6 class="mt-3 mb-2">Топ точных формулировок пропуска</h6>
+      <div class="table-responsive">
+        <table class="table table-sm aav-table mb-0">
+          <thead><tr><th>Причина</th><th>Категория</th><th class="text-end">Раз</th></tr></thead>
+          <tbody>
+            {% for r in params.auto_bid.top_reasons %}
+            <tr>
+              <td>{{ r.reason }}</td>
+              <td class="text-muted">{{ r.reason_category }}</td>
+              <td class="text-end"><strong>{{ r.cnt }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning mb-0">
+        Журнал решений автоставки пока пуст за период.
+        После работы парсера с включёнными автоставками здесь появятся причины пропусков
+        (фильтры года/пробега, такси, выкуп ≤ min и т.д.).
+        Нужна миграция <code>0009_avitoautobiddecision</code>.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-8">
+      <div class="portal-panel h-100">
+        <h5 class="mb-3">Модели на аукционе</h5>
+        {% if params.models %}
+        <div class="table-responsive">
+          <table class="table table-sm aav-table mb-0">
+            <thead>
+              <tr>
+                <th>Марка / модель</th>
+                <th class="text-end">Лотов</th>
+                <th class="text-end">Со ставкой</th>
+                <th class="text-end">Ср. пробег</th>
+                <th class="text-end">Ср. год</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in params.models %}
+              <tr>
+                <td><strong>{{ m.brand }}</strong> {{ m.model }}</td>
+                <td class="text-end">{{ m.cnt }}</td>
+                <td class="text-end">{{ m.with_bid }}</td>
+                <td class="text-end">{% if m.avg_mileage %}{{ m.avg_mileage|formatted_number }}{% else %}—{% endif %}</td>
+                <td class="text-end">{{ m.avg_year|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">Нет данных по моделям за период.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="portal-panel mb-3">
+        <h5 class="mb-3">Пробег (распределение)</h5>
+        {% if params.mileage_buckets %}
+          {% for b in params.mileage_buckets %}
+          <div class="aav-bar">
+            <div style="min-width:6.5rem">{{ b.label }}</div>
+            <div class="aav-bar-track">
+              {% widthratio b.count params.kpis.lots_total 100 as bpct %}
+              <div class="aav-bar-fill" style="width:{% if bpct %}{{ bpct }}{% else %}0{% endif %}%"></div>
+            </div>
+            <strong>{{ b.count }}</strong>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="text-muted small mb-0">Нет пробегов.</p>
+        {% endif %}
+      </div>
+      <div class="portal-panel">
+        <h5 class="mb-3">Годы выпуска</h5>
+        {% if params.years %}
+          {% for y in params.years %}
+          <div class="d-flex justify-content-between small py-1 border-bottom">
+            <span>{{ y.year }}</span>
+            <strong>{{ y.cnt }}</strong>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="text-muted small mb-0">Нет данных по годам.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

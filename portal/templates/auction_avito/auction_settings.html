@@ -1,4 +1,5 @@
 {% extends 'base_web.html' %}
+{% load l10n %}
 
 {% block title %} — Настройки аукциона Авито {% endblock %}
 {% block title_navbar %} — Настройки аукциона {% endblock %}
@@ -12,6 +13,7 @@
     </div>
     <div class="d-flex gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">Рекомендации</a>
     </div>
   </div>
@@ -29,51 +31,51 @@
       <h5 class="mb-3">Автоставки</h5>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" name="auto_bid_enabled" id="auto_bid_enabled"
-               {% if settings.auto_bid_enabled %}checked{% endif %}>
+               {% if auction_settings.auto_bid_enabled %}checked{% endif %}>
         <label class="form-check-label" for="auto_bid_enabled">Включить автоматические ставки</label>
       </div>
       <div class="row g-3">
         <div class="col-md-3">
           <label class="form-label">Пробег от, км</label>
           <input type="number" class="form-control" name="mileage_min" min="0"
-                 value="{{ settings.mileage_min|default_if_none:'' }}" placeholder="без ограничения">
+                 value="{{ auction_settings.mileage_min|default_if_none:'' }}" placeholder="без ограничения">
         </div>
         <div class="col-md-3">
           <label class="form-label">Пробег до, км</label>
           <input type="number" class="form-control" name="mileage_max" min="0"
-                 value="{{ settings.mileage_max|default_if_none:'' }}" placeholder="без ограничения">
+                 value="{{ auction_settings.mileage_max|default_if_none:'' }}" placeholder="без ограничения">
         </div>
         <div class="col-md-3">
           <label class="form-label">Год выпуска от</label>
           <input type="number" class="form-control" name="year_min" min="1980" max="2100"
-                 value="{{ settings.year_min|default_if_none:'' }}" placeholder="без ограничения">
+                 value="{{ auction_settings.year_min|default_if_none:'' }}" placeholder="без ограничения">
         </div>
         <div class="col-md-3">
           <label class="form-label">Год выпуска до</label>
           <input type="number" class="form-control" name="year_max" min="1980" max="2100"
-                 value="{{ settings.year_max|default_if_none:'' }}" placeholder="без ограничения">
+                 value="{{ auction_settings.year_max|default_if_none:'' }}" placeholder="без ограничения">
         </div>
         <div class="col-md-3">
           <label class="form-label">Округление ставки вверх до</label>
           <input type="number" class="form-control" name="bid_round_to" min="1"
-                 value="{{ settings.bid_round_to|default:1000 }}">
+                 value="{{ auction_settings.bid_round_to|default:1000|unlocalize }}">
           <div class="form-text">Обычно 1000 ₽</div>
         </div>
       </div>
       <hr>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="block_taxi" id="block_taxi"
-               {% if settings.block_taxi %}checked{% endif %}>
+               {% if auction_settings.block_taxi %}checked{% endif %}>
         <label class="form-check-label" for="block_taxi">Не ставить на машины из такси (<code>taxi</code>)</label>
       </div>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="block_carsharing" id="block_carsharing"
-               {% if settings.block_carsharing %}checked{% endif %}>
+               {% if auction_settings.block_carsharing %}checked{% endif %}>
         <label class="form-check-label" for="block_carsharing">Не ставить на каршеринг (<code>carsharing</code>)</label>
       </div>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="block_mileage_twisted" id="block_mileage_twisted"
-               {% if settings.block_mileage_twisted %}checked{% endif %}>
+               {% if auction_settings.block_mileage_twisted %}checked{% endif %}>
         <label class="form-check-label" for="block_mileage_twisted">Не ставить при скрученном пробеге (<code>mileageTwisted</code>)</label>
       </div>
       <p class="small text-muted mt-3 mb-0">
@@ -93,22 +95,22 @@
         <div class="col-md-3">
           <label class="form-label">Тест-прайс</label>
           <input type="number" step="0.001" min="0" class="form-control" name="weight_test_price"
-                 value="{{ settings.weight_test_price }}">
+                 value="{{ auction_settings.weight_test_price|unlocalize }}">
         </div>
         <div class="col-md-3">
           <label class="form-label">РДО</label>
           <input type="number" step="0.001" min="0" class="form-control" name="weight_rdo"
-                 value="{{ settings.weight_rdo }}">
+                 value="{{ auction_settings.weight_rdo|unlocalize }}">
         </div>
         <div class="col-md-3">
           <label class="form-label">Коррекция</label>
           <input type="number" step="0.001" min="0" class="form-control" name="weight_kor"
-                 value="{{ settings.weight_kor }}">
+                 value="{{ auction_settings.weight_kor|unlocalize }}">
         </div>
         <div class="col-md-3">
           <label class="form-label">ТХТ</label>
           <input type="number" step="0.001" min="0" class="form-control" name="weight_txt"
-                 value="{{ settings.weight_txt }}">
+                 value="{{ auction_settings.weight_txt|unlocalize }}">
         </div>
       </div>
     </div>
@@ -117,14 +119,14 @@
       <h5 class="mb-3">Итоги завершённых лотов</h5>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" name="outcome_poll_enabled" id="outcome_poll_enabled"
-               {% if settings.outcome_poll_enabled %}checked{% endif %}>
+               {% if auction_settings.outcome_poll_enabled %}checked{% endif %}>
         <label class="form-check-label" for="outcome_poll_enabled">
           Опрашивать Maxposter по лотам со ставкой после окончания аукциона
         </label>
       </div>
       <label class="form-label">Email при выигрыше лота</label>
       <textarea class="form-control" name="win_notify_emails" rows="3"
-                placeholder="user1@example.com, user2@example.com">{{ settings.win_notify_emails }}</textarea>
+                placeholder="user1@example.com, user2@example.com">{{ auction_settings.win_notify_emails }}</textarea>
       <div class="form-text">
         Письмо уходит один раз, когда продавец выбрал нас. В письме: ссылка Maxposter, авто, расчёт выкупа, финальная ставка.
       </div>
