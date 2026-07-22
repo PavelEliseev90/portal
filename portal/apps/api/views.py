@@ -528,8 +528,112 @@ def avito_auction_settings(request):
         'weight_rdo': float(s.weight_rdo),
         'weight_kor': float(s.weight_kor),
         'weight_txt': float(s.weight_txt),
+        'outcome_poll_enabled': s.outcome_poll_enabled,
+        'win_notify_emails': s.win_notify_emails or '',
         'updated_at': s.updated_at.isoformat() if s.updated_at else None,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def avito_auction_outcome_queue(request):
+    """Очередь завершённых лотов со ставкой для опроса итога на Maxposter."""
+    from auction_avito.models import AvitoAuctionSettings
+    from auction_avito.services.outcome import (
+        offers_needing_outcome_poll,
+        serialize_outcome_queue_item,
+    )
+
+    settings_obj = AvitoAuctionSettings.get_solo()
+    if not settings_obj.outcome_poll_enabled:
+        return JsonResponse({
+            'ok': True,
+            'enabled': False,
+            'items': [],
+            'count': 0,
+        }, status=status.HTTP_200_OK)
+
+    if request.method == 'GET':
+        limit = request.GET.get('limit', 30)
+        lookback_days = request.GET.get('lookback_days', 21)
+        recheck_hours = request.GET.get('recheck_hours', 6)
+    else:
+        try:
+            data = json.loads(request.body.decode().replace("'", '"') or '{}')
+        except Exception:
+            data = {}
+        limit = data.get('limit', 30)
+        lookback_days = data.get('lookback_days', 21)
+        recheck_hours = data.get('recheck_hours', 6)
+
+    try:
+        limit = int(limit)
+        lookback_days = int(lookback_days)
+        recheck_hours = int(recheck_hours)
+    except (TypeError, ValueError):
+        limit, lookback_days, recheck_hours = 30, 21, 6
+
+    items = [
+        serialize_outcome_queue_item(o)
+        for o in offers_needing_outcome_poll(
+            limit=limit,
+            lookback_days=lookback_days,
+            recheck_hours=recheck_hours,
+        )
+    ]
+    return JsonResponse({
+        'ok': True,
+        'enabled': True,
+        'count': len(items),
+        'items': items,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def avito_auction_outcome_set(request):
+    """
+    Запись итога лота с Maxposter (парсер).
+
+    JSON:
+    {
+      "lotOfferId": 1624513305,
+      "title": "Аукцион завершен",
+      "detail": "Ждём решения продавца…",
+      "blob": "…",
+      "status": "ended",
+      "outcomeCode": "waiting_seller",  // опционально, иначе классификация по тексту
+      "raw": "…"
+    }
+    """
+    from auction_avito.models import AvitoLotOffer
+    from auction_avito.services.outcome import apply_offer_outcome
+    from auction_avito.services.offer_api import build_offer_state_response, resolve_offer_by_ids
+
+    try:
+        data = json.loads(request.body.decode().replace("'", '"') or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=status.HTTP_400_BAD_REQUEST)
+
+    lot_offer_id = data.get('lotOfferId') or data.get('LotOfferId')
+    lot_id = data.get('lotId') or data.get('LotId')
+    offer = resolve_offer_by_ids(lot_offer_id=lot_offer_id, lot_id=lot_id)
+    if not offer:
+        return JsonResponse(
+            {'error': 'offer not found', 'lotOfferId': lot_offer_id, 'lotId': lot_id},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    result = apply_offer_outcome(
+        offer,
+        title=data.get('title') or data.get('outcomeTitle') or '',
+        detail=data.get('detail') or data.get('outcomeDetail') or '',
+        blob=data.get('blob') or data.get('text') or '',
+        status_code=data.get('status') or data.get('statusCode') or '',
+        outcome_code=data.get('outcomeCode') or data.get('outcome_code') or '',
+        raw=data.get('raw') or '',
+        send_email=data.get('sendEmail', True) is not False,
+    )
+    state = build_offer_state_response(offer)
+    return JsonResponse({**result, **state}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

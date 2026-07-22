@@ -1,0 +1,371 @@
+"""
+Опрос итогов завершённых лотов Maxposter (решение продавца).
+
+Для каждого lotOfferId из очереди портала открывает
+  https://app.maxposter.ru/dealer/auction/{lotOfferId}/view
+перехватывает JSON API и/или читает тексты со страницы, затем
+POST /api/avito_auction_outcome_set/ на портал.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+import urllib.error
+import urllib.request
+
+from maxposter_session import (
+    MaxposterAuthError,
+    apply_cookies,
+    clear_session,
+    load_session,
+    save_session,
+    touch_session,
+)
+from playwright.sync_api import TimeoutError as PWTimeout
+from playwright.sync_api import sync_playwright
+
+from script_auction import USER_AGENT, _extract_authorization_header, _login, _select_dealer
+
+LOGIN_URL = "https://app.maxposter.ru/login"
+AUCTION_URL = "https://app.maxposter.ru/dealer/auction"
+VIEW_URL_TPL = "https://app.maxposter.ru/dealer/auction/{lot_offer_id}/view"
+
+EMAIL_ENV = "MAXPOSTER_EMAIL"
+PASSWORD_ENV = "MAXPOSTER_PASSWORD"
+DEALER_ID_ENV = "MAXPOSTER_DEALER_ID"
+PORTAL_BASE_ENV = "PORTAL_BASE"
+OUTCOME_ITEMS_ENV = "OUTCOME_ITEMS_JSON"
+OUTCOME_LIMIT_ENV = "OUTCOME_LIMIT"
+
+INTERESTING_TEXT_RE = re.compile(
+    r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого",
+    re.I,
+)
+
+
+def _env(name: str, default: str = "") -> str:
+    return (os.environ.get(name) or default).strip()
+
+
+def _env_required(name: str) -> str:
+    val = _env(name)
+    if not val:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return val
+
+
+def _portal_base() -> str:
+    return _env(PORTAL_BASE_ENV, "https://ah.kors-group.com").rstrip("/")
+
+
+def _http_json(method: str, url: str, payload: dict | None = None, timeout: int = 60) -> dict:
+    data = None
+    headers = {"Accept": "application/json"}
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as exc:
+        err_body = exc.read().decode("utf-8", errors="replace")[:500]
+        raise RuntimeError(f"HTTP {exc.code} {url}: {err_body}") from exc
+
+
+def fetch_outcome_queue(limit: int = 30) -> dict:
+    url = f"{_portal_base()}/api/avito_auction_outcome_queue/?limit={limit}"
+    return _http_json("GET", url)
+
+
+def push_outcome(item: dict, extracted: dict) -> dict:
+    url = f"{_portal_base()}/api/avito_auction_outcome_set/"
+    payload = {
+        "lotOfferId": item.get("lotOfferId"),
+        "lotId": item.get("lotId"),
+        "title": extracted.get("title") or "",
+        "detail": extracted.get("detail") or "",
+        "blob": extracted.get("blob") or "",
+        "status": extracted.get("status") or "",
+        "outcomeCode": extracted.get("outcomeCode") or "",
+        "raw": extracted.get("raw") or "",
+    }
+    return _http_json("POST", url, payload)
+
+
+def _warm_headers(page, session_headers: dict | None = None) -> dict:
+    headers = dict(session_headers or {})
+    try:
+        page.goto(AUCTION_URL, wait_until="load", timeout=60_000)
+        headers.update(_extract_authorization_header(page))
+    except Exception as exc:
+        print(f"Прогрев outcome: {exc}")
+    return headers
+
+
+def _ensure_session(page, ctx, email: str, password: str, dealer_id: str, script_dir: str) -> dict:
+    if dealer_id:
+        cached = load_session(script_dir, email, dealer_id)
+        if cached:
+            print(f"SESSION_CACHE_TRY (outcome) возраст={cached.get('_age_min', 0):.0f} мин")
+            apply_cookies(ctx, page, cached["cookies"])
+            touch_session(script_dir, email, dealer_id)
+            print("SESSION_CACHE_HIT (outcome)")
+            return _warm_headers(page, cached.get("session_headers"))
+
+    print("SESSION_FULL_LOGIN (outcome)")
+    _login(page, ctx, email, password)
+    if dealer_id:
+        _select_dealer(page, ctx, dealer_id)
+    headers = _warm_headers(page)
+    if dealer_id:
+        save_session(script_dir, email, dealer_id, ctx.cookies(), headers)
+    return headers
+
+
+def _walk_strings(obj, out: list[str], depth: int = 0):
+    if depth > 8:
+        return
+    if isinstance(obj, str):
+        s = obj.strip()
+        if len(s) >= 8 and INTERESTING_TEXT_RE.search(s):
+            out.append(s)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _walk_strings(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj[:200]:
+            _walk_strings(v, out, depth + 1)
+
+
+def _pick_title_detail(texts: list[str]) -> tuple[str, str]:
+    title = ""
+    detail = ""
+    for t in texts:
+        low = t.lower()
+        if not title and ("аукцион заверш" in low or "аукцион отмен" in low):
+            title = t
+            continue
+        if not detail and (
+            "решени" in low or "выигр" in low or "выбран" in low or "выбрал" in low
+            or "проигра" in low or "ждём" in low or "ждем" in low or "никого" in low
+        ):
+            detail = t
+            continue
+    if not title and texts:
+        title = texts[0]
+    if not detail and len(texts) > 1:
+        detail = texts[1]
+    return title, detail
+
+
+def _extract_status_from_json(payload: dict) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    for key in ("offer", "lotOffer", "data"):
+        nested = payload.get(key)
+        if isinstance(nested, dict):
+            st = nested.get("status")
+            if isinstance(st, dict) and st.get("status"):
+                return str(st.get("status"))
+            if isinstance(st, str):
+                return st
+    st = payload.get("status")
+    if isinstance(st, dict) and st.get("status"):
+        return str(st.get("status"))
+    if isinstance(st, str):
+        return st
+    return ""
+
+
+def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
+    """Открыть страницу лота, собрать тексты из API + DOM."""
+    url = VIEW_URL_TPL.format(lot_offer_id=lot_offer_id)
+    captured: list[dict] = []
+
+    def on_response(resp):
+        try:
+            req_url = resp.url or ""
+            if "mp-gateway.maxposter.ru" not in req_url and "maxposter" not in req_url:
+                return
+            ctype = (resp.headers or {}).get("content-type", "")
+            if "json" not in ctype:
+                return
+            if resp.status != 200:
+                return
+            data = resp.json()
+            if isinstance(data, (dict, list)):
+                captured.append({"url": req_url, "data": data})
+        except Exception:
+            pass
+
+    page.on("response", on_response)
+    try:
+        page.goto(url, wait_until="networkidle", timeout=90_000)
+    except PWTimeout:
+        page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+        page.wait_for_timeout(2500)
+    finally:
+        try:
+            page.remove_listener("response", on_response)
+        except Exception:
+            pass
+
+    page.wait_for_timeout(1500)
+
+    api_texts: list[str] = []
+    status_code = ""
+    for item in captured:
+        data = item.get("data")
+        if isinstance(data, dict) and not status_code:
+            status_code = _extract_status_from_json(data)
+        _walk_strings(data, api_texts)
+
+    # DOM: собираем видимые строки из основного контента.
+    dom_texts: list[str] = []
+    try:
+        dom_texts = page.evaluate(
+            """() => {
+              const root = document.querySelector('main') || document.body;
+              const nodes = root.querySelectorAll('h1,h2,h3,h4,p,div,span,li');
+              const out = [];
+              const seen = new Set();
+              for (const el of nodes) {
+                if (!el || el.children.length > 4) continue;
+                const t = (el.innerText || '').replace(/\\s+/g, ' ').trim();
+                if (t.length < 8 || t.length > 280) continue;
+                if (!/аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого/i.test(t)) continue;
+                if (seen.has(t)) continue;
+                seen.add(t);
+                out.push(t);
+                if (out.length >= 40) break;
+              }
+              return out;
+            }"""
+        ) or []
+    except Exception as exc:
+        print(f"DOM extract error lotOfferId={lot_offer_id}: {exc}")
+
+    texts = []
+    seen = set()
+    for t in list(dom_texts) + list(api_texts):
+        t = re.sub(r"\s+", " ", str(t)).strip()
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        texts.append(t)
+
+    title, detail = _pick_title_detail(texts)
+    blob = " | ".join(texts[:20])
+    raw = json.dumps(
+        {
+            "url": url,
+            "status": status_code,
+            "texts": texts[:30],
+            "apiUrls": [c.get("url") for c in captured][:20],
+        },
+        ensure_ascii=False,
+    )
+    return {
+        "title": title,
+        "detail": detail,
+        "blob": blob,
+        "status": status_code,
+        "raw": raw,
+        "texts": texts,
+    }
+
+
+def _load_items() -> list[dict]:
+    raw = _env(OUTCOME_ITEMS_ENV)
+    if raw:
+        data = json.loads(raw)
+        if isinstance(data, dict) and "items" in data:
+            return list(data.get("items") or [])
+        if isinstance(data, list):
+            return data
+    limit = int(_env(OUTCOME_LIMIT_ENV, "20") or "20")
+    queue = fetch_outcome_queue(limit=limit)
+    if not queue.get("enabled", True):
+        print("Outcome poll disabled on portal")
+        return []
+    return list(queue.get("items") or [])
+
+
+def main():
+    email = _env_required(EMAIL_ENV)
+    password = _env_required(PASSWORD_ENV)
+    dealer_id = _env(DEALER_ID_ENV)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    items = _load_items()
+    print(f"OUTCOME_QUEUE count={len(items)} portal={_portal_base()}")
+
+    results = []
+    if not items:
+        print(json.dumps({"ok": True, "count": 0, "results": []}, ensure_ascii=False))
+        return
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        ctx = browser.new_context(user_agent=USER_AGENT, locale="ru-RU")
+        page = ctx.new_page()
+        try:
+            try:
+                _ensure_session(page, ctx, email, password, dealer_id, script_dir)
+            except MaxposterAuthError:
+                if dealer_id:
+                    clear_session(script_dir, email, dealer_id)
+                raise
+
+            for item in items:
+                lot_offer_id = item.get("lotOfferId")
+                if not lot_offer_id:
+                    continue
+                print(f"OUTCOME_CHECK lotOfferId={lot_offer_id} lotId={item.get('lotId')}")
+                try:
+                    extracted = extract_outcome_from_view(page, lot_offer_id)
+                    portal = push_outcome(item, extracted)
+                    results.append({
+                        "ok": True,
+                        "lotOfferId": lot_offer_id,
+                        "extracted": {
+                            "title": extracted.get("title"),
+                            "detail": extracted.get("detail"),
+                            "status": extracted.get("status"),
+                            "texts": (extracted.get("texts") or [])[:8],
+                        },
+                        "portal": {
+                            "outcomeCode": portal.get("outcomeCode"),
+                            "statusCode": portal.get("statusCode"),
+                            "becameWon": portal.get("becameWon"),
+                            "email": portal.get("email"),
+                        },
+                    })
+                    print(
+                        f"OUTCOME_OK lotOfferId={lot_offer_id} "
+                        f"→ {portal.get('outcomeCode')} / {portal.get('statusCode')}"
+                    )
+                except MaxposterAuthError:
+                    if dealer_id:
+                        clear_session(script_dir, email, dealer_id)
+                    raise
+                except Exception as exc:
+                    print(f"OUTCOME_ERR lotOfferId={lot_offer_id}: {exc}")
+                    results.append({"ok": False, "lotOfferId": lot_offer_id, "error": str(exc)[:300]})
+        finally:
+            browser.close()
+
+    ok_n = sum(1 for r in results if r.get("ok"))
+    payload = {"ok": ok_n == len(results), "count": len(results), "okCount": ok_n, "results": results}
+    print(json.dumps(payload, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
+        raise SystemExit(1) from exc

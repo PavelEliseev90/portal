@@ -113,6 +113,23 @@
       </div>
     </div>
 
+    <div class="portal-panel mb-3">
+      <h5 class="mb-3">Итоги завершённых лотов</h5>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="outcome_poll_enabled" id="outcome_poll_enabled"
+               {% if settings.outcome_poll_enabled %}checked{% endif %}>
+        <label class="form-check-label" for="outcome_poll_enabled">
+          Опрашивать Maxposter по лотам со ставкой после окончания аукциона
+        </label>
+      </div>
+      <label class="form-label">Email при выигрыше лота</label>
+      <textarea class="form-control" name="win_notify_emails" rows="3"
+                placeholder="user1@example.com, user2@example.com">{{ settings.win_notify_emails }}</textarea>
+      <div class="form-text">
+        Письмо уходит один раз, когда продавец выбрал нас. В письме: ссылка Maxposter, авто, расчёт выкупа, финальная ставка.
+      </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Сохранить</button>
   </form>
 </div>

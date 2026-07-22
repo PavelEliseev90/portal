@@ -164,3 +164,45 @@ class AutoBidDecideTests(SimpleTestCase):
         self.assertFalse(d['should_bid'])
         self.assertEqual(d['next_bid'], 805_000)
         self.assertIn('первая ставка', d['reason'])
+
+
+class OutcomeClassifyTests(SimpleTestCase):
+    def test_waiting_seller(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершен',
+            detail='Ждём решения продавца. Обычно на это уходит день-два',
+        )
+        self.assertEqual(d['outcome_code'], 'waiting_seller')
+        self.assertEqual(d['status_code'], 'finished')
+
+    def test_won_phrase(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершен',
+            detail='Поздравляем! Вас выбрали продавцом',
+        )
+        self.assertEqual(d['outcome_code'], 'won')
+        self.assertEqual(d['status_code'], 'won')
+
+    def test_lost_phrase(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            blob='Аукцион завершен. Продавец выбрал другого участника',
+        )
+        self.assertEqual(d['outcome_code'], 'lost')
+        self.assertEqual(d['status_code'], 'lost')
+
+    def test_seller_chose_nobody(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершен',
+            detail='Продавец никого не выбрал',
+        )
+        self.assertEqual(d['outcome_code'], 'no_selection')
+        self.assertEqual(d['status_code'], 'finished')
+        self.assertIn('никого', d['outcome_detail'].lower())

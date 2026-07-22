@@ -151,6 +151,8 @@ urlpatterns = [
    path('avito_auction_offers_state/',   views.avito_auction_offers_state),
    path('avito_auction_settings/',       views.avito_auction_settings),
    path('avito_auction_auto_bid_decide/', views.avito_auction_auto_bid_decide),
+   path('avito_auction_outcome_queue/',  views.avito_auction_outcome_queue),
+   path('avito_auction_outcome_set/',    views.avito_auction_outcome_set),
 
    # Конвертация аудио файлов с диктофона так как там уйня полная
 
