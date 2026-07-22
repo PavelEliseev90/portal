@@ -196,8 +196,8 @@ def record_manual_uk_approval(calc, user, comment, approved_at=None):
     if not calc.rlk_id or not calc.car_id:
         raise ValueError('Для фиксации решения УК нужны рабочий лист и автомобиль.')
     approved_kvp = int(calc.kvp or 0)
-    if approved_kvp <= 0:
-        raise ValueError('Согласованный УК КВП должен быть больше 0.')
+    # if approved_kvp <= 0:
+    #     raise ValueError('Согласованный УК КВП должен быть больше 0.')
     approved_at = approved_at or timezone.now()
     defaults = {
         'rlk_id': calc.rlk_id,
@@ -1332,12 +1332,12 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
         comment = _require_comment(request, comment)
         if comment is None:
             return _approval_redirect(calc.pk)
-        if int(calc.kvp or 0) <= 0:
-            messages.error(
-                request,
-                'Нельзя согласовать УК: КВП должен быть больше 0.',
-            )
-            return _approval_redirect(calc.pk)
+        # if int(calc.kvp or 0) <= -1000000000:
+        #     messages.error(
+        #         request,
+        #         'Нельзя согласовать УК: КВП должен быть больше 0.',
+        #     )
+        #     return _approval_redirect(calc.pk)
 
         now = timezone.now()
         with transaction.atomic():

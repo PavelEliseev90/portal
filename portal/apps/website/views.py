@@ -10685,34 +10685,35 @@ def sb_lo(request):
 def test(request):
     # Бэкфилл пробега Автотеки для старых оценок:
     # avtoteka_last_run / avtoteka_warning_run по уже сохранённому avtoteka_data.
-    from task_manager.views import calc_avtoteka_run_metrics
+    # from task_manager.views import calc_avtoteka_run_metrics
 
-    qs = (
-        RegInteractivOcenka.objects
-        .exclude(avtoteka_data=None)
-        .exclude(avtoteka_data='')
-        .filter(avtoteka_last_run=0, avtoteka_warning_run=0)
-        .order_by('-start_estimation')
-    )
-    updated = 0
-    errors = 0
-    total = qs.count()
-    for estimation in qs.iterator(chunk_size=200):
-        try:
-            if not estimation.avtoteka_data or len(estimation.avtoteka_data) < 100:
-                continue
-            data_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
-            last_run, warning_run = calc_avtoteka_run_metrics(data_autoteka)
-            if last_run == 0 and warning_run == 0:
-                continue
-            RegInteractivOcenka.objects.filter(pk=estimation.pk).update(
-                avtoteka_last_run=last_run or 0,
-                avtoteka_warning_run=warning_run or 0,
-            )
-            updated += 1
-        except Exception:
-            errors += 1
-    print(f'avtoteka run backfill: updated={updated} errors={errors} scanned={total}')
+    # qs = (
+    #     RegInteractivOcenka.objects
+    #     .exclude(avtoteka_data=None)
+    #     .exclude(avtoteka_data='')
+    #     .filter(avtoteka_last_run=0, avtoteka_warning_run=0)
+    #     .order_by('-start_estimation')
+    # ).values('pk')
+    # updated = 0
+    # errors = 0
+    # total = qs.count()
+    # for estimation_pk in qs.iterator(chunk_size=200):
+    #     try:
+    #         estimation = RegInteractivOcenka.objects.get(pk = estimation_pk['pk'])
+    #         if not estimation.avtoteka_data or len(estimation.avtoteka_data) < 100:
+    #             continue
+    #         data_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
+    #         last_run, warning_run = calc_avtoteka_run_metrics(data_autoteka)
+    #         if last_run == 0 and warning_run == 0:
+    #             continue
+    #         RegInteractivOcenka.objects.filter(pk=estimation.pk).update(
+    #             avtoteka_last_run=last_run or 0,
+    #             avtoteka_warning_run=warning_run or 0,
+    #         )
+    #         updated += 1
+    #     except Exception:
+    #         errors += 1
+    # print(f'avtoteka run backfill: updated={updated} errors={errors} scanned={total}')
 
     usrs = User.objects.filter(is_staff = False).exclude(username__icontains = 'phone_')
     for us in usrs:

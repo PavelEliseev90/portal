@@ -1886,6 +1886,22 @@
               </div>
             {% endif %}
 
+            {% if params.estimation.avtoteka_last_run > 0 %}
+              {% if params.estimation.avtoteka_last_run > params.estimation.page_salon.run %}
+                <div class="col-auto">
+                  <div class="kors-brand-pill bg-danger text-nowrap">
+                    <span class="icon-cd"></span> Пробег автотека - {{params.estimation.avtoteka_last_run|floatformat:"0g"}} км.
+                  </div>
+                </div>
+              {% else %}
+                <div class="col-auto">
+                  <div class="kors-brand-pill bg-success text-nowrap">
+                    <span class="icon-cd"></span> Пробег автотека - {{params.estimation.avtoteka_last_run|floatformat:"0g"}} км.
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+
             {% if params.estimation.page_proverki.car_credit == True %}
               <div class="col-auto">
                 <div class="kors-brand-pill bg-danger text-nowrap">
@@ -2332,7 +2348,7 @@
         
         </div>
 
-        <main class="col">
+        <main class="col-10">
           
           <div class="hidesite fixed-top mobile-nav-select" style="margin-top: 3.7 rem; right: 25px; left: 25px;">
             <div class="col">
