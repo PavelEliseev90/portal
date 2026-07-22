@@ -45,12 +45,24 @@
     padding: 0.75rem 0.9rem;
     background: #f8fafc;
   }
+  a.aav-counter {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .15s ease, transform .15s ease;
+    cursor: pointer;
+  }
+  a.aav-counter:hover {
+    box-shadow: 0 4px 14px rgba(0, 42, 90, 0.12);
+    transform: translateY(-1px);
+  }
   .aav-counter.won { background: #ecfdf5; border-color: #bbf7d0; }
   .aav-counter.lost { background: #fef2f2; border-color: #fecaca; }
   .aav-counter.waiting_seller { background: #fff7ed; border-color: #fed7aa; }
   .aav-counter.no_selection { background: #f1f5f9; border-color: #e2e8f0; }
   .aav-counter .c-label { font-size: 0.8rem; color: #475569; }
   .aav-counter .c-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; }
+  .aav-counter .c-pct { font-size: 0.78rem; color: #6c7a92; margin-top: 0.1rem; }
   .aav-group {
     border: 1px solid rgba(0, 42, 90, 0.1);
     border-radius: 12px;
@@ -150,12 +162,14 @@
     {% if params.outcomes %}
     <div class="aav-counter-grid">
       {% for o in params.outcomes %}
-      <div class="aav-counter {{ o.code }}">
+      <a class="aav-counter {{ o.code }}" href="{{ o.list_url }}" title="Открыть список лотов">
         <div class="c-label">{{ o.label }}</div>
         <div class="c-value">{{ o.count }}</div>
-      </div>
+        <div class="c-pct">{{ o.pct }}%</div>
+      </a>
       {% endfor %}
     </div>
+    <p class="small text-muted mt-2 mb-0">Нажмите на итог, чтобы открыть список лотов за выбранный период.</p>
     {% else %}
     <p class="text-muted small mb-0">За период нет зафиксированных итогов (outcome). Они появятся после опроса завершённых лотов.</p>
     {% endif %}
@@ -225,7 +239,9 @@
               <tr>
                 <th>Марка / модель</th>
                 <th class="text-end">Лотов</th>
+                <th class="text-end">Доля</th>
                 <th class="text-end">Со ставкой</th>
+                <th class="text-end">% со ставкой</th>
                 <th class="text-end">Ср. пробег</th>
                 <th class="text-end">Ср. год</th>
               </tr>
@@ -235,7 +251,9 @@
               <tr>
                 <td><strong>{{ m.brand }}</strong> {{ m.model }}</td>
                 <td class="text-end">{{ m.cnt }}</td>
+                <td class="text-end text-muted">{{ m.pct }}%</td>
                 <td class="text-end">{{ m.with_bid }}</td>
+                <td class="text-end text-muted">{{ m.bid_pct }}%</td>
                 <td class="text-end">{% if m.avg_mileage %}{{ m.avg_mileage|formatted_number }}{% else %}—{% endif %}</td>
                 <td class="text-end">{{ m.avg_year|default:"—" }}</td>
               </tr>
@@ -256,10 +274,10 @@
           <div class="aav-bar">
             <div style="min-width:6.5rem">{{ b.label }}</div>
             <div class="aav-bar-track">
-              {% widthratio b.count params.kpis.lots_total 100 as bpct %}
-              <div class="aav-bar-fill" style="width:{% if bpct %}{{ bpct }}{% else %}0{% endif %}%"></div>
+              <div class="aav-bar-fill" style="width:{{ b.pct }}%"></div>
             </div>
-            <strong>{{ b.count }}</strong>
+            <strong style="min-width:2rem;text-align:right">{{ b.count }}</strong>
+            <span class="text-muted" style="min-width:3.2rem;text-align:right">{{ b.pct }}%</span>
           </div>
           {% endfor %}
         {% else %}
@@ -270,9 +288,15 @@
         <h5 class="mb-3">Годы выпуска</h5>
         {% if params.years %}
           {% for y in params.years %}
-          <div class="d-flex justify-content-between small py-1 border-bottom">
+          <div class="d-flex justify-content-between align-items-center small py-1 border-bottom gap-2">
             <span>{{ y.year }}</span>
+            <span class="text-muted flex-grow-1">
+              <span class="aav-bar-track d-inline-block align-middle" style="width:100%;max-width:7rem;vertical-align:middle">
+                <span class="aav-bar-fill d-block" style="width:{{ y.pct }}%"></span>
+              </span>
+            </span>
             <strong>{{ y.cnt }}</strong>
+            <span class="text-muted" style="min-width:2.8rem;text-align:right">{{ y.pct }}%</span>
           </div>
           {% endfor %}
         {% else %}

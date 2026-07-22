@@ -1,0 +1,88 @@
+2026-07-22 22:19:29 OUTCOME_EXTRACT[4] lotOfferId=1623167054 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=71
+2026-07-22 22:19:29 OUTCOME_OK[4] lotOfferId=1623167054 lotId=4147751 «Kia Sportage 2017» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+2026-07-22 22:19:29 OUTCOME_CHECK[5/15] lotOfferId=1623184474 lotId=4147925 pk=3537 dealer=2104 bid=705600 prev=- «ВАЗ (LADA) Vesta 2019»
+2026-07-22 22:21:03 OUTCOME_EXTRACT[5] lotOfferId=1623184474 title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' texts=71
+2026-07-22 22:21:03 OUTCOME_OK[5] lotOfferId=1623184474 lotId=4147925 «ВАЗ (LADA) Vesta 2019» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' becameWon=False
+2026-07-22 22:21:03 OUTCOME_CHECK[6/15] lotOfferId=1623184727 lotId=4147932 pk=3536 dealer=2104 bid=515000 prev=- «ВАЗ (LADA) Granta 2020»
+2026-07-22 22:22:38 OUTCOME_EXTRACT[6] lotOfferId=1623184727 title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' texts=71
+2026-07-22 22:22:41 OUTCOME_OK[6] lotOfferId=1623184727 lotId=4147932 «ВАЗ (LADA) Granta 2020» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' becameWon=False
+2026-07-22 22:22:41 OUTCOME_CHECK[7/15] lotOfferId=1623193611 lotId=4148041 pk=3538 dealer=2104 bid=745000 prev=- «Opel Mokka 2014»
+2026-07-22 22:24:16 OUTCOME_EXTRACT[7] lotOfferId=1623193611 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+2026-07-22 22:24:16 OUTCOME_OK[7] lotOfferId=1623193611 lotId=4148041 «Opel Mokka 2014» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+2026-07-22 22:24:16 OUTCOME_CHECK[8/15] lotOfferId=1623199993 lotId=4148106 pk=3539 dealer=2104 bid=750000 prev=- «Mitsubishi Outlander 2010»
+2026-07-22 22:25:50 OUTCOME_EXTRACT[8] lotOfferId=1623199993 title='Аукцион завершён Дата аукциона 17 июля 2026 Лот не выкупили' detail='Уведомление о том, что продавец автомобиля в Авито Аукционе выбрал предложение вашего дилерского центра среди прочих' texts=71
+2026-07-22 22:25:51 OUTCOME_OK[8] lotOfferId=1623199993 lotId=4148106 «Mitsubishi Outlander 2010» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Лот не выкупили' detail='Уведомление о том, что продавец автомобиля в Авито Аукционе выбрал предложение вашего дилерского центра среди прочих' becameWon=False
+2026-07-22 22:25:51 OUTCOME_CHECK[9/15] lotOfferId=1623236499 lotId=4148490 pk=3541 dealer=2104 bid=771000 prev=- «Ford EcoSport 2015»
+2026-07-22 22:27:25 OUTCOME_EXTRACT[9] lotOfferId=1623236499 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+2026-07-22 22:27:25 OUTCOME_OK[9] lotOfferId=1623236499 lotId=4148490 «Ford EcoSport 2015» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+2026-07-22 22:27:25 OUTCOME_CHECK[10/15] lotOfferId=1623250154 lotId=4148625 pk=3542 dealer=2104 bid=521000 prev=- «Hyundai Solaris 2013»
+2026-07-22 22:29:00 OUTCOME_EXTRACT[10] lotOfferId=1623250154 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+2026-07-22 22:29:00 OUTCOME_OK[10] lotOfferId=1623250154 lotId=4148625 «Hyundai Solaris 2013» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+2026-07-22 22:29:00 OUTCOME_CHECK[11/15] lotOfferId=1623890446 lotId=4155880 pk=3552 dealer=2104 bid=1143000 prev=- «Nissan Qashqai 2016»
+2026-07-22 22:30:35 OUTCOME_EXTRACT[11] lotOfferId=1623890446 title='Аукцион завершён Дата аукциона 20 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 20 июля 2026 Продавец никого не выбрал' texts=70
+2026-07-22 22:30:35 OUTCOME_OK[11] lotOfferId=1623890446 lotId=4155880 «Nissan Qashqai 2016» - → no_selection/finished title='Аукцион завершён Дата аукциона 20 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 20 июля 2026 Продавец никого не выбрал' becameWon=False
+2026-07-22 22:30:35 OUTCOME_CHECK[12/15] lotOfferId=1624187383 lotId=4159039 pk=3560 dealer=2104 bid=478000 prev=- «Hyundai Solaris 2014»
+2026-07-22 22:32:09 OUTCOME_EXTRACT[12] lotOfferId=1624187383 title='Аукцион завершён Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' detail='Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' texts=71
+2026-07-22 22:32:09 OUTCOME_OK[12] lotOfferId=1624187383 lotId=4159039 «Hyundai Solaris 2014» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' detail='Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' becameWon=False
+2026-07-22 22:32:09 OUTCOME_CHECK[13/15] lotOfferId=1624235859 lotId=4159575 pk=3569 dealer=2104 bid=2587000 prev=- «Mazda CX-5 2019»
+
+----- /api/outcomes 2026-07-22T22:33:08 dealer=2104 -----
+========================================================================
+OUTCOME_START enabled=True queue=15 filtered=15 dealer=2104 portal=https://ah.kors-group.com log=D:\portal\tools\maxposter_auction\outcome_poll.log
+OUTCOME_QUEUE[1/15] lotOfferId=1623155077 lotId=4147621 pk=3532 dealer=2104 bid=642000 prev=- «Suzuki Grand Vitara 2007»
+OUTCOME_QUEUE[2/15] lotOfferId=1623103950 lotId=4146957 pk=3528 dealer=2104 bid=662000 prev=- «Opel Insignia 2013»
+OUTCOME_QUEUE[3/15] lotOfferId=1623160855 lotId=4147687 pk=3533 dealer=2104 bid=1499000 prev=- «Geely Coolray 2020»
+OUTCOME_QUEUE[4/15] lotOfferId=1623167054 lotId=4147751 pk=3535 dealer=2104 bid=1760000 prev=- «Kia Sportage 2017»
+OUTCOME_QUEUE[5/15] lotOfferId=1623184474 lotId=4147925 pk=3537 dealer=2104 bid=705600 prev=- «ВАЗ (LADA) Vesta 2019»
+OUTCOME_QUEUE[6/15] lotOfferId=1623184727 lotId=4147932 pk=3536 dealer=2104 bid=515000 prev=- «ВАЗ (LADA) Granta 2020»
+OUTCOME_QUEUE[7/15] lotOfferId=1623193611 lotId=4148041 pk=3538 dealer=2104 bid=745000 prev=- «Opel Mokka 2014»
+OUTCOME_QUEUE[8/15] lotOfferId=1623199993 lotId=4148106 pk=3539 dealer=2104 bid=750000 prev=- «Mitsubishi Outlander 2010»
+OUTCOME_QUEUE[9/15] lotOfferId=1623236499 lotId=4148490 pk=3541 dealer=2104 bid=771000 prev=- «Ford EcoSport 2015»
+OUTCOME_QUEUE[10/15] lotOfferId=1623250154 lotId=4148625 pk=3542 dealer=2104 bid=521000 prev=- «Hyundai Solaris 2013»
+OUTCOME_QUEUE[11/15] lotOfferId=1623890446 lotId=4155880 pk=3552 dealer=2104 bid=1143000 prev=- «Nissan Qashqai 2016»
+OUTCOME_QUEUE[12/15] lotOfferId=1624187383 lotId=4159039 pk=3560 dealer=2104 bid=478000 prev=- «Hyundai Solaris 2014»
+OUTCOME_QUEUE[13/15] lotOfferId=1624235859 lotId=4159575 pk=3569 dealer=2104 bid=2587000 prev=- «Mazda CX-5 2019»
+OUTCOME_QUEUE[14/15] lotOfferId=1624214807 lotId=4159310 pk=3565 dealer=2104 bid=605000 prev=- «Volkswagen Jetta 2011»
+OUTCOME_QUEUE[15/15] lotOfferId=1624243941 lotId=4159651 pk=3570 dealer=2104 bid=2160900 prev=- «BMW 5 серия 2019»
+SESSION_CACHE_TRY (outcome) возраст=7 мин
+SESSION_CACHE_HIT (outcome)
+Auth token в storage не найден
+OUTCOME_CHECK[1/15] lotOfferId=1623155077 lotId=4147621 pk=3532 dealer=2104 bid=642000 prev=- «Suzuki Grand Vitara 2007»
+OUTCOME_EXTRACT[1] lotOfferId=1623155077 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=74
+OUTCOME_OK[1] lotOfferId=1623155077 lotId=4147621 «Suzuki Grand Vitara 2007» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[2/15] lotOfferId=1623103950 lotId=4146957 pk=3528 dealer=2104 bid=662000 prev=- «Opel Insignia 2013»
+OUTCOME_EXTRACT[2] lotOfferId=1623103950 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=71
+OUTCOME_OK[2] lotOfferId=1623103950 lotId=4146957 «Opel Insignia 2013» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[3/15] lotOfferId=1623160855 lotId=4147687 pk=3533 dealer=2104 bid=1499000 prev=- «Geely Coolray 2020»
+OUTCOME_EXTRACT[3] lotOfferId=1623160855 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+OUTCOME_OK[3] lotOfferId=1623160855 lotId=4147687 «Geely Coolray 2020» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[4/15] lotOfferId=1623167054 lotId=4147751 pk=3535 dealer=2104 bid=1760000 prev=- «Kia Sportage 2017»
+OUTCOME_EXTRACT[4] lotOfferId=1623167054 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=71
+OUTCOME_OK[4] lotOfferId=1623167054 lotId=4147751 «Kia Sportage 2017» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[5/15] lotOfferId=1623184474 lotId=4147925 pk=3537 dealer=2104 bid=705600 prev=- «ВАЗ (LADA) Vesta 2019»
+OUTCOME_EXTRACT[5] lotOfferId=1623184474 title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' texts=71
+OUTCOME_OK[5] lotOfferId=1623184474 lotId=4147925 «ВАЗ (LADA) Vesta 2019» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' becameWon=False
+OUTCOME_CHECK[6/15] lotOfferId=1623184727 lotId=4147932 pk=3536 dealer=2104 bid=515000 prev=- «ВАЗ (LADA) Granta 2020»
+OUTCOME_EXTRACT[6] lotOfferId=1623184727 title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' texts=71
+OUTCOME_OK[6] lotOfferId=1623184727 lotId=4147932 «ВАЗ (LADA) Granta 2020» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Выбрали другого покупателя' detail='Дата аукциона 17 июля 2026 Выбрали другого покупателя' becameWon=False
+OUTCOME_CHECK[7/15] lotOfferId=1623193611 lotId=4148041 pk=3538 dealer=2104 bid=745000 prev=- «Opel Mokka 2014»
+OUTCOME_EXTRACT[7] lotOfferId=1623193611 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+OUTCOME_OK[7] lotOfferId=1623193611 lotId=4148041 «Opel Mokka 2014» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[8/15] lotOfferId=1623199993 lotId=4148106 pk=3539 dealer=2104 bid=750000 prev=- «Mitsubishi Outlander 2010»
+OUTCOME_EXTRACT[8] lotOfferId=1623199993 title='Аукцион завершён Дата аукциона 17 июля 2026 Лот не выкупили' detail='Уведомление о том, что продавец автомобиля в Авито Аукционе выбрал предложение вашего дилерского центра среди прочих' texts=71
+OUTCOME_OK[8] lotOfferId=1623199993 lotId=4148106 «Mitsubishi Outlander 2010» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Лот не выкупили' detail='Уведомление о том, что продавец автомобиля в Авито Аукционе выбрал предложение вашего дилерского центра среди прочих' becameWon=False
+OUTCOME_CHECK[9/15] lotOfferId=1623236499 lotId=4148490 pk=3541 dealer=2104 bid=771000 prev=- «Ford EcoSport 2015»
+OUTCOME_EXTRACT[9] lotOfferId=1623236499 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+OUTCOME_OK[9] lotOfferId=1623236499 lotId=4148490 «Ford EcoSport 2015» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[10/15] lotOfferId=1623250154 lotId=4148625 pk=3542 dealer=2104 bid=521000 prev=- «Hyundai Solaris 2013»
+OUTCOME_EXTRACT[10] lotOfferId=1623250154 title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' texts=70
+OUTCOME_OK[10] lotOfferId=1623250154 lotId=4148625 «Hyundai Solaris 2013» - → no_selection/finished title='Аукцион завершён Дата аукциона 17 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 17 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[11/15] lotOfferId=1623890446 lotId=4155880 pk=3552 dealer=2104 bid=1143000 prev=- «Nissan Qashqai 2016»
+OUTCOME_EXTRACT[11] lotOfferId=1623890446 title='Аукцион завершён Дата аукциона 20 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 20 июля 2026 Продавец никого не выбрал' texts=70
+OUTCOME_OK[11] lotOfferId=1623890446 lotId=4155880 «Nissan Qashqai 2016» - → no_selection/finished title='Аукцион завершён Дата аукциона 20 июля 2026 Продавец никого не выбрал' detail='Дата аукциона 20 июля 2026 Продавец никого не выбрал' becameWon=False
+OUTCOME_CHECK[12/15] lotOfferId=1624187383 lotId=4159039 pk=3560 dealer=2104 bid=478000 prev=- «Hyundai Solaris 2014»
+OUTCOME_EXTRACT[12] lotOfferId=1624187383 title='Аукцион завершён Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' detail='Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' texts=71
+OUTCOME_OK[12] lotOfferId=1624187383 lotId=4159039 «Hyundai Solaris 2014» - → waiting_seller/finished title='Аукцион завершён Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' detail='Дата аукциона 21 июля 2026 Ждём решения продавца Обычно на это уходит день-два' becameWon=False
+OUTCOME_CHECK[13/15] lotOfferId=1624235859 lotId=4159575 pk=3569 dealer=2104 bid=2587000 prev=- «Mazda CX-5 2019»
+--- stderr ---
+Таймаут 1200 сек.

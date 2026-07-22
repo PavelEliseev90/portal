@@ -17,6 +17,135 @@ SCRIPT_OUTCOME_PATH = os.path.join(bundle_dir(), "script_outcome.py")
 OUT_JSON = os.path.join(HERE, "offers_dump.json")
 DEALERS_STATUS_JSON = os.path.join(HERE, "dealers_status.json")
 
+_outcome_lock = threading.Lock()
+_reload_lock = threading.Lock()
+_bid_lock = threading.Lock()
+
+
+class _OutcomeWorker:
+    """
+    Один поток для Playwright: session живёт между лотами, без перелогина.
+    Вызовы из HTTP-потоков сериализуются через очередь.
+    """
+
+    def __init__(self):
+        import queue as queue_mod
+
+        self._queue = queue_mod.Queue()
+        self._thread = threading.Thread(target=self._loop, name="outcome-worker", daemon=True)
+        self._thread.start()
+        self._pw = None
+        self._browser = None
+        self._ctx = None
+        self._page = None
+        self._email = None
+        self._dealer_id = None
+        self._script_dir = bundle_dir()
+
+    def _close(self):
+        for obj, meth in (
+            (self._page, "close"),
+            (self._ctx, "close"),
+            (self._browser, "close"),
+            (self._pw, "stop"),
+        ):
+            if obj is None:
+                continue
+            try:
+                getattr(obj, meth)()
+            except Exception:
+                pass
+        self._page = self._ctx = self._browser = self._pw = None
+        self._email = self._dealer_id = None
+
+    def _ensure(self, email: str, password: str, dealer_id: str):
+        import script_outcome as so
+
+        need_new = (
+            self._page is None
+            or self._email != email
+            or str(self._dealer_id or "") != str(dealer_id or "")
+        )
+        if not need_new:
+            return
+        self._close()
+        from playwright.sync_api import sync_playwright
+
+        self._pw = sync_playwright().start()
+        self._browser = self._pw.chromium.launch(headless=True)
+        self._ctx = self._browser.new_context(user_agent=so.USER_AGENT, locale="ru-RU")
+        self._page = self._ctx.new_page()
+        so._ensure_session(self._page, self._ctx, email, password, dealer_id, self._script_dir)
+        self._email = email
+        self._dealer_id = dealer_id
+
+    def _run_one(self, job: dict) -> dict:
+        import script_outcome as so
+        from maxposter_session import MaxposterAuthError, clear_session
+
+        email = job["email"]
+        password = job["password"]
+        dealer_id = job.get("dealer_id") or ""
+        portal_base = job.get("portal_base") or "https://ah.kors-group.com"
+        item = job["item"]
+
+        os.environ["PORTAL_BASE"] = portal_base.rstrip("/")
+        os.environ["APP_DIR"] = HERE
+        os.environ["MAXPOSTER_EMAIL"] = email
+        os.environ["MAXPOSTER_PASSWORD"] = password
+        if dealer_id:
+            os.environ["MAXPOSTER_DEALER_ID"] = str(dealer_id)
+
+        try:
+            self._ensure(email, password, dealer_id)
+            return so.process_item(self._page, item, idx=1, total=1)
+        except MaxposterAuthError:
+            if dealer_id:
+                clear_session(self._script_dir, email, dealer_id)
+            self._close()
+            raise
+        except Exception:
+            try:
+                if self._page is not None and self._page.is_closed():
+                    self._close()
+            except Exception:
+                self._close()
+            raise
+
+    def _loop(self):
+        while True:
+            job, box = self._queue.get()
+            try:
+                box["result"] = self._run_one(job)
+                box["error"] = None
+            except Exception as exc:
+                box["result"] = None
+                box["error"] = exc
+            finally:
+                box["done"].set()
+
+    def poll_one(self, *, email: str, password: str, dealer_id: str, portal_base: str, item: dict, timeout: float = 180):
+        done = threading.Event()
+        box = {"done": done, "result": None, "error": None}
+        self._queue.put((
+            {
+                "email": email,
+                "password": password,
+                "dealer_id": dealer_id,
+                "portal_base": portal_base,
+                "item": item,
+            },
+            box,
+        ))
+        if not done.wait(timeout):
+            raise TimeoutError(f"Таймаут опроса одного лота ({int(timeout)} сек)")
+        if box["error"] is not None:
+            raise box["error"]
+        return box["result"]
+
+
+_outcome_session = _OutcomeWorker()
+
 
 class _ScriptResult:
     def __init__(self, returncode: int, stdout: str = "", stderr: str = ""):
@@ -92,9 +221,6 @@ def _run_script(script_path: str, module_name: str, env: dict, *, timeout: int =
     return _ScriptResult(proc.returncode, proc.stdout or "", proc.stderr or "")
 
 
-_reload_lock = threading.Lock()
-_bid_lock = threading.Lock()
-_outcome_lock = threading.Lock()
 _status_lock = threading.Lock()
 
 
@@ -376,17 +502,82 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json(409, {"ok": False, "error": "Outcome poll already running"})
                 return
             try:
-                limit = body.get("limit", 20)
+                portal_base = str(body.get("portalBase") or env.get("PORTAL_BASE") or "").rstrip("/")
+                items = body.get("items") if isinstance(body.get("items"), list) else None
+
+                # Предпочтительный режим: один лот — живая сессия Playwright без перелогина.
+                if items is not None:
+                    if not items:
+                        self._send_json(200, {
+                            "ok": True,
+                            "outcome_result": {
+                                "ok": True,
+                                "count": 0,
+                                "okCount": 0,
+                                "results": [],
+                                "reason": "empty",
+                            },
+                        })
+                        return
+                    item = items[0]
+                    try:
+                        row = _outcome_session.poll_one(
+                            email=email,
+                            password=password,
+                            dealer_id=dealer_id,
+                            portal_base=portal_base or "https://ah.kors-group.com",
+                            item=item,
+                        )
+                        ok = bool(row.get("ok"))
+                        self._send_json(200 if ok else 500, {
+                            "ok": ok,
+                            "outcome_result": {
+                                "ok": ok,
+                                "count": 1,
+                                "okCount": 1 if ok else 0,
+                                "results": [row],
+                                "summary": {
+                                    "total": 1,
+                                    "ok": 1 if ok else 0,
+                                    "fail": 0 if ok else 1,
+                                    "becameWon": 1 if (row.get("portal") or {}).get("becameWon") else 0,
+                                    "byOutcome": {
+                                        ((row.get("portal") or {}).get("outcomeCode") or ("error" if not ok else "unknown")): 1
+                                    },
+                                },
+                            },
+                            "error": None if ok else (row.get("error") or row.get("msg")),
+                        })
+                    except Exception as exc:
+                        self._send_json(500, {
+                            "ok": False,
+                            "error": str(exc)[:500],
+                            "outcome_result": {
+                                "ok": False,
+                                "count": 1,
+                                "okCount": 0,
+                                "results": [{
+                                    "ok": False,
+                                    "lotOfferId": item.get("lotOfferId"),
+                                    "lotId": item.get("lotId"),
+                                    "car": item.get("car") or "",
+                                    "error": str(exc)[:300],
+                                    "msg": f"лот {item.get('lotId')}: ошибка — {str(exc)[:200]}",
+                                }],
+                            },
+                        })
+                    return
+
+                # Legacy batch (весь скрипт целиком) — оставлен на всякий случай.
+                limit = body.get("limit", 5)
                 try:
-                    limit = max(1, min(50, int(limit)))
+                    limit = max(1, min(20, int(limit)))
                 except (TypeError, ValueError):
-                    limit = 20
-                if body.get("portalBase"):
-                    env["PORTAL_BASE"] = str(body.get("portalBase")).rstrip("/")
+                    limit = 5
+                if portal_base:
+                    env["PORTAL_BASE"] = portal_base
                 env["OUTCOME_LIMIT"] = str(limit)
-                if isinstance(body.get("items"), list) and body.get("items"):
-                    env["OUTCOME_ITEMS_JSON"] = json.dumps(body.get("items"), ensure_ascii=False)
-                proc = _run_script(SCRIPT_OUTCOME_PATH, "script_outcome", env, timeout=1200)
+                proc = _run_script(SCRIPT_OUTCOME_PATH, "script_outcome", env, timeout=600)
                 result_payload = None
                 for line in reversed((proc.stdout or "").splitlines()):
                     line = line.strip()
@@ -403,39 +594,13 @@ class Handler(SimpleHTTPRequestHandler):
                 if result_payload is None and proc.returncode != 0:
                     err_tail = ((proc.stderr or "") + "\n" + (proc.stdout or "")).strip()[-500:]
                     result_payload = {"ok": False, "error": err_tail or f"script exit {proc.returncode}"}
-
-                # Дублируем лог опроса в файл рядом с сервером (удобно смотреть без viewer).
-                try:
-                    log_path = os.path.join(HERE, "outcome_poll.log")
-                    with open(log_path, "a", encoding="utf-8") as fh:
-                        fh.write(f"\n----- /api/outcomes {datetime.now().isoformat(timespec='seconds')} dealer={dealer_id} -----\n")
-                        if proc.stdout:
-                            fh.write(proc.stdout)
-                            if not proc.stdout.endswith("\n"):
-                                fh.write("\n")
-                        if proc.stderr:
-                            fh.write("--- stderr ---\n")
-                            fh.write(proc.stderr)
-                            if not proc.stderr.endswith("\n"):
-                                fh.write("\n")
-                    summary = (result_payload or {}).get("summary") or {}
-                    by = summary.get("byOutcome") or {}
-                    print(
-                        f"[outcomes] ok={ok} count={summary.get('total', (result_payload or {}).get('count'))} "
-                        f"by={by} log={log_path}",
-                        flush=True,
-                    )
-                except Exception as log_exc:
-                    print(f"[outcomes] log write failed: {log_exc}", flush=True)
-
                 self._send_json(200 if ok else 500, {
                     "ok": ok,
                     "returncode": proc.returncode,
-                    "stdout": (proc.stdout or "")[-12000:],
-                    "stderr": (proc.stderr or "")[-8000:],
+                    "stdout": (proc.stdout or "")[-8000:],
+                    "stderr": (proc.stderr or "")[-4000:],
                     "outcome_result": result_payload or {},
                     "error": None if ok else (result_payload or {}).get("error") or (proc.stderr or "")[-400:],
-                    "log_path": os.path.join(HERE, "outcome_poll.log"),
                 })
             finally:
                 _outcome_lock.release()
