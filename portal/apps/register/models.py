@@ -2567,6 +2567,18 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     avtoteka_data       = models.TextField("Автотека", blank=True, null=True)
     avtoteka_preview    = models.CharField("Автотека задание превью", max_length=250, default='', null=True, blank=True)
     avtoteka_task       = models.TextField("Автотека задание", blank=True, null=True)
+    avtoteka_last_run   = models.IntegerField(
+        'Последний зафиксированный пробег в Автотеке',
+        default=0,
+        null=False,
+        blank=True,
+    )
+    avtoteka_warning_run = models.IntegerField(
+        'Возможная рассчитанная скрутка',
+        default=0,
+        null=False,
+        blank=True,
+    )
 
     avtoteka_car_autodex            = models.FloatField('Автотека сумма расчетов ремонтов', default=0.00, null=True, blank=True)
 

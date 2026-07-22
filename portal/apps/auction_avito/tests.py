@@ -121,3 +121,46 @@ class AutoBidDecideTests(SimpleTestCase):
         )
         self.assertFalse(d['should_bid'])
         self.assertIn('maxBid', d['reason'])
+
+    def test_no_max_bid_first_from_min(self):
+        d = decide_auto_bid(
+            _settings(),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=None,
+            min_bid_step=5_000,
+            our_bid=0,
+            year=2019,
+            mileage=50_000,
+        )
+        # next = ceil((800000+5000)/1000)*1000 = 805000
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 805_000)
+        self.assertEqual(d['mode'], 'first_from_min')
+
+    def test_no_max_bid_zero_treated_as_empty(self):
+        d = decide_auto_bid(
+            _settings(),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=0,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+        )
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 805_000)
+
+    def test_no_max_bid_next_ge_buyout_skips(self):
+        d = decide_auto_bid(
+            _settings(),
+            buyout_price=804_000,
+            min_available_bid=800_000,
+            max_bid=None,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+        )
+        self.assertFalse(d['should_bid'])
+        self.assertEqual(d['next_bid'], 805_000)
+        self.assertIn('первая ставка', d['reason'])

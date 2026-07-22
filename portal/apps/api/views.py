@@ -595,10 +595,16 @@ def avito_auction_auto_bid_decide(request):
     year = data.get('year')
     mileage = data.get('mileage')
     buyout = data.get('buyoutPrice') or data.get('estimation_price') or data.get('buyout')
-    min_avail = data.get('minAvailableBid')
-    max_bid = data.get('maxBid')
-    min_step = data.get('minBidStep')
-    our_bid = data.get('ourBid') or data.get('bid')
+    # Явный ключ в JSON (даже null) важнее БД — иначе пустой maxBid с ленты
+    # перетирается устаревшим значением с портала.
+    max_bid_from_payload = 'maxBid' in data or 'MaxBid' in data
+    min_avail_from_payload = 'minAvailableBid' in data or 'MinAvailableBid' in data
+    min_step_from_payload = 'minBidStep' in data or 'MinBidStep' in data
+    our_bid_from_payload = 'ourBid' in data or 'bid' in data
+    min_avail = data.get('minAvailableBid', data.get('MinAvailableBid'))
+    max_bid = data.get('maxBid', data.get('MaxBid'))
+    min_step = data.get('minBidStep', data.get('MinBidStep'))
+    our_bid = data.get('ourBid') if 'ourBid' in data else data.get('bid')
 
     if lot is not None:
         vehicle = getattr(lot, 'vehicle_avito', None) or getattr(lot, 'vehicle_autohub', None)
@@ -606,16 +612,16 @@ def avito_auction_auto_bid_decide(request):
             year = getattr(vehicle, 'year', None)
         if mileage in (None, '') and vehicle is not None:
             mileage = getattr(vehicle, 'mileage', None)
-        if max_bid in (None, ''):
+        if not max_bid_from_payload and max_bid in (None, ''):
             max_bid = lot.max_bid
         if offer is None:
             offer = lot.offers.order_by('-id').first()
         if offer is not None:
-            if min_step in (None, ''):
+            if not min_step_from_payload and min_step in (None, ''):
                 min_step = offer.min_bid_step
-            if our_bid in (None, ''):
+            if not our_bid_from_payload and our_bid in (None, ''):
                 our_bid = offer.bid
-            if min_avail in (None, ''):
+            if not min_avail_from_payload and min_avail in (None, ''):
                 min_avail = (offer.raw_offer_json or {}).get('minAvailableBid') or (
                     (offer.raw_offer_json or {}).get('lot') or {}
                 ).get('minAvailableBid')
@@ -623,6 +629,13 @@ def avito_auction_auto_bid_decide(request):
             last_calc = lot.calculations.filter(is_success=True).order_by('-calculated_at').first()
             if last_calc:
                 buyout = last_calc.estimation_price
+
+    # Пустой / нулевой maxBid = ставок ещё нет → первая ставка от minAvailableBid.
+    try:
+        if max_bid is not None and float(max_bid) <= 0:
+            max_bid = None
+    except (TypeError, ValueError):
+        max_bid = None
 
     decision = decide_auto_bid(
         settings_obj,

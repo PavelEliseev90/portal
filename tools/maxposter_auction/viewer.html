@@ -175,6 +175,28 @@
     tr.row-offfeed td { opacity: 0.88; }
     tr.row-offfeed td:first-child { box-shadow: inset 6px 0 0 rgba(138,160,184,0.55), inset 0 0 0 1px rgba(138,160,184,0.2); }
     tr.row-calc-pending td[data-cell="buy"] .muted { color: var(--accent); }
+    tr.autobid-row td {
+      padding: 4px 10px 8px;
+      border-top: none;
+      background: rgba(8, 14, 24, 0.55);
+    }
+    tr.row-warn + tr.autobid-row td { background: rgba(253, 186, 74, 0.12); }
+    tr.row-bad + tr.autobid-row td { background: rgba(253, 164, 175, 0.12); }
+    tr.row-good + tr.autobid-row td { background: rgba(167, 243, 208, 0.10); }
+    .autobid-status {
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(36,50,68,.85);
+      color: var(--muted);
+      white-space: normal;
+    }
+    .autobid-status.skip { color: #fdba74; border-color: rgba(253,186,74,.35); background: rgba(253,186,74,.08); }
+    .autobid-status.ok { color: #a7f3d0; border-color: rgba(167,243,208,.35); background: rgba(167,243,208,.08); }
+    .autobid-status.err { color: #fda4af; border-color: rgba(253,164,175,.4); background: rgba(253,164,175,.08); }
+    .autobid-status.pending { color: #7dd3fc; border-color: rgba(125,211,252,.3); background: rgba(125,211,252,.06); }
+    .autobid-status .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     /* badges in list */
     .badgeRow{display:flex; flex-direction:column; gap:6px; max-width:320px}
     .badgeItem{
@@ -493,6 +515,9 @@
   const BID_URL = "/api/bid";
   const BID_COMMENT = "сделано автоматически парсером";
   const autoBidInFlight = new Set();
+  /** status по calcKey: { kind: 'skip'|'ok'|'err'|'pending', text, ts } */
+  const autoBidStatus = new Map();
+  const AUTOBID_COLSPAN = 16;
   let autoReloadTimeout = null;
   let autoReloadTickRunning = false;
   let lastAutoReloadFinishedAt = 0;
@@ -534,7 +559,7 @@
       calcQueueRunning++;
       (async () => {
         try{
-          const tr = document.querySelector(`tr[data-key="${CSS.escape(String(item.key))}"]`);
+          const tr = document.querySelector(`tr[data-i][data-key="${CSS.escape(String(item.key))}"]`);
           const btn = tr?.querySelector("button[data-calc]") || null;
           await performCalcOnRow(tr, item.offer, btn);
         }finally{
@@ -1241,7 +1266,7 @@
     return parseCalculateCarResponse(data);
   }
   function updateRowAfterCalc(key, offer){
-    const tr = document.querySelector(`tr[data-key="${CSS.escape(String(key))}"]`);
+    const tr = document.querySelector(`tr[data-i][data-key="${CSS.escape(String(key))}"]`);
     if (!tr) return;
     const c = renderCalcCells(offer);
     tr.querySelector('[data-cell="buy"]').innerHTML = c.buy;
@@ -1292,6 +1317,34 @@
   function isLocalAutoBidEnabled(){
     return String($("autoBidLocal")?.value || "0") === "1";
   }
+  /** Пустой/0 maxBid = ставок ещё нет → в decide уходит null (первая ставка от min). */
+  function normalizeMaxBidForDecide(v){
+    if (v == null || v === "") return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return n;
+  }
+  function setAutoBidStatus(key, kind, text){
+    autoBidStatus.set(String(key), { kind, text, ts: Date.now() });
+    paintAutoBidStatusRow(key);
+  }
+  function autoBidStatusHtml(key){
+    const st = autoBidStatus.get(String(key));
+    if (!st){
+      if (!isLocalAutoBidEnabled()){
+        return `<div class="autobid-status muted">автоставка: выкл</div>`;
+      }
+      return `<div class="autobid-status muted">автоставка: —</div>`;
+    }
+    const cls = ["skip", "ok", "err", "pending"].includes(st.kind) ? st.kind : "";
+    return `<div class="autobid-status ${cls}">${escapeHtml(st.text)}</div>`;
+  }
+  function paintAutoBidStatusRow(key){
+    const cell = document.querySelector(
+      `tr.autobid-row[data-autobid-for="${CSS.escape(String(key))}"] [data-autobid-status]`
+    );
+    if (cell) cell.innerHTML = autoBidStatusHtml(key);
+  }
   function buildAutoBidDecidePayload(offer, answer){
     const { lotOfferId, lotId, lot } = resolveOfferIds(offer);
     const veh = lot?.vehicle || {};
@@ -1303,7 +1356,8 @@
       lotOfferId: lotOfferId != null && lotOfferId !== "" ? Number(lotOfferId) : null,
       buyoutPrice: answer?.estimation_price,
       minAvailableBid: lot?.minAvailableBid,
-      maxBid: lot?.maxBid,
+      // Всегда явный ключ (в т.ч. null) — API не подмешивает устаревший max_bid из БД.
+      maxBid: normalizeMaxBidForDecide(lot?.maxBid),
       minBidStep: offer?.minBidStep,
       ourBid: portalSync?.bid ?? offer?.bid ?? 0,
       year,
@@ -1333,29 +1387,42 @@
   async function maybeAutoBidAfterCalc(offer, answer){
     if (!isLocalAutoBidEnabled()) return;
     const key = calcKey(offer);
+    const lotLabel = offer?.lot?.lotId || key;
     if (autoBidInFlight.has(key)) return;
     autoBidInFlight.add(key);
+    setAutoBidStatus(key, "pending", `автоставка: лот ${lotLabel}: проверка…`);
     try{
       const decision = await decideAutoBidOnPortal(offer, answer);
       if (!decision?.should_bid){
-        logAutoBid(`лот ${offer?.lot?.lotId || key}: пропуск — ${decision?.reason || "нет решения"}`);
+        const msg = `автоставка: лот ${lotLabel}: пропуск — ${decision?.reason || "нет решения"}`;
+        setAutoBidStatus(key, "skip", msg);
+        logAutoBid(`лот ${lotLabel}: пропуск — ${decision?.reason || "нет решения"}`);
         return;
       }
       const amount = Number(decision.bid_amount);
       if (!Number.isFinite(amount) || amount <= 0){
-        logAutoBid(`лот ${offer?.lot?.lotId || key}: некорректная сумма`);
+        const msg = `автоставка: лот ${lotLabel}: некорректная сумма`;
+        setAutoBidStatus(key, "err", msg);
+        logAutoBid(`лот ${lotLabel}: некорректная сумма`);
         return;
       }
-      logAutoBid(`лот ${offer?.lot?.lotId || key}: ставка ${amount} ₽ (${decision.reason || "ok"})`);
+      setAutoBidStatus(key, "pending", `автоставка: лот ${lotLabel}: ставка ${amount} ₽…`);
+      logAutoBid(`лот ${lotLabel}: ставка ${amount} ₽ (${decision.reason || "ok"})`);
       const bidResult = await runBidForOffer(offer, { bidAmount: amount });
       if (bidResult?.portal_ok === false){
-        logAutoBid(`лот ${offer?.lot?.lotId || key}: Maxposter ok, портал: ${bidResult.portal_error || "ошибка"}`);
+        const msg = `автоставка: лот ${lotLabel}: ставка ${amount} ₽ (Maxposter ok, портал: ${bidResult.portal_error || "ошибка"})`;
+        setAutoBidStatus(key, "err", msg);
+        logAutoBid(`лот ${lotLabel}: Maxposter ok, портал: ${bidResult.portal_error || "ошибка"}`);
       } else {
-        logAutoBid(`лот ${offer?.lot?.lotId || key}: ставка ${amount} ₽ принята`);
+        const msg = `автоставка: лот ${lotLabel}: ставка ${amount} ₽ принята`;
+        setAutoBidStatus(key, "ok", msg);
+        logAutoBid(`лот ${lotLabel}: ставка ${amount} ₽ принята`);
       }
       updateRowAfterCalc(key, offer);
     }catch(err){
-      logAutoBid(`лот ${offer?.lot?.lotId || key}: ошибка — ${String(err?.message || err).slice(0, 200)}`);
+      const errText = String(err?.message || err).slice(0, 200);
+      setAutoBidStatus(key, "err", `автоставка: лот ${lotLabel}: ошибка — ${errText}`);
+      logAutoBid(`лот ${lotLabel}: ошибка — ${errText}`);
     }finally{
       autoBidInFlight.delete(key);
     }
@@ -1632,6 +1699,9 @@
           <td class="nowrap">${escapeHtml(fmtDateTime(finish))}</td>
           <td>${escapeHtml(place)}</td>
           <td>${lotCell}</td>
+        </tr>
+        <tr class="autobid-row" data-autobid-for="${escapeHtml(key)}">
+          <td colspan="${AUTOBID_COLSPAN}" data-autobid-status>${autoBidStatusHtml(key)}</td>
         </tr>
       `;
     }).join("");
