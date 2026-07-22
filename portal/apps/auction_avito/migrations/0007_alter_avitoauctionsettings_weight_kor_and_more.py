@@ -13,16 +13,31 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='avitoauctionsettings',
             name='weight_kor',
-            field=models.DecimalField(decimal_places=3, default='0.25', max_digits=6, verbose_name='Вес этапа «Коррекция»'),
+            field=models.DecimalField(
+                decimal_places=3,
+                default='0.25',
+                max_digits=6,
+                verbose_name='Вес этапа «Коррекция»',
+            ),
         ),
         migrations.AlterField(
             model_name='avitoauctionsettings',
             name='weight_rdo',
-            field=models.DecimalField(decimal_places=3, default='0.55', max_digits=6, verbose_name='Вес этапа «РДО»'),
+            field=models.DecimalField(
+                decimal_places=3,
+                default='0.55',
+                max_digits=6,
+                verbose_name='Вес этапа «РДО»',
+            ),
         ),
         migrations.AlterField(
             model_name='avitoauctionsettings',
             name='weight_txt',
-            field=models.DecimalField(decimal_places=3, default='0.05', max_digits=6, verbose_name='Вес этапа «ТХТ»'),
+            field=models.DecimalField(
+                decimal_places=3,
+                default='0.05',
+                max_digits=6,
+                verbose_name='Вес этапа «ТХТ»',
+            ),
         ),
     ]

@@ -401,7 +401,9 @@ def rule_matches(rule: EstimationRule, facts: dict[str, Any]) -> tuple[bool, str
     if min_count > 0 and fact_count < min_count:
         return False, f'кол-во повреждений {fact_count} < {min_count}'
     allowed_bodies = _rule_body_types(rule)
-    if allowed_bodies:
+    # Пустые ids/names = любой кузов. Нельзя писать `if allowed_bodies:` —
+    # dict всегда truthy даже при пустых множествах.
+    if allowed_bodies['ids'] or allowed_bodies['names']:
         fact_body = _norm(facts.get('body_type'))
         fact_body_id = facts.get('body_type_id')
         matched = False
