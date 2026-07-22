@@ -3,11 +3,14 @@
 
 Источник: страница лота / dealer/auction/{lotOfferId}/view или API оффера.
 Тексты на UI Maxposter (наблюдаемые / эвристики):
-- «Аукцион завершен» + «Ждём решения продавца…» → waiting_seller
-- формулировки про выбор нас / победу → won
+- «Ждём решения продавца…» → waiting_seller (остаётся в очереди)
+- выигрыш → won
 - другой покупатель → lost
-- «Продавец никого не выбрал» → no_selection
-- отмена → canceled
+- «Продавец никого не выбрал» → no_selection (финал)
+- «Лот не выкупили» → not_redeemed (финал)
+- «Вы отказались от лота» → we_refused (финал)
+- «Лот не взяли в работу…» → not_taken (финал)
+- «Продавец отменил аукцион» → canceled (финал)
 """
 from __future__ import annotations
 
@@ -29,15 +32,21 @@ OUTCOME_WAITING = 'waiting_seller'
 OUTCOME_WON = 'won'
 OUTCOME_LOST = 'lost'
 OUTCOME_NO_SELECTION = 'no_selection'
+OUTCOME_NOT_REDEEMED = 'not_redeemed'
+OUTCOME_WE_REFUSED = 'we_refused'
+OUTCOME_NOT_TAKEN = 'not_taken'
 OUTCOME_CANCELED = 'canceled'
 OUTCOME_UNKNOWN = 'unknown'
 
 OUTCOME_NAMES = {
     OUTCOME_WAITING: 'Ждём решения продавца',
     OUTCOME_WON: 'Выигран',
-    OUTCOME_LOST: 'Проигран',
+    OUTCOME_LOST: 'Проигран / выбрали другого',
     OUTCOME_NO_SELECTION: 'Продавец никого не выбрал',
-    OUTCOME_CANCELED: 'Отменён',
+    OUTCOME_NOT_REDEEMED: 'Лот не выкупили',
+    OUTCOME_WE_REFUSED: 'Вы отказались от лота',
+    OUTCOME_NOT_TAKEN: 'Лот не взяли в работу',
+    OUTCOME_CANCELED: 'Продавец отменил аукцион',
     OUTCOME_UNKNOWN: 'Итог неизвестен',
 }
 
@@ -47,6 +56,9 @@ OUTCOME_BADGE_LABELS = {
     OUTCOME_WON: 'Выигран',
     OUTCOME_LOST: 'Проигран',
     OUTCOME_NO_SELECTION: 'Никого не выбрали',
+    OUTCOME_NOT_REDEEMED: 'Не выкупили',
+    OUTCOME_WE_REFUSED: 'Отказались',
+    OUTCOME_NOT_TAKEN: 'Не взяли в работу',
     OUTCOME_CANCELED: 'Отменён',
     OUTCOME_UNKNOWN: 'Итог ?',
 }
@@ -56,6 +68,9 @@ OUTCOME_FILTER_CHOICES = [
     (OUTCOME_WON, OUTCOME_NAMES[OUTCOME_WON]),
     (OUTCOME_LOST, OUTCOME_NAMES[OUTCOME_LOST]),
     (OUTCOME_NO_SELECTION, OUTCOME_NAMES[OUTCOME_NO_SELECTION]),
+    (OUTCOME_NOT_REDEEMED, OUTCOME_NAMES[OUTCOME_NOT_REDEEMED]),
+    (OUTCOME_WE_REFUSED, OUTCOME_NAMES[OUTCOME_WE_REFUSED]),
+    (OUTCOME_NOT_TAKEN, OUTCOME_NAMES[OUTCOME_NOT_TAKEN]),
     (OUTCOME_CANCELED, OUTCOME_NAMES[OUTCOME_CANCELED]),
     (OUTCOME_UNKNOWN, OUTCOME_NAMES[OUTCOME_UNKNOWN]),
 ]
@@ -103,11 +118,14 @@ def offer_list_badge(offer) -> dict[str, str]:
     }
 
 
-# Финальные исходы — повторный опрос не нужен (кроме ручного).
+# Финальные исходы — повторный опрос не нужен.
 FINAL_OUTCOMES = frozenset({
     OUTCOME_WON,
     OUTCOME_LOST,
     OUTCOME_NO_SELECTION,
+    OUTCOME_NOT_REDEEMED,
+    OUTCOME_WE_REFUSED,
+    OUTCOME_NOT_TAKEN,
     OUTCOME_CANCELED,
 })
 
@@ -124,13 +142,24 @@ MAXPOSTER_STATUS_MAP = {
 
 _WON_RE = re.compile(
     r'вас\s+выбрали|вы\s+выиграл|выбран[аы]?\s+ваш[аеи]|поздравляем|'
-    r'лот\s+ваш|вы\s+победил|продавец\s+выбрал\s+вас|'
-    r'предложение\s+ваш|вашего\s+дилерск|winner|you\s+won',
+    r'лот\s+ваш|вы\s+победил|продавец\s+выбрал\s+вас|winner|you\s+won',
     re.I,
 )
 _NO_SELECTION_RE = re.compile(
     r'продавец\s+никого\s+не\s+выбрал|никого\s+не\s+выбрал|'
     r'не\s+выбрал\s+никого|никто\s+не\s+выбран',
+    re.I,
+)
+_NOT_REDEEMED_RE = re.compile(
+    r'лот\s+не\s+выкупил|не\s+выкупил[аи]?\s+лот',
+    re.I,
+)
+_WE_REFUSED_RE = re.compile(
+    r'вы\s+отказал[аи]сь\s+от\s+лота|отказал[аи]сь\s+от\s+лота',
+    re.I,
+)
+_NOT_TAKEN_RE = re.compile(
+    r'не\s+взял[аи]?\s+в\s+работу|доступен\s+другим\s+дилер',
     re.I,
 )
 _LOST_RE = re.compile(
@@ -143,7 +172,11 @@ _WAIT_RE = re.compile(
     r'день[-–—]?\s*два|ожида(ем|ние)\s+решени',
     re.I,
 )
-_CANCEL_RE = re.compile(r'отмен[её]н|canceled|cancelled|снят\s+с\s+аукциона', re.I)
+_CANCEL_RE = re.compile(
+    r'продавец\s+отменил\s+аукцион|отмен[её]н\s+аукцион|аукцион\s+отмен|'
+    r'отмен[её]н|canceled|cancelled|снят\s+с\s+аукциона',
+    re.I,
+)
 _FINISHED_TITLE_RE = re.compile(r'аукцион\s+заверш', re.I)
 
 
@@ -154,6 +187,15 @@ def normalize_maxposter_status(status_code: str | None) -> str:
 
 def _norm_spaces(text: str) -> str:
     return re.sub(r'\s+', ' ', (text or '').strip())
+
+
+def _finished_outcome(code: str, title: str, detail: str, *, status: str = 'finished') -> dict[str, str]:
+    return {
+        'outcome_code': code,
+        'outcome_title': title or 'Аукцион завершен',
+        'outcome_detail': detail or OUTCOME_NAMES.get(code, ''),
+        'status_code': status,
+    }
 
 
 def classify_outcome_text(
@@ -172,19 +214,29 @@ def classify_outcome_text(
     blob = _norm_spaces(blob) or _norm_spaces(f'{title} {detail}')
     raw_status = normalize_maxposter_status(status_code)
 
+    # Финальные «закрывающие» формулировки — раньше выигрыша,
+    # т.к. на странице Maxposter рядом может быть шаблонный текст про дилера.
+    if _NOT_REDEEMED_RE.search(blob):
+        return _finished_outcome(OUTCOME_NOT_REDEEMED, title, detail or OUTCOME_NAMES[OUTCOME_NOT_REDEEMED])
+    if _WE_REFUSED_RE.search(blob):
+        return _finished_outcome(OUTCOME_WE_REFUSED, title, detail or OUTCOME_NAMES[OUTCOME_WE_REFUSED])
+    if _NOT_TAKEN_RE.search(blob):
+        return _finished_outcome(OUTCOME_NOT_TAKEN, title, detail or OUTCOME_NAMES[OUTCOME_NOT_TAKEN])
+    if raw_status == OUTCOME_NO_SELECTION or _NO_SELECTION_RE.search(blob):
+        return _finished_outcome(OUTCOME_NO_SELECTION, title, detail or OUTCOME_NAMES[OUTCOME_NO_SELECTION])
+    if raw_status == OUTCOME_CANCELED or _CANCEL_RE.search(blob):
+        return _finished_outcome(
+            OUTCOME_CANCELED,
+            title or 'Аукцион отменён',
+            detail or OUTCOME_NAMES[OUTCOME_CANCELED],
+        )
+
     if raw_status == OUTCOME_WON or _WON_RE.search(blob):
         return {
             'outcome_code': OUTCOME_WON,
             'outcome_title': title or 'Аукцион завершен',
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WON],
             'status_code': OUTCOME_WON,
-        }
-    if raw_status == OUTCOME_NO_SELECTION or _NO_SELECTION_RE.search(blob):
-        return {
-            'outcome_code': OUTCOME_NO_SELECTION,
-            'outcome_title': title or 'Аукцион завершен',
-            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_NO_SELECTION],
-            'status_code': 'finished',
         }
     if raw_status == OUTCOME_LOST or _LOST_RE.search(blob):
         return {
@@ -193,18 +245,15 @@ def classify_outcome_text(
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_LOST],
             'status_code': OUTCOME_LOST,
         }
-    if raw_status == OUTCOME_CANCELED or _CANCEL_RE.search(blob):
-        return {
-            'outcome_code': OUTCOME_CANCELED,
-            'outcome_title': title or 'Аукцион отменён',
-            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_CANCELED],
-            'status_code': 'finished',
-        }
     if raw_status == OUTCOME_WAITING or _WAIT_RE.search(blob) or (
         _FINISHED_TITLE_RE.search(blob)
         and not _WON_RE.search(blob)
         and not _LOST_RE.search(blob)
         and not _NO_SELECTION_RE.search(blob)
+        and not _NOT_REDEEMED_RE.search(blob)
+        and not _WE_REFUSED_RE.search(blob)
+        and not _NOT_TAKEN_RE.search(blob)
+        and not _CANCEL_RE.search(blob)
     ):
         return {
             'outcome_code': OUTCOME_WAITING,
@@ -435,7 +484,10 @@ def apply_offer_outcome(
                 else normalize_maxposter_status(status_code) or 'finished'
             ),
         }
-        if outcome_code == OUTCOME_CANCELED or outcome_code == OUTCOME_NO_SELECTION:
+        if outcome_code in (
+            OUTCOME_CANCELED, OUTCOME_NO_SELECTION,
+            OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
+        ):
             classified['status_code'] = 'finished'
             if not classified['outcome_detail']:
                 classified['outcome_detail'] = OUTCOME_NAMES.get(outcome_code, '')
@@ -471,11 +523,15 @@ def apply_offer_outcome(
         elif offer.outcome_code == OUTCOME_LOST:
             offer.status_code = 'lost'
             offer.status_name = STATUS_NAMES['lost']
-        elif offer.outcome_code in (OUTCOME_NO_SELECTION, OUTCOME_CANCELED, OUTCOME_WAITING):
+        elif offer.outcome_code in (
+            OUTCOME_NO_SELECTION, OUTCOME_CANCELED, OUTCOME_WAITING,
+            OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
+            OUTCOME_UNKNOWN,
+        ):
             offer.status_code = 'finished'
             offer.status_name = STATUS_NAMES['finished']
-            if offer.outcome_code == OUTCOME_NO_SELECTION and not offer.outcome_detail:
-                offer.outcome_detail = OUTCOME_NAMES[OUTCOME_NO_SELECTION]
+            if offer.outcome_code in FINAL_OUTCOMES and not offer.outcome_detail:
+                offer.outcome_detail = OUTCOME_NAMES.get(offer.outcome_code, '')
 
     update_fields = [
         'outcome_code', 'outcome_title', 'outcome_detail', 'outcome_raw',

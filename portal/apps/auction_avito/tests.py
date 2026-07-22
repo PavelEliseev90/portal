@@ -205,14 +205,35 @@ class OutcomeClassifyTests(SimpleTestCase):
         )
         self.assertEqual(d['outcome_code'], 'lost')
 
-    def test_won_dealer_offer_selected(self):
+    def test_not_redeemed(self):
         from auction_avito.services.outcome import classify_outcome_text
 
         d = classify_outcome_text(
             title='Аукцион завершён Лот не выкупили',
-            detail='продавец автомобиля выбрал предложение вашего дилерского центра среди прочих',
+            detail='Уведомление о том, что продавец выбрал предложение вашего дилерского центра',
         )
-        self.assertEqual(d['outcome_code'], 'won')
+        self.assertEqual(d['outcome_code'], 'not_redeemed')
+        self.assertEqual(d['status_code'], 'finished')
+
+    def test_we_refused(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(detail='Вы отказались от лота')
+        self.assertEqual(d['outcome_code'], 'we_refused')
+
+    def test_not_taken_to_work(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            detail='Лот не взяли в работу Теперь лот доступен другим дилерам',
+        )
+        self.assertEqual(d['outcome_code'], 'not_taken')
+
+    def test_seller_canceled_auction(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(detail='Продавец отменил аукцион')
+        self.assertEqual(d['outcome_code'], 'canceled')
 
     def test_seller_chose_nobody(self):
         from auction_avito.services.outcome import classify_outcome_text
@@ -224,3 +245,12 @@ class OutcomeClassifyTests(SimpleTestCase):
         self.assertEqual(d['outcome_code'], 'no_selection')
         self.assertEqual(d['status_code'], 'finished')
         self.assertIn('никого', d['outcome_detail'].lower())
+
+    def test_final_outcomes_exclude_from_queue(self):
+        from auction_avito.services.outcome import FINAL_OUTCOMES
+
+        for code in (
+            'not_redeemed', 'we_refused', 'not_taken',
+            'no_selection', 'canceled', 'won', 'lost',
+        ):
+            self.assertIn(code, FINAL_OUTCOMES)
