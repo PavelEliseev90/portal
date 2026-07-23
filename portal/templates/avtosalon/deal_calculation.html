@@ -557,7 +557,7 @@
           
           <div class="price-item">
             <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
-              Итог по правилу{% if params.km_breakdown.available %} ({% if params.km_breakdown.with_trade_in %}с trade-in{% else %}без trade-in{% endif %}){% endif %}:
+              Итог по правилу{% if params.approval_km_rule_frozen %} <span class="small opacity-75">(снимок)</span>{% endif %}{% if params.km_breakdown.available %} ({% if params.km_breakdown.with_trade_in %}с trade-in{% else %}без trade-in{% endif %}){% endif %}:
               {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
               <button type="button"
                       class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
@@ -697,7 +697,7 @@
               <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого по сделке:</p>
               <h2 id="itog">{{ params.calc.amount|default:params.total_amount|floatformat:"0g" }} ₽</h2>
               <br>
-              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽{% if params.approval_km_rule_total is not None %} · итог по правилу {{ params.approval_km_rule_total|floatformat:"0g" }} ₽{% endif %} · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
+              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽{% if params.approval_km_rule_total is not None %} · итог по правилу {{ params.approval_km_rule_total|floatformat:"0g" }} ₽{% if params.approval_km_rule_frozen %} <span class="small text-muted">(снимок)</span>{% endif %}{% endif %} · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
             </div>
           </div>
 

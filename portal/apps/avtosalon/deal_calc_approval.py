@@ -5,6 +5,7 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 
@@ -116,6 +117,237 @@ def kvp_above_km_rule(calc, cumulative_data=None):
     if km_rule is None:
         return False
     return int(calc.kvp or 0) > int(km_rule)
+
+
+def is_km_rule_frozen(calc) -> bool:
+    """
+    Итог по формуле зафиксирован и не должен пересчитываться при открытии КП:
+    КП уже в цепочке согласования или решение принято.
+    """
+    from prices_car.models import CarCalculations
+
+    status = (calc.soglasovanie_status or '').strip()
+    if status in (
+        CarCalculations.SOGLASOVANIE_PENDING_UK,
+        CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+        CarCalculations.SOGLASOVANIE_UK_APPROVED,
+        CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+        CarCalculations.SOGLASOVANIE_UK_REJECTED,
+    ):
+        return True
+    if (
+        status == CarCalculations.SOGLASOVANIE_PENDING
+        and calc.date_start_soglasovanie is not None
+    ):
+        return True
+    return False
+
+
+def snapshot_km_rule_total(calc, cumulative_data=None):
+    """
+    Сохраняет в calc.km_raschet тот же «итог по правилу», что виден при согласовании
+    (get_km_rule_total), а не отдельный путь через KMCar/1С.
+    """
+    from prices_car.km_breakdown import get_km_rule_total
+
+    if cumulative_data is None:
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+    total = get_km_rule_total(cumulative_data, calc.car, calc=calc)
+    if total is not None:
+        calc.km_raschet = int(total)
+    return calc.km_raschet
+
+
+def resolve_approval_km_rule_total(calc, cumulative_data=None):
+    """
+    Значение для UI/отчёта: при заморозке — снимок km_raschet,
+    иначе — живой расчёт (и при возможности пишем в объект без save).
+    """
+    if is_km_rule_frozen(calc) and calc.km_raschet is not None:
+        return int(calc.km_raschet)
+
+    from prices_car.km_breakdown import get_km_rule_total
+
+    if cumulative_data is None:
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+    live = get_km_rule_total(cumulative_data, calc.car, calc=calc)
+    if live is not None:
+        return int(live)
+    if calc.km_raschet is not None:
+        return int(calc.km_raschet)
+    return None
+
+
+def calc_approval_moment(calc):
+    """Дата/время, относительно которого восстанавливаем итог по правилу."""
+    return (
+        calc.uk_approve_date
+        or calc.director_approve_date
+        or calc.date_start_soglasovanie
+        or calc.date_success
+        or calc.date
+    )
+
+
+def _day_end(dt):
+    """Конец календарного дня для dt (aware/naive как у исходного)."""
+    from datetime import datetime, time
+
+    if dt is None:
+        return None
+    if timezone.is_aware(dt):
+        local = timezone.localtime(dt)
+        return timezone.make_aware(
+            datetime.combine(local.date(), time(23, 59, 59)),
+            timezone.get_current_timezone(),
+        )
+    return datetime.combine(dt.date(), time(23, 59, 59))
+
+
+def resolve_km_rule_as_of_approval(calc, *, as_of=None, allow_live_fallback=True):
+    """
+    Оценка «итога по правилу» на день согласования.
+
+    Источник приоритета:
+    1) KMCar автомобиля на эту дату (последняя запись не позже конца дня) —
+       это кэш компонентов формулы, который реально писался в те дни;
+    2) при allow_live_fallback — текущий get_km_rule_total (если истории KMCar нет).
+
+    Полный historical cumulative_data (сток/продажи на тот день) не восстанавливаем.
+    """
+    from prices_car.km_car import resolve_km_from_row
+    from prices_car.km_raschet import calculation_has_applied_trade_in
+    from prices_car.models import KMCar
+
+    moment = as_of or calc_approval_moment(calc)
+    with_ti = calculation_has_applied_trade_in(calc)
+    source = 'none'
+    value = None
+
+    if calc.car_id and moment is not None:
+        day_end = _day_end(moment)
+        row = (
+            KMCar.objects
+            .filter(car_id=calc.car_id, date__lte=day_end)
+            .order_by('-date', '-pk')
+            .first()
+        )
+        if row is None:
+            # Ближайшая запись в тот же календарный день (если кэш писали чуть позже).
+            day = timezone.localtime(moment).date() if timezone.is_aware(moment) else moment.date()
+            row = (
+                KMCar.objects
+                .filter(car_id=calc.car_id, date__date=day)
+                .order_by('date', 'pk')
+                .first()
+            )
+        if row is not None:
+            value = resolve_km_from_row(row, with_trade_in=with_ti)
+            if value is not None:
+                source = 'km_car'
+
+    if value is None and allow_live_fallback:
+        from prices_car.km_breakdown import get_km_rule_total
+
+        cumulative_data, _ = _get_calc_cumulative_data(calc)
+        live = get_km_rule_total(cumulative_data, calc.car, calc=calc)
+        if live is not None:
+            value = int(live)
+            source = 'live'
+
+    if value is None and calc.km_raschet is not None:
+        value = int(calc.km_raschet)
+        source = 'kept'
+
+    return {
+        'value': value,
+        'source': source,
+        'as_of': moment,
+        'with_trade_in': with_ti,
+    }
+
+
+def backfill_km_rule_snapshots(
+    *,
+    only_missing=True,
+    force=False,
+    lookback_days=120,
+    limit=None,
+    dry_run=False,
+    allow_live_fallback=True,
+    progress_callback=None,
+):
+    """
+    Разовый проход: проставить km_raschet по оценке на день согласования.
+
+    only_missing — только пустые km_raschet (по умолчанию).
+    force — перезаписать даже заполненные (для frozen КП).
+    """
+    from datetime import timedelta
+
+    from prices_car.models import CarCalculations
+
+    since = timezone.now() - timedelta(days=max(1, int(lookback_days)))
+    qs = (
+        CarCalculations.objects
+        .filter(rlk_id__isnull=False, car_id__isnull=False)
+        .filter(
+            Q(date_start_soglasovanie__gte=since)
+            | Q(director_approve_date__gte=since)
+            | Q(uk_approve_date__gte=since)
+            | Q(date__gte=since)
+        )
+        .select_related('car')
+        .order_by('-pk')
+    )
+    if only_missing and not force:
+        qs = qs.filter(Q(km_raschet__isnull=True))
+    if limit:
+        qs = qs[:max(1, int(limit))]
+
+    stats = {
+        'checked': 0,
+        'updated': 0,
+        'skipped_same': 0,
+        'skipped_no_value': 0,
+        'by_source': {'km_car': 0, 'live': 0, 'kept': 0, 'none': 0},
+    }
+
+    for calc in qs:
+        stats['checked'] += 1
+
+        if only_missing and calc.km_raschet is not None and not force:
+            stats['skipped_same'] += 1
+            continue
+
+        resolved = resolve_km_rule_as_of_approval(
+            calc, allow_live_fallback=allow_live_fallback,
+        )
+        value = resolved['value']
+        source = resolved['source']
+        stats['by_source'][source] = stats['by_source'].get(source, 0) + 1
+
+        if value is None:
+            stats['skipped_no_value'] += 1
+            if progress_callback:
+                progress_callback(calc, None, source, 'no_value')
+            continue
+
+        if calc.km_raschet is not None and int(calc.km_raschet) == int(value) and not force:
+            stats['skipped_same'] += 1
+            if progress_callback:
+                progress_callback(calc, value, source, 'same')
+            continue
+
+        old = calc.km_raschet
+        if not dry_run:
+            calc.km_raschet = int(value)
+            calc.save(update_fields=['km_raschet'])
+        stats['updated'] += 1
+        if progress_callback:
+            progress_callback(calc, value, source, 'updated', old=old)
+
+    return stats
 
 
 def can_auto_approve_calculation(calc, cumulative_data=None):
@@ -341,6 +573,7 @@ def try_approve_by_prior_uk_threshold(
     )
 
     now = timezone.now()
+    snapshot_km_rule_total(calc)
     calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_APPROVED
     calc.uk_approve_user = system_user
     calc.uk_approve_date = now
@@ -369,6 +602,7 @@ def try_approve_by_prior_uk_threshold(
             uk_approval_threshold_kvp=int(approval.approved_kvp),
             uk_approval_reference=approval,
             date_success=now,
+            km_raschet=calc.km_raschet,
         )
         if not updated:
             calc.refresh_from_db()
@@ -392,6 +626,7 @@ def try_approve_by_prior_uk_threshold(
             'uk_approval_threshold_kvp',
             'uk_approval_reference',
             'date_success',
+            'km_raschet',
         ])
 
     def notify_after_commit():
@@ -413,10 +648,7 @@ def recalculate_deal_calculation_km(calc, user):
     Только для price_car_new_all. Ручные согласования/отказы не трогаем;
     ошибочное автосогласование сбрасываем и переоцениваем.
     """
-    from prices_car.km_raschet import (
-        apply_km_raschet_to_calculation,
-        calculation_has_applied_trade_in,
-    )
+    from prices_car.km_raschet import calculation_has_applied_trade_in
     from prices_car.models import CarCalculations
 
     if not user_has_deal_calc_uk_access(user):
@@ -426,7 +658,13 @@ def recalculate_deal_calculation_km(calc, user):
     if not car:
         return False, 'У КП не указан автомобиль.'
 
-    apply_km_raschet_to_calculation(calc, car)
+    cumulative_data = None
+    try:
+        cumulative_data = car.cumulative_data()
+    except Exception:
+        pass
+
+    snapshot_km_rule_total(calc, cumulative_data)
     update_fields = ['km_raschet']
 
     reset_auto = is_auto_approved_calculation(calc)
@@ -443,12 +681,6 @@ def recalculate_deal_calculation_km(calc, user):
         ])
 
     calc.save(update_fields=update_fields)
-
-    cumulative_data = None
-    try:
-        cumulative_data = car.cumulative_data()
-    except Exception:
-        pass
 
     prior_uk_ok = try_approve_by_prior_uk_threshold(
         calc, send_chat=True, send_to_1c=True,
@@ -506,6 +738,7 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
         return False
 
     now = timezone.now()
+    snapshot_km_rule_total(calc, cumulative_data)
     calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
     calc.director_approve_user = user
     calc.director_approve_date = now
@@ -517,6 +750,7 @@ def try_auto_approve_calculation(calc, send_chat=False, cumulative_data=None):
         'director_approve_date',
         'director_approve_comment',
         'date_success',
+        'km_raschet',
     ])
 
     if send_chat:
@@ -914,7 +1148,16 @@ def submit_calculation_soglasovanie_from_1c(calculation_object, car_object, rlk_
     now = timezone.now()
     calculation_object.soglasovanie_status = CarCalculations.SOGLASOVANIE_PENDING
     calculation_object.date_start_soglasovanie = now
-    calculation_object.save(update_fields=['soglasovanie_status', 'date_start_soglasovanie'])
+    try:
+        cumulative_data = car_object.cumulative_data() if car_object else None
+    except Exception:
+        cumulative_data = None
+    snapshot_km_rule_total(calculation_object, cumulative_data)
+    calculation_object.save(update_fields=[
+        'soglasovanie_status',
+        'date_start_soglasovanie',
+        'km_raschet',
+    ])
 
     _send_pending_soglasovanie_notifications(
         calculation_object, car_object, rlk_object, unit_object,
@@ -1177,10 +1420,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
     approval_kvp_above_km_rule = kvp_above_km_rule(calc, cumulative_data)
     approval_auto_min_dc_ok = kvp_above_min_dc_if_configured(calc, cumulative_data)
     approval_can_auto_approve = can_auto_approve_calculation(calc, cumulative_data)
-    km_rule_total = None
-    if cumulative_data:
-        from prices_car.km_breakdown import get_km_rule_total
-        km_rule_total = get_km_rule_total(cumulative_data, calc.car, calc=calc)
+    km_rule_total = resolve_approval_km_rule_total(calc, cumulative_data)
 
     return {
         'approval_min_km_dc': min_km_dc,
@@ -1190,6 +1430,7 @@ def build_deal_calc_approval_context(user, calc, cumulative_data):
         'approval_auto_min_dc_ok': approval_auto_min_dc_ok,
         'approval_can_auto_approve': approval_can_auto_approve,
         'approval_km_rule_total': km_rule_total,
+        'approval_km_rule_frozen': is_km_rule_frozen(calc),
         'approval_auto_approved': approval_auto_approved,
         'approval_prior_uk_approved': approval_prior_uk_approved,
         'approval_prior_uk_threshold': (
@@ -1266,6 +1507,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             return _approval_redirect(calc.pk)
 
         now = timezone.now()
+        snapshot_km_rule_total(calc, cumulative_data)
         calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
         calc.director_approve_user = request.user
         calc.director_approve_date = now
@@ -1277,6 +1519,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             'director_approve_date',
             'director_approve_comment',
             'date_success',
+            'km_raschet',
         ])
         send_calc_rlk_chat_message(
             calc,
@@ -1303,6 +1546,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             return _approval_redirect(calc.pk)
 
         now = timezone.now()
+        snapshot_km_rule_total(calc, cumulative_data)
         calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_PENDING_UK
         calc.director_approve_user = request.user
         calc.director_approve_date = now
@@ -1312,6 +1556,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             'director_approve_user',
             'director_approve_date',
             'director_approve_comment',
+            'km_raschet',
         ])
         send_calc_rlk_chat_message(
             calc,
@@ -1356,6 +1601,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             calc.uk_approval_threshold_kvp = int(calc.kvp or 0)
             calc.uk_approval_reference = approval
             calc.date_success = now
+            snapshot_km_rule_total(calc, cumulative_data)
             calc.save(update_fields=[
                 'soglasovanie_status',
                 'uk_approve_user',
@@ -1365,6 +1611,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
                 'uk_approval_threshold_kvp',
                 'uk_approval_reference',
                 'date_success',
+                'km_raschet',
             ])
         send_calc_rlk_chat_message(
             calc,
@@ -1390,6 +1637,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             return _approval_redirect(calc.pk)
 
         now = timezone.now()
+        snapshot_km_rule_total(calc, cumulative_data)
         calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED
         calc.director_approve_user = request.user
         calc.director_approve_date = now
@@ -1399,6 +1647,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             'director_approve_user',
             'director_approve_date',
             'director_approve_comment',
+            'km_raschet',
         ])
         send_calc_rlk_chat_message(
             calc,
@@ -1424,6 +1673,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             return _approval_redirect(calc.pk)
 
         now = timezone.now()
+        snapshot_km_rule_total(calc, cumulative_data)
         calc.soglasovanie_status = CarCalculations.SOGLASOVANIE_UK_REJECTED
         calc.uk_approve_user = request.user
         calc.uk_approve_date = now
@@ -1439,6 +1689,7 @@ def handle_deal_calc_approval_post(request, calc, cumulative_data):
             'uk_approval_basis',
             'uk_approval_threshold_kvp',
             'uk_approval_reference',
+            'km_raschet',
         ])
         send_calc_rlk_chat_message(
             calc,
