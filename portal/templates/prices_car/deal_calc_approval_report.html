@@ -1,0 +1,170 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Отчёт по согласованию КП {% endblock %}
+{% block title_navbar %} — Отчёт по согласованию КП {% endblock %}
+
+{% block content %}
+<style>
+  .kp-report-page { padding: 1.25rem; }
+  .kp-report-header {
+    display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; margin-bottom: 1.25rem;
+  }
+  .kp-report-header h1 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin: 0 0 0.35rem; }
+  .kp-report-meta { color: #6c7a92; font-size: 0.9rem; }
+  .kp-report-filters {
+    background: #fff; border: 1px solid #e8eef5; border-radius: 1rem;
+    padding: 1rem 1.15rem; margin-bottom: 1rem;
+  }
+  .kp-report-table-wrap {
+    overflow-x: auto; background: #fff; border-radius: 1rem; border: 1px solid #e8eef5;
+  }
+  .kp-report-table { width: 100%; font-size: 0.88rem; margin-bottom: 0; }
+  .kp-report-table th {
+    color: #6c7a92; font-weight: 600; white-space: nowrap;
+    border-bottom: 2px solid #e8eef5; padding: 0.65rem 0.5rem; vertical-align: bottom;
+  }
+  .kp-report-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
+  .kp-report-empty { padding: 2rem; text-align: center; color: #8ea1ba; }
+  .kp-report-vin { font-family: ui-monospace, monospace; font-size: 0.82rem; }
+</style>
+
+<div class="kp-report-page">
+  <div class="kp-report-header">
+    <div>
+      <h1>Отчёт по согласованию коммерческих предложений</h1>
+      <div class="kp-report-meta">
+        Только последнее КП по рабочему листу · всего: {{ params.total_count }}
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ params.desktop_url }}" class="btn btn-outline-primary btn-sm">← Рабочий стол</a>
+    </div>
+  </div>
+
+  <div class="kp-report-filters">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted mb-1">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start }}">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted mb-1">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end }}">
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted mb-1">VIN</label>
+        <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <label class="form-label small text-muted mb-1">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+          <option value="{{ unit.pk }}"{% if params.filtr.unit_id == unit.pk|stringformat:"s" %} selected{% endif %}>
+            {{ unit.name }}{% if unit.city %} ({{ unit.city.name }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label small text-muted mb-1">Согласование</label>
+        <select class="form-select" name="soglasovanie">
+          <option value="">Все статусы</option>
+          <option value="approved"{% if params.filtr.soglasovanie == 'approved' %} selected{% endif %}>Согласовано</option>
+          <option value="pending"{% if params.filtr.soglasovanie == 'pending' %} selected{% endif %}>На согласовании</option>
+          <option value="rejected"{% if params.filtr.soglasovanie == 'rejected' %} selected{% endif %}>Отказ</option>
+          <option value="pending_uk"{% if params.filtr.soglasovanie == 'pending_uk' %} selected{% endif %}>На согласовании УК</option>
+          <option value="uk_approved"{% if params.filtr.soglasovanie == 'uk_approved' %} selected{% endif %}>Согласовано УК</option>
+          <option value="director_approved"{% if params.filtr.soglasovanie == 'director_approved' %} selected{% endif %}>Согласовано директором</option>
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="only_shipped" value="1" id="onlyShipped"
+            {% if params.filtr.only_shipped %}checked{% endif %}>
+          <label class="form-check-label" for="onlyShipped">Только с отгрузкой</label>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-auto">
+        <button type="submit" class="btn btn-primary">Применить</button>
+        <a href="{% url 'prices_car:deal_calc_approval_report' %}" class="btn btn-outline-secondary">Сбросить</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="kp-report-table-wrap">
+    <table class="table kp-report-table">
+      <thead>
+        <tr>
+          <th>Подразделение / город</th>
+          <th>Марка</th>
+          <th>Модель</th>
+          <th>Комплектация</th>
+          <th>Год</th>
+          <th>VIN</th>
+          <th class="text-end">КВП</th>
+          <th class="text-end">Итог по формуле</th>
+          <th>Статус согласования</th>
+          <th class="text-end">Доходность уехала</th>
+          <th>РЛ / КП</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in params.rows %}
+        <tr>
+          <td>{{ row.unit_label }}</td>
+          <td>{{ row.mark }}</td>
+          <td>{{ row.model }}</td>
+          <td>{{ row.complectation }}</td>
+          <td>{{ row.year }}</td>
+          <td class="kp-report-vin">{{ row.vin }}</td>
+          <td class="text-end text-nowrap">
+            {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }} ₽{% else %}—{% endif %}
+          </td>
+          <td class="text-end text-nowrap">
+            {% if row.km_formula is not None %}{{ row.km_formula|floatformat:"0g" }} ₽{% else %}—{% endif %}
+          </td>
+          <td>{{ row.soglasovanie_label }}</td>
+          <td class="text-end text-nowrap">
+            {% if row.sale_profit is not None %}{{ row.sale_profit|floatformat:"0g" }} ₽{% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-nowrap">
+            <div>РЛ {{ row.rlk_nomer }}</div>
+            <a href="{{ row.url }}">КП {{ row.number }}</a>
+            {% if row.shipped %}<div class="small text-muted">Отгр. {{ row.shipment_nomer }}</div>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="kp-report-empty">Нет коммерческих предложений за выбранный период.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if params.page_obj.has_other_pages %}
+  <nav class="mt-3" aria-label="Страницы отчёта">
+    <ul class="pagination pagination-sm">
+      {% if params.page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}&date_start={{ params.filtr.date_start }}&date_end={{ params.filtr.date_end }}&vin={{ params.filtr.vin }}&unit_id={{ params.filtr.unit_id }}&soglasovanie={{ params.filtr.soglasovanie }}{% if params.filtr.only_shipped %}&only_shipped=1{% endif %}">←</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled">
+        <span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }}</span>
+      </li>
+      {% if params.page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ params.page_obj.next_page_number }}&date_start={{ params.filtr.date_start }}&date_end={{ params.filtr.date_end }}&vin={{ params.filtr.vin }}&unit_id={{ params.filtr.unit_id }}&soglasovanie={{ params.filtr.soglasovanie }}{% if params.filtr.only_shipped %}&only_shipped=1{% endif %}">→</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
