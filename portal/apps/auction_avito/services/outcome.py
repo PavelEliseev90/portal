@@ -151,15 +151,17 @@ _NO_SELECTION_RE = re.compile(
     re.I,
 )
 _NOT_REDEEMED_RE = re.compile(
-    r'лот\s+не\s+выкупил|не\s+выкупил[аи]?\s+лот',
+    r'не\s*выкупил',
     re.I,
 )
 _WE_REFUSED_RE = re.compile(
-    r'вы\s+отказал[аи]сь\s+от\s+лота|отказал[аи]сь\s+от\s+лота',
+    r'отказал\w*\s+от\s+лота',
     re.I,
 )
 _NOT_TAKEN_RE = re.compile(
-    r'не\s+взял[аи]?\s+в\s+работу|доступен\s+другим\s+дилер',
+    r'не\s*взял\w*\s*в\s*работ|'
+    r'доступен\w*\s+другим\s+дилер|'
+    r'лот\s+не\s+взял',
     re.I,
 )
 _LOST_RE = re.compile(
@@ -167,17 +169,73 @@ _LOST_RE = re.compile(
     r'лот\s+достался|продавец\s+выбрал\s+друг|you\s+lost|another\s+bidder',
     re.I,
 )
+# Не использовать голое «решения продавца» — ловит «Пожелания продавца».
 _WAIT_RE = re.compile(
-    r'ждём\s+решения|ждем\s+решения|решения\s+продавца|'
-    r'день[-–—]?\s*два|ожида(ем|ние)\s+решени',
+    r'(?:ждём|ждем)\s+решения(?:\s+продавца)?|'
+    r'ожида(?:ем|ние)\s+решени|'
+    r'обычно\s+на\s+это\s+уходит\s+день',
     re.I,
 )
 _CANCEL_RE = re.compile(
-    r'продавец\s+отменил\s+аукцион|отмен[её]н\s+аукцион|аукцион\s+отмен|'
+    r'отменил\w*\s+аукцион|аукцион\s+отмен|'
+    r'продавец\s+отмен|'
     r'отмен[её]н|canceled|cancelled|снят\s+с\s+аукциона',
     re.I,
 )
 _FINISHED_TITLE_RE = re.compile(r'аукцион\s+заверш', re.I)
+
+# Запасной матч без пробелов/пунктуации (ломаные пробелы в DOM Maxposter).
+_COMPACT_FINALS = (
+    (OUTCOME_NOT_REDEEMED, ('невыкупил',)),
+    (OUTCOME_WE_REFUSED, ('отказалисьотлота', 'отказалсяотлота')),
+    (OUTCOME_NOT_TAKEN, ('невзяливработ', 'доступендругимдилер')),
+    (OUTCOME_NO_SELECTION, ('никогоневыбрал', 'продавецникогоневыбрал')),
+    (OUTCOME_CANCELED, (
+        'продавецотменилаукцион',
+        'отменилаукцион',
+        'отменилаукцион',
+        'аукционотмен',
+        'продавецотменил',
+    )),
+)
+
+# Самый надёжный слой: обычные подстроки (после lower + norm spaces).
+# Порядок важен — более специфичные фразы раньше.
+_FINAL_SUBSTRING_RULES = (
+    (OUTCOME_NOT_REDEEMED, (
+        'лот не выкупил',
+        'не выкупил',
+    )),
+    (OUTCOME_WE_REFUSED, (
+        'отказались от лота',
+        'отказался от лота',
+        'вы отказались от лота',
+    )),
+    (OUTCOME_NOT_TAKEN, (
+        'не взяли в работу',
+        'не взял в работу',
+        'не взяла в работу',
+        'доступен другим дилер',
+    )),
+    (OUTCOME_NO_SELECTION, (
+        'никого не выбрал',
+        'продавец никого не выбрал',
+    )),
+    (OUTCOME_CANCELED, (
+        'продавец отменил аукцион',
+        'отменил аукцион',
+        'отменила аукцион',
+        'аукцион отменён',
+        'аукцион отменен',
+        'аукцион отмен',
+    )),
+    (OUTCOME_LOST, (
+        'выбрали другого покупател',
+        'выбрал другого покупател',
+        'другого покупател',
+        'выбрали другого',
+    )),
+)
 
 
 def normalize_maxposter_status(status_code: str | None) -> str:
@@ -189,12 +247,42 @@ def _norm_spaces(text: str) -> str:
     return re.sub(r'\s+', ' ', (text or '').strip())
 
 
+def _compact_text(text: str) -> str:
+    return re.sub(r'[^\wа-яё]+', '', (text or '').lower(), flags=re.I)
+
+
+def _match_compact_final(haystack: str) -> str | None:
+    compact = _compact_text(haystack)
+    if not compact:
+        return None
+    for code, needles in _COMPACT_FINALS:
+        if any(n in compact for n in needles):
+            return code
+    return None
+
+
+def _match_substring_final(haystack: str) -> str | None:
+    low = (haystack or '').lower()
+    if not low:
+        return None
+    for code, needles in _FINAL_SUBSTRING_RULES:
+        if any(n in low for n in needles):
+            return code
+    return None
+
+
 def _finished_outcome(code: str, title: str, detail: str, *, status: str = 'finished') -> dict[str, str]:
+    if code == OUTCOME_WON:
+        st = 'won'
+    elif code == OUTCOME_LOST:
+        st = 'lost'
+    else:
+        st = status or 'finished'
     return {
         'outcome_code': code,
-        'outcome_title': title or 'Аукцион завершен',
+        'outcome_title': title or ('Аукцион отменён' if code == OUTCOME_CANCELED else 'Аукцион завершен'),
         'outcome_detail': detail or OUTCOME_NAMES.get(code, ''),
-        'status_code': status,
+        'status_code': st,
     }
 
 
@@ -211,49 +299,67 @@ def classify_outcome_text(
     """
     title = _norm_spaces(title)
     detail = _norm_spaces(detail)
-    blob = _norm_spaces(blob) or _norm_spaces(f'{title} {detail}')
+    blob = _norm_spaces(blob)
+    # title/detail всегда в поиске — blob с описанием авто не должен их перекрывать.
+    haystack = _norm_spaces(f'{title}\n{detail}\n{blob}')
     raw_status = normalize_maxposter_status(status_code)
 
-    # Финальные «закрывающие» формулировки — раньше выигрыша,
-    # т.к. на странице Maxposter рядом может быть шаблонный текст про дилера.
-    if _NOT_REDEEMED_RE.search(blob):
-        return _finished_outcome(OUTCOME_NOT_REDEEMED, title, detail or OUTCOME_NAMES[OUTCOME_NOT_REDEEMED])
-    if _WE_REFUSED_RE.search(blob):
-        return _finished_outcome(OUTCOME_WE_REFUSED, title, detail or OUTCOME_NAMES[OUTCOME_WE_REFUSED])
-    if _NOT_TAKEN_RE.search(blob):
-        return _finished_outcome(OUTCOME_NOT_TAKEN, title, detail or OUTCOME_NAMES[OUTCOME_NOT_TAKEN])
-    if raw_status == OUTCOME_NO_SELECTION or _NO_SELECTION_RE.search(blob):
-        return _finished_outcome(OUTCOME_NO_SELECTION, title, detail or OUTCOME_NAMES[OUTCOME_NO_SELECTION])
-    if raw_status == OUTCOME_CANCELED or _CANCEL_RE.search(blob):
-        return _finished_outcome(
-            OUTCOME_CANCELED,
-            title or 'Аукцион отменён',
-            detail or OUTCOME_NAMES[OUTCOME_CANCELED],
-        )
-
-    if raw_status == OUTCOME_WON or _WON_RE.search(blob):
-        return {
-            'outcome_code': OUTCOME_WON,
-            'outcome_title': title or 'Аукцион завершен',
-            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WON],
-            'status_code': OUTCOME_WON,
-        }
-    if raw_status == OUTCOME_LOST or _LOST_RE.search(blob):
+    # 1) Прямые финальные фразы (самый надёжный слой).
+    phrase_code = _match_substring_final(haystack) or _match_compact_final(haystack)
+    if phrase_code == OUTCOME_LOST:
         return {
             'outcome_code': OUTCOME_LOST,
             'outcome_title': title or 'Аукцион завершен',
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_LOST],
             'status_code': OUTCOME_LOST,
         }
-    if raw_status == OUTCOME_WAITING or _WAIT_RE.search(blob) or (
-        _FINISHED_TITLE_RE.search(blob)
-        and not _WON_RE.search(blob)
-        and not _LOST_RE.search(blob)
-        and not _NO_SELECTION_RE.search(blob)
-        and not _NOT_REDEEMED_RE.search(blob)
-        and not _WE_REFUSED_RE.search(blob)
-        and not _NOT_TAKEN_RE.search(blob)
-        and not _CANCEL_RE.search(blob)
+    if phrase_code in FINAL_OUTCOMES:
+        return _finished_outcome(
+            phrase_code,
+            title or ('Аукцион отменён' if phrase_code == OUTCOME_CANCELED else 'Аукцион завершен'),
+            detail or OUTCOME_NAMES.get(phrase_code, ''),
+        )
+
+    # 2) Regex-слой (на всякий случай).
+    if _NOT_REDEEMED_RE.search(haystack):
+        return _finished_outcome(OUTCOME_NOT_REDEEMED, title, detail or OUTCOME_NAMES[OUTCOME_NOT_REDEEMED])
+    if _WE_REFUSED_RE.search(haystack):
+        return _finished_outcome(OUTCOME_WE_REFUSED, title, detail or OUTCOME_NAMES[OUTCOME_WE_REFUSED])
+    if _NOT_TAKEN_RE.search(haystack):
+        return _finished_outcome(OUTCOME_NOT_TAKEN, title, detail or OUTCOME_NAMES[OUTCOME_NOT_TAKEN])
+    if raw_status == OUTCOME_NO_SELECTION or _NO_SELECTION_RE.search(haystack):
+        return _finished_outcome(OUTCOME_NO_SELECTION, title, detail or OUTCOME_NAMES[OUTCOME_NO_SELECTION])
+    if raw_status == OUTCOME_CANCELED or _CANCEL_RE.search(haystack):
+        return _finished_outcome(
+            OUTCOME_CANCELED,
+            title or 'Аукцион отменён',
+            detail or OUTCOME_NAMES[OUTCOME_CANCELED],
+        )
+
+    if raw_status == OUTCOME_WON or _WON_RE.search(haystack):
+        return {
+            'outcome_code': OUTCOME_WON,
+            'outcome_title': title or 'Аукцион завершен',
+            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WON],
+            'status_code': OUTCOME_WON,
+        }
+    if raw_status == OUTCOME_LOST or _LOST_RE.search(haystack):
+        return {
+            'outcome_code': OUTCOME_LOST,
+            'outcome_title': title or 'Аукцион завершен',
+            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_LOST],
+            'status_code': OUTCOME_LOST,
+        }
+    if raw_status == OUTCOME_WAITING or _WAIT_RE.search(haystack) or (
+        _FINISHED_TITLE_RE.search(haystack)
+        and not phrase_code
+        and not _WON_RE.search(haystack)
+        and not _LOST_RE.search(haystack)
+        and not _NO_SELECTION_RE.search(haystack)
+        and not _NOT_REDEEMED_RE.search(haystack)
+        and not _WE_REFUSED_RE.search(haystack)
+        and not _NOT_TAKEN_RE.search(haystack)
+        and not _CANCEL_RE.search(haystack)
     ):
         return {
             'outcome_code': OUTCOME_WAITING,
@@ -261,7 +367,7 @@ def classify_outcome_text(
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WAITING],
             'status_code': 'finished',
         }
-    if raw_status in ('finished', 'ended') or _FINISHED_TITLE_RE.search(blob):
+    if raw_status in ('finished', 'ended') or _FINISHED_TITLE_RE.search(haystack):
         return {
             'outcome_code': OUTCOME_WAITING if not detail else OUTCOME_UNKNOWN,
             'outcome_title': title or 'Аукцион завершен',
@@ -269,9 +375,9 @@ def classify_outcome_text(
             'status_code': 'finished',
         }
     return {
-        'outcome_code': OUTCOME_UNKNOWN if blob else '',
+        'outcome_code': OUTCOME_UNKNOWN if haystack else '',
         'outcome_title': title,
-        'outcome_detail': detail or blob[:500],
+        'outcome_detail': detail or haystack[:500],
         'status_code': raw_status or 'finished',
     }
 
@@ -469,8 +575,6 @@ def apply_offer_outcome(
 
     prev_outcome = (offer.outcome_code or '').strip()
     prev_status = (offer.status_code or '').strip()
-    prev_title = (offer.outcome_title or '').strip()
-    prev_detail = (offer.outcome_detail or '').strip()
 
     if outcome_code in FINAL_OUTCOMES or outcome_code in (
         OUTCOME_WAITING, OUTCOME_UNKNOWN,
@@ -543,29 +647,23 @@ def apply_offer_outcome(
     became_won = (
         offer.outcome_code == OUTCOME_WON
         and prev_outcome != OUTCOME_WON
-        and offer.win_email_sent_at is None
     )
     new_code = (offer.outcome_code or '').strip()
-    outcome_changed = bool(new_code) and (
-        new_code != prev_outcome
-        or (offer.outcome_title or '').strip() != prev_title
-        or (offer.outcome_detail or '').strip() != prev_detail
-    )
-    # Повторный опрос того же waiting_seller без смены текста — в чат не дублируем.
-    if (
-        new_code == prev_outcome == OUTCOME_WAITING
-        and (offer.outcome_title or '').strip() == prev_title
-        and (offer.outcome_detail or '').strip() == prev_detail
-    ):
-        outcome_changed = False
+    # В чат — только при смене кода. Повтор waiting_seller / тот же финал
+    # с чуть другим текстом со страницы не дублируем.
+    outcome_code_changed = bool(new_code) and new_code != prev_outcome
 
     if notify_chat and became_won:
         try:
-            notify_auction_won(offer)
-            chat_result = {'sent': True, 'kind': 'won'}
+            sent = notify_auction_won(offer)
+            chat_result = {
+                'sent': sent is not None,
+                'kind': 'won',
+                'reason': None if sent is not None else 'duplicate',
+            }
         except Exception as exc:
             chat_result = {'sent': False, 'reason': f'chat error: {exc}'}
-        if send_email:
+        if send_email and offer.win_email_sent_at is None:
             try:
                 email_result = send_win_email(offer)
                 if email_result.get('sent'):
@@ -573,10 +671,15 @@ def apply_offer_outcome(
                     update_fields.append('win_email_sent_at')
             except Exception as exc:
                 email_result = {'sent': False, 'reason': str(exc)}
-    elif notify_chat and outcome_changed:
+    elif notify_chat and outcome_code_changed:
         try:
-            notify_lot_outcome(offer, prev_outcome=prev_outcome)
-            chat_result = {'sent': True, 'kind': 'outcome', 'code': new_code}
+            sent = notify_lot_outcome(offer, prev_outcome=prev_outcome)
+            chat_result = {
+                'sent': sent is not None,
+                'kind': 'outcome',
+                'code': new_code,
+                'reason': None if sent is not None else 'duplicate',
+            }
         except Exception as exc:
             chat_result = {'sent': False, 'reason': f'chat error: {exc}'}
             logger.warning('avito outcome chat failed lotOfferId=%s: %s', offer.lot_offer_id, exc)
