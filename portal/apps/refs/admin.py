@@ -355,9 +355,9 @@ class RefOrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(RefUnit)
 class RefUnitAdmin(admin.ModelAdmin):
-    list_display    = ('name', 'buauto', 'city', 'ib', )
+    list_display    = ('name', 'buauto', 'auto_reprice_new', 'city', 'ib', )
     search_fields   = ('name', )
-    list_filter     = ('buauto', 'city', 'ib',)
+    list_filter     = ('buauto', 'auto_reprice_new', 'city', 'ib',)
     raw_id_fields   = ('eco_staff', 'eco_units', )
 
 

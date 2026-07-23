@@ -176,6 +176,11 @@ class RefUnit(models.Model):
     main_photo      = models.ImageField(upload_to='logo_unit/', max_length=100, verbose_name="Логотип", blank=True, null=True)
     main_photo_back = models.ImageField(upload_to='back_unit/', max_length=100, verbose_name="Фоновая картинка монитора", blank=True, null=True)
     buauto          = models.BooleanField("Подразделение Б/У Автомобилей", default=False)
+    auto_reprice_new = models.BooleanField(
+        "Включена автоматическая переоценка новых",
+        default=False,
+        help_text='Участвует в отчётах и процессах по новым АМ с автопереоценкой.',
+    )
     email_service   = models.CharField("Адрес для оповещения о онлайн записи (через ;)", blank=True, default='', max_length=2500)
     board_name      = models.CharField("Наименование монитора приветсвтвия", default='', max_length=200, blank=True)
     adress          = models.CharField("Адрес", default='', max_length=512, blank=True)

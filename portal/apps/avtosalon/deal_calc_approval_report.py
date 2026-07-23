@@ -1,6 +1,7 @@
 """Отчёт по согласованию коммерческих предложений (только для УК)."""
 from datetime import date
 from calendar import monthrange
+from urllib.parse import urlencode
 
 from django.db.models import OuterRef, Subquery, Q
 from django.urls import reverse
@@ -25,6 +26,34 @@ def _parse_date(raw):
         return date.fromisoformat(raw)
     except ValueError:
         return None
+
+
+def _parse_int_id_list(values):
+    ids = []
+    for raw in values or []:
+        try:
+            val = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if val and val not in ids:
+            ids.append(val)
+    return ids
+
+
+def approval_report_units_qs():
+    """Подразделения с включённой автопереоценкой новых."""
+    from refs.models import RefUnit
+
+    return (
+        RefUnit.objects
+        .filter(
+            auto_reprice_new=True,
+            buauto=False,
+            ib__active=True,
+        )
+        .select_related('city')
+        .order_by('name')
+    )
 
 
 def _car_mark(car):
@@ -57,10 +86,24 @@ def _car_complectation(car):
     return ''
 
 
+def _user_display_name(user) -> str:
+    if not user:
+        return ''
+    profile = getattr(user, 'profiles', None)
+    if profile and getattr(profile, 'eco_name', None):
+        name = (profile.eco_name or '').strip()
+        if name:
+            return name
+    full = (user.get_full_name() or '').strip()
+    if full:
+        return full
+    return (user.username or '').strip() or str(user.pk)
+
+
 def build_approval_report_queryset(request):
     """
     Последнее КП по рабочему листу (active=True).
-    Факт доходности при продаже — из CumulativeMarginUS по VIN (если есть).
+    Только подразделения с auto_reprice_new=True.
     """
     date_start = _parse_date(request.GET.get('date_start'))
     date_end = _parse_date(request.GET.get('date_end'))
@@ -68,9 +111,18 @@ def build_approval_report_queryset(request):
         date_start, date_end = _current_month_bounds()
 
     vin = (request.GET.get('vin') or '').strip()
-    unit_id = (request.GET.get('unit_id') or '').strip()
+    unit_ids = _parse_int_id_list(
+        request.GET.getlist('unit[]')
+        + request.GET.getlist('unit_ids')
+        + request.GET.getlist('unit_id')
+    )
     only_shipped = (request.GET.get('only_shipped') or '').strip() in ('1', 'true', 'yes', 'on')
     soglasovanie = (request.GET.get('soglasovanie') or '').strip()
+
+    allowed_unit_ids = list(approval_report_units_qs().values_list('pk', flat=True))
+    if unit_ids:
+        allowed_set = set(allowed_unit_ids)
+        unit_ids = [uid for uid in unit_ids if uid in allowed_set]
 
     shipment_qs = (
         DocCarShipment.objects
@@ -95,6 +147,7 @@ def build_approval_report_queryset(request):
     qs = (
         CarCalculations.objects
         .filter(active=True, rlk_id__isnull=False)
+        .filter(unit_id__in=allowed_unit_ids or [-1])
         .select_related(
             'unit',
             'unit__city',
@@ -104,6 +157,10 @@ def build_approval_report_queryset(request):
             'car__modification_autoru__model__mark',
             'car__complectation_autoru',
             'rlk',
+            'director_approve_user',
+            'director_approve_user__profiles',
+            'uk_approve_user',
+            'uk_approve_user__profiles',
         )
         .annotate(
             shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
@@ -119,8 +176,8 @@ def build_approval_report_queryset(request):
         qs = qs.filter(date__date__lte=date_end)
     if vin:
         qs = qs.filter(car__vin__icontains=vin)
-    if unit_id.isdigit():
-        qs = qs.filter(unit_id=int(unit_id))
+    if unit_ids:
+        qs = qs.filter(unit_id__in=unit_ids)
     if only_shipped:
         qs = qs.filter(shipment_pk__isnull=False)
     if soglasovanie:
@@ -151,11 +208,30 @@ def build_approval_report_queryset(request):
         'date_start': date_start.isoformat() if date_start else '',
         'date_end': date_end.isoformat() if date_end else '',
         'vin': vin,
-        'unit_id': unit_id if unit_id.isdigit() else '',
+        'filter_unit': unit_ids,
         'only_shipped': only_shipped,
         'soglasovanie': soglasovanie,
     }
     return qs.order_by('-date', '-pk'), filtr
+
+
+def build_approval_report_querystring(filtr, *, page=None):
+    params = []
+    if filtr.get('date_start'):
+        params.append(('date_start', filtr['date_start']))
+    if filtr.get('date_end'):
+        params.append(('date_end', filtr['date_end']))
+    if filtr.get('vin'):
+        params.append(('vin', filtr['vin']))
+    for unit_id in filtr.get('filter_unit') or []:
+        params.append(('unit_ids', str(unit_id)))
+    if filtr.get('soglasovanie'):
+        params.append(('soglasovanie', filtr['soglasovanie']))
+    if filtr.get('only_shipped'):
+        params.append(('only_shipped', '1'))
+    if page:
+        params.append(('page', str(page)))
+    return urlencode(params)
 
 
 def serialize_approval_report_row(calc):
@@ -188,31 +264,102 @@ def serialize_approval_report_row(calc):
         'rlk_nomer': calc.rlk.nomer if calc.rlk else '—',
         'number': calc.number or '—',
         'date': calc.date,
+        'date_str': calc.date.strftime('%d.%m.%Y %H:%M') if calc.date else '',
         'kvp': calc.kvp,
         'km_formula': calc.km_raschet,
         'soglasovanie_status': calc.soglasovanie_status or '',
         'soglasovanie_label': get_soglasovanie_status_display(calc),
+        'director_approver': _user_display_name(calc.director_approve_user) or '—',
+        'uk_approver': _user_display_name(calc.uk_approve_user) or '—',
         'shipped': shipped,
         'shipment_nomer': getattr(calc, 'shipment_nomer', None) or '',
         'sale_profit': sale_profit,
     }
 
 
-def build_approval_report_context(request):
-    from refs.models import RefUnit
+def build_approval_report_excel(rows):
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
 
+    headers = [
+        'Подразделение',
+        'Город',
+        'Марка',
+        'Модель',
+        'Комплектация',
+        'Год',
+        'VIN',
+        'КВП',
+        'Итог по формуле',
+        'Статус согласования',
+        'Согласовал директор',
+        'Согласовал УК',
+        'Доходность уехала',
+        'РЛ',
+        'КП',
+        'Отгрузка',
+        'Дата КП',
+        'Ссылка КП',
+    ]
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Согласование КП'
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color='002A5A', end_color='002A5A', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    for row in rows:
+        ws.append([
+            row['unit_name'],
+            row['city_name'],
+            row['mark'],
+            row['model'],
+            row['complectation'],
+            row['year'],
+            row['vin'],
+            row['kvp'] if row['kvp'] is not None else '',
+            row['km_formula'] if row['km_formula'] is not None else '',
+            row['soglasovanie_label'],
+            row['director_approver'] if row['director_approver'] != '—' else '',
+            row['uk_approver'] if row['uk_approver'] != '—' else '',
+            row['sale_profit'] if row['sale_profit'] is not None else '',
+            row['rlk_nomer'],
+            row['number'],
+            row['shipment_nomer'] or '',
+            row['date_str'],
+            row['url'],
+        ])
+
+    for col in range(1, len(headers) + 1):
+        letter = get_column_letter(col)
+        max_length = 0
+        for cell in ws[letter]:
+            try:
+                if cell.value is not None and len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except Exception:
+                pass
+        ws.column_dimensions[letter].width = min(max_length + 2, 40)
+
+    return wb
+
+
+def build_approval_report_context(request):
     qs, filtr = build_approval_report_queryset(request)
-    units = (
-        RefUnit.objects
-        .filter(buauto=False, ib__active=True, name__istartswith='дц')
-        .select_related('city')
-        .order_by('name')
-    )
+    units = approval_report_units_qs()
     return {
         'filtr': filtr,
         'units': units,
         'queryset': qs,
+        'querystring': build_approval_report_querystring(filtr),
         'desktop_url': reverse('prices_car:new_cars_director_desktop'),
         'report_url': reverse('prices_car:deal_calc_approval_report'),
+        'export_url': reverse('prices_car:deal_calc_approval_report_export'),
         'is_uk': user_has_deal_calc_uk_access(request.user),
     }

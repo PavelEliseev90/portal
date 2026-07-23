@@ -204,6 +204,10 @@ def deal_calc_approval_report(request):
 
     rows = [serialize_approval_report_row(item) for item in page_obj]
     uid_suffix = desktop_user_query_suffix(view_user, request.user)
+    export_qs = ctx['querystring']
+    export_url = reverse('prices_car:deal_calc_approval_report_export')
+    if export_qs:
+        export_url = '{}?{}'.format(export_url, export_qs)
 
     return render(request, 'prices_car/deal_calc_approval_report.html', {
         'params': {
@@ -213,10 +217,44 @@ def deal_calc_approval_report(request):
             'rows': rows,
             'page_obj': page_obj,
             'paginator': paginator,
+            'querystring': ctx['querystring'],
             'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
+            'export_url': export_url,
             'total_count': paginator.count,
         },
     })
+
+
+@login_required
+def deal_calc_approval_report_export(request):
+    """Excel-выгрузка отчёта по согласованию КП (те же фильтры, что на странице)."""
+    from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
+    from avtosalon.deal_calc_approval_report import (
+        build_approval_report_context,
+        build_approval_report_excel,
+        serialize_approval_report_row,
+    )
+    from avtosalon.deal_calc_desktop import can_view_desktop_as, resolve_desktop_user
+
+    if not user_has_deal_calc_uk_access(request.user):
+        return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
+
+    view_user = resolve_desktop_user(request)
+    if not can_view_desktop_as(request, view_user):
+        return HttpResponseForbidden('Нет доступа.')
+    if not user_has_deal_calc_uk_access(view_user):
+        return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
+
+    ctx = build_approval_report_context(request)
+    rows = [serialize_approval_report_row(item) for item in ctx['queryset'].iterator(chunk_size=300)]
+    wb = build_approval_report_excel(rows)
+    filename = 'kp_approval_report_%s.xlsx' % datetime.now().strftime('%Y%m%d_%H%M%S')
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    wb.save(response)
+    return response
 
 
 @login_required
