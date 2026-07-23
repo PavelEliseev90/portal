@@ -281,30 +281,53 @@ def notify_bid_placed(lot, bid_amount, bid_made_at=None, *, user=None):
 
 
 def notify_auction_won(offer, *, user=None):
-    """Продавец выбрал нашу ставку — уведомление в чаты."""
+    """Продавец выбрал нашу ставку — коротко в чат лота + ленту."""
+    from auction_avito.services.outcome import OUTCOME_NAMES, OUTCOME_WON
+
     lot = offer.lot
-    label = _lot_feed_label(lot)
-    venue = _lot_feed_venue_label(lot)
-    try:
-        bid_fmt = f'{int(offer.bid):,}'.replace(',', ' ')
-    except (TypeError, ValueError):
-        bid_fmt = str(offer.bid or '—')
-    detail = (offer.outcome_detail or offer.outcome_title or '').strip()
-    text = (
-        f'Выигран лот: {label}\n'
-        f'Площадка: {venue}\n'
-        f'Наша ставка: {bid_fmt} ₽'
-    )
-    if detail:
-        text += f'\n{detail}'
+    if lot is None:
+        return None
+    text = OUTCOME_NAMES.get(OUTCOME_WON, 'Выигран')
+    if _lot_chat_last_is_duplicate(lot, text):
+        return None
     post_aav_feed_message(text, user=user, lot_pk=lot.pk)
-    post_aav_lot_message(lot, text, user=user)
+    return post_aav_lot_message(lot, text, user=user)
+
+
+def _lot_chat_last_is_duplicate(lot, text: str, *, prefixes: tuple[str, ...] = ()) -> bool:
+    """Не слать то же самое / тот же тип итога подряд."""
+    try:
+        chat = get_or_create_lot_chat(lot)
+        last = (
+            ChatMessage.objects
+            .filter(chat=chat)
+            .order_by('-id')
+            .values_list('content', flat=True)
+            .first()
+        )
+    except Exception:
+        return False
+    if not last:
+        return False
+    last = (last or '').strip()
+    new = (text or '').strip()
+    if not last or not new:
+        return False
+    if last == new:
+        return True
+    # Совпадение первой строки (на случай старых многострочных сообщений).
+    if last.split('\n', 1)[0].strip() == new.split('\n', 1)[0].strip():
+        return True
+    for prefix in prefixes:
+        if last.startswith(prefix) and new.startswith(prefix):
+            return True
+    return False
 
 
 def notify_lot_outcome(offer, *, prev_outcome: str = '', user=None):
     """
-    Итог торгов Maxposter → чат лота.
-    Вызывается при смене outcome_code (в т.ч. первый опрос).
+    Итог торгов → чат лота: только короткий статус
+    («Лот не выкупили», «Продавец никого не выбрал», …).
     """
     from auction_avito.services.outcome import OUTCOME_NAMES
 
@@ -312,26 +335,9 @@ def notify_lot_outcome(offer, *, prev_outcome: str = '', user=None):
     if lot is None:
         return None
     code = (offer.outcome_code or '').strip() or 'unknown'
-    name = OUTCOME_NAMES.get(code, code)
-    label = _lot_feed_label(lot)
-    venue = _lot_feed_venue_label(lot)
-    title = (offer.outcome_title or '').strip()
-    detail = (offer.outcome_detail or '').strip()
-    try:
-        bid_fmt = f'{int(offer.bid):,}'.replace(',', ' ')
-    except (TypeError, ValueError):
-        bid_fmt = str(offer.bid or '—')
-
-    lines = [f'Итог лота: {name}', f'{label}', f'Площадка: {venue}', f'Наша ставка: {bid_fmt} ₽']
-    if prev_outcome and prev_outcome != code:
-        prev_name = OUTCOME_NAMES.get(prev_outcome, prev_outcome)
-        lines.insert(1, f'{prev_name} → {name}')
-    if title and title.lower() not in name.lower():
-        lines.append(title)
-    if detail and detail != title:
-        lines.append(detail)
-
-    text = '\n'.join(lines)
+    text = OUTCOME_NAMES.get(code, code)
+    if _lot_chat_last_is_duplicate(lot, text):
+        return None
     return post_aav_lot_message(lot, text, user=user)
 
 
