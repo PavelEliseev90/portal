@@ -328,6 +328,9 @@ def build_desktop_context(user, request_user=None):
 
     calc_list_url = reverse('prices_car:calculations_list') + uid_suffix
     desktop_url = reverse('prices_car:new_cars_director_desktop') + uid_suffix
+    approval_report_url = ''
+    if role == ROLE_UK:
+        approval_report_url = reverse('prices_car:deal_calc_approval_report') + uid_suffix
 
     return {
         'role': role,
@@ -338,6 +341,7 @@ def build_desktop_context(user, request_user=None):
         'tiles': tiles,
         'calculations_list_url': calc_list_url,
         'desktop_url': desktop_url,
+        'approval_report_url': approval_report_url,
     }
 
 

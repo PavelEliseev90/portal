@@ -88,6 +88,11 @@
       <a href="{{ desktop.calculations_list_url }}" class="ncd-btn ncd-btn-primary">
         📋 Все коммерческие предложения
       </a>
+      {% if desktop.approval_report_url %}
+      <a href="{{ desktop.approval_report_url }}" class="ncd-btn ncd-btn-outline">
+        📊 Отчёт по согласованию КП
+      </a>
+      {% endif %}
       <a href="{% url 'prices_car:km_calculator_lab' %}" class="ncd-btn ncd-btn-outline">
         🧮 Калькулятор КМ
       </a>

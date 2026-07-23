@@ -169,6 +169,57 @@ def new_cars_director_desktop_list(request, section):
 
 
 @login_required
+def deal_calc_approval_report(request):
+    """Отчёт по согласованию КП — только для УК (последнее КП по рабочему листу)."""
+    from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
+    from avtosalon.deal_calc_approval_report import (
+        build_approval_report_context,
+        serialize_approval_report_row,
+    )
+    from avtosalon.deal_calc_desktop import (
+        can_view_desktop_as,
+        resolve_desktop_user,
+        desktop_user_query_suffix,
+    )
+
+    if not user_has_deal_calc_uk_access(request.user):
+        return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
+
+    view_user = resolve_desktop_user(request)
+    if not can_view_desktop_as(request, view_user):
+        return HttpResponseForbidden('Нет доступа.')
+    if not user_has_deal_calc_uk_access(view_user):
+        return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
+
+    ctx = build_approval_report_context(request)
+    qs = ctx['queryset']
+    paginator = Paginator(qs, 50)
+    page_number = request.GET.get('page') or 1
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    rows = [serialize_approval_report_row(item) for item in page_obj]
+    uid_suffix = desktop_user_query_suffix(view_user, request.user)
+
+    return render(request, 'prices_car/deal_calc_approval_report.html', {
+        'params': {
+            'type': 'deal_calc_approval_report',
+            'filtr': ctx['filtr'],
+            'units': ctx['units'],
+            'rows': rows,
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'desktop_url': reverse('prices_car:new_cars_director_desktop') + uid_suffix,
+            'total_count': paginator.count,
+        },
+    })
+
+
+@login_required
 def brands_get_models(request):
     """AJAX: модели по выбранным маркам (для форм брендов, калькуляций и т.п.)."""
     mark_ids = request.GET.getlist('mark_ids[]') or request.GET.getlist('mark_ids')
