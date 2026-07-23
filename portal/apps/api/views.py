@@ -539,6 +539,7 @@ def avito_auction_outcome_queue(request):
     """Очередь завершённых лотов со ставкой для опроса итога на Maxposter."""
     from auction_avito.models import AvitoAuctionSettings
     from auction_avito.services.outcome import (
+        backfill_outcome_lot_chats,
         offers_needing_outcome_poll,
         serialize_outcome_queue_item,
     )
@@ -574,6 +575,10 @@ def avito_auction_outcome_queue(request):
     except (TypeError, ValueError):
         limit, lookback_days, recheck_hours = 30, 21, 6
 
+    # Досыл коротких статусов в чаты лотов по уже сохранённым итогам
+    # (в т.ч. финалы, которые больше не в очереди опроса Maxposter).
+    chat_backfill = backfill_outcome_lot_chats(lookback_days=lookback_days)
+
     items = [
         serialize_outcome_queue_item(o)
         for o in offers_needing_outcome_poll(
@@ -584,8 +589,8 @@ def avito_auction_outcome_queue(request):
     ]
     import logging
     logging.getLogger(__name__).info(
-        'avito outcome queue: enabled=1 count=%s limit=%s lookback_days=%s',
-        len(items), limit, lookback_days,
+        'avito outcome queue: enabled=1 count=%s limit=%s lookback_days=%s chat_backfill=%s',
+        len(items), limit, lookback_days, chat_backfill,
     )
     for it in items:
         logging.getLogger(__name__).info(
@@ -598,6 +603,7 @@ def avito_auction_outcome_queue(request):
         'enabled': True,
         'count': len(items),
         'items': items,
+        'chatBackfill': chat_backfill,
     }, status=status.HTTP_200_OK)
 
 

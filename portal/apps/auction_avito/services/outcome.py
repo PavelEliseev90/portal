@@ -438,6 +438,58 @@ def offers_needing_outcome_poll(
     return qs[:max(1, min(int(limit or 30), 100))]
 
 
+def backfill_outcome_lot_chats(*, lookback_days: int = 21, limit: int = 80) -> dict[str, int]:
+    """
+    Досылает короткий статус в чат лота по недавним офферам с известным итогом.
+    Нужен, когда итог уже сохранён (в т.ч. финал ушёл из очереди опроса),
+    а сообщение в чат раньше не ушло. Дубликаты отсекаются внутри notify_*.
+    """
+    from auction_avito.chat_utils import notify_auction_won, notify_lot_outcome
+    from auction_avito.models import AvitoLotOffer
+
+    since = timezone.now() - timedelta(days=max(1, int(lookback_days)))
+    qs = (
+        AvitoLotOffer.objects
+        .select_related('lot')
+        .filter(bid__gt=0, lot__isnull=False)
+        .exclude(outcome_code='')
+        .exclude(outcome_code=OUTCOME_UNKNOWN)
+        .filter(
+            Q(outcome_synced_at__gte=since)
+            | Q(outcome_synced_at__isnull=True, lot__finish_at__gte=since)
+        )
+        .order_by('-outcome_synced_at', '-id')[:max(1, min(int(limit or 80), 200))]
+    )
+    sent = 0
+    skipped = 0
+    errors = 0
+    for offer in qs:
+        code = (offer.outcome_code or '').strip()
+        if not code:
+            skipped += 1
+            continue
+        try:
+            if code == OUTCOME_WON:
+                msg = notify_auction_won(offer)
+            else:
+                msg = notify_lot_outcome(offer)
+            if msg is not None:
+                sent += 1
+            else:
+                skipped += 1
+        except Exception as exc:
+            errors += 1
+            logger.warning(
+                'avito outcome chat backfill failed lotOfferId=%s: %s',
+                offer.lot_offer_id,
+                exc,
+            )
+    result = {'sent': sent, 'skipped': skipped, 'errors': errors, 'checked': sent + skipped + errors}
+    if sent or errors:
+        logger.info('avito outcome chat backfill: %s', result)
+    return result
+
+
 def serialize_outcome_queue_item(offer) -> dict[str, Any]:
     lot = offer.lot
     vehicle = getattr(lot, 'vehicle_avito', None)
@@ -569,39 +621,43 @@ def apply_offer_outcome(
     """
     Сохраняет итог на оффере, при необходимости меняет status_code,
     шлёт письмо и чат при первом переходе в won,
-    пишет итог в чат лота при смене outcome.
+    пишет короткий статус в чат лота (с защитой от дублей).
     """
     from auction_avito.chat_utils import notify_auction_won, notify_lot_outcome
 
     prev_outcome = (offer.outcome_code or '').strip()
     prev_status = (offer.status_code or '').strip()
 
-    if outcome_code in FINAL_OUTCOMES or outcome_code in (
-        OUTCOME_WAITING, OUTCOME_UNKNOWN,
-    ):
-        classified = {
-            'outcome_code': outcome_code,
-            'outcome_title': _norm_spaces(title) or OUTCOME_NAMES.get(outcome_code, ''),
-            'outcome_detail': _norm_spaces(detail),
-            'status_code': (
-                outcome_code if outcome_code in ('won', 'lost')
-                else normalize_maxposter_status(status_code) or 'finished'
-            ),
-        }
-        if outcome_code in (
-            OUTCOME_CANCELED, OUTCOME_NO_SELECTION,
-            OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
-        ):
-            classified['status_code'] = 'finished'
-            if not classified['outcome_detail']:
-                classified['outcome_detail'] = OUTCOME_NAMES.get(outcome_code, '')
-    else:
-        classified = classify_outcome_text(
-            title=title,
-            detail=detail,
-            blob=blob,
-            status_code=status_code,
-        )
+    # Всегда классифицируем по текстам со страницы — так финальные фразы
+    # («Лот не выкупили» и т.п.) не залипают как waiting_seller.
+    classified = classify_outcome_text(
+        title=title,
+        detail=detail,
+        blob=blob,
+        status_code=status_code,
+    )
+    # Явный код от клиента — только если по тексту итог пустой/неясный,
+    # либо клиент прислал более «сильный» финал.
+    if outcome_code:
+        text_code = (classified.get('outcome_code') or '').strip()
+        if (
+            outcome_code in FINAL_OUTCOMES
+            and text_code in ('', OUTCOME_UNKNOWN, OUTCOME_WAITING)
+        ) or text_code in ('', OUTCOME_UNKNOWN):
+            classified = {
+                'outcome_code': outcome_code,
+                'outcome_title': _norm_spaces(title) or OUTCOME_NAMES.get(outcome_code, ''),
+                'outcome_detail': _norm_spaces(detail) or OUTCOME_NAMES.get(outcome_code, ''),
+                'status_code': (
+                    outcome_code if outcome_code in ('won', 'lost')
+                    else normalize_maxposter_status(status_code) or 'finished'
+                ),
+            }
+            if outcome_code in (
+                OUTCOME_CANCELED, OUTCOME_NO_SELECTION,
+                OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
+            ):
+                classified['status_code'] = 'finished'
 
     now = timezone.now()
     offer.outcome_code = classified['outcome_code'] or offer.outcome_code
@@ -649,10 +705,10 @@ def apply_offer_outcome(
         and prev_outcome != OUTCOME_WON
     )
     new_code = (offer.outcome_code or '').strip()
-    # В чат — только при смене кода. Повтор waiting_seller / тот же финал
-    # с чуть другим текстом со страницы не дублируем.
-    outcome_code_changed = bool(new_code) and new_code != prev_outcome
 
+    # В чат лота — короткий статус при любом известном итоге.
+    # Дубликаты отсекает notify_* (в т.ч. waiting_seller → waiting_seller,
+    # если сообщения ещё не было — отправим).
     if notify_chat and became_won:
         try:
             sent = notify_auction_won(offer)
@@ -671,7 +727,7 @@ def apply_offer_outcome(
                     update_fields.append('win_email_sent_at')
             except Exception as exc:
                 email_result = {'sent': False, 'reason': str(exc)}
-    elif notify_chat and outcome_code_changed:
+    elif notify_chat and new_code and new_code != OUTCOME_UNKNOWN:
         try:
             sent = notify_lot_outcome(offer, prev_outcome=prev_outcome)
             chat_result = {

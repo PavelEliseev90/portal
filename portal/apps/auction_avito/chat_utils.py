@@ -315,8 +315,16 @@ def _lot_chat_last_is_duplicate(lot, text: str, *, prefixes: tuple[str, ...] = (
         return False
     if last == new:
         return True
-    # Совпадение первой строки (на случай старых многострочных сообщений).
-    if last.split('\n', 1)[0].strip() == new.split('\n', 1)[0].strip():
+
+    def _head(value: str) -> str:
+        head = value.split('\n', 1)[0].strip()
+        if head.startswith('Итог лота:'):
+            return head.split(':', 1)[1].strip()
+        if head.startswith('Выигран лот'):
+            return 'Выигран'
+        return head
+
+    if _head(last) == _head(new):
         return True
     for prefix in prefixes:
         if last.startswith(prefix) and new.startswith(prefix):

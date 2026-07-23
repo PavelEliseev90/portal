@@ -338,6 +338,11 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
     code = portal.get("outcomeCode") or "?"
     status = portal.get("statusCode") or "?"
     prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
+    chat_info = portal.get("chat") or {}
+    if chat_info.get("sent"):
+        chat_flag = "chat=ok"
+    else:
+        chat_flag = f"chat={chat_info.get('reason') or 'skip'}"
     row = {
         "ok": True,
         "lotOfferId": lot_offer_id,
@@ -359,15 +364,17 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
             "prevOutcome": prev,
             "becameWon": portal.get("becameWon"),
             "email": portal.get("email"),
+            "chat": chat_info,
         },
         "msg": (
             f"лот {item.get('lotId')} / offer {lot_offer_id}: "
-            f"{prev} → {code} ({title}; {detail})"
+            f"{prev} → {code} ({title}; {detail}) [{chat_flag}]"
         ),
     }
     print(
         f"OUTCOME_OK[{idx}] lotOfferId={lot_offer_id} lotId={item.get('lotId')} "
-        f"«{item.get('car') or '—'}» {prev} → {code}/{status} becameWon={bool(portal.get('becameWon'))}",
+        f"«{item.get('car') or '—'}» {prev} → {code}/{status} "
+        f"becameWon={bool(portal.get('becameWon'))} {chat_flag}",
         flush=True,
     )
     return row
@@ -407,6 +414,13 @@ def _load_items() -> tuple[list[dict], dict]:
     if not meta["enabled"]:
         print("Outcome poll disabled on portal")
         return [], meta
+    bf = queue.get("chatBackfill") or {}
+    if bf:
+        print(
+            f"OUTCOME_CHAT_BACKFILL sent={bf.get('sent', 0)} "
+            f"skipped={bf.get('skipped', 0)} errors={bf.get('errors', 0)}",
+            flush=True,
+        )
     items = list(queue.get("items") or [])
     meta["queueCount"] = len(items)
     dealer_id = meta["dealerId"]
