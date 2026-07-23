@@ -3620,11 +3620,22 @@ def deal_calculation_doc(request, id):
     }
     
     car     = calc.car
+    cumulative_data = None
     if car:
-        apply_km_raschet_to_calculation(calc, car)
-        if calc.km_raschet is not None:
-            calc.save(update_fields=['km_raschet'])
-    cumulative_data = car.cumulative_data() if car else None
+        try:
+            cumulative_data = car.cumulative_data()
+        except Exception:
+            cumulative_data = None
+        # Не перезаписываем снимок итога по формуле, если КП уже в согласовании /
+        # решение принято. Иначе отчёт и карточка расходятся с моментом согласования.
+        from avtosalon.deal_calc_approval import (
+            is_km_rule_frozen,
+            snapshot_km_rule_total,
+        )
+        if (not is_km_rule_frozen(calc)) or calc.km_raschet is None:
+            snapshot_km_rule_total(calc, cumulative_data)
+            if calc.km_raschet is not None:
+                calc.save(update_fields=['km_raschet'])
     prior_uk_approved = try_approve_by_prior_uk_threshold(
         calc, send_chat=True, send_to_1c=True,
     )
