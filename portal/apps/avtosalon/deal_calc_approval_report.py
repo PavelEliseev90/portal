@@ -86,6 +86,20 @@ def _car_complectation(car):
     return ''
 
 
+def _user_display_name(user) -> str:
+    if not user:
+        return ''
+    profile = getattr(user, 'profiles', None)
+    if profile and getattr(profile, 'eco_name', None):
+        name = (profile.eco_name or '').strip()
+        if name:
+            return name
+    full = (user.get_full_name() or '').strip()
+    if full:
+        return full
+    return (user.username or '').strip() or str(user.pk)
+
+
 def build_approval_report_queryset(request):
     """
     Последнее КП по рабочему листу (active=True).
@@ -143,6 +157,10 @@ def build_approval_report_queryset(request):
             'car__modification_autoru__model__mark',
             'car__complectation_autoru',
             'rlk',
+            'director_approve_user',
+            'director_approve_user__profiles',
+            'uk_approve_user',
+            'uk_approve_user__profiles',
         )
         .annotate(
             shipment_pk=Subquery(shipment_qs.values('pk')[:1]),
@@ -251,6 +269,8 @@ def serialize_approval_report_row(calc):
         'km_formula': calc.km_raschet,
         'soglasovanie_status': calc.soglasovanie_status or '',
         'soglasovanie_label': get_soglasovanie_status_display(calc),
+        'director_approver': _user_display_name(calc.director_approve_user) or '—',
+        'uk_approver': _user_display_name(calc.uk_approve_user) or '—',
         'shipped': shipped,
         'shipment_nomer': getattr(calc, 'shipment_nomer', None) or '',
         'sale_profit': sale_profit,
@@ -273,6 +293,8 @@ def build_approval_report_excel(rows):
         'КВП',
         'Итог по формуле',
         'Статус согласования',
+        'Согласовал директор',
+        'Согласовал УК',
         'Доходность уехала',
         'РЛ',
         'КП',
@@ -304,6 +326,8 @@ def build_approval_report_excel(rows):
             row['kvp'] if row['kvp'] is not None else '',
             row['km_formula'] if row['km_formula'] is not None else '',
             row['soglasovanie_label'],
+            row['director_approver'] if row['director_approver'] != '—' else '',
+            row['uk_approver'] if row['uk_approver'] != '—' else '',
             row['sale_profit'] if row['sale_profit'] is not None else '',
             row['rlk_nomer'],
             row['number'],
