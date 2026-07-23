@@ -205,15 +205,29 @@ class OutcomeClassifyTests(SimpleTestCase):
         )
         self.assertEqual(d['outcome_code'], 'lost')
 
-    def test_not_redeemed(self):
+    def test_not_redeemed_with_seller_wishes_blob(self):
+        """Реальный кейс: title с «не выкупили», detail — пожелания/описание авто."""
         from auction_avito.services.outcome import classify_outcome_text
 
         d = classify_outcome_text(
-            title='Аукцион завершён Лот не выкупили',
-            detail='Уведомление о том, что продавец выбрал предложение вашего дилерского центра',
+            title='Аукцион завершён Дата аукциона 22 июля 2026 Лот не выкупили',
+            detail=(
+                'Пожелания продавца 900 000 ₽ В трейд-ин: Обмен на авто с пробегом '
+                'Про автомобиль Поколение:Mk6 (2008—2012) Кузов:Хетчбэк'
+            ),
+            blob='длинное описание без фразы итога',
         )
         self.assertEqual(d['outcome_code'], 'not_redeemed')
-        self.assertEqual(d['status_code'], 'finished')
+
+    def test_wishes_not_treated_as_waiting(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён',
+            detail='Пожелания продавца 900 000 ₽',
+        )
+        # Без явного «ждём решения» не должно цепляться за «Пожелания»
+        self.assertNotEqual(d['outcome_code'], 'waiting_seller')
 
     def test_we_refused(self):
         from auction_avito.services.outcome import classify_outcome_text
@@ -225,15 +239,40 @@ class OutcomeClassifyTests(SimpleTestCase):
         from auction_avito.services.outcome import classify_outcome_text
 
         d = classify_outcome_text(
-            detail='Лот не взяли в работу Теперь лот доступен другим дилерам',
+            title='Аукцион завершён Лот не взяли в работу Теперь лот доступен другим дилерам',
+            detail='Пожелания продавца 300 000 ₽ Прогноз торга ~54 737 ₽ В трейд-ин: Обмен на авто с пробегом',
+        )
+        self.assertEqual(d['outcome_code'], 'not_taken')
+        self.assertEqual(d['status_code'], 'finished')
+
+    def test_not_taken_compact_spaces(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён\u00a0Лот\u00a0не\u00a0взяли\u00a0в\u00a0работу',
         )
         self.assertEqual(d['outcome_code'], 'not_taken')
 
     def test_seller_canceled_auction(self):
         from auction_avito.services.outcome import classify_outcome_text
 
-        d = classify_outcome_text(detail='Продавец отменил аукцион')
+        d = classify_outcome_text(
+            title='Аукцион завершён Продавец отменил аукцион',
+            detail='Пожелания продавца 100 000 ₽',
+        )
         self.assertEqual(d['outcome_code'], 'canceled')
+        self.assertEqual(d['status_code'], 'finished')
+
+    def test_canceled_verb_forms(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        for text in (
+            'Продавец отменил аукцион',
+            'Аукцион отменён',
+            'Аукцион отменен продавцом',
+        ):
+            d = classify_outcome_text(detail=text)
+            self.assertEqual(d['outcome_code'], 'canceled', text)
 
     def test_seller_chose_nobody(self):
         from auction_avito.services.outcome import classify_outcome_text
