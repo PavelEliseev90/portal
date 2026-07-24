@@ -1,7 +1,8 @@
 """Онлайн-монитор аукциона Авито: активные лоты, наши ставки, ожидание итога."""
 from __future__ import annotations
 
-from django.db.models import OuterRef, Prefetch, Q, Subquery
+from django.db.models import Count, Max, OuterRef, Prefetch, Q, Subquery
+from django.utils import timezone
 
 from auction_avito.models import (
     AvitoBidderAccount,
@@ -10,8 +11,12 @@ from auction_avito.models import (
     AvitoLotOffer,
 )
 from auction_avito.services.offer_status import active_lots_q
-from auction_avito.services.outcome import FINAL_OUTCOMES, OUTCOME_WAITING, OUTCOME_UNKNOWN
-from django.utils import timezone
+from auction_avito.services.outcome import (
+    FINAL_OUTCOMES,
+    OUTCOME_WAITING,
+    OUTCOME_UNKNOWN,
+    OUTCOME_WON,
+)
 
 # Подписи площадок (наши dealerId) — синхронно с tools/maxposter_auction/dealers.js
 KNOWN_DEALER_LABELS = {
@@ -84,6 +89,15 @@ def waiting_outcome_offers_q():
     )
 
 
+def won_pending_offers_q():
+    """Выигранные офферы, ещё не отмеченные «передан в работу»."""
+    return (
+        Q(bid__gt=0)
+        & Q(handed_to_work_at__isnull=True)
+        & Q(outcome_code=OUTCOME_WON)
+    )
+
+
 def _dealer_filter_q(dealer_ids: list[int]) -> Q:
     if not dealer_ids:
         return Q()
@@ -109,11 +123,78 @@ def monitor_counts(*, dealer_ids: list[int] | None = None) -> dict:
         waiting_qs = waiting_qs.filter(account__dealer_id__in=dealer_ids)
     waiting = waiting_qs.values('lot_id').distinct().count()
 
+    won_qs = AvitoLotOffer.objects.filter(won_pending_offers_q())
+    if dealer_ids:
+        won_qs = won_qs.filter(account__dealer_id__in=dealer_ids)
+    won_pending = won_qs.values('lot_id').distinct().count()
+
     return {
         'active': active,
         'active_our_bid': active_our_bid,
         'waiting_decision': waiting,
+        'won_pending': won_pending,
     }
+
+
+def monitor_revision(*, dealer_ids: list[int] | None = None) -> str:
+    """
+    Короткий отпечаток состояния для автообновления монитора.
+    Меняется при новых/изменённых лотах, ставках, итогах, «в работу».
+    """
+    dealer_ids = dealer_ids or []
+    offer_qs = AvitoLotOffer.objects.all()
+    lot_qs = AvitoLot.objects.all()
+    if dealer_ids:
+        offer_qs = offer_qs.filter(account__dealer_id__in=dealer_ids)
+        lot_qs = lot_qs.filter(offers__account__dealer_id__in=dealer_ids).distinct()
+
+    from auction_avito.models import AvitoBidHistory
+
+    hist_qs = AvitoBidHistory.objects.all()
+    if dealer_ids:
+        hist_qs = hist_qs.filter(offer__account__dealer_id__in=dealer_ids)
+
+    offer_agg = offer_qs.aggregate(
+        n=Count('id'),
+        bid_sum=Max('bid'),
+        upd=Max('updated_at'),
+        out=Max('outcome_synced_at'),
+        hand=Max('handed_to_work_at'),
+    )
+    lot_agg = lot_qs.aggregate(
+        n=Count('id'),
+        sync=Max('synced_at'),
+        max_bid=Max('max_bid'),
+        finish=Max('finish_at'),
+    )
+    hist_agg = hist_qs.aggregate(n=Count('id'), rec=Max('recorded_at'))
+    counts = monitor_counts(dealer_ids=dealer_ids)
+
+    def _ts(v):
+        if not v:
+            return ''
+        try:
+            return v.isoformat()
+        except Exception:
+            return str(v)
+
+    return '|'.join([
+        str(counts.get('active', 0)),
+        str(counts.get('active_our_bid', 0)),
+        str(counts.get('waiting_decision', 0)),
+        str(counts.get('won_pending', 0)),
+        str(offer_agg.get('n') or 0),
+        str(offer_agg.get('bid_sum') or 0),
+        _ts(offer_agg.get('upd')),
+        _ts(offer_agg.get('out')),
+        _ts(offer_agg.get('hand')),
+        str(lot_agg.get('n') or 0),
+        str(lot_agg.get('max_bid') or 0),
+        _ts(lot_agg.get('sync')),
+        _ts(lot_agg.get('finish')),
+        str(hist_agg.get('n') or 0),
+        _ts(hist_agg.get('rec')),
+    ])
 
 
 def _annotate_buyout(qs):
@@ -177,12 +258,23 @@ def monitor_lots_queryset(*, mode: str = 'active', dealer_ids: list[int] | None 
             .distinct()
         )
         qs = base.filter(pk__in=offer_lot_ids)
+    elif mode == 'won_pending':
+        offer_lot_ids = (
+            AvitoLotOffer.objects
+            .filter(won_pending_offers_q())
+            .filter(Q(account__dealer_id__in=dealer_ids) if dealer_ids else Q())
+            .values_list('lot_id', flat=True)
+            .distinct()
+        )
+        qs = base.filter(pk__in=offer_lot_ids)
     else:
         qs = base.filter(active_lots_q())
         if dealer_ids:
             qs = qs.filter(offers__account__dealer_id__in=dealer_ids)
         qs = qs.distinct()
 
+    if mode == 'won_pending':
+        return _annotate_buyout(qs).order_by('-synced_at', '-lot_id')
     return _annotate_buyout(qs).order_by('finish_at', 'lot_id')
 
 
@@ -454,6 +546,16 @@ def serialize_monitor_lot(lot) -> dict:
         'autoBidText': display_auto,
         'autoBidAt': auto_at,
         'bidHistory': bid_history,
+        'handedToWorkAt': _format_dt_local(primary.handed_to_work_at) if primary else '',
+        'isHandedToWork': bool(primary and primary.handed_to_work_at),
+        'canHandToWork': bool(
+            primary
+            and not primary.handed_to_work_at
+            and (
+                (primary.outcome_code or '') == OUTCOME_WON
+                or (primary.status_code or '') == OUTCOME_WON
+            )
+        ),
     }
 
 

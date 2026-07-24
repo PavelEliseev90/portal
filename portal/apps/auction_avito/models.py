@@ -485,6 +485,21 @@ class AvitoLotOffer(models.Model):
         null=True,
         blank=True,
     )
+    handed_to_work_at = models.DateTimeField(
+        'Передан в работу',
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='Когда выигранный лот отметили как переданный в работу (убирается из монитора «Выигранные»).',
+    )
+    handed_to_work_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='avito_handed_to_work_offers',
+        verbose_name='Перенёс в работу',
+    )
 
     raw_offer_json = models.JSONField('JSON оффера (сырой)', default=dict, blank=True)
 

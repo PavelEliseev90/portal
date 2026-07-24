@@ -8,11 +8,12 @@
 <style>
   .mon-kpi {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.75rem;
     margin-bottom: 1rem;
   }
-  @media (max-width: 768px) { .mon-kpi { grid-template-columns: 1fr; } }
+  @media (max-width: 992px) { .mon-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px) { .mon-kpi { grid-template-columns: 1fr; } }
   .mon-kpi a {
     display: block;
     text-decoration: none;
@@ -30,8 +31,28 @@
     background: linear-gradient(135deg, #f0f6fc, #fff);
     box-shadow: 0 0 0 2px rgba(0,80,157,.15);
   }
+  .mon-kpi a.won-tab.active {
+    border-color: #15803d;
+    background: linear-gradient(135deg, #ecfdf5, #fff);
+    box-shadow: 0 0 0 2px rgba(21,128,61,.15);
+  }
   .mon-kpi .num { font-size: 1.75rem; font-weight: 700; color: #002a5a; line-height: 1.1; }
+  .mon-kpi a.won-tab .num { color: #166534; }
   .mon-kpi .lbl { font-size: .85rem; color: #6c7a92; margin-top: .25rem; }
+  .mon-live {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .78rem; color: #6c7a92;
+  }
+  .mon-live-dot {
+    width: .55rem; height: .55rem; border-radius: 50%;
+    background: #94a3b8;
+  }
+  .mon-live-dot.on { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+  .mon-live-dot.pulse { animation: monPulse 1s ease; }
+  @keyframes monPulse {
+    0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); }
+    100% { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+  }
   .mon-table-wrap { overflow-x: auto; }
   .mon-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
   .mon-table th {
@@ -50,6 +71,7 @@
   .mon-table tr.mon-row-sole:hover { background: #fff3cd; }
   .mon-table tr.mon-row-leading { background: #eef8f0; }
   .mon-table tr.mon-row-leading:hover { background: #e4f3e7; }
+  .mon-table tr.mon-row-won { background: #ecfdf5; }
   .mon-thumb {
     width: 56px; height: 42px; object-fit: cover; border-radius: .4rem;
     background: #e8eef5; display: block;
@@ -68,6 +90,7 @@
   .mon-badge-outbid { background: #fecaca; color: #991b1b; }
   .mon-badge-sole { background: #fde68a; color: #92400e; }
   .mon-badge-leading { background: #bbf7d0; color: #166534; }
+  .mon-badge-won { background: #bbf7d0; color: #14532d; }
   .mon-auto-text {
     max-width: 220px; font-size: .78rem; color: #334155; line-height: 1.25;
   }
@@ -113,13 +136,21 @@
 {% block content %}
 <div class="portal-page" id="monApp"
      data-set-url="{% url 'auction_avito:monitor_set_manual_max' %}"
+     data-hand-url="{% url 'auction_avito:monitor_hand_to_work' %}"
+     data-data-url="{% url 'auction_avito:monitor_data' %}"
+     data-mode="{{ mode }}"
+     data-revision="{{ revision }}"
      data-csrf="{{ csrf_token }}">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
     <div>
       <h2 class="mb-1">Монитор аукциона Авито</h2>
-      <p class="text-muted small mb-0">Активные лоты, наши ставки и ожидание решения продавца.</p>
+      <p class="text-muted small mb-0">Активные лоты, ставки, итоги и выигранные без передачи в работу.</p>
     </div>
-    <div class="d-flex flex-wrap gap-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="mon-live" id="monLive" title="Автообновление">
+        <span class="mon-live-dot on" id="monLiveDot"></span>
+        <span id="monLiveText">онлайн</span>
+      </span>
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:auction_settings' %}">Настройки</a>
@@ -148,17 +179,21 @@
 
   <div class="mon-kpi" id="monKpi">
     {% with qs=querystring %}
-    <a href="?mode=active{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'active' %}active{% endif %}">
-      <div class="num">{{ counts.active }}</div>
+    <a href="?mode=active{% if qs %}&{{ qs }}{% endif %}" data-mode="active" class="{% if mode == 'active' %}active{% endif %}">
+      <div class="num" data-count="active">{{ counts.active }}</div>
       <div class="lbl">Активные лоты</div>
     </a>
-    <a href="?mode=active_our_bid{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'active_our_bid' %}active{% endif %}">
-      <div class="num">{{ counts.active_our_bid }}</div>
+    <a href="?mode=active_our_bid{% if qs %}&{{ qs }}{% endif %}" data-mode="active_our_bid" class="{% if mode == 'active_our_bid' %}active{% endif %}">
+      <div class="num" data-count="active_our_bid">{{ counts.active_our_bid }}</div>
       <div class="lbl">Активные с нашей ставкой</div>
     </a>
-    <a href="?mode=waiting{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'waiting' %}active{% endif %}">
-      <div class="num">{{ counts.waiting_decision }}</div>
+    <a href="?mode=waiting{% if qs %}&{{ qs }}{% endif %}" data-mode="waiting" class="{% if mode == 'waiting' %}active{% endif %}">
+      <div class="num" data-count="waiting_decision">{{ counts.waiting_decision }}</div>
       <div class="lbl">Ждут решения</div>
+    </a>
+    <a href="?mode=won_pending{% if qs %}&{{ qs }}{% endif %}" data-mode="won_pending" class="won-tab {% if mode == 'won_pending' %}active{% endif %}">
+      <div class="num" data-count="won_pending">{{ counts.won_pending }}</div>
+      <div class="lbl">Выигранные (не в работу)</div>
     </a>
     {% endwith %}
   </div>
@@ -179,20 +214,23 @@
           <th>maxBid</th>
           <th>До</th>
           <th>Площадка</th>
+          <th>Место</th>
         </tr>
       </thead>
       <tbody id="monTbody">
         {% for r in rows %}
-        <tr class="mon-row {{ r.rowClass|default:'' }}" data-idx="{{ forloop.counter0 }}">
+        <tr class="mon-row {{ r.rowClass|default:'' }}{% if mode == 'won_pending' %} mon-row-won{% endif %}" data-idx="{{ forloop.counter0 }}">
           <td>
             {% if r.photo %}<img class="mon-thumb" src="{{ r.photo }}" alt="">{% else %}<div class="mon-thumb-empty">—</div>{% endif %}
           </td>
           <td>
             <div class="fw-semibold">{{ r.title }}</div>
             <div class="text-muted small">
-              {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:"0g" }} км {% endif %}
+              {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:"0g" }} км · {% endif %}лот {{ r.lotId }}
             </div>
-            {% if r.autoBidLabel %}
+            {% if mode == 'won_pending' %}
+              <span class="mon-badge mon-badge-won">Выигран</span>
+            {% elif r.autoBidLabel %}
               {% if r.isOutbid %}
               <span class="mon-badge mon-badge-outbid">{{ r.autoBidLabel }}</span>
               {% elif r.isSole %}
@@ -206,14 +244,14 @@
             {{ r.statusName|default:r.statusCode|default:"—" }}
             {% if r.outcomeTitle %}<div class="small text-warning">{{ r.outcomeTitle }}</div>{% endif %}
           </td>
-          <td class="mon-money buyout  text-end">{% if r.buyout %}{{ r.buyout|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money our  text-end">{% if r.ourBid %}{{ r.ourBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money  text-end">{% if r.ourBidsCount %}{{ r.ourBidsCount }}{% else %}—{% endif %}</td>
+          <td class="mon-money buyout">{% if r.buyout %}{{ r.buyout|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money our">{% if r.ourBid %}{{ r.ourBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money">{% if r.ourBidsCount %}{{ r.ourBidsCount }}{% else %}—{% endif %}</td>
           <td>
             {% if r.sellerWishPrice %}
-            <div class="mon-money text-end">{{ r.sellerWishPrice|floatformat:"0g" }} ₽</div>
+            <div class="mon-money">{{ r.sellerWishPrice|floatformat:"0g" }} ₽</div>
             {% else %}
-            <div class="text-muted text-end">—</div>
+            <div class="text-muted">—</div>
             {% endif %}
             {% if r.tradeInComment %}<div class="mon-wish" title="{{ r.tradeInComment }}">{{ r.tradeInComment|truncatechars:80 }}</div>{% endif %}
           </td>
@@ -223,19 +261,19 @@
               {% if r.autoBidAt %}<div class="muted">{{ r.autoBidAt }}</div>{% endif %}
             </div>
           </td>
-          <td class="mon-money js-manual-max text-end">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money  text-end">{% if r.maxBid %}{{ r.maxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money js-manual-max">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money">{% if r.maxBid %}{{ r.maxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
           <td>{{ r.finishHuman|default:"—" }}</td>
           <td class="small">{{ r.dealerLabel|default:"—" }}</td>
-        
+          <td class="small">{{ r.place|default:"—" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="13" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
+        <tr class="mon-empty"><td colspan="13" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
         {% endfor %}
       </tbody>
     </table>
     {% if page_obj.has_other_pages %}
-    <div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="d-flex justify-content-between align-items-center mt-3" id="monPager">
       <div class="small text-muted">Стр. {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
       <div class="d-flex gap-2">
         {% if page_obj.has_previous %}
@@ -307,6 +345,14 @@
         </div>
         <div class="small text-muted" id="mHistoryEmpty" hidden>Истории ставок пока нет</div>
       </div>
+      <div class="mon-card" style="grid-column:1/-1" id="mHandCard" hidden>
+        <h6>Передача в работу</h6>
+        <p class="small text-muted mb-2">После отметки лот исчезнет из вкладки «Выигранные (не в работу)».</p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <button type="button" class="btn btn-success btn-sm" id="mHandToWork">Передан в работу</button>
+          <span class="small text-muted" id="mHandHint"></span>
+        </div>
+      </div>
       <div class="mon-card" style="grid-column:1/-1">
         <h6>Потолок автоставки (вручную)</h6>
         <p class="small text-muted mb-2">Можно задать выше расчётного выкупа — автоставка будет идти до этого порога.</p>
@@ -325,14 +371,21 @@
   </div>
 </div>
 
+{% include 'auction_avito/aav_chat_embed.html' with embed=feed_chat %}
+
 <script>
 (function(){
   const app = document.getElementById('monApp');
   if (!app) return;
   const setUrl = app.dataset.setUrl;
+  const handUrl = app.dataset.handUrl;
+  const dataUrl = app.dataset.dataUrl;
   const csrf = app.dataset.csrf;
+  const mode = app.dataset.mode || 'active';
+  let revision = app.dataset.revision || '';
   let current = null;
   let rows = [];
+  let pollBusy = false;
   try {
     rows = JSON.parse(document.getElementById('mon-rows-data').textContent);
   } catch (e) { rows = []; }
@@ -341,8 +394,22 @@
     if (v === null || v === undefined || v === '') return '—';
     return Number(v).toLocaleString('ru-RU') + ' ₽';
   }
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function dealerQuery(){
+    const params = new URLSearchParams();
+    document.querySelectorAll('.mon-dealers input[type=checkbox]:checked').forEach(function(cb){
+      params.append('dealer', cb.value);
+    });
+    return params;
+  }
 
   function badgeHtml(row){
+    if (mode === 'won_pending') {
+      return '<span class="mon-badge mon-badge-won">Выигран</span>';
+    }
     const label = row.autoBidLabel || row.bidPositionLabel || '';
     if (!label) return '';
     let cls = 'mon-badge';
@@ -350,7 +417,7 @@
     else if (row.isSole) cls += ' mon-badge-sole';
     else if (row.isLeading) cls += ' mon-badge-leading';
     else return '';
-    return '<span class="' + cls + '">' + label + '</span>';
+    return '<span class="' + cls + '">' + esc(label) + '</span>';
   }
 
   function fillHistory(row){
@@ -369,9 +436,9 @@
     hist.forEach(function(h){
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td>' + (h.bidMadeAt || '—') + '</td>' +
+        '<td>' + esc(h.bidMadeAt || '—') + '</td>' +
         '<td class="mon-money">' + money(h.bid) + '</td>' +
-        '<td>' + (h.comment || '—') + '</td>';
+        '<td>' + esc(h.comment || '—') + '</td>';
       body.appendChild(tr);
     });
   }
@@ -421,6 +488,18 @@
       : '';
     document.getElementById('mManualMax').value = row.manualMaxBid || '';
     document.getElementById('mManualHint').textContent = '';
+    const handCard = document.getElementById('mHandCard');
+    const handHint = document.getElementById('mHandHint');
+    if (row.canHandToWork || mode === 'won_pending') {
+      handCard.hidden = false;
+      handHint.textContent = row.isHandedToWork
+        ? ('уже отмечен: ' + (row.handedToWorkAt || ''))
+        : '';
+      document.getElementById('mHandToWork').disabled = !!row.isHandedToWork;
+    } else {
+      handCard.hidden = true;
+      handHint.textContent = '';
+    }
     fillHistory(row);
     const portal = document.getElementById('mLinkPortal');
     portal.href = row.portalLotUrl || '#';
@@ -439,12 +518,126 @@
     current = null;
   }
 
+  function renderRows(list){
+    rows = Array.isArray(list) ? list : [];
+    const tbody = document.getElementById('monTbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr class="mon-empty"><td colspan="13" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r, idx){
+      const rowCls = (r.rowClass || '') + (mode === 'won_pending' ? ' mon-row-won' : '');
+      const photo = r.photo
+        ? '<img class="mon-thumb" src="' + esc(r.photo) + '" alt="">'
+        : '<div class="mon-thumb-empty">—</div>';
+      const meta = [
+        r.year || '',
+        r.mileage ? (Number(r.mileage).toLocaleString('ru-RU') + ' км') : '',
+        r.lotId ? ('лот ' + r.lotId) : ''
+      ].filter(Boolean).join(' · ');
+      const badge = badgeHtml(r);
+      const wish = r.sellerWishPrice != null
+        ? '<div class="mon-money">' + money(r.sellerWishPrice) + '</div>'
+        : '<div class="text-muted">—</div>';
+      const wishNote = r.tradeInComment
+        ? '<div class="mon-wish" title="' + esc(r.tradeInComment) + '">' + esc(String(r.tradeInComment).slice(0,80)) + '</div>'
+        : '';
+      const auto = '<div class="mon-auto-text">' + esc((r.autoBidText || '—').slice(0,120)) +
+        (r.autoBidAt ? '<div class="muted">' + esc(r.autoBidAt) + '</div>' : '') + '</div>';
+      return (
+        '<tr class="mon-row ' + esc(rowCls) + '" data-idx="' + idx + '">' +
+          '<td>' + photo + '</td>' +
+          '<td><div class="fw-semibold">' + esc(r.title || '') + '</div>' +
+            '<div class="text-muted small">' + esc(meta) + '</div>' + badge + '</td>' +
+          '<td>' + esc(r.statusName || r.statusCode || '—') +
+            (r.outcomeTitle ? '<div class="small text-warning">' + esc(r.outcomeTitle) + '</div>' : '') + '</td>' +
+          '<td class="mon-money buyout">' + money(r.buyout) + '</td>' +
+          '<td class="mon-money our">' + money(r.ourBid) + '</td>' +
+          '<td class="mon-money">' + (r.ourBidsCount ? esc(r.ourBidsCount) : '—') + '</td>' +
+          '<td>' + wish + wishNote + '</td>' +
+          '<td>' + auto + '</td>' +
+          '<td class="mon-money js-manual-max">' + money(r.manualMaxBid) + '</td>' +
+          '<td class="mon-money">' + money(r.maxBid) + '</td>' +
+          '<td>' + esc(r.finishHuman || '—') + '</td>' +
+          '<td class="small">' + esc(r.dealerLabel || '—') + '</td>' +
+          '<td class="small">' + esc(r.place || '—') + '</td>' +
+        '</tr>'
+      );
+    }).join('');
+  }
+
+  function updateCounts(counts){
+    if (!counts) return;
+    Object.keys(counts).forEach(function(key){
+      const el = document.querySelector('[data-count="' + key + '"]');
+      if (el) el.textContent = counts[key];
+    });
+  }
+
+  function pulseLive(text){
+    const dot = document.getElementById('monLiveDot');
+    const label = document.getElementById('monLiveText');
+    if (label) label.textContent = text || 'обновлено';
+    if (!dot) return;
+    dot.classList.add('on', 'pulse');
+    setTimeout(function(){ dot.classList.remove('pulse'); }, 900);
+  }
+
+  async function refreshMonitor(forceReload){
+    if (pollBusy) return;
+    pollBusy = true;
+    try {
+      const q = dealerQuery();
+      // mode не влияет на детект изменений — только на состав rows при soft-update
+      q.set('mode', mode);
+      q.set('rows', '0');
+      if (revision) q.set('revision', revision);
+      const resp = await fetch(dataUrl + '?' + q.toString(), {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const data = await resp.json().catch(function(){ return {}; });
+      if (!resp.ok || !data.ok) {
+        pulseLive('ошибка связи');
+        return;
+      }
+      if (data.counts) updateCounts(data.counts);
+      const nextRev = data.revision || '';
+      if (data.changed && nextRev && nextRev !== revision) {
+        pulseLive('обновление…');
+        // Полная перезагрузка текущей вкладки (query string сохраняется)
+        window.location.reload();
+        return;
+      }
+      if (forceReload && data.changed) {
+        window.location.reload();
+        return;
+      }
+      if (nextRev) revision = nextRev;
+      pulseLive('онлайн');
+    } catch (e) {
+      pulseLive('нет связи');
+    } finally {
+      pollBusy = false;
+    }
+  }
+
+  let reloadTimer = null;
+  function scheduleReload(){
+    if (reloadTimer) return;
+    pulseLive('есть изменения…');
+    reloadTimer = setTimeout(function(){
+      window.location.reload();
+    }, 400);
+  }
+
   document.getElementById('monModalClose').addEventListener('click', closeModal);
   document.getElementById('monModalBack').addEventListener('click', (e) => {
     if (e.target.id === 'monModalBack') closeModal();
   });
 
   document.getElementById('monTbody').addEventListener('click', (e) => {
+    if (e.target.closest('button')) return;
     const tr = e.target.closest('tr.mon-row');
     if (!tr) return;
     const idx = Number(tr.dataset.idx);
@@ -480,14 +673,38 @@
       const tr = document.querySelector('tr.mon-row[data-idx="' + idx + '"]');
       if (tr) {
         const cell = tr.querySelector('.js-manual-max');
-        if (cell) {
-          cell.textContent = data.manualMaxBid
-            ? (Number(data.manualMaxBid).toLocaleString('ru-RU') + ' ₽')
-            : '—';
-        }
+        if (cell) cell.textContent = money(data.manualMaxBid);
       }
     }
   }
+
+  async function handToWork(){
+    if (!current || !current.lotOfferId) return;
+    const body = new FormData();
+    body.append('lotOfferId', current.lotOfferId);
+    const resp = await fetch(handUrl, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf },
+      body,
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok) {
+      document.getElementById('mHandHint').textContent = data.error || 'ошибка';
+      return;
+    }
+    current.isHandedToWork = true;
+    current.canHandToWork = false;
+    current.handedToWorkAt = data.handedToWorkAt || '';
+    document.getElementById('mHandHint').textContent = 'отмечено: ' + (data.handedToWorkAt || '');
+    document.getElementById('mHandToWork').disabled = true;
+    if (mode === 'won_pending') {
+      rows = rows.filter(function(r){ return r.lotOfferId !== current.lotOfferId; });
+      renderRows(rows);
+      closeModal();
+      scheduleReload();
+    }
+  }
+
   document.getElementById('mManualSave').addEventListener('click', () => {
     const v = document.getElementById('mManualMax').value;
     saveManual(v === '' ? null : Number(v));
@@ -496,12 +713,23 @@
     document.getElementById('mManualMax').value = '';
     saveManual(null);
   });
+  document.getElementById('mHandToWork').addEventListener('click', handToWork);
 
   document.getElementById('monSelectAll').addEventListener('click', () => {
     document.querySelectorAll('.mon-dealers input[type=checkbox]').forEach(cb => { cb.checked = true; });
   });
   document.getElementById('monSelectNone').addEventListener('click', () => {
     document.querySelectorAll('.mon-dealers input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  });
+
+  // Автообновление страницы при любой новой ставке / лоте / итоге —
+  // независимо от выбранной вкладки (mode/статус).
+  setInterval(function(){ refreshMonitor(false); }, 8000);
+  window.addEventListener('aav-feed-message', function(){
+    scheduleReload();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) refreshMonitor(false);
   });
 })();
 </script>
