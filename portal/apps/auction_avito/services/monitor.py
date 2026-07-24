@@ -251,8 +251,10 @@ def build_monitor_dealer_choices(selected_ids: list[int] | None = None) -> list[
 
 
 def _today_bounds():
-    """Начало/конец текущего локального дня."""
-    now = timezone.localtime()
+    """Начало/конец текущего локального дня (aware или naive — как в проекте)."""
+    now = timezone.now()
+    if timezone.is_aware(now):
+        now = timezone.localtime(now)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=1)
     return start, end
