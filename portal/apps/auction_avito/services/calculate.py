@@ -74,9 +74,11 @@ def _force_recalc_requested(payload: dict) -> bool:
 
 def get_reusable_calculation(payload: dict, *, force: bool = False, max_age=None):
     """
-    Последний успешный авторасчёт лота, если он не старше max_age (по умолчанию 2 часа).
+    Последний успешный расчёт лота младше TTL (по умолчанию 2 часа).
 
-    Возвращает AvitoLotCalculation или None (нужен новый расчёт).
+    Назначение: парсер на каждом reload шлёт ВСЕ лоты в /api/calculate_car/,
+    а здесь решаем — дергать Maxposter/zna заново или отдать сохранённый выкуп.
+    forceRecalc / force=True — всегда новый расчёт (ручная кнопка).
     """
     if force or _force_recalc_requested(payload):
         return None

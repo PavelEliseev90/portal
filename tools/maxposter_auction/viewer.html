@@ -585,52 +585,38 @@
     maybeScheduleOutcomesAfterPipeline();
   }
 
-  /** Поля, по которым решаем: нужен повторный пересчёт после reload из Maxposter. */
-  const CALC_REUSE_MS = 2 * 60 * 60 * 1000;
-  function calcCacheIsFresh(cached){
-    if (!cached?.ok || cached.answer?.estimation_price == null) return false;
-    const at = Number(cached.cachedAtMs || 0);
-    if (!at) return true; // без метки — считаем живым до явного сброса
-    return (Date.now() - at) < CALC_REUSE_MS;
-  }
+  /**
+   * После обновления ленты в очередь расчёта идут ВСЕ лоты.
+   * Экономия Maxposter/zna — только на портале (/api/calculate_car/, кэш 2 ч).
+   * Локальный calcCache лишь для UI; не блокирует повторный POST.
+   */
   function offerSyncFingerprint(offer){
     if (!offer || typeof offer !== "object") return "";
     const lot = offer.lot || {};
-    // Только «рыночные» поля: смена ставки/статуса не должна сжигать кэш расчёта.
     return JSON.stringify({
+      updatedAt: offer.updatedAt ?? null,
+      status: safeGet(offer, "status.status", null),
+      bid: offer.bid ?? null,
       minPrice: lot.minPrice ?? null,
+      maxBid: lot.maxBid ?? null,
+      minAvailableBid: lot.minAvailableBid ?? null,
+      maxAvailableBid: lot.maxAvailableBid ?? null,
+      minBidStep: offer.minBidStep ?? null,
+      finishAt: lot.finishAt ?? lot.originFinishAt ?? null,
       year: lot.vehicle?.year?.id ?? lot.vehicle?.year ?? lot.autohubVehicle?.year ?? null,
       mileage: lot.vehicle?.mileage ?? null,
       modificationID: lot.autohubVehicle?.modificationID ?? null,
     });
   }
-  function collectKeysNeedingAutoCalc(allKeys, changedKeys){
-    const keys = [];
-    for (const key of allKeys || []){
-      const k = String(key);
-      const entry = offerStore.get(k);
-      if (!entry) continue;
-      const offer = offerWithViewerMeta(entry);
-      const fp = offerSyncFingerprint(offer);
-      const cached = calcCache.get(k);
-      if (calcCacheIsFresh(cached)){
-        // если сменилась машина/пробег/цена — сбрасываем
-        if (cached.syncFp && cached.syncFp !== fp){
-          calcCache.delete(k);
-        } else {
-          continue;
-        }
-      }
-      keys.push(k);
-    }
-    return keys;
+  function collectKeysNeedingAutoCalc(allKeys){
+    // Без исключений: каждый лот из свежей ленты → POST calculate_car
+    // (портал сам вернёт кэш выкупа, если младше 2 ч).
+    return (allKeys || []).map(String);
   }
   function enqueueAutoCalc(keys){
     let n = 0;
     for (const key of keys){
       const k = String(key);
-      const cached = calcCache.get(k);
-      if (calcCacheIsFresh(cached)) continue;
       if (calcQueue.some((q) => q.key === k)) continue;
       const entry = offerStore.get(k);
       if (!entry) continue;
@@ -1334,9 +1320,10 @@
         raw: result.raw,
         syncFp: offerSyncFingerprint(offer),
         cachedAtMs,
+        fromCache: Boolean(result.answer?.from_cache),
       });
       updateRowAfterCalc(key, offer);
-      // автоставка: после успешного расчёта (условия — на портале)
+      // автоставка: после ответа расчёта (в т.ч. из кэша портала) — условия на портале
       await maybeAutoBidAfterCalc(offer, result.answer);
     }catch(err){
       calcCache.set(key, { ok: false, err: String(err?.message || err || "Ошибка") });
@@ -1669,7 +1656,8 @@
       feedDelta = {
         newKeys: applied.newKeys,
         changedKeys: applied.changedKeys,
-        keysToCalc: collectKeysNeedingAutoCalc(applied.allKeys, applied.changedKeys),
+        allKeys: applied.allKeys,
+        keysToCalc: collectKeysNeedingAutoCalc(applied.allKeys),
       };
       lastFeedTs = feedTs;
     }
@@ -1791,7 +1779,7 @@
         if (changedN) parts.push(`изменённых: ${changedN}`);
         if (retryN) parts.push(`повтор: ${retryN}`);
         const label = parts.length ? parts.join(", ") : String(calcN);
-        $("loadedMeta").textContent = `${base} · авторасчёт (${label})`;
+        $("loadedMeta").textContent = `${base} · авторасчёт всех (${label}, всего ${calcN})`;
       }
     }
     if (!$("rows").dataset.bound) {
