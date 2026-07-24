@@ -177,6 +177,32 @@ class OutcomeClassifyTests(SimpleTestCase):
         self.assertEqual(d['outcome_code'], 'waiting_seller')
         self.assertEqual(d['status_code'], 'finished')
 
+    def test_waiting_not_false_won_from_notification_blob(self):
+        """Шаблон Maxposter про «выбрал предложение ДЦ» + «ждём продавца» ≠ won."""
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён Дата аукциона 24 июля 2026 Ждём решения продавца',
+            detail='Обычно на это уходит день-два',
+            blob=(
+                'Уведомление о том, что продавец автомобиля в Авито Аукционе '
+                'выбрал предложение вашего дилерского центра среди прочих | '
+                'Поздравляем вас выбрали'
+            ),
+        )
+        self.assertEqual(d['outcome_code'], 'waiting_seller')
+
+    def test_won_ignored_in_blob_only(self):
+        """Победа только в blob без title/detail — не считаем won."""
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён',
+            detail='',
+            blob='Поздравляем! Вас выбрали. Лот ваш.',
+        )
+        self.assertNotEqual(d['outcome_code'], 'won')
+
     def test_won_phrase(self):
         from auction_avito.services.outcome import classify_outcome_text
 

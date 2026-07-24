@@ -2259,7 +2259,7 @@
       setOutcomeStatus(startMsg);
       logOutcome({ ok: true, skipped: true, msg: startMsg });
 
-      const queueUrl = `${getPortalApiUrls().outcomeQueue}?limit=20`;
+      const queueUrl = `${getPortalApiUrls().outcomeQueue}?limit=50&lookback_days=30&dealer_id=${encodeURIComponent(dealerId)}`;
       const qResp = await fetch(queueUrl, { cache: "no-store" });
       const qData = await qResp.json().catch(() => ({}));
       if (!qResp.ok){
@@ -2273,6 +2273,7 @@
       }
 
       let items = Array.isArray(qData.items) ? qData.items.slice() : [];
+      // Портал уже фильтрует по dealer_id; страховка на клиенте
       items = items.filter((it) => !it?.dealerId || String(it.dealerId) === String(dealerId));
       if (!items.length){
         const msg = `Итоги: очередь пуста (портал: ${qData.count ?? 0}, площадка ${dealerId}: 0)`;

@@ -141,8 +141,16 @@ MAXPOSTER_STATUS_MAP = {
 }
 
 _WON_RE = re.compile(
-    r'вас\s+выбрали|вы\s+выиграл|выбран[аы]?\s+ваш[аеи]|поздравляем|'
+    r'вас\s+выбрали|вы\s+выиграл|выбран[аы]?\s+ваш[аеи]\s|'
+    r'поздравляем|'
     r'лот\s+ваш|вы\s+победил|продавец\s+выбрал\s+вас|winner|you\s+won',
+    re.I,
+)
+# Шаблонные тексты Maxposter («уведомление о том, что продавец… выбрал предложение…»)
+# не являются фактом победы — вырезаем из haystack до классификации.
+_OUTCOME_NOISE_RE = re.compile(
+    r'уведомление\s+о\s+том[^.|]{0,200}дилерского\s+центра[^.|]{0,80}'
+    r'|уведомление\s+о\s+том[^.|]{0,200}среди\s+прочих',
     re.I,
 )
 _NO_SELECTION_RE = re.compile(
@@ -286,6 +294,37 @@ def _finished_outcome(code: str, title: str, detail: str, *, status: str = 'fini
     }
 
 
+def _strip_outcome_noise(text: str) -> str:
+    """Убирает шаблонные уведомления Maxposter, дающие ложный won."""
+    if not text:
+        return ''
+    return _norm_spaces(_OUTCOME_NOISE_RE.sub(' ', text))
+
+
+def _our_bid_behind_max(offer) -> bool:
+    """True, если на лоте maxBid строго выше нашей ставки — мы не лидеры."""
+    if offer is None:
+        return False
+    our = getattr(offer, 'bid', None)
+    lot = getattr(offer, 'lot', None)
+    if our in (None, '') or lot is None:
+        return False
+    max_bid = getattr(lot, 'max_bid', None)
+    if max_bid in (None, ''):
+        try:
+            max_bid = lot.display_max_bid
+        except Exception:
+            max_bid = None
+    try:
+        our_n = int(our)
+        max_n = int(max_bid) if max_bid not in (None, '') else None
+    except (TypeError, ValueError):
+        return False
+    if max_n is None or our_n <= 0:
+        return False
+    return max_n > our_n
+
+
 def classify_outcome_text(
     *,
     title: str = '',
@@ -296,16 +335,24 @@ def classify_outcome_text(
     """
     Классифицирует итог по текстам со страницы/API.
     Возвращает outcome_code, outcome_title, outcome_detail, status_code.
+
+    «Ждём решения продавца» приоритетнее шаблонных фраз про «выбрали» в blob.
+    Won — только по title/detail или явному status=won (не по blob в одиночку).
     """
     title = _norm_spaces(title)
     detail = _norm_spaces(detail)
     blob = _norm_spaces(blob)
-    # title/detail всегда в поиске — blob с описанием авто не должен их перекрывать.
-    haystack = _norm_spaces(f'{title}\n{detail}\n{blob}')
+    primary = _strip_outcome_noise(_norm_spaces(f'{title}\n{detail}'))
+    haystack = _strip_outcome_noise(_norm_spaces(f'{title}\n{detail}\n{blob}'))
     raw_status = normalize_maxposter_status(status_code)
 
-    # 1) Прямые финальные фразы (самый надёжный слой).
-    phrase_code = _match_substring_final(haystack) or _match_compact_final(haystack)
+    # 1) Прямые финальные фразы — сначала title/detail.
+    phrase_code = (
+        _match_substring_final(primary)
+        or _match_compact_final(primary)
+        or _match_substring_final(haystack)
+        or _match_compact_final(haystack)
+    )
     if phrase_code == OUTCOME_LOST:
         return {
             'outcome_code': OUTCOME_LOST,
@@ -320,7 +367,7 @@ def classify_outcome_text(
             detail or OUTCOME_NAMES.get(phrase_code, ''),
         )
 
-    # 2) Regex-слой (на всякий случай).
+    # 2) Regex-слой финалов (кроме won).
     if _NOT_REDEEMED_RE.search(haystack):
         return _finished_outcome(OUTCOME_NOT_REDEEMED, title, detail or OUTCOME_NAMES[OUTCOME_NOT_REDEEMED])
     if _WE_REFUSED_RE.search(haystack):
@@ -336,25 +383,40 @@ def classify_outcome_text(
             detail or OUTCOME_NAMES[OUTCOME_CANCELED],
         )
 
-    if raw_status == OUTCOME_WON or _WON_RE.search(haystack):
+    # 3) Ожидание решения — ДО won по слабым совпадениям в blob.
+    strong_won_primary = bool(_WON_RE.search(primary))
+    strong_lost_primary = bool(_LOST_RE.search(primary))
+    wait_in_primary = bool(_WAIT_RE.search(primary) or raw_status == OUTCOME_WAITING)
+    wait_anywhere = wait_in_primary or bool(_WAIT_RE.search(haystack))
+
+    if wait_anywhere and not strong_won_primary and not strong_lost_primary:
+        return {
+            'outcome_code': OUTCOME_WAITING,
+            'outcome_title': title or 'Аукцион завершен',
+            'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WAITING],
+            'status_code': 'finished',
+        }
+
+    # 4) Won — только явный status или фраза в title/detail (не blob).
+    if raw_status == OUTCOME_WON or strong_won_primary:
         return {
             'outcome_code': OUTCOME_WON,
             'outcome_title': title or 'Аукцион завершен',
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_WON],
             'status_code': OUTCOME_WON,
         }
-    if raw_status == OUTCOME_LOST or _LOST_RE.search(haystack):
+    if raw_status == OUTCOME_LOST or strong_lost_primary or _LOST_RE.search(haystack):
         return {
             'outcome_code': OUTCOME_LOST,
             'outcome_title': title or 'Аукцион завершен',
             'outcome_detail': detail or OUTCOME_NAMES[OUTCOME_LOST],
             'status_code': OUTCOME_LOST,
         }
-    if raw_status == OUTCOME_WAITING or _WAIT_RE.search(haystack) or (
+    if (
         _FINISHED_TITLE_RE.search(haystack)
         and not phrase_code
-        and not _WON_RE.search(haystack)
-        and not _LOST_RE.search(haystack)
+        and not strong_won_primary
+        and not strong_lost_primary
         and not _NO_SELECTION_RE.search(haystack)
         and not _NOT_REDEEMED_RE.search(haystack)
         and not _WE_REFUSED_RE.search(haystack)
@@ -402,15 +464,20 @@ def offers_needing_outcome_poll(
     limit: int = 30,
     lookback_days: int = 21,
     recheck_hours: int = 6,
+    dealer_id=None,
 ) -> QuerySet:
     """
-    Офферы со ставкой по завершённым лотам, где итог ещё не финальный.
+    Офферы со ставкой по завершённым (или «зависшим») лотам, где итог ещё не финальный.
 
     waiting_seller («Ждём решения продавца») всегда остаётся в очереди —
     при следующем опросе состояние проверяется снова, пока продавец не выберет итог.
-    unknown / пустой — тоже, с опциональной паузой recheck_hours только для unknown
-    после недавней синхронизации не требуется (unknown тоже сразу в очереди).
+
+    Важно: лот мог уйти с активной ленты Maxposter без обновления status/finish_at
+    на портале — такие офферы со ставкой тоже включаем (иначе «сделали ставку,
+    а в итоги не попадает»).
     """
+    from django.db.models import Case, IntegerField, Value, When
+
     from auction_avito.models import AvitoLotOffer
 
     now = timezone.now()
@@ -418,14 +485,32 @@ def offers_needing_outcome_poll(
     # recheck_hours оставлен для совместимости API; waiting_seller без паузы.
     _ = recheck_hours
 
+    terminal_statuses = list(TERMINAL_OFFER_STATUSES) + ['ended', 'canceled', 'finished']
+
+    # «Завершён для опроса итога»
+    finished_like = (
+        Q(lot__finish_at__lte=now)
+        | Q(lot__origin_finish_at__lte=now)
+        | Q(status_code__in=terminal_statuses)
+        # Нет дат финиша — лот часто уже снят с ленты, finish_at так и не обновили
+        | Q(lot__finish_at__isnull=True, lot__origin_finish_at__isnull=True)
+    )
+
+    # Окно давности: по finish / ставке / последней синхронизации итога / updated
+    in_lookback = (
+        Q(lot__finish_at__gte=since)
+        | Q(lot__origin_finish_at__gte=since)
+        | Q(bid_made_at__gte=since)
+        | Q(outcome_synced_at__gte=since)
+        | Q(updated_at__gte=since)
+    )
+
     qs = (
         AvitoLotOffer.objects
         .select_related('lot', 'account', 'lot__vehicle_avito', 'lot__venue')
         .filter(bid__gt=0)
-        .filter(
-            Q(lot__finish_at__lte=now) | Q(status_code__in=list(TERMINAL_OFFER_STATUSES) + ['ended', 'canceled'])
-        )
-        .filter(Q(lot__finish_at__gte=since) | Q(lot__finish_at__isnull=True, updated_at__gte=since))
+        .filter(finished_like)
+        .filter(in_lookback)
         .exclude(outcome_code__in=list(FINAL_OUTCOMES))
         .filter(
             Q(outcome_synced_at__isnull=True)
@@ -433,8 +518,23 @@ def offers_needing_outcome_poll(
             | Q(outcome_code=OUTCOME_UNKNOWN)
             | Q(outcome_code=OUTCOME_WAITING)
         )
-        .order_by('outcome_synced_at', 'lot__finish_at')
     )
+
+    if dealer_id not in (None, ''):
+        try:
+            qs = qs.filter(account__dealer_id=int(dealer_id))
+        except (TypeError, ValueError):
+            pass
+
+    # Сначала никогда не опрашивали, потом давно не синкали waiting_seller
+    qs = qs.annotate(
+        _sync_priority=Case(
+            When(outcome_synced_at__isnull=True, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        ),
+    ).order_by('_sync_priority', 'outcome_synced_at', 'lot__finish_at', 'id')
+
     return qs[:max(1, min(int(limit or 30), 100))]
 
 
@@ -669,6 +769,28 @@ def apply_offer_outcome(
                 OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
             ):
                 classified['status_code'] = 'finished'
+
+    # Защита от ложного won: наша ставка ниже maxBid лота → победы быть не может.
+    if (classified.get('outcome_code') or '').strip() == OUTCOME_WON and _our_bid_behind_max(offer):
+        logger.warning(
+            'avito outcome: reject won lotOfferId=%s ourBid=%s maxBid=%s (not leading)',
+            getattr(offer, 'lot_offer_id', None),
+            getattr(offer, 'bid', None),
+            getattr(getattr(offer, 'lot', None), 'max_bid', None),
+        )
+        wait_hint = _WAIT_RE.search(_norm_spaces(f'{title}\n{detail}\n{blob}'))
+        classified = {
+            'outcome_code': OUTCOME_WAITING if wait_hint else OUTCOME_UNKNOWN,
+            'outcome_title': _norm_spaces(title) or 'Аукцион завершен',
+            'outcome_detail': (
+                _norm_spaces(detail)
+                or (
+                    OUTCOME_NAMES[OUTCOME_WAITING] if wait_hint
+                    else 'Итог уточняется (наша ставка ниже maxBid)'
+                )
+            ),
+            'status_code': 'finished',
+        }
 
     now = timezone.now()
     offer.outcome_code = classified['outcome_code'] or offer.outcome_code
