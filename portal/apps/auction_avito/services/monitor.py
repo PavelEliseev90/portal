@@ -386,8 +386,8 @@ def serialize_monitor_lot(lot) -> dict:
 
     finish = lot.finish_at
     try:
-        finish_iso = finish.strftime('%Y-%m-%dT%H:%M:%S') if finish else ''
-        finish_human = timezone.localtime(finish).strftime('%d.%m.%Y %H:%M') if finish else ''
+        finish_iso = finish.strftime('%d.%m.%Y %H:%M') if finish else ''
+        finish_human = str(finish_iso or '')
     except Exception:
         finish_iso = str(finish or '')
         finish_human = finish_iso
