@@ -1,0 +1,366 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — Монитор аукциона Авито {% endblock %}
+{% block title_navbar %} — Монитор аукциона {% endblock %}
+
+{% block head %}
+<style>
+  .mon-kpi {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 768px) { .mon-kpi { grid-template-columns: 1fr; } }
+  .mon-kpi a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 1rem;
+    border: 1px solid rgba(0,42,90,.12);
+    background: #fff;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 10px 28px rgba(0,23,61,.05);
+    transition: border-color .15s, transform .15s;
+  }
+  .mon-kpi a:hover { border-color: rgba(0,80,157,.4); transform: translateY(-1px); color: inherit; }
+  .mon-kpi a.active {
+    border-color: #00509d;
+    background: linear-gradient(135deg, #f0f6fc, #fff);
+    box-shadow: 0 0 0 2px rgba(0,80,157,.15);
+  }
+  .mon-kpi .num { font-size: 1.75rem; font-weight: 700; color: #002a5a; line-height: 1.1; }
+  .mon-kpi .lbl { font-size: .85rem; color: #6c7a92; margin-top: .25rem; }
+  .mon-table-wrap { overflow-x: auto; }
+  .mon-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .mon-table th {
+    text-align: left; padding: .55rem .5rem; color: #6c7a92; font-weight: 600;
+    border-bottom: 1px solid rgba(0,42,90,.1); white-space: nowrap;
+  }
+  .mon-table td {
+    padding: .55rem .5rem; border-bottom: 1px solid rgba(0,42,90,.06);
+    vertical-align: middle;
+  }
+  .mon-table tr.mon-row { cursor: pointer; }
+  .mon-table tr.mon-row:hover { background: #f5f8fc; }
+  .mon-thumb {
+    width: 56px; height: 42px; object-fit: cover; border-radius: .4rem;
+    background: #e8eef5; display: block;
+  }
+  .mon-thumb-empty {
+    width: 56px; height: 42px; border-radius: .4rem; background: #e8eef5;
+    display: flex; align-items: center; justify-content: center; color: #9aabc0; font-size: .7rem;
+  }
+  .mon-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mon-money.our { color: #166534; font-weight: 650; }
+  .mon-money.buyout { color: #002a5a; font-weight: 650; }
+  .mon-dealers {
+    display: flex; flex-wrap: wrap; gap: .35rem .5rem; max-height: 9rem; overflow: auto;
+    padding: .5rem .65rem; border: 1px solid rgba(0,42,90,.12); border-radius: .75rem; background: #fff;
+  }
+  .mon-dealers label {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .8rem; margin: 0; cursor: pointer; white-space: nowrap;
+  }
+  .mon-modal-back {
+    position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 1050;
+    display: none; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow: auto;
+  }
+  .mon-modal-back.show { display: flex; }
+  .mon-modal {
+    background: #fff; border-radius: 1rem; width: min(920px, 100%);
+    box-shadow: 0 24px 60px rgba(0,0,0,.25); padding: 1.25rem 1.35rem;
+  }
+  .mon-modal-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .85rem 1.25rem;
+  }
+  @media (max-width: 700px) { .mon-modal-grid { grid-template-columns: 1fr; } }
+  .mon-card {
+    border: 1px solid rgba(0,42,90,.1); border-radius: .85rem; padding: .85rem 1rem; background: #fafbfd;
+  }
+  .mon-card h6 { margin: 0 0 .5rem; color: #002a5a; font-weight: 650; }
+  .mon-kv { display: flex; justify-content: space-between; gap: .75rem; font-size: .88rem; margin: .2rem 0; }
+  .mon-kv span:first-child { color: #6c7a92; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page" id="monApp"
+     data-set-url="{% url 'auction_avito:monitor_set_manual_max' %}"
+     data-csrf="{{ csrf_token }}">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <h2 class="mb-1">Монитор аукциона Авито</h2>
+      <p class="text-muted small mb-0">Активные лоты, наши ставки и ожидание решения продавца.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:auction_settings' %}">Настройки</a>
+    </div>
+  </div>
+
+  <form method="get" id="monFilterForm" class="portal-panel mb-3">
+    <input type="hidden" name="mode" id="monMode" value="{{ mode }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <strong>Площадки</strong>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="monSelectAll">Все</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="monSelectNone">Сбросить</button>
+        <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+      </div>
+    </div>
+    <div class="mon-dealers">
+      {% for d in dealer_choices %}
+      <label>
+        <input type="checkbox" name="dealer" value="{{ d.id }}" {% if d.selected %}checked{% endif %}>
+        {{ d.label }}
+      </label>
+      {% endfor %}
+    </div>
+  </form>
+
+  <div class="mon-kpi" id="monKpi">
+    {% with qs=querystring %}
+    <a href="?mode=active{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'active' %}active{% endif %}">
+      <div class="num">{{ counts.active }}</div>
+      <div class="lbl">Активные лоты</div>
+    </a>
+    <a href="?mode=active_our_bid{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'active_our_bid' %}active{% endif %}">
+      <div class="num">{{ counts.active_our_bid }}</div>
+      <div class="lbl">Активные с нашей ставкой</div>
+    </a>
+    <a href="?mode=waiting{% if qs %}&{{ qs }}{% endif %}" class="{% if mode == 'waiting' %}active{% endif %}">
+      <div class="num">{{ counts.waiting_decision }}</div>
+      <div class="lbl">Ждут решения</div>
+    </a>
+    {% endwith %}
+  </div>
+
+  <div class="portal-panel mon-table-wrap">
+    <table class="mon-table" id="monTable">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Авто</th>
+          <th>Статус</th>
+          <th>Выкуп</th>
+          <th>Наша ставка</th>
+          <th>Потолок</th>
+          <th>maxBid</th>
+          <th>До</th>
+          <th>Площадка</th>
+          <th>Место</th>
+        </tr>
+      </thead>
+      <tbody id="monTbody">
+        {% for r in rows %}
+        <tr class="mon-row" data-idx="{{ forloop.counter0 }}">
+          <td>
+            {% if r.photo %}<img class="mon-thumb" src="{{ r.photo }}" alt="">{% else %}<div class="mon-thumb-empty">—</div>{% endif %}
+          </td>
+          <td>
+            <div class="fw-semibold">{{ r.title }}</div>
+            <div class="text-muted small">
+              {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:0 }} км · {% endif %}лот {{ r.lotId }}
+            </div>
+          </td>
+          <td>
+            {{ r.statusName|default:r.statusCode|default:"—" }}
+            {% if r.outcomeTitle %}<div class="small text-warning">{{ r.outcomeTitle }}</div>{% endif %}
+          </td>
+          <td class="mon-money buyout">{% if r.buyout %}{{ r.buyout|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money our">{% if r.ourBid %}{{ r.ourBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money">{% if r.maxBid %}{{ r.maxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td>{{ r.finishHuman|default:"—" }}</td>
+          <td class="small">{{ r.dealerLabel|default:"—" }}</td>
+          <td class="small">{{ r.place|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <div class="small text-muted">Стр. {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
+      <div class="d-flex gap-2">
+        {% if page_obj.has_previous %}
+        <a class="btn btn-sm btn-outline-secondary" href="?mode={{ mode }}&page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">←</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a class="btn btn-sm btn-outline-secondary" href="?mode={{ mode }}&page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">→</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{{ rows|json_script:"mon-rows-data" }}
+
+<div class="mon-modal-back" id="monModalBack" hidden>
+  <div class="mon-modal" role="dialog" aria-modal="true">
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h4 class="mb-1" id="monModalTitle">Лот</h4>
+        <div class="small text-muted" id="monModalSub"></div>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="monModalClose">Закрыть</button>
+    </div>
+    <div class="mon-modal-grid">
+      <div class="mon-card">
+        <h6>Основное</h6>
+        <div class="mon-kv"><span>Лот</span><span id="mLotId">—</span></div>
+        <div class="mon-kv"><span>Offer</span><span id="mOfferId">—</span></div>
+        <div class="mon-kv"><span>Статус</span><span id="mStatus">—</span></div>
+        <div class="mon-kv"><span>До</span><span id="mFinish">—</span></div>
+        <div class="mon-kv"><span>Место</span><span id="mPlace">—</span></div>
+        <div class="mon-kv"><span>Площадка</span><span id="mDealer">—</span></div>
+      </div>
+      <div class="mon-card">
+        <h6>Ставки</h6>
+        <div class="mon-kv"><span>Выкуп</span><span id="mBuyout">—</span></div>
+        <div class="mon-kv"><span>Наша ставка</span><span id="mOurBid">—</span></div>
+        <div class="mon-kv"><span>maxBid</span><span id="mMaxBid">—</span></div>
+        <div class="mon-kv"><span>minAvailable</span><span id="mMinAvail">—</span></div>
+        <div class="mon-kv"><span>Шаг</span><span id="mStep">—</span></div>
+        <div class="mon-kv"><span>Итог</span><span id="mOutcome">—</span></div>
+      </div>
+      <div class="mon-card" style="grid-column:1/-1">
+        <h6>Потолок автоставки (вручную)</h6>
+        <p class="small text-muted mb-2">Можно задать выше расчётного выкупа — автоставка будет идти до этого порога.</p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <input type="number" class="form-control" style="max-width:200px" id="mManualMax" min="0" step="1000" placeholder="сумма ₽">
+          <button type="button" class="btn btn-primary btn-sm" id="mManualSave">Сохранить</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="mManualClear">Сбросить</button>
+          <span class="small text-muted" id="mManualHint"></span>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-primary btn-sm" id="mLinkPortal" href="#" target="_blank" rel="noopener">Открыть на портале</a>
+      <a class="btn btn-outline-primary btn-sm" id="mLinkMp" href="#" target="_blank" rel="noopener">Открыть в Maxposter</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const app = document.getElementById('monApp');
+  if (!app) return;
+  const setUrl = app.dataset.setUrl;
+  const csrf = app.dataset.csrf;
+  let current = null;
+  let rows = [];
+  try {
+    rows = JSON.parse(document.getElementById('mon-rows-data').textContent);
+  } catch (e) { rows = []; }
+
+  function money(v){
+    if (v === null || v === undefined || v === '') return '—';
+    return Number(v).toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function openModal(row){
+    current = row;
+    document.getElementById('monModalTitle').textContent = row.title || ('Лот ' + row.lotId);
+    document.getElementById('monModalSub').textContent =
+      [row.year, row.mileage ? (Number(row.mileage).toLocaleString('ru-RU') + ' км') : ''].filter(Boolean).join(' · ');
+    document.getElementById('mLotId').textContent = row.lotId || '—';
+    document.getElementById('mOfferId').textContent = row.lotOfferId || '—';
+    document.getElementById('mStatus').textContent = row.statusName || row.statusCode || '—';
+    document.getElementById('mFinish').textContent = row.finishHuman || '—';
+    document.getElementById('mPlace').textContent = row.place || '—';
+    document.getElementById('mDealer').textContent = row.dealerLabel || '—';
+    document.getElementById('mBuyout').textContent = money(row.buyout);
+    document.getElementById('mOurBid').textContent = money(row.ourBid);
+    document.getElementById('mMaxBid').textContent = money(row.maxBid);
+    document.getElementById('mMinAvail').textContent = money(row.minAvailableBid);
+    document.getElementById('mStep').textContent = money(row.minBidStep);
+    document.getElementById('mOutcome').textContent = row.outcomeTitle || row.outcomeCode || '—';
+    document.getElementById('mManualMax').value = row.manualMaxBid || '';
+    document.getElementById('mManualHint').textContent = '';
+    const portal = document.getElementById('mLinkPortal');
+    portal.href = row.portalLotUrl || '#';
+    portal.style.display = row.portalLotUrl ? '' : 'none';
+    const mp = document.getElementById('mLinkMp');
+    mp.href = row.maxposterUrl || '#';
+    mp.style.display = row.maxposterUrl ? '' : 'none';
+    const back = document.getElementById('monModalBack');
+    back.hidden = false;
+    back.classList.add('show');
+  }
+  function closeModal(){
+    const back = document.getElementById('monModalBack');
+    back.classList.remove('show');
+    back.hidden = true;
+    current = null;
+  }
+
+  document.getElementById('monModalClose').addEventListener('click', closeModal);
+  document.getElementById('monModalBack').addEventListener('click', (e) => {
+    if (e.target.id === 'monModalBack') closeModal();
+  });
+
+  document.getElementById('monTbody').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr.mon-row');
+    if (!tr) return;
+    const idx = Number(tr.dataset.idx);
+    const row = rows[idx];
+    if (row) openModal(row);
+  });
+
+  async function saveManual(value){
+    if (!current || !current.lotOfferId) {
+      document.getElementById('mManualHint').textContent = 'Нет offerId';
+      return;
+    }
+    const body = new FormData();
+    body.append('lotOfferId', current.lotOfferId);
+    body.append('manualMaxBid', value === null || value === undefined ? '' : String(value));
+    const resp = await fetch(setUrl, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf },
+      body,
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok) {
+      document.getElementById('mManualHint').textContent = data.error || 'ошибка';
+      return;
+    }
+    current.manualMaxBid = data.manualMaxBid;
+    document.getElementById('mManualHint').textContent = data.manualMaxBid
+      ? ('сохранено: ' + money(data.manualMaxBid))
+      : 'сброшено';
+    const idx = rows.findIndex(r => r.lotOfferId === current.lotOfferId);
+    if (idx >= 0) {
+      rows[idx].manualMaxBid = data.manualMaxBid;
+      const tr = document.querySelector('tr.mon-row[data-idx="' + idx + '"]');
+      if (tr && tr.children[5]) {
+        tr.children[5].textContent = data.manualMaxBid
+          ? (Number(data.manualMaxBid).toLocaleString('ru-RU') + ' ₽')
+          : '—';
+      }
+    }
+  }
+  document.getElementById('mManualSave').addEventListener('click', () => {
+    const v = document.getElementById('mManualMax').value;
+    saveManual(v === '' ? null : Number(v));
+  });
+  document.getElementById('mManualClear').addEventListener('click', () => {
+    document.getElementById('mManualMax').value = '';
+    saveManual(null);
+  });
+
+  document.getElementById('monSelectAll').addEventListener('click', () => {
+    document.querySelectorAll('.mon-dealers input[type=checkbox]').forEach(cb => { cb.checked = true; });
+  });
+  document.getElementById('monSelectNone').addEventListener('click', () => {
+    document.querySelectorAll('.mon-dealers input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  });
+})();
+</script>
+{% endblock %}

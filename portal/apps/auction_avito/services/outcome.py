@@ -588,13 +588,24 @@ def build_win_email_html(offer) -> tuple[str, str]:
     return subject, html
 
 
+def resolve_win_notify_emails(offer) -> list[str]:
+    """Сначала email площадки (account), иначе общий fallback из настроек."""
+    from auction_avito.models import AvitoAuctionSettings
+
+    account = getattr(offer, 'account', None)
+    platform_raw = (getattr(account, 'win_notify_emails', None) or '').strip()
+    if platform_raw:
+        emails = parse_win_notify_emails(platform_raw)
+        if emails:
+            return emails
+    return parse_win_notify_emails(AvitoAuctionSettings.get_solo().win_notify_emails)
+
+
 def send_win_email(offer, *, emails: list[str] | None = None) -> dict[str, Any]:
     from django.core.mail import EmailMultiAlternatives
 
-    from auction_avito.models import AvitoAuctionSettings
-
     if emails is None:
-        emails = parse_win_notify_emails(AvitoAuctionSettings.get_solo().win_notify_emails)
+        emails = resolve_win_notify_emails(offer)
     if not emails:
         return {'sent': False, 'reason': 'no recipients'}
 

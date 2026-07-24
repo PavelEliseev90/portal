@@ -691,6 +691,113 @@ def analytics(request):
     return render(request, 'auction_avito/analytics.html', {'params': ctx})
 
 
+@login_required
+def monitor(request):
+    """Онлайн-монитор: активные лоты / с нашими ставками / ждут решения."""
+    from auction_avito.services.monitor import (
+        KNOWN_DEALER_LABELS,
+        dealer_label,
+        monitor_counts,
+        monitor_lots_queryset,
+        parse_dealer_ids,
+        serialize_monitor_lot,
+    )
+
+    dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
+    mode = (request.GET.get('mode') or 'active').strip()
+    if mode not in ('active', 'active_our_bid', 'waiting'):
+        mode = 'active'
+
+    counts = monitor_counts(dealer_ids=dealer_ids)
+    lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)
+    page_obj = Paginator(lots_qs, 50).get_page(request.GET.get('page') or 1)
+    rows = [serialize_monitor_lot(lot) for lot in page_obj.object_list]
+
+    dealer_choices = [
+        {'id': did, 'label': dealer_label(did), 'selected': did in dealer_ids}
+        for did in sorted(KNOWN_DEALER_LABELS)
+    ]
+    # плюс аккаунты из БД, которых нет в справочнике
+    from auction_avito.models import AvitoBidderAccount
+    for did in AvitoBidderAccount.objects.filter(is_active=True).values_list('dealer_id', flat=True):
+        if did not in KNOWN_DEALER_LABELS:
+            dealer_choices.append({
+                'id': did,
+                'label': dealer_label(did),
+                'selected': did in dealer_ids,
+            })
+    dealer_choices.sort(key=lambda x: x['id'])
+
+    q = request.GET.copy()
+    q.pop('page', None)
+    q.pop('mode', None)
+
+    return render(request, 'auction_avito/monitor.html', {
+        'counts': counts,
+        'mode': mode,
+        'dealer_ids': dealer_ids,
+        'dealer_choices': dealer_choices,
+        'rows': rows,
+        'page_obj': page_obj,
+        'querystring': q.urlencode(),
+    })
+
+
+@login_required
+@require_http_methods(['GET'])
+def monitor_data(request):
+    """JSON для автообновления счётчиков и списка монитора."""
+    from django.http import JsonResponse
+
+    from auction_avito.services.monitor import (
+        monitor_counts,
+        monitor_lots_queryset,
+        parse_dealer_ids,
+        serialize_monitor_lot,
+    )
+
+    dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
+    mode = (request.GET.get('mode') or 'active').strip()
+    if mode not in ('active', 'active_our_bid', 'waiting'):
+        mode = 'active'
+    counts = monitor_counts(dealer_ids=dealer_ids)
+    lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)[:80]
+    rows = [serialize_monitor_lot(lot) for lot in lots_qs]
+    return JsonResponse({'ok': True, 'counts': counts, 'mode': mode, 'rows': rows})
+
+
+@login_required
+@require_POST
+def monitor_set_manual_max(request):
+    """Задать / сбросить ручной потолок автоставки по офферу."""
+    from django.http import JsonResponse
+
+    lot_offer_id = request.POST.get('lotOfferId') or request.POST.get('lot_offer_id')
+    raw = (request.POST.get('manualMaxBid') or request.POST.get('manual_max_bid') or '').strip()
+    try:
+        offer = AvitoLotOffer.objects.select_related('lot').get(lot_offer_id=int(lot_offer_id))
+    except (AvitoLotOffer.DoesNotExist, TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'offer not found'}, status=404)
+
+    if raw in ('', '0', 'null', 'None'):
+        offer.manual_max_bid = None
+    else:
+        try:
+            value = int(float(str(raw).replace(' ', '').replace(',', '.')))
+        except (TypeError, ValueError):
+            return JsonResponse({'ok': False, 'error': 'invalid amount'}, status=400)
+        if value < 1:
+            offer.manual_max_bid = None
+        else:
+            offer.manual_max_bid = value
+    offer.save(update_fields=['manual_max_bid'])
+    return JsonResponse({
+        'ok': True,
+        'lotOfferId': offer.lot_offer_id,
+        'manualMaxBid': offer.manual_max_bid,
+    })
+
+
 def _parse_optional_int(raw):
     raw = (raw or '').strip()
     if raw == '':
@@ -702,6 +809,9 @@ def _parse_optional_int(raw):
 @require_http_methods(['GET', 'POST'])
 def auction_settings(request):
     """Настройки автоставок и коэффициентов рекомендаций выкупа."""
+    from auction_avito.models import AvitoBidderAccount
+    from auction_avito.services.monitor import platform_email_rows
+
     settings_obj = AvitoAuctionSettings.get_solo()
 
     if request.method == 'POST':
@@ -723,6 +833,21 @@ def auction_settings(request):
             settings_obj.win_notify_emails = (request.POST.get('win_notify_emails') or '').strip()
             settings_obj.full_clean()
             settings_obj.save()
+
+            # Email по площадкам: platform_emails_<dealer_id>
+            for key, value in request.POST.items():
+                if not key.startswith('platform_emails_'):
+                    continue
+                try:
+                    dealer_id = int(key.replace('platform_emails_', '', 1))
+                except ValueError:
+                    continue
+                acc = AvitoBidderAccount.objects.filter(dealer_id=dealer_id).first()
+                if not acc:
+                    continue
+                acc.win_notify_emails = (value or '').strip()
+                acc.save(update_fields=['win_notify_emails'])
+
             messages.success(request, 'Настройки сохранены.')
             return redirect('auction_avito:auction_settings')
         except Exception as exc:
@@ -730,6 +855,7 @@ def auction_settings(request):
 
     return render(request, 'auction_avito/auction_settings.html', {
         'auction_settings': settings_obj,
+        'platform_email_rows': platform_email_rows(),
     })
 
 

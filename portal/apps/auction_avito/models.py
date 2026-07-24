@@ -28,6 +28,12 @@ class AvitoBidderAccount(models.Model):
     )
     is_active = models.BooleanField('Активен', default=True)
     comment = models.CharField('Комментарий', max_length=500, blank=True, default='')
+    win_notify_emails = models.TextField(
+        'Email при выигрыше (площадка)',
+        blank=True,
+        default='',
+        help_text='Адреса этой площадки через запятую или с новой строки. Если пусто — берётся общий список из настроек.',
+    )
 
     class Meta:
         db_table = 'avitoBidderAccount'
@@ -386,6 +392,12 @@ class AvitoLotOffer(models.Model):
     bid = models.PositiveIntegerField('Текущая ставка', null=True, blank=True)
     bid_made_at = models.DateTimeField('bidMadeAt', null=True, blank=True)
     min_bid_step = models.PositiveIntegerField('minBidStep', null=True, blank=True)
+    manual_max_bid = models.PositiveIntegerField(
+        'Макс. ставка вручную (потолок автоставки)',
+        null=True,
+        blank=True,
+        help_text='Если задано — автоставка идёт до этого порога, даже если он выше расчётного выкупа.',
+    )
 
     sale_cost = models.PositiveIntegerField('saleCost', null=True, blank=True)
     presale_preparation_cost = models.PositiveIntegerField(
@@ -717,10 +729,10 @@ class AvitoAuctionSettings(models.Model):
     )
 
     win_notify_emails = models.TextField(
-        'Email при выигрыше лота',
+        'Email при выигрыше лота (общий fallback)',
         blank=True,
         default='',
-        help_text='Адреса через запятую или с новой строки. Письмо уходит один раз при outcome=won.',
+        help_text='Общий список, если у площадки (AvitoBidderAccount) свои адреса не заданы. Письмо уходит один раз при outcome=won.',
     )
     outcome_poll_enabled = models.BooleanField(
         'Опрашивать итоги завершённых лотов',

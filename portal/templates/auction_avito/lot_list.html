@@ -178,7 +178,10 @@
       <p class="text-muted small mb-0">Лоты B2B-аукциона: оценка, ставки, Автотека и рыночный коридор IMV.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">
+      <a class="btn btn-primary btn-sm" href="{% url 'auction_avito:monitor' %}">
+        <span class="bi bi-broadcast"></span> Монитор
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">
         <span class="bi bi-graph-up-arrow"></span> Рекомендации выкупа
       </a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">
