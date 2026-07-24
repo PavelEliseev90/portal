@@ -1,6 +1,8 @@
 """Онлайн-монитор аукциона Авито: активные лоты, наши ставки, ожидание итога."""
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.db.models import Count, Max, OuterRef, Prefetch, Q, Subquery
 from django.utils import timezone
 
@@ -128,12 +130,413 @@ def monitor_counts(*, dealer_ids: list[int] | None = None) -> dict:
         won_qs = won_qs.filter(account__dealer_id__in=dealer_ids)
     won_pending = won_qs.values('lot_id').distinct().count()
 
+    history_today = monitor_history_today_count(dealer_ids=dealer_ids)
+
     return {
         'active': active,
         'active_our_bid': active_our_bid,
         'waiting_decision': waiting,
         'won_pending': won_pending,
+        'history_today': history_today,
     }
+
+
+def monitor_dealer_counts() -> dict[int, dict]:
+    """
+    Счётчики по каждой площадке (dealer_id):
+    active / active_our_bid / waiting_decision / won_pending.
+    """
+    empty = {
+        'active': 0,
+        'active_our_bid': 0,
+        'waiting_decision': 0,
+        'won_pending': 0,
+    }
+    by_dealer: dict[int, dict] = {}
+
+    def _bucket(did) -> dict:
+        try:
+            key = int(did)
+        except (TypeError, ValueError):
+            return empty
+        if key not in by_dealer:
+            by_dealer[key] = dict(empty)
+        return by_dealer[key]
+
+    active_rows = (
+        AvitoLot.objects
+        .filter(active_lots_q())
+        .values('offers__account__dealer_id')
+        .annotate(n=Count('id', distinct=True))
+    )
+    for row in active_rows:
+        did = row.get('offers__account__dealer_id')
+        if did is None:
+            continue
+        _bucket(did)['active'] = int(row['n'] or 0)
+
+    bid_rows = (
+        AvitoLot.objects
+        .filter(active_lots_q(), offers__bid__gt=0)
+        .values('offers__account__dealer_id')
+        .annotate(n=Count('id', distinct=True))
+    )
+    for row in bid_rows:
+        did = row.get('offers__account__dealer_id')
+        if did is None:
+            continue
+        _bucket(did)['active_our_bid'] = int(row['n'] or 0)
+
+    waiting_rows = (
+        AvitoLotOffer.objects
+        .filter(waiting_outcome_offers_q())
+        .values('account__dealer_id')
+        .annotate(n=Count('lot_id', distinct=True))
+    )
+    for row in waiting_rows:
+        did = row.get('account__dealer_id')
+        if did is None:
+            continue
+        _bucket(did)['waiting_decision'] = int(row['n'] or 0)
+
+    won_rows = (
+        AvitoLotOffer.objects
+        .filter(won_pending_offers_q())
+        .values('account__dealer_id')
+        .annotate(n=Count('lot_id', distinct=True))
+    )
+    for row in won_rows:
+        did = row.get('account__dealer_id')
+        if did is None:
+            continue
+        _bucket(did)['won_pending'] = int(row['n'] or 0)
+
+    return by_dealer
+
+
+def build_monitor_dealer_choices(selected_ids: list[int] | None = None) -> list[dict]:
+    """Список площадок для фильтра монитора со счётчиками."""
+    selected_ids = selected_ids or []
+    selected_set = set(selected_ids)
+    per = monitor_dealer_counts()
+
+    ids = set(KNOWN_DEALER_LABELS) | set(per.keys())
+    for did in AvitoBidderAccount.objects.filter(is_active=True).values_list('dealer_id', flat=True):
+        ids.add(did)
+
+    rows = []
+    for did in sorted(ids):
+        c = per.get(did) or {
+            'active': 0,
+            'active_our_bid': 0,
+            'waiting_decision': 0,
+            'won_pending': 0,
+        }
+        rows.append({
+            'id': did,
+            'label': dealer_label(did),
+            'selected': did in selected_set,
+            'active': c['active'],
+            'active_our_bid': c['active_our_bid'],
+            'waiting_decision': c['waiting_decision'],
+            'won_pending': c['won_pending'],
+            'total': (
+                c['active']
+                + c['active_our_bid']
+                + c['waiting_decision']
+                + c['won_pending']
+            ),
+        })
+    return rows
+
+
+def _today_bounds():
+    """Начало/конец текущего локального дня."""
+    now = timezone.localtime()
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    return start, end
+
+
+def monitor_history_today_count(*, dealer_ids: list[int] | None = None) -> int:
+    """Лёгкий счётчик событий за сегодня (для KPI, без сборки ленты)."""
+    from auction_avito.models import AvitoAutoBidDecision, AvitoBidHistory, AvitoLotCalculation
+
+    dealer_ids = dealer_ids or []
+    start, end = _today_bounds()
+
+    lots = AvitoLot.objects.filter(
+        Q(created_at__gte=start, created_at__lt=end)
+        | Q(
+            pk__in=AvitoLotCalculation.objects.filter(
+                is_success=True,
+                calculated_at__gte=start,
+                calculated_at__lt=end,
+            ).values('lot_id')
+        )
+    )
+    if dealer_ids:
+        lots = lots.filter(offers__account__dealer_id__in=dealer_ids)
+    n_lots = lots.distinct().count()
+
+    bids = AvitoBidHistory.objects.filter(recorded_at__gte=start, recorded_at__lt=end)
+    if dealer_ids:
+        bids = bids.filter(offer__account__dealer_id__in=dealer_ids)
+    n_bids = bids.count()
+
+    outs = AvitoLotOffer.objects.filter(
+        outcome_synced_at__gte=start,
+        outcome_synced_at__lt=end,
+    ).exclude(outcome_code='')
+    if dealer_ids:
+        outs = outs.filter(account__dealer_id__in=dealer_ids)
+    n_outs = outs.count()
+
+    hands = AvitoLotOffer.objects.filter(
+        handed_to_work_at__gte=start,
+        handed_to_work_at__lt=end,
+    )
+    if dealer_ids:
+        hands = hands.filter(account__dealer_id__in=dealer_ids)
+    n_hands = hands.count()
+
+    ab = AvitoAutoBidDecision.objects.filter(
+        created_at__gte=start,
+        created_at__lt=end,
+        should_bid=True,
+    )
+    if dealer_ids:
+        ab = ab.filter(
+            Q(offer__account__dealer_id__in=dealer_ids)
+            | Q(offer__isnull=True, lot__offers__account__dealer_id__in=dealer_ids)
+        ).distinct()
+    n_ab = ab.count()
+
+    return n_lots + n_bids + n_outs + n_hands + n_ab
+
+
+def _lot_title(lot) -> str:
+    vehicle = getattr(lot, 'vehicle_avito', None) or getattr(lot, 'vehicle_autohub', None)
+    brand = getattr(vehicle, 'brand_name', '') or ''
+    model = getattr(vehicle, 'model_name', '') or ''
+    title = f'{brand} {model}'.strip()
+    return title or f'Лот {lot.lot_id}'
+
+
+def _money_ru(v) -> str:
+    try:
+        return f'{int(v):,}'.replace(',', ' ')
+    except (TypeError, ValueError):
+        return str(v or '')
+
+
+def monitor_today_history(*, dealer_ids: list[int] | None = None, limit: int = 200) -> list[dict]:
+    """
+    Лента событий за сегодня: новые лоты, ставки, итоги, передача в работу, автоставки.
+    """
+    from auction_avito.models import AvitoAutoBidDecision, AvitoBidHistory, AvitoLotCalculation
+    from auction_avito.services.outcome import OUTCOME_NAMES
+
+    dealer_ids = dealer_ids or []
+    start, end = _today_bounds()
+    events: list[dict] = []
+
+    # 1) Новые лоты (по created_at API или первому успешному расчёту за сегодня)
+    lot_qs = (
+        AvitoLot.objects
+        .select_related('venue', 'vehicle_avito')
+        .filter(
+            Q(created_at__gte=start, created_at__lt=end)
+            | Q(
+                pk__in=AvitoLotCalculation.objects.filter(
+                    is_success=True,
+                    calculated_at__gte=start,
+                    calculated_at__lt=end,
+                ).values_list('lot_id', flat=True)
+            )
+        )
+    )
+    if dealer_ids:
+        lot_qs = lot_qs.filter(offers__account__dealer_id__in=dealer_ids).distinct()
+
+    seen_new_lots = set()
+    for lot in lot_qs[:150]:
+        if lot.pk in seen_new_lots:
+            continue
+        seen_new_lots.add(lot.pk)
+        at = lot.created_at
+        if not at or at < start or at >= end:
+            # берём время первого расчёта за сегодня
+            calc = (
+                lot.calculations
+                .filter(is_success=True, calculated_at__gte=start, calculated_at__lt=end)
+                .order_by('calculated_at')
+                .first()
+            )
+            at = calc.calculated_at if calc else timezone.now()
+        events.append({
+            'id': f'new-{lot.pk}',
+            'kind': 'new_lot',
+            'kindLabel': 'Новый лот',
+            'at': at,
+            'title': _lot_title(lot),
+            'detail': f'лот {lot.lot_id}',
+            'lotPk': lot.pk,
+            'lotId': lot.lot_id,
+            'portalLotUrl': f'/auction_avito/lots/{lot.pk}/',
+            'dealerLabel': '',
+            'place': (lot.venue.display_label if lot.venue_id else '') or (lot.seller_place_name or ''),
+        })
+
+    # 2) Наши ставки
+    bid_qs = (
+        AvitoBidHistory.objects
+        .select_related('offer', 'offer__lot', 'offer__lot__vehicle_avito', 'offer__account')
+        .filter(recorded_at__gte=start, recorded_at__lt=end)
+    )
+    if dealer_ids:
+        bid_qs = bid_qs.filter(offer__account__dealer_id__in=dealer_ids)
+    for h in bid_qs.order_by('-recorded_at')[:200]:
+        offer = h.offer
+        lot = offer.lot if offer else None
+        if not lot:
+            continue
+        at = h.bid_made_at or h.recorded_at
+        events.append({
+            'id': f'bid-{h.pk}',
+            'kind': 'bid',
+            'kindLabel': 'Ставка',
+            'at': at,
+            'title': _lot_title(lot),
+            'detail': f'{_money_ru(h.bid)} ₽ · лот {lot.lot_id}',
+            'lotPk': lot.pk,
+            'lotId': lot.lot_id,
+            'portalLotUrl': f'/auction_avito/lots/{lot.pk}/',
+            'dealerLabel': dealer_label(offer.account.dealer_id) if offer.account_id else '',
+            'place': '',
+        })
+
+    # 3) Итоги (смена outcome)
+    out_qs = (
+        AvitoLotOffer.objects
+        .select_related('lot', 'lot__vehicle_avito', 'account')
+        .filter(outcome_synced_at__gte=start, outcome_synced_at__lt=end)
+        .exclude(outcome_code='')
+    )
+    if dealer_ids:
+        out_qs = out_qs.filter(account__dealer_id__in=dealer_ids)
+    for offer in out_qs.order_by('-outcome_synced_at')[:150]:
+        lot = offer.lot
+        code = (offer.outcome_code or '').strip()
+        label = OUTCOME_NAMES.get(code, code)
+        detail_bits = [label]
+        if offer.outcome_title:
+            detail_bits.append(offer.outcome_title)
+        events.append({
+            'id': f'out-{offer.pk}-{int(offer.outcome_synced_at.timestamp()) if offer.outcome_synced_at else 0}',
+            'kind': 'outcome',
+            'kindLabel': 'Итог',
+            'at': offer.outcome_synced_at,
+            'title': _lot_title(lot),
+            'detail': ' · '.join(detail_bits) + f' · лот {lot.lot_id}',
+            'lotPk': lot.pk,
+            'lotId': lot.lot_id,
+            'portalLotUrl': f'/auction_avito/lots/{lot.pk}/',
+            'dealerLabel': dealer_label(offer.account.dealer_id) if offer.account_id else '',
+            'place': '',
+            'outcomeCode': code,
+        })
+
+    # 4) Переданы в работу
+    hand_qs = (
+        AvitoLotOffer.objects
+        .select_related('lot', 'lot__vehicle_avito', 'account', 'handed_to_work_by')
+        .filter(handed_to_work_at__gte=start, handed_to_work_at__lt=end)
+    )
+    if dealer_ids:
+        hand_qs = hand_qs.filter(account__dealer_id__in=dealer_ids)
+    for offer in hand_qs.order_by('-handed_to_work_at')[:100]:
+        lot = offer.lot
+        who = ''
+        if offer.handed_to_work_by_id:
+            u = offer.handed_to_work_by
+            who = f'{u.last_name or ""} {u.first_name or ""}'.strip() or u.username
+        events.append({
+            'id': f'hand-{offer.pk}',
+            'kind': 'handed',
+            'kindLabel': 'В работу',
+            'at': offer.handed_to_work_at,
+            'title': _lot_title(lot),
+            'detail': (f'передан в работу' + (f' · {who}' if who else '')) + f' · лот {lot.lot_id}',
+            'lotPk': lot.pk,
+            'lotId': lot.lot_id,
+            'portalLotUrl': f'/auction_avito/lots/{lot.pk}/',
+            'dealerLabel': dealer_label(offer.account.dealer_id) if offer.account_id else '',
+            'place': '',
+        })
+
+    # 5) Автоставка разрешена (should_bid) — без спама skip
+    ab_qs = (
+        AvitoAutoBidDecision.objects
+        .select_related('lot', 'lot__vehicle_avito', 'offer', 'offer__account')
+        .filter(created_at__gte=start, created_at__lt=end, should_bid=True)
+    )
+    if dealer_ids:
+        ab_qs = ab_qs.filter(
+            Q(offer__account__dealer_id__in=dealer_ids)
+            | Q(offer__isnull=True, lot__offers__account__dealer_id__in=dealer_ids)
+        ).distinct()
+    for d in ab_qs.order_by('-created_at')[:100]:
+        lot = d.lot
+        if not lot and d.offer_id:
+            lot = d.offer.lot
+        if not lot:
+            continue
+        amount = d.bid_amount or d.next_bid
+        detail = d.reason or 'автоставка разрешена'
+        if amount:
+            detail = f'{detail} · {_money_ru(amount)} ₽'
+        dealer = ''
+        if d.offer_id and d.offer.account_id:
+            dealer = dealer_label(d.offer.account.dealer_id)
+        events.append({
+            'id': f'ab-{d.pk}',
+            'kind': 'autobid',
+            'kindLabel': 'Автоставка',
+            'at': d.created_at,
+            'title': _lot_title(lot),
+            'detail': f'{detail} · лот {lot.lot_id}',
+            'lotPk': lot.pk,
+            'lotId': lot.lot_id,
+            'portalLotUrl': f'/auction_avito/lots/{lot.pk}/',
+            'dealerLabel': dealer,
+            'place': '',
+        })
+
+    # Сортировка и сериализация времени
+    events.sort(key=lambda e: e.get('at') or start, reverse=True)
+    out = []
+    seen_ids = set()
+    for ev in events:
+        eid = ev.get('id')
+        if eid in seen_ids:
+            continue
+        seen_ids.add(eid)
+        at = ev.get('at')
+        ev['atHuman'] = _format_dt_local(at) if at else ''
+        ev['atIso'] = ''
+        if at:
+            try:
+                ev['atIso'] = timezone.localtime(at).isoformat()
+            except Exception:
+                ev['atIso'] = str(at)
+        # datetime не JSON-сериализуется в json_script напрямую если оставить объект —
+        # уберём сырой at из ответа для шаблона/JSON
+        ev.pop('at', None)
+        out.append(ev)
+        if len(out) >= limit:
+            break
+    return out
 
 
 def monitor_revision(*, dealer_ids: list[int] | None = None) -> str:

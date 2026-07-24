@@ -693,42 +693,36 @@ def analytics(request):
 
 @login_required
 def monitor(request):
-    """Онлайн-монитор: активные лоты / с нашими ставками / ждут решения / выигранные."""
+    """Онлайн-монитор: активные лоты / ставки / итоги / выигранные / история за сегодня."""
     from auction_avito.services.monitor import (
-        KNOWN_DEALER_LABELS,
-        dealer_label,
+        build_monitor_dealer_choices,
         monitor_counts,
         monitor_lots_queryset,
         monitor_revision,
+        monitor_today_history,
         parse_dealer_ids,
         serialize_monitor_lot,
     )
 
     dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
     mode = (request.GET.get('mode') or 'active').strip()
-    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending'):
+    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending', 'history_today'):
         mode = 'active'
 
     counts = monitor_counts(dealer_ids=dealer_ids)
-    lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)
-    page_obj = Paginator(lots_qs, 50).get_page(request.GET.get('page') or 1)
-    rows = [serialize_monitor_lot(lot) for lot in page_obj.object_list]
     revision = monitor_revision(dealer_ids=dealer_ids)
+    rows = []
+    page_obj = None
+    history_events = []
 
-    dealer_choices = [
-        {'id': did, 'label': dealer_label(did), 'selected': did in dealer_ids}
-        for did in sorted(KNOWN_DEALER_LABELS)
-    ]
-    # плюс аккаунты из БД, которых нет в справочнике
-    from auction_avito.models import AvitoBidderAccount
-    for did in AvitoBidderAccount.objects.filter(is_active=True).values_list('dealer_id', flat=True):
-        if did not in KNOWN_DEALER_LABELS:
-            dealer_choices.append({
-                'id': did,
-                'label': dealer_label(did),
-                'selected': did in dealer_ids,
-            })
-    dealer_choices.sort(key=lambda x: x['id'])
+    if mode == 'history_today':
+        history_events = monitor_today_history(dealer_ids=dealer_ids, limit=250)
+    else:
+        lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)
+        page_obj = Paginator(lots_qs, 50).get_page(request.GET.get('page') or 1)
+        rows = [serialize_monitor_lot(lot) for lot in page_obj.object_list]
+
+    dealer_choices = build_monitor_dealer_choices(dealer_ids)
 
     q = request.GET.copy()
     q.pop('page', None)
@@ -741,6 +735,7 @@ def monitor(request):
         'dealer_choices': dealer_choices,
         'rows': rows,
         'page_obj': page_obj,
+        'history_events': history_events,
         'querystring': q.urlencode(),
         'revision': revision,
         'feed_chat': build_aav_feed_embed(request),
@@ -755,21 +750,26 @@ def monitor_data(request):
 
     from auction_avito.services.monitor import (
         monitor_counts,
+        monitor_dealer_counts,
         monitor_lots_queryset,
         monitor_revision,
+        monitor_today_history,
         parse_dealer_ids,
         serialize_monitor_lot,
     )
 
     dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
     mode = (request.GET.get('mode') or 'active').strip()
-    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending'):
+    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending', 'history_today'):
         mode = 'active'
 
     # Отпечаток глобальный — не зависит от выбранной вкладки/статуса
     revision = monitor_revision(dealer_ids=dealer_ids)
     since = (request.GET.get('revision') or '').strip()
     counts = monitor_counts(dealer_ids=dealer_ids)
+    dealer_counts = {
+        str(k): v for k, v in monitor_dealer_counts().items()
+    }
 
     if since and since == revision:
         return JsonResponse({
@@ -777,21 +777,25 @@ def monitor_data(request):
             'changed': False,
             'revision': revision,
             'counts': counts,
+            'dealerCounts': dealer_counts,
         })
 
-    # При изменении — отдаём rows только если клиент их просит (soft-update).
-    # Для полной перезагрузки страницы достаточно changed+revision.
     want_rows = (request.GET.get('rows') or '1').strip() not in ('0', 'false', 'no')
     payload = {
         'ok': True,
         'changed': True,
         'revision': revision,
         'counts': counts,
+        'dealerCounts': dealer_counts,
         'mode': mode,
     }
     if want_rows:
-        lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)[:80]
-        payload['rows'] = [serialize_monitor_lot(lot) for lot in lots_qs]
+        if mode == 'history_today':
+            payload['history'] = monitor_today_history(dealer_ids=dealer_ids, limit=250)
+            payload['rows'] = []
+        else:
+            lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)[:80]
+            payload['rows'] = [serialize_monitor_lot(lot) for lot in lots_qs]
     return JsonResponse(payload)
 
 
