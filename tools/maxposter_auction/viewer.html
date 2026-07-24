@@ -574,7 +574,7 @@
         try{
           const tr = document.querySelector(`tr[data-i][data-key="${CSS.escape(String(item.key))}"]`);
           const btn = tr?.querySelector("button[data-calc]") || null;
-          await performCalcOnRow(tr, item.offer, btn);
+          await performCalcOnRow(tr, item.offer, btn, { force: false });
         }finally{
           calcQueueRunning--;
           drainCalcQueue();
@@ -586,40 +586,42 @@
   }
 
   /** Поля, по которым решаем: нужен повторный пересчёт после reload из Maxposter. */
+  const CALC_REUSE_MS = 2 * 60 * 60 * 1000;
+  function calcCacheIsFresh(cached){
+    if (!cached?.ok || cached.answer?.estimation_price == null) return false;
+    const at = Number(cached.cachedAtMs || 0);
+    if (!at) return true; // без метки — считаем живым до явного сброса
+    return (Date.now() - at) < CALC_REUSE_MS;
+  }
   function offerSyncFingerprint(offer){
     if (!offer || typeof offer !== "object") return "";
     const lot = offer.lot || {};
+    // Только «рыночные» поля: смена ставки/статуса не должна сжигать кэш расчёта.
     return JSON.stringify({
-      updatedAt: offer.updatedAt ?? null,
-      status: safeGet(offer, "status.status", null),
-      bid: offer.bid ?? null,
       minPrice: lot.minPrice ?? null,
-      maxBid: lot.maxBid ?? null,
-      minAvailableBid: lot.minAvailableBid ?? null,
-      maxAvailableBid: lot.maxAvailableBid ?? null,
-      minBidStep: offer.minBidStep ?? null,
-      finishAt: lot.finishAt ?? lot.originFinishAt ?? null,
+      year: lot.vehicle?.year?.id ?? lot.vehicle?.year ?? lot.autohubVehicle?.year ?? null,
+      mileage: lot.vehicle?.mileage ?? null,
+      modificationID: lot.autohubVehicle?.modificationID ?? null,
     });
   }
   function collectKeysNeedingAutoCalc(allKeys, changedKeys){
-    const changedSet = new Set((changedKeys || []).map(String));
     const keys = [];
     for (const key of allKeys || []){
       const k = String(key);
-      if (changedSet.has(k)) calcCache.delete(k);
       const entry = offerStore.get(k);
       if (!entry) continue;
       const offer = offerWithViewerMeta(entry);
       const fp = offerSyncFingerprint(offer);
       const cached = calcCache.get(k);
-      if (!cached?.ok || cached.answer?.estimation_price == null){
-        keys.push(k);
-        continue;
+      if (calcCacheIsFresh(cached)){
+        // если сменилась машина/пробег/цена — сбрасываем
+        if (cached.syncFp && cached.syncFp !== fp){
+          calcCache.delete(k);
+        } else {
+          continue;
+        }
       }
-      if (cached.syncFp !== fp){
-        calcCache.delete(k);
-        keys.push(k);
-      }
+      keys.push(k);
     }
     return keys;
   }
@@ -628,7 +630,7 @@
     for (const key of keys){
       const k = String(key);
       const cached = calcCache.get(k);
-      if (cached?.ok && cached.answer?.estimation_price != null) continue;
+      if (calcCacheIsFresh(cached)) continue;
       if (calcQueue.some((q) => q.key === k)) continue;
       const entry = offerStore.get(k);
       if (!entry) continue;
@@ -1221,21 +1223,29 @@
       bid: Number(finalBid),
     };
     const dealerId = resolveDealerIdForCalc(offer) || undefined;
-    const resp = await fetch(BID_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password,
-        dealerId,
-        lotOfferId,
-        lotId,
-        dryRun: false,
-        bidAmount: Number(finalBid),
-        bidPayload,
-      }),
+    const bidBody = JSON.stringify({
+      email,
+      password,
+      dealerId,
+      lotOfferId,
+      lotId,
+      dryRun: false,
+      bidAmount: Number(finalBid),
+      bidPayload,
     });
-    const data = await resp.json().catch(() => ({}));
+    let data = {};
+    let resp = null;
+    for (let attempt = 0; attempt < 4; attempt++){
+      resp = await fetch(BID_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: bidBody,
+      });
+      data = await resp.json().catch(() => ({}));
+      const busy = resp.status === 409 || /bid already running/i.test(String(data?.error || ""));
+      if (!busy) break;
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+    }
     if (!resp.ok || !data.ok){
       const msg = data?.bid_result?.note || data?.error || data?.stderr || data?.stdout || `HTTP ${resp.status}`;
       throw new Error(String(msg).slice(0, 500));
@@ -1266,12 +1276,14 @@
       };
     }
   }
-  async function calculateForOffer(offer){
+  async function calculateForOffer(offer, { force = false } = {}){
     const { calc: calcUrl } = getPortalApiUrls();
+    const payload = buildOfferSyncPayload(offer);
+    if (force) payload.forceRecalc = true;
     const resp = await fetch(calcUrl, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(buildOfferSyncPayload(offer)),
+      body: JSON.stringify(payload),
     });
     if (!resp.ok){
       const t = await resp.text().catch(()=> "");
@@ -1296,7 +1308,7 @@
       tr.classList.add("row-offfeed");
     }
   }
-  async function performCalcOnRow(tr, offer, calcBtn){
+  async function performCalcOnRow(tr, offer, calcBtn, { force = false } = {}){
     const key = calcKey(offer);
     let prevBtn = "";
     if (calcBtn){
@@ -1305,16 +1317,23 @@
       calcBtn.innerHTML = `<span class="spin"></span>Считаю…`;
     }
     try{
-      const result = await calculateForOffer(offer);
+      const result = await calculateForOffer(offer, { force });
       if (result.sync) applyPortalSyncToOffer(key, result.sync, offer);
       if (!result.ok) {
         throw new Error(result.error || "Ошибка расчёта");
+      }
+      let cachedAtMs = Date.now();
+      const cachedAtRaw = result.answer?.cached_at;
+      if (cachedAtRaw){
+        const parsed = Date.parse(cachedAtRaw);
+        if (Number.isFinite(parsed)) cachedAtMs = parsed;
       }
       calcCache.set(key, {
         ok: true,
         answer: result.answer,
         raw: result.raw,
         syncFp: offerSyncFingerprint(offer),
+        cachedAtMs,
       });
       updateRowAfterCalc(key, offer);
       // автоставка: после успешного расчёта (условия — на портале)
@@ -1790,7 +1809,7 @@
           e.stopPropagation();
           const key = tr.getAttribute("data-key");
           const o = findOfferByKey(key) || offer;
-          await performCalcOnRow(tr, o, calcBtn);
+          await performCalcOnRow(tr, o, calcBtn, { force: true });
           return;
         }
 

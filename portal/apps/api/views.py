@@ -339,8 +339,11 @@ def avito_auction_bid_set(request):
     from auction_avito.services.sync import _dt
     from auction_avito.services.offer_api import build_offer_state_response
 
-    body_unicode = request.body.decode().replace("'", '"')
-    data = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Expected JSON object'}, status=status.HTTP_400_BAD_REQUEST)
 
     sync_source = data.get('Offer') or data.get('offer') or data
     if isinstance(sync_source, dict):
@@ -439,8 +442,11 @@ def avito_auction_offer_get(request):
     """Состояние оффера/ставки на портале по LotOfferId или LotId."""
     from auction_avito.services.offer_api import build_offer_state_response, resolve_offer_by_ids
 
-    body_unicode = request.body.decode().replace("'", '"')
-    data = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        data = {}
     lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
     lot_id = data.get('LotId') or data.get('lotId')
     if not lot_offer_id and not lot_id:
@@ -477,8 +483,11 @@ def avito_auction_offers_state(request):
     """Пакетное чтение ставок/офферов для парсера."""
     from auction_avito.services.offer_api import build_offers_state_map
 
-    body_unicode = request.body.decode().replace("'", '"')
-    data = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        data = {}
     lot_offer_ids = data.get('lotOfferIds') or data.get('lotOfferId') or []
     lot_ids = data.get('lotIds') or data.get('lotId') or []
     if isinstance(lot_offer_ids, (int, str)):
@@ -560,9 +569,10 @@ def avito_auction_outcome_queue(request):
         lookback_days = request.GET.get('lookback_days', 21)
         recheck_hours = request.GET.get('recheck_hours', 6)
     else:
-        try:
-            data = json.loads(request.body.decode().replace("'", '"') or '{}')
-        except Exception:
+        data, parse_error = _parse_1c_exchange_body(request)
+        if parse_error is not None:
+            data = {}
+        elif not isinstance(data, dict):
             data = {}
         limit = data.get('limit', 30)
         lookback_days = data.get('lookback_days', 21)
@@ -627,9 +637,10 @@ def avito_auction_outcome_set(request):
     from auction_avito.services.outcome import apply_offer_outcome
     from auction_avito.services.offer_api import build_offer_state_response, resolve_offer_by_ids
 
-    try:
-        data = json.loads(request.body.decode().replace("'", '"') or '{}')
-    except Exception:
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
         return JsonResponse({'error': 'invalid json'}, status=status.HTTP_400_BAD_REQUEST)
 
     lot_offer_id = data.get('lotOfferId') or data.get('LotOfferId')
@@ -684,9 +695,10 @@ def avito_auction_auto_bid_decide(request):
         extract_risk_flags_from_payload,
     )
 
-    try:
-        data = json.loads(request.body.decode().replace("'", '"'))
-    except Exception:
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
         data = {}
 
     settings_obj = AvitoAuctionSettings.get_solo()
@@ -933,19 +945,44 @@ def get_car_object(car, unit):
 @api_view(['POST'])
 def calculate_car(request):
     from auction_avito.services.calculate import (
+        answer_from_cached_calculation,
         attach_avito_sync_to_answer,
+        get_reusable_calculation,
         normalize_calculate_car_request,
         persist_auction_calculation,
+        upsert_lot_from_calculate_request,
     )
 
     answer = ''
     auction = False
     info = None
     dc = None
+    # До ветвлений — иначе UnboundLocalError при сбое Maxposter / пустом ответе.
+    price = None
+    price_sale = 0
+    list_info_price = []
+    zachita_ot_ubitka = 0
+    finance_price = 0
+    iznos_price = 0
+    discount_torg = 0
+    zna = 0
+    day_sale_all = 90
+    zg = 'Неопределена'
+    kf = 100
+    price_sale_rdo = 0
+    price_sale_kor = 0
 
     try:
         info = json.loads(request.body)
         info = normalize_calculate_car_request(info)
+
+        # Последний успешный расчёт лота младше 2 ч — без Maxposter и формулы.
+        cached = get_reusable_calculation(info)
+        if cached is not None:
+            upsert_lot_from_calculate_request(info)
+            answer = answer_from_cached_calculation(cached)
+            answer = attach_avito_sync_to_answer(answer, cached)
+            return JsonResponse({'answer': answer}, status=status.HTTP_200_OK)
 
         autohubVehicle  = info['autohubVehicle']
         vehicle         = info['vehicle']
@@ -1032,6 +1069,13 @@ def calculate_car(request):
         }
             
         r   = requests.post(URL_TEMPLATE, auth=HTTPBasicAuth(username, password), json=data_info)
+        if r.status_code != 200:
+            raise ValueError(
+                'Maxposter express API HTTP {}: {}'.format(
+                    r.status_code, (r.text or '')[:400],
+                )
+            )
+
         if r.status_code == 200:
             
             kf_auction          = 75 
@@ -1041,6 +1085,7 @@ def calculate_car(request):
             zachita_ot_ubitka   = 0
             finance_price       = 0
             iznos_price         = 0
+            discount_torg       = 0
             
             
             zg = "Неопределена"
@@ -1233,20 +1278,22 @@ def calculate_car(request):
         
         #Смотрим автотеку
         
-        autoteka_events = info['autoteka']['report']['events']
+        autoteka_events = ((info.get('autoteka') or {}).get('report') or {}).get('events') or []
         auction_text    = ''
         for event in autoteka_events:
-            if event['type'] == 'taxi' and event['status'] != 'ok':
+            if event.get('type') == 'taxi' and event.get('status') != 'ok':
                 auction = True
                 auction_text = auction_text + '' + 'такси / '
-            elif event['type'] == 'carsharing' and event['status'] != 'ok':
+            elif event.get('type') == 'carsharing' and event.get('status') != 'ok':
                 auction = True
                 auction_text = auction_text + '' + 'каршеринг / '
-            elif event['type'] == 'mileageTwisted' and event['status'] != 'ok':
+            elif event.get('type') == 'mileageTwisted' and event.get('status') != 'ok':
                 auction = True
                 auction_text = auction_text + '' + 'пробег / '
 
         if auction:
+            if price is None:
+                raise ValueError('Цена расчёта (price) не получена до корректировки аукциона')
             price_new  = price - (price * 40 / 100)
             diff       = price - price_new
             price = price_new
@@ -1316,6 +1363,8 @@ def calculate_car(request):
         #         }
                
         #ИТОГ
+        if price is None:
+            raise ValueError('Цена расчёта (price) не получена')
         estimation_price    = round(price, -2)
         profit              = round(price_sale - price, -2)
         difference_sum          = 0     
