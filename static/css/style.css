@@ -1364,7 +1364,6 @@ body.modal-open .mobile-filters-button-container {
   position: relative;
   background-color: #E1F0EE;
   background-clip: padding-box;
-  margin-top: 3rem;
   padding: 0.4rem 0.8rem 0.8rem;
   border-radius: 0.2rem;
   -moz-transition: margin-top 0.2s linear, background-color 0.2s linear, border-bottom 0.2s linear;

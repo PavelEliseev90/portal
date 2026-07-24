@@ -179,7 +179,6 @@
           <th>maxBid</th>
           <th>До</th>
           <th>Площадка</th>
-          <th>Место</th>
         </tr>
       </thead>
       <tbody id="monTbody">
@@ -191,7 +190,7 @@
           <td>
             <div class="fw-semibold">{{ r.title }}</div>
             <div class="text-muted small">
-              {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:0 }} км · {% endif %}лот {{ r.lotId }}
+              {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:"0g" }} км {% endif %}
             </div>
             {% if r.autoBidLabel %}
               {% if r.isOutbid %}
@@ -207,14 +206,14 @@
             {{ r.statusName|default:r.statusCode|default:"—" }}
             {% if r.outcomeTitle %}<div class="small text-warning">{{ r.outcomeTitle }}</div>{% endif %}
           </td>
-          <td class="mon-money buyout">{% if r.buyout %}{{ r.buyout|floatformat:0 }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money our">{% if r.ourBid %}{{ r.ourBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money">{% if r.ourBidsCount %}{{ r.ourBidsCount }}{% else %}—{% endif %}</td>
+          <td class="mon-money buyout  text-end">{% if r.buyout %}{{ r.buyout|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money our  text-end">{% if r.ourBid %}{{ r.ourBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money  text-end">{% if r.ourBidsCount %}{{ r.ourBidsCount }}{% else %}—{% endif %}</td>
           <td>
             {% if r.sellerWishPrice %}
-            <div class="mon-money">{{ r.sellerWishPrice|floatformat:0 }} ₽</div>
+            <div class="mon-money text-end">{{ r.sellerWishPrice|floatformat:"0g" }} ₽</div>
             {% else %}
-            <div class="text-muted">—</div>
+            <div class="text-muted text-end">—</div>
             {% endif %}
             {% if r.tradeInComment %}<div class="mon-wish" title="{{ r.tradeInComment }}">{{ r.tradeInComment|truncatechars:80 }}</div>{% endif %}
           </td>
@@ -224,11 +223,11 @@
               {% if r.autoBidAt %}<div class="muted">{{ r.autoBidAt }}</div>{% endif %}
             </div>
           </td>
-          <td class="mon-money js-manual-max">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money">{% if r.maxBid %}{{ r.maxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money js-manual-max text-end">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money  text-end">{% if r.maxBid %}{{ r.maxBid|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
           <td>{{ r.finishHuman|default:"—" }}</td>
           <td class="small">{{ r.dealerLabel|default:"—" }}</td>
-          <td class="small">{{ r.place|default:"—" }}</td>
+        
         </tr>
         {% empty %}
         <tr><td colspan="13" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
@@ -506,4 +505,5 @@
   });
 })();
 </script>
+
 {% endblock %}
