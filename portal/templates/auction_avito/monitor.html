@@ -8,12 +8,13 @@
 <style>
   .mon-kpi {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.75rem;
     margin-bottom: 1rem;
   }
-  @media (max-width: 992px) { .mon-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 520px) { .mon-kpi { grid-template-columns: 1fr; } }
+  @media (max-width: 1100px) { .mon-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 700px) { .mon-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .mon-kpi { grid-template-columns: 1fr; } }
   .mon-kpi a {
     display: block;
     text-decoration: none;
@@ -96,13 +97,34 @@
   }
   .mon-auto-text .muted { color: #94a3b8; font-size: .72rem; }
   .mon-dealers {
-    display: flex; flex-wrap: wrap; gap: .35rem .5rem; max-height: 9rem; overflow: auto;
+    display: flex; flex-wrap: wrap; gap: .45rem .55rem; max-height: 14rem; overflow: auto;
     padding: .5rem .65rem; border: 1px solid rgba(0,42,90,.12); border-radius: .75rem; background: #fff;
   }
   .mon-dealers label {
-    display: inline-flex; align-items: center; gap: .3rem;
-    font-size: .8rem; margin: 0; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+    font-size: .8rem; margin: 0; cursor: pointer;
+    padding: .25rem .45rem; border-radius: .45rem;
+    border: 1px solid rgba(0,42,90,.08); background: #f8fafc;
   }
+  .mon-d-counters {
+    display: inline-flex; gap: .2rem; flex-wrap: wrap;
+  }
+  .mon-d-c {
+    display: inline-block; min-width: 1.35rem; text-align: center;
+    font-size: .68rem; font-weight: 700; line-height: 1.35;
+    padding: .05rem .28rem; border-radius: .3rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .mon-d-c.zero { opacity: .35; font-weight: 500; }
+  .mon-d-c.a { background: #dbeafe; color: #1e40af; }
+  .mon-d-c.b { background: #dcfce7; color: #166534; }
+  .mon-d-c.w { background: #fef3c7; color: #92400e; }
+  .mon-d-c.g { background: #bbf7d0; color: #14532d; }
+  .mon-dealers-legend {
+    display: flex; flex-wrap: wrap; gap: .5rem .85rem;
+    font-size: .72rem; color: #6c7a92; margin-top: .45rem;
+  }
+  .mon-dealers-legend span { display: inline-flex; align-items: center; gap: .25rem; }
   .mon-modal-back {
     position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 1050;
     display: none; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow: auto;
@@ -130,6 +152,39 @@
   .mon-wish {
     font-size: .78rem; color: #64748b; max-width: 140px; line-height: 1.25;
   }
+  .mon-history-list { display: flex; flex-direction: column; gap: .55rem; }
+  .mon-hist-item {
+    display: grid;
+    grid-template-columns: 7.5rem 7rem 1fr auto;
+    gap: .75rem;
+    align-items: start;
+    padding: .7rem .85rem;
+    border: 1px solid rgba(0,42,90,.08);
+    border-radius: .75rem;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .mon-hist-item:hover { border-color: rgba(0,80,157,.35); background: #f8fbff; color: inherit; }
+  @media (max-width: 800px) {
+    .mon-hist-item { grid-template-columns: 1fr; gap: .25rem; }
+  }
+  .mon-hist-time { font-variant-numeric: tabular-nums; color: #64748b; font-size: .85rem; white-space: nowrap; }
+  .mon-hist-kind {
+    display: inline-block; font-size: .72rem; font-weight: 700;
+    padding: .2rem .45rem; border-radius: .35rem; white-space: nowrap;
+  }
+  .mon-hist-kind.new_lot { background: #dbeafe; color: #1e40af; }
+  .mon-hist-kind.bid { background: #dcfce7; color: #166534; }
+  .mon-hist-kind.outcome { background: #fef3c7; color: #92400e; }
+  .mon-hist-kind.outcome-won { background: #bbf7d0; color: #14532d; }
+  .mon-hist-kind.outcome-lost { background: #fecaca; color: #991b1b; }
+  .mon-hist-kind.handed { background: #e0e7ff; color: #3730a3; }
+  .mon-hist-kind.autobid { background: #f3e8ff; color: #6b21a8; }
+  .mon-hist-title { font-weight: 650; }
+  .mon-hist-detail { color: #64748b; font-size: .82rem; margin-top: .15rem; }
+  .mon-hist-dealer { font-size: .78rem; color: #94a3b8; text-align: right; }
 </style>
 {% endblock %}
 
@@ -167,13 +222,25 @@
         <button type="submit" class="btn btn-primary btn-sm">Применить</button>
       </div>
     </div>
-    <div class="mon-dealers">
+    <div class="mon-dealers" id="monDealers">
       {% for d in dealer_choices %}
-      <label>
+      <label title="Активные / со ставкой / ждут / выигранные">
         <input type="checkbox" name="dealer" value="{{ d.id }}" {% if d.selected %}checked{% endif %}>
-        {{ d.label }}
+        <span>{{ d.label }}</span>
+        <span class="mon-d-counters">
+          <span class="mon-d-c a{% if not d.active %} zero{% endif %}" data-dealer="{{ d.id }}" data-k="active">{{ d.active }}</span>
+          <span class="mon-d-c b{% if not d.active_our_bid %} zero{% endif %}" data-dealer="{{ d.id }}" data-k="active_our_bid">{{ d.active_our_bid }}</span>
+          <span class="mon-d-c w{% if not d.waiting_decision %} zero{% endif %}" data-dealer="{{ d.id }}" data-k="waiting_decision">{{ d.waiting_decision }}</span>
+          <span class="mon-d-c g{% if not d.won_pending %} zero{% endif %}" data-dealer="{{ d.id }}" data-k="won_pending">{{ d.won_pending }}</span>
+        </span>
       </label>
       {% endfor %}
+    </div>
+    <div class="mon-dealers-legend">
+      <span><span class="mon-d-c a">N</span> активные</span>
+      <span><span class="mon-d-c b">N</span> со ставкой</span>
+      <span><span class="mon-d-c w">N</span> ждут решения</span>
+      <span><span class="mon-d-c g">N</span> выигранные</span>
     </div>
   </form>
 
@@ -195,9 +262,41 @@
       <div class="num" data-count="won_pending">{{ counts.won_pending }}</div>
       <div class="lbl">Выигранные (не в работу)</div>
     </a>
+    <a href="?mode=history_today{% if qs %}&{{ qs }}{% endif %}" data-mode="history_today" class="{% if mode == 'history_today' %}active{% endif %}">
+      <div class="num" data-count="history_today">{{ counts.history_today }}</div>
+      <div class="lbl">История за сегодня</div>
+    </a>
     {% endwith %}
   </div>
 
+  {% if mode == 'history_today' %}
+  <div class="portal-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <strong>События за сегодня</strong>
+        <div class="small text-muted">Новые лоты, ставки, итоги, автоставки, передача в работу</div>
+      </div>
+      <div class="small text-muted" id="monHistCount">{{ history_events|length }} записей</div>
+    </div>
+    <div class="mon-history-list" id="monHistoryList">
+      {% for e in history_events %}
+      <a class="mon-hist-item" href="{{ e.portalLotUrl }}" {% if e.portalLotUrl %}target="_blank" rel="noopener"{% endif %}>
+        <div class="mon-hist-time">{{ e.atHuman|default:"—" }}</div>
+        <div>
+          <span class="mon-hist-kind {{ e.kind }}{% if e.kind == 'outcome' and e.outcomeCode %} outcome-{{ e.outcomeCode }}{% endif %}">{{ e.kindLabel }}</span>
+        </div>
+        <div>
+          <div class="mon-hist-title">{{ e.title }}</div>
+          <div class="mon-hist-detail">{{ e.detail }}{% if e.place %} · {{ e.place }}{% endif %}</div>
+        </div>
+        <div class="mon-hist-dealer">{{ e.dealerLabel }}</div>
+      </a>
+      {% empty %}
+      <div class="text-muted py-4 text-center" id="monHistEmpty">За сегодня событий пока нет</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
   <div class="portal-panel mon-table-wrap">
     <table class="mon-table" id="monTable">
       <thead>
@@ -286,9 +385,11 @@
     </div>
     {% endif %}
   </div>
+  {% endif %}
 </div>
 
 {{ rows|json_script:"mon-rows-data" }}
+{{ history_events|json_script:"mon-history-data" }}
 
 <div class="mon-modal-back" id="monModalBack" hidden>
   <div class="mon-modal" role="dialog" aria-modal="true">
@@ -574,6 +675,21 @@
     });
   }
 
+  function updateDealerCounts(map){
+    if (!map) return;
+    Object.keys(map).forEach(function(did){
+      const c = map[did] || {};
+      ['active', 'active_our_bid', 'waiting_decision', 'won_pending'].forEach(function(k){
+        const el = document.querySelector('.mon-d-c[data-dealer="' + did + '"][data-k="' + k + '"]');
+        if (!el) return;
+        const n = Number(c[k] || 0);
+        el.textContent = String(n);
+        if (n) el.classList.remove('zero');
+        else el.classList.add('zero');
+      });
+    });
+  }
+
   function pulseLive(text){
     const dot = document.getElementById('monLiveDot');
     const label = document.getElementById('monLiveText');
@@ -602,6 +718,7 @@
         return;
       }
       if (data.counts) updateCounts(data.counts);
+      if (data.dealerCounts) updateDealerCounts(data.dealerCounts);
       const nextRev = data.revision || '';
       if (data.changed && nextRev && nextRev !== revision) {
         pulseLive('обновление…');
