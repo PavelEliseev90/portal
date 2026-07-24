@@ -609,7 +609,9 @@ class Handler(SimpleHTTPRequestHandler):
         if not is_frozen() and not os.path.exists(SCRIPT_BID_PATH):
             self._send_json(500, {"ok": False, "error": f"Script not found: {SCRIPT_BID_PATH}"})
             return
-        if not _bid_lock.acquire(blocking=False):
+        # Ждём освобождения предыдущей ставки (сериализация Playwright), а не 409 сразу.
+        bid_wait_sec = float(os.environ.get("BID_LOCK_WAIT_SEC", "180") or "180")
+        if not _bid_lock.acquire(blocking=True, timeout=max(1.0, bid_wait_sec)):
             self._send_json(409, {"ok": False, "error": "Bid already running"})
             return
         try:

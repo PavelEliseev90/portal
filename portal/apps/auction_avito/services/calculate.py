@@ -1,7 +1,10 @@
 """
 Сохранение лота и истории расчётов из POST /api/calculate_car/.
 """
+from datetime import timedelta
+
 from django.db import transaction
+from django.utils import timezone
 
 from auction_avito.models import (
     AvitoAutotekaEvent,
@@ -18,6 +21,117 @@ from auction_avito.services.sync import (
     upsert_offer_from_api,
 )
 from auction_avito.services.venues import resolve_venue_from_payload
+
+# Повторный Maxposter/формула не чаще, чем раз в TTL — берём последний успешный расчёт лота.
+CALC_REUSE_TTL = timedelta(hours=2)
+
+
+def _as_aware(dt):
+    """Нормализует datetime к aware (текущая TZ Django), без сюрпризов при сравнении."""
+    if dt is None:
+        return None
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+
+def _force_recalc_requested(payload: dict) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    for key in ('forceRecalc', 'force_recalc', 'force', 'recalculate'):
+        val = payload.get(key)
+        if val in (True, 1, '1', 'true', 'True', 'yes', 'YES'):
+            return True
+    return False
+
+
+def get_reusable_calculation(payload: dict, *, force: bool = False, max_age=None):
+    """
+    Последний успешный авторасчёт лота, если он не старше max_age (по умолчанию 2 часа).
+
+    Возвращает AvitoLotCalculation или None (нужен новый расчёт).
+    Сравнение дат — через timezone.now() и aware datetime.
+    """
+    if force or _force_recalc_requested(payload):
+        return None
+
+    payload = normalize_calculate_car_request(payload if isinstance(payload, dict) else {})
+    lot_id = _int_id(_extract_ids(payload).get('lot_id'))
+    if not lot_id:
+        return None
+
+    ttl = max_age if max_age is not None else CALC_REUSE_TTL
+    if not isinstance(ttl, timedelta):
+        try:
+            ttl = timedelta(hours=float(ttl))
+        except (TypeError, ValueError):
+            ttl = CALC_REUSE_TTL
+
+    calc = (
+        AvitoLotCalculation.objects
+        .filter(
+            lot__lot_id=lot_id,
+            is_success=True,
+            estimation_price__isnull=False,
+        )
+        .select_related('lot', 'offer')
+        .order_by('-calculated_at')
+        .first()
+    )
+    if calc is None or calc.calculated_at is None:
+        return None
+
+    calculated_at = _as_aware(calc.calculated_at)
+    now = timezone.now()
+    age = now - calculated_at
+    # Часы в будущем (перекос часов) — считаем свежим.
+    if age.total_seconds() < 0:
+        return calc
+    if age > ttl:
+        return None
+    return calc
+
+
+def answer_from_cached_calculation(calc: AvitoLotCalculation) -> dict:
+    """Собирает answer для API из сохранённого расчёта (без повторного Maxposter)."""
+    raw = calc.raw_answer_json if isinstance(calc.raw_answer_json, dict) else {}
+    answer = {}
+    if isinstance(raw, dict) and raw:
+        answer = {
+            k: v for k, v in raw.items()
+            if k not in ('avito_sync', 'avito_calculation_id', 'avito_lot_id', 'from_cache', 'cached_at', 'cached_calculation_id')
+        }
+
+    # Гарантируем ключевые поля из колонок БД (надёжнее сырого JSON).
+    defaults = {
+        'estimation_price': calc.estimation_price,
+        'profit': calc.profit,
+        'zna': calc.zna,
+        'hub_sale_price_avg': calc.zna,
+        'hub_price_avg': calc.avg_days_in_sale,
+        'zg': calc.price_group,
+        'kf': calc.kf,
+        'sale': calc.price_sale,
+        'price_sale': calc.price_sale,
+        'price_sale_rdo': calc.price_sale_rdo,
+        'price_sale_kor': calc.price_sale_kor,
+        'cna_expenses': calc.cna_expenses,
+        'zachita_ot_ubitka': calc.zachita_ot_ubitka,
+        'finance_price': calc.finance_price,
+        'iznos_price': calc.iznos_price,
+        'discount_torg': calc.discount_torg,
+        'auction': calc.auction_risk,
+        'list_info_price': calc.price_steps or [],
+    }
+    for key, val in defaults.items():
+        if answer.get(key) is None and val is not None:
+            answer[key] = val
+
+    calculated_at = _as_aware(calc.calculated_at)
+    answer['from_cache'] = True
+    answer['cached_calculation_id'] = calc.pk
+    answer['cached_at'] = calculated_at.isoformat() if calculated_at else None
+    return answer
 
 
 def _extract_ids(payload: dict) -> dict:
