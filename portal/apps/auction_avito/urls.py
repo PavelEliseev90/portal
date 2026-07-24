@@ -9,6 +9,7 @@ urlpatterns = [
     path('monitor/', views.monitor, name='monitor'),
     path('monitor/data/', views.monitor_data, name='monitor_data'),
     path('monitor/set-manual-max/', views.monitor_set_manual_max, name='monitor_set_manual_max'),
+    path('monitor/hand-to-work/', views.monitor_hand_to_work, name='monitor_hand_to_work'),
     path('chat/send/', views.feed_chat_send, name='feed_chat_send'),
     path('chat/messages/', views.feed_chat_messages, name='feed_chat_messages'),
     path('buyout-recommendations/', views.buyout_recommendations, name='buyout_recommendations'),

@@ -245,6 +245,9 @@
             const notif = document.getElementById(prefix + '-notif');
             if (notif) notif.play().catch(function () {});
             appendMessage(data, !!data.eco);
+            try {
+                window.dispatchEvent(new CustomEvent('aav-feed-message', { detail: data }));
+            } catch (err) {}
         };
 
         chatSocket.onclose = function () {

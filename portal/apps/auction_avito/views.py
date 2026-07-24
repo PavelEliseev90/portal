@@ -693,25 +693,27 @@ def analytics(request):
 
 @login_required
 def monitor(request):
-    """Онлайн-монитор: активные лоты / с нашими ставками / ждут решения."""
+    """Онлайн-монитор: активные лоты / с нашими ставками / ждут решения / выигранные."""
     from auction_avito.services.monitor import (
         KNOWN_DEALER_LABELS,
         dealer_label,
         monitor_counts,
         monitor_lots_queryset,
+        monitor_revision,
         parse_dealer_ids,
         serialize_monitor_lot,
     )
 
     dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
     mode = (request.GET.get('mode') or 'active').strip()
-    if mode not in ('active', 'active_our_bid', 'waiting'):
+    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending'):
         mode = 'active'
 
     counts = monitor_counts(dealer_ids=dealer_ids)
     lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)
     page_obj = Paginator(lots_qs, 50).get_page(request.GET.get('page') or 1)
     rows = [serialize_monitor_lot(lot) for lot in page_obj.object_list]
+    revision = monitor_revision(dealer_ids=dealer_ids)
 
     dealer_choices = [
         {'id': did, 'label': dealer_label(did), 'selected': did in dealer_ids}
@@ -740,30 +742,57 @@ def monitor(request):
         'rows': rows,
         'page_obj': page_obj,
         'querystring': q.urlencode(),
+        'revision': revision,
+        'feed_chat': build_aav_feed_embed(request),
     })
 
 
 @login_required
 @require_http_methods(['GET'])
 def monitor_data(request):
-    """JSON для автообновления счётчиков и списка монитора."""
+    """JSON для автообновления: revision не зависит от mode/вкладки."""
     from django.http import JsonResponse
 
     from auction_avito.services.monitor import (
         monitor_counts,
         monitor_lots_queryset,
+        monitor_revision,
         parse_dealer_ids,
         serialize_monitor_lot,
     )
 
     dealer_ids = parse_dealer_ids(request.GET.getlist('dealer') or request.GET.get('dealers'))
     mode = (request.GET.get('mode') or 'active').strip()
-    if mode not in ('active', 'active_our_bid', 'waiting'):
+    if mode not in ('active', 'active_our_bid', 'waiting', 'won_pending'):
         mode = 'active'
+
+    # Отпечаток глобальный — не зависит от выбранной вкладки/статуса
+    revision = monitor_revision(dealer_ids=dealer_ids)
+    since = (request.GET.get('revision') or '').strip()
     counts = monitor_counts(dealer_ids=dealer_ids)
-    lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)[:80]
-    rows = [serialize_monitor_lot(lot) for lot in lots_qs]
-    return JsonResponse({'ok': True, 'counts': counts, 'mode': mode, 'rows': rows})
+
+    if since and since == revision:
+        return JsonResponse({
+            'ok': True,
+            'changed': False,
+            'revision': revision,
+            'counts': counts,
+        })
+
+    # При изменении — отдаём rows только если клиент их просит (soft-update).
+    # Для полной перезагрузки страницы достаточно changed+revision.
+    want_rows = (request.GET.get('rows') or '1').strip() not in ('0', 'false', 'no')
+    payload = {
+        'ok': True,
+        'changed': True,
+        'revision': revision,
+        'counts': counts,
+        'mode': mode,
+    }
+    if want_rows:
+        lots_qs = monitor_lots_queryset(mode=mode, dealer_ids=dealer_ids)[:80]
+        payload['rows'] = [serialize_monitor_lot(lot) for lot in lots_qs]
+    return JsonResponse(payload)
 
 
 @login_required
@@ -795,6 +824,58 @@ def monitor_set_manual_max(request):
         'ok': True,
         'lotOfferId': offer.lot_offer_id,
         'manualMaxBid': offer.manual_max_bid,
+    })
+
+
+@login_required
+@require_POST
+def monitor_hand_to_work(request):
+    """Отметить выигранный оффер как «передан в работу»."""
+    from django.http import JsonResponse
+    from django.utils import timezone
+
+    from auction_avito.services.outcome import OUTCOME_WON
+
+    lot_offer_id = request.POST.get('lotOfferId') or request.POST.get('lot_offer_id')
+    clear = (request.POST.get('clear') or '').strip().lower() in ('1', 'true', 'yes')
+    try:
+        offer = AvitoLotOffer.objects.select_related('lot').get(lot_offer_id=int(lot_offer_id))
+    except (AvitoLotOffer.DoesNotExist, TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'offer not found'}, status=404)
+
+    if clear:
+        offer.handed_to_work_at = None
+        offer.handed_to_work_by = None
+        offer.save(update_fields=['handed_to_work_at', 'handed_to_work_by'])
+        return JsonResponse({
+            'ok': True,
+            'lotOfferId': offer.lot_offer_id,
+            'handedToWork': False,
+            'handedToWorkAt': '',
+        })
+
+    is_won = (
+        (offer.outcome_code or '') == OUTCOME_WON
+        or (offer.status_code or '') == OUTCOME_WON
+    )
+    if not is_won:
+        return JsonResponse({'ok': False, 'error': 'лот ещё не выигран'}, status=400)
+
+    if not offer.handed_to_work_at:
+        offer.handed_to_work_at = timezone.now()
+        offer.handed_to_work_by = request.user
+        offer.save(update_fields=['handed_to_work_at', 'handed_to_work_by'])
+
+    try:
+        handed_human = timezone.localtime(offer.handed_to_work_at).strftime('%d.%m.%Y %H:%M')
+    except Exception:
+        handed_human = str(offer.handed_to_work_at or '')
+
+    return JsonResponse({
+        'ok': True,
+        'lotOfferId': offer.lot_offer_id,
+        'handedToWork': True,
+        'handedToWorkAt': handed_human,
     })
 
 
