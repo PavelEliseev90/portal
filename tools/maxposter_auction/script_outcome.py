@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from maxposter_session import (
@@ -108,8 +109,11 @@ def _http_json(method: str, url: str, payload: dict | None = None, timeout: int 
         raise RuntimeError(f"HTTP {exc.code} {url}: {err_body}") from exc
 
 
-def fetch_outcome_queue(limit: int = 30) -> dict:
-    url = f"{_portal_base()}/api/avito_auction_outcome_queue/?limit={limit}"
+def fetch_outcome_queue(limit: int = 50, dealer_id: str | None = None, lookback_days: int = 30) -> dict:
+    qs = f"limit={int(limit)}&lookback_days={int(lookback_days)}"
+    if dealer_id:
+        qs += f"&dealer_id={urllib.parse.quote(str(dealer_id))}"
+    url = f"{_portal_base()}/api/avito_auction_outcome_queue/?{qs}"
     return _http_json("GET", url)
 
 
@@ -408,8 +412,9 @@ def _load_items() -> tuple[list[dict], dict]:
         meta["filteredCount"] = len(items)
         return items, meta
 
-    limit = int(_env(OUTCOME_LIMIT_ENV, "20") or "20")
-    queue = fetch_outcome_queue(limit=limit)
+    limit = int(_env(OUTCOME_LIMIT_ENV, "50") or "50")
+    dealer_id = meta["dealerId"]
+    queue = fetch_outcome_queue(limit=limit, dealer_id=dealer_id, lookback_days=30)
     meta["enabled"] = bool(queue.get("enabled", True))
     if not meta["enabled"]:
         print("Outcome poll disabled on portal")

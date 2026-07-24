@@ -568,6 +568,7 @@ def avito_auction_outcome_queue(request):
         limit = request.GET.get('limit', 30)
         lookback_days = request.GET.get('lookback_days', 21)
         recheck_hours = request.GET.get('recheck_hours', 6)
+        dealer_id = request.GET.get('dealer_id') or request.GET.get('dealerId')
     else:
         data, parse_error = _parse_1c_exchange_body(request)
         if parse_error is not None:
@@ -577,6 +578,7 @@ def avito_auction_outcome_queue(request):
         limit = data.get('limit', 30)
         lookback_days = data.get('lookback_days', 21)
         recheck_hours = data.get('recheck_hours', 6)
+        dealer_id = data.get('dealer_id') or data.get('dealerId')
 
     try:
         limit = int(limit)
@@ -595,6 +597,7 @@ def avito_auction_outcome_queue(request):
             limit=limit,
             lookback_days=lookback_days,
             recheck_hours=recheck_hours,
+            dealer_id=dealer_id,
         )
     ]
     import logging

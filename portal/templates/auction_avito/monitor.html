@@ -44,6 +44,12 @@
   }
   .mon-table tr.mon-row { cursor: pointer; }
   .mon-table tr.mon-row:hover { background: #f5f8fc; }
+  .mon-table tr.mon-row-outbid { background: #fde8e8; }
+  .mon-table tr.mon-row-outbid:hover { background: #fcdede; }
+  .mon-table tr.mon-row-sole { background: #fff8e1; }
+  .mon-table tr.mon-row-sole:hover { background: #fff3cd; }
+  .mon-table tr.mon-row-leading { background: #eef8f0; }
+  .mon-table tr.mon-row-leading:hover { background: #e4f3e7; }
   .mon-thumb {
     width: 56px; height: 42px; object-fit: cover; border-radius: .4rem;
     background: #e8eef5; display: block;
@@ -55,6 +61,17 @@
   .mon-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .mon-money.our { color: #166534; font-weight: 650; }
   .mon-money.buyout { color: #002a5a; font-weight: 650; }
+  .mon-badge {
+    display: inline-block; font-size: .72rem; font-weight: 650; line-height: 1.2;
+    padding: .15rem .45rem; border-radius: .35rem; white-space: nowrap;
+  }
+  .mon-badge-outbid { background: #fecaca; color: #991b1b; }
+  .mon-badge-sole { background: #fde68a; color: #92400e; }
+  .mon-badge-leading { background: #bbf7d0; color: #166534; }
+  .mon-auto-text {
+    max-width: 220px; font-size: .78rem; color: #334155; line-height: 1.25;
+  }
+  .mon-auto-text .muted { color: #94a3b8; font-size: .72rem; }
   .mon-dealers {
     display: flex; flex-wrap: wrap; gap: .35rem .5rem; max-height: 9rem; overflow: auto;
     padding: .5rem .65rem; border: 1px solid rgba(0,42,90,.12); border-radius: .75rem; background: #fff;
@@ -69,7 +86,7 @@
   }
   .mon-modal-back.show { display: flex; }
   .mon-modal {
-    background: #fff; border-radius: 1rem; width: min(920px, 100%);
+    background: #fff; border-radius: 1rem; width: min(980px, 100%);
     box-shadow: 0 24px 60px rgba(0,0,0,.25); padding: 1.25rem 1.35rem;
   }
   .mon-modal-grid {
@@ -82,6 +99,14 @@
   .mon-card h6 { margin: 0 0 .5rem; color: #002a5a; font-weight: 650; }
   .mon-kv { display: flex; justify-content: space-between; gap: .75rem; font-size: .88rem; margin: .2rem 0; }
   .mon-kv span:first-child { color: #6c7a92; }
+  .mon-history { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .mon-history th, .mon-history td {
+    padding: .35rem .4rem; border-bottom: 1px solid rgba(0,42,90,.08); text-align: left;
+  }
+  .mon-history th { color: #6c7a92; font-weight: 600; }
+  .mon-wish {
+    font-size: .78rem; color: #64748b; max-width: 140px; line-height: 1.25;
+  }
 </style>
 {% endblock %}
 
@@ -147,6 +172,9 @@
           <th>Статус</th>
           <th>Выкуп</th>
           <th>Наша ставка</th>
+          <th>Ставок</th>
+          <th>Пожелание</th>
+          <th>Автоставка</th>
           <th>Потолок</th>
           <th>maxBid</th>
           <th>До</th>
@@ -156,7 +184,7 @@
       </thead>
       <tbody id="monTbody">
         {% for r in rows %}
-        <tr class="mon-row" data-idx="{{ forloop.counter0 }}">
+        <tr class="mon-row {{ r.rowClass|default:'' }}" data-idx="{{ forloop.counter0 }}">
           <td>
             {% if r.photo %}<img class="mon-thumb" src="{{ r.photo }}" alt="">{% else %}<div class="mon-thumb-empty">—</div>{% endif %}
           </td>
@@ -165,6 +193,15 @@
             <div class="text-muted small">
               {% if r.year %}{{ r.year }} · {% endif %}{% if r.mileage %}{{ r.mileage|floatformat:0 }} км · {% endif %}лот {{ r.lotId }}
             </div>
+            {% if r.autoBidLabel %}
+              {% if r.isOutbid %}
+              <span class="mon-badge mon-badge-outbid">{{ r.autoBidLabel }}</span>
+              {% elif r.isSole %}
+              <span class="mon-badge mon-badge-sole">{{ r.autoBidLabel }}</span>
+              {% elif r.isLeading %}
+              <span class="mon-badge mon-badge-leading">{{ r.autoBidLabel }}</span>
+              {% endif %}
+            {% endif %}
           </td>
           <td>
             {{ r.statusName|default:r.statusCode|default:"—" }}
@@ -172,14 +209,29 @@
           </td>
           <td class="mon-money buyout">{% if r.buyout %}{{ r.buyout|floatformat:0 }} ₽{% else %}—{% endif %}</td>
           <td class="mon-money our">{% if r.ourBid %}{{ r.ourBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
-          <td class="mon-money">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
+          <td class="mon-money">{% if r.ourBidsCount %}{{ r.ourBidsCount }}{% else %}—{% endif %}</td>
+          <td>
+            {% if r.sellerWishPrice %}
+            <div class="mon-money">{{ r.sellerWishPrice|floatformat:0 }} ₽</div>
+            {% else %}
+            <div class="text-muted">—</div>
+            {% endif %}
+            {% if r.tradeInComment %}<div class="mon-wish" title="{{ r.tradeInComment }}">{{ r.tradeInComment|truncatechars:80 }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="mon-auto-text">
+              {{ r.autoBidText|default:"—"|truncatechars:120 }}
+              {% if r.autoBidAt %}<div class="muted">{{ r.autoBidAt }}</div>{% endif %}
+            </div>
+          </td>
+          <td class="mon-money js-manual-max">{% if r.manualMaxBid %}{{ r.manualMaxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
           <td class="mon-money">{% if r.maxBid %}{{ r.maxBid|floatformat:0 }} ₽{% else %}—{% endif %}</td>
           <td>{{ r.finishHuman|default:"—" }}</td>
           <td class="small">{{ r.dealerLabel|default:"—" }}</td>
           <td class="small">{{ r.place|default:"—" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="10" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
+        <tr><td colspan="13" class="text-muted py-4 text-center">Нет лотов в выбранном режиме</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -207,6 +259,7 @@
       <div>
         <h4 class="mb-1" id="monModalTitle">Лот</h4>
         <div class="small text-muted" id="monModalSub"></div>
+        <div class="mt-1" id="monModalBadge"></div>
       </div>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="monModalClose">Закрыть</button>
     </div>
@@ -219,15 +272,41 @@
         <div class="mon-kv"><span>До</span><span id="mFinish">—</span></div>
         <div class="mon-kv"><span>Место</span><span id="mPlace">—</span></div>
         <div class="mon-kv"><span>Площадка</span><span id="mDealer">—</span></div>
+        <div class="mon-kv"><span>Итог</span><span id="mOutcome">—</span></div>
       </div>
       <div class="mon-card">
-        <h6>Ставки</h6>
+        <h6>Цены и ставки</h6>
         <div class="mon-kv"><span>Выкуп</span><span id="mBuyout">—</span></div>
+        <div class="mon-kv"><span>ЦНА</span><span id="mZna">—</span></div>
+        <div class="mon-kv"><span>Маржа</span><span id="mProfit">—</span></div>
+        <div class="mon-kv"><span>Желание продавца</span><span id="mWish">—</span></div>
         <div class="mon-kv"><span>Наша ставка</span><span id="mOurBid">—</span></div>
+        <div class="mon-kv"><span>Наших ставок</span><span id="mBidsCount">—</span></div>
         <div class="mon-kv"><span>maxBid</span><span id="mMaxBid">—</span></div>
-        <div class="mon-kv"><span>minAvailable</span><span id="mMinAvail">—</span></div>
+        <div class="mon-kv"><span>Мин. ставка</span><span id="mMinAvail">—</span></div>
+        <div class="mon-kv"><span>Макс. доступная</span><span id="mMaxAvail">—</span></div>
         <div class="mon-kv"><span>Шаг</span><span id="mStep">—</span></div>
-        <div class="mon-kv"><span>Итог</span><span id="mOutcome">—</span></div>
+        <div class="mon-kv"><span>Коридор L1–L2</span><span id="mCorridor">—</span></div>
+        <div class="mon-kv"><span>IMV (рынок)</span><span id="mImv">—</span></div>
+      </div>
+      <div class="mon-card" style="grid-column:1/-1">
+        <h6>Автоставка / позиция</h6>
+        <div class="mon-kv"><span>Статус</span><span id="mAutoLabel">—</span></div>
+        <div class="small" id="mAutoText" style="color:#334155;line-height:1.35"></div>
+        <div class="small text-muted mt-1" id="mAutoAt"></div>
+        <div class="small text-muted mt-2" id="mTradeIn"></div>
+      </div>
+      <div class="mon-card" style="grid-column:1/-1">
+        <h6>История наших ставок</h6>
+        <div id="mHistoryWrap">
+          <table class="mon-history">
+            <thead>
+              <tr><th>Когда</th><th>Сумма</th><th>Комментарий</th></tr>
+            </thead>
+            <tbody id="mHistoryBody"></tbody>
+          </table>
+        </div>
+        <div class="small text-muted" id="mHistoryEmpty" hidden>Истории ставок пока нет</div>
       </div>
       <div class="mon-card" style="grid-column:1/-1">
         <h6>Потолок автоставки (вручную)</h6>
@@ -264,25 +343,86 @@
     return Number(v).toLocaleString('ru-RU') + ' ₽';
   }
 
+  function badgeHtml(row){
+    const label = row.autoBidLabel || row.bidPositionLabel || '';
+    if (!label) return '';
+    let cls = 'mon-badge';
+    if (row.isOutbid) cls += ' mon-badge-outbid';
+    else if (row.isSole) cls += ' mon-badge-sole';
+    else if (row.isLeading) cls += ' mon-badge-leading';
+    else return '';
+    return '<span class="' + cls + '">' + label + '</span>';
+  }
+
+  function fillHistory(row){
+    const body = document.getElementById('mHistoryBody');
+    const empty = document.getElementById('mHistoryEmpty');
+    const wrap = document.getElementById('mHistoryWrap');
+    body.innerHTML = '';
+    const hist = Array.isArray(row.bidHistory) ? row.bidHistory : [];
+    if (!hist.length) {
+      wrap.hidden = true;
+      empty.hidden = false;
+      return;
+    }
+    wrap.hidden = false;
+    empty.hidden = true;
+    hist.forEach(function(h){
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + (h.bidMadeAt || '—') + '</td>' +
+        '<td class="mon-money">' + money(h.bid) + '</td>' +
+        '<td>' + (h.comment || '—') + '</td>';
+      body.appendChild(tr);
+    });
+  }
+
   function openModal(row){
     current = row;
     document.getElementById('monModalTitle').textContent = row.title || ('Лот ' + row.lotId);
     document.getElementById('monModalSub').textContent =
       [row.year, row.mileage ? (Number(row.mileage).toLocaleString('ru-RU') + ' км') : ''].filter(Boolean).join(' · ');
+    document.getElementById('monModalBadge').innerHTML = badgeHtml(row);
     document.getElementById('mLotId').textContent = row.lotId || '—';
     document.getElementById('mOfferId').textContent = row.lotOfferId || '—';
     document.getElementById('mStatus').textContent = row.statusName || row.statusCode || '—';
     document.getElementById('mFinish').textContent = row.finishHuman || '—';
     document.getElementById('mPlace').textContent = row.place || '—';
     document.getElementById('mDealer').textContent = row.dealerLabel || '—';
+    document.getElementById('mOutcome').textContent = row.outcomeTitle || row.outcomeCode || '—';
     document.getElementById('mBuyout').textContent = money(row.buyout);
+    document.getElementById('mZna').textContent = money(row.zna);
+    document.getElementById('mProfit').textContent = money(row.profit);
+    document.getElementById('mWish').textContent = money(row.sellerWishPrice != null ? row.sellerWishPrice : row.minPrice);
     document.getElementById('mOurBid').textContent = money(row.ourBid);
+    document.getElementById('mBidsCount').textContent = row.ourBidsCount != null ? String(row.ourBidsCount) : '—';
     document.getElementById('mMaxBid').textContent = money(row.maxBid);
     document.getElementById('mMinAvail').textContent = money(row.minAvailableBid);
+    document.getElementById('mMaxAvail').textContent = money(row.maxAvailableBid);
     document.getElementById('mStep').textContent = money(row.minBidStep);
-    document.getElementById('mOutcome').textContent = row.outcomeTitle || row.outcomeCode || '—';
+    if (row.bidL1 != null || row.bidL2 != null) {
+      document.getElementById('mCorridor').textContent =
+        money(row.bidL1).replace(' ₽','') + ' – ' + money(row.bidL2);
+    } else {
+      document.getElementById('mCorridor').textContent = '—';
+    }
+    if (row.imvMedian != null || row.imvLow != null) {
+      document.getElementById('mImv').textContent =
+        money(row.imvLow).replace(' ₽','') + ' – ' + money(row.imvHigh) +
+        (row.imvMedian != null ? (' (мед. ' + money(row.imvMedian) + ')') : '');
+    } else {
+      document.getElementById('mImv').textContent = '—';
+    }
+    document.getElementById('mAutoLabel').textContent = row.autoBidLabel || row.bidPositionLabel || '—';
+    document.getElementById('mAutoText').textContent = row.autoBidText || row.autoBidReason || '—';
+    document.getElementById('mAutoAt').textContent = row.autoBidAt ? ('решение: ' + row.autoBidAt) : '';
+    const trade = (row.tradeInComment || '').trim();
+    document.getElementById('mTradeIn').textContent = trade
+      ? ('Пожелание / trade-in: ' + trade)
+      : '';
     document.getElementById('mManualMax').value = row.manualMaxBid || '';
     document.getElementById('mManualHint').textContent = '';
+    fillHistory(row);
     const portal = document.getElementById('mLinkPortal');
     portal.href = row.portalLotUrl || '#';
     portal.style.display = row.portalLotUrl ? '' : 'none';
@@ -339,10 +479,13 @@
     if (idx >= 0) {
       rows[idx].manualMaxBid = data.manualMaxBid;
       const tr = document.querySelector('tr.mon-row[data-idx="' + idx + '"]');
-      if (tr && tr.children[5]) {
-        tr.children[5].textContent = data.manualMaxBid
-          ? (Number(data.manualMaxBid).toLocaleString('ru-RU') + ' ₽')
-          : '—';
+      if (tr) {
+        const cell = tr.querySelector('.js-manual-max');
+        if (cell) {
+          cell.textContent = data.manualMaxBid
+            ? (Number(data.manualMaxBid).toLocaleString('ru-RU') + ' ₽')
+            : '—';
+        }
       }
     }
   }
