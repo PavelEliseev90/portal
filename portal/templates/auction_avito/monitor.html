@@ -185,6 +185,59 @@
   .mon-hist-title { font-weight: 650; }
   .mon-hist-detail { color: #64748b; font-size: .82rem; margin-top: .15rem; }
   .mon-hist-dealer { font-size: .78rem; color: #94a3b8; text-align: right; }
+
+  /* Интерактивный путеводитель */
+  .mon-tour-btn {
+    border: 1px solid rgba(0,80,157,.35);
+    background: linear-gradient(135deg, #e8f1fb, #fff);
+    color: #00509d;
+    font-weight: 650;
+  }
+  .mon-tour-btn:hover { background: #dceaf8; color: #003f7a; }
+  .mon-tour-spot {
+    position: fixed; z-index: 2100; pointer-events: none;
+    border-radius: .65rem;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, .62);
+    transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease;
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+  }
+  .mon-tour-card {
+    position: fixed; z-index: 2101;
+    width: min(380px, calc(100vw - 1.5rem));
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 20px 50px rgba(0,0,0,.28);
+    padding: 1rem 1.1rem 0.95rem;
+    color: #0f172a;
+  }
+  .mon-tour-card h5 {
+    margin: 0 0 .35rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #002a5a;
+  }
+  .mon-tour-card p {
+    margin: 0 0 .85rem;
+    font-size: .9rem;
+    line-height: 1.45;
+    color: #475569;
+  }
+  .mon-tour-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: .5rem; margin-bottom: .65rem;
+  }
+  .mon-tour-step {
+    font-size: .75rem; font-weight: 650; color: #64748b;
+    letter-spacing: .02em;
+  }
+  .mon-tour-actions { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
+  .mon-tour-actions .btn { font-size: .82rem; }
+  body.mon-tour-on { overflow: hidden; }
+  .mon-tour-mask {
+    position: fixed; inset: 0; z-index: 2099;
+    background: transparent; cursor: default;
+  }
 </style>
 {% endblock %}
 
@@ -202,27 +255,28 @@
       <p class="text-muted small mb-0">Активные лоты, ставки, итоги и выигранные без передачи в работу.</p>
     </div>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-      <span class="mon-live" id="monLive" title="Автообновление">
+      <span class="mon-live" id="monLive" data-tour="live" title="Автообновление">
         <span class="mon-live-dot on" id="monLiveDot"></span>
         <span id="monLiveText">онлайн</span>
       </span>
+      <button type="button" class="btn btn-sm mon-tour-btn" id="monTourStart" title="Интерактивный путеводитель">Обучение</button>
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:auction_settings' %}">Настройки</a>
     </div>
   </div>
 
-  <form method="get" id="monFilterForm" class="portal-panel mb-3">
+  <form method="get" id="monFilterForm" class="portal-panel mb-3" data-tour="filters">
     <input type="hidden" name="mode" id="monMode" value="{{ mode }}">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-      <strong>Площадки</strong>
-      <div class="d-flex gap-2">
+      <strong data-tour="filters-title">Площадки</strong>
+      <div class="d-flex gap-2" data-tour="filter-actions">
         <button type="button" class="btn btn-outline-secondary btn-sm" id="monSelectAll">Все</button>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="monSelectNone">Сбросить</button>
         <button type="submit" class="btn btn-primary btn-sm">Применить</button>
       </div>
     </div>
-    <div class="mon-dealers" id="monDealers">
+    <div class="mon-dealers" id="monDealers" data-tour="dealers">
       {% for d in dealer_choices %}
       <label title="Активные / со ставкой / ждут / выигранные">
         <input type="checkbox" name="dealer" value="{{ d.id }}" {% if d.selected %}checked{% endif %}>
@@ -236,7 +290,7 @@
       </label>
       {% endfor %}
     </div>
-    <div class="mon-dealers-legend">
+    <div class="mon-dealers-legend" data-tour="legend">
       <span><span class="mon-d-c a">N</span> активные</span>
       <span><span class="mon-d-c b">N</span> со ставкой</span>
       <span><span class="mon-d-c w">N</span> ждут решения</span>
@@ -244,25 +298,25 @@
     </div>
   </form>
 
-  <div class="mon-kpi" id="monKpi">
+  <div class="mon-kpi" id="monKpi" data-tour="kpi">
     {% with qs=querystring %}
-    <a href="?mode=active{% if qs %}&{{ qs }}{% endif %}" data-mode="active" class="{% if mode == 'active' %}active{% endif %}">
+    <a href="?mode=active{% if qs %}&{{ qs }}{% endif %}" data-mode="active" data-tour="kpi-active" class="{% if mode == 'active' %}active{% endif %}">
       <div class="num" data-count="active">{{ counts.active }}</div>
       <div class="lbl">Активные лоты</div>
     </a>
-    <a href="?mode=active_our_bid{% if qs %}&{{ qs }}{% endif %}" data-mode="active_our_bid" class="{% if mode == 'active_our_bid' %}active{% endif %}">
+    <a href="?mode=active_our_bid{% if qs %}&{{ qs }}{% endif %}" data-mode="active_our_bid" data-tour="kpi-bid" class="{% if mode == 'active_our_bid' %}active{% endif %}">
       <div class="num" data-count="active_our_bid">{{ counts.active_our_bid }}</div>
       <div class="lbl">Активные с нашей ставкой</div>
     </a>
-    <a href="?mode=waiting{% if qs %}&{{ qs }}{% endif %}" data-mode="waiting" class="{% if mode == 'waiting' %}active{% endif %}">
+    <a href="?mode=waiting{% if qs %}&{{ qs }}{% endif %}" data-mode="waiting" data-tour="kpi-waiting" class="{% if mode == 'waiting' %}active{% endif %}">
       <div class="num" data-count="waiting_decision">{{ counts.waiting_decision }}</div>
       <div class="lbl">Ждут решения</div>
     </a>
-    <a href="?mode=won_pending{% if qs %}&{{ qs }}{% endif %}" data-mode="won_pending" class="won-tab {% if mode == 'won_pending' %}active{% endif %}">
+    <a href="?mode=won_pending{% if qs %}&{{ qs }}{% endif %}" data-mode="won_pending" data-tour="kpi-won" class="won-tab {% if mode == 'won_pending' %}active{% endif %}">
       <div class="num" data-count="won_pending">{{ counts.won_pending }}</div>
       <div class="lbl">Выигранные (не в работу)</div>
     </a>
-    <a href="?mode=history_today{% if qs %}&{{ qs }}{% endif %}" data-mode="history_today" class="{% if mode == 'history_today' %}active{% endif %}">
+    <a href="?mode=history_today{% if qs %}&{{ qs }}{% endif %}" data-mode="history_today" data-tour="kpi-history" class="{% if mode == 'history_today' %}active{% endif %}">
       <div class="num" data-count="history_today">{{ counts.history_today }}</div>
       <div class="lbl">История за сегодня</div>
     </a>
@@ -270,7 +324,7 @@
   </div>
 
   {% if mode == 'history_today' %}
-  <div class="portal-panel">
+  <div class="portal-panel" data-tour="content">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <strong>События за сегодня</strong>
@@ -297,7 +351,7 @@
     </div>
   </div>
   {% else %}
-  <div class="portal-panel mon-table-wrap">
+  <div class="portal-panel mon-table-wrap" data-tour="content">
     <table class="mon-table" id="monTable">
       <thead>
         <tr>
@@ -446,7 +500,7 @@
         </div>
         <div class="small text-muted" id="mHistoryEmpty" hidden>Истории ставок пока нет</div>
       </div>
-      <div class="mon-card" style="grid-column:1/-1" id="mHandCard" hidden>
+      <div class="mon-card" style="grid-column:1/-1" id="mHandCard" data-tour="hand" hidden>
         <h6>Передача в работу</h6>
         <p class="small text-muted mb-2">После отметки лот исчезнет из вкладки «Выигранные (не в работу)».</p>
         <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -454,7 +508,7 @@
           <span class="small text-muted" id="mHandHint"></span>
         </div>
       </div>
-      <div class="mon-card" style="grid-column:1/-1">
+      <div class="mon-card" style="grid-column:1/-1" data-tour="manual-max">
         <h6>Потолок автоставки (вручную)</h6>
         <p class="small text-muted mb-2">Можно задать выше расчётного выкупа — автоставка будет идти до этого порога.</p>
         <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -700,6 +754,7 @@
   }
 
   async function refreshMonitor(forceReload){
+    if (window.__monTourActive) return;
     if (pollBusy) return;
     pollBusy = true;
     try {
@@ -741,6 +796,7 @@
 
   let reloadTimer = null;
   function scheduleReload(){
+    if (window.__monTourActive) return;
     if (reloadTimer) return;
     pulseLive('есть изменения…');
     reloadTimer = setTimeout(function(){
@@ -848,6 +904,230 @@
   document.addEventListener('visibilitychange', function(){
     if (!document.hidden) refreshMonitor(false);
   });
+})();
+</script>
+
+<div id="monTourMask" class="mon-tour-mask" hidden></div>
+<div id="monTourSpot" class="mon-tour-spot" hidden></div>
+<div id="monTourCard" class="mon-tour-card" hidden>
+  <div class="mon-tour-meta">
+    <span class="mon-tour-step" id="monTourStepLabel">1 / 1</span>
+    <button type="button" class="btn btn-sm btn-link text-muted p-0" id="monTourSkip">Пропустить</button>
+  </div>
+  <h5 id="monTourTitle">Заголовок</h5>
+  <p id="monTourText">Текст</p>
+  <div class="mon-tour-actions">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="monTourPrev">Назад</button>
+    <button type="button" class="btn btn-primary btn-sm" id="monTourNext">Далее</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'aav_monitor_tour_v1';
+  const mask = document.getElementById('monTourMask');
+  const spot = document.getElementById('monTourSpot');
+  const card = document.getElementById('monTourCard');
+  const titleEl = document.getElementById('monTourTitle');
+  const textEl = document.getElementById('monTourText');
+  const stepEl = document.getElementById('monTourStepLabel');
+  const btnNext = document.getElementById('monTourNext');
+  const btnPrev = document.getElementById('monTourPrev');
+  const btnSkip = document.getElementById('monTourSkip');
+  const btnStart = document.getElementById('monTourStart');
+  if (!spot || !card || !btnStart || !mask) return;
+
+  const steps = [
+    {
+      sel: '#monApp',
+      title: 'Монитор аукциона',
+      text: 'Это рабочий экран по торгам Авито: фильтры площадок, вкладки статусов, таблица лотов, карточка лота, чат и автообновление. Сейчас коротко пройдёмся по главным элементам.',
+    },
+    {
+      sel: '[data-tour="live"]',
+      title: 'Индикатор «онлайн»',
+      text: 'Страница сама следит за изменениями: новая ставка, новый лот или итог. При изменении экран перезагрузится — на любой вкладке, не только на текущей.',
+    },
+    {
+      sel: '[data-tour="filters"]',
+      title: 'Фильтр площадок',
+      text: 'Отметьте нужные дилерские площадки и нажмите «Применить». Таблица и счётчики сверху пересчитаются только по выбранным.',
+    },
+    {
+      sel: '[data-tour="dealers"]',
+      title: 'Счётчики у площадки',
+      text: 'Четыре цветных числа рядом с названием: синий — активные, зелёный — со нашей ставкой, жёлтый — ждут решения, тёмно-зелёный — выигранные и ещё не в работе.',
+    },
+    {
+      sel: '[data-tour="legend"]',
+      title: 'Легенда цветов',
+      text: 'Подсказка под фильтром, чтобы не путать цвета счётчиков.',
+    },
+    {
+      sel: '[data-tour="filter-actions"]',
+      title: 'Кнопки фильтра',
+      text: '«Все» — выбрать все площадки, «Сбросить» — снять галочки, «Применить» — обновить список с новым фильтром.',
+    },
+    {
+      sel: '[data-tour="kpi-active"]',
+      title: 'Вкладка «Активные лоты»',
+      text: 'Все идущие сейчас торги по выбранным площадкам. Удобно смотреть общую картину аукциона.',
+    },
+    {
+      sel: '[data-tour="kpi-bid"]',
+      title: '«Активные с нашей ставкой»',
+      text: 'Только лоты, где уже есть наша ставка. Здесь видно лидируем ли мы, или ставку перебили (красная подсветка).',
+    },
+    {
+      sel: '[data-tour="kpi-waiting"]',
+      title: '«Ждут решения»',
+      text: 'Торги завершились, продавец ещё не ответил (или итог ещё не подтянули). Нужно держать на контроле.',
+    },
+    {
+      sel: '[data-tour="kpi-won"]',
+      title: '«Выигранные (не в работу)»',
+      text: 'Лоты, которые мы выиграли, но ещё не отметили «Передан в работу». После отметки лот пропадает из этой вкладки.',
+    },
+    {
+      sel: '[data-tour="kpi-history"]',
+      title: '«История за сегодня»',
+      text: 'Лента событий дня: новые лоты, ставки, итоги, автоставки и передачи в работу. Клик по строке открывает карточку лота.',
+    },
+    {
+      sel: '[data-tour="content"]',
+      title: 'Список лотов / история',
+      text: 'Основная рабочая зона. В режимах лотов — таблица: выкуп, наша ставка, число ставок, пожелание продавца, причина автоставки, потолок, maxBid. Цвета строк: красный — перебита, жёлтый — без конкурентов, зелёный — лидируем.',
+    },
+    {
+      sel: '[data-tour="content"]',
+      title: 'Карточка лота',
+      text: 'Клик по строке открывает модалку: цены и ставки (L1–L2, ЦНА, желание продавца), история наших ставок, потолок автоставки вручную. На выигранных — кнопка «Передан в работу».',
+    },
+    {
+      sel: '#aav_feed_chat_open, [id$="_chat_open"]',
+      title: 'Чат Авито',
+      text: 'Кнопка справа внизу открывает ленту чата по лотам: туда падают уведомления о новых лотах, ставках и итогах. Можно писать коллегам.',
+      optional: true,
+    },
+    {
+      sel: '#monTourStart',
+      title: 'Готово',
+      text: 'Обучение можно запустить снова кнопкой «Обучение». Удачной работы с монитором!',
+    },
+  ];
+
+  let idx = 0;
+  let active = false;
+
+  function $(sel) {
+    try { return document.querySelector(sel); } catch (e) { return null; }
+  }
+
+  function placeCard(rect) {
+    const pad = 12;
+    const cw = card.offsetWidth || 360;
+    const ch = card.offsetHeight || 180;
+    let left = rect.left;
+    let top = rect.bottom + pad;
+    if (left + cw > window.innerWidth - 8) left = window.innerWidth - cw - 8;
+    if (left < 8) left = 8;
+    if (top + ch > window.innerHeight - 8) {
+      top = rect.top - ch - pad;
+    }
+    if (top < 8) top = 8;
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+  }
+
+  function highlight(el) {
+    if (!el) {
+      spot.hidden = true;
+      placeCard({ left: 24, top: 80, bottom: 80, right: 24, width: 0, height: 0 });
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    const rect = el.getBoundingClientRect();
+    const m = 6;
+    spot.hidden = false;
+    spot.style.left = (rect.left - m) + 'px';
+    spot.style.top = (rect.top - m) + 'px';
+    spot.style.width = (rect.width + m * 2) + 'px';
+    spot.style.height = (rect.height + m * 2) + 'px';
+    placeCard(rect);
+  }
+
+  function render() {
+    const step = steps[idx];
+    if (!step) { stop(true); return; }
+    stepEl.textContent = (idx + 1) + ' / ' + steps.length;
+    titleEl.textContent = step.title;
+    textEl.textContent = step.text;
+    btnPrev.disabled = idx === 0;
+    btnNext.textContent = idx === steps.length - 1 ? 'Готово' : 'Далее';
+    let el = $(step.sel);
+    if (!el && step.optional) {
+      // fallback: кнопка обучения
+      el = btnStart;
+    }
+    // небольшая задержка после scroll
+    setTimeout(function () { highlight(el); }, 180);
+  }
+
+  function start() {
+    active = true;
+    window.__monTourActive = true;
+    document.body.classList.add('mon-tour-on');
+    mask.hidden = false;
+    card.hidden = false;
+    idx = 0;
+    render();
+  }
+
+  function stop(completed) {
+    active = false;
+    window.__monTourActive = false;
+    document.body.classList.remove('mon-tour-on');
+    mask.hidden = true;
+    spot.hidden = true;
+    card.hidden = true;
+    try {
+      if (completed) localStorage.setItem(STORAGE_KEY, '1');
+    } catch (e) {}
+  }
+
+  function next() {
+    if (idx >= steps.length - 1) { stop(true); return; }
+    idx += 1;
+    render();
+  }
+  function prev() {
+    if (idx <= 0) return;
+    idx -= 1;
+    render();
+  }
+
+  btnStart.addEventListener('click', start);
+  btnNext.addEventListener('click', next);
+  btnPrev.addEventListener('click', prev);
+  btnSkip.addEventListener('click', function () { stop(false); });
+  window.addEventListener('keydown', function (e) {
+    if (!active) return;
+    if (e.key === 'Escape') stop(false);
+    if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  });
+  window.addEventListener('resize', function () {
+    if (active) render();
+  });
+
+  // Первый заход — предложить обучение (не навязывать жёстко)
+  try {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      setTimeout(function () {
+        if (!window.__monTourActive) start();
+      }, 700);
+    }
+  } catch (e) {}
 })();
 </script>
 
