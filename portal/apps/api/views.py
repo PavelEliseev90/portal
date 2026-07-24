@@ -753,6 +753,21 @@ def avito_auction_auto_bid_decide(request):
             if last_calc:
                 buyout = last_calc.estimation_price
 
+    # Ручной потолок автоставки по офферу (может быть выше расчётного выкупа).
+    calc_buyout = buyout
+    manual_ceiling = None
+    if offer is not None and getattr(offer, 'manual_max_bid', None):
+        try:
+            manual_ceiling = int(offer.manual_max_bid)
+        except (TypeError, ValueError):
+            manual_ceiling = None
+    if manual_ceiling and manual_ceiling > 0:
+        try:
+            calc_n = int(float(calc_buyout)) if calc_buyout not in (None, '') else 0
+        except (TypeError, ValueError):
+            calc_n = 0
+        buyout = max(calc_n, manual_ceiling)
+
     # Пустой / нулевой maxBid = ставок ещё нет → первая ставка от minAvailableBid.
     try:
         if max_bid is not None and float(max_bid) <= 0:
@@ -760,20 +775,35 @@ def avito_auction_auto_bid_decide(request):
     except (TypeError, ValueError):
         max_bid = None
 
-    decision = decide_auto_bid(
-        settings_obj,
-        buyout_price=buyout,
-        min_available_bid=min_avail,
-        max_bid=max_bid,
-        min_bid_step=min_step,
-        our_bid=our_bid,
-        year=year,
-        mileage=mileage,
-        risk_flags=risk,
-    )
+    try:
+        decision = decide_auto_bid(
+            settings_obj,
+            buyout_price=buyout,
+            min_available_bid=min_avail,
+            max_bid=max_bid,
+            min_bid_step=min_step,
+            our_bid=our_bid,
+            year=year,
+            mileage=mileage,
+            risk_flags=risk,
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {
+                'should_bid': False,
+                'error': f'{type(exc).__name__}: {exc}',
+                'reason': f'ошибка решения: {exc}',
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
     decision['risk_flags'] = risk
     decision['lot_id'] = getattr(lot, 'lot_id', None) or lot_id
     decision['lot_offer_id'] = getattr(offer, 'lot_offer_id', None) or lot_offer_id
+    decision['calc_buyout'] = calc_buyout
+    decision['manual_max_bid'] = manual_ceiling
+    if manual_ceiling:
+        decision['buyout_ceiling_source'] = 'manual_max_bid'
 
     try:
         from auction_avito.models import AvitoAutoBidDecision

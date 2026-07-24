@@ -40,6 +40,7 @@ class AvitoAutotekaEventInline(admin.TabularInline):
 class AvitoBidderAccountAdmin(admin.ModelAdmin):
     list_display = ('bidder_id', 'dealer_id', 'unit', 'is_active')
     list_filter = ('is_active',)
+    fields = ('bidder_id', 'dealer_id', 'unit', 'is_active', 'comment', 'win_notify_emails')
 
 
 @admin.register(AvitoVenue)
@@ -69,6 +70,7 @@ class AvitoLotOfferAdmin(admin.ModelAdmin):
         'status_name',
         'outcome_code',
         'bid',
+        'manual_max_bid',
         'gm1_money',
         'updated_at',
     )

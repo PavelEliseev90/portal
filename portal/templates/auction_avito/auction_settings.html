@@ -13,6 +13,7 @@
     </div>
     <div class="d-flex gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:monitor' %}">Монитор</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">Рекомендации</a>
     </div>
@@ -124,11 +125,28 @@
           Опрашивать Maxposter по лотам со ставкой после окончания аукциона
         </label>
       </div>
-      <label class="form-label">Email при выигрыше лота</label>
-      <textarea class="form-control" name="win_notify_emails" rows="3"
+      <label class="form-label">Email при выигрыше — общий fallback</label>
+      <textarea class="form-control" name="win_notify_emails" rows="2"
                 placeholder="user1@example.com, user2@example.com">{{ auction_settings.win_notify_emails }}</textarea>
-      <div class="form-text">
-        Письмо уходит один раз, когда продавец выбрал нас. В письме: ссылка Maxposter, авто, расчёт выкупа, финальная ставка.
+      <div class="form-text mb-3">
+        Используется, если у площадки ниже не заданы свои адреса. Письмо уходит один раз при outcome=won.
+      </div>
+
+      <h6 class="mt-2 mb-2">Email по площадкам</h6>
+      <p class="small text-muted">Свои адреса для каждой нашей площадки (dealerId). Сохраняются только для аккаунтов, уже созданных в системе.</p>
+      <div class="row g-3">
+        {% for row in platform_email_rows %}
+        <div class="col-md-6">
+          <label class="form-label small mb-1">
+            {{ row.label }}
+            {% if not row.has_account %}<span class="badge text-bg-light text-muted">нет аккаунта</span>{% endif %}
+          </label>
+          <textarea class="form-control form-control-sm" name="platform_emails_{{ row.dealer_id }}" rows="2"
+                    {% if not row.has_account %}disabled placeholder="Сначала создайте AvitoBidderAccount"{% else %}placeholder="email@…"{% endif %}>{{ row.emails }}</textarea>
+        </div>
+        {% empty %}
+        <div class="col-12 text-muted small">Нет площадок в справочнике.</div>
+        {% endfor %}
       </div>
     </div>
 

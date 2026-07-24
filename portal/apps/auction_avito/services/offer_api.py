@@ -92,6 +92,7 @@ def build_offer_state_response(offer: AvitoLotOffer, *, history_limit: int = 5) 
         'lotId': lot.lot_id if lot else None,
         'lotPk': lot.pk if lot else None,
         'bid': offer.bid,
+        'manualMaxBid': offer.manual_max_bid,
         'bidMadeAt': _format_dt(offer.bid_made_at),
         'bidComment': comment,
         'status': {
