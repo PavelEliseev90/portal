@@ -26,13 +26,40 @@ from auction_avito.services.venues import resolve_venue_from_payload
 CALC_REUSE_TTL = timedelta(hours=2)
 
 
-def _as_aware(dt):
-    """Нормализует datetime к aware (текущая TZ Django), без сюрпризов при сравнении."""
+def _compat_dt(dt):
+    """
+    Приводит datetime к тому же виду, что timezone.now() при текущих settings.USE_TZ.
+    Иначе: TypeError can't subtract offset-naive and offset-aware datetimes.
+    """
     if dt is None:
         return None
-    if timezone.is_naive(dt):
-        return timezone.make_aware(dt, timezone.get_current_timezone())
+    from django.conf import settings
+
+    if settings.USE_TZ:
+        if timezone.is_naive(dt):
+            return timezone.make_aware(dt, timezone.get_current_timezone())
+        return dt
+    # USE_TZ=False → now() naive; с БД иногда приходит aware
+    if timezone.is_aware(dt):
+        return timezone.make_naive(dt, timezone.get_current_timezone())
     return dt
+
+
+def _age_seconds(earlier, later=None):
+    """Разница later - earlier в секундах; при любой ошибке дат — None."""
+    try:
+        a = _compat_dt(earlier)
+        b = _compat_dt(later if later is not None else timezone.now())
+        if a is None or b is None:
+            return None
+        # Последний предохранитель, если драйвер БД вернул неожиданный tzinfo
+        if timezone.is_aware(a) and timezone.is_naive(b):
+            a = timezone.make_naive(a, timezone.get_current_timezone())
+        elif timezone.is_naive(a) and timezone.is_aware(b):
+            b = timezone.make_naive(b, timezone.get_current_timezone())
+        return (b - a).total_seconds()
+    except Exception:
+        return None
 
 
 def _force_recalc_requested(payload: dict) -> bool:
@@ -50,7 +77,6 @@ def get_reusable_calculation(payload: dict, *, force: bool = False, max_age=None
     Последний успешный авторасчёт лота, если он не старше max_age (по умолчанию 2 часа).
 
     Возвращает AvitoLotCalculation или None (нужен новый расчёт).
-    Сравнение дат — через timezone.now() и aware datetime.
     """
     if force or _force_recalc_requested(payload):
         return None
@@ -81,13 +107,14 @@ def get_reusable_calculation(payload: dict, *, force: bool = False, max_age=None
     if calc is None or calc.calculated_at is None:
         return None
 
-    calculated_at = _as_aware(calc.calculated_at)
-    now = timezone.now()
-    age = now - calculated_at
-    # Часы в будущем (перекос часов) — считаем свежим.
-    if age.total_seconds() < 0:
+    age_sec = _age_seconds(calc.calculated_at)
+    if age_sec is None:
+        # Непонятные даты — безопаснее пересчитать, чем падать
+        return None
+    # Часы в будущем (перекос) — считаем свежим
+    if age_sec < 0:
         return calc
-    if age > ttl:
+    if age_sec > ttl.total_seconds():
         return None
     return calc
 
@@ -127,7 +154,7 @@ def answer_from_cached_calculation(calc: AvitoLotCalculation) -> dict:
         if answer.get(key) is None and val is not None:
             answer[key] = val
 
-    calculated_at = _as_aware(calc.calculated_at)
+    calculated_at = _compat_dt(calc.calculated_at)
     answer['from_cache'] = True
     answer['cached_calculation_id'] = calc.pk
     answer['cached_at'] = calculated_at.isoformat() if calculated_at else None

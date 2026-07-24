@@ -977,7 +977,10 @@ def calculate_car(request):
         info = normalize_calculate_car_request(info)
 
         # Последний успешный расчёт лота младше 2 ч — без Maxposter и формулы.
-        cached = get_reusable_calculation(info)
+        try:
+            cached = get_reusable_calculation(info)
+        except Exception:
+            cached = None
         if cached is not None:
             upsert_lot_from_calculate_request(info)
             answer = answer_from_cached_calculation(cached)
