@@ -16,6 +16,15 @@ def _as_int(value, default=None):
         return default
 
 
+def round_up_to(value, step) -> int:
+    """Округление ставки вверх до кратного step (например 820500 → 821000 при step=1000)."""
+    value = int(value)
+    step = max(1, int(step or 1))
+    if step == 1:
+        return value
+    return int(math.ceil(value / step) * step)
+
+
 def categorize_auto_bid_reason(reason: str, *, should_bid: bool = False, filters_ok: bool = True) -> str:
     """
     Стабильный код причины для аналитики.
