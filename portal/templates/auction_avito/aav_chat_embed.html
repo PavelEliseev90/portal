@@ -1,3 +1,4 @@
+{% load static %}
 {% with prefix=embed.prefix|default:"aav_feed" %}
 <div class="hidemobile" style="position: fixed; bottom: 0; right: 0; padding: 20px; z-index: 1030;">
     <button type="button" class="btn bg-dark text-white" id="{{ prefix }}_chat_open" data-bs-toggle="offcanvas" data-bs-target="#{{ prefix }}Offcanvas" aria-controls="{{ prefix }}Offcanvas">
@@ -79,7 +80,7 @@
     </div>
 </div>
 
-<audio id="{{ prefix }}-notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="{{ prefix }}-notif" src="{% static 'auction_avito/notif_avito.wav' %}" preload="auto"></audio>
 
 <style>
   .aav-chat-msg-lot { cursor: pointer; }
