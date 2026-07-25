@@ -693,8 +693,14 @@ def analytics(request):
 
 @login_required
 def loss_report(request):
-    """Отчёт по лотам: KPI + таблица для анализа проигрышей."""
-    from auction_avito.services.loss_report import build_loss_report_context
+    """Отчёт по лотам: KPI + таблица для анализа проигрышей (+ Excel)."""
+    from auction_avito.services.loss_report import (
+        build_loss_report_context,
+        export_loss_report_xlsx,
+    )
+
+    if (request.GET.get('export') or '').strip().lower() in ('xlsx', 'excel', '1'):
+        return export_loss_report_xlsx(request)
 
     ctx = build_loss_report_context(request)
     return render(request, 'auction_avito/loss_report.html', {'params': ctx})
