@@ -1,0 +1,339 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Отчёт по лотам Авито {% endblock %}
+{% block title_navbar %} — Отчёт по лотам {% endblock %}
+
+{% block head %}
+<style>
+  .aav-an-hero {
+    border-radius: 14px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    background: linear-gradient(135deg, #eef4fb 0%, #fff 48%, #f8fafc 100%);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+  .aav-an-hero h2 { margin: 0 0 0.35rem; font-weight: 650; color: #002a5a; }
+  .aav-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+  .aav-kpi {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    background: #fff;
+    padding: 0.85rem 1rem;
+  }
+  .aav-kpi .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8ea1ba;
+    margin-bottom: 0.2rem;
+  }
+  .aav-kpi .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
+  .aav-kpi .hint { font-size: 0.78rem; color: #6c7a92; margin-top: 0.15rem; }
+  .aav-counter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.65rem;
+  }
+  .aav-counter {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    padding: 0.75rem 0.9rem;
+    background: #f8fafc;
+  }
+  a.aav-counter {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .15s ease, transform .15s ease, outline .15s;
+    cursor: pointer;
+  }
+  a.aav-counter:hover {
+    box-shadow: 0 4px 14px rgba(0, 42, 90, 0.12);
+    transform: translateY(-1px);
+  }
+  a.aav-counter.active-filter {
+    outline: 2px solid #00509d;
+    outline-offset: 1px;
+  }
+  .aav-counter.won { background: #ecfdf5; border-color: #bbf7d0; }
+  .aav-counter.lost { background: #fef2f2; border-color: #fecaca; }
+  .aav-counter.waiting_seller { background: #fff7ed; border-color: #fed7aa; }
+  .aav-counter.no_selection,
+  .aav-counter.not_redeemed,
+  .aav-counter.we_refused,
+  .aav-counter.not_taken,
+  .aav-counter.canceled,
+  .aav-counter.finished { background: #f1f5f9; border-color: #e2e8f0; }
+  .aav-counter .c-label { font-size: 0.8rem; color: #475569; }
+  .aav-counter .c-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; }
+  .aav-counter .c-pct { font-size: 0.78rem; color: #6c7a92; margin-top: 0.1rem; }
+  .lr-table-wrap { overflow-x: auto; }
+  .lr-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  .lr-table th {
+    text-align: left; padding: .5rem .45rem; color: #6c7a92; font-weight: 600;
+    border-bottom: 1px solid rgba(0,42,90,.1); white-space: nowrap;
+    position: sticky; top: 0; background: #fff; z-index: 1;
+  }
+  .lr-table td {
+    padding: .5rem .45rem; border-bottom: 1px solid rgba(0,42,90,.06);
+    vertical-align: middle;
+  }
+  .lr-table tr.lr-row { cursor: pointer; }
+  .lr-table tr.lr-row:hover { background: #f5f8fc; }
+  .lr-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lr-neg { color: #b91c1c; font-weight: 650; }
+  .lr-pos { color: #166534; font-weight: 650; }
+  .lr-muted { color: #94a3b8; }
+  .lr-badge {
+    display: inline-block; font-size: .72rem; font-weight: 650;
+    padding: .12rem .4rem; border-radius: .3rem;
+  }
+  .lr-badge.lost { background: #fecaca; color: #991b1b; }
+  .lr-badge.won { background: #bbf7d0; color: #14532d; }
+  .lr-badge.waiting_seller { background: #fed7aa; color: #9a3412; }
+  .lr-badge.other { background: #e2e8f0; color: #334155; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page">
+  <div class="aav-an-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h2><span class="bi bi-clipboard-data me-2"></span>Отчёт по лотам</h2>
+      <p class="text-muted small mb-0">
+        Анализ проигрышей: выкуп vs min/max ставки, пожелание продавца, коридор, число наших ставок.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:monitor' %}">Монитор</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <form method="get" class="row g-2 align-items-end">
+      <input type="hidden" name="outcome" value="{{ params.filters.outcome }}">
+      <input type="hidden" name="status" value="{{ params.filters.status }}">
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-1">С</label>
+        <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small text-muted mb-1">По</label>
+        <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+      </div>
+      <div class="col-auto">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="with_bids" value="1" id="lrWithBids"
+                 {% if params.filters.with_bids %}checked{% endif %}>
+          <label class="form-check-label" for="lrWithBids">Только со ставками</label>
+        </div>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Показать</button>
+      </div>
+      {% if params.filters.outcome or params.filters.status %}
+      <div class="col-auto">
+        <a class="btn btn-outline-secondary" href="{{ params.clear_outcome_url }}">Сбросить итог</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="aav-kpi-grid mb-3">
+    <div class="aav-kpi">
+      <div class="label">Всего лотов</div>
+      <div class="value">{{ params.kpis.lots_total }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Лотов со ставками</div>
+      <div class="value">{{ params.kpis.lots_with_bids }}</div>
+      <div class="hint">{{ params.kpis.bid_share }}% от лотов</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Всего ставок</div>
+      <div class="value">{{ params.kpis.bids_total }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. ставок на лот</div>
+      <div class="value">{{ params.kpis.avg_bids_per_lot }}</div>
+      <div class="hint">только лоты со ставками</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. пробег</div>
+      <div class="value">{% if params.kpis.avg_mileage %}{{ params.kpis.avg_mileage|formatted_number }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. год</div>
+      <div class="value">{{ params.kpis.avg_year|default:"—" }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. до пожелания</div>
+      <div class="value">{% if params.kpis.avg_below_wish_pct is not None %}{% if params.kpis.avg_below_wish_pct > 0 %}+{% endif %}{{ params.kpis.avg_below_wish_pct }}%{% else %}—{% endif %}</div>
+      <div class="hint">выкуп vs wish · {{ params.kpis.below_wish_n }} лот.</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ср. ниже maxBid</div>
+      <div class="value">{% if params.kpis.avg_below_max_pct is not None %}{% if params.kpis.avg_below_max_pct > 0 %}+{% endif %}{{ params.kpis.avg_below_max_pct }}%{% else %}—{% endif %}</div>
+      <div class="hint">выкуп vs max · {{ params.kpis.below_max_n }} лот.</div>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h5 class="mb-3">Итоги торгов</h5>
+    {% if params.outcomes %}
+    <div class="aav-counter-grid">
+      {% for o in params.outcomes %}
+      <a class="aav-counter {{ o.code }}{% if o.active %} active-filter{% endif %}"
+         href="{{ o.list_url }}" title="Показать лоты с этим итогом">
+        <div class="c-label">{{ o.label }}</div>
+        <div class="c-value">{{ o.count }}</div>
+        <div class="c-pct">{{ o.pct }}%</div>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="small text-muted mt-2 mb-0">Нажмите на итог, чтобы отфильтровать таблицу лотов за выбранный период.</p>
+    {% else %}
+    <p class="text-muted small mb-0">За период нет зафиксированных итогов.</p>
+    {% endif %}
+  </div>
+
+  <div class="portal-panel">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div>
+        <h5 class="mb-0">Лоты для анализа</h5>
+        <div class="small text-muted">
+          Показано {{ params.kpis.rows_shown }}
+          {% if params.filters.with_bids %}· только со ставками{% endif %}
+          {% if params.filters.outcome %}· итог: {{ params.filters.outcome }}{% endif %}
+          {% if params.filters.status %}· статус: {{ params.filters.status }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="lr-table-wrap">
+      <table class="lr-table">
+        <thead>
+          <tr>
+            <th>Авто</th>
+            <th>Выкуп</th>
+            <th>Мин. ставка</th>
+            <th>Пожелание</th>
+            <th>Коридор L1–L2</th>
+            <th>maxBid</th>
+            <th>Наша ставка</th>
+            <th>Ставок</th>
+            <th title="пожелание − выкуп: насколько выкуп не дотягивает до желания продавца">До пожелания</th>
+            <th title="% от пожелания: (пожелание − выкуп) / пожелание">До пожелания %</th>
+            <th title="maxBid − выкуп: насколько выкуп ниже максимума">Выкуп ниже max</th>
+            <th title="% от maxBid: (maxBid − выкуп) / maxBid">Ниже max %</th>
+            <th title="выкуп − minAvailableBid: + выше минимума, − ниже">Выкуп vs min</th>
+            <th>Итог</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in params.rows %}
+          <tr class="lr-row" data-href="{{ r.portalLotUrl }}">
+            <td>
+              <div class="fw-semibold">{{ r.title }}</div>
+              <div class="small text-muted">
+                {% if r.year %}{{ r.year }} · {% endif %}
+                {% if r.mileage %}{{ r.mileage|formatted_number }} км · {% endif %}
+                лот {{ r.lotId }}
+              </div>
+            </td>
+            <td class="lr-money">{% if r.buyout is not None %}{{ r.buyout|formatted_number }} ₽{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{% if r.minAvailableBid is not None %}{{ r.minAvailableBid|formatted_number }} ₽{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{% if r.sellerWish is not None %}{{ r.sellerWish|formatted_number }} ₽{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{% if r.corridor %}{{ r.corridor }}{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{% if r.maxBid is not None %}{{ r.maxBid|formatted_number }} ₽{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{% if r.ourBid is not None %}{{ r.ourBid|formatted_number }} ₽{% else %}<span class="lr-muted">—</span>{% endif %}</td>
+            <td class="lr-money">{{ r.ourBidsCount|default:"—" }}</td>
+            <td class="lr-money {% if r.buyoutBelowWish is not None and r.buyoutBelowWish > 0 %}lr-neg{% elif r.buyoutBelowWish is not None and r.buyoutBelowWish < 0 %}lr-pos{% endif %}">
+              {% if r.buyoutBelowWish is not None %}
+                {% if r.buyoutBelowWish > 0 %}+{% endif %}{{ r.buyoutBelowWish|formatted_number }} ₽
+              {% else %}<span class="lr-muted">—</span>{% endif %}
+            </td>
+            <td class="lr-money {% if r.buyoutBelowWishPct is not None and r.buyoutBelowWishPct > 0 %}lr-neg{% elif r.buyoutBelowWishPct is not None and r.buyoutBelowWishPct < 0 %}lr-pos{% endif %}">
+              {% if r.buyoutBelowWishPct is not None %}
+                {% if r.buyoutBelowWishPct > 0 %}+{% endif %}{{ r.buyoutBelowWishPct }}%
+              {% else %}<span class="lr-muted">—</span>{% endif %}
+            </td>
+            <td class="lr-money {% if r.buyoutBelowMax is not None and r.buyoutBelowMax > 0 %}lr-neg{% elif r.buyoutBelowMax is not None and r.buyoutBelowMax < 0 %}lr-pos{% endif %}">
+              {% if r.buyoutBelowMax is not None %}
+                {% if r.buyoutBelowMax > 0 %}+{% endif %}{{ r.buyoutBelowMax|formatted_number }} ₽
+              {% else %}<span class="lr-muted">—</span>{% endif %}
+            </td>
+            <td class="lr-money {% if r.buyoutBelowMaxPct is not None and r.buyoutBelowMaxPct > 0 %}lr-neg{% elif r.buyoutBelowMaxPct is not None and r.buyoutBelowMaxPct < 0 %}lr-pos{% endif %}">
+              {% if r.buyoutBelowMaxPct is not None %}
+                {% if r.buyoutBelowMaxPct > 0 %}+{% endif %}{{ r.buyoutBelowMaxPct }}%
+              {% else %}<span class="lr-muted">—</span>{% endif %}
+            </td>
+            <td class="lr-money {% if r.buyoutVsMin is not None and r.buyoutVsMin < 0 %}lr-neg{% elif r.buyoutVsMin is not None and r.buyoutVsMin > 0 %}lr-pos{% endif %}">
+              {% if r.buyoutVsMin is not None %}
+                {% if r.buyoutVsMin > 0 %}+{% endif %}{{ r.buyoutVsMin|formatted_number }} ₽
+                {% if r.buyoutVsMinPct is not None %}
+                  <span class="small text-muted">({{ r.buyoutVsMinPct }}%)</span>
+                {% endif %}
+              {% else %}<span class="lr-muted">—</span>{% endif %}
+            </td>
+            <td>
+              {% if r.outcomeCode == 'lost' %}
+              <span class="lr-badge lost">{{ r.outcomeLabel }}</span>
+              {% elif r.outcomeCode == 'won' %}
+              <span class="lr-badge won">{{ r.outcomeLabel }}</span>
+              {% elif r.outcomeCode == 'waiting_seller' %}
+              <span class="lr-badge waiting_seller">{{ r.outcomeLabel }}</span>
+              {% else %}
+              <span class="lr-badge other">{{ r.outcomeLabel|default:"—" }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="14" class="text-muted text-center py-4">Нет лотов по выбранным фильтрам</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if params.kpis.rows_shown >= 500 %}
+    <p class="small text-muted mt-2 mb-0">Показаны первые 500 лотов. Уточните период или итог.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('tr.lr-row[data-href]').forEach(function (tr) {
+    tr.addEventListener('click', function () {
+      const href = tr.getAttribute('data-href');
+      if (href) window.open(href, '_blank', 'noopener');
+    });
+  });
+  // если чекбокс снят — явно шлём with_bids=0
+  const form = document.querySelector('.portal-panel form');
+  const cb = document.getElementById('lrWithBids');
+  if (form && cb) {
+    form.addEventListener('submit', function () {
+      if (!cb.checked) {
+        let hidden = form.querySelector('input[name="with_bids"][type="hidden"]');
+        if (!hidden) {
+          hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = 'with_bids';
+          form.appendChild(hidden);
+        }
+        hidden.value = '0';
+        cb.disabled = true;
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}
