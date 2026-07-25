@@ -692,6 +692,15 @@ def analytics(request):
 
 
 @login_required
+def loss_report(request):
+    """Отчёт по лотам: KPI + таблица для анализа проигрышей."""
+    from auction_avito.services.loss_report import build_loss_report_context
+
+    ctx = build_loss_report_context(request)
+    return render(request, 'auction_avito/loss_report.html', {'params': ctx})
+
+
+@login_required
 def monitor(request):
     """Онлайн-монитор: активные лоты / ставки / итоги / выигранные / история за сегодня."""
     from auction_avito.services.monitor import (
