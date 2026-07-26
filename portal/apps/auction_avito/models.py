@@ -729,6 +729,14 @@ class AvitoAuctionSettings(models.Model):
             '(фильтр «мелочи» по выкупаемым лотам). Пусто = без ограничения.'
         ),
     )
+    cap_bid_by_seller_wish = models.BooleanField(
+        'Не выше пожелания продавца',
+        default=False,
+        help_text=(
+            'Если включено, автоставка не ставится, когда рассчитанная сумма '
+            'превышает minPrice (желание/пожелание продавца) по лоту.'
+        ),
+    )
 
     weight_test_price = models.DecimalField(
         'Вес этапа «Тест-прайс»',

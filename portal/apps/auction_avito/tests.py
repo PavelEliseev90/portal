@@ -178,6 +178,48 @@ class AutoBidDecideTests(SimpleTestCase):
         self.assertFalse(d['should_bid'])
         self.assertIn('минимальной', d['reason'])
 
+    def test_cap_by_seller_wish_blocks(self):
+        d = decide_auto_bid(
+            _settings(cap_bid_by_seller_wish=True),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=820_000,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+            seller_wish=824_000,  # next = 825000 > wish
+        )
+        self.assertFalse(d['should_bid'])
+        self.assertEqual(d['reason_category'], 'above_seller_wish')
+        self.assertIn('пожелания продавца', d['reason'])
+
+    def test_cap_by_seller_wish_allows_equal(self):
+        d = decide_auto_bid(
+            _settings(cap_bid_by_seller_wish=True),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=820_000,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+            seller_wish=825_000,  # next = 825000 == wish
+        )
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 825_000)
+
+    def test_cap_by_seller_wish_disabled_ignores(self):
+        d = decide_auto_bid(
+            _settings(cap_bid_by_seller_wish=False),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=820_000,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+            seller_wish=824_000,
+        )
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 825_000)
 
 class OutcomeClassifyTests(SimpleTestCase):
     def test_waiting_seller(self):

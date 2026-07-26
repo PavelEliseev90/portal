@@ -533,6 +533,8 @@ def avito_auction_settings(request):
         'block_carsharing': s.block_carsharing,
         'block_mileage_twisted': s.block_mileage_twisted,
         'bid_round_to': s.bid_round_to,
+        'min_bid_amount': s.min_bid_amount,
+        'cap_bid_by_seller_wish': s.cap_bid_by_seller_wish,
         'weight_test_price': float(s.weight_test_price),
         'weight_rdo': float(s.weight_rdo),
         'weight_kor': float(s.weight_kor),
@@ -743,6 +745,15 @@ def avito_auction_auto_bid_decide(request):
     max_bid = data.get('maxBid', data.get('MaxBid'))
     min_step = data.get('minBidStep', data.get('MinBidStep'))
     our_bid = data.get('ourBid') if 'ourBid' in data else data.get('bid')
+    seller_wish_from_payload = (
+        'minPrice' in data or 'MinPrice' in data
+        or 'sellerWish' in data or 'sellerWishPrice' in data
+    )
+    seller_wish = (
+        data.get('minPrice', data.get('MinPrice', data.get('sellerWish', data.get('sellerWishPrice'))))
+        if seller_wish_from_payload
+        else None
+    )
 
     if lot is not None:
         vehicle = getattr(lot, 'vehicle_avito', None) or getattr(lot, 'vehicle_autohub', None)
@@ -752,6 +763,8 @@ def avito_auction_auto_bid_decide(request):
             mileage = getattr(vehicle, 'mileage', None)
         if not max_bid_from_payload and max_bid in (None, ''):
             max_bid = lot.max_bid
+        if not seller_wish_from_payload and seller_wish in (None, ''):
+            seller_wish = getattr(lot, 'min_price', None)
         if offer is None:
             offer = lot.offers.order_by('-id').first()
         if offer is not None:
@@ -804,6 +817,7 @@ def avito_auction_auto_bid_decide(request):
             year=year,
             mileage=mileage,
             risk_flags=risk,
+            seller_wish=seller_wish,
         )
     except Exception as exc:
         return JsonResponse(

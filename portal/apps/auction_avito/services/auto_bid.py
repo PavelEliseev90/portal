@@ -68,6 +68,8 @@ def categorize_auto_bid_reason(reason: str, *, should_bid: bool = False, filters
         return 'below_min_bid'
     if 'ручн' in text and 'потол' in text:
         return 'above_manual_max'
+    if 'пожелан' in text:
+        return 'above_seller_wish'
     if text.startswith('ok'):
         return 'ok'
     return 'other'
@@ -90,6 +92,7 @@ REASON_CATEGORY_LABELS = {
     'next_ge_buyout': 'След. ставка ≥ выкупа',
     'below_min_bid': 'Ставка ниже минимальной в настройках',
     'above_manual_max': 'Выше ручного потолка',
+    'above_seller_wish': 'Выше пожелания продавца',
     'other': 'Прочее',
 }
 
@@ -108,6 +111,7 @@ REASON_CATEGORY_GROUP = {
     'next_ge_buyout': 'economics',
     'below_min_bid': 'economics',
     'above_manual_max': 'economics',
+    'above_seller_wish': 'economics',
     'already_ours': 'already',
     'ok': 'ok',
     'other': 'other',
@@ -207,6 +211,7 @@ def decide_auto_bid(
     year=None,
     mileage=None,
     risk_flags: dict | None = None,
+    seller_wish=None,
 ) -> dict[str, Any]:
     """
     Алгоритм:
@@ -219,6 +224,7 @@ def decide_auto_bid(
          maxBid не наша и выкуп > maxBid;
          next = round_up(maxBid + minBidStep);
          ставим, если next < выкупа.
+    5) опционально: next ≤ пожелание продавца (minPrice), если включено в настройках.
 
     После каждого обновления ленты парсер заново считает и вызывает этот decide.
     """
@@ -232,6 +238,7 @@ def decide_auto_bid(
         'max_bid': _as_int(max_bid),
         'min_bid_step': _as_int(min_bid_step, 0) or 0,
         'our_bid': _as_int(our_bid),
+        'seller_wish': _as_int(seller_wish),
         'next_bid': None,
         'filters_ok': False,
         'mode': None,
@@ -301,6 +308,8 @@ def decide_auto_bid(
             )
             result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
+        if _reject_above_seller_wish(result, settings, next_bid):
+            return result
         result['should_bid'] = True
         result['bid_amount'] = next_bid
         result['reason'] = 'ok (первая ставка: min+шаг)'
@@ -339,19 +348,35 @@ def decide_auto_bid(
             result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
 
-    result['should_bid'] = True
-    result['bid_amount'] = next_bid
-    result['reason'] = 'ok'
-    result['reason_category'] = 'ok'
-
     min_bid_floor = _as_int(getattr(settings, 'min_bid_amount', None))
     if min_bid_floor and min_bid_floor > 0 and next_bid < min_bid_floor:
-        result['should_bid'] = False
-        result['bid_amount'] = None
         result['reason'] = (
             f'ставка {next_bid} ниже минимальной в настройках ({min_bid_floor})'
         )
         result['reason_category'] = categorize_auto_bid_reason(result['reason'])
         return result
 
+    if _reject_above_seller_wish(result, settings, next_bid):
+        return result
+
+    result['should_bid'] = True
+    result['bid_amount'] = next_bid
+    result['reason'] = 'ok'
+    result['reason_category'] = 'ok'
     return result
+
+
+def _reject_above_seller_wish(result: dict, settings, next_bid: int) -> bool:
+    """True = отклонили из‑за потолка пожелания продавца."""
+    if not getattr(settings, 'cap_bid_by_seller_wish', False):
+        return False
+    wish = result.get('seller_wish')
+    if not wish or wish <= 0:
+        return False
+    if next_bid <= wish:
+        return False
+    result['should_bid'] = False
+    result['bid_amount'] = None
+    result['reason'] = f'ставка {next_bid} выше пожелания продавца ({wish})'
+    result['reason_category'] = 'above_seller_wish'
+    return True

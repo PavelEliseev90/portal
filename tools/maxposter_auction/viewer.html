@@ -1411,6 +1411,7 @@
       maxBid: normalizeMaxBidForDecide(lot?.maxBid),
       minBidStep: offer?.minBidStep,
       ourBid: portalSync?.bid ?? offer?.bid ?? 0,
+      minPrice: lot?.minPrice ?? null,
       year,
       mileage,
       autoteka: lot?.autoteka || null,
