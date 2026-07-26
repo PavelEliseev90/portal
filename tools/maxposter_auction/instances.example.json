@@ -1,0 +1,24 @@
+{
+  "hubPort": 8005,
+  "portalBase": "https://ah.kors-group.com",
+  "instances": [
+    {
+      "dealerId": "2104",
+      "label": "КорсАвто Тула",
+      "port": 8010,
+      "enabled": true
+    },
+    {
+      "dealerId": "2106",
+      "label": "КорсАвто Новомосковск",
+      "port": 8011,
+      "enabled": true
+    },
+    {
+      "dealerId": "2107",
+      "label": "КорсАвто Калуга",
+      "port": 8012,
+      "enabled": false
+    }
+  ]
+}

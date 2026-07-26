@@ -3,6 +3,9 @@ maxposter_session.json
 offers_dump.json
 offers_dump_*.json
 dealers_status.json
+instances.json
+instances/
+outcome_poll.log
 build/
 dist/
 __pycache__/

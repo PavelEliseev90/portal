@@ -338,6 +338,7 @@
     <div class="pageHead">
       <h1>Авито — лоты с Аукциона</h1>
       <div class="sub">Файл данных: <span class="mono">offers_dump.json</span></div>
+      <div class="sub" id="instanceMeta" style="display:none"></div>
       <div class="sub" id="loadedMeta">Загрузка…</div>
     </div>
     <nav class="tabBar" role="tablist">
@@ -1863,6 +1864,38 @@
   function getSelectedDealerId(){
     return $("dealerId").value.trim();
   }
+  async function applyInstanceConfig(){
+    try{
+      const resp = await fetch("/api/instance", { cache: "no-store" });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      window.__INSTANCE__ = data;
+      const locked = String(data.lockedDealerId || "").trim();
+      if (locked){
+        const label = data.label
+          ? `${locked}: ${data.label}`
+          : ((window.KNOWN_DEALERS || []).find((d) => String(d.id) === locked)?.label || locked);
+        fillDealerSelect([{ id: locked, label }]);
+        const sel = $("dealerId");
+        sel.value = locked;
+        sel.disabled = true;
+        localStorage.setItem("mp_dealer_id", locked);
+        const meta = $("instanceMeta");
+        if (meta){
+          meta.style.display = "block";
+          meta.innerHTML = `Режим инстанса · площадка зафиксирована · порт <span class="mono">${escapeHtml(data.port)}</span>`;
+        }
+        document.title = `Maxposter · ${label}`;
+      }
+      if (data.portalBase && $("portalBase") && !localStorage.getItem("mp_portal_base")){
+        $("portalBase").value = data.portalBase;
+      }
+      if (data.emailConfigured && $("loginEmail") && !$("loginEmail").value){
+        $("loginEmail").placeholder = "логин из .env воркера";
+        $("loginPassword").placeholder = "пароль из .env воркера";
+      }
+    }catch(_){}
+  }
   function initAuthFields(){
     const savedEmail = localStorage.getItem("mp_login_email") || "";
     const savedPassword = localStorage.getItem("mp_login_password") || "";
@@ -2426,10 +2459,12 @@
   });
   initAuthFields();
   fillDealerSelect(window.KNOWN_DEALERS || []);
-  renderReloadLog();
-  switchTab(localStorage.getItem(ACTIVE_TAB_KEY) || "Lots");
-  applyAutoReloadFromField();
-  boot();
+  applyInstanceConfig().finally(() => {
+    renderReloadLog();
+    switchTab(localStorage.getItem(ACTIVE_TAB_KEY) || "Lots");
+    applyAutoReloadFromField();
+    boot();
+  });
 </script>
 </body>
 </html>

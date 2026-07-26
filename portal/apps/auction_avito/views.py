@@ -925,6 +925,7 @@ def auction_settings(request):
             settings_obj.block_carsharing = request.POST.get('block_carsharing') == 'on'
             settings_obj.block_mileage_twisted = request.POST.get('block_mileage_twisted') == 'on'
             settings_obj.bid_round_to = max(1, int(request.POST.get('bid_round_to') or 1000))
+            settings_obj.min_bid_amount = _parse_optional_int(request.POST.get('min_bid_amount'))
             settings_obj.weight_test_price = request.POST.get('weight_test_price') or 1
             settings_obj.weight_rdo = request.POST.get('weight_rdo') or '0.55'
             settings_obj.weight_kor = request.POST.get('weight_kor') or '0.25'

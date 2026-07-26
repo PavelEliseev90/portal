@@ -768,7 +768,7 @@ def avito_auction_auto_bid_decide(request):
             if last_calc:
                 buyout = last_calc.estimation_price
 
-    # Ручной потолок автоставки по офферу (может быть выше расчётного выкупа).
+    # Ручной потолок автоставки: жёсткий cap (не выше manual, даже если расчёт больше).
     calc_buyout = buyout
     manual_ceiling = None
     if offer is not None and getattr(offer, 'manual_max_bid', None):
@@ -781,7 +781,10 @@ def avito_auction_auto_bid_decide(request):
             calc_n = int(float(calc_buyout)) if calc_buyout not in (None, '') else 0
         except (TypeError, ValueError):
             calc_n = 0
-        buyout = max(calc_n, manual_ceiling)
+        if calc_n > 0:
+            buyout = min(calc_n, manual_ceiling)
+        else:
+            buyout = manual_ceiling
 
     # Пустой / нулевой maxBid = ставок ещё нет → первая ставка от minAvailableBid.
     try:
@@ -819,6 +822,19 @@ def avito_auction_auto_bid_decide(request):
     decision['manual_max_bid'] = manual_ceiling
     if manual_ceiling:
         decision['buyout_ceiling_source'] = 'manual_max_bid'
+        # Доп. защита: ставка не выше ручного потолка.
+        bid_amt = decision.get('bid_amount')
+        try:
+            bid_n = int(bid_amt) if bid_amt not in (None, '') else None
+        except (TypeError, ValueError):
+            bid_n = None
+        if bid_n is not None and bid_n > manual_ceiling:
+            decision['should_bid'] = False
+            decision['bid_amount'] = None
+            decision['reason'] = (
+                f'ставка {bid_n} выше ручного потолка {manual_ceiling}'
+            )
+            decision['reason_category'] = 'above_manual_max'
 
     try:
         from auction_avito.models import AvitoAutoBidDecision

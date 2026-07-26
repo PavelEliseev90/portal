@@ -64,6 +64,10 @@ def categorize_auto_bid_reason(reason: str, *, should_bid: bool = False, filters
         return 'already_ours'
     if '≥ выкупа' in text or '>= выкупа' in text:
         return 'next_ge_buyout'
+    if 'минимальн' in text and 'ставк' in text:
+        return 'below_min_bid'
+    if 'ручн' in text and 'потол' in text:
+        return 'above_manual_max'
     if text.startswith('ok'):
         return 'ok'
     return 'other'
@@ -84,6 +88,8 @@ REASON_CATEGORY_LABELS = {
     'buyout_le_max': 'Выкуп ≤ maxBid',
     'already_ours': 'Уже наша ставка / мы лидируем',
     'next_ge_buyout': 'След. ставка ≥ выкупа',
+    'below_min_bid': 'Ставка ниже минимальной в настройках',
+    'above_manual_max': 'Выше ручного потолка',
     'other': 'Прочее',
 }
 
@@ -100,6 +106,8 @@ REASON_CATEGORY_GROUP = {
     'buyout_le_min': 'economics',
     'buyout_le_max': 'economics',
     'next_ge_buyout': 'economics',
+    'below_min_bid': 'economics',
+    'above_manual_max': 'economics',
     'already_ours': 'already',
     'ok': 'ok',
     'other': 'other',
@@ -286,6 +294,13 @@ def decide_auto_bid(
             )
             result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
+        min_bid_floor = _as_int(getattr(settings, 'min_bid_amount', None))
+        if min_bid_floor and min_bid_floor > 0 and next_bid < min_bid_floor:
+            result['reason'] = (
+                f'ставка {next_bid} ниже минимальной в настройках ({min_bid_floor})'
+            )
+            result['reason_category'] = categorize_auto_bid_reason(result['reason'])
+            return result
         result['should_bid'] = True
         result['bid_amount'] = next_bid
         result['reason'] = 'ok (первая ставка: min+шаг)'
@@ -328,4 +343,15 @@ def decide_auto_bid(
     result['bid_amount'] = next_bid
     result['reason'] = 'ok'
     result['reason_category'] = 'ok'
+
+    min_bid_floor = _as_int(getattr(settings, 'min_bid_amount', None))
+    if min_bid_floor and min_bid_floor > 0 and next_bid < min_bid_floor:
+        result['should_bid'] = False
+        result['bid_amount'] = None
+        result['reason'] = (
+            f'ставка {next_bid} ниже минимальной в настройках ({min_bid_floor})'
+        )
+        result['reason_category'] = categorize_auto_bid_reason(result['reason'])
+        return result
+
     return result

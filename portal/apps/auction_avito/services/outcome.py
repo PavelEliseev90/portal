@@ -767,6 +767,35 @@ def apply_offer_outcome(
         blob=blob,
         status_code=status_code,
     )
+
+    # Пустая выгрузка с Maxposter (UI/сессия) — не затираем известный итог на unknown/? .
+    extract_empty = not (
+        (title or '').strip() or (detail or '').strip() or (blob or '').strip() or (status_code or '').strip()
+    )
+    if extract_empty:
+        logger.warning(
+            'avito outcome: empty extract lotOfferId=%s — keep prev=%s',
+            getattr(offer, 'lot_offer_id', None),
+            prev_outcome or '-',
+        )
+        classified = {
+            'outcome_code': prev_outcome or '',
+            'outcome_title': (offer.outcome_title or '') if prev_outcome else '',
+            'outcome_detail': (offer.outcome_detail or '') if prev_outcome else '',
+            'status_code': prev_status or offer.status_code or 'finished',
+        }
+    elif (classified.get('outcome_code') or '').strip() in ('', OUTCOME_UNKNOWN) and prev_outcome:
+        # Слабая классификация при наличии прежнего waiting/финала — не откатываем в ?.
+        if prev_outcome == OUTCOME_WAITING or prev_outcome in FINAL_OUTCOMES:
+            classified = {
+                'outcome_code': prev_outcome,
+                'outcome_title': _norm_spaces(title) or offer.outcome_title or OUTCOME_NAMES.get(prev_outcome, ''),
+                'outcome_detail': _norm_spaces(detail) or offer.outcome_detail or OUTCOME_NAMES.get(prev_outcome, ''),
+                'status_code': (
+                    prev_outcome if prev_outcome in ('won', 'lost')
+                    else (prev_status or 'finished')
+                ),
+            }
     # Явный код от клиента — только если по тексту итог пустой/неясный,
     # либо клиент прислал более «сильный» финал.
     if outcome_code:

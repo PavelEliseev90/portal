@@ -165,6 +165,19 @@ class AutoBidDecideTests(SimpleTestCase):
         self.assertEqual(d['next_bid'], 805_000)
         self.assertIn('первая ставка', d['reason'])
 
+    def test_min_bid_amount_floor(self):
+        d = decide_auto_bid(
+            _settings(min_bid_amount=900_000),
+            buyout_price=950_000,
+            min_available_bid=800_000,
+            max_bid=820_000,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+        )
+        self.assertFalse(d['should_bid'])
+        self.assertIn('минимальной', d['reason'])
+
 
 class OutcomeClassifyTests(SimpleTestCase):
     def test_waiting_seller(self):
