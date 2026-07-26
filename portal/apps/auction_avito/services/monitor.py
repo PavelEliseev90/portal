@@ -18,6 +18,7 @@ from auction_avito.services.outcome import (
     OUTCOME_WAITING,
     OUTCOME_UNKNOWN,
     OUTCOME_WON,
+    WIN_NOTIFY_OUTCOMES,
 )
 
 # Подписи площадок (наши dealerId) — синхронно с tools/maxposter_auction/dealers.js
@@ -92,11 +93,11 @@ def waiting_outcome_offers_q():
 
 
 def won_pending_offers_q():
-    """Выигранные офферы, ещё не отмеченные «передан в работу»."""
+    """Выигранные / «не обработан» офферы, ещё не отмеченные «передан в работу»."""
     return (
         Q(bid__gt=0)
         & Q(handed_to_work_at__isnull=True)
-        & Q(outcome_code=OUTCOME_WON)
+        & Q(outcome_code__in=list(WIN_NOTIFY_OUTCOMES))
     )
 
 
@@ -957,7 +958,7 @@ def serialize_monitor_lot(lot) -> dict:
             primary
             and not primary.handed_to_work_at
             and (
-                (primary.outcome_code or '') == OUTCOME_WON
+                (primary.outcome_code or '') in WIN_NOTIFY_OUTCOMES
                 or (primary.status_code or '') == OUTCOME_WON
             )
         ),

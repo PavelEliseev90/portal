@@ -9,7 +9,7 @@
 - «Продавец никого не выбрал» → no_selection (финал)
 - «Лот не выкупили» → not_redeemed (финал)
 - «Вы отказались от лота» → we_refused (финал)
-- «Лот не взяли в работу…» → not_taken (финал)
+- «Лот не взяли в работу…» / «Лот не обработан…» → not_taken (финал; как выигрыш: письмо + внимание в списке)
 - «Продавец отменил аукцион» → canceled (финал)
 """
 from __future__ import annotations
@@ -45,7 +45,7 @@ OUTCOME_NAMES = {
     OUTCOME_NO_SELECTION: 'Продавец никого не выбрал',
     OUTCOME_NOT_REDEEMED: 'Лот не выкупили',
     OUTCOME_WE_REFUSED: 'Вы отказались от лота',
-    OUTCOME_NOT_TAKEN: 'Лот не взяли в работу',
+    OUTCOME_NOT_TAKEN: 'Лот не взяли в работу / не обработан',
     OUTCOME_CANCELED: 'Продавец отменил аукцион',
     OUTCOME_UNKNOWN: 'Итог неизвестен',
 }
@@ -58,7 +58,7 @@ OUTCOME_BADGE_LABELS = {
     OUTCOME_NO_SELECTION: 'Никого не выбрали',
     OUTCOME_NOT_REDEEMED: 'Не выкупили',
     OUTCOME_WE_REFUSED: 'Отказались',
-    OUTCOME_NOT_TAKEN: 'Не взяли в работу',
+    OUTCOME_NOT_TAKEN: 'Не обработан',
     OUTCOME_CANCELED: 'Отменён',
     OUTCOME_UNKNOWN: 'Итог ?',
 }
@@ -79,10 +79,11 @@ OUTCOME_FILTER_CHOICES = [
 def offer_list_badge(offer) -> dict[str, str]:
     """
     Бейдж для карточки списка: приоритет у outcome_code, иначе status_code.
-    Возвращает {code, label, css} — css = класс-модификатор aav-status-*.
+    Возвращает {code, label, css, important} — css = класс-модификатор aav-status-*.
+    important=True для won / not_taken (выигрыш и «не обработан»).
     """
     if offer is None:
-        return {'code': '', 'label': '—', 'css': 'muted'}
+        return {'code': '', 'label': '—', 'css': 'muted', 'important': False}
 
     outcome = (getattr(offer, 'outcome_code', None) or '').strip()
     if outcome:
@@ -90,6 +91,7 @@ def offer_list_badge(offer) -> dict[str, str]:
             'code': outcome,
             'label': OUTCOME_BADGE_LABELS.get(outcome) or OUTCOME_NAMES.get(outcome) or outcome,
             'css': outcome,
+            'important': outcome in WIN_NOTIFY_OUTCOMES,
         }
 
     status = (getattr(offer, 'status_code', None) or '').strip()
@@ -115,6 +117,7 @@ def offer_list_badge(offer) -> dict[str, str]:
             or '—'
         ),
         'css': css,
+        'important': status == 'won',
     }
 
 
@@ -127,6 +130,12 @@ FINAL_OUTCOMES = frozenset({
     OUTCOME_WE_REFUSED,
     OUTCOME_NOT_TAKEN,
     OUTCOME_CANCELED,
+})
+
+# Итоги, при которых шлём win-письмо разово и считаем «требует внимания» как выигрыш.
+WIN_NOTIFY_OUTCOMES = frozenset({
+    OUTCOME_WON,
+    OUTCOME_NOT_TAKEN,
 })
 
 # Маппинг сырого status.status с ленты Maxposter → portal status_code.
@@ -168,6 +177,8 @@ _WE_REFUSED_RE = re.compile(
 )
 _NOT_TAKEN_RE = re.compile(
     r'не\s*взял\w*\s*в\s*работ|'
+    r'не\s*обработан|'
+    r'лот\s+не\s+обработан|'
     r'доступен\w*\s+другим\s+дилер|'
     r'лот\s+не\s+взял',
     re.I,
@@ -196,7 +207,7 @@ _FINISHED_TITLE_RE = re.compile(r'аукцион\s+заверш', re.I)
 _COMPACT_FINALS = (
     (OUTCOME_NOT_REDEEMED, ('невыкупил',)),
     (OUTCOME_WE_REFUSED, ('отказалисьотлота', 'отказалсяотлота')),
-    (OUTCOME_NOT_TAKEN, ('невзяливработ', 'доступендругимдилер')),
+    (OUTCOME_NOT_TAKEN, ('невзяливработ', 'необработан', 'доступендругимдилер')),
     (OUTCOME_NO_SELECTION, ('никогоневыбрал', 'продавецникогоневыбрал')),
     (OUTCOME_CANCELED, (
         'продавецотменилаукцион',
@@ -223,6 +234,8 @@ _FINAL_SUBSTRING_RULES = (
         'не взяли в работу',
         'не взял в работу',
         'не взяла в работу',
+        'лот не обработан',
+        'не обработан',
         'доступен другим дилер',
     )),
     (OUTCOME_NO_SELECTION, (
@@ -661,6 +674,13 @@ def build_win_email_html(offer) -> tuple[str, str]:
             return str(v)
 
     subject = f'Аукцион Авито: выигран лот {getattr(lot, "lot_id", "—")} — {car}'
+    headline = 'Мы выиграли лот на аукционе Авито'
+    if (offer.outcome_code or '').strip() == OUTCOME_NOT_TAKEN:
+        subject = (
+            f'Аукцион Авито: лот не обработан {getattr(lot, "lot_id", "—")} — {car}'
+        )
+        headline = 'Лот не обработан / не взяли в работу — требуется внимание'
+
     rows = [
         ('Автомобиль', car),
         ('Лот', getattr(lot, 'lot_id', '—')),
@@ -680,7 +700,7 @@ def build_win_email_html(offer) -> tuple[str, str]:
     )
     html = (
         '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#0f172a">'
-        '<h2 style="color:#166534;margin:0 0 12px">Мы выиграли лот на аукционе Авито</h2>'
+        f'<h2 style="color:#166534;margin:0 0 12px">{escape(headline)}</h2>'
         f'<p style="margin:0 0 16px">{escape(car)}</p>'
         f'<table style="border-collapse:collapse;width:100%;max-width:640px">{body_rows}</table>'
         '</div>'
@@ -731,7 +751,7 @@ def apply_offer_outcome(
 ) -> dict[str, Any]:
     """
     Сохраняет итог на оффере, при необходимости меняет status_code,
-    шлёт письмо и чат при первом переходе в won,
+    шлёт письмо и чат при первом переходе в won / not_taken,
     пишет короткий статус в чат лота (с защитой от дублей).
     """
     from auction_avito.chat_utils import notify_auction_won, notify_lot_outcome
@@ -747,6 +767,35 @@ def apply_offer_outcome(
         blob=blob,
         status_code=status_code,
     )
+
+    # Пустая выгрузка с Maxposter (UI/сессия) — не затираем известный итог на unknown/? .
+    extract_empty = not (
+        (title or '').strip() or (detail or '').strip() or (blob or '').strip() or (status_code or '').strip()
+    )
+    if extract_empty:
+        logger.warning(
+            'avito outcome: empty extract lotOfferId=%s — keep prev=%s',
+            getattr(offer, 'lot_offer_id', None),
+            prev_outcome or '-',
+        )
+        classified = {
+            'outcome_code': prev_outcome or '',
+            'outcome_title': (offer.outcome_title or '') if prev_outcome else '',
+            'outcome_detail': (offer.outcome_detail or '') if prev_outcome else '',
+            'status_code': prev_status or offer.status_code or 'finished',
+        }
+    elif (classified.get('outcome_code') or '').strip() in ('', OUTCOME_UNKNOWN) and prev_outcome:
+        # Слабая классификация при наличии прежнего waiting/финала — не откатываем в ?.
+        if prev_outcome == OUTCOME_WAITING or prev_outcome in FINAL_OUTCOMES:
+            classified = {
+                'outcome_code': prev_outcome,
+                'outcome_title': _norm_spaces(title) or offer.outcome_title or OUTCOME_NAMES.get(prev_outcome, ''),
+                'outcome_detail': _norm_spaces(detail) or offer.outcome_detail or OUTCOME_NAMES.get(prev_outcome, ''),
+                'status_code': (
+                    prev_outcome if prev_outcome in ('won', 'lost')
+                    else (prev_status or 'finished')
+                ),
+            }
     # Явный код от клиента — только если по тексту итог пустой/неясный,
     # либо клиент прислал более «сильный» финал.
     if outcome_code:
@@ -837,17 +886,27 @@ def apply_offer_outcome(
         offer.outcome_code == OUTCOME_WON
         and prev_outcome != OUTCOME_WON
     )
+    became_win_notify = (
+        offer.outcome_code in WIN_NOTIFY_OUTCOMES
+        and prev_outcome not in WIN_NOTIFY_OUTCOMES
+    )
     new_code = (offer.outcome_code or '').strip()
 
     # В чат лота — короткий статус при любом известном итоге.
     # Дубликаты отсекает notify_* (в т.ч. waiting_seller → waiting_seller,
     # если сообщения ещё не было — отправим).
-    if notify_chat and became_won:
+    # won / not_taken — win-письмо разово + чат.
+    if notify_chat and became_win_notify:
         try:
-            sent = notify_auction_won(offer)
+            if offer.outcome_code == OUTCOME_WON:
+                sent = notify_auction_won(offer)
+                chat_kind = 'won'
+            else:
+                sent = notify_lot_outcome(offer, prev_outcome=prev_outcome)
+                chat_kind = 'not_taken' if offer.outcome_code == OUTCOME_NOT_TAKEN else 'outcome'
             chat_result = {
                 'sent': sent is not None,
-                'kind': 'won',
+                'kind': chat_kind,
                 'reason': None if sent is not None else 'duplicate',
             }
         except Exception as exc:
@@ -886,12 +945,14 @@ def apply_offer_outcome(
         'statusCode': offer.status_code,
         'statusName': offer.status_name,
         'becameWon': became_won,
+        'becameWinNotify': became_win_notify,
         'email': email_result,
         'chat': chat_result,
         'outcomeSyncedAt': now.isoformat(),
     }
     logger.info(
-        'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r becameWon=%s chat=%s',
+        'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r '
+        'becameWon=%s becameWinNotify=%s chat=%s',
         offer.lot_offer_id,
         offer.lot.lot_id if offer.lot_id else None,
         prev_outcome or '-',
@@ -901,6 +962,7 @@ def apply_offer_outcome(
         offer.outcome_title,
         offer.outcome_detail,
         became_won,
+        became_win_notify,
         chat_result,
     )
     return result

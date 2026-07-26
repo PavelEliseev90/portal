@@ -113,6 +113,9 @@
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:monitor' %}">Монитор</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
+      <a class="btn btn-success btn-sm" href="{{ params.export_url }}">
+        <span class="bi bi-file-earmark-excel"></span> Excel
+      </a>
     </div>
   </div>
 
@@ -215,6 +218,9 @@
           {% if params.filters.status %}· статус: {{ params.filters.status }}{% endif %}
         </div>
       </div>
+      <a class="btn btn-outline-success btn-sm" href="{{ params.export_url }}">
+        <span class="bi bi-download"></span> Скачать Excel
+      </a>
     </div>
     <div class="lr-table-wrap">
       <table class="lr-table">

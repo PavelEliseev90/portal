@@ -62,6 +62,12 @@
                  value="{{ auction_settings.bid_round_to|default:1000|unlocalize }}">
           <div class="form-text">Обычно 1000 ₽</div>
         </div>
+        <div class="col-md-3">
+          <label class="form-label">Минимальная ставка, ₽</label>
+          <input type="number" class="form-control" name="min_bid_amount" min="0"
+                 value="{{ auction_settings.min_bid_amount|default_if_none:'' }}" placeholder="без ограничения">
+          <div class="form-text">Не ставить, если расчётная ставка ниже порога</div>
+        </div>
       </div>
       <hr>
       <div class="form-check">
@@ -79,10 +85,18 @@
                {% if auction_settings.block_mileage_twisted %}checked{% endif %}>
         <label class="form-check-label" for="block_mileage_twisted">Не ставить при скрученном пробеге (<code>mileageTwisted</code>)</label>
       </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="cap_bid_by_seller_wish" id="cap_bid_by_seller_wish"
+               {% if auction_settings.cap_bid_by_seller_wish %}checked{% endif %}>
+        <label class="form-check-label" for="cap_bid_by_seller_wish">Не ставить выше пожелания продавца (<code>minPrice</code>)</label>
+      </div>
       <p class="small text-muted mt-3 mb-0">
         Алгоритм: фильтры → выкуп &gt; minAvailableBid →
         если maxBid нет: <code>ceil((min + шаг) / round) * round</code> &lt; выкуп (первая ставка);
         если maxBid есть и не наша: <code>ceil((maxBid + шаг) / round) * round</code> &lt; выкуп → ставка.
+        Ручной потолок на лоте — жёсткий cap: ставка не выше него, даже если расчёт больше.
+        Минимальная ставка в настройках отсекает слишком мелкие ставки.
+        Опция «не выше пожелания продавца» запрещает ставку, если она &gt; minPrice по лоту.
         После каждого обновления ленты лоты пересчитываются и решение принимается заново.
       </p>
     </div>

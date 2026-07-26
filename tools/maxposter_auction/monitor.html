@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Мониторинг воркеров · Maxposter Auction</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#111826; --muted:#8aa0b8; --text:#e7eef7;
+      --accent:#7dd3fc; --ok:#a7f3d0; --bad:#fda4af; --warn:#fdba74; --line:#243244;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; color:var(--text);
+      font:14px/1.45 "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(900px 420px at 12% -10%, rgba(125,211,252,.12), transparent 55%),
+        radial-gradient(700px 380px at 90% 0%, rgba(167,243,208,.08), transparent 50%),
+        linear-gradient(180deg,#070a0f, var(--bg));
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:28px 20px 48px}
+    .head{margin-bottom:22px}
+    h1{
+      margin:0 0 8px; font-size:28px; font-weight:700; letter-spacing:-.02em;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .sub{color:var(--muted); font-size:13px}
+    .kpis{display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 20px}
+    .kpi{
+      min-width:120px; padding:12px 14px; border:1px solid var(--line);
+      border-radius:12px; background:rgba(17,24,38,.8);
+    }
+    .kpi .v{font-size:22px; font-weight:700}
+    .kpi .t{font-size:12px; color:var(--muted)}
+    .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px}
+    .btn{
+      cursor:pointer; border:1px solid var(--line); border-radius:10px;
+      background:#0c1220; color:var(--text); padding:9px 14px; font-size:13px;
+    }
+    .btn:hover{border-color:rgba(125,211,252,.5)}
+    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px}
+    .card{
+      border:1px solid var(--line); border-radius:14px; padding:16px;
+      background:rgba(17,24,38,.82); backdrop-filter:blur(8px);
+      display:flex; flex-direction:column; gap:10px;
+      transition: border-color .2s ease, transform .2s ease;
+    }
+    .card:hover{border-color:rgba(125,211,252,.35); transform:translateY(-1px)}
+    .card.offline{opacity:.78}
+    .card.disabled{opacity:.55}
+    .row{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+    .title{font-weight:700; font-size:15px}
+    .meta{color:var(--muted); font-size:12px}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+      padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+    }
+    .pill.ok{color:var(--ok); border-color:rgba(167,243,208,.35); background:rgba(167,243,208,.08)}
+    .pill.bad{color:var(--bad); border-color:rgba(253,164,175,.35); background:rgba(253,164,175,.08)}
+    .pill.warn{color:var(--warn); border-color:rgba(253,186,116,.35); background:rgba(253,186,116,.08)}
+    .pill.muted{color:var(--muted)}
+    .stats{display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px}
+    .stat{
+      padding:8px 10px; border-radius:10px; background:#0c1220; border:1px solid rgba(36,50,68,.7);
+    }
+    .stat b{display:block; font-size:14px; margin-top:2px}
+    .busy{display:flex; gap:6px; flex-wrap:wrap}
+    .chip{
+      font-size:11px; padding:3px 7px; border-radius:8px;
+      border:1px solid var(--line); color:var(--muted);
+    }
+    .chip.on{color:#0b0f14; background:var(--accent); border-color:transparent; font-weight:700}
+    .actions{display:flex; gap:8px; margin-top:auto; padding-top:4px}
+    .actions a{
+      color:var(--accent); text-decoration:none; font-size:13px;
+      border-bottom:1px solid transparent;
+    }
+    .actions a:hover{border-bottom-color:rgba(125,211,252,.6)}
+    .err{color:var(--bad); font-size:12px; word-break:break-word}
+    .foot{margin-top:22px; color:var(--muted); font-size:12px}
+    .dot{width:7px; height:7px; border-radius:50%; background:currentColor; display:inline-block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <h1>Мониторинг воркеров</h1>
+      <div class="sub">Каждая площадка — отдельный процесс, порт и Playwright. Обновление каждые 3 с.</div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="kAlive">—</div><div class="t">Онлайн</div></div>
+      <div class="kpi"><div class="v" id="kEnabled">—</div><div class="t">Включено</div></div>
+      <div class="kpi"><div class="v" id="kTotal">—</div><div class="t">В конфиге</div></div>
+      <div class="kpi"><div class="v" id="kBusy">—</div><div class="t">Заняты сейчас</div></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="refresh">Обновить сейчас</button>
+      <span class="meta" id="updated">—</span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function esc(s){
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function fmtTs(iso){
+    if (!iso) return "—";
+    try { return new Date(iso).toLocaleString("ru-RU"); } catch { return String(iso); }
+  }
+
+  function busyChips(busy){
+    const b = busy || {};
+    const keys = [
+      ["reload", "reload"],
+      ["bid", "ставка"],
+      ["outcome", "итоги"],
+    ];
+    return keys.map(([k, label]) => {
+      const on = !!b[k];
+      return `<span class="chip${on ? " on" : ""}">${esc(label)}</span>`;
+    }).join("");
+  }
+
+  function statusPill(w){
+    if (!w.enabled) return `<span class="pill muted"><span class="dot"></span>выкл</span>`;
+    if (w.alive) return `<span class="pill ok"><span class="dot"></span>онлайн</span>`;
+    return `<span class="pill bad"><span class="dot"></span>офлайн</span>`;
+  }
+
+  function render(data){
+    const workers = data.workers || [];
+    $("kAlive").textContent = data.alive ?? "—";
+    $("kEnabled").textContent = data.enabled ?? "—";
+    $("kTotal").textContent = data.total ?? "—";
+    const busyN = workers.filter((w) => w.alive && w.busy && (w.busy.reload || w.busy.bid || w.busy.outcome)).length;
+    $("kBusy").textContent = busyN;
+    $("updated").textContent = `обновлено: ${fmtTs(data.ts)}`;
+    $("foot").textContent = `Конфиг: ${data.configPath || "instances.json"} · хаб :${data.hubPort || "—"}`;
+
+    $("grid").innerHTML = workers.map((w) => {
+      const cls = !w.enabled ? "disabled" : (w.alive ? "" : "offline");
+      const err = (!w.alive && w.error) ? `<div class="err">${esc(w.error)}</div>` : "";
+      const reloadErr = (w.alive && w.lastReloadOk === false && w.lastReloadError)
+        ? `<div class="err">reload: ${esc(String(w.lastReloadError).slice(0, 160))}</div>` : "";
+      return `<article class="card ${cls}">
+        <div class="row">
+          <div>
+            <div class="title">${esc(w.label || w.dealerId)}</div>
+            <div class="meta">dealerId=${esc(w.dealerId)} · :${esc(w.port)}${w.pid ? ` · pid ${esc(w.pid)}` : ""}</div>
+          </div>
+          ${statusPill(w)}
+        </div>
+        <div class="stats">
+          <div class="stat">Лотов<b>${w.offersCount != null ? esc(w.offersCount) : "—"}</b></div>
+          <div class="stat">Данные<b style="font-size:12px;font-weight:600">${esc(fmtTs(w.fileTs))}</b></div>
+        </div>
+        <div class="busy">${w.alive ? busyChips(w.busy) : ""}</div>
+        ${err}${reloadErr}
+        <div class="actions">
+          ${w.url ? `<a href="${esc(w.url)}" target="_blank" rel="noopener">Открыть viewer</a>` : ""}
+          ${w.port ? `<a href="http://127.0.0.1:${esc(w.port)}/api/instance" target="_blank" rel="noopener">/api/instance</a>` : ""}
+        </div>
+      </article>`;
+    }).join("") || `<div class="meta">Нет площадок в конфиге. Скопируйте instances.example.json → instances.json</div>`;
+  }
+
+  async function refresh(){
+    try{
+      const resp = await fetch("/api/workers", { cache: "no-store" });
+      const data = await resp.json();
+      render(data);
+    }catch(err){
+      $("updated").textContent = `ошибка опроса: ${String(err?.message || err)}`;
+    }
+  }
+
+  $("refresh").addEventListener("click", refresh);
+  refresh();
+  setInterval(refresh, 3000);
+</script>
+</body>
+</html>

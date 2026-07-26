@@ -693,8 +693,14 @@ def analytics(request):
 
 @login_required
 def loss_report(request):
-    """Отчёт по лотам: KPI + таблица для анализа проигрышей."""
-    from auction_avito.services.loss_report import build_loss_report_context
+    """Отчёт по лотам: KPI + таблица для анализа проигрышей (+ Excel)."""
+    from auction_avito.services.loss_report import (
+        build_loss_report_context,
+        export_loss_report_xlsx,
+    )
+
+    if (request.GET.get('export') or '').strip().lower() in ('xlsx', 'excel', '1'):
+        return export_loss_report_xlsx(request)
 
     ctx = build_loss_report_context(request)
     return render(request, 'auction_avito/loss_report.html', {'params': ctx})
@@ -847,7 +853,7 @@ def monitor_hand_to_work(request):
     from django.http import JsonResponse
     from django.utils import timezone
 
-    from auction_avito.services.outcome import OUTCOME_WON
+    from auction_avito.services.outcome import OUTCOME_WON, WIN_NOTIFY_OUTCOMES
 
     lot_offer_id = request.POST.get('lotOfferId') or request.POST.get('lot_offer_id')
     clear = (request.POST.get('clear') or '').strip().lower() in ('1', 'true', 'yes')
@@ -868,7 +874,7 @@ def monitor_hand_to_work(request):
         })
 
     is_won = (
-        (offer.outcome_code or '') == OUTCOME_WON
+        (offer.outcome_code or '') in WIN_NOTIFY_OUTCOMES
         or (offer.status_code or '') == OUTCOME_WON
     )
     if not is_won:
@@ -919,6 +925,8 @@ def auction_settings(request):
             settings_obj.block_carsharing = request.POST.get('block_carsharing') == 'on'
             settings_obj.block_mileage_twisted = request.POST.get('block_mileage_twisted') == 'on'
             settings_obj.bid_round_to = max(1, int(request.POST.get('bid_round_to') or 1000))
+            settings_obj.min_bid_amount = _parse_optional_int(request.POST.get('min_bid_amount'))
+            settings_obj.cap_bid_by_seller_wish = request.POST.get('cap_bid_by_seller_wish') == 'on'
             settings_obj.weight_test_price = request.POST.get('weight_test_price') or 1
             settings_obj.weight_rdo = request.POST.get('weight_rdo') or '0.55'
             settings_obj.weight_kor = request.POST.get('weight_kor') or '0.25'

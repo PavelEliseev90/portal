@@ -137,6 +137,7 @@ class AvitoAuctionSettingsAdmin(admin.ModelAdmin):
         'block_taxi',
         'block_carsharing',
         'block_mileage_twisted',
+        'cap_bid_by_seller_wish',
         'updated_at',
     )
     readonly_fields = ('updated_at',)

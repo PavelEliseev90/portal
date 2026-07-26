@@ -108,8 +108,6 @@ z-index: 1044;">
 </div>
 </div>
 
-<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
-
 <script>
 
 
@@ -508,7 +506,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>' 
+                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                                                        '
                 html_list += '                    </div>'
                 html_list += '                </div>'
@@ -551,22 +549,35 @@ z-index: 1044;">
         };
 
         chatSocket.onmessage = function(e){
-            
-          document.getElementById('notif').play();
-          
-          const data = JSON.parse(e.data);
+          var data;
+          try {
+            data = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
 
-          if (data.message){
-              
-            if (toats_visible){
-              var link = '/eco/' + data.chat.replace('rlk_','') + '/';
-              toast(data.chat, data.message , '22:10', link, ' ');
-            };
-            
-            refresh_info(data.chat);
+          // Только чаты интерактивных оценок (slug rlk_{id}).
+          // Игнор: aav_feed / aav_lot_*, prep_*, прочие шины на том же WS.
+          var chatSlug = (data && data.chat) ? String(data.chat) : '';
+          if (!/^rlk_\d+$/.test(chatSlug)) {
+            return;
+          }
 
-          };
+          if (!data.message) {
+            return;
+          }
 
+          var notif = document.getElementById('notif');
+          if (notif && notif.play) {
+            notif.play().catch(function () {});
+          }
+
+          if (toats_visible){
+            var link = '/eco/' + chatSlug.replace('rlk_','') + '/';
+            toast(chatSlug, data.message , '22:10', link, ' ');
+          }
+
+          refresh_info(chatSlug);
         };
 
         chatSocket.onclose = function(e){
@@ -793,7 +804,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>' 
+                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                    </div>'
                 html_list += '                </div>'
                 html_list += '            </div>'

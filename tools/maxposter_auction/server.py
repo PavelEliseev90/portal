@@ -8,7 +8,7 @@ from datetime import datetime
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-from app_paths import app_dir, bundle_dir, is_frozen
+from app_paths import app_dir, bundle_dir, ensure_runtime_files, is_frozen
 
 HERE = app_dir()
 SCRIPT_PATH = os.path.join(bundle_dir(), "script_auction.py")
@@ -16,6 +16,12 @@ SCRIPT_BID_PATH = os.path.join(bundle_dir(), "script_bid.py")
 SCRIPT_OUTCOME_PATH = os.path.join(bundle_dir(), "script_outcome.py")
 OUT_JSON = os.path.join(HERE, "offers_dump.json")
 DEALERS_STATUS_JSON = os.path.join(HERE, "dealers_status.json")
+
+# Жёстко закреплённая площадка (режим multi-instance).
+FIXED_DEALER_ID = (os.environ.get("MAXPOSTER_DEALER_ID") or "").strip()
+INSTANCE_LABEL = (os.environ.get("INSTANCE_LABEL") or "").strip()
+_STARTED_AT = datetime.utcnow().isoformat()
+_PID = os.getpid()
 
 _outcome_lock = threading.Lock()
 _reload_lock = threading.Lock()
@@ -40,7 +46,8 @@ class _OutcomeWorker:
         self._page = None
         self._email = None
         self._dealer_id = None
-        self._script_dir = bundle_dir()
+        # Сессия Maxposter — в каталоге инстанса, не в общем бандле.
+        self._script_dir = HERE
 
     def _close(self):
         for obj, meth in (
@@ -96,9 +103,14 @@ class _OutcomeWorker:
         if dealer_id:
             os.environ["MAXPOSTER_DEALER_ID"] = str(dealer_id)
 
+        # stdout/stderr скрипта — только в буфер: в CMD не пишем,
+        # детали для viewer уже в row.msg / JSON ответа API.
+        buf_out = io.StringIO()
+        buf_err = io.StringIO()
         try:
-            self._ensure(email, password, dealer_id)
-            return so.process_item(self._page, item, idx=1, total=1)
+            with redirect_stdout(buf_out), redirect_stderr(buf_err):
+                self._ensure(email, password, dealer_id)
+                return so.process_item(self._page, item, idx=1, total=1)
         except MaxposterAuthError:
             if dealer_id:
                 clear_session(self._script_dir, email, dealer_id)
@@ -295,7 +307,7 @@ def _update_dealer_status_from_reload(
 
 def _dealers_status_payload() -> dict:
     meta = _read_dump_meta()
-    dealer_id = meta.get("dealerId")
+    dealer_id = FIXED_DEALER_ID or meta.get("dealerId")
     status = _load_dealer_status()
     entry = status.get(str(dealer_id)) if dealer_id is not None else {}
     entry = entry or {}
@@ -312,6 +324,53 @@ def _dealers_status_payload() -> dict:
             }
         )
     return {"ok": True, "dealers": dealers, "dealerId": dealer_id}
+
+
+def _resolve_dealer_id(body_dealer: str | None = None) -> str:
+    if FIXED_DEALER_ID:
+        return FIXED_DEALER_ID
+    return str(body_dealer or "").strip()
+
+
+def _auth_from_body(body: dict) -> tuple[str, str]:
+    email = str(body.get("email") or "").strip() or (os.environ.get("MAXPOSTER_EMAIL") or "").strip()
+    password = str(body.get("password") or "") or (os.environ.get("MAXPOSTER_PASSWORD") or "")
+    return email, password
+
+
+def _instance_payload() -> dict:
+    meta = _read_dump_meta()
+    dealer_id = FIXED_DEALER_ID or meta.get("dealerId")
+    status = _load_dealer_status()
+    entry = status.get(str(dealer_id)) if dealer_id is not None else {}
+    entry = entry or {}
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8005"))
+    return {
+        "ok": True,
+        "alive": True,
+        "pid": _PID,
+        "startedAt": _STARTED_AT,
+        "host": host,
+        "port": port,
+        "url": f"http://{host}:{port}/viewer.html",
+        "instanceDir": HERE,
+        "lockedDealerId": FIXED_DEALER_ID or None,
+        "label": INSTANCE_LABEL or None,
+        "dealerId": str(dealer_id) if dealer_id is not None else None,
+        "offersCount": meta.get("count"),
+        "fileTs": meta.get("ts"),
+        "lastReloadOk": entry.get("ok"),
+        "lastReloadTs": entry.get("ts"),
+        "lastReloadError": entry.get("error"),
+        "busy": {
+            "reload": _reload_lock.locked(),
+            "bid": _bid_lock.locked(),
+            "outcome": _outcome_lock.locked(),
+        },
+        "emailConfigured": bool((os.environ.get("MAXPOSTER_EMAIL") or "").strip()),
+        "portalBase": (os.environ.get("PORTAL_BASE") or os.environ.get("PORTAL_BASE_URL") or "").rstrip("/") or None,
+    }
 
 
 def _reload_script_outcome(proc: _ScriptResult, out_path: str) -> dict:
@@ -368,13 +427,18 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Location", "/viewer.html")
             self.end_headers()
             return
-        if self.path.rstrip("/") == "/api/dealers/status":
+        route = self.path.split("?", 1)[0].rstrip("/")
+        if route == "/api/dealers/status":
             self._send_json(200, _dealers_status_payload())
+            return
+        if route in {"/api/instance", "/api/health"}:
+            self._send_json(200, _instance_payload())
             return
         return super().do_GET()
 
     def log_message(self, format, *args):
-        print(f"[{self.log_date_time_string()}] {format % args}")
+        # HTTP access-лог в CMD не нужен — ход работы смотрим во viewer («Лог обновлений»).
+        return
 
     def _send_json(self, code: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -385,12 +449,9 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("cache-control", "no-store")
             self.end_headers()
             self.wfile.write(body)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as exc:
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
             # Клиент закрыл вкладку / оборвал fetch по таймауту — это не ошибка скрипта.
-            print(
-                f"[{self.log_date_time_string()}] client disconnected "
-                f"while sending {self.path}: {type(exc).__name__}"
-            )
+            return
 
     def _read_json_body(self):
         content_len = int(self.headers.get("content-length", "0") or "0")
@@ -425,7 +486,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if route == "/api/clear_lots":
-            dealer_id = str(body.get("dealerId") or "").strip() or None
+            dealer_id = _resolve_dealer_id(body.get("dealerId")) or None
             try:
                 out = _clear_offers_dump(dealer_id)
                 self._send_json(200, {
@@ -438,14 +499,13 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json(500, {"ok": False, "error": str(e)[:500]})
             return
 
-        email = str(body.get("email") or "").strip()
-        password = str(body.get("password") or "")
+        email, password = _auth_from_body(body)
 
         if route == "/api/reload":
             if not email or not password:
                 self._send_json(200, {"ok": False, "skipped": True, "reason": "no_auth", "error": "email and password are required"})
                 return
-            dealer_id = str(body.get("dealerId") or "").strip()
+            dealer_id = _resolve_dealer_id(body.get("dealerId"))
             if not dealer_id:
                 self._send_json(200, {"ok": False, "skipped": True, "reason": "no_dealer", "error": "dealerId is required"})
                 return
@@ -456,9 +516,13 @@ class Handler(SimpleHTTPRequestHandler):
         env = os.environ.copy()
         env["MAXPOSTER_EMAIL"] = email
         env["MAXPOSTER_PASSWORD"] = password
-        dealer_id = str(body.get("dealerId") or "").strip()
+        dealer_id = _resolve_dealer_id(body.get("dealerId"))
         if dealer_id:
             env["MAXPOSTER_DEALER_ID"] = dealer_id
+        env.setdefault("APP_DIR", HERE)
+        portal_env = (os.environ.get("PORTAL_BASE") or os.environ.get("PORTAL_BASE_URL") or "").rstrip("/")
+        if portal_env:
+            env.setdefault("PORTAL_BASE", portal_env)
 
         if route == "/api/reload":
             if not is_frozen() and not os.path.exists(SCRIPT_PATH):
@@ -658,6 +722,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
+    ensure_runtime_files(HERE)
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8005"))
     ThreadingHTTPServer.allow_reuse_address = True
@@ -668,8 +733,11 @@ def main():
         print("Закройте другой процесс или задайте другой PORT, например PORT=8006")
         raise SystemExit(1) from e
     url = f"http://{host}:{port}/viewer.html"
+    label = INSTANCE_LABEL or FIXED_DEALER_ID or "default"
     print(f"Serving on {url}")
-    print("Не закрывайте это окно, пока работаете со страницей.")
+    if FIXED_DEALER_ID:
+        print(f"Инстанс: {label} · dealerId={FIXED_DEALER_ID} · dir={HERE}")
+    print("Не закрывайте это окно, пока работает эта площадка.")
     httpd.serve_forever()
 
 

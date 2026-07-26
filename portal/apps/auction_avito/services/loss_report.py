@@ -42,7 +42,7 @@ def _period_lots_qs(start, end):
     )
 
 
-def build_loss_report_context(request) -> dict:
+def build_loss_report_context(request, *, row_limit: int = 500) -> dict:
     from django.db.models import Avg
 
     date_from, date_to = resolve_period(request)
@@ -163,8 +163,9 @@ def build_loss_report_context(request) -> dict:
 
     lots_qs = lots_qs.distinct().order_by('-finish_at', '-lot_id')
 
+    limit = max(1, int(row_limit or 500))
     rows = []
-    for lot in lots_qs[:500]:
+    for lot in lots_qs[:limit]:
         offers = list(lot.offers.all())
         primary = None
         for o in offers:
@@ -288,4 +289,148 @@ def build_loss_report_context(request) -> dict:
         'rows': rows,
         'clear_outcome_url': clear_outcome_url,
         'period_qs': period_qs,
+        'export_url': (
+            f'{report_base}?{period_qs}'
+            f'&with_bids={"1" if with_bids else "0"}'
+            f'{"&outcome=" + outcome if outcome else ""}'
+            f'{"&status=" + status if status else ""}'
+            f'&export=xlsx'
+        ),
     }
+
+
+def export_loss_report_xlsx(request):
+    """Собрать Excel по текущим фильтрам отчёта."""
+    from datetime import datetime
+    from io import BytesIO
+
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    ctx = build_loss_report_context(request, row_limit=5000)
+    rows = ctx.get('rows') or []
+    filters = ctx.get('filters') or {}
+    kpis = ctx.get('kpis') or {}
+
+    wb = Workbook()
+
+    # --- Лист KPI ---
+    ws_kpi = wb.active
+    ws_kpi.title = 'Сводка'
+    ws_kpi.append(['Параметр', 'Значение'])
+    header_fill = PatternFill(start_color='002A5A', end_color='002A5A', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF')
+    for cell in ws_kpi[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    kpi_lines = [
+        ('Период с', filters.get('date_from') or ''),
+        ('Период по', filters.get('date_to') or ''),
+        ('Только со ставками', 'да' if filters.get('with_bids') else 'нет'),
+        ('Фильтр итога', filters.get('outcome') or filters.get('status') or 'все'),
+        ('Всего лотов', kpis.get('lots_total')),
+        ('Лотов со ставками', kpis.get('lots_with_bids')),
+        ('% лотов со ставками', kpis.get('bid_share')),
+        ('Всего ставок', kpis.get('bids_total')),
+        ('Ср. ставок на лот', kpis.get('avg_bids_per_lot')),
+        ('Ср. пробег', kpis.get('avg_mileage')),
+        ('Ср. год', kpis.get('avg_year')),
+        ('Ср. до пожелания %', kpis.get('avg_below_wish_pct')),
+        ('Ср. ниже maxBid %', kpis.get('avg_below_max_pct')),
+        ('Строк в выгрузке', kpis.get('rows_shown')),
+    ]
+    for label, value in kpi_lines:
+        ws_kpi.append([label, value if value is not None else ''])
+    ws_kpi.column_dimensions['A'].width = 28
+    ws_kpi.column_dimensions['B'].width = 18
+
+    # --- Лист лотов ---
+    ws = wb.create_sheet('Лоты')
+    headers = [
+        'Лот ID',
+        'Авто',
+        'Год',
+        'Пробег',
+        'Выкуп',
+        'ЦНА',
+        'Мин. ставка',
+        'Пожелание',
+        'L1',
+        'L2',
+        'maxBid',
+        'Наша ставка',
+        'Число ставок',
+        'До пожелания ₽',
+        'До пожелания %',
+        'Выкуп ниже max ₽',
+        'Выкуп ниже max %',
+        'Выкуп vs min ₽',
+        'Выкуп vs min %',
+        'Код итога',
+        'Итог',
+        'Место',
+        'Ссылка',
+    ]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    for r in rows:
+        ws.append([
+            r.get('lotId'),
+            r.get('title') or '',
+            r.get('year') or '',
+            r.get('mileage') or '',
+            r.get('buyout') if r.get('buyout') is not None else '',
+            r.get('zna') if r.get('zna') is not None else '',
+            r.get('minAvailableBid') if r.get('minAvailableBid') is not None else '',
+            r.get('sellerWish') if r.get('sellerWish') is not None else '',
+            r.get('bidL1') if r.get('bidL1') is not None else '',
+            r.get('bidL2') if r.get('bidL2') is not None else '',
+            r.get('maxBid') if r.get('maxBid') is not None else '',
+            r.get('ourBid') if r.get('ourBid') is not None else '',
+            r.get('ourBidsCount') if r.get('ourBidsCount') is not None else '',
+            r.get('buyoutBelowWish') if r.get('buyoutBelowWish') is not None else '',
+            r.get('buyoutBelowWishPct') if r.get('buyoutBelowWishPct') is not None else '',
+            r.get('buyoutBelowMax') if r.get('buyoutBelowMax') is not None else '',
+            r.get('buyoutBelowMaxPct') if r.get('buyoutBelowMaxPct') is not None else '',
+            r.get('buyoutVsMin') if r.get('buyoutVsMin') is not None else '',
+            r.get('buyoutVsMinPct') if r.get('buyoutVsMinPct') is not None else '',
+            r.get('outcomeCode') or '',
+            r.get('outcomeLabel') or '',
+            r.get('place') or '',
+            r.get('portalLotUrl') or '',
+        ])
+
+    widths = [12, 28, 8, 12, 12, 12, 12, 12, 10, 10, 12, 12, 10, 14, 12, 14, 12, 12, 12, 14, 28, 22, 40]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # --- Лист итогов ---
+    ws_out = wb.create_sheet('Итоги')
+    ws_out.append(['Итог', 'Код', 'Количество', '%'])
+    for cell in ws_out[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+    for o in ctx.get('outcomes') or []:
+        ws_out.append([o.get('label'), o.get('code'), o.get('count'), o.get('pct')])
+    for col, w in enumerate([36, 18, 12, 10], start=1):
+        ws_out.column_dimensions[get_column_letter(col)].width = w
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'avito_lots_report_{filters.get("date_from")}_{filters.get("date_to")}_{stamp}.xlsx'
+    response = HttpResponse(
+        buf.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

@@ -42,7 +42,9 @@ OUTCOME_LIMIT_ENV = "OUTCOME_LIMIT"
 OUTCOME_LOG_NAME = "outcome_poll.log"
 
 INTERESTING_TEXT_RE = re.compile(
-    r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого",
+    r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|"
+    r"ждём|ждем|день|побед|никого|покупател|не\s*выкуп|"
+    r"не\s*взял|не\s*обработ|доступен\s*другим|отказ|winner|lost",
     re.I,
 )
 
@@ -245,20 +247,20 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
         page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         try:
             page.wait_for_function(
-                """() => /аукцион|продавц|решени|выигр|выбран|выбрал|никого/i.test(
+                """() => /аукцион|продавц|решени|выигр|выбран|выбрал|никого|не\\s*выкуп|не\\s*взял|не\\s*обработ|доступен|отказ|ждём|ждем/i.test(
                     (document.body && document.body.innerText) || ''
                 )""",
-                timeout=8_000,
+                timeout=12_000,
             )
         except PWTimeout:
-            page.wait_for_timeout(900)
+            page.wait_for_timeout(1500)
     finally:
         try:
             page.remove_listener("response", on_response)
         except Exception:
             pass
 
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(600)
 
     api_texts: list[str] = []
     status_code = ""
@@ -274,24 +276,76 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
         dom_texts = page.evaluate(
             """() => {
               const root = document.querySelector('main') || document.body;
-              const nodes = root.querySelectorAll('h1,h2,h3,h4,p,div,span,li');
+              const nodes = root.querySelectorAll('h1,h2,h3,h4,p,div,span,li,section,article');
               const out = [];
               const seen = new Set();
+              const re = /аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого|покупател|не выкуп|не взял|не обработ|доступен другим|отказ/i;
               for (const el of nodes) {
-                if (!el || el.children.length > 4) continue;
-                const t = (el.innerText || '').replace(/\\s+/g, ' ').trim();
-                if (t.length < 8 || t.length > 280) continue;
-                if (!/аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|ждём|ждем|день|побед|никого|покупател|не выкупил/i.test(t)) continue;
-                if (seen.has(t)) continue;
-                seen.add(t);
-                out.push(t);
-                if (out.length >= 40) break;
+                if (!el) continue;
+                // Берём листья и короткие блоки; длинные контейнеры режем по строкам ниже.
+                const raw = (el.innerText || '').replace(/\\s+/g, ' ').trim();
+                if (!raw) continue;
+                const chunks = raw.length > 280 ? raw.split(/(?<=[.!?])\\s+|\\n+/).map(s => s.trim()) : [raw];
+                for (const t of chunks) {
+                  if (t.length < 6 || t.length > 320) continue;
+                  if (!re.test(t)) continue;
+                  if (seen.has(t)) continue;
+                  seen.add(t);
+                  out.push(t);
+                  if (out.length >= 60) return out;
+                }
               }
               return out;
             }"""
         ) or []
     except Exception as exc:
         print(f"DOM extract error lotOfferId={lot_offer_id}: {exc}")
+
+    # Fallback: весь body.innerText построчно — если UI сменился и селекторы пустые.
+    if not dom_texts and not api_texts:
+        try:
+            body_lines = page.evaluate(
+                """() => {
+                  const t = (document.body && document.body.innerText) || '';
+                  return t.split(/\\n+/).map(s => s.replace(/\\s+/g, ' ').trim()).filter(Boolean);
+                }"""
+            ) or []
+            for t in body_lines:
+                if len(t) < 6 or len(t) > 320:
+                    continue
+                if INTERESTING_TEXT_RE.search(t):
+                    dom_texts.append(t)
+                if len(dom_texts) >= 40:
+                    break
+            if not dom_texts and body_lines:
+                # Последний шанс — склеить кусок body как blob для классификатора.
+                blob_fallback = " ".join(body_lines)[:4000]
+                if blob_fallback.strip():
+                    dom_texts.append(blob_fallback[:500])
+            print(
+                f"OUTCOME_FALLBACK_BODY lotOfferId={lot_offer_id} "
+                f"lines={len(body_lines)} matched={len(dom_texts)}",
+                flush=True,
+            )
+        except Exception as exc:
+            print(f"BODY fallback error lotOfferId={lot_offer_id}: {exc}")
+
+    # Повторная короткая пауза, если всё ещё пусто (медленный SPA).
+    if not dom_texts and not api_texts:
+        try:
+            page.wait_for_timeout(2000)
+            more = page.evaluate(
+                """() => {
+                  const t = (document.body && document.body.innerText) || '';
+                  return /аукцион|продавц|решени|выигр|выбран|не\\s*выкуп|не\\s*взял|ждём|ждем/i.test(t)
+                    ? t.slice(0, 2500) : '';
+                }"""
+            ) or ""
+            if more.strip():
+                dom_texts.append(more.strip()[:500])
+                print(f"OUTCOME_RETRY_TEXT lotOfferId={lot_offer_id} len={len(more)}", flush=True)
+        except Exception:
+            pass
 
     texts = []
     seen = set()
@@ -310,6 +364,7 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
             "status": status_code,
             "texts": texts[:30],
             "apiUrls": [c.get("url") for c in captured][:20],
+            "extractEmpty": not bool(texts),
         },
         ensure_ascii=False,
     )
@@ -320,6 +375,7 @@ def extract_outcome_from_view(page, lot_offer_id: int | str) -> dict:
         "status": status_code,
         "raw": raw,
         "texts": texts,
+        "extractEmpty": not bool(texts),
     }
 
 
@@ -466,7 +522,7 @@ def main():
     email = _env_required(EMAIL_ENV)
     password = _env_required(PASSWORD_ENV)
     dealer_id = _env(DEALER_ID_ENV)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = _app_dir()
     items, queue_meta = _load_items()
     _log("=" * 72)
     _log(

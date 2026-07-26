@@ -396,7 +396,10 @@ class AvitoLotOffer(models.Model):
         'Макс. ставка вручную (потолок автоставки)',
         null=True,
         blank=True,
-        help_text='Если задано — автоставка идёт до этого порога, даже если он выше расчётного выкупа.',
+        help_text=(
+            'Если задано — жёсткий потолок: автоставка не может превысить эту сумму, '
+            'даже если расчётный выкуп выше. Приоритет у ручного потолка.'
+        ),
     )
 
     sale_cost = models.PositiveIntegerField('saleCost', null=True, blank=True)
@@ -716,6 +719,23 @@ class AvitoAuctionSettings(models.Model):
         'Округление ставки вверх до',
         default=1000,
         help_text='maxBid + minBidStep округляется вверх до этого шага (обычно 1000).',
+    )
+    min_bid_amount = models.PositiveIntegerField(
+        'Минимальная ставка, ₽',
+        null=True,
+        blank=True,
+        help_text=(
+            'Автоставка не делается, если рассчитанная ставка ниже этого порога '
+            '(фильтр «мелочи» по выкупаемым лотам). Пусто = без ограничения.'
+        ),
+    )
+    cap_bid_by_seller_wish = models.BooleanField(
+        'Не выше пожелания продавца',
+        default=False,
+        help_text=(
+            'Если включено, автоставка не ставится, когда рассчитанная сумма '
+            'превышает minPrice (желание/пожелание продавца) по лоту.'
+        ),
     )
 
     weight_test_price = models.DecimalField(

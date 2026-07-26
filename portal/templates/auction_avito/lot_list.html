@@ -43,6 +43,15 @@
     border-color: rgba(0, 80, 157, 0.35);
     box-shadow: 0 16px 40px rgba(0, 42, 90, 0.12);
   }
+  .aav-card--important {
+    border-color: #f59e0b;
+    box-shadow: 0 12px 32px rgba(245, 158, 11, 0.18);
+    background: linear-gradient(180deg, #fffbeb 0%, #fff 45%);
+  }
+  .aav-card--important:hover {
+    border-color: #d97706;
+    box-shadow: 0 16px 40px rgba(217, 119, 6, 0.22);
+  }
   .aav-card-photo {
     aspect-ratio: 4/3;
     background: #e8eef5;
@@ -121,6 +130,7 @@
   }
   .aav-status-inprogress { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
   .aav-status-won { background: #dcfce7; color: #14532d; border-color: #86efac; }
+  .aav-status-not_taken { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
   .aav-status-lost { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
   .aav-status-waiting_seller { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
   .aav-status-no_selection { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
@@ -145,10 +155,10 @@
   .aav-outcome-pill.aav-status-won { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
   .aav-outcome-pill.aav-status-lost { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
   .aav-outcome-pill.aav-status-waiting_seller { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+  .aav-outcome-pill.aav-status-not_taken { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
   .aav-outcome-pill.aav-status-no_selection,
   .aav-outcome-pill.aav-status-not_redeemed,
   .aav-outcome-pill.aav-status-we_refused,
-  .aav-outcome-pill.aav-status-not_taken,
   .aav-outcome-pill.aav-status-canceled,
   .aav-outcome-pill.aav-status-unknown { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
   .aav-finish {
@@ -293,7 +303,7 @@
     <div class="aav-grid">
       {% for lot in params.page_obj %}
         {% with vehicle=lot.vehicle_avito offer=lot.offers.first img=lot.images.first %}
-        <a class="aav-card" href="{% url 'auction_avito:lot_detail' lot.pk %}">
+        <a class="aav-card{% if lot.list_badge.important %} aav-card--important{% endif %}" href="{% url 'auction_avito:lot_detail' lot.pk %}">
           <div class="aav-card-photo">
             {% if lot.list_badge %}
               <span class="aav-status aav-status-{{ lot.list_badge.css }}" title="{{ lot.list_badge.code }}">

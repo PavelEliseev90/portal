@@ -533,6 +533,8 @@ def avito_auction_settings(request):
         'block_carsharing': s.block_carsharing,
         'block_mileage_twisted': s.block_mileage_twisted,
         'bid_round_to': s.bid_round_to,
+        'min_bid_amount': s.min_bid_amount,
+        'cap_bid_by_seller_wish': s.cap_bid_by_seller_wish,
         'weight_test_price': float(s.weight_test_price),
         'weight_rdo': float(s.weight_rdo),
         'weight_kor': float(s.weight_kor),
@@ -743,6 +745,15 @@ def avito_auction_auto_bid_decide(request):
     max_bid = data.get('maxBid', data.get('MaxBid'))
     min_step = data.get('minBidStep', data.get('MinBidStep'))
     our_bid = data.get('ourBid') if 'ourBid' in data else data.get('bid')
+    seller_wish_from_payload = (
+        'minPrice' in data or 'MinPrice' in data
+        or 'sellerWish' in data or 'sellerWishPrice' in data
+    )
+    seller_wish = (
+        data.get('minPrice', data.get('MinPrice', data.get('sellerWish', data.get('sellerWishPrice'))))
+        if seller_wish_from_payload
+        else None
+    )
 
     if lot is not None:
         vehicle = getattr(lot, 'vehicle_avito', None) or getattr(lot, 'vehicle_autohub', None)
@@ -752,6 +763,8 @@ def avito_auction_auto_bid_decide(request):
             mileage = getattr(vehicle, 'mileage', None)
         if not max_bid_from_payload and max_bid in (None, ''):
             max_bid = lot.max_bid
+        if not seller_wish_from_payload and seller_wish in (None, ''):
+            seller_wish = getattr(lot, 'min_price', None)
         if offer is None:
             offer = lot.offers.order_by('-id').first()
         if offer is not None:
@@ -768,7 +781,7 @@ def avito_auction_auto_bid_decide(request):
             if last_calc:
                 buyout = last_calc.estimation_price
 
-    # Ручной потолок автоставки по офферу (может быть выше расчётного выкупа).
+    # Ручной потолок автоставки: жёсткий cap (не выше manual, даже если расчёт больше).
     calc_buyout = buyout
     manual_ceiling = None
     if offer is not None and getattr(offer, 'manual_max_bid', None):
@@ -781,7 +794,10 @@ def avito_auction_auto_bid_decide(request):
             calc_n = int(float(calc_buyout)) if calc_buyout not in (None, '') else 0
         except (TypeError, ValueError):
             calc_n = 0
-        buyout = max(calc_n, manual_ceiling)
+        if calc_n > 0:
+            buyout = min(calc_n, manual_ceiling)
+        else:
+            buyout = manual_ceiling
 
     # Пустой / нулевой maxBid = ставок ещё нет → первая ставка от minAvailableBid.
     try:
@@ -801,6 +817,7 @@ def avito_auction_auto_bid_decide(request):
             year=year,
             mileage=mileage,
             risk_flags=risk,
+            seller_wish=seller_wish,
         )
     except Exception as exc:
         return JsonResponse(
@@ -819,6 +836,19 @@ def avito_auction_auto_bid_decide(request):
     decision['manual_max_bid'] = manual_ceiling
     if manual_ceiling:
         decision['buyout_ceiling_source'] = 'manual_max_bid'
+        # Доп. защита: ставка не выше ручного потолка.
+        bid_amt = decision.get('bid_amount')
+        try:
+            bid_n = int(bid_amt) if bid_amt not in (None, '') else None
+        except (TypeError, ValueError):
+            bid_n = None
+        if bid_n is not None and bid_n > manual_ceiling:
+            decision['should_bid'] = False
+            decision['bid_amount'] = None
+            decision['reason'] = (
+                f'ставка {bid_n} выше ручного потолка {manual_ceiling}'
+            )
+            decision['reason_category'] = 'above_manual_max'
 
     try:
         from auction_avito.models import AvitoAutoBidDecision
