@@ -853,7 +853,7 @@ def monitor_hand_to_work(request):
     from django.http import JsonResponse
     from django.utils import timezone
 
-    from auction_avito.services.outcome import OUTCOME_WON
+    from auction_avito.services.outcome import OUTCOME_WON, WIN_NOTIFY_OUTCOMES
 
     lot_offer_id = request.POST.get('lotOfferId') or request.POST.get('lot_offer_id')
     clear = (request.POST.get('clear') or '').strip().lower() in ('1', 'true', 'yes')
@@ -874,7 +874,7 @@ def monitor_hand_to_work(request):
         })
 
     is_won = (
-        (offer.outcome_code or '') == OUTCOME_WON
+        (offer.outcome_code or '') in WIN_NOTIFY_OUTCOMES
         or (offer.status_code or '') == OUTCOME_WON
     )
     if not is_won:

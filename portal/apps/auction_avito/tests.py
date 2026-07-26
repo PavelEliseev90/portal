@@ -271,6 +271,26 @@ class OutcomeClassifyTests(SimpleTestCase):
         self.assertEqual(d['outcome_code'], 'not_taken')
         self.assertEqual(d['status_code'], 'finished')
 
+    def test_not_processed_phrase(self):
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Аукцион завершён',
+            detail='Лот не обработан',
+        )
+        self.assertEqual(d['outcome_code'], 'not_taken')
+        self.assertEqual(d['status_code'], 'finished')
+
+    def test_not_taken_in_win_notify_outcomes(self):
+        from auction_avito.services.outcome import (
+            OUTCOME_NOT_TAKEN,
+            OUTCOME_WON,
+            WIN_NOTIFY_OUTCOMES,
+        )
+
+        self.assertIn(OUTCOME_WON, WIN_NOTIFY_OUTCOMES)
+        self.assertIn(OUTCOME_NOT_TAKEN, WIN_NOTIFY_OUTCOMES)
+
     def test_not_taken_compact_spaces(self):
         from auction_avito.services.outcome import classify_outcome_text
 

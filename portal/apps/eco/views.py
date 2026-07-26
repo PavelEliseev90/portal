@@ -2353,6 +2353,9 @@ def get_chats_list_online_info(request, id):
         user_name=Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1]),
         user_content=Subquery(subqyery_message_info.values('user')[:1]),
         eco=Subquery(subqyery_message_info.values('user__profiles__eco')[:1]),
+        last_msg_important=Subquery(
+            subqyery_message_info.values('user__profiles__eco_chat_important')[:1]
+        ),
         auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
         kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
     )
@@ -2537,6 +2540,9 @@ def get_chats_list_online(request):
         user_name=Subquery(subqyery_message_info.values('user__profiles__eco_name')[:1]),
         user_content=Subquery(subqyery_message_info.values('user')[:1]),
         eco=Subquery(subqyery_message_info.values('user__profiles__eco')[:1]),
+        last_msg_important=Subquery(
+            subqyery_message_info.values('user__profiles__eco_chat_important')[:1]
+        ),
         auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
         kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
     )

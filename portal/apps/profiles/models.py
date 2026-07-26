@@ -20,7 +20,8 @@ class Profiles(models.Model):
     eco_visible             = models.BooleanField("ЕЦО просмотр", default = False)
     eco_page_price_info     = models.BooleanField("ЕЦО просмотр страницы ценообразование", default = False)
     eco_page_price_auto     = models.BooleanField("ЕЦО просмотр страницы ценообразование автоматическая", default = False)
-    eco_toast               = models.BooleanField("Всплывающиесообщения", default = False) 
+    eco_toast               = models.BooleanField("Всплывающиесообщения", default = False)
+    eco_chat_important      = models.BooleanField("Важные сообщения в чатах ЕЦО", default=False) 
     
     korsavto_settings       = models.BooleanField("Доступ к настройкам корсавто", default = False)
 
