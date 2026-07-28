@@ -27,6 +27,7 @@ urlpatterns = [
     path('interactive-evaluations/',            views.interactive_evaluations_report, name='interactive_evaluations_report'),
     path('estimation-zg/',                      views.estimation_zg_analytics, name='estimation_zg_analytics'),
     path('estimation-zg/detail/',               views.estimation_zg_detail, name='estimation_zg_detail'),
+    path('autohub-zg/',                         views.autohub_zg_analytics, name='autohub_zg_analytics'),
     path('market-trends/',                      views.market_model_trends, name='market_model_trends'),
     path('market-trends/model/',                views.market_model_detail, name='market_model_detail'),
     path('market-trends/month/',                views.market_model_month_detail, name='market_model_month_detail'),

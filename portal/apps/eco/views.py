@@ -13135,10 +13135,10 @@ def interactive_evaluations_report(request):
 
 @login_required
 def estimation_zg_analytics(request):
-    """Аналитика оценок: помесячно + разбивка по ЦГ + % принятия + Autohub фон."""
+    """Аналитика оценок: помесячно + разбивка по ЦГ + % принятия."""
     from eco.estimation_zg_analytics import (
         build_estimation_zg_analytics,
-        build_autohub_zg_analytics,
+        normalize_accepted_filter,
     )
     import json as _json
 
@@ -13162,6 +13162,7 @@ def estimation_zg_analytics(request):
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
     type_id = _get_int(request.GET.get('type_id'))
+    accepted = normalize_accepted_filter(request.GET.get('accepted'))
 
     data = build_estimation_zg_analytics(
         date_start=date_start,
@@ -13170,11 +13171,7 @@ def estimation_zg_analytics(request):
         staff_id=staff_id,
         analyst_id=analyst_id,
         type_id=type_id,
-    )
-    hub = build_autohub_zg_analytics(
-        date_start=date_start,
-        date_end=date_end,
-        unit_id=unit_id,
+        accepted=accepted,
     )
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
@@ -13193,6 +13190,7 @@ def estimation_zg_analytics(request):
             'staff_id': staff_id or '',
             'analyst_id': analyst_id or '',
             'type_id': type_id or '',
+            'accepted': accepted,
         },
         'summary': data['summary'],
         'zg_summary': data['zg_summary'],
@@ -13201,10 +13199,6 @@ def estimation_zg_analytics(request):
         'pivot_rows': data['pivot_rows'],
         'pivot_footer': data['pivot_footer'],
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
-        'hub_summary': hub['summary'],
-        'hub_pivot_rows': hub['pivot_rows'],
-        'hub_pivot_footer': hub['pivot_footer'],
-        'hub_chart_json': _json.dumps(hub['chart'], ensure_ascii=False),
         'detail_base': '/eco/estimation-zg/detail/',
         'units': units,
         'staffs': staffs,
@@ -13214,15 +13208,65 @@ def estimation_zg_analytics(request):
             'Оценки: воронка Trade-In, ЦГ по ЦНА (zg_name). '
             '«Принята» — date_reception_success. Месяцы — по дате начала оценки.'
         ),
-        'hub_hint': (
+    }
+    return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
+
+
+@login_required
+def autohub_zg_analytics(request):
+    """Autohub: сегменты склада по ЦГ × месяц (отдельная страница)."""
+    from eco.estimation_zg_analytics import build_autohub_zg_analytics
+    import json as _json
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'autohub_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+
+    hub = build_autohub_zg_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+    )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+
+    params = {
+        'type': 'autohub_zg_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+        },
+        'hub_summary': hub['summary'],
+        'month_labels': hub['month_labels'],
+        'month_keys': hub['month_keys'],
+        'hub_pivot_rows': hub['pivot_rows'],
+        'hub_pivot_footer': hub['pivot_footer'],
+        'hub_chart_json': _json.dumps(hub['chart'], ensure_ascii=False),
+        'detail_base': '/eco/estimation-zg/detail/',
+        'units': units,
+        'hint': (
             'Autohub: снимки regEstimationRefCarsOrganizations по складу. '
             'ЦГ по avg_price сегмента (те же пороги, что ЦНА). '
             'В месяце сегмент (поколение/марка+модель) учитывается один раз (последний снимок). '
-            'total / дни / avg — медианы по сегментам; «выше рынка» — наша price > avg_price. '
-            'Фильтры оценщик/аналитик/тип на Autohub не влияют (только период и ДЦ).'
+            'total / дни / avg — медианы по сегментам; «выше рынка» — наша price > avg_price.'
         ),
     }
-    return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
+    return render(request, 'lo/autohub_zg_analytics.html', {'params': params})
 
 
 @login_required
@@ -13232,6 +13276,7 @@ def estimation_zg_detail(request):
         build_estimation_zg_detail,
         build_autohub_zg_detail,
         normalize_zg_name,
+        normalize_accepted_filter,
     )
     from urllib.parse import urlencode
 
@@ -13253,18 +13298,30 @@ def estimation_zg_detail(request):
     staff_id = _get_int(request.GET.get('staff_id'))
     analyst_id = _get_int(request.GET.get('analyst_id'))
     type_id = _get_int(request.GET.get('type_id'))
+    accepted = normalize_accepted_filter(request.GET.get('accepted'))
 
-    back_qs = {
-        k: v for k, v in {
-            'date_start': request.GET.get('date_start') or '',
-            'date_end': request.GET.get('date_end') or '',
-            'unit_id': unit_id or '',
-            'staff_id': staff_id or '',
-            'analyst_id': analyst_id or '',
-            'type_id': type_id or '',
-        }.items() if v
-    }
-    back_url = '/eco/estimation-zg/'
+    if source == 'autohub':
+        back_qs = {
+            k: v for k, v in {
+                'date_start': request.GET.get('date_start') or '',
+                'date_end': request.GET.get('date_end') or '',
+                'unit_id': unit_id or '',
+            }.items() if v
+        }
+        back_url = '/eco/autohub-zg/'
+    else:
+        back_qs = {
+            k: v for k, v in {
+                'date_start': request.GET.get('date_start') or '',
+                'date_end': request.GET.get('date_end') or '',
+                'unit_id': unit_id or '',
+                'staff_id': staff_id or '',
+                'analyst_id': analyst_id or '',
+                'type_id': type_id or '',
+                'accepted': accepted if accepted != 'all' else '',
+            }.items() if v
+        }
+        back_url = '/eco/estimation-zg/'
     if back_qs:
         back_url += '?' + urlencode(back_qs)
 
@@ -13288,6 +13345,7 @@ def estimation_zg_detail(request):
             staff_id=staff_id,
             analyst_id=analyst_id,
             type_id=type_id,
+            accepted=accepted,
         )
 
     params = {
@@ -13302,6 +13360,7 @@ def estimation_zg_detail(request):
             'staff_id': staff_id or '',
             'analyst_id': analyst_id or '',
             'type_id': type_id or '',
+            'accepted': accepted,
         },
     }
     return render(request, 'lo/estimation_zg_detail.html', {'params': params})

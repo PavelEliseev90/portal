@@ -145,6 +145,16 @@ def is_accepted(row: TradeInFunnel) -> bool:
     return dt != DATE_INVALID and dt.year > 1
 
 
+def normalize_accepted_filter(raw) -> str:
+    """Фильтр принятия: all | yes | no."""
+    v = str(raw or 'all').strip().lower()
+    if v in ('yes', '1', 'да', 'accepted', 'true'):
+        return 'yes'
+    if v in ('no', '0', 'нет', 'rejected', 'false'):
+        return 'no'
+    return 'all'
+
+
 def _month_key(dt: datetime) -> str:
     return dt.strftime('%Y-%m')
 
@@ -191,7 +201,10 @@ def build_estimation_zg_analytics(
     staff_id: Optional[int] = None,
     analyst_id: Optional[int] = None,
     type_id: Optional[int] = None,
+    accepted: Optional[str] = None,
 ) -> dict:
+    accepted_filter = normalize_accepted_filter(accepted)
+
     qs = TradeInFunnel.objects.filter(
         date_start_estimation__gte=date_start,
         date_start_estimation__lte=date_end,
@@ -229,15 +242,20 @@ def build_estimation_zg_analytics(
     for row in rows.iterator(chunk_size=2000):
         if not row.date_start_estimation:
             continue
+        acc = is_accepted(row)
+        if accepted_filter == 'yes' and not acc:
+            continue
+        if accepted_filter == 'no' and acc:
+            continue
         mk = _month_key(row.date_start_estimation)
         zg = normalize_zg_name(row.zg_name, resolve_funnel_price(row))
-        accepted = 1 if is_accepted(row) else 0
+        accepted_n = 1 if acc else 0
         bucket[mk][zg]['total'] += 1
-        bucket[mk][zg]['accepted'] += accepted
+        bucket[mk][zg]['accepted'] += accepted_n
         zg_totals[zg]['total'] += 1
-        zg_totals[zg]['accepted'] += accepted
+        zg_totals[zg]['accepted'] += accepted_n
         month_totals[mk]['total'] += 1
-        month_totals[mk]['accepted'] += accepted
+        month_totals[mk]['accepted'] += accepted_n
 
     months = _iter_months(date_start, date_end)
     month_keys = [_month_key(m) for m in months]
@@ -323,6 +341,7 @@ def build_estimation_zg_analytics(
             'rate': _pct(grand_accepted, grand_total),
             'months': len(month_keys),
         },
+        'accepted_filter': accepted_filter,
         'month_keys': month_keys,
     }
 
@@ -526,10 +545,12 @@ def build_estimation_zg_detail(
     staff_id: Optional[int] = None,
     analyst_id: Optional[int] = None,
     type_id: Optional[int] = None,
+    accepted: Optional[str] = None,
 ) -> dict:
     """Список оценок за месяц × ЦГ."""
     date_start, date_end = _month_bounds(month_key)
     target_zg = normalize_zg_name(zg)
+    accepted_filter = normalize_accepted_filter(accepted)
 
     qs = TradeInFunnel.objects.filter(
         date_start_estimation__gte=date_start,
@@ -557,6 +578,10 @@ def build_estimation_zg_detail(
         if row_zg != target_zg:
             continue
         acc = is_accepted(row)
+        if accepted_filter == 'yes' and not acc:
+            continue
+        if accepted_filter == 'no' and acc:
+            continue
         if acc:
             accepted_n += 1
         rows.append({

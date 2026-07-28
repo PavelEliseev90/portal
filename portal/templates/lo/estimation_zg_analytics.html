@@ -58,6 +58,7 @@
 <div class="zg-page">
   <h2>Аналитика оценок по ценовым группам</h2>
   <p class="lead">Помесячное количество оценок с разбивкой по ЦГ и процентом принятия.
+    · <a href="{% url 'eco:autohub_zg_analytics' %}">Autohub по ЦГ</a>
     · <a href="{% url 'eco:market_model_trends' %}">Тренд рынка по моделям</a>
   </p>
 
@@ -113,6 +114,14 @@
           {% for t in params.types %}
           <option value="{{ t.id }}" {% if params.filters.type_id|stringformat:"s" == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
           {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Принят</label>
+        <select class="form-select" name="accepted">
+          <option value="all" {% if params.filters.accepted == 'all' %}selected{% endif %}>Все</option>
+          <option value="yes" {% if params.filters.accepted == 'yes' %}selected{% endif %}>Да</option>
+          <option value="no" {% if params.filters.accepted == 'no' %}selected{% endif %}>Нет</option>
         </select>
       </div>
       <div class="col-12 col-md-auto">
@@ -189,7 +198,7 @@
               {% if cell.empty %}
               <span class="cell-empty">—</span>
               {% else %}
-              <a class="cell-link" href="{{ params.detail_base }}?source=estimations&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.analyst_id %}&analyst_id={{ params.filters.analyst_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}">
+              <a class="cell-link" href="{{ params.detail_base }}?source=estimations&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.analyst_id %}&analyst_id={{ params.filters.analyst_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}{% if params.filters.accepted and params.filters.accepted != 'all' %}&accepted={{ params.filters.accepted }}{% endif %}">
               <div class="cell-main">{{ cell.total }} / {{ cell.accepted }}</div>
               <div class="cell-sub {% if cell.rate >= 40 %}rate-ok{% elif cell.rate >= 20 %}rate-mid{% else %}rate-low{% endif %}">{{ cell.rate|unlocalize }}%</div>
               </a>
@@ -231,130 +240,6 @@
       </table>
     </div>
   </div>
-
-  <h2 class="mt-4 mb-2" style="font-size:1.25rem;color:#002a5a;">Autohub — рыночный фон по ЦГ</h2>
-  <p class="lead" style="margin-bottom:1rem;">Сегменты склада с дедупом; ЦГ по avg_price (пороги как у ЦНА).</p>
-
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-      <div class="zg-metric">
-        <div class="t">Сегментов</div>
-        <div class="v">{{ params.hub_summary.segments }}</div>
-        <div class="s">уникальных за период</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="zg-metric">
-        <div class="t">Мед. total</div>
-        <div class="v">{{ params.hub_summary.med_total }}</div>
-        <div class="s">usefulSales</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="zg-metric">
-        <div class="t">Мед. дней</div>
-        <div class="v">{{ params.hub_summary.med_days|unlocalize }}</div>
-        <div class="s">avgDaysInSale</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="zg-metric">
-        <div class="t">Выше рынка</div>
-        <div class="v">{{ params.hub_summary.above_share|unlocalize }}%</div>
-        <div class="s">наша price &gt; avg</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="zg-panel">
-    <div class="zg-panel-head">
-      <h3>Autohub: сегменты по месяцам (стек по ЦГ)</h3>
-      <div class="btn-group chart-mode" role="group" aria-label="Режим графика Autohub">
-        <button type="button" class="btn btn-sm btn-primary" id="hubChartModeAbs">Количество</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="hubChartModeShare">Доли ЦГ, %</button>
-      </div>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="hubZgChart"></canvas>
-    </div>
-    <p class="zg-hint mb-0">{{ params.hub_hint }} Клик по столбцу ЦГ открывает расшифровку.</p>
-  </div>
-
-  <div class="zg-panel">
-    <h3>Autohub: ЦГ × месяц</h3>
-    <p class="zg-hint mt-0 mb-2">
-      В ячейке: <strong>сегментов</strong> · мед. total · мед. дней · мед. avg_price · % выше рынка. Ячейка кликабельна.
-    </p>
-    <div class="table-responsive">
-      <table class="table table-sm table-bordered align-middle table-zg mb-0">
-        <thead>
-          <tr>
-            <th>ЦГ</th>
-            {% for label in params.month_labels %}
-            <th class="text-center">{{ label }}</th>
-            {% endfor %}
-            <th class="text-center col-total">Итого</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in params.hub_pivot_rows %}
-          <tr>
-            <td><span class="pill">ЦГ {{ row.zg }}</span></td>
-            {% for cell in row.cells %}
-            <td class="text-center">
-              {% if cell.empty %}
-              <span class="cell-empty">—</span>
-              {% else %}
-              <a class="cell-link" href="{{ params.detail_base }}?source=autohub&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}">
-              <div class="cell-main">{{ cell.segments }} сегм.</div>
-              <div class="cell-sub">total {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ cell.med_avg }}</div>
-              <div class="cell-sub">выше {{ cell.above_share|unlocalize }}%</div>
-              </a>
-              {% endif %}
-            </td>
-            {% endfor %}
-            <td class="text-center col-total">
-              {% if row.total.empty %}
-              <span class="cell-empty">—</span>
-              {% else %}
-              <div class="cell-main">{{ row.total.segments }} сегм.</div>
-              <div class="cell-sub">total {{ row.total.med_total }} · {{ row.total.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ row.total.med_avg }}</div>
-              <div class="cell-sub">выше {{ row.total.above_share|unlocalize }}%</div>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="{{ params.month_labels|length|add:2 }}" class="text-muted">Нет снимков Autohub за период.</td></tr>
-          {% endfor %}
-          {% if params.hub_pivot_footer and params.hub_pivot_rows %}
-          <tr class="row-total">
-            <td>Итого</td>
-            {% for cell in params.hub_pivot_footer.cells %}
-            <td class="text-center">
-              {% if cell.empty %}
-              <span class="cell-empty">—</span>
-              {% else %}
-              <div class="cell-main">{{ cell.segments }} сегм.</div>
-              <div class="cell-sub">total {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ cell.med_avg }}</div>
-              <div class="cell-sub">выше {{ cell.above_share|unlocalize }}%</div>
-              {% endif %}
-            </td>
-            {% endfor %}
-            <td class="text-center col-total">
-              <div class="cell-main">{{ params.hub_pivot_footer.total.segments }} сегм.</div>
-              <div class="cell-sub">total {{ params.hub_pivot_footer.total.med_total }} · {{ params.hub_pivot_footer.total.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ params.hub_pivot_footer.total.med_avg }}</div>
-              <div class="cell-sub">выше {{ params.hub_pivot_footer.total.above_share|unlocalize }}%</div>
-            </td>
-          </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -368,6 +253,7 @@
     staff_id: "{{ params.filters.staff_id }}",
     analyst_id: "{{ params.filters.analyst_id }}",
     type_id: "{{ params.filters.type_id }}",
+    accepted: "{{ params.filters.accepted }}",
   };
 
   function detailUrl(source, monthKey, zg) {
@@ -376,13 +262,8 @@
     p.set('month', monthKey);
     p.set('zg', zg);
     Object.keys(FILTER_QS).forEach((k) => {
-      if (FILTER_QS[k]) p.set(k, FILTER_QS[k]);
+      if (FILTER_QS[k] && !(k === 'accepted' && FILTER_QS[k] === 'all')) p.set(k, FILTER_QS[k]);
     });
-    if (source === 'autohub') {
-      p.delete('staff_id');
-      p.delete('analyst_id');
-      p.delete('type_id');
-    }
     return DETAIL_BASE + '?' + p.toString();
   }
 
@@ -455,8 +336,8 @@
                   if (mode === 'normalized') return `${ds.label}: ${ctx.parsed.y}% · ${n} / ${a} (${r}%)`;
                   return `${ds.label}: ${n} / ${a} (${r}%)`;
                 }
-                if (mode === 'normalized') return `${ds.label}: ${ctx.parsed.y}% · ${n} сегм.`;
-                return `${ds.label}: ${n} сегм.`;
+                if (mode === 'normalized') return `${ds.label}: ${ctx.parsed.y}% · ${n}`;
+                return `${ds.label}: ${n}`;
               },
               footer(items) {
                 if (!items.length) return '';
@@ -470,7 +351,7 @@
                   const mr = monthTotal ? Math.round(1000 * monthAcc / monthTotal) / 10 : 0;
                   return `Итого месяц: ${monthTotal} / ${monthAcc} (${mr}%) · клик — расшифровка`;
                 }
-                return `Итого сегментов: ${monthTotal} · клик — расшифровка`;
+                return `Итого: ${monthTotal} · клик — расшифровка`;
               }
             }
           }
@@ -513,7 +394,6 @@
   }
 
   makeStackedChart('zgChart', {{ params.chart_json|safe }}, 'chartModeAbs', 'chartModeShare', 'Количество оценок', 'estimations');
-  makeStackedChart('hubZgChart', {{ params.hub_chart_json|safe }}, 'hubChartModeAbs', 'hubChartModeShare', 'Число сегментов', 'autohub');
 })();
 </script>
 {% endblock %}
