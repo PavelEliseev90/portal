@@ -13193,7 +13193,9 @@ def estimation_zg_analytics(request):
         },
         'summary': data['summary'],
         'zg_summary': data['zg_summary'],
-        'table_rows': data['table_rows'],
+        'month_labels': data['month_labels'],
+        'pivot_rows': data['pivot_rows'],
+        'pivot_footer': data['pivot_footer'],
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
         'units': units,
         'staffs': staffs,
@@ -13202,7 +13204,8 @@ def estimation_zg_analytics(request):
         'hint': (
             'Источник — воронка Trade-In. ЦГ из zg_name (иначе по цене zna / после КД / до КД). '
             '«Принята» — заполнена дата успешного приёма (date_reception_success). '
-            'Период и месяцы — по дате начала оценки.'
+            'Период и месяцы — по дате начала оценки. '
+            'Переключатель «Доли ЦГ» — нормированный стек 100% по месяцу.'
         ),
     }
     return render(request, 'lo/estimation_zg_analytics.html', {'params': params})

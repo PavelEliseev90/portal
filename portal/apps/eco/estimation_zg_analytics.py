@@ -22,7 +22,6 @@ DATE_INVALID = datetime(1, 1, 1)
 
 ZG_ORDER = [row['name'] for row in PRICE_GROUP_RANGES] + ['Неопределена']
 
-# Нормализация возможных вариантов написания zg_name в воронке
 ZG_ALIASES = {
     '200': '200',
     '400': '400',
@@ -55,7 +54,6 @@ ZG_COLORS = {
 
 
 def zg_from_price(price) -> str:
-    """ЦГ по порогам, как в расчёте ценообразования."""
     try:
         value = float(price or 0)
     except (TypeError, ValueError):
@@ -78,7 +76,6 @@ def normalize_zg_name(raw: Optional[str], price=None) -> str:
         key = str(raw).strip()
         if key in ZG_ALIASES:
             return ZG_ALIASES[key]
-        # иногда приходит без пробела или с лишними символами
         compact = key.replace(' ', '')
         for alias, name in ZG_ALIASES.items():
             if alias.replace(' ', '') == compact:
@@ -131,6 +128,15 @@ def _pct(part: int, total: int) -> float:
     if not total:
         return 0.0
     return round(100.0 * part / total, 1)
+
+
+def _cell(total: int, accepted: int) -> dict:
+    return {
+        'total': total,
+        'accepted': accepted,
+        'rate': _pct(accepted, total),
+        'empty': total <= 0,
+    }
 
 
 def build_estimation_zg_analytics(
@@ -214,34 +220,32 @@ def build_estimation_zg_analytics(
             ],
         })
 
-    table_rows = []
-    for m, mk, label in zip(months, month_keys, month_labels):
-        month_total = month_totals[mk]['total']
-        month_acc = month_totals[mk]['accepted']
-        for zg in zg_list:
+    # Pivot: строки = ЦГ, столбцы = месяцы; ячейка = оценки / принято / %
+    pivot_rows = []
+    for zg in zg_list:
+        cells = []
+        for mk in month_keys:
             cell = bucket[mk][zg]
-            if cell['total'] <= 0:
-                continue
-            table_rows.append({
-                'month_key': mk,
-                'month_label': label,
-                'zg': zg,
-                'total': cell['total'],
-                'accepted': cell['accepted'],
-                'rate': _pct(cell['accepted'], cell['total']),
-                'share_of_month': _pct(cell['total'], month_total),
-            })
-        if month_total:
-            table_rows.append({
-                'month_key': mk,
-                'month_label': label,
-                'zg': 'Итого',
-                'total': month_total,
-                'accepted': month_acc,
-                'rate': _pct(month_acc, month_total),
-                'share_of_month': 100.0,
-                'is_total': True,
-            })
+            cells.append(_cell(cell['total'], cell['accepted']))
+        zt = zg_totals[zg]
+        pivot_rows.append({
+            'zg': zg,
+            'cells': cells,
+            'total': _cell(zt['total'], zt['accepted']),
+        })
+
+    footer_cells = [
+        _cell(month_totals[mk]['total'], month_totals[mk]['accepted'])
+        for mk in month_keys
+    ]
+    grand_total = sum(v['total'] for v in month_totals.values())
+    grand_accepted = sum(v['accepted'] for v in month_totals.values())
+    pivot_footer = {
+        'zg': 'Итого',
+        'cells': footer_cells,
+        'total': _cell(grand_total, grand_accepted),
+        'is_total': True,
+    }
 
     zg_summary = []
     for zg in zg_list:
@@ -256,9 +260,6 @@ def build_estimation_zg_analytics(
             'rate': _pct(a, t),
         })
 
-    grand_total = sum(v['total'] for v in month_totals.values())
-    grand_accepted = sum(v['accepted'] for v in month_totals.values())
-
     return {
         'month_keys': month_keys,
         'month_labels': month_labels,
@@ -266,8 +267,10 @@ def build_estimation_zg_analytics(
         'chart': {
             'labels': month_labels,
             'datasets': datasets,
+            'month_totals': [month_totals[mk]['total'] for mk in month_keys],
         },
-        'table_rows': table_rows,
+        'pivot_rows': pivot_rows,
+        'pivot_footer': pivot_footer,
         'zg_summary': zg_summary,
         'summary': {
             'total': grand_total,
