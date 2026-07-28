@@ -3439,6 +3439,77 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
 post_save.connect(journal_save_handler, sender=RegInteractivOcenka)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenka)
 
+
+def _safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def resolve_autohub_zna(estimation, remote=False):
+    """
+    ЦНА Autohub для price_zna_2 — та же логика, что estimations_price_calculation(type='autohub').
+
+    if hub_avg == 0 and page_remote: взять remote.hub_avg
+    elif hub_avg is not None: hub_avg
+    if remote and page_remote: remote.hub_avg
+    """
+    if estimation is None:
+        return 0
+    page_remote = getattr(estimation, 'page_remote', None)
+    hub_avg = _safe_float(getattr(estimation, 'hub_avg', None), 0)
+
+    zna = 0
+    if hub_avg == 0 and page_remote is not None:
+        zna = _safe_float(getattr(page_remote, 'hub_avg', None), 0)
+    elif getattr(estimation, 'hub_avg', None) is not None:
+        zna = hub_avg
+
+    if remote and page_remote is not None:
+        zna = _safe_float(getattr(page_remote, 'hub_avg', None), 0)
+
+    return int(zna) if zna else 0
+
+
+def ensure_price_zna_2(estimation, page_soglasovanie, remote=False, persist=True):
+    """
+    Если price_zna_2 пустой — заполнить из estimation.hub_avg (с fallback remote).
+    Возвращает итоговую ЦНА для витрины.
+    """
+    zna = 0
+    if page_soglasovanie is not None:
+        zna = int(_safe_float(getattr(page_soglasovanie, 'price_zna_2', 0), 0) or 0)
+
+    resolved = resolve_autohub_zna(estimation, remote=remote)
+    if zna <= 0 and resolved > 0:
+        zna = resolved
+        if persist and page_soglasovanie is not None:
+            try:
+                page_soglasovanie.price_zna_2 = resolved
+                page_soglasovanie.save(update_fields=['price_zna_2'])
+            except Exception:
+                pass
+
+    if zna <= 0 and page_soglasovanie is not None:
+        for attr in ('price_zna_1', 'price_zna_3'):
+            v = int(_safe_float(getattr(page_soglasovanie, attr, 0), 0) or 0)
+            if v > 0:
+                zna = v
+                break
+
+    if zna <= 0 and estimation is not None:
+        page_remote = getattr(estimation, 'page_remote', None)
+        if page_remote is not None:
+            zna = int(_safe_float(getattr(page_remote, 'price_zna', 0), 0) or 0)
+        if zna <= 0:
+            zna = int(_safe_float(getattr(estimation, 'custom_zna', 0), 0) or 0)
+
+    return zna
+
+
 def update_trade_in_funnel(interactiv_rlk):
     try:
         from analytics.models import TradeInFunnel
@@ -3505,6 +3576,9 @@ def update_trade_in_funnel(interactiv_rlk):
     comparison_after_type    = 0
     diagostica          = False 
     diff_summ           = 0
+
+    if estimation_rlk is None:
+        return
 
     date_start_estimation = estimation_rlk.start_estimation
 
@@ -3589,8 +3663,22 @@ def update_trade_in_funnel(interactiv_rlk):
                 comparison_after_type = 1
 
         price_auto_bcp  = page_soglasovanie.price_auto_bcp_2
-        zna             = page_soglasovanie.price_zna_2 
+        # ЦНА: price_zna_2, при пустом — hub_avg (+ remote) и дозапись в price_zna_2
+        zna = ensure_price_zna_2(
+            estimation_rlk,
+            page_soglasovanie,
+            remote=remote,
+            persist=True,
+        )
         diagostica      = not page_soglasovanie.no_diagnostica
+    else:
+        # Без согласования — всё равно берём hub_avg в витрину
+        zna = ensure_price_zna_2(
+            estimation_rlk,
+            None,
+            remote=remote,
+            persist=False,
+        )
     
     year    = estimation_rlk.year
     vin     = estimation_rlk.vin 
@@ -3617,7 +3705,10 @@ def update_trade_in_funnel(interactiv_rlk):
     
     zg_id = 0
     zg_name = ''
-    if zna <= 200000:
+    if zna <= 0:
+        zg_id = 0
+        zg_name = ''
+    elif zna <= 200000:
         zg_id = 7
         zg_name = '200'
     elif zna <= 400000:
@@ -3641,6 +3732,8 @@ def update_trade_in_funnel(interactiv_rlk):
     elif zna > 5000000:
         zg_id = 12
         zg_name = '5 000+'
+
+    zna_custom = _safe_float(getattr(estimation_rlk, 'custom_zna', 0), 0)
 
     TradeInFunnel.objects.update_or_create(
                         rlk_id = rlk_id,
@@ -3698,10 +3791,10 @@ def update_trade_in_funnel(interactiv_rlk):
                             'price_auto_after'          : price_auto_after,
                             'price_sale'                : price_auto_bcp,
                             'price_auto_bcp'            : price_auto_bcp,
-                            'stage'                     : interactiv_rlk.status.name,
+                            'stage'                     : interactiv_rlk.status.name if interactiv_rlk.status_id else '',
                             'diagostica'                : diagostica,
                             'zna'                       : zna,
-                            'zna_custom'                : estimation_rlk.custom_zna,
+                            'zna_custom'                : zna_custom,
                             'comparison_after'          : comparison_after,
                             'comparison_before'         : comparison_before,
                             'comparison_remote'         : comparison_remote,
