@@ -3891,7 +3891,12 @@ def doc(request, id):
                     kors_estimation_data(estimation.id)
                 elif refresh == 'all':
                     get_info_max(interactiv_rlk, estimation.id)
-                    kors_estimation_data(estimation.id)
+                    # kors_estimation_data(estimation.id)
+                    price_autohub_k = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k', body_info=body, salon_info=salon, save_history=True, user=user)
+                    price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito', body_info=body, salon_info=salon, save_history=True, user=user )
+                    price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub', body_info=body, salon_info=salon, save_history=True, user=user)
+                    price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom', body_info=body, salon_info=salon, save_history=True, user=user)
+                    
                 elif refresh == 'data1c':
                     from task_manager.views import estimation_send_1c
                     try:
@@ -3912,17 +3917,17 @@ def doc(request, id):
                     except:
                         s= 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
-                if refresh in ('autohub', 'znak', 'kors', 'all', 'data1c'):
-                    estimation.refresh_from_db()
-                    record_interactive_price_refresh(
-                        interactiv_rlk=interactiv_rlk,
-                        estimation=estimation,
-                        user=request.user,
-                        refresh_kind=refresh,
-                        price_calculation_fn=estimations_price_calculation,
-                        body_info=body,
-                        salon_info=salon,
-                    )
+                # if refresh in ('autohub', 'znak', 'kors', 'all', 'data1c'):
+                #     estimation.refresh_from_db()
+                #     record_interactive_price_refresh(
+                #         interactiv_rlk=interactiv_rlk,
+                #         estimation=estimation,
+                #         user=request.user,
+                #         refresh_kind=refresh,
+                #         price_calculation_fn=estimations_price_calculation,
+                #         body_info=body,
+                #         salon_info=salon,
+                #     )
                 return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 
             balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
