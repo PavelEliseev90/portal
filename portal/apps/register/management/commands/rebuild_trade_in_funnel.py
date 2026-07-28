@@ -4,6 +4,9 @@
 Витрина пишется при save() RegInteractivOcenkaRLK / DocLO и не содержит
 автоматической истории. Команда прогоняет оценки и активные ЛО за даты.
 
+При обновлении: если price_zna_2 пустой — заполняется из estimation.hub_avg
+(с fallback page_remote.hub_avg), затем пишется в витрину zna / ЦГ.
+
 Примеры:
   python manage.py rebuild_trade_in_funnel --from 2024-01-01 --to 2025-12-31 --dry-run
   python manage.py rebuild_trade_in_funnel --from 2024-01-01 --to 2025-12-31
@@ -14,10 +17,14 @@ from __future__ import annotations
 import datetime as DT
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 
 
 class Command(BaseCommand):
-    help = 'Пересобирает TradeInFunnel из RegInteractivOcenkaRLK (+ активные DocLO) за период'
+    help = (
+        'Пересобирает TradeInFunnel из RegInteractivOcenkaRLK (+ активные DocLO). '
+        'Дозаполняет price_zna_2 из hub_avg при пустом значении.'
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -69,6 +76,11 @@ class Command(BaseCommand):
                 'rlk',
                 'estimation',
                 'estimation__page_remote',
+                'estimation__modification',
+                'estimation__modification__model',
+                'estimation__modification__model__mark',
+                'estimation__page_salon',
+                'estimation__page_documents',
                 'page_soglasovanie',
                 'type_reception',
                 'unit',
@@ -83,6 +95,14 @@ class Command(BaseCommand):
             .order_by('id')
         )
         rlk_count = rlk_qs.count()
+
+        need_zna_count = rlk_qs.filter(
+            page_soglasovanie__isnull=False,
+        ).filter(
+            Q(page_soglasovanie__price_zna_2__isnull=True) | Q(page_soglasovanie__price_zna_2=0)
+        ).filter(
+            Q(estimation__hub_avg__gt=0) | Q(estimation__page_remote__hub_avg__gt=0)
+        ).count()
 
         lo_ids = []
         if not skip_lo:
@@ -105,7 +125,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f'Период {date_from:%Y-%m-%d} … {date_to:%Y-%m-%d}: '
-            f'RegInteractivOcenkaRLK={rlk_count}, DocLO(active)={lo_count}'
+            f'RegInteractivOcenkaRLK={rlk_count}, DocLO(active)={lo_count}, '
+            f'кандидатов дозаполнить price_zna_2 из hub_avg≈{need_zna_count}'
             + (' [dry-run]' if dry_run else '')
         )
 
