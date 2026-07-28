@@ -13138,6 +13138,76 @@ def interactive_evaluations_report(request):
     return render(request, 'lo/interactive_evaluations_report.html', {'params': params})
 
 
+@login_required
+def estimation_zg_analytics(request):
+    """Аналитика оценок: помесячно + разбивка по ЦГ + % принятия."""
+    from eco.estimation_zg_analytics import build_estimation_zg_analytics
+    import json as _json
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'estimation_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    # По умолчанию — с начала текущего года (удобно для помесячного графика)
+    default_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+
+    data = build_estimation_zg_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+        staff_id=staff_id,
+        analyst_id=analyst_id,
+        type_id=type_id,
+    )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    staffs = RefStaff.objects.exclude(name='').order_by('name')
+    analysts = User.objects.filter(profiles__eco=True).order_by('last_name', 'first_name')
+    types = RefTypeReceptionCarsOrganization.objects.order_by('name')
+
+    params = {
+        'type': 'estimation_zg_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+            'staff_id': staff_id or '',
+            'analyst_id': analyst_id or '',
+            'type_id': type_id or '',
+        },
+        'summary': data['summary'],
+        'zg_summary': data['zg_summary'],
+        'table_rows': data['table_rows'],
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'units': units,
+        'staffs': staffs,
+        'analysts': analysts,
+        'types': types,
+        'hint': (
+            'Источник — воронка Trade-In. ЦГ из zg_name (иначе по цене zna / после КД / до КД). '
+            '«Принята» — заполнена дата успешного приёма (date_reception_success). '
+            'Период и месяцы — по дате начала оценки.'
+        ),
+    }
+    return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
+
+
 def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=None):
     """
     Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.

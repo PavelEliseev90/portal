@@ -73,6 +73,7 @@ def _probe_worker(item: dict, timeout: float = 2.5) -> dict:
             "instanceDir": data.get("instanceDir"),
             "lockedDealerId": data.get("lockedDealerId") or dealer_id,
             "emailConfigured": data.get("emailConfigured"),
+            "worker": data.get("worker") or {},
         })
         return base
     except urllib.error.URLError as exc:

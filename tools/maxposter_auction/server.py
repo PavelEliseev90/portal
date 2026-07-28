@@ -22,6 +22,7 @@ FIXED_DEALER_ID = (os.environ.get("MAXPOSTER_DEALER_ID") or "").strip()
 INSTANCE_LABEL = (os.environ.get("INSTANCE_LABEL") or "").strip()
 _STARTED_AT = datetime.utcnow().isoformat()
 _PID = os.getpid()
+_instance_worker = None
 
 _outcome_lock = threading.Lock()
 _reload_lock = threading.Lock()
@@ -369,7 +370,13 @@ def _instance_payload() -> dict:
             "outcome": _outcome_lock.locked(),
         },
         "emailConfigured": bool((os.environ.get("MAXPOSTER_EMAIL") or "").strip()),
+        "email": (os.environ.get("MAXPOSTER_EMAIL") or "").strip() or None,
         "portalBase": (os.environ.get("PORTAL_BASE") or os.environ.get("PORTAL_BASE_URL") or "").rstrip("/") or None,
+        "worker": (_instance_worker.status() if _instance_worker else {
+            "enabled": False,
+            "intervalSec": 0,
+            "running": False,
+        }),
     }
 
 
@@ -722,6 +729,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
+    global _instance_worker
     ensure_runtime_files(HERE)
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8005"))
@@ -738,6 +746,14 @@ def main():
     if FIXED_DEALER_ID:
         print(f"Инстанс: {label} · dealerId={FIXED_DEALER_ID} · dir={HERE}")
     print("Не закрывайте это окно, пока работает эта площадка.")
+
+    try:
+        from worker_loop import start_worker_if_configured
+
+        _instance_worker = start_worker_if_configured(OUT_JSON)
+    except Exception as exc:
+        print(f"[worker] не удалось стартовать фон: {exc}", flush=True)
+
     httpd.serve_forever()
 
 
