@@ -1182,9 +1182,8 @@
     }
   }
   async function runBidForOffer(offer, { bidAmount = null } = {}){
-    const email = $("loginEmail").value.trim();
-    const password = $("loginPassword").value;
-    if (!email || !password) throw new Error("Заполните логин и пароль перед ставкой.");
+    if (!hasAuthForApi()) throw new Error("Заполните логин и пароль (или настройте .env воркера).");
+    const { email, password } = getAuthForApi();
     const lotOfferId = offer?.lotOfferId;
     const { lotId, lot } = resolveOfferIds(offer);
     if (!lotOfferId) throw new Error("Не найден lotOfferId для этого лота.");
@@ -1849,6 +1848,20 @@
       $("loadedMeta").textContent = "Ошибка загрузки";
     }
   }
+  function getAuthForApi(){
+    return {
+      email: ($("loginEmail")?.value || "").trim(),
+      password: $("loginPassword")?.value || "",
+    };
+  }
+  function envAuthAvailable(){
+    return Boolean(window.__INSTANCE__?.emailConfigured);
+  }
+  /** Логин/пароль в форме ИЛИ .env воркера (сервер подставит сам). */
+  function hasAuthForApi(){
+    const a = getAuthForApi();
+    return Boolean((a.email && a.password) || envAuthAvailable());
+  }
   function fillDealerSelect(dealers){
     const sel = $("dealerId");
     const cur = sel.value || localStorage.getItem("mp_dealer_id") || "";
@@ -1872,6 +1885,7 @@
       const data = await resp.json();
       window.__INSTANCE__ = data;
       const locked = String(data.lockedDealerId || "").trim();
+      const meta = $("instanceMeta");
       if (locked){
         const label = data.label
           ? `${locked}: ${data.label}`
@@ -1881,7 +1895,6 @@
         sel.value = locked;
         sel.disabled = true;
         localStorage.setItem("mp_dealer_id", locked);
-        const meta = $("instanceMeta");
         if (meta){
           meta.style.display = "block";
           meta.innerHTML = `Режим инстанса · площадка зафиксирована · порт <span class="mono">${escapeHtml(data.port)}</span>`;
@@ -1891,9 +1904,24 @@
       if (data.portalBase && $("portalBase") && !localStorage.getItem("mp_portal_base")){
         $("portalBase").value = data.portalBase;
       }
-      if (data.emailConfigured && $("loginEmail") && !$("loginEmail").value){
-        $("loginEmail").placeholder = "логин из .env воркера";
-        $("loginPassword").placeholder = "пароль из .env воркера";
+      if (data.emailConfigured){
+        if ($("loginEmail") && !$("loginEmail").value && data.email){
+          $("loginEmail").value = data.email;
+        }
+        if ($("loginEmail") && !$("loginEmail").value){
+          $("loginEmail").placeholder = "логин из .env воркера";
+        }
+        if ($("loginPassword") && !$("loginPassword").value){
+          $("loginPassword").placeholder = "пароль из .env воркера (можно не заполнять)";
+        }
+        if (meta && locked){
+          meta.innerHTML += ` · auth: <span class="mono">.env</span>`;
+        }
+      }
+      if (data.worker?.enabled && meta){
+        meta.style.display = "block";
+        const w = data.worker;
+        meta.innerHTML += ` · фон: каждые ${escapeHtml(w.intervalSec)}с`;
       }
     }catch(_){}
   }
@@ -1919,21 +1947,23 @@
       render(window.__DATA__);
       renderDealerStatusLine();
     });
-    $("autoReloadSec").value = localStorage.getItem("mp_auto_reload_sec") || "";
+    $("autoReloadSec").value = localStorage.getItem("mp_auto_reload_sec") === null
+      ? "180"
+      : (localStorage.getItem("mp_auto_reload_sec") || "");
     $("autoReloadSec").addEventListener("input", () => {
       localStorage.setItem("mp_auto_reload_sec", $("autoReloadSec").value);
       applyAutoReloadFromField();
     });
-    const savedAutoBid = localStorage.getItem("mp_auto_bid_local") || "0";
+    const savedAutoBid = localStorage.getItem("mp_auto_bid_local");
     if ($("autoBidLocal")) {
-      $("autoBidLocal").value = savedAutoBid === "1" ? "1" : "0";
+      $("autoBidLocal").value = (savedAutoBid === null ? "1" : savedAutoBid) === "1" ? "1" : "0";
       $("autoBidLocal").addEventListener("change", () => {
         localStorage.setItem("mp_auto_bid_local", $("autoBidLocal").value);
       });
     }
-    const savedAutoOutcomes = localStorage.getItem("mp_auto_outcomes_local") || "0";
+    const savedAutoOutcomes = localStorage.getItem("mp_auto_outcomes_local");
     if ($("autoOutcomesLocal")) {
-      $("autoOutcomesLocal").value = savedAutoOutcomes === "1" ? "1" : "0";
+      $("autoOutcomesLocal").value = (savedAutoOutcomes === null ? "1" : savedAutoOutcomes) === "1" ? "1" : "0";
       $("autoOutcomesLocal").addEventListener("change", () => {
         localStorage.setItem("mp_auto_outcomes_local", $("autoOutcomesLocal").value);
       });
@@ -2134,14 +2164,13 @@
       return reloadPromise;
     }
     reloadPromise = (async () => {
-      const email = $("loginEmail").value.trim();
-      const password = $("loginPassword").value;
-      if (!email || !password){
+      if (!hasAuthForApi()){
         if (!silent) {
-          $("loadedMeta").textContent = "Обновление с сайта пропущено: укажите логин и пароль.";
+          $("loadedMeta").textContent = "Обновление с сайта пропущено: укажите логин и пароль (или .env воркера).";
         }
         return { skipped: true, reason: "no_auth" };
       }
+      const { email, password } = getAuthForApi();
       const dealerId = getSelectedDealerId();
       if (!dealerId){
         if (!silent) {
@@ -2235,8 +2264,7 @@
     }
   });
   async function runOutcomePoll({ silent = false, reason = "" } = {}){
-    const email = ($("loginEmail")?.value || "").trim();
-    const password = $("loginPassword")?.value || "";
+    const { email, password } = getAuthForApi();
     const dealerId = getSelectedDealerId();
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const setOutcomeStatus = (text) => {
@@ -2254,9 +2282,9 @@
       }catch(_){}
     };
 
-    if (!email || !password){
+    if (!hasAuthForApi()){
       if (!silent){
-        setOutcomeStatus("Итоги: укажите логин и пароль Maxposter");
+        setOutcomeStatus("Итоги: укажите логин и пароль Maxposter (или .env воркера)");
         logOutcome({ ok: false, msg: "Итоги: нет логина/пароля" });
         try{ switchTab("Logs"); }catch(_){}
       }
