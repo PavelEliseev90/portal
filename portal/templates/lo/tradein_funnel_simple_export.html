@@ -1,0 +1,88 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Выгрузка TradeInFunnel {% endblock %}
+{% block title_navbar %} — Выгрузка воронки {% endblock %}
+
+{% block content %}
+<style>
+  .exp-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; max-width: 920px; }
+  .exp-page h2 { font-size: 1.5rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .exp-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
+  .exp-card {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06); padding: 1.25rem 1.35rem;
+  }
+  .exp-card .form-label {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; margin-bottom: .35rem;
+  }
+  .exp-hint { font-size: .85rem; color: #6c7a92; margin-top: 1rem; }
+  .exp-fields { font-size: .85rem; color: #334155; columns: 2; gap: 1.5rem; margin: 0; padding-left: 1.1rem; }
+  .req { color: #dc2626; }
+</style>
+
+<div class="exp-page">
+  <h2>Выгрузка TradeInFunnel</h2>
+  <p class="lead">Простая выгрузка в Excel. Период обязателен (по дате начала оценки).</p>
+
+  <div class="exp-card">
+    {% if params.error %}
+    <div class="alert alert-warning py-2">{{ params.error }}</div>
+    {% endif %}
+
+    <form method="get" class="mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Период с <span class="req">*</span></label>
+          <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">по <span class="req">*</span></label>
+          <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">ДЦ оценки</label>
+          <select class="form-select" name="unit_id">
+            <option value="">Все</option>
+            {% for u in params.units %}
+            <option value="{{ u.id }}" {% if params.filters.unit_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-auto d-flex gap-2">
+          <button type="submit" class="btn btn-outline-secondary" name="preview" value="1">Посчитать</button>
+          <button type="submit" class="btn btn-primary" name="export" value="1">Excel</button>
+        </div>
+      </div>
+    </form>
+
+    {% if params.rows_count != None and not params.error %}
+    <div class="alert alert-light border mb-0">
+      Найдено записей: <strong>{{ params.rows_count }}</strong>
+      {% if params.rows_count == 0 %}
+      <span class="text-muted">— за период данных нет (возможно, нужна пересборка воронки).</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <p class="exp-hint mb-2"><strong>Поля в файле:</strong></p>
+    <ul class="exp-fields">
+      <li>Дата</li>
+      <li>ДЦ оценки</li>
+      <li>Марка</li>
+      <li>Модель</li>
+      <li>Пробег</li>
+      <li>Год</li>
+      <li>VIN</li>
+      <li>Номер РЛ</li>
+      <li>Дата РЛ</li>
+      <li>Затраты на подготовку</li>
+      <li>Затраты кузовной участок</li>
+      <li>Затраты слесарный участок</li>
+      <li>Цена до КД</li>
+      <li>Цена после КД</li>
+      <li>Рынок руб.</li>
+    </ul>
+    <p class="exp-hint mb-0">{{ params.field_hint }}</p>
+  </div>
+</div>
+{% endblock %}

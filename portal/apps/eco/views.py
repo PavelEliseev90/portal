@@ -13486,6 +13486,159 @@ def market_model_month_detail(request):
     return render(request, 'lo/market_model_month_detail.html', {'params': params})
 
 
+@login_required
+def tradein_funnel_simple_export(request):
+    """Лёгкая выгрузка TradeInFunnel в Excel. Период обязателен."""
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from openpyxl.utils import get_column_letter
+    from urllib.parse import quote
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {'type': 'tradein_funnel_simple_export', 'nav_selected': 4, 'request': request}
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start_raw = (request.GET.get('date_start') or '').strip()
+    date_end_raw = (request.GET.get('date_end') or '').strip()
+    do_export = request.GET.get('export') == '1'
+    unit_id = _get_int(request.GET.get('unit_id'))
+
+    error = ''
+    rows_count = None
+    date_start = None
+    date_end = None
+
+    if do_export or date_start_raw or date_end_raw:
+        if not date_start_raw or not date_end_raw:
+            error = 'Укажите период: дату начала и окончания.'
+        else:
+            date_start = _parse_date(date_start_raw, default_start, is_end=False)
+            date_end = _parse_date(date_end_raw, default_end, is_end=True)
+            if date_start > date_end:
+                error = 'Дата начала больше даты окончания.'
+
+    if not error and date_start and date_end:
+        qs = TradeInFunnel.objects.filter(
+            date_start_estimation__gte=date_start,
+            date_start_estimation__lte=date_end,
+        ).exclude(date_start_estimation__isnull=True)
+        if unit_id:
+            qs = qs.filter(unit_id=unit_id)
+        rows_count = qs.count()
+
+        if do_export:
+            headers = [
+                'Дата',
+                'ДЦ оценки',
+                'Марка',
+                'Модель',
+                'Пробег',
+                'Год',
+                'VIN',
+                'Номер РЛ',
+                'Дата РЛ',
+                'Затраты на подготовку',
+                'Затраты кузовной участок',
+                'Затраты слесарный участок',
+                'Цена до КД',
+                'Цена после КД',
+                'Рынок руб.',
+            ]
+            wb = Workbook()
+            ws = wb.active
+            ws.title = 'TradeInFunnel'
+            header_font = Font(bold=True, color='FFFFFF')
+            header_fill = PatternFill('solid', fgColor='002A5A')
+            thin = Border(
+                left=Side(style='thin', color='CBD5E1'),
+                right=Side(style='thin', color='CBD5E1'),
+                top=Side(style='thin', color='CBD5E1'),
+                bottom=Side(style='thin', color='CBD5E1'),
+            )
+            for col, title in enumerate(headers, start=1):
+                cell = ws.cell(row=1, column=col, value=title)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = Alignment(horizontal='center', wrap_text=True)
+                cell.border = thin
+
+            invalid = DT.datetime(1, 1, 1)
+            row_i = 2
+            for item in qs.order_by('date_start_estimation').iterator(chunk_size=2000):
+                def _num(v):
+                    try:
+                        return float(v or 0)
+                    except (TypeError, ValueError):
+                        return 0
+
+                def _dt(v):
+                    if not v or v == invalid or (getattr(v, 'year', 0) or 0) <= 1:
+                        return None
+                    return v
+
+                est_dt = _dt(item.date_start_estimation)
+                rlk_dt = _dt(item.date_rlk)
+                values = [
+                    est_dt.strftime('%d.%m.%Y %H:%M') if est_dt else '',
+                    item.unit_name or '',
+                    item.mark_name or '',
+                    item.model_name or '',
+                    item.run or 0,
+                    item.year or 0,
+                    item.vin or '',
+                    item.rlk_number or '',
+                    rlk_dt.strftime('%d.%m.%Y %H:%M') if rlk_dt else '',
+                    _num(item.cost_plan_preparation),
+                    _num(item.cost_plan_mcu),
+                    _num(item.cost_plan_ss),
+                    _num(item.price_before),
+                    _num(item.price_after),
+                    _num(item.zna),
+                ]
+                for col, val in enumerate(values, start=1):
+                    cell = ws.cell(row=row_i, column=col, value=val)
+                    cell.border = thin
+                row_i += 1
+
+            widths = [18, 22, 14, 18, 10, 8, 20, 16, 18, 16, 16, 16, 14, 14, 14]
+            for i, w in enumerate(widths, start=1):
+                ws.column_dimensions[get_column_letter(i)].width = w
+
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            filename = 'tradein_funnel_{}_{}.xlsx'.format(
+                date_start.strftime('%Y%m%d'),
+                date_end.strftime('%Y%m%d'),
+            )
+            response['Content-Disposition'] = "attachment; filename*=UTF-8''{}".format(quote(filename))
+            wb.save(response)
+            return response
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    params = {
+        'type': 'tradein_funnel_simple_export',
+        'nav_selected': 4,
+        'request': request,
+        'error': error,
+        'rows_count': rows_count,
+        'filters': {
+            'date_start': date_start_raw or default_start.strftime('%Y-%m-%d'),
+            'date_end': date_end_raw or default_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+        },
+        'units': units,
+        'field_hint': (
+            'Дата = начало оценки; ДЦ = unit_name; рынок = ЦНА (zna); '
+            'затраты: подготовка / MCU / SS; цены до/после КД.'
+        ),
+    }
+    return render(request, 'lo/tradein_funnel_simple_export.html', {'params': params})
+
+
 def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=None):
     """
     Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.
