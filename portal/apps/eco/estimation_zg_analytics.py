@@ -1,9 +1,12 @@
 """Аналитика оценок по ценовым группам (помесячно).
 
-Источник: TradeInFunnel (как в воронке приёма).
-«Оценка» — есть дата начала оценки в периоде.
-«Принята» — заполнена date_reception_success (не 01.01.0001).
-ЦГ — zg_name из воронки, иначе расчёт по цене (zna / price_after / price_before).
+Источник оценок: TradeInFunnel.
+«Оценка» — дата начала оценки в периоде.
+«Принята» — date_reception_success (не 01.01.0001).
+ЦГ — zg_name из воронки (ЦНА), иначе пересчёт по цене теми же порогами.
+
+Autohub: regEstimationRefCarsOrganizations — сегменты склада с дедупом,
+ЦГ по avg_price теми же порогами.
 """
 from __future__ import annotations
 
@@ -54,21 +57,61 @@ ZG_COLORS = {
 
 
 def zg_from_price(price) -> str:
+    """ЦГ по порогам воронки (включительно <=), как update_trade_in_funnel по ЦНА."""
     try:
         value = float(price or 0)
     except (TypeError, ValueError):
         value = 0
     if value <= 0:
         return 'Неопределена'
-    for row in PRICE_GROUP_RANGES:
-        max_p = row.get('max_price_rub')
-        min_p = row.get('min_price_rub') or 0
-        if max_p is None:
-            if value >= min_p:
-                return row['name']
-        elif min_p <= value < max_p:
-            return row['name']
-    return 'Неопределена'
+    if value <= 200_000:
+        return '200'
+    if value <= 400_000:
+        return '400'
+    if value <= 700_000:
+        return '700'
+    if value <= 1_200_000:
+        return '1 200'
+    if value <= 2_000_000:
+        return '2 000'
+    if value <= 3_000_000:
+        return '3 000'
+    if value <= 5_000_000:
+        return '5 000'
+    return '5 000+'
+
+
+def _median(values) -> float:
+    vals = [float(v) for v in values if v is not None]
+    if not vals:
+        return 0.0
+    vals.sort()
+    n = len(vals)
+    mid = n // 2
+    if n % 2:
+        return vals[mid]
+    return (vals[mid - 1] + vals[mid]) / 2.0
+
+
+def _segment_key(car) -> str:
+    """Ключ сегмента рынка: поколение Autoru, иначе modification_id / car_id."""
+    if car is None:
+        return 'unknown'
+    mod = getattr(car, 'modification_autoru', None)
+    if mod is not None:
+        gen = getattr(mod, 'idSiteGeneration', None) or 0
+        mark = 0
+        model = 0
+        try:
+            mark = mod.model.mark_id or 0
+            model = mod.model_id or 0
+        except Exception:
+            pass
+        if gen or mark or model:
+            return f'g:{gen}|m:{mark}|md:{model}'
+        if mod.pk:
+            return f'mod:{mod.pk}'
+    return f'car:{car.pk}'
 
 
 def normalize_zg_name(raw: Optional[str], price=None) -> str:
@@ -276,6 +319,187 @@ def build_estimation_zg_analytics(
             'total': grand_total,
             'accepted': grand_accepted,
             'rate': _pct(grand_accepted, grand_total),
+            'months': len(month_keys),
+        },
+    }
+
+
+def _hub_cell(segments_count, totals, days, avgs, above_n=0) -> dict:
+    n = int(segments_count or 0)
+    empty = n <= 0
+    return {
+        'segments': n,
+        'med_total': round(_median(totals)) if not empty else 0,
+        'med_days': round(_median(days), 1) if not empty else 0,
+        'med_avg': round(_median(avgs)) if not empty else 0,
+        'above_share': _pct(above_n, n) if not empty else 0,
+        'empty': empty,
+    }
+
+
+def build_autohub_zg_analytics(
+    *,
+    date_start: datetime,
+    date_end: datetime,
+    unit_id: Optional[int] = None,
+) -> dict:
+    """
+    Autohub-снимки склада (regEstimationRefCarsOrganizations) по ЦГ × месяц.
+
+    ЦГ — по avg_price (средняя рынка в сегменте), пороги как у ЦНА.
+    Дедуп: в месяце один сегмент (поколение/марка+модель) → последний снимок.
+    Метрики ячейки: число сегментов, медиана total / avg_days / avg_price,
+    доля снимков где наша price > avg_price.
+    """
+    from register.models import RegEstimationRefCarsOrganizations
+
+    qs = RegEstimationRefCarsOrganizations.objects.filter(
+        date__gte=date_start,
+        date__lte=date_end,
+        avg_price__gt=0,
+    ).select_related(
+        'car',
+        'car__modification_autoru',
+        'car__modification_autoru__model',
+        'car__modification_autoru__model__mark',
+        'car__unit',
+    )
+
+    if unit_id:
+        qs = qs.filter(car__unit_id=unit_id)
+
+    # (month, segment) -> latest snapshot fields
+    latest = {}
+    for row in qs.iterator(chunk_size=2000):
+        if not row.date:
+            continue
+        mk = _month_key(row.date)
+        seg = _segment_key(row.car)
+        key = (mk, seg)
+        prev = latest.get(key)
+        if prev is None or row.date > prev['date']:
+            latest[key] = {
+                'date': row.date,
+                'avg_price': row.avg_price or 0,
+                'avg_days': row.avg_days or 0,
+                'total': row.total or 0,
+                'price': row.price or 0,
+                'zg': zg_from_price(row.avg_price),
+            }
+
+    # month -> zg -> lists
+    bucket = defaultdict(lambda: defaultdict(lambda: {
+        'segments': 0,
+        'totals': [],
+        'days': [],
+        'avgs': [],
+        'above': 0,
+    }))
+    month_seg_count = defaultdict(int)
+
+    for (mk, _seg), snap in latest.items():
+        zg = snap['zg']
+        cell = bucket[mk][zg]
+        cell['segments'] += 1
+        cell['totals'].append(snap['total'])
+        cell['days'].append(snap['avg_days'])
+        cell['avgs'].append(snap['avg_price'])
+        if snap['price'] > 0 and snap['avg_price'] > 0 and snap['price'] > snap['avg_price']:
+            cell['above'] += 1
+        month_seg_count[mk] += 1
+
+    months = _iter_months(date_start, date_end)
+    month_keys = [_month_key(m) for m in months]
+    month_labels = [_month_label(m) for m in months]
+
+    seen = set()
+    for mk in month_keys:
+        seen.update(bucket[mk].keys())
+    zg_list = [z for z in ZG_ORDER if z in seen]
+    if not zg_list:
+        zg_list = [row['name'] for row in PRICE_GROUP_RANGES]
+
+    datasets = []
+    for zg in zg_list:
+        datasets.append({
+            'label': f'ЦГ {zg}',
+            'zg': zg,
+            'backgroundColor': ZG_COLORS.get(zg, '#94a3b8'),
+            'data': [bucket[mk][zg]['segments'] for mk in month_keys],
+        })
+
+    pivot_rows = []
+    zg_period = defaultdict(lambda: {
+        'segments': 0, 'totals': [], 'days': [], 'avgs': [], 'above': 0,
+    })
+    for zg in zg_list:
+        cells = []
+        for mk in month_keys:
+            b = bucket[mk][zg]
+            cells.append(_hub_cell(
+                b['segments'], b['totals'], b['days'], b['avgs'], b['above'],
+            ))
+            if b['segments']:
+                zg_period[zg]['segments'] += b['segments']
+                zg_period[zg]['totals'].extend(b['totals'])
+                zg_period[zg]['days'].extend(b['days'])
+                zg_period[zg]['avgs'].extend(b['avgs'])
+                zg_period[zg]['above'] += b['above']
+        zp = zg_period[zg]
+        pivot_rows.append({
+            'zg': zg,
+            'cells': cells,
+            'total': _hub_cell(
+                zp['segments'], zp['totals'], zp['days'], zp['avgs'], zp['above'],
+            ),
+        })
+
+    footer_cells = []
+    all_totals, all_days, all_avgs = [], [], []
+    all_segments = 0
+    all_above = 0
+    for mk in month_keys:
+        totals, days, avgs = [], [], []
+        segs = 0
+        above = 0
+        for zg in zg_list:
+            b = bucket[mk][zg]
+            segs += b['segments']
+            totals.extend(b['totals'])
+            days.extend(b['days'])
+            avgs.extend(b['avgs'])
+            above += b['above']
+        footer_cells.append(_hub_cell(segs, totals, days, avgs, above))
+        all_segments += segs
+        all_totals.extend(totals)
+        all_days.extend(days)
+        all_avgs.extend(avgs)
+        all_above += above
+
+    pivot_footer = {
+        'zg': 'Итого',
+        'cells': footer_cells,
+        'total': _hub_cell(all_segments, all_totals, all_days, all_avgs, all_above),
+        'is_total': True,
+    }
+
+    return {
+        'month_keys': month_keys,
+        'month_labels': month_labels,
+        'zg_list': zg_list,
+        'chart': {
+            'labels': month_labels,
+            'datasets': datasets,
+            'month_totals': [month_seg_count[mk] for mk in month_keys],
+        },
+        'pivot_rows': pivot_rows,
+        'pivot_footer': pivot_footer,
+        'summary': {
+            'segments': all_segments,
+            'med_total': round(_median(all_totals)) if all_totals else 0,
+            'med_days': round(_median(all_days), 1) if all_days else 0,
+            'med_avg': round(_median(all_avgs)) if all_avgs else 0,
+            'above_share': _pct(all_above, all_segments),
             'months': len(month_keys),
         },
     }

@@ -13135,8 +13135,11 @@ def interactive_evaluations_report(request):
 
 @login_required
 def estimation_zg_analytics(request):
-    """Аналитика оценок: помесячно + разбивка по ЦГ + % принятия."""
-    from eco.estimation_zg_analytics import build_estimation_zg_analytics
+    """Аналитика оценок: помесячно + разбивка по ЦГ + % принятия + Autohub фон."""
+    from eco.estimation_zg_analytics import (
+        build_estimation_zg_analytics,
+        build_autohub_zg_analytics,
+    )
     import json as _json
 
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
@@ -13168,6 +13171,11 @@ def estimation_zg_analytics(request):
         analyst_id=analyst_id,
         type_id=type_id,
     )
+    hub = build_autohub_zg_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+    )
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
     staffs = RefStaff.objects.exclude(name='').order_by('name')
@@ -13192,15 +13200,24 @@ def estimation_zg_analytics(request):
         'pivot_rows': data['pivot_rows'],
         'pivot_footer': data['pivot_footer'],
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'hub_summary': hub['summary'],
+        'hub_pivot_rows': hub['pivot_rows'],
+        'hub_pivot_footer': hub['pivot_footer'],
+        'hub_chart_json': _json.dumps(hub['chart'], ensure_ascii=False),
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
         'types': types,
         'hint': (
-            'Источник — воронка Trade-In. ЦГ из zg_name (иначе по цене zna / после КД / до КД). '
-            '«Принята» — заполнена дата успешного приёма (date_reception_success). '
-            'Период и месяцы — по дате начала оценки. '
-            'Переключатель «Доли ЦГ» — нормированный стек 100% по месяцу.'
+            'Оценки: воронка Trade-In, ЦГ по ЦНА (zg_name). '
+            '«Принята» — date_reception_success. Месяцы — по дате начала оценки.'
+        ),
+        'hub_hint': (
+            'Autohub: снимки regEstimationRefCarsOrganizations по складу. '
+            'ЦГ по avg_price сегмента (те же пороги, что ЦНА). '
+            'В месяце сегмент (поколение/марка+модель) учитывается один раз (последний снимок). '
+            'total / дни / avg — медианы по сегментам; «выше рынка» — наша price > avg_price. '
+            'Фильтры оценщик/аналитик/тип на Autohub не влияют (только период и ДЦ).'
         ),
     }
     return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
