@@ -173,12 +173,13 @@ def _pct(part: int, total: int) -> float:
     return round(100.0 * part / total, 1)
 
 
-def _cell(total: int, accepted: int) -> dict:
+def _cell(total: int, accepted: int, month_key: str = '') -> dict:
     return {
         'total': total,
         'accepted': accepted,
         'rate': _pct(accepted, total),
         'empty': total <= 0,
+        'month_key': month_key,
     }
 
 
@@ -269,7 +270,7 @@ def build_estimation_zg_analytics(
         cells = []
         for mk in month_keys:
             cell = bucket[mk][zg]
-            cells.append(_cell(cell['total'], cell['accepted']))
+            cells.append(_cell(cell['total'], cell['accepted'], mk))
         zt = zg_totals[zg]
         pivot_rows.append({
             'zg': zg,
@@ -278,7 +279,7 @@ def build_estimation_zg_analytics(
         })
 
     footer_cells = [
-        _cell(month_totals[mk]['total'], month_totals[mk]['accepted'])
+        _cell(month_totals[mk]['total'], month_totals[mk]['accepted'], mk)
         for mk in month_keys
     ]
     grand_total = sum(v['total'] for v in month_totals.values())
@@ -309,6 +310,7 @@ def build_estimation_zg_analytics(
         'zg_list': zg_list,
         'chart': {
             'labels': month_labels,
+            'month_keys': month_keys,
             'datasets': datasets,
             'month_totals': [month_totals[mk]['total'] for mk in month_keys],
         },
@@ -321,10 +323,11 @@ def build_estimation_zg_analytics(
             'rate': _pct(grand_accepted, grand_total),
             'months': len(month_keys),
         },
+        'month_keys': month_keys,
     }
 
 
-def _hub_cell(segments_count, totals, days, avgs, above_n=0) -> dict:
+def _hub_cell(segments_count, totals, days, avgs, above_n=0, month_key: str = '') -> dict:
     n = int(segments_count or 0)
     empty = n <= 0
     return {
@@ -334,6 +337,7 @@ def _hub_cell(segments_count, totals, days, avgs, above_n=0) -> dict:
         'med_avg': round(_median(avgs)) if not empty else 0,
         'above_share': _pct(above_n, n) if not empty else 0,
         'empty': empty,
+        'month_key': month_key,
     }
 
 
@@ -437,7 +441,7 @@ def build_autohub_zg_analytics(
         for mk in month_keys:
             b = bucket[mk][zg]
             cells.append(_hub_cell(
-                b['segments'], b['totals'], b['days'], b['avgs'], b['above'],
+                b['segments'], b['totals'], b['days'], b['avgs'], b['above'], mk,
             ))
             if b['segments']:
                 zg_period[zg]['segments'] += b['segments']
@@ -469,7 +473,7 @@ def build_autohub_zg_analytics(
             days.extend(b['days'])
             avgs.extend(b['avgs'])
             above += b['above']
-        footer_cells.append(_hub_cell(segs, totals, days, avgs, above))
+        footer_cells.append(_hub_cell(segs, totals, days, avgs, above, mk))
         all_segments += segs
         all_totals.extend(totals)
         all_days.extend(days)
@@ -489,6 +493,7 @@ def build_autohub_zg_analytics(
         'zg_list': zg_list,
         'chart': {
             'labels': month_labels,
+            'month_keys': month_keys,
             'datasets': datasets,
             'month_totals': [month_seg_count[mk] for mk in month_keys],
         },
@@ -501,5 +506,171 @@ def build_autohub_zg_analytics(
             'med_avg': round(_median(all_avgs)) if all_avgs else 0,
             'above_share': _pct(all_above, all_segments),
             'months': len(month_keys),
+        },
+        'month_keys': month_keys,
+    }
+
+
+def _month_bounds(month_key: str):
+    """YYYY-MM → (date_start, date_end) inclusive."""
+    start = datetime.strptime(month_key + '-01', '%Y-%m-%d')
+    end = (start + relativedelta(months=1)) - relativedelta(seconds=1)
+    return start, end
+
+
+def build_estimation_zg_detail(
+    *,
+    month_key: str,
+    zg: str,
+    unit_id: Optional[int] = None,
+    staff_id: Optional[int] = None,
+    analyst_id: Optional[int] = None,
+    type_id: Optional[int] = None,
+) -> dict:
+    """Список оценок за месяц × ЦГ."""
+    date_start, date_end = _month_bounds(month_key)
+    target_zg = normalize_zg_name(zg)
+
+    qs = TradeInFunnel.objects.filter(
+        date_start_estimation__gte=date_start,
+        date_start_estimation__lte=date_end,
+        estimation_id__isnull=False,
+    ).exclude(date_start_estimation=DATE_INVALID)
+
+    if unit_id:
+        qs = qs.filter(unit_id=unit_id)
+    if staff_id:
+        qs = qs.filter(staff_id=staff_id)
+    if analyst_id:
+        qs = qs.filter(
+            Q(analyst_before_id=analyst_id)
+            | Q(analyst_after_id=analyst_id)
+            | Q(analyst_remote_id=analyst_id)
+        )
+    if type_id:
+        qs = qs.filter(type_reception_id=type_id)
+
+    rows = []
+    accepted_n = 0
+    for row in qs.order_by('-date_start_estimation').iterator(chunk_size=1000):
+        row_zg = normalize_zg_name(row.zg_name, resolve_funnel_price(row))
+        if row_zg != target_zg:
+            continue
+        acc = is_accepted(row)
+        if acc:
+            accepted_n += 1
+        rows.append({
+            'rlk_id': row.rlk_id,
+            'rlk_number': row.rlk_number or '',
+            'estimation_id': row.estimation_id,
+            'vin': row.vin or '',
+            'mark': row.mark_name or '',
+            'model': row.model_name or '',
+            'unit': row.unit_name or '',
+            'staff': row.staff_name or '',
+            'stage': row.stage or '',
+            'zna': float(row.zna or 0),
+            'price_before': float(row.price_before or 0),
+            'price_after': float(row.price_after or 0),
+            'zg': row_zg,
+            'start_estimation': row.date_start_estimation,
+            'date_reception': row.date_reception_success if acc else None,
+            'accepted': acc,
+        })
+
+    return {
+        'source': 'estimations',
+        'month_key': month_key,
+        'month_label': _month_label(date_start),
+        'zg': target_zg,
+        'rows': rows,
+        'summary': {
+            'total': len(rows),
+            'accepted': accepted_n,
+            'rate': _pct(accepted_n, len(rows)),
+        },
+    }
+
+
+def build_autohub_zg_detail(
+    *,
+    month_key: str,
+    zg: str,
+    unit_id: Optional[int] = None,
+) -> dict:
+    """Список сегментов Autohub за месяц × ЦГ (после дедупа)."""
+    from register.models import RegEstimationRefCarsOrganizations
+
+    date_start, date_end = _month_bounds(month_key)
+    target_zg = normalize_zg_name(zg)
+
+    qs = RegEstimationRefCarsOrganizations.objects.filter(
+        date__gte=date_start,
+        date__lte=date_end,
+        avg_price__gt=0,
+    ).select_related(
+        'car',
+        'car__modification_autoru',
+        'car__modification_autoru__model',
+        'car__modification_autoru__model__mark',
+        'car__unit',
+    )
+    if unit_id:
+        qs = qs.filter(car__unit_id=unit_id)
+
+    latest = {}
+    for row in qs.iterator(chunk_size=2000):
+        if not row.date:
+            continue
+        if _month_key(row.date) != month_key:
+            continue
+        seg = _segment_key(row.car)
+        prev = latest.get(seg)
+        if prev is None or row.date > prev['date']:
+            car = row.car
+            mark = ''
+            model = ''
+            mod_name = ''
+            try:
+                mark = car.modification_autoru.model.mark.name
+                model = car.modification_autoru.model.name
+                mod_name = car.modification_autoru.name
+            except Exception:
+                mark = getattr(car, 'mark', '') or ''
+                model = getattr(car, 'model', '') or ''
+                mod_name = getattr(car, 'modification', '') or ''
+            latest[seg] = {
+                'date': row.date,
+                'segment': seg,
+                'car_id': car.pk if car else None,
+                'vin': (car.vin if car else '') or '',
+                'unit': (car.unit.name if car and car.unit_id else '') or '',
+                'mark': mark,
+                'model': model,
+                'modification': mod_name,
+                'avg_price': row.avg_price or 0,
+                'avg_days': row.avg_days or 0,
+                'total': row.total or 0,
+                'price': row.price or 0,
+                'zg': zg_from_price(row.avg_price),
+                'above': bool(row.price and row.avg_price and row.price > row.avg_price),
+            }
+
+    rows = [v for v in latest.values() if v['zg'] == target_zg]
+    rows.sort(key=lambda x: (-x['total'], -x['avg_price']))
+
+    above_n = sum(1 for r in rows if r['above'])
+    return {
+        'source': 'autohub',
+        'month_key': month_key,
+        'month_label': _month_label(date_start),
+        'zg': target_zg,
+        'rows': rows,
+        'summary': {
+            'segments': len(rows),
+            'med_total': round(_median([r['total'] for r in rows])) if rows else 0,
+            'med_days': round(_median([r['avg_days'] for r in rows]), 1) if rows else 0,
+            'med_avg': round(_median([r['avg_price'] for r in rows])) if rows else 0,
+            'above_share': _pct(above_n, len(rows)),
         },
     }

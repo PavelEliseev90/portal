@@ -26,6 +26,7 @@ urlpatterns = [
     path('pricing-report/',                     views.interactive_pricing_report, name='interactive_pricing_report'),
     path('interactive-evaluations/',            views.interactive_evaluations_report, name='interactive_evaluations_report'),
     path('estimation-zg/',                      views.estimation_zg_analytics, name='estimation_zg_analytics'),
+    path('estimation-zg/detail/',               views.estimation_zg_detail, name='estimation_zg_detail'),
     path('js/get_chats_list/',                  views.get_chats_list),
     path('js/post_chats_list/',                 views.post_chats_list),
     path('js/get_chats_list_online/',           views.get_chats_list_online),

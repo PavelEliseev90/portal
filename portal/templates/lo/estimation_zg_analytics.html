@@ -47,6 +47,12 @@
     padding: 1rem 1.15rem; margin-bottom: 1.25rem; color: #78350f; font-size: .9rem;
   }
   .zg-callout code { background: #fef3c7; padding: .1rem .35rem; border-radius: .35rem; font-size: .82rem; }
+  a.cell-link {
+    display: block; text-decoration: none; color: inherit; border-radius: .5rem;
+    padding: .2rem .15rem; transition: background .15s;
+  }
+  a.cell-link:hover { background: #eef2ff; }
+  .chart-wrap canvas { cursor: pointer; }
 </style>
 
 <div class="zg-page">
@@ -155,12 +161,12 @@
     <div class="chart-wrap">
       <canvas id="zgChart"></canvas>
     </div>
-    <p class="zg-hint mb-0">{{ params.hint }}</p>
+    <p class="zg-hint mb-0">{{ params.hint }} Клик по столбцу ЦГ открывает расшифровку.</p>
   </div>
 
   <div class="zg-panel">
     <h3>Оценки: ЦГ × месяц</h3>
-    <p class="zg-hint mt-0 mb-2">В ячейке: <strong>оценки / принято (процент приёма)</strong>. ЦГ по ЦНА.</p>
+    <p class="zg-hint mt-0 mb-2">В ячейке: <strong>оценки / принято (процент приёма)</strong>. ЦГ по ЦНА. Ячейка кликабельна.</p>
     <div class="table-responsive">
       <table class="table table-sm table-bordered align-middle table-zg mb-0">
         <thead>
@@ -181,8 +187,10 @@
               {% if cell.empty %}
               <span class="cell-empty">—</span>
               {% else %}
+              <a class="cell-link" href="{{ params.detail_base }}?source=estimations&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}{% if params.filters.staff_id %}&staff_id={{ params.filters.staff_id }}{% endif %}{% if params.filters.analyst_id %}&analyst_id={{ params.filters.analyst_id }}{% endif %}{% if params.filters.type_id %}&type_id={{ params.filters.type_id }}{% endif %}">
               <div class="cell-main">{{ cell.total }} / {{ cell.accepted }}</div>
               <div class="cell-sub {% if cell.rate >= 40 %}rate-ok{% elif cell.rate >= 20 %}rate-mid{% else %}rate-low{% endif %}">{{ cell.rate|unlocalize }}%</div>
+              </a>
               {% endif %}
             </td>
             {% endfor %}
@@ -267,13 +275,13 @@
     <div class="chart-wrap">
       <canvas id="hubZgChart"></canvas>
     </div>
-    <p class="zg-hint mb-0">{{ params.hub_hint }}</p>
+    <p class="zg-hint mb-0">{{ params.hub_hint }} Клик по столбцу ЦГ открывает расшифровку.</p>
   </div>
 
   <div class="zg-panel">
     <h3>Autohub: ЦГ × месяц</h3>
     <p class="zg-hint mt-0 mb-2">
-      В ячейке: <strong>сегментов</strong> · мед. total · мед. дней · мед. avg_price · % выше рынка.
+      В ячейке: <strong>сегментов</strong> · мед. total · мед. дней · мед. avg_price · % выше рынка. Ячейка кликабельна.
     </p>
     <div class="table-responsive">
       <table class="table table-sm table-bordered align-middle table-zg mb-0">
@@ -295,10 +303,12 @@
               {% if cell.empty %}
               <span class="cell-empty">—</span>
               {% else %}
+              <a class="cell-link" href="{{ params.detail_base }}?source=autohub&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}">
               <div class="cell-main">{{ cell.segments }} сегм.</div>
               <div class="cell-sub">total {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
               <div class="cell-sub">avg {{ cell.med_avg }}</div>
               <div class="cell-sub">выше {{ cell.above_share|unlocalize }}%</div>
+              </a>
               {% endif %}
             </td>
             {% endfor %}
@@ -348,12 +358,40 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (function(){
-  function makeStackedChart(canvasId, chartData, absBtnId, shareBtnId, yTitleAbs) {
+  const DETAIL_BASE = "{{ params.detail_base }}";
+  const FILTER_QS = {
+    date_start: "{{ params.filters.date_start }}",
+    date_end: "{{ params.filters.date_end }}",
+    unit_id: "{{ params.filters.unit_id }}",
+    staff_id: "{{ params.filters.staff_id }}",
+    analyst_id: "{{ params.filters.analyst_id }}",
+    type_id: "{{ params.filters.type_id }}",
+  };
+
+  function detailUrl(source, monthKey, zg) {
+    const p = new URLSearchParams();
+    p.set('source', source);
+    p.set('month', monthKey);
+    p.set('zg', zg);
+    Object.keys(FILTER_QS).forEach((k) => {
+      if (FILTER_QS[k]) p.set(k, FILTER_QS[k]);
+    });
+    if (source === 'autohub') {
+      p.delete('staff_id');
+      p.delete('analyst_id');
+      p.delete('type_id');
+    }
+    return DETAIL_BASE + '?' + p.toString();
+  }
+
+  function makeStackedChart(canvasId, chartData, absBtnId, shareBtnId, yTitleAbs, source) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !chartData || !chartData.labels) return;
     const monthTotals = chartData.month_totals || [];
+    const monthKeys = chartData.month_keys || [];
     const baseDatasets = (chartData.datasets || []).map((ds) => ({
       label: ds.label,
+      zg: ds.zg || (ds.label || '').replace(/^ЦГ\s+/, ''),
       absolute: ds.data || [],
       accepted: ds.accepted || [],
       rate: ds.rate || [],
@@ -370,6 +408,7 @@
           : ds.absolute.slice();
         return {
           label: ds.label,
+          zg: ds.zg,
           data,
           absolute: ds.absolute,
           accepted: ds.accepted,
@@ -390,6 +429,16 @@
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
+        onClick(evt, elements) {
+          if (!elements || !elements.length) return;
+          const el = elements[0];
+          const ds = chart.data.datasets[el.datasetIndex];
+          const monthKey = monthKeys[el.index];
+          const zg = ds.zg || '';
+          if (!monthKey || !zg) return;
+          if (Number(ds.absolute[el.index] || 0) <= 0) return;
+          window.location.href = detailUrl(source, monthKey, zg);
+        },
         plugins: {
           legend: { position: 'bottom' },
           tooltip: {
@@ -417,9 +466,9 @@
                 });
                 if (hasAccept) {
                   const mr = monthTotal ? Math.round(1000 * monthAcc / monthTotal) / 10 : 0;
-                  return `Итого месяц: ${monthTotal} / ${monthAcc} (${mr}%)`;
+                  return `Итого месяц: ${monthTotal} / ${monthAcc} (${mr}%) · клик — расшифровка`;
                 }
-                return `Итого сегментов: ${monthTotal}`;
+                return `Итого сегментов: ${monthTotal} · клик — расшифровка`;
               }
             }
           }
@@ -461,8 +510,8 @@
     document.getElementById(shareBtnId).addEventListener('click', () => setMode('normalized'));
   }
 
-  makeStackedChart('zgChart', {{ params.chart_json|safe }}, 'chartModeAbs', 'chartModeShare', 'Количество оценок');
-  makeStackedChart('hubZgChart', {{ params.hub_chart_json|safe }}, 'hubChartModeAbs', 'hubChartModeShare', 'Число сегментов');
+  makeStackedChart('zgChart', {{ params.chart_json|safe }}, 'chartModeAbs', 'chartModeShare', 'Количество оценок', 'estimations');
+  makeStackedChart('hubZgChart', {{ params.hub_chart_json|safe }}, 'hubChartModeAbs', 'hubChartModeShare', 'Число сегментов', 'autohub');
 })();
 </script>
 {% endblock %}

@@ -13197,6 +13197,7 @@ def estimation_zg_analytics(request):
         'summary': data['summary'],
         'zg_summary': data['zg_summary'],
         'month_labels': data['month_labels'],
+        'month_keys': data['month_keys'],
         'pivot_rows': data['pivot_rows'],
         'pivot_footer': data['pivot_footer'],
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
@@ -13204,6 +13205,7 @@ def estimation_zg_analytics(request):
         'hub_pivot_rows': hub['pivot_rows'],
         'hub_pivot_footer': hub['pivot_footer'],
         'hub_chart_json': _json.dumps(hub['chart'], ensure_ascii=False),
+        'detail_base': '/eco/estimation-zg/detail/',
         'units': units,
         'staffs': staffs,
         'analysts': analysts,
@@ -13221,6 +13223,88 @@ def estimation_zg_analytics(request):
         ),
     }
     return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
+
+
+@login_required
+def estimation_zg_detail(request):
+    """Расшифровка: оценки или Autohub за выбранные месяц × ЦГ."""
+    from eco.estimation_zg_analytics import (
+        build_estimation_zg_detail,
+        build_autohub_zg_detail,
+        normalize_zg_name,
+    )
+    from urllib.parse import urlencode
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'estimation_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    month_key = (request.GET.get('month') or '').strip()
+    zg = normalize_zg_name(request.GET.get('zg') or '')
+    source = (request.GET.get('source') or 'estimations').strip()
+    if source not in ('estimations', 'autohub'):
+        source = 'estimations'
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+    staff_id = _get_int(request.GET.get('staff_id'))
+    analyst_id = _get_int(request.GET.get('analyst_id'))
+    type_id = _get_int(request.GET.get('type_id'))
+
+    back_qs = {
+        k: v for k, v in {
+            'date_start': request.GET.get('date_start') or '',
+            'date_end': request.GET.get('date_end') or '',
+            'unit_id': unit_id or '',
+            'staff_id': staff_id or '',
+            'analyst_id': analyst_id or '',
+            'type_id': type_id or '',
+        }.items() if v
+    }
+    back_url = '/eco/estimation-zg/'
+    if back_qs:
+        back_url += '?' + urlencode(back_qs)
+
+    if not month_key or len(month_key) != 7:
+        params = {
+            'type': 'estimation_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+            'error': 'Не указан месяц (ожидается YYYY-MM).',
+            'back_url': back_url,
+        }
+        return render(request, 'lo/estimation_zg_detail.html', {'params': params})
+
+    if source == 'autohub':
+        detail = build_autohub_zg_detail(month_key=month_key, zg=zg, unit_id=unit_id)
+    else:
+        detail = build_estimation_zg_detail(
+            month_key=month_key,
+            zg=zg,
+            unit_id=unit_id,
+            staff_id=staff_id,
+            analyst_id=analyst_id,
+            type_id=type_id,
+        )
+
+    params = {
+        'type': 'estimation_zg_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'detail': detail,
+        'source': source,
+        'back_url': back_url,
+        'filters': {
+            'unit_id': unit_id or '',
+            'staff_id': staff_id or '',
+            'analyst_id': analyst_id or '',
+            'type_id': type_id or '',
+        },
+    }
+    return render(request, 'lo/estimation_zg_detail.html', {'params': params})
 
 
 def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=None):
