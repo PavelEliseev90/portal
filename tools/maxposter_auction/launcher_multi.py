@@ -130,6 +130,10 @@ def main() -> None:
         env["INSTANCE_LABEL"] = label
         env["APP_DIR"] = str(instance_dir)
         env["PORTAL_BASE"] = str(it.get("portalBase") or portal).rstrip("/")
+        # Фоновый цикл без браузера (reload + calc/ставки + итоги)
+        env.setdefault("WORKER_INTERVAL_SEC", str(it.get("workerIntervalSec") or 180))
+        env.setdefault("WORKER_AUTO_BID", "1" if it.get("workerAutoBid", True) else "0")
+        env.setdefault("WORKER_OUTCOMES", "1" if it.get("workerOutcomes", True) else "0")
 
         print(f"Старт воркера {label} dealer={dealer_id} :{port} → {instance_dir}")
         procs.append(_spawn([sys.executable, str(ROOT / "server.py")], env, f"{dealer_id}:{port}"))

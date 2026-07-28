@@ -166,6 +166,7 @@
           <div class="stat">Данные<b style="font-size:12px;font-weight:600">${esc(fmtTs(w.fileTs))}</b></div>
         </div>
         <div class="busy">${w.alive ? busyChips(w.busy) : ""}</div>
+        ${w.alive && w.worker ? `<div class="meta">Фон: ${w.worker.enabled ? `каждые ${esc(w.worker.intervalSec)}с${w.worker.running ? " · сейчас работает" : ""}` : "выкл"}</div>` : ""}
         ${err}${reloadErr}
         <div class="actions">
           ${w.url ? `<a href="${esc(w.url)}" target="_blank" rel="noopener">Открыть viewer</a>` : ""}
