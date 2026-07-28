@@ -13307,6 +13307,185 @@ def estimation_zg_detail(request):
     return render(request, 'lo/estimation_zg_detail.html', {'params': params})
 
 
+@login_required
+def market_model_trends(request):
+    """Сводка трендов Autohub по маркам/моделям."""
+    from eco.market_model_trends import build_market_model_trends
+    from refs.models import AutoruMark
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {'type': 'market_model_trends', 'nav_selected': 4, 'request': request}
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    mark_id = _get_int(request.GET.get('mark_id'))
+    mark_q = (request.GET.get('mark_q') or '').strip()
+    sort = (request.GET.get('sort') or 'volatility').strip()
+    if sort not in ('volatility', 'coverage', 'price_up', 'price_down'):
+        sort = 'volatility'
+
+    data = build_market_model_trends(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+        mark_id=mark_id,
+        mark_q=mark_q,
+        sort=sort,
+        limit=_get_int(request.GET.get('limit')) or 100,
+    )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    marks = AutoruMark.objects.exclude(name='').order_by('name')
+
+    params = {
+        'type': 'market_model_trends',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+            'mark_id': mark_id or '',
+            'mark_q': mark_q,
+            'sort': sort,
+        },
+        'summary': data['summary'],
+        'month_labels': data['month_labels'],
+        'month_keys': data['month_keys'],
+        'rows': data['rows'],
+        'units': units,
+        'marks': marks,
+        'hint': (
+            'Снимки Autohub по складу (regEstimation…). '
+            'В месяце сегмент (поколение) один раз. По модели — медианы avg_price / total / дней. '
+            'Δ — изменение мед. цены от первого к последнему месяцу с данными.'
+        ),
+    }
+    return render(request, 'lo/market_model_trends.html', {'params': params})
+
+
+@login_required
+def market_model_detail(request):
+    """Карточка модели: помесячный тренд + поколения."""
+    from eco.market_model_trends import build_market_model_detail
+    from urllib.parse import urlencode
+    import json as _json
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {'type': 'market_model_trends', 'nav_selected': 4, 'request': request}
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    mark_id = _get_int(request.GET.get('mark_id'))
+    model_id = _get_int(request.GET.get('model_id'))
+    mark_name = (request.GET.get('mark') or '').strip()
+    model_name = (request.GET.get('model') or '').strip()
+
+    if not mark_id and not model_id and not (mark_name and model_name):
+        return HttpResponseRedirect('/eco/market-trends/')
+
+    detail = build_market_model_detail(
+        date_start=date_start,
+        date_end=date_end,
+        mark_id=mark_id,
+        model_id=model_id,
+        mark_name=mark_name,
+        model_name=model_name,
+        unit_id=unit_id,
+    )
+
+    back_qs = {k: v for k, v in {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'mark_id': mark_id or '',
+    }.items() if v}
+    back_url = '/eco/market-trends/' + (('?' + urlencode(back_qs)) if back_qs else '')
+
+    params = {
+        'type': 'market_model_trends',
+        'nav_selected': 4,
+        'request': request,
+        'detail': detail,
+        'chart_json': _json.dumps(detail['chart'], ensure_ascii=False),
+        'back_url': back_url,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+            'mark_id': mark_id or '',
+            'model_id': model_id or '',
+            'mark': detail['mark_name'],
+            'model': detail['model_name'],
+        },
+    }
+    return render(request, 'lo/market_model_detail.html', {'params': params})
+
+
+@login_required
+def market_model_month_detail(request):
+    """Сегменты модели за один месяц."""
+    from eco.market_model_trends import build_market_model_month_detail
+    from urllib.parse import urlencode
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {'type': 'market_model_trends', 'nav_selected': 4, 'request': request}
+        return render(request, 'errors/403.html', {'params': params})
+
+    month_key = (request.GET.get('month') or '').strip()
+    unit_id = _get_int(request.GET.get('unit_id'))
+    mark_id = _get_int(request.GET.get('mark_id'))
+    model_id = _get_int(request.GET.get('model_id'))
+    mark_name = (request.GET.get('mark') or '').strip()
+    model_name = (request.GET.get('model') or '').strip()
+    date_start = request.GET.get('date_start') or ''
+    date_end = request.GET.get('date_end') or ''
+
+    if not month_key or len(month_key) != 7:
+        return HttpResponseRedirect('/eco/market-trends/')
+
+    detail = build_market_model_month_detail(
+        month_key=month_key,
+        mark_id=mark_id,
+        model_id=model_id,
+        mark_name=mark_name,
+        model_name=model_name,
+        unit_id=unit_id,
+    )
+
+    back_qs = {k: v for k, v in {
+        'date_start': date_start,
+        'date_end': date_end,
+        'unit_id': unit_id or '',
+        'mark_id': mark_id or '',
+        'model_id': model_id or '',
+        'mark': mark_name or detail['mark_name'],
+        'model': model_name or detail['model_name'],
+    }.items() if v}
+    back_url = '/eco/market-trends/model/' + (('?' + urlencode(back_qs)) if back_qs else '')
+
+    params = {
+        'type': 'market_model_trends',
+        'nav_selected': 4,
+        'request': request,
+        'detail': detail,
+        'back_url': back_url,
+    }
+    return render(request, 'lo/market_model_month_detail.html', {'params': params})
+
+
 def _get_op_rlk_qs(date_start, date_end, report_type, unit_source_ids, unit_ids, city_ids, type_reception_ids=None):
     """
     Вспомогательная функция для получения QuerySet рабочих листов ОП из DocRLK.

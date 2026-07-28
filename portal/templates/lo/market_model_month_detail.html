@@ -1,0 +1,71 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — {{ params.detail.mark_name }} {{ params.detail.model_name }} · {{ params.detail.month_label }} {% endblock %}
+{% block title_navbar %} — Месяц модели {% endblock %}
+
+{% block content %}
+<style>
+  .mt-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .mt-page h2 { font-size: 1.4rem; font-weight: 600; color: #002a5a; }
+  .lead { color: #6c7a92; font-size: .95rem; }
+  .mt-panel, .mt-metric {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06);
+  }
+  .mt-metric { padding: 1rem 1.15rem; height: 100%; }
+  .mt-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .mt-metric .v { font-size: 1.4rem; font-weight: 650; color: #002a5a; }
+  .mt-panel { padding: 1.15rem 1.25rem; margin-top: 1rem; }
+  .above { color: #0f9d58; font-weight: 600; }
+  .table-mt td, .table-mt th { font-size: .86rem; vertical-align: middle; }
+</style>
+
+<div class="mt-page">
+  <a href="{{ params.back_url }}" class="btn btn-sm btn-outline-secondary mb-3">← К карточке модели</a>
+  <h2>{{ params.detail.mark_name }} {{ params.detail.model_name }} · {{ params.detail.month_label }}</h2>
+  <p class="lead">Сегменты после дедупа за месяц.</p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Сегментов</div><div class="v">{{ params.detail.summary.segments }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Мед. avg</div><div class="v">{{ params.detail.summary.med_avg }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Мед. total</div><div class="v">{{ params.detail.summary.med_total }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Мед. дней</div><div class="v">{{ params.detail.summary.med_days|unlocalize }}</div></div></div>
+  </div>
+
+  <div class="mt-panel">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-mt mb-0">
+        <thead>
+          <tr>
+            <th>Поколение / мод.</th>
+            <th>VIN (пример)</th>
+            <th>ДЦ</th>
+            <th class="text-end">avg_price</th>
+            <th class="text-end">наша</th>
+            <th class="text-end">total</th>
+            <th class="text-end">дней</th>
+            <th>Снимок</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.detail.rows %}
+          <tr>
+            <td>{{ row.gen_label|default:"—" }}</td>
+            <td>{{ row.vin|default:"—" }}</td>
+            <td>{{ row.unit|default:"—" }}</td>
+            <td class="text-end">{{ row.avg_price }}</td>
+            <td class="text-end {% if row.price > row.avg_price %}above{% endif %}">{{ row.price }}</td>
+            <td class="text-end">{{ row.total }}</td>
+            <td class="text-end">{{ row.avg_days }}</td>
+            <td>{{ row.date|date:"d.m.Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-muted">Нет сегментов.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
