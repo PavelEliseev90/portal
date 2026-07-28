@@ -1,0 +1,200 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — {{ params.detail.mark_name }} {{ params.detail.model_name }} {% endblock %}
+{% block title_navbar %} — Тренд модели {% endblock %}
+
+{% block content %}
+<style>
+  .mt-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .mt-page h2 { font-size: 1.45rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .lead { color: #6c7a92; margin-bottom: 1rem; font-size: .95rem; }
+  .mt-panel, .mt-metric {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06);
+  }
+  .mt-metric { padding: 1rem 1.15rem; height: 100%; }
+  .mt-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .mt-metric .v { font-size: 1.45rem; font-weight: 650; color: #002a5a; }
+  .mt-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .mt-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 1rem; }
+  .chart-wrap { position: relative; height: 360px; }
+  .delta-up { color: #0f9d58; font-weight: 600; }
+  .delta-down { color: #dc2626; font-weight: 600; }
+  .delta-flat { color: #94a3b8; }
+  a.cell-link { color: inherit; text-decoration: none; display: block; }
+  a.cell-link:hover { background: #eef2ff; border-radius: .4rem; }
+  .table-mt td, .table-mt th { font-size: .86rem; vertical-align: middle; }
+  .hint { font-size: .82rem; color: #6c7a92; }
+</style>
+
+<div class="mt-page">
+  <a href="{{ params.back_url }}" class="btn btn-sm btn-outline-secondary mb-3">← К списку моделей</a>
+  <h2>{{ params.detail.mark_name }} {{ params.detail.model_name }}</h2>
+  <p class="lead">Помесячный тренд рынка Autohub (медиана по сегментам/поколениям).</p>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="mt-metric">
+        <div class="t">Δ за период</div>
+        <div class="v {% if params.detail.summary.overall_delta > 1 %}delta-up{% elif params.detail.summary.overall_delta < -1 %}delta-down{% else %}delta-flat{% endif %}">
+          {% if params.detail.summary.overall_delta != None %}{{ params.detail.summary.overall_delta|unlocalize }}%{% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Посл. avg</div><div class="v">{{ params.detail.summary.last_avg }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Посл. total</div><div class="v">{{ params.detail.summary.last_total }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Посл. дней</div><div class="v">{{ params.detail.summary.last_days|unlocalize }}</div></div></div>
+  </div>
+
+  <div class="mt-panel">
+    <h3>Цена рынка и объём предложений</h3>
+    <div class="chart-wrap"><canvas id="modelTrendChart"></canvas></div>
+    <p class="hint mb-0 mt-2">Линия — мед. avg_price; столбцы — мед. total. Клик по месяцу в таблице ниже — расшифровка сегментов.</p>
+  </div>
+
+  <div class="mt-panel">
+    <h3>По месяцам</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-mt mb-0">
+        <thead>
+          <tr>
+            <th>Месяц</th>
+            <th class="text-end">Сегм.</th>
+            <th class="text-end">avg_price</th>
+            <th class="text-end">Δ</th>
+            <th class="text-end">total</th>
+            <th class="text-end">дней</th>
+            <th class="text-end">наша</th>
+            <th class="text-end">спред</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in params.detail.series %}
+          <tr>
+            <td>
+              {% if s.segments %}
+              <a class="cell-link" href="{% url 'eco:market_model_month_detail' %}?month={{ s.month }}&mark_id={{ params.filters.mark_id }}&model_id={{ params.filters.model_id }}&mark={{ params.filters.mark|urlencode }}&model={{ params.filters.model|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}">
+                {{ s.label }}
+              </a>
+              {% else %}{{ s.label }}{% endif %}
+            </td>
+            <td class="text-end">{% if s.segments %}{{ s.segments }}{% else %}—{% endif %}</td>
+            <td class="text-end">{% if s.segments %}{{ s.med_avg }}{% else %}—{% endif %}</td>
+            <td class="text-end {% if s.delta > 1 %}delta-up{% elif s.delta < -1 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if s.delta != None %}{{ s.delta|unlocalize }}%{% else %}—{% endif %}
+            </td>
+            <td class="text-end">{% if s.segments %}{{ s.med_total }}{% else %}—{% endif %}</td>
+            <td class="text-end">{% if s.segments %}{{ s.med_days|unlocalize }}{% else %}—{% endif %}</td>
+            <td class="text-end">{% if s.med_our %}{{ s.med_our }}{% else %}—{% endif %}</td>
+            <td class="text-end {% if s.spread > 2 %}delta-up{% elif s.spread < -2 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if s.spread != None %}{{ s.spread|unlocalize }}%{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if params.detail.generations %}
+  <div class="mt-panel">
+    <h3>По поколениям / сегментам</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-mt mb-0">
+        <thead>
+          <tr>
+            <th>Сегмент</th>
+            <th class="text-end">Снимков</th>
+            <th class="text-end">Цена с</th>
+            <th class="text-end">Цена по</th>
+            <th class="text-end">Δ</th>
+            <th class="text-end">Посл. total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in params.detail.generations %}
+          <tr>
+            <td>{{ g.gen_label }}{% if g.gen_id %} <span class="text-muted">({{ g.gen_id }})</span>{% endif %}</td>
+            <td class="text-end">{{ g.segments_total }}</td>
+            <td class="text-end">{{ g.first_avg }}</td>
+            <td class="text-end">{{ g.last_avg }}</td>
+            <td class="text-end {% if g.price_delta > 1 %}delta-up{% elif g.price_delta < -1 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if g.price_delta != None %}{{ g.price_delta|unlocalize }}%{% else %}—{% endif %}
+            </td>
+            <td class="text-end">{{ g.last_total }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const data = {{ params.chart_json|safe }};
+  const canvas = document.getElementById('modelTrendChart');
+  if (!canvas || !data) return;
+  new Chart(canvas.getContext('2d'), {
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'total (мед.)',
+          data: data.total,
+          backgroundColor: 'rgba(148,163,184,0.45)',
+          yAxisID: 'yTotal',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'avg_price (мед.)',
+          data: data.avg_price,
+          borderColor: '#2563eb',
+          backgroundColor: '#2563eb',
+          tension: 0.25,
+          yAxisID: 'yPrice',
+          order: 1,
+        },
+        {
+          type: 'line',
+          label: 'наша price (мед.)',
+          data: data.our_price,
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b',
+          borderDash: [5, 4],
+          tension: 0.25,
+          yAxisID: 'yPrice',
+          order: 0,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        yPrice: {
+          type: 'linear',
+          position: 'left',
+          title: { display: true, text: 'Цена, ₽' },
+          ticks: { callback: (v) => (v/1000).toFixed(0) + 'k' }
+        },
+        yTotal: {
+          type: 'linear',
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'total' },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}
