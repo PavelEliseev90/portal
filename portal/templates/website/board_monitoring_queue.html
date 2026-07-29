@@ -99,7 +99,7 @@
                 swap={{ r.swap_id }}{% if r.estimation_id %} · est={{ r.estimation_id }}{% endif %}
               </div>
             </td>
-            <td>{% if r.ok %}OK{% else %}Ошибка{% endif %}{% if r.error %}<div style="font-size:0.68rem">{{ r.error }}</div>{% endif %}</td>
+            <td>{% if r.ok %}OK{% else %}Ошибка{% endif %}{% if r.error %}<div style="font-size:0.68rem">{{ r.error }}</div>{% endif %}{% if r.duplicates_cleared %}<div style="font-size:0.68rem">дублей снято: {{ r.duplicates_cleared }}</div>{% endif %}</td>
             <td>{{ r.status_code|default:"—" }}</td>
             <td>{% if r.text %}<pre class="kors-resp">{{ r.text }}</pre>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
           </tr>
