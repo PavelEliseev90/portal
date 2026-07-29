@@ -2263,10 +2263,37 @@ def board_monitoring_queue(request, kind):
     return render(request, 'website/board_monitoring_queue.html', {'params': params})
 
 
+def _monitoring_clear_send_1c_duplicates(rlk_id, estimation_id, *, keep_swap_id=None, now=None):
+    """
+    Убрать из очереди (status_code=60) все записи того же РЛК+оценки.
+    После успешной отправки дубли больше не нужны.
+    """
+    now = now or DT.datetime.now()
+    qs = RegSwapKors.objects.filter(
+        status_code=60,
+        rlk_id=rlk_id,
+        estimation_id=estimation_id,
+    )
+    if keep_swap_id is not None:
+        qs = qs.exclude(pk=keep_swap_id)
+    note = 'дубль снят после успешной отправки в 1С'
+    updated = 0
+    for dup in qs.iterator():
+        comment = (dup.comment or '').strip()
+        dup.status_code = 200
+        dup.status = 'Ok'
+        dup.status_date = now
+        dup.comment = (f'{comment}; {note}' if comment else note)[:512]
+        dup.save(update_fields=['status_code', 'status', 'status_date', 'comment'])
+        updated += 1
+    return updated
+
+
 def _monitoring_send_1c_one(swap):
     """
     Отправка одной записи очереди через estimation_send_1c.
     Возвращает dict для UI: title, ok, status_code, text, error.
+    При успехе снимает из очереди все дубли по тому же rlk+estimation.
     """
     from task_manager.views import estimation_send_1c_result
 
@@ -2278,6 +2305,7 @@ def _monitoring_send_1c_one(swap):
         'title': title,
         'rlk_id': getattr(rlk, 'id', None),
         'estimation_id': getattr(est, 'id', None),
+        'duplicates_cleared': 0,
     }
     if rlk is None or est is None:
         return {
@@ -2302,6 +2330,13 @@ def _monitoring_send_1c_one(swap):
             if len(swap.comment) > 512:
                 swap.comment = swap.comment[:512]
         swap.save(update_fields=['status_code', 'status', 'status_date', 'comment'])
+        cleared = _monitoring_clear_send_1c_duplicates(
+            rlk.id,
+            est.id,
+            keep_swap_id=swap.pk,
+            now=now,
+        )
+        base['duplicates_cleared'] = cleared
     else:
         err = result.get('error') or f'HTTP {result.get("status_code")}'
         swap.status_date = now
@@ -2335,6 +2370,13 @@ def board_monitoring_queue_send_1c(request):
 
     if send_all:
         for swap in list(_monitoring_qs_send_1c()[:200]):
+            # Дубли могли уже сняться после успешной отправки той же пары rlk+estimation
+            try:
+                swap.refresh_from_db()
+            except Exception:
+                continue
+            if swap.status_code != 60:
+                continue
             try:
                 results.append(_monitoring_send_1c_one(swap))
             except Exception as exc:
@@ -2345,6 +2387,7 @@ def board_monitoring_queue_send_1c(request):
                     'status_code': None,
                     'text': '',
                     'error': str(exc),
+                    'duplicates_cleared': 0,
                 })
     elif item_id:
         try:
@@ -2380,11 +2423,13 @@ def board_monitoring_queue_send_1c(request):
     request.session['monitoring_send_1c_results'] = results
     ok_n = sum(1 for r in results if r.get('ok'))
     fail_n = len(results) - ok_n
+    dup_n = sum(int(r.get('duplicates_cleared') or 0) for r in results)
     if results:
-        messages.info(
-            request,
-            f'Отправка в 1С: успешно {ok_n}, ошибок {fail_n} (детали ниже).',
-        )
+        msg = f'Отправка в 1С: успешно {ok_n}, ошибок {fail_n}'
+        if dup_n:
+            msg += f', снято дублей из очереди {dup_n}'
+        msg += ' (детали ниже).'
+        messages.info(request, msg)
     return HttpResponseRedirect(f'/monitorings/queue/send_1c/?back={back}')
 
 
