@@ -72,10 +72,15 @@
     <h3 class="deal-section-title"><span class="bi bi-graph-up-arrow me-1" aria-hidden="true"></span> Аналитика и маркетинг</h3>
     <span class="text-muted small">Показатели сети и выгрузки</span>
   </div>
-  <p class="text-muted small mb-2">Воронка продаж, KPI оценки, выгрузка на классифайды.</p>
+  <p class="text-muted small mb-2">Воронка продаж, KPI оценки, отчёты по ЦГ, выгрузка на классифайды.</p>
   <div class="asp-links">
     <a class="btn-calculate-sm" href="/korsavto/sales_funnel/"><span class="bi bi-funnel"></span> Воронка продаж</a>
     <a class="btn-calculate-sm" href="/korsavto/kpi_eco/"><span class="bi bi-speedometer2"></span> KPI оценки</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:estimation_zg_analytics' %}"><span class="bi bi-bar-chart-steps"></span> Оценки по ЦГ</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:autohub_zg_analytics' %}"><span class="bi bi-pie-chart"></span> Autohub по ЦГ</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:sales_zg_analytics' %}"><span class="bi bi-cash-stack"></span> Продажи по ЦГ</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:market_model_trends' %}"><span class="bi bi-graph-up-arrow"></span> Тренд рынка по моделям</a>
+    <a class="btn-calculate-sm" href="{% url 'eco:tradein_funnel_simple_export' %}"><span class="bi bi-file-earmark-excel"></span> Выгрузка TradeInFunnel</a>
     <a class="btn-calculate-sm" href="{% url 'classifieds:list' %}"><span class="bi bi-cloud-upload"></span> Классифайды</a>
     <a class="btn-calculate-sm" href="{% url 'prices_car:index' %}"><span class="bi bi-currency-exchange"></span> Ценообразование новых</a>
   </div>
