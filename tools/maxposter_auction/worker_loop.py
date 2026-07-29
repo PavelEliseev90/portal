@@ -272,6 +272,9 @@ def run_outcomes(email: str, password: str, dealer_id: str) -> dict:
             timeout=300,
         )
     except Exception as exc:
+        if "409" in str(exc) or "Conflict" in str(exc):
+            logger.info("outcome bulk skip: already running (409)")
+            return {"ok": True, "skipped": True, "reason": "busy", "okCount": 0, "failCount": 0, "total": 0}
         logger.warning("outcome bulk fail: %s", exc)
         return {"ok": False, "error": str(exc)[:500], "okCount": 0, "failCount": 1, "total": 0}
 

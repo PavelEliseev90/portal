@@ -61,10 +61,10 @@ OUTCOME_SKIP_BULK_ARCHIVE_ENV = "OUTCOME_SKIP_BULK_ARCHIVE"
 OUTCOME_SKIP_BULK_WAITING_ENV = "OUTCOME_SKIP_BULK_WAITING"
 OUTCOME_LOG_NAME = "outcome_poll.log"
 
-BULK_PAGE_LIMIT_DEFAULT = 50
-WINS_MAX_PAGES_DEFAULT = 15
-ARCHIVE_MAX_PAGES_DEFAULT = 25
-WAITING_MAX_PAGES_DEFAULT = 15
+BULK_PAGE_LIMIT_DEFAULT = 20
+WINS_MAX_PAGES_DEFAULT = 2
+ARCHIVE_MAX_PAGES_DEFAULT = 2
+WAITING_MAX_PAGES_DEFAULT = 2
 
 # status.status из autohub offers/list → outcome_code портала
 AUTOHUB_STATUS_TO_OUTCOME: dict[str, str] = {
@@ -223,8 +223,9 @@ def _wins_max_pages() -> int:
 
 
 def _archive_max_pages() -> int:
+    """Архив: не больше 2 страниц (свежие итоги)."""
     try:
-        return max(1, min(100, int(_env(OUTCOME_ARCHIVE_MAX_PAGES_ENV, str(ARCHIVE_MAX_PAGES_DEFAULT)) or ARCHIVE_MAX_PAGES_DEFAULT)))
+        return max(1, min(2, int(_env(OUTCOME_ARCHIVE_MAX_PAGES_ENV, str(ARCHIVE_MAX_PAGES_DEFAULT)) or ARCHIVE_MAX_PAGES_DEFAULT)))
     except (TypeError, ValueError):
         return ARCHIVE_MAX_PAGES_DEFAULT
 
@@ -1224,39 +1225,71 @@ def sync_all_bulk(
     dealer_id: str | None = None,
     queue_items: list[dict] | None = None,
 ) -> dict:
-    """Bulk: продавец выбирает (2) → вас выбрали (3) → архив (4) → портал."""
+    """Bulk: вас выбрали (3) → продавец выбирает (2) → архив (4) → портал.
+
+    Wins первыми (важнее). Ошибка/429 на одной вкладке не отменяет остальные.
+    """
     waiting_bulk: dict | None = None
     wins_bulk: dict | None = None
     archive_bulk: dict | None = None
     headers = dict(session_headers or {})
 
-    if not _skip_bulk_waiting():
-        waiting_bulk = sync_waiting_bulk(
-            page,
-            ctx,
-            session_headers=headers,
-            dealer_id=dealer_id,
-            queue_items=queue_items,
-        )
-        headers = waiting_bulk.get("sessionHeaders") or headers
+    def _safe(label: str, fn):
+        try:
+            return fn()
+        except MaxposterAuthError:
+            raise
+        except Exception as exc:
+            err = str(exc)[:500]
+            print(f"{label}_ERR: {err}", flush=True)
+            return {
+                "ok": False,
+                "error": err,
+                "results": [],
+                "summary": {
+                    "apiOffers": 0,
+                    "ok": 0,
+                    "fail": 1,
+                    "syncedLotOfferIds": [],
+                },
+            }
 
     if not _skip_bulk_wins():
-        wins_bulk = sync_wins_bulk(
-            page,
-            ctx,
-            session_headers=headers,
-            dealer_id=dealer_id,
-            queue_items=queue_items,
+        wins_bulk = _safe(
+            "WINS_BULK",
+            lambda: sync_wins_bulk(
+                page,
+                ctx,
+                session_headers=headers,
+                dealer_id=dealer_id,
+                queue_items=queue_items,
+            ),
         )
-        headers = wins_bulk.get("sessionHeaders") or headers
+        headers = (wins_bulk or {}).get("sessionHeaders") or headers
+
+    if not _skip_bulk_waiting():
+        waiting_bulk = _safe(
+            "WAITING_BULK",
+            lambda: sync_waiting_bulk(
+                page,
+                ctx,
+                session_headers=headers,
+                dealer_id=dealer_id,
+                queue_items=queue_items,
+            ),
+        )
+        headers = (waiting_bulk or {}).get("sessionHeaders") or headers
 
     if not _skip_bulk_archive():
-        archive_bulk = sync_archive_bulk(
-            page,
-            ctx,
-            session_headers=headers,
-            dealer_id=dealer_id,
-            queue_items=queue_items,
+        archive_bulk = _safe(
+            "ARCHIVE_BULK",
+            lambda: sync_archive_bulk(
+                page,
+                ctx,
+                session_headers=headers,
+                dealer_id=dealer_id,
+                queue_items=queue_items,
+            ),
         )
 
     results: list[dict] = []
@@ -1287,9 +1320,14 @@ def sync_all_bulk(
         "pushedLotOfferIds": all_pushed,
     }
     ok = True
-    for bulk in (waiting_bulk, wins_bulk, archive_bulk):
-        if bulk and not bulk.get("ok", True):
-            ok = False
+    # Частичный успех = ok. Жёсткий fail только если ни одна вкладка не дала данных и есть ошибки.
+    has_data = bool(results) or any(
+        ((b or {}).get("summary") or {}).get("apiOffers", 0) > 0
+        for b in (waiting_bulk, wins_bulk, archive_bulk)
+    )
+    has_errors = any((b or {}).get("error") for b in (waiting_bulk, wins_bulk, archive_bulk))
+    if has_errors and not has_data:
+        ok = False
     return {
         "ok": ok,
         "waitingBulk": waiting_bulk,

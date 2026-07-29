@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 import traceback
 from datetime import datetime
 
@@ -307,6 +308,15 @@ def _api_offers_post(
         headers=headers,
         timeout=60_000,
     )
+    if resp.status == 429:
+        # Одна пауза и повтор — иначе rate-limit валит весь bulk.
+        time.sleep(2.5)
+        resp = ctx.request.post(
+            url,
+            data=json.dumps(body),
+            headers=headers,
+            timeout=60_000,
+        )
     if not resp.ok:
         if resp.status == 403:
             raise MaxposterAuthError(
@@ -377,6 +387,9 @@ def _api_offers_page_or_fetch(
         raise
     except Exception as exc:
         if page is None:
+            raise
+        # 429 — не долбить через page.fetch, это только усугубляет лимит.
+        if "429" in str(exc):
             raise
         print(f"api offers/list failed ({exc!r}), пробуем page.fetch…")
         if body_base is not None:
@@ -553,8 +566,9 @@ def fetch_autohub_offers_all(
     limit: int = 50,
     max_pages: int = 20,
     sort_field: str = SORT_FIELD_OFFER_UPDATED,
+    page_pause_sec: float = 0.35,
 ) -> list[dict]:
-    """Все офферы вкладки autohub (statusGroup) одним проходом по cursor."""
+    """Офферы вкладки autohub (statusGroup) по cursor; при 429 — частичный результат."""
     body_base = _autohub_offers_body(
         status_group,
         "",
@@ -570,15 +584,25 @@ def fetch_autohub_offers_all(
 
     while page_num < max(1, int(max_pages)):
         page_num += 1
-        payload = _api_offers_page_or_fetch(
-            ctx,
-            page,
-            cursor_value=cursor_value,
-            limit=limit,
-            extra_headers=extra_headers,
-            body_base=body_base,
-            url=AUTOHUB_OFFERS_URL,
-        )
+        try:
+            payload = _api_offers_page_or_fetch(
+                ctx,
+                page,
+                cursor_value=cursor_value,
+                limit=limit,
+                extra_headers=extra_headers,
+                body_base=body_base,
+                url=AUTOHUB_OFFERS_URL,
+            )
+        except Exception as exc:
+            if "429" in str(exc):
+                print(
+                    f"autohub statusGroup={status_group}: HTTP 429 на p{page_num}, "
+                    f"останавливаем пагинацию (уже {len(all_offers)} офферов)",
+                    flush=True,
+                )
+                break
+            raise
         offers = payload.get("offers") or []
         _log_offers_payload(
             f"  autohub statusGroup={status_group} p{page_num}",
@@ -605,6 +629,8 @@ def fetch_autohub_offers_all(
         if next_value == cursor_value:
             break
         cursor_value = next_value
+        if page_pause_sec > 0 and page_num < max(1, int(max_pages)):
+            time.sleep(float(page_pause_sec))
 
     print(
         f"autohub offers/list statusGroup={status_group}: "

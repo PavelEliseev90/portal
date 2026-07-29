@@ -2362,8 +2362,10 @@
       });
 
       for (const ln of (wData?.logLines || bulk?.logLines || []).slice(-80)){
-        if (ln && /BULK|autohub|HTTP|Auth|error|ERR|skip|→|WINS_|WAITING_|ARCHIVE_/i.test(String(ln))){
-          logOutcome({ ok: !/ERR|error|сбой|fail/i.test(String(ln)), msg: String(ln).slice(0, 320) });
+        const s = String(ln);
+        if (s && /BULK|autohub|HTTP|Auth|429|WINS_|WAITING_|ARCHIVE_|нет на портале/i.test(s)){
+          const bad = /\bERR\b|HTTP 429|HTTP 403|сбой|Traceback|RuntimeError/i.test(s);
+          logOutcome({ ok: !bad, msg: s.slice(0, 320) });
         }
       }
       for (const wr of wResults.slice(0, 60)){
