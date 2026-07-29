@@ -1,0 +1,83 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — Расшифровка продаж по ЦГ {% endblock %}
+{% block title_navbar %} — Продажи / ЦГ детально {% endblock %}
+
+{% block content %}
+<style>
+  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .zg-page h2 { font-size: 1.45rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .zg-panel { background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08); box-shadow: 0 14px 32px rgba(0,23,61,.06); padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .zg-metric { padding: 1rem 1.15rem; height: 100%; background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08); box-shadow: 0 14px 32px rgba(0,23,61,.06); }
+  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .zg-metric .v { font-size: 1.5rem; font-weight: 650; color: #002a5a; line-height: 1.2; }
+  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
+  .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600; }
+</style>
+
+<div class="zg-page">
+  <a href="{{ params.back_url }}" class="btn btn-sm btn-outline-secondary mb-3">← К сводке</a>
+
+  {% if params.error %}
+    <div class="alert alert-warning">{{ params.error }}</div>
+  {% else %}
+    <h2>
+      Продажи: {{ params.detail.month_label }} · <span class="pill">ЦГ {{ params.detail.zg }}</span>
+    </h2>
+
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-4">
+        <div class="zg-metric">
+          <div class="t">Продаж</div>
+          <div class="v">{{ params.detail.summary.total }}</div>
+          <div class="s">в ЦГ</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="zg-metric">
+          <div class="t">Мед. цена</div>
+          <div class="v">{{ params.detail.summary.med_price|unlocalize }}</div>
+          <div class="s">price_sale</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="zg-panel">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Дата продажи</th>
+              <th>Авто</th>
+              <th>VIN</th>
+              <th>ДЦ</th>
+              <th>Источник</th>
+              <th>Тип оценки</th>
+              <th class="text-end">Цена</th>
+              <th>Статус оценки</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in params.detail.rows %}
+            <tr>
+              <td>{% if row.date_sale %}{{ row.date_sale|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+              <td>{{ row.mark }} {{ row.model }}</td>
+              <td>{{ row.vin|default:"—" }}</td>
+              <td>{{ row.unit|default:"—" }}</td>
+              <td>{{ row.unit_source|default:"—" }}</td>
+              <td>{{ row.type_name|default:"—" }}</td>
+              <td class="text-end">{{ row.price_sale|unlocalize }}</td>
+              <td>{{ row.stage|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-muted">Нет продаж за этот месяц и ЦГ.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
