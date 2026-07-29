@@ -657,10 +657,12 @@ class Handler(SimpleHTTPRequestHandler):
                     summary = wins.get("summary") or {}
                     wins_bulk = wins.get("winsBulk")
                     archive_bulk = wins.get("archiveBulk")
+                    waiting_bulk = wins.get("waitingBulk")
                     ok = bool(wins.get("ok", True))
                     self._send_json(200 if ok else 500, {
                         "ok": ok,
                         "bulk": wins,
+                        "waitingBulk": waiting_bulk,
                         "winsBulk": wins_bulk,
                         "archiveBulk": archive_bulk,
                         "wonLotOfferIds": summary.get("wonLotOfferIds") or [],

@@ -646,6 +646,56 @@ def _portal_lot_url(lot) -> str:
     return path
 
 
+def _offer_venue_label(offer) -> str:
+    """Площадка аукциона (AvitoVenue или sellerPlaceName + dealerId)."""
+    lot = getattr(offer, 'lot', None)
+    if lot is None:
+        return '—'
+    venue = getattr(lot, 'venue', None)
+    if venue is not None:
+        return venue.display_label
+    account = getattr(offer, 'account', None)
+    dealer_id = getattr(account, 'dealer_id', None) if account else None
+    name = (lot.seller_place_name or '').strip()
+    city = ''
+    if name and ',' in name:
+        city_part, _, rest = name.partition(',')
+        if rest.strip():
+            city = city_part.strip()
+            name = rest.strip()
+    label_parts = [p for p in (name, city) if p]
+    label = ' · '.join(label_parts) if label_parts else '—'
+    if dealer_id:
+        label = f'{label} (ID {dealer_id})' if label != '—' else f'ID {dealer_id}'
+    return label or '—'
+
+
+def _html_link(url: str, text: str | None = None) -> str:
+    if not url:
+        return '—'
+    href = escape(url)
+    label = escape(text or url)
+    return f'<a href="{href}" style="color:#2563eb;text-decoration:underline">{label}</a>'
+
+
+def _email_table_rows(rows: list[tuple]) -> str:
+    parts = []
+    for row in rows:
+        key = row[0]
+        value = row[1]
+        is_html = row[2] if len(row) > 2 else False
+        if is_html:
+            cell = str(value)
+        else:
+            cell = escape(str(value)).replace('\n', '<br>')
+        parts.append(
+            f'<tr><td style="padding:6px 10px;color:#64748b;vertical-align:top">'
+            f'{escape(str(key))}</td>'
+            f'<td style="padding:6px 10px;color:#0f172a">{cell}</td></tr>'
+        )
+    return ''.join(parts)
+
+
 def _maxposter_url(offer) -> str:
     if not offer or not offer.lot_offer_id:
         return ''
@@ -682,6 +732,7 @@ def build_win_email_html(offer) -> tuple[str, str]:
         headline = 'Лот не обработан / не взяли в работу — требуется внимание'
 
     rows = [
+        ('Площадка', _offer_venue_label(offer)),
         ('Автомобиль', car),
         ('Лот', getattr(lot, 'lot_id', '—')),
         ('lotOfferId', offer.lot_offer_id),
@@ -690,14 +741,10 @@ def build_win_email_html(offer) -> tuple[str, str]:
         ('Прибыль (расчёт)', money(profit)),
         ('ЦНА (расчёт)', money(zna)),
         ('Итог Maxposter', f'{offer.outcome_title or ""}\n{offer.outcome_detail or ""}'.strip()),
-        ('Maxposter', _maxposter_url(offer)),
-        ('Портал', _portal_lot_url(lot)),
+        ('Maxposter', _html_link(_maxposter_url(offer), 'Открыть лот в Maxposter'), True),
+        ('Портал', _html_link(_portal_lot_url(lot), 'Открыть лот на портале'), True),
     ]
-    body_rows = ''.join(
-        f'<tr><td style="padding:6px 10px;color:#64748b;vertical-align:top">{escape(str(k))}</td>'
-        f'<td style="padding:6px 10px;color:#0f172a">{escape(str(v)).replace(chr(10), "<br>")}</td></tr>'
-        for k, v in rows
-    )
+    body_rows = _email_table_rows(rows)
     html = (
         '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#0f172a">'
         f'<h2 style="color:#166534;margin:0 0 12px">{escape(headline)}</h2>'
@@ -723,11 +770,22 @@ def resolve_win_notify_emails(offer) -> list[str]:
 
 def send_win_email(offer, *, emails: list[str] | None = None) -> dict[str, Any]:
     from django.core.mail import EmailMultiAlternatives
+    from auction_avito.models import AvitoLotOffer
 
     if emails is None:
         emails = resolve_win_notify_emails(offer)
     if not emails:
         return {'sent': False, 'reason': 'no recipients'}
+
+    offer = (
+        AvitoLotOffer.objects.select_related(
+            'lot',
+            'lot__venue',
+            'lot__venue__city',
+            'account',
+        )
+        .get(pk=offer.pk)
+    )
 
     subject, html = build_win_email_html(offer)
     from_email = getattr(settings, 'EMAIL_HOST_USER_INFO', None) or settings.EMAIL_HOST_USER

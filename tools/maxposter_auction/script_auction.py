@@ -38,6 +38,7 @@ AUTOHUB_OFFERS_URL = (
     "https://api-gateway.maxposter.ru/web/1/autohub-auction/lots/offers/list"
 )
 STATUS_GROUP_ACTIVE = 1
+STATUS_GROUP_WAITING = 2
 STATUS_GROUP_WON = 3
 STATUS_GROUP_ARCHIVE = 4
 SORT_FIELD_OFFER_UPDATED = "lotOfferUpdatedAt"

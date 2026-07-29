@@ -288,7 +288,8 @@ def run_outcomes(email: str, password: str, dealer_id: str) -> dict:
             synced_bulk.add(str(oid))
         summary = bulk_row.get("summary") or {}
         logger.info(
-            "outcome bulk: wins_api=%s archive_api=%s ok=%s becameWon=%s synced=%s",
+            "outcome bulk: waiting_api=%s wins_api=%s archive_api=%s ok=%s becameWon=%s synced=%s",
+            summary.get("waitingApiOffers"),
             summary.get("winsApiOffers"),
             summary.get("archiveApiOffers"),
             summary.get("ok"),

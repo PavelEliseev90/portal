@@ -1,7 +1,7 @@
 """
 Опрос итогов завершённых лотов Maxposter (решение продавца).
 
-1. Bulk API «Вас выбрали» (statusGroup=3) и архив (statusGroup=4) → итог на портал.
+1. Bulk API: «Продавец выбирает» (2) → «Вас выбрали» (3) → архив (4) → итог на портал.
 2. Очередь портала — Playwright /view только для оставшихся лотов.
 """
 from __future__ import annotations
@@ -27,7 +27,9 @@ from playwright.sync_api import sync_playwright
 
 from script_auction import (
     SORT_FIELD,
+    SORT_FIELD_OFFER_UPDATED,
     STATUS_GROUP_ARCHIVE,
+    STATUS_GROUP_WAITING,
     STATUS_GROUP_WON,
     USER_AGENT,
     fetch_autohub_offers_all,
@@ -38,6 +40,7 @@ from script_auction import (
 
 LOGIN_URL = "https://app.maxposter.ru/login"
 AUCTION_URL = "https://app.maxposter.ru/dealer/auction"
+AUCTION_WAITING_URL = "https://app.maxposter.ru/dealer/auction?type=old&tab=2"
 AUCTION_WINS_URL = "https://app.maxposter.ru/dealer/auction?type=old&tab=3"
 AUCTION_ARCHIVE_URL = "https://app.maxposter.ru/dealer/auction?type=old&tab=4"
 VIEW_URL_TPL = "https://app.maxposter.ru/dealer/auction/{lot_offer_id}/view"
@@ -52,13 +55,16 @@ OUTCOME_BULK_PAGE_LIMIT_ENV = "OUTCOME_BULK_PAGE_LIMIT"
 OUTCOME_WINS_PAGE_LIMIT_ENV = "OUTCOME_WINS_PAGE_LIMIT"
 OUTCOME_WINS_MAX_PAGES_ENV = "OUTCOME_WINS_MAX_PAGES"
 OUTCOME_ARCHIVE_MAX_PAGES_ENV = "OUTCOME_ARCHIVE_MAX_PAGES"
+OUTCOME_WAITING_MAX_PAGES_ENV = "OUTCOME_WAITING_MAX_PAGES"
 OUTCOME_SKIP_BULK_WINS_ENV = "OUTCOME_SKIP_BULK_WINS"
 OUTCOME_SKIP_BULK_ARCHIVE_ENV = "OUTCOME_SKIP_BULK_ARCHIVE"
+OUTCOME_SKIP_BULK_WAITING_ENV = "OUTCOME_SKIP_BULK_WAITING"
 OUTCOME_LOG_NAME = "outcome_poll.log"
 
 BULK_PAGE_LIMIT_DEFAULT = 50
 WINS_MAX_PAGES_DEFAULT = 15
 ARCHIVE_MAX_PAGES_DEFAULT = 25
+WAITING_MAX_PAGES_DEFAULT = 15
 
 # status.status из autohub offers/list → outcome_code портала
 AUTOHUB_STATUS_TO_OUTCOME: dict[str, str] = {
@@ -85,6 +91,10 @@ AUTOHUB_STATUS_TO_OUTCOME: dict[str, str] = {
     "not_processed": "not_taken",
     "waiting_seller": "waiting_seller",
     "waiting_for_seller": "waiting_seller",
+    "seller_choosing": "waiting_seller",
+    "seller_chooses": "waiting_seller",
+    "waiting_for_seller_decision": "waiting_seller",
+    "seller_decision_pending": "waiting_seller",
 }
 
 FINAL_OUTCOME_CODES = frozenset({
@@ -219,12 +229,23 @@ def _archive_max_pages() -> int:
         return ARCHIVE_MAX_PAGES_DEFAULT
 
 
+def _waiting_max_pages() -> int:
+    try:
+        return max(1, min(100, int(_env(OUTCOME_WAITING_MAX_PAGES_ENV, str(WAITING_MAX_PAGES_DEFAULT)) or WAITING_MAX_PAGES_DEFAULT)))
+    except (TypeError, ValueError):
+        return WAITING_MAX_PAGES_DEFAULT
+
+
 def _skip_bulk_wins() -> bool:
     return _env(OUTCOME_SKIP_BULK_WINS_ENV, "").lower() in ("1", "true", "yes")
 
 
 def _skip_bulk_archive() -> bool:
     return _env(OUTCOME_SKIP_BULK_ARCHIVE_ENV, "").lower() in ("1", "true", "yes")
+
+
+def _skip_bulk_waiting() -> bool:
+    return _env(OUTCOME_SKIP_BULK_WAITING_ENV, "").lower() in ("1", "true", "yes")
 
 
 def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> str | None:
@@ -237,6 +258,8 @@ def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> s
         return "we_refused"
     if code.startswith("seller_canceled") or code.startswith("seller_cancelled"):
         return "canceled"
+    if code.startswith("waiting") or "seller_choos" in code:
+        return "waiting_seller"
     if "chose_nothing" in code:
         return "no_selection"
     if "chose_other" in code or code.endswith("_lost"):
@@ -253,6 +276,10 @@ def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> s
         return "we_refused"
     if "отменен" in name or "отменён" in name:
         return "canceled"
+    if "жд" in name and "решени" in name:
+        return "waiting_seller"
+    if "продавец выбирает" in name or "выбирает покуп" in name:
+        return "waiting_seller"
     if "не взял" in name or "не обработ" in name:
         return "not_taken"
     if "выбрал друг" in name or "проигра" in name:
@@ -289,6 +316,7 @@ def _extracted_from_api_offer(
     *,
     status_group: int,
     outcome_code: str | None = None,
+    include_waiting: bool = False,
 ) -> dict | None:
     status = offer.get("status") or {}
     if isinstance(status, dict):
@@ -300,7 +328,7 @@ def _extracted_from_api_offer(
     code = outcome_code or _map_autohub_status_to_outcome(status_code, status_name)
     if not code:
         return None
-    if code == "waiting_seller":
+    if code == "waiting_seller" and not include_waiting:
         return None
     lot_offer_id = offer.get("lotOfferId")
     title = status_name or "Аукцион завершен"
@@ -357,6 +385,17 @@ def _extracted_won_from_api_offer(offer: dict) -> dict:
             ensure_ascii=False,
         )[:8000],
     }
+
+
+def _warm_waiting_headers(page, session_headers: dict | None = None) -> dict:
+    headers = dict(session_headers or {})
+    try:
+        page.goto(AUCTION_WAITING_URL, wait_until="domcontentloaded", timeout=45_000)
+        page.wait_for_timeout(400)
+        headers.update(_extract_authorization_header(page))
+    except Exception as exc:
+        print(f"Прогрев waiting tab: {exc}")
+    return headers
 
 
 def _warm_archive_headers(page, session_headers: dict | None = None) -> dict:
@@ -771,8 +810,9 @@ def sync_wins_bulk(
         page,
         status_group=STATUS_GROUP_WON,
         extra_headers=headers,
-        limit=_wins_page_limit(),
+        limit=_bulk_page_limit(),
         max_pages=_wins_max_pages(),
+        sort_field=SORT_FIELD_OFFER_UPDATED,
     )
     queue_ids = {
         int(it["lotOfferId"])
@@ -861,6 +901,142 @@ def sync_wins_bulk(
     print(
         f"WINS_BULK done api={summary['apiOffers']} ok={summary['ok']} "
         f"fail={fail} skip={skipped} becameWon={became_won}",
+        flush=True,
+    )
+    return {
+        "ok": fail == 0,
+        "results": results,
+        "summary": summary,
+    }
+
+
+def sync_waiting_bulk(
+    page,
+    ctx,
+    *,
+    session_headers: dict | None = None,
+    dealer_id: str | None = None,
+    queue_items: list[dict] | None = None,
+) -> dict:
+    """
+    Список «Продавец выбирает» (statusGroup=2) → waiting_seller на портал.
+    Пушим все офферы с API, не только пересечение с очередью.
+    """
+    headers = _warm_waiting_headers(page, session_headers)
+    offers = fetch_autohub_offers_all(
+        ctx,
+        page,
+        status_group=STATUS_GROUP_WAITING,
+        extra_headers=headers,
+        limit=_bulk_page_limit(),
+        max_pages=_waiting_max_pages(),
+        sort_field=SORT_FIELD,
+    )
+    queue_ids = {
+        int(it["lotOfferId"])
+        for it in (queue_items or [])
+        if it.get("lotOfferId") is not None
+    }
+    results: list[dict] = []
+    waiting_ids: set[int] = set()
+    synced_ids: set[int] = set()
+    fail = 0
+    skipped = 0
+    unmapped = 0
+
+    if queue_ids:
+        in_queue = sum(
+            1 for o in offers
+            if o.get("lotOfferId") is not None and int(o.get("lotOfferId")) in queue_ids
+        )
+        print(
+            f"WAITING_BULK queue overlap: {in_queue}/{len(offers)} API waiting in portal queue "
+            f"(push all mappable API offers)",
+            flush=True,
+        )
+
+    total = len(offers)
+    print(f"WAITING_BULK start offers={len(offers)} push={total}", flush=True)
+
+    for idx, offer in enumerate(offers, 1):
+        lot_offer_id = offer.get("lotOfferId")
+        if lot_offer_id is None:
+            continue
+        try:
+            lot_offer_id = int(lot_offer_id)
+        except (TypeError, ValueError):
+            continue
+        waiting_ids.add(lot_offer_id)
+
+        extracted = _extracted_from_api_offer(
+            offer,
+            status_group=STATUS_GROUP_WAITING,
+            include_waiting=True,
+        )
+        if not extracted:
+            unmapped += 1
+            status = offer.get("status") or {}
+            st = status.get("status") if isinstance(status, dict) else status
+            print(
+                f"WAITING_BULK[{idx}/{total}] skip lotOfferId={lot_offer_id} "
+                f"unmapped status={st!r}",
+                flush=True,
+            )
+            continue
+
+        item = _portal_item_from_api_offer(offer, dealer_id)
+        car = item.get("car") or "—"
+        code = extracted.get("outcomeCode") or "?"
+        print(
+            f"WAITING_BULK[{idx}/{total}] lotOfferId={lot_offer_id} "
+            f"lotId={item.get('lotId')} status={extracted.get('status')} → {code} «{car}»",
+            flush=True,
+        )
+        try:
+            row = _push_bulk_row(
+                item,
+                extracted,
+                source="bulk_waiting",
+                idx=idx,
+                total=total,
+            )
+            results.append(row)
+            if row.get("skipped"):
+                skipped += 1
+                print(row.get("msg") or "WAITING_BULK skip", flush=True)
+                continue
+            if not row.get("ok"):
+                fail += 1
+                continue
+            synced_ids.add(lot_offer_id)
+            print(row.get("msg") or "WAITING_BULK ok", flush=True)
+        except Exception as exc:
+            fail += 1
+            err = str(exc)[:300]
+            results.append({
+                "ok": False,
+                "source": "bulk_waiting",
+                "lotOfferId": lot_offer_id,
+                "lotId": item.get("lotId"),
+                "car": car,
+                "error": err,
+                "msg": f"WAITING_BULK[{idx}/{total}] error offer {lot_offer_id}: {err}",
+            })
+            print(results[-1]["msg"], flush=True)
+
+    summary = {
+        "apiOffers": len(offers),
+        "pushed": total - unmapped,
+        "ok": sum(1 for r in results if r.get("ok")),
+        "fail": fail,
+        "skipped": skipped,
+        "unmapped": unmapped,
+        "waitingLotOfferIds": sorted(waiting_ids),
+        "syncedLotOfferIds": sorted(synced_ids),
+    }
+    print(
+        f"WAITING_BULK done api={summary['apiOffers']} ok={summary['ok']} "
+        f"fail={fail} skip={skipped} unmapped={unmapped}",
         flush=True,
     )
     return {
@@ -1036,10 +1212,21 @@ def sync_all_bulk(
     dealer_id: str | None = None,
     queue_items: list[dict] | None = None,
 ) -> dict:
-    """Bulk wins (statusGroup=3) + archive (statusGroup=4) → портал."""
+    """Bulk: продавец выбирает (2) → вас выбрали (3) → архив (4) → портал."""
+    waiting_bulk: dict | None = None
     wins_bulk: dict | None = None
     archive_bulk: dict | None = None
     headers = dict(session_headers or {})
+
+    if not _skip_bulk_waiting():
+        waiting_bulk = sync_waiting_bulk(
+            page,
+            ctx,
+            session_headers=headers,
+            dealer_id=dealer_id,
+            queue_items=queue_items,
+        )
+        headers = waiting_bulk.get("sessionHeaders") or headers
 
     if not _skip_bulk_wins():
         wins_bulk = sync_wins_bulk(
@@ -1061,32 +1248,37 @@ def sync_all_bulk(
         )
 
     results: list[dict] = []
+    if waiting_bulk:
+        results.extend(waiting_bulk.get("results") or [])
     if wins_bulk:
         results.extend(wins_bulk.get("results") or [])
     if archive_bulk:
         results.extend(archive_bulk.get("results") or [])
 
-    synced = _merged_synced_ids(wins_bulk, archive_bulk)
+    synced = _merged_synced_ids(waiting_bulk, wins_bulk, archive_bulk)
+    ws_ = (waiting_bulk or {}).get("summary") or {}
     ws = (wins_bulk or {}).get("summary") or {}
     as_ = (archive_bulk or {}).get("summary") or {}
     summary = {
+        "waitingApiOffers": ws_.get("apiOffers", 0),
         "winsApiOffers": ws.get("apiOffers", 0),
         "archiveApiOffers": as_.get("apiOffers", 0),
         "ok": sum(1 for r in results if r.get("ok")),
         "fail": sum(1 for r in results if not r.get("ok") and not r.get("skipped")),
         "skipped": sum(1 for r in results if r.get("skipped")),
         "becameWon": ws.get("becameWon", 0),
+        "waitingLotOfferIds": ws_.get("waitingLotOfferIds") or [],
         "wonLotOfferIds": ws.get("wonLotOfferIds") or [],
         "archiveLotOfferIds": as_.get("archiveLotOfferIds") or [],
         "syncedLotOfferIds": synced,
     }
     ok = True
-    if wins_bulk and not wins_bulk.get("ok", True):
-        ok = False
-    if archive_bulk and not archive_bulk.get("ok", True):
-        ok = False
+    for bulk in (waiting_bulk, wins_bulk, archive_bulk):
+        if bulk and not bulk.get("ok", True):
+            ok = False
     return {
         "ok": ok,
+        "waitingBulk": waiting_bulk,
         "winsBulk": wins_bulk,
         "archiveBulk": archive_bulk,
         "results": results,
@@ -1219,6 +1411,7 @@ def main():
 
     results = []
     bulk: dict | None = None
+    waiting_bulk: dict | None = None
     wins_bulk: dict | None = None
     archive_bulk: dict | None = None
 
@@ -1232,6 +1425,7 @@ def main():
             "reason": "disabled",
             "summary": _build_summary([]),
             "winsBulk": None,
+            "waitingBulk": None,
             "archiveBulk": None,
             "bulk": None,
             "logLines": list(_LOG_LINES),
@@ -1256,8 +1450,10 @@ def main():
                     clear_session(script_dir, email, dealer_id)
                 raise
 
-            if not _skip_bulk_wins() or not _skip_bulk_archive():
+            if not _skip_bulk_waiting() or not _skip_bulk_wins() or not _skip_bulk_archive():
                 parts = []
+                if not _skip_bulk_waiting():
+                    parts.append("statusGroup=2")
                 if not _skip_bulk_wins():
                     parts.append("statusGroup=3")
                 if not _skip_bulk_archive():
@@ -1271,12 +1467,14 @@ def main():
                         dealer_id=dealer_id,
                         queue_items=items,
                     )
+                    waiting_bulk = bulk.get("waitingBulk")
                     wins_bulk = bulk.get("winsBulk")
                     archive_bulk = bulk.get("archiveBulk")
                     results.extend(bulk.get("results") or [])
                     bs = bulk.get("summary") or {}
                     _log(
-                        f"BULK summary wins_api={bs.get('winsApiOffers')} "
+                        f"BULK summary waiting_api={bs.get('waitingApiOffers')} "
+                        f"wins_api={bs.get('winsApiOffers')} "
                         f"archive_api={bs.get('archiveApiOffers')} "
                         f"ok={bs.get('ok')} becameWon={bs.get('becameWon')} "
                         f"synced={len(bs.get('syncedLotOfferIds') or [])}"
@@ -1337,6 +1535,7 @@ def main():
         "okCount": ok_n,
         "results": results,
         "summary": summary,
+        "waitingBulk": waiting_bulk,
         "winsBulk": wins_bulk,
         "archiveBulk": archive_bulk,
         "bulk": bulk,
@@ -1348,7 +1547,7 @@ def main():
 
 
 def main_bulk_only() -> dict:
-    """Bulk wins + archive — для /api/outcomes/wins."""
+    """Bulk waiting + wins + archive — для /api/outcomes/wins."""
     global _LOG_LINES
     _LOG_LINES = []
     email = _env_required(EMAIL_ENV)

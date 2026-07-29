@@ -161,11 +161,11 @@ start_server.bat
 | Решение автоставки | `POST /api/avito_auction_auto_bid_decide/` |
 | Очередь итогов | `GET /api/avito_auction_outcome_queue/` |
 | Запись итога | `POST /api/avito_auction_outcome_set/` |
-| Bulk итогов (wins + архив) | `POST /api/outcomes/wins` (`statusGroup=3` + `statusGroup=4`) |
+| Bulk итогов (waiting + wins + архив) | `POST /api/outcomes/wins` (`statusGroup=2→3→4`) |
 
 ### Итоги завершённых лотов
 
-1. Bulk API Maxposter: «Вас выбрали» (`statusGroup=3`) и «Архив» (`statusGroup=4`, сортировка `lotFinishesAt`) → итог на портал  
+1. Bulk API Maxposter по вкладкам: «Продавец выбирает» (`2`) → «Вас выбрали» (`3`) → «Архив» (`4`) — все офферы с API, не только очередь портала  
 2. Очередь с портала (`outcome_queue`) — Playwright `/view` только для оставшихся  
 3. Разбор статуса → запись на портал; при **won** / **not_taken** — чат + email  
 

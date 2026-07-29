@@ -2341,14 +2341,14 @@
       logOutcome({
         ok: true,
         msg: items.length
-          ? `Итоги: в очереди ${items.length} лот(ов), сначала bulk API (wins + архив)…`
-          : "Итоги: очередь пуста — bulk API (wins + архив)…",
+          ? `Итоги: в очереди ${items.length} лот(ов), сначала bulk API (2→3→4)…`
+          : "Итоги: очередь пуста — bulk API (продавец выбирает → wins → архив)…",
         count: items.length,
       });
 
       let syncedBulkIds = new Set();
       try{
-        setOutcomeStatus("Итоги: bulk API (statusGroup=3 wins + statusGroup=4 архив)…");
+        setOutcomeStatus("Итоги: bulk API (statusGroup=2→3→4)…");
         const { resp: wResp, data: wData } = await fetchJsonWithTimeout("/api/outcomes/wins", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -2369,11 +2369,12 @@
         syncedBulkIds = new Set((wSummary.syncedLotOfferIds || wData.syncedLotOfferIds || []).map(String));
         const wOk = wSummary.ok ?? wResults.filter((r) => r.ok).length;
         const wWinsApi = wSummary.winsApiOffers ?? wSummary.apiOffers ?? 0;
+        const wWaitApi = wSummary.waitingApiOffers ?? (wData?.waitingBulk?.summary?.apiOffers) ?? 0;
         const wArchApi = wSummary.archiveApiOffers ?? (wData?.archiveBulk?.summary?.apiOffers) ?? 0;
         const wBecame = wSummary.becameWon ?? 0;
         logOutcome({
           ok: wResp.ok,
-          msg: `Итоги bulk: wins API=${wWinsApi} archive API=${wArchApi} записано=${wOk} новых побед=${wBecame} synced=${syncedBulkIds.size}`,
+          msg: `Итоги bulk: waiting=${wWaitApi} wins=${wWinsApi} archive=${wArchApi} записано=${wOk} новых побед=${wBecame} synced=${syncedBulkIds.size}`,
         });
         for (const wr of wResults.slice(0, 30)){
           if (wr.msg) logOutcome({ ok: !!wr.ok, msg: wr.msg });
