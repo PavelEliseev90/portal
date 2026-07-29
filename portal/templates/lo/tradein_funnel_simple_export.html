@@ -39,12 +39,21 @@
           <label class="form-label">по <span class="req">*</span></label>
           <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}" required>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label">ДЦ оценки</label>
           <select class="form-select" name="unit_id">
             <option value="">Все</option>
             {% for u in params.units %}
             <option value="{{ u.id }}" {% if params.filters.unit_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Подразделение источник</label>
+          <select class="form-select" name="unit_source_id">
+            <option value="">Все</option>
+            {% for u in params.source_units %}
+            <option value="{{ u.id }}" {% if params.filters.unit_source_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -68,6 +77,8 @@
     <ul class="exp-fields">
       <li>Дата</li>
       <li>ДЦ оценки</li>
+      <li>Подразделение источник</li>
+      <li>Тип оценки</li>
       <li>Марка</li>
       <li>Модель</li>
       <li>Пробег</li>
@@ -75,6 +86,8 @@
       <li>VIN</li>
       <li>Номер РЛ</li>
       <li>Дата РЛ</li>
+      <li>Принят</li>
+      <li>Статус оценки</li>
       <li>Затраты на подготовку</li>
       <li>Затраты кузовной участок</li>
       <li>Затраты слесарный участок</li>
