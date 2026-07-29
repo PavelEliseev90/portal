@@ -434,6 +434,10 @@ z-index: 1044;">
                 if (obj.kolesa2_estimation == 1){
                   kolesa2_estimation = '<span class="badge bg-success rounded-pill justify-content-end">2КК</span>';
                 };
+                var important_badge = '';
+                if (obj.last_msg_important) {
+                  important_badge = '<span class="badge bg-warning text-dark">Важно</span> ';
+                }
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -464,6 +468,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=             important_badge;
                 html +=             kolesa2_estimation;
                 html +=             estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';
@@ -729,6 +734,10 @@ z-index: 1044;">
                 if (obj.kolesa2_estimation == 1){
                   kolesa2_estimation = '<span class="badge bg-success rounded-pill justify-content-end">2КК</span>';
                 };
+                var important_badge = '';
+                if (obj.last_msg_important) {
+                  important_badge = '<span class="badge bg-warning text-dark">Важно</span> ';
+                }
 
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
@@ -759,6 +768,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=                  important_badge;
                 html +=                  kolesa2_estimation;
                 html +=                  estimation_rlk_count;
                 html += '          <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span>';

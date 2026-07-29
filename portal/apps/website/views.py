@@ -1939,6 +1939,10 @@ def board_monitoring(request):
         date__gte=express_since_24h,
     ).count()
 
+    from api.models import Exchange1CErrorLog
+    exchange_errors_24h = Exchange1CErrorLog.objects.filter(date_create__gte=express_since_24h).count()
+    exchange_errors_total = Exchange1CErrorLog.objects.count()
+
     params = {
         'type'                  : 'monitorings',
         'ip'                    : ip_list,
@@ -1974,6 +1978,8 @@ def board_monitoring(request):
         'data_info_express_estimation_stok' : data_info_express_estimation_stok,
         'express_cars_max_date' : express_cars_max_date,
         'express_cars_count_24h': express_cars_count_24h,
+        'exchange_errors_24h'   : exchange_errors_24h,
+        'exchange_errors_total' : exchange_errors_total,
         'now'                   : now_dt
 
     }
