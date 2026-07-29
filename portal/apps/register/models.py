@@ -93,17 +93,28 @@ def get_qrcode(name):
 
 def add_swap(interactiv_rlk):
     try:
-        
+        rlk = interactiv_rlk.rlk
+        estimation = interactiv_rlk.estimation
+        if rlk is None or estimation is None:
+            return
+        # Уже в очереди на отправку в 1С — дубль не создаём.
+        if RegSwapKors.objects.filter(
+            rlk=rlk,
+            estimation=estimation,
+            status_code=60,
+        ).exists():
+            return
+
         if interactiv_rlk.estimation.end_estimation != None:
             swap = RegSwapKors()
-            swap.rlk        = interactiv_rlk.rlk
-            swap.estimation = interactiv_rlk.estimation
+            swap.rlk = rlk
+            swap.estimation = estimation
             swap.save()
         else:
             if interactiv_rlk.page_soglasovanie != None:
                 swap = RegSwapKors()
-                swap.rlk        = interactiv_rlk.rlk
-                swap.estimation = interactiv_rlk.estimation
+                swap.rlk = rlk
+                swap.estimation = estimation
                 swap.save()
 
     except:

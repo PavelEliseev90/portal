@@ -59,11 +59,20 @@ def close_task(reg_interactiv_ocenka, user):
 
 
 def add_swap(rlk, estimation):
-    try:        
-        swap                = RegSwapKors()
-        swap.rlk            = rlk 
-        swap.estimation     = estimation
-        swap.save()        
+    try:
+        if rlk is None or estimation is None:
+            return
+        # Уже в очереди (status_code=60) — не плодим дубли.
+        if RegSwapKors.objects.filter(
+            rlk=rlk,
+            estimation=estimation,
+            status_code=60,
+        ).exists():
+            return
+        swap = RegSwapKors()
+        swap.rlk = rlk
+        swap.estimation = estimation
+        swap.save()
     except:
         s = 1
 
