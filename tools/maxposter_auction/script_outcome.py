@@ -1,8 +1,8 @@
 """
 Опрос итогов завершённых лотов Maxposter (решение продавца).
 
-1. Bulk API: «Продавец выбирает» (2) → «Вас выбрали» (3) → архив (4) → итог на портал.
-2. Очередь портала — Playwright /view только для оставшихся лотов.
+Только bulk API: «Продавец выбирает» (2) → «Вас выбрали» (3) → архив (4) → портал.
+Очередь портала и Playwright /view сейчас не используются.
 """
 from __future__ import annotations
 
@@ -1409,181 +1409,24 @@ def _build_summary(results: list[dict]) -> dict:
 
 
 def main():
-    global _LOG_LINES
-    _LOG_LINES = []
-    email = _env_required(EMAIL_ENV)
-    password = _env_required(PASSWORD_ENV)
-    dealer_id = _env(DEALER_ID_ENV)
-    script_dir = _app_dir()
-    items, queue_meta = _load_items()
-    _log("=" * 72)
-    _log(
-        f"OUTCOME_START enabled={queue_meta.get('enabled')} "
-        f"queue={queue_meta.get('queueCount')} filtered={queue_meta.get('filteredCount')} "
-        f"dealer={dealer_id or '-'} portal={_portal_base()} "
-        f"log={os.path.join(_app_dir(), OUTCOME_LOG_NAME)}"
-    )
-
-    results = []
-    bulk: dict | None = None
-    waiting_bulk: dict | None = None
-    wins_bulk: dict | None = None
-    archive_bulk: dict | None = None
-
-    if not items and queue_meta.get("enabled") is False:
-        _log("OUTCOME_DISABLED — опрос выключен на портале")
-        payload = {
-            "ok": True,
-            "count": 0,
-            "okCount": 0,
-            "results": [],
-            "reason": "disabled",
-            "summary": _build_summary([]),
-            "winsBulk": None,
-            "waitingBulk": None,
-            "archiveBulk": None,
-            "bulk": None,
-            "logLines": list(_LOG_LINES),
-            **queue_meta,
-        }
-        print(json.dumps(payload, ensure_ascii=False), flush=True)
-        return
-
-    for idx, item in enumerate(items, 1):
-        _log(f"OUTCOME_QUEUE[{idx}/{len(items)}] {_fmt_item(item)}")
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(user_agent=USER_AGENT, locale="ru-RU")
-        page = ctx.new_page()
-        session_headers: dict = {}
-        try:
-            try:
-                session_headers = _ensure_session(page, ctx, email, password, dealer_id, script_dir)
-            except MaxposterAuthError:
-                if dealer_id:
-                    clear_session(script_dir, email, dealer_id)
-                raise
-
-            if not _skip_bulk_waiting() or not _skip_bulk_wins() or not _skip_bulk_archive():
-                parts = []
-                if not _skip_bulk_waiting():
-                    parts.append("statusGroup=2")
-                if not _skip_bulk_wins():
-                    parts.append("statusGroup=3")
-                if not _skip_bulk_archive():
-                    parts.append("statusGroup=4")
-                _log(f"BULK: autohub offers/list {', '.join(parts)} …")
-                try:
-                    bulk = sync_all_bulk(
-                        page,
-                        ctx,
-                        session_headers=session_headers,
-                        dealer_id=dealer_id,
-                        queue_items=items,
-                    )
-                    waiting_bulk = bulk.get("waitingBulk")
-                    wins_bulk = bulk.get("winsBulk")
-                    archive_bulk = bulk.get("archiveBulk")
-                    results.extend(bulk.get("results") or [])
-                    bs = bulk.get("summary") or {}
-                    _log(
-                        f"BULK summary waiting_api={bs.get('waitingApiOffers')} "
-                        f"wins_api={bs.get('winsApiOffers')} "
-                        f"archive_api={bs.get('archiveApiOffers')} "
-                        f"ok={bs.get('ok')} becameWon={bs.get('becameWon')} "
-                        f"synced={len(bs.get('syncedLotOfferIds') or [])}"
-                    )
-                except MaxposterAuthError:
-                    if dealer_id:
-                        clear_session(script_dir, email, dealer_id)
-                    raise
-                except Exception as exc:
-                    _log(f"BULK_ERR: {str(exc)[:300]}")
-                    bulk = {"ok": False, "error": str(exc)[:300], "results": [], "summary": {}}
-
-            playwright_items = filter_queue_after_bulk(items, bulk)
-            if len(playwright_items) < len(items):
-                _log(
-                    f"OUTCOME_PLAYWRIGHT queue={len(playwright_items)} "
-                    f"(was {len(items)}, bulk skip {len(items) - len(playwright_items)})"
-                )
-            elif not playwright_items and not items:
-                _log("OUTCOME_QUEUE_EMPTY — Playwright не нужен (bulk only)")
-
-            for idx, item in enumerate(playwright_items, 1):
-                try:
-                    row = process_item(page, item, idx=idx, total=len(playwright_items))
-                    results.append(row)
-                    _log(row.get("msg") or f"OUTCOME row {idx}")
-                except MaxposterAuthError:
-                    if dealer_id:
-                        clear_session(script_dir, email, dealer_id)
-                    raise
-                except Exception as exc:
-                    err = str(exc)[:300]
-                    _log(f"OUTCOME_ERR[{idx}] lotOfferId={item.get('lotOfferId')}: {err}")
-                    results.append({
-                        "ok": False,
-                        "lotOfferId": item.get("lotOfferId"),
-                        "lotId": item.get("lotId"),
-                        "lotPk": item.get("lotPk"),
-                        "car": item.get("car") or "",
-                        "error": err,
-                        "msg": f"лот {item.get('lotId')} / offer {item.get('lotOfferId')}: ошибка — {err}",
-                    })
-        finally:
-            browser.close()
-
-    summary = _build_summary(results)
-    by = summary.get("byOutcome") or {}
-    by_txt = ", ".join(f"{k}={v}" for k, v in sorted(by.items())) or "—"
-    _log(
-        f"OUTCOME_DONE ok={summary['ok']}/{summary['total']} fail={summary['fail']} "
-        f"becameWon={summary['becameWon']} by=[{by_txt}]"
-    )
-    _log("=" * 72)
-    ok_n = summary["ok"]
-    payload = {
-        "ok": ok_n == len(results) and summary["fail"] == 0,
-        "count": len(results),
-        "okCount": ok_n,
-        "results": results,
-        "summary": summary,
-        "waitingBulk": waiting_bulk,
-        "winsBulk": wins_bulk,
-        "archiveBulk": archive_bulk,
-        "bulk": bulk,
-        "syncedLotOfferIds": (bulk or {}).get("syncedLotOfferIds") or [],
-        "logLines": list(_LOG_LINES),
-        **queue_meta,
-    }
-    print(json.dumps(payload, ensure_ascii=False), flush=True)
+    """Только bulk statusGroup 2→3→4 → портал (без очереди и Playwright /view)."""
+    return main_bulk_only()
 
 
 def main_bulk_only() -> dict:
-    """Bulk waiting + wins + archive — для /api/outcomes/wins."""
+    """Bulk waiting + wins + archive — для /api/outcomes/wins и CLI."""
     global _LOG_LINES
     _LOG_LINES = []
     email = _env_required(EMAIL_ENV)
     password = _env_required(PASSWORD_ENV)
     dealer_id = _env(DEALER_ID_ENV)
     script_dir = _app_dir()
-    limit = int(_env(OUTCOME_LIMIT_ENV, "50") or "50")
-    queue_items: list[dict] | None = None
-    raw = _env(OUTCOME_ITEMS_ENV)
-    if raw:
-        data = json.loads(raw)
-        if isinstance(data, dict):
-            queue_items = list(data.get("items") or [])
-        elif isinstance(data, list):
-            queue_items = data
-    else:
-        queue = fetch_outcome_queue(limit=limit, dealer_id=dealer_id, lookback_days=30)
-        queue_items = list(queue.get("items") or [])
 
     _log("=" * 72)
-    _log(f"BULK_ONLY dealer={dealer_id or '-'} portal={_portal_base()}")
+    _log(
+        f"BULK_ONLY dealer={dealer_id or '-'} portal={_portal_base()} "
+        f"(statusGroup 2→3→4, без очереди портала)"
+    )
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -1596,16 +1439,31 @@ def main_bulk_only() -> dict:
                 ctx,
                 session_headers=session_headers,
                 dealer_id=dealer_id,
-                queue_items=queue_items,
+                queue_items=None,
             )
+        except MaxposterAuthError:
+            if dealer_id:
+                clear_session(script_dir, email, dealer_id)
+            raise
         finally:
             browser.close()
+
+    bs = bulk.get("summary") or {}
+    _log(
+        f"BULK summary waiting_api={bs.get('waitingApiOffers')} "
+        f"wins_api={bs.get('winsApiOffers')} "
+        f"archive_api={bs.get('archiveApiOffers')} "
+        f"ok={bs.get('ok')} becameWon={bs.get('becameWon')} "
+        f"synced={len(bs.get('syncedLotOfferIds') or [])}"
+    )
+    _log("=" * 72)
 
     payload = {
         **bulk,
         "logLines": list(_LOG_LINES),
         "wonLotOfferIds": bulk.get("wonLotOfferIds") or [],
         "syncedLotOfferIds": bulk.get("syncedLotOfferIds") or [],
+        "mode": "bulk_only",
     }
     print(json.dumps(payload, ensure_ascii=False), flush=True)
     return payload

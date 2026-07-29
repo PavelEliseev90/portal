@@ -165,9 +165,8 @@ start_server.bat
 
 ### Итоги завершённых лотов
 
-1. Bulk API Maxposter по вкладкам: «Продавец выбирает» (`2`) → «Вас выбрали» (`3`) → «Архив» (`4`) — все офферы с API, не только очередь портала  
-2. Очередь с портала (`outcome_queue`) — Playwright `/view` только для оставшихся  
-3. Разбор статуса → запись на портал; при **won** / **not_taken** — чат + email  
+1. Bulk API Maxposter по вкладкам: «Продавец выбирает» (`2`) → «Вас выбрали» (`3`) → «Архив» (`4`) — **без очереди портала и без Playwright /view**  
+2. Разбор `status.status` → запись на портал; при **won** / **not_taken** — чат + email  
 
 Маппинг `status.status` из архива: `seller_chose_nothing` → `no_selection`, `bidder_refused_*` → `we_refused`, `not_purchased` → `not_redeemed`, `seller_canceled_archive` → `canceled`.
 
