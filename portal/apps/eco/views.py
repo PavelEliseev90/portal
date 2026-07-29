@@ -13564,6 +13564,7 @@ def tradein_funnel_simple_export(request):
     date_end_raw = (request.GET.get('date_end') or '').strip()
     do_export = request.GET.get('export') == '1'
     unit_id = _get_int(request.GET.get('unit_id'))
+    unit_source_id = _get_int(request.GET.get('unit_source_id') or request.GET.get('source_unit_id'))
 
     error = ''
     rows_count = None
@@ -13586,12 +13587,16 @@ def tradein_funnel_simple_export(request):
         ).exclude(date_start_estimation__isnull=True)
         if unit_id:
             qs = qs.filter(unit_id=unit_id)
+        if unit_source_id:
+            qs = qs.filter(unit_source_id=unit_source_id)
         rows_count = qs.count()
 
         if do_export:
             headers = [
                 'Дата',
                 'ДЦ оценки',
+                'Подразделение источник',
+                'Тип оценки',
                 'Марка',
                 'Модель',
                 'Пробег',
@@ -13599,6 +13604,8 @@ def tradein_funnel_simple_export(request):
                 'VIN',
                 'Номер РЛ',
                 'Дата РЛ',
+                'Принят',
+                'Статус оценки',
                 'Затраты на подготовку',
                 'Затраты кузовной участок',
                 'Затраты слесарный участок',
@@ -13640,9 +13647,13 @@ def tradein_funnel_simple_export(request):
 
                 est_dt = _dt(item.date_start_estimation)
                 rlk_dt = _dt(item.date_rlk)
+                reception_success_dt = _dt(item.date_reception_success)
+                accepted_txt = 'Да' if reception_success_dt else 'Нет'
                 values = [
                     est_dt.strftime('%d.%m.%Y %H:%M') if est_dt else '',
                     item.unit_name or '',
+                    item.unit_source_name or '',
+                    item.type_reception_name or '',
                     item.mark_name or '',
                     item.model_name or '',
                     item.run or 0,
@@ -13650,6 +13661,8 @@ def tradein_funnel_simple_export(request):
                     item.vin or '',
                     item.rlk_number or '',
                     rlk_dt.strftime('%d.%m.%Y %H:%M') if rlk_dt else '',
+                    accepted_txt,
+                    item.stage or '',
                     _num(item.cost_plan_preparation),
                     _num(item.cost_plan_mcu),
                     _num(item.cost_plan_ss),
@@ -13662,7 +13675,7 @@ def tradein_funnel_simple_export(request):
                     cell.border = thin
                 row_i += 1
 
-            widths = [18, 22, 14, 18, 10, 8, 20, 16, 18, 16, 16, 16, 14, 14, 14]
+            widths = [18, 22, 26, 16, 14, 18, 10, 8, 20, 16, 18, 10, 16, 16, 16, 16, 14, 14, 14]
             for i, w in enumerate(widths, start=1):
                 ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -13678,6 +13691,16 @@ def tradein_funnel_simple_export(request):
             return response
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    source_units = (
+        RefUnit.objects.filter(
+            id__in=TradeInFunnel.objects.exclude(unit_source_id__isnull=True)
+            .exclude(unit_source_id=0)
+            .values_list('unit_source_id', flat=True)
+            .distinct()
+        )
+        .exclude(name='')
+        .order_by('name')
+    )
     params = {
         'type': 'tradein_funnel_simple_export',
         'nav_selected': 4,
@@ -13688,8 +13711,10 @@ def tradein_funnel_simple_export(request):
             'date_start': date_start_raw or default_start.strftime('%Y-%m-%d'),
             'date_end': date_end_raw or default_end.strftime('%Y-%m-%d'),
             'unit_id': unit_id or '',
+            'unit_source_id': unit_source_id or '',
         },
         'units': units,
+        'source_units': source_units,
         'field_hint': (
             'Дата = начало оценки; ДЦ = unit_name; рынок = ЦНА (zna); '
             'затраты: подготовка / MCU / SS; цены до/после КД.'
