@@ -2347,6 +2347,7 @@
       });
 
       let syncedBulkIds = new Set();
+      let bulkApiTotal = 0;
       try{
         setOutcomeStatus("Итоги: bulk API (statusGroup=2→3→4)…");
         const { resp: wResp, data: wData } = await fetchJsonWithTimeout("/api/outcomes/wins", {
@@ -2363,6 +2364,14 @@
         if (wResp.status === 409){
           throw new Error("сервер занят — подождите и повторите");
         }
+        if (!wResp.ok){
+          const errText = wData?.error || `HTTP ${wResp.status}`;
+          const lines = wData?.logLines || [];
+          for (const ln of lines.slice(-40)){
+            if (ln) logOutcome({ ok: false, msg: String(ln).slice(0, 300) });
+          }
+          throw new Error(String(errText).slice(0, 500));
+        }
         const bulk = wData?.bulk || wData;
         const wSummary = bulk?.summary || wData?.summary || wData?.winsBulk?.summary || {};
         const wResults = bulk?.results || wData?.results || wData?.winsBulk?.results || [];
@@ -2372,30 +2381,44 @@
         const wWaitApi = wSummary.waitingApiOffers ?? (wData?.waitingBulk?.summary?.apiOffers) ?? 0;
         const wArchApi = wSummary.archiveApiOffers ?? (wData?.archiveBulk?.summary?.apiOffers) ?? 0;
         const wBecame = wSummary.becameWon ?? 0;
+        bulkApiTotal = Number(wWaitApi || 0) + Number(wWinsApi || 0) + Number(wArchApi || 0);
         logOutcome({
-          ok: wResp.ok,
-          msg: `Итоги bulk: waiting=${wWaitApi} wins=${wWinsApi} archive=${wArchApi} записано=${wOk} новых побед=${wBecame} synced=${syncedBulkIds.size}`,
+          ok: true,
+          msg: `Итоги bulk: waiting=${wWaitApi} wins=${wWinsApi} archive=${wArchApi} записано=${wOk} новых побед=${wBecame} finals=${syncedBulkIds.size}`,
         });
-        for (const wr of wResults.slice(0, 30)){
+        for (const ln of (wData?.logLines || bulk?.logLines || []).slice(-60)){
+          if (ln && /BULK|autohub|HTTP|Auth|error|ERR|skip|→/i.test(String(ln))){
+            logOutcome({ ok: !/ERR|error|сбой|fail/i.test(String(ln)), msg: String(ln).slice(0, 320) });
+          }
+        }
+        for (const wr of wResults.slice(0, 40)){
           if (wr.msg) logOutcome({ ok: !!wr.ok, msg: wr.msg });
+        }
+        if (bulkApiTotal === 0){
+          logOutcome({
+            ok: false,
+            msg: "Итоги bulk: API вернул 0 офферов по вкладкам 2/3/4 — проверьте сессию Maxposter и dealerId (далее Playwright по очереди)",
+          });
         }
         if (syncedBulkIds.size){
           const before = items.length;
           items = items.filter((it) => !syncedBulkIds.has(String(it.lotOfferId)));
           logOutcome({
             ok: true,
-            msg: `Итоги: bulk — пропуск Playwright для ${before - items.length} лот(ов)`,
+            msg: `Итоги: bulk finals — пропуск Playwright для ${before - items.length} лот(ов)`,
           });
         }
       }catch(err){
         logOutcome({
           ok: false,
-          msg: `Итоги bulk API: сбой — ${String(err?.message || err).slice(0, 220)} (далее Playwright)`,
+          msg: `Итоги bulk API: сбой — ${String(err?.message || err).slice(0, 400)} (далее Playwright по очереди)`,
         });
       }
 
       if (!items.length){
-        const msg = "Итоги: очередь закрыта bulk API, Playwright не нужен";
+        const msg = bulkApiTotal
+          ? "Итоги: очередь закрыта bulk API, Playwright не нужен"
+          : "Итоги: очередь пуста и bulk API не дал офферов";
         setOutcomeStatus(msg);
         logOutcome({ ok: true, skipped: true, msg });
         return { ok: true, count: syncedBulkIds.size };

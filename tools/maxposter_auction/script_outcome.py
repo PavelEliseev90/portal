@@ -974,6 +974,15 @@ def sync_waiting_bulk(
             include_waiting=True,
         )
         if not extracted:
+            # Вкладка «Продавец выбирает» — даже без известного status.status
+            # считаем waiting_seller (как statusGroup=3 всегда won).
+            extracted = _extracted_from_api_offer(
+                offer,
+                status_group=STATUS_GROUP_WAITING,
+                outcome_code="waiting_seller",
+                include_waiting=True,
+            )
+        if not extracted:
             unmapped += 1
             status = offer.get("status") or {}
             st = status.get("status") if isinstance(status, dict) else status
@@ -1180,27 +1189,30 @@ def sync_archive_bulk(
     }
 
 
-def _merged_synced_ids(*bulks: dict | None) -> list[int]:
+def _merged_synced_ids(*bulks: dict | None, finals_only: bool = True) -> list[int]:
+    """lotOfferId успешно записанных в портал. finals_only — только финальные итоги (для пропуска Playwright)."""
     out: set[int] = set()
     for bulk in bulks:
         if not bulk:
             continue
-        for oid in (bulk.get("summary") or {}).get("syncedLotOfferIds") or []:
-            try:
-                out.add(int(oid))
-            except (TypeError, ValueError):
-                pass
         for row in bulk.get("results") or []:
             if not row.get("ok") or row.get("skipped"):
                 continue
             code = (row.get("portal") or {}).get("outcomeCode") or ""
-            if code in FINAL_OUTCOME_CODES:
-                oid = row.get("lotOfferId")
-                if oid is not None:
-                    try:
-                        out.add(int(oid))
-                    except (TypeError, ValueError):
-                        pass
+            if finals_only and code not in FINAL_OUTCOME_CODES:
+                continue
+            oid = row.get("lotOfferId")
+            if oid is not None:
+                try:
+                    out.add(int(oid))
+                except (TypeError, ValueError):
+                    pass
+        if not finals_only:
+            for oid in (bulk.get("summary") or {}).get("syncedLotOfferIds") or []:
+                try:
+                    out.add(int(oid))
+                except (TypeError, ValueError):
+                    pass
     return sorted(out)
 
 
@@ -1255,7 +1267,8 @@ def sync_all_bulk(
     if archive_bulk:
         results.extend(archive_bulk.get("results") or [])
 
-    synced = _merged_synced_ids(waiting_bulk, wins_bulk, archive_bulk)
+    synced = _merged_synced_ids(waiting_bulk, wins_bulk, archive_bulk, finals_only=True)
+    all_pushed = _merged_synced_ids(waiting_bulk, wins_bulk, archive_bulk, finals_only=False)
     ws_ = (waiting_bulk or {}).get("summary") or {}
     ws = (wins_bulk or {}).get("summary") or {}
     as_ = (archive_bulk or {}).get("summary") or {}
@@ -1271,6 +1284,7 @@ def sync_all_bulk(
         "wonLotOfferIds": ws.get("wonLotOfferIds") or [],
         "archiveLotOfferIds": as_.get("archiveLotOfferIds") or [],
         "syncedLotOfferIds": synced,
+        "pushedLotOfferIds": all_pushed,
     }
     ok = True
     for bulk in (waiting_bulk, wins_bulk, archive_bulk):
@@ -1284,6 +1298,7 @@ def sync_all_bulk(
         "results": results,
         "summary": summary,
         "syncedLotOfferIds": synced,
+        "pushedLotOfferIds": all_pushed,
         "wonLotOfferIds": summary["wonLotOfferIds"],
     }
 

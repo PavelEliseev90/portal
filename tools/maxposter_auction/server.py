@@ -47,6 +47,7 @@ class _OutcomeWorker:
         self._page = None
         self._email = None
         self._dealer_id = None
+        self._session_headers = None
         # Сессия Maxposter — в каталоге инстанса, не в общем бандле.
         self._script_dir = HERE
 
@@ -65,6 +66,7 @@ class _OutcomeWorker:
                 pass
         self._page = self._ctx = self._browser = self._pw = None
         self._email = self._dealer_id = None
+        self._session_headers = None
 
     def _ensure(self, email: str, password: str, dealer_id: str):
         import script_outcome as so
@@ -75,7 +77,7 @@ class _OutcomeWorker:
             or str(self._dealer_id or "") != str(dealer_id or "")
         )
         if not need_new:
-            return
+            return self._session_headers or {}
         self._close()
         from playwright.sync_api import sync_playwright
 
@@ -83,9 +85,12 @@ class _OutcomeWorker:
         self._browser = self._pw.chromium.launch(headless=True)
         self._ctx = self._browser.new_context(user_agent=so.USER_AGENT, locale="ru-RU")
         self._page = self._ctx.new_page()
-        so._ensure_session(self._page, self._ctx, email, password, dealer_id, self._script_dir)
+        self._session_headers = so._ensure_session(
+            self._page, self._ctx, email, password, dealer_id, self._script_dir
+        )
         self._email = email
         self._dealer_id = dealer_id
+        return self._session_headers or {}
 
     def _run_one(self, job: dict) -> dict:
         import script_outcome as so
@@ -146,19 +151,30 @@ class _OutcomeWorker:
         buf_err = io.StringIO()
         try:
             with redirect_stdout(buf_out), redirect_stderr(buf_err):
-                self._ensure(email, password, dealer_id)
-                return so.sync_all_bulk(
+                headers = self._ensure(email, password, dealer_id)
+                result = so.sync_all_bulk(
                     self._page,
                     self._ctx,
-                    session_headers=None,
+                    session_headers=headers,
                     dealer_id=dealer_id,
                     queue_items=queue_items,
                 )
+            log_text = (buf_out.getvalue() or "") + (buf_err.getvalue() or "")
+            log_lines = [ln for ln in log_text.splitlines() if ln.strip()]
+            if isinstance(result, dict):
+                result = dict(result)
+                result["logLines"] = log_lines[-200:]
+            return result
         except MaxposterAuthError:
             if dealer_id:
                 clear_session(self._script_dir, email, dealer_id)
             self._close()
             raise
+        except Exception as exc:
+            log_text = (buf_out.getvalue() or "") + (buf_err.getvalue() or "")
+            raise RuntimeError(
+                f"{exc}\n--- bulk log ---\n{log_text[-3000:]}"
+            ) from exc
 
     def _run_wins_bulk(self, job: dict) -> dict:
         return self._run_bulk_outcomes(job)
@@ -669,12 +685,15 @@ class Handler(SimpleHTTPRequestHandler):
                         "syncedLotOfferIds": summary.get("syncedLotOfferIds") or wins.get("syncedLotOfferIds") or [],
                         "summary": summary,
                         "results": wins.get("results") or [],
+                        "logLines": wins.get("logLines") or [],
+                        "error": wins.get("error"),
                     })
                 except Exception as exc:
                     self._send_json(500, {
                         "ok": False,
-                        "error": str(exc)[:500],
-                        "winsBulk": {"ok": False, "error": str(exc)[:300]},
+                        "error": str(exc)[:2000],
+                        "winsBulk": {"ok": False, "error": str(exc)[:500]},
+                        "logLines": str(exc).splitlines()[-80:],
                     })
             finally:
                 _outcome_lock.release()
