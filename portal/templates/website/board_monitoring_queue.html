@@ -29,6 +29,13 @@
   }
   .kors-badge-remote { background: #fff4df; color: #9a6700; }
   .kors-badge-local { background: #e8f1fb; color: #1d4e89; }
+  .kors-send-ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .kors-send-fail { background: var(--bad-bg); color: var(--bad-fg); }
+  .kors-resp {
+    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.7rem; max-height: 8rem; overflow: auto; margin: 0.25rem 0 0;
+    padding: 0.35rem 0.45rem; border-radius: 0.35rem; background: #f6f8fa; border: 1px solid var(--line);
+  }
 </style>
 
 <div class="kors-monitoring-page">
@@ -39,6 +46,15 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="{{ params.back }}">← Назад</a>
+      {% if params.kind == 'send_1c' and params.count %}
+      <form method="post" action="{% url 'website:board_monitoring_queue_send_1c' %}"
+            onsubmit="return confirm('Отправить в 1С все {{ params.count }} записей?');">
+        {% csrf_token %}
+        <input type="hidden" name="back" value="{{ params.back }}">
+        <input type="hidden" name="send_all" value="1">
+        <button type="submit" class="btn btn-success btn-sm">Отправить все</button>
+      </form>
+      {% endif %}
       {% if params.count %}
       <form method="post" action="/monitorings/queue/{{ params.kind }}/dismiss/"
             onsubmit="return confirm('Убрать все {{ params.count }} записей из очереди?');">
@@ -50,6 +66,49 @@
       {% endif %}
     </div>
   </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} py-2 mb-2" style="font-size:0.8rem">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  {% if params.send_results %}
+  <div class="kors-panel mb-2">
+    <h6 class="mb-2" style="font-size:0.85rem;font-weight:650">Результат отправки в 1С</h6>
+    <div class="table-responsive">
+      <table class="kors-queue-table">
+        <thead>
+          <tr>
+            <th>Документ</th>
+            <th>Статус</th>
+            <th>HTTP</th>
+            <th>Response text</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in params.send_results %}
+          <tr class="{% if r.ok %}kors-send-ok{% else %}kors-send-fail{% endif %}">
+            <td>
+              {% if r.rlk_id %}
+                <a href="/eco/{{ r.rlk_id }}/" target="_blank" rel="noopener">{{ r.title }}</a>
+              {% else %}
+                {{ r.title }}
+              {% endif %}
+              <div style="font-size:0.68rem;color:var(--muted)">
+                swap={{ r.swap_id }}{% if r.estimation_id %} · est={{ r.estimation_id }}{% endif %}
+              </div>
+            </td>
+            <td>{% if r.ok %}OK{% else %}Ошибка{% endif %}{% if r.error %}<div style="font-size:0.68rem">{{ r.error }}</div>{% endif %}</td>
+            <td>{{ r.status_code|default:"—" }}</td>
+            <td>{% if r.text %}<pre class="kors-resp">{{ r.text }}</pre>{% else %}<span style="color:var(--muted)">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="kors-panel">
     {% if params.rows %}
@@ -78,10 +137,22 @@
               {% else %}
                 {{ row.title }}
               {% endif %}
-              <div style="font-size:0.68rem;color:var(--muted)">id={{ row.id }}{% if row.rlk_id %} · рлк={{ row.rlk_id }}{% endif %}</div>
+              <div style="font-size:0.68rem;color:var(--muted)">id={{ row.id }}{% if row.rlk_id %} · рлк={{ row.rlk_id }}{% endif %}{% if row.estimation_id %} · est={{ row.estimation_id }}{% endif %}</div>
             </td>
             <td style="font-size:0.72rem;color:var(--muted)">{{ row.extra }}</td>
             <td class="text-end text-nowrap">
+              {% if params.kind == 'send_1c' %}
+                {% if row.can_send_1c %}
+                <form method="post" action="{% url 'website:board_monitoring_queue_send_1c' %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="back" value="{{ params.back }}">
+                  <input type="hidden" name="id" value="{{ row.id }}">
+                  <button type="submit" class="btn btn-sm btn-success py-0">Отправить</button>
+                </form>
+                {% else %}
+                <span class="btn btn-sm btn-outline-secondary py-0 disabled" title="Нет rlk+estimation">Нет данных</span>
+                {% endif %}
+              {% endif %}
               <form method="post" action="/monitorings/queue/{{ params.kind }}/dismiss/" class="d-inline">
                 {% csrf_token %}
                 <input type="hidden" name="back" value="{{ params.back }}">

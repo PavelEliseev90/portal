@@ -958,7 +958,107 @@ def auction_settings(request):
     return render(request, 'auction_avito/auction_settings.html', {
         'auction_settings': settings_obj,
         'platform_email_rows': platform_email_rows(),
+        'test_win_offers': _test_win_email_offer_choices(),
     })
+
+
+def _test_win_email_offer_choices(limit: int = 80):
+    """Недавние офферы со ставкой — для тестовой отправки письма о победе."""
+    qs = (
+        AvitoLotOffer.objects
+        .filter(bid__gt=0)
+        .select_related('lot', 'lot__vehicle_avito', 'account', 'lot__venue')
+        .order_by('-updated_at', '-id')[:limit]
+    )
+    rows = []
+    for offer in qs:
+        lot = offer.lot
+        vehicle = getattr(lot, 'vehicle_avito', None) if lot else None
+        brand = getattr(vehicle, 'brand_name', '') or ''
+        model = getattr(vehicle, 'model_name', '') or ''
+        year = getattr(vehicle, 'year', '') or ''
+        car = ' '.join(str(x) for x in (brand, model, year) if x).strip() or '—'
+        dealer = getattr(offer.account, 'dealer_id', None) if offer.account_id else None
+        outcome = (offer.outcome_code or '').strip() or '—'
+        label = (
+            f'lot {getattr(lot, "lot_id", "?")} · offer {offer.lot_offer_id} · '
+            f'{car} · bid {offer.bid} · {outcome}'
+        )
+        if dealer:
+            label += f' · dealer {dealer}'
+        rows.append({'id': offer.pk, 'label': label})
+    return rows
+
+
+@login_required
+@require_POST
+def auction_settings_test_win_email(request):
+    """Тестовая отправка письма о победе на указанный ящик (без win_email_sent_at)."""
+    from auction_avito.services.outcome import send_win_email
+
+    email = (request.POST.get('test_email') or '').strip()
+    offer_pk = (request.POST.get('offer_id') or '').strip()
+    lot_offer_id = (request.POST.get('lot_offer_id') or '').strip()
+    lot_id = (request.POST.get('lot_id') or '').strip()
+
+    if not email or '@' not in email:
+        messages.error(request, 'Укажите корректный email для тестовой отправки.')
+        return redirect('auction_avito:auction_settings')
+
+    offer = None
+    if offer_pk:
+        try:
+            offer = AvitoLotOffer.objects.select_related(
+                'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
+            ).filter(pk=int(offer_pk)).first()
+        except (TypeError, ValueError):
+            offer = None
+    if offer is None and lot_offer_id:
+        try:
+            offer = AvitoLotOffer.objects.select_related(
+                'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
+            ).filter(lot_offer_id=int(lot_offer_id)).first()
+        except (TypeError, ValueError):
+            offer = None
+    if offer is None and lot_id:
+        try:
+            offer = (
+                AvitoLotOffer.objects
+                .select_related(
+                    'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
+                )
+                .filter(lot__lot_id=int(lot_id), bid__gt=0)
+                .order_by('-updated_at')
+                .first()
+            )
+        except (TypeError, ValueError):
+            offer = None
+
+    if offer is None:
+        messages.error(
+            request,
+            'Оффер не найден. Выберите лот из списка или укажите lotOfferId / lotId.',
+        )
+        return redirect('auction_avito:auction_settings')
+
+    try:
+        result = send_win_email(offer, emails=[email.lower()])
+    except Exception as exc:
+        messages.error(request, f'Ошибка отправки: {exc}')
+        return redirect('auction_avito:auction_settings')
+
+    if not result.get('sent'):
+        messages.error(request, f'Письмо не отправлено: {result.get("reason") or "unknown"}')
+    else:
+        messages.success(
+            request,
+            (
+                f'Тестовое письмо отправлено на {email} '
+                f'(лот {getattr(offer.lot, "lot_id", "—")}, offer {offer.lot_offer_id}). '
+                f'Тема: {result.get("subject") or "—"}'
+            ),
+        )
+    return redirect('auction_avito:auction_settings')
 
 
 @login_required

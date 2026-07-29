@@ -166,5 +166,43 @@
 
     <button type="submit" class="btn btn-primary">Сохранить</button>
   </form>
+
+  <div class="portal-panel mb-3 mt-4">
+    <h5 class="mb-2">Тестовая отправка письма о победе</h5>
+    <p class="small text-muted mb-3">
+      Отладка шаблона и данных: письмо уходит на указанный ящик с данными выбранного лота.
+      Флаг «уже отправляли» (<code>win_email_sent_at</code>) не ставится.
+    </p>
+    <form method="post" action="{% url 'auction_avito:auction_settings_test_win_email' %}">
+      {% csrf_token %}
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-6">
+          <label class="form-label">Лот (недавние со ставкой)</label>
+          <select class="form-select" name="offer_id">
+            <option value="">— выберите —</option>
+            {% for opt in test_win_offers %}
+            <option value="{{ opt.id }}">{{ opt.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">или lotOfferId</label>
+          <input type="number" class="form-control" name="lot_offer_id" placeholder="1626…">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">или lotId</label>
+          <input type="number" class="form-control" name="lot_id" placeholder="4183…">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Email получателя</label>
+          <input type="email" class="form-control" name="test_email" required
+                 placeholder="you@korsavto.ru" value="{{ request.user.email|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <button type="submit" class="btn btn-success">Отправить тестовое письмо</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

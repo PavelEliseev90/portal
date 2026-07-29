@@ -353,7 +353,7 @@ def avito_auction_bid_set(request):
 
     lot_offer_id = data.get('LotOfferId') or data.get('lotOfferId')
     lot_id_raw = data.get('LotId') or data.get('lotId')
-    bid_value = data.get('Bid')
+    bid_value = data.get('Bid') if data.get('Bid') not in (None, '') else data.get('bid')
     bid_made_at_raw = data.get('BidMadeAt') or data.get('bidMadeAt')
     comment = (data.get('Comment') or data.get('comment') or '').strip()
     bid_user = data.get('BidMadeByUser') or data.get('bidMadeByUser') or {}
@@ -4706,6 +4706,12 @@ def load_worksheets(worksheets):
 def load_worksheets_events(worksheets_events):
     def process(worksheets_event):
         worksheet_events_object = get_worksheet_event(worksheets_event)
+        if worksheet_events_object is None:
+            raise ValueError(
+                'DocRLK not found for RLKUin={} and nested WorkSheet missing/invalid'.format(
+                    worksheets_event.get('RLKUin'),
+                )
+            )
         return worksheet_events_object.uin
     return _exchange_item_loop('WorksheetEvents', worksheets_events, process)
 
@@ -5079,6 +5085,11 @@ def get_worksheet_event(worksheets_event):
     
     worksheet_uin   = worksheets_event['RLKUin']
     worksheet       = DocRLK.objects.filter(uin=worksheet_uin).first()
+    if not worksheet:
+        # Событие может прийти раньше пакета Worksheets — создаём РЛК из вложенного WorkSheet.
+        nested = worksheets_event.get('WorkSheet') or worksheets_event.get('Worksheet')
+        if isinstance(nested, dict) and nested.get('Uin'):
+            worksheet = get_worksheet(nested)
     if worksheet:
         uin         = worksheets_event['Uin']
         events = DocRLKEvents.objects.filter(uin = uin)
@@ -5120,7 +5131,9 @@ def get_worksheet(worksheet):
     rlk_object.dataTime             = worksheet['Date']
     rlk_object.nomer                = worksheet['Number']
     rlk_object.clientName           = worksheet['ClientName'][:250]
-    rlk_object.staff                = get_staff(worksheet['Staff'])
+    # В пакете WorksheetEvents часто Author вместо Staff.
+    staff_payload = worksheet.get('Staff') or worksheet.get('Author') or {}
+    rlk_object.staff                = get_staff(staff_payload) if isinstance(staff_payload, dict) else None
     
     if 'DateEnd' in worksheet:
         rlk_object.dataEnd          = worksheet['DateEnd'] 
@@ -5651,13 +5664,12 @@ def get_service(service):
     return service_object 
 
 def get_staff(staff):
-    
-    if len(staff) == 0:
+
+    if not isinstance(staff, dict) or len(staff) == 0:
         return None
-    if len(staff.get('Name')) == 0:
+    if len(staff.get('Name') or '') == 0:
         return None
-    
-    staff.get('Name')
+
     staff_uin       = staff.get('Uin')
     staff_objects    = RefStaff.objects.filter(uin = staff_uin)
     if len(list(staff_objects)) == 0:
@@ -5669,14 +5681,14 @@ def get_staff(staff):
     staff_object.domain_login   = staff.get('Domain')
     staff_object.post           = staff.get('Post')
     staff_object.status         = staff.get('Status')
-    
+
     if 'Buauto' in staff:
         staff_object.buauto = staff.get('Buauto', False)
-        
+
     staff_object.save()
-    
+
     staff_object.units.clear()
-    units = staff.get('Units')
+    units = staff.get('Units') or []
     for unit in units:
         unit_info = get_unit(unit)
         if unit_info != None:

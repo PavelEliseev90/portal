@@ -3160,17 +3160,78 @@ def send_push_estimation():
 def start_swap_estimation():
     swap_estimation()
 
-def estimation_send_1c(rlk_id, id):
-    
-    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id = rlk_id).filter(estimation__id = id).first()
-    estimation  = interactiv_rlk.estimation
-    rlk         = interactiv_rlk.rlk
+def estimation_send_1c_result(rlk_id, estimation_id):
+    """
+    Отправка оценки в 1С с разбором ответа (для мониторинга очереди).
+    Не заменяет estimation_send_1c — отдельный безопасный путь.
+    Возвращает dict: {ok, status_code, text, error}.
+    """
+    interactiv_rlk = (
+        RegInteractivOcenkaRLK.objects
+        .filter(rlk__id=rlk_id)
+        .filter(estimation__id=estimation_id)
+        .first()
+    )
+    if interactiv_rlk is None:
+        return {
+            'ok': False,
+            'status_code': None,
+            'text': '',
+            'error': f'RegInteractivOcenkaRLK not found rlk={rlk_id} estimation={estimation_id}',
+        }
+
+    estimation = interactiv_rlk.estimation
+    rlk = interactiv_rlk.rlk
     js_data = {
-        'Type'          : 'estimation',
-        'Rlk'           : DocRLKSerializer(rlk, many=False).data,
-        'Estimation'    : RegInteractivOcenkaSerializer(estimation, many=False).data,
-        'Soglasovanie'  : RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
-        'Info'          : RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
+        'Type': 'estimation',
+        'Rlk': DocRLKSerializer(rlk, many=False).data,
+        'Estimation': RegInteractivOcenkaSerializer(estimation, many=False).data,
+        'Soglasovanie': RegInteractivOcenkaSoglasovanieSerializer(
+            interactiv_rlk.page_soglasovanie, many=False,
+        ).data,
+        'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
+    }
+    try:
+        # Та же маршрутизация, что у estimation_send_1c
+        if rlk.unit is None:
+            response = requests.post(url_hs_kors_auto, json=js_data)
+        else:
+            if rlk.unit.ib.alfa:
+                response = requests.post(url_hs_alfa_auto, json=js_data)
+            else:
+                response = requests.post(url_hs_kors_auto, json=js_data)
+    except Exception as exc:
+        return {
+            'ok': False,
+            'status_code': None,
+            'text': '',
+            'error': str(exc),
+        }
+
+    try:
+        text = (response.text or '')[:4000]
+    except Exception:
+        text = ''
+    status_code = response.status_code
+    return {
+        'ok': status_code == 200,
+        'status_code': status_code,
+        'text': text,
+        'error': None if status_code == 200 else f'HTTP {status_code}',
+    }
+
+
+def estimation_send_1c(rlk_id, id):
+    # Важно: тело и возврат как раньше — вызывается из eco и др.
+    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk__id=rlk_id).filter(estimation__id=id).first()
+    estimation = interactiv_rlk.estimation
+    rlk = interactiv_rlk.rlk
+    js_data = {
+        'Type': 'estimation',
+        'Rlk': DocRLKSerializer(rlk, many=False).data,
+        'Estimation': RegInteractivOcenkaSerializer(estimation, many=False).data,
+        'Soglasovanie': RegInteractivOcenkaSoglasovanieSerializer(interactiv_rlk.page_soglasovanie, many=False).data,
+        'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
     }
     if rlk.unit == None:
         response = requests.post(url_hs_kors_auto, json=js_data)
@@ -3181,7 +3242,7 @@ def estimation_send_1c(rlk_id, id):
             response = requests.post(url_hs_kors_auto, json=js_data)
 
     return response.status_code
-    
+
 
 def swap_estimation():
     

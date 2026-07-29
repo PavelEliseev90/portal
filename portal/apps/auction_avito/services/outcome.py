@@ -22,7 +22,6 @@ from typing import Any
 from django.conf import settings
 from django.db.models import Q, QuerySet
 from django.utils import timezone
-from django.utils.html import escape
 
 from auction_avito.services.offer_status import STATUS_NAMES, TERMINAL_OFFER_STATUSES
 
@@ -645,14 +644,23 @@ def _last_calc(lot):
     return lot.calculations.filter(is_success=True).order_by('-calculated_at').first()
 
 
+def _portal_public_base() -> str:
+    """Абсолютный origin портала для ссылок в письмах."""
+    for attr in (
+        'MYKORS_PORTAL_PUBLIC_BASE_URL',
+        'SITE_URL',
+        'PORTAL_BASE_URL',
+    ):
+        base = (getattr(settings, attr, None) or '').strip()
+        if base:
+            return base.rstrip('/')
+    return 'https://ah.kors-group.com'
+
+
 def _portal_lot_url(lot) -> str:
     if lot is None:
         return ''
-    base = getattr(settings, 'SITE_URL', '') or getattr(settings, 'PORTAL_BASE_URL', '') or ''
-    path = f'/auction_avito/lots/{lot.pk}/'
-    if base:
-        return base.rstrip('/') + path
-    return path
+    return f'{_portal_public_base()}/auction_avito/lots/{lot.pk}/'
 
 
 def _offer_venue_label(offer) -> str:
@@ -679,40 +687,25 @@ def _offer_venue_label(offer) -> str:
     return label or '—'
 
 
-def _html_link(url: str, text: str | None = None) -> str:
-    if not url:
-        return '—'
-    href = escape(url)
-    label = escape(text or url)
-    return f'<a href="{href}" style="color:#2563eb;text-decoration:underline">{label}</a>'
-
-
-def _email_table_rows(rows: list[tuple]) -> str:
-    parts = []
-    for row in rows:
-        key = row[0]
-        value = row[1]
-        is_html = row[2] if len(row) > 2 else False
-        if is_html:
-            cell = str(value)
-        else:
-            cell = escape(str(value)).replace('\n', '<br>')
-        parts.append(
-            f'<tr><td style="padding:6px 10px;color:#64748b;vertical-align:top">'
-            f'{escape(str(key))}</td>'
-            f'<td style="padding:6px 10px;color:#0f172a">{cell}</td></tr>'
-        )
-    return ''.join(parts)
-
-
 def _maxposter_url(offer) -> str:
     if not offer or not offer.lot_offer_id:
         return ''
     return f'https://app.maxposter.ru/dealer/auction/{offer.lot_offer_id}/view'
 
 
-def build_win_email_html(offer) -> tuple[str, str]:
-    """subject, html для письма о победе."""
+def _money_email(v) -> str:
+    if v in (None, ''):
+        return '—'
+    try:
+        return f'{int(round(float(v))):,}'.replace(',', ' ') + ' ₽'
+    except (TypeError, ValueError):
+        return str(v)
+
+
+def build_win_email_html(offer) -> tuple[str, str, str]:
+    """subject, text, html для письма о победе / not_taken (шаблон как у ECO, зелёный акцент)."""
+    from django.template.loader import get_template
+
     lot = offer.lot
     vehicle = getattr(lot, 'vehicle_avito', None) if lot else None
     brand = getattr(vehicle, 'brand_name', '') or ''
@@ -724,14 +717,6 @@ def build_win_email_html(offer) -> tuple[str, str]:
     profit = getattr(calc, 'profit', None) if calc else None
     zna = getattr(calc, 'zna', None) if calc else None
 
-    def money(v):
-        if v in (None, ''):
-            return '—'
-        try:
-            return f'{int(round(float(v))):,}'.replace(',', ' ') + ' ₽'
-        except (TypeError, ValueError):
-            return str(v)
-
     subject = f'Аукцион Авито: выигран лот {getattr(lot, "lot_id", "—")} — {car}'
     headline = 'Мы выиграли лот на аукционе Авито'
     if (offer.outcome_code or '').strip() == OUTCOME_NOT_TAKEN:
@@ -740,28 +725,25 @@ def build_win_email_html(offer) -> tuple[str, str]:
         )
         headline = 'Лот не обработан / не взяли в работу — требуется внимание'
 
-    rows = [
-        ('Площадка', _offer_venue_label(offer)),
-        ('Автомобиль', car),
-        ('Лот', getattr(lot, 'lot_id', '—')),
-        ('lotOfferId', offer.lot_offer_id),
-        ('Наша ставка', money(offer.bid)),
-        ('Выкуп (расчёт)', money(buyout)),
-        ('Прибыль (расчёт)', money(profit)),
-        ('ЦНА (расчёт)', money(zna)),
-        ('Итог Maxposter', f'{offer.outcome_title or ""}\n{offer.outcome_detail or ""}'.strip()),
-        ('Maxposter', _html_link(_maxposter_url(offer), 'Открыть лот в Maxposter'), True),
-        ('Портал', _html_link(_portal_lot_url(lot), 'Открыть лот на портале'), True),
-    ]
-    body_rows = _email_table_rows(rows)
-    html = (
-        '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#0f172a">'
-        f'<h2 style="color:#166534;margin:0 0 12px">{escape(headline)}</h2>'
-        f'<p style="margin:0 0 16px">{escape(car)}</p>'
-        f'<table style="border-collapse:collapse;width:100%;max-width:640px">{body_rows}</table>'
-        '</div>'
-    )
-    return subject, html
+    outcome = f'{offer.outcome_title or ""}\n{offer.outcome_detail or ""}'.strip()
+    ctx = {
+        'portal_home': _portal_public_base(),
+        'portal_url': _portal_lot_url(lot),
+        'maxposter_url': _maxposter_url(offer),
+        'headline': headline,
+        'venue': _offer_venue_label(offer),
+        'car': car,
+        'lot_id': getattr(lot, 'lot_id', '—'),
+        'lot_offer_id': offer.lot_offer_id or '—',
+        'bid': _money_email(offer.bid),
+        'buyout': _money_email(buyout),
+        'profit': _money_email(profit),
+        'zna': _money_email(zna),
+        'outcome': outcome,
+    }
+    text = get_template('email_auction_win.txt').render(ctx)
+    html = get_template('email_auction_win.html').render(ctx)
+    return subject, text, html
 
 
 def resolve_win_notify_emails(offer) -> list[str]:
@@ -792,13 +774,14 @@ def send_win_email(offer, *, emails: list[str] | None = None) -> dict[str, Any]:
             'lot__venue',
             'lot__venue__city',
             'account',
+            'lot__vehicle_avito',
         )
         .get(pk=offer.pk)
     )
 
-    subject, html = build_win_email_html(offer)
+    subject, text, html = build_win_email_html(offer)
     from_email = getattr(settings, 'EMAIL_HOST_USER_INFO', None) or settings.EMAIL_HOST_USER
-    msg = EmailMultiAlternatives(subject, html, from_email, emails)
+    msg = EmailMultiAlternatives(subject, text, from_email, emails)
     msg.attach_alternative(html, 'text/html')
     msg.send(fail_silently=False)
     return {'sent': True, 'to': emails, 'subject': subject}
