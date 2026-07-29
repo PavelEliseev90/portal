@@ -1,0 +1,14 @@
+АХ КорсГрупп — Аукцион Авито
+
+{{headline}}
+
+Площадка: {{venue}}
+Автомобиль: {{car}}
+Лот / offer: {{lot_id}} / {{lot_offer_id}}
+Наша ставка: {{bid}}
+Выкуп / прибыль / ЦНА: {{buyout}} / {{profit}} / {{zna}}
+{% if outcome %}Итог Maxposter: {{outcome}}
+{% endif %}
+{% if portal_url %}Портал: {{portal_url}}
+{% endif %}{% if maxposter_url %}Maxposter: {{maxposter_url}}
+{% endif %}

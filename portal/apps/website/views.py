@@ -2239,8 +2239,12 @@ def board_monitoring_queue(request, kind):
                 'date': swap.date,
                 'title': _monitoring_estimation_title(est) if est else (f'РЛК {rlk.id}' if rlk else f'#{swap.pk}'),
                 'rlk_id': getattr(rlk, 'id', None),
+                'estimation_id': getattr(est, 'id', None),
+                'can_send_1c': bool(rlk and est),
                 'extra': f'status_code={swap.status_code} · {(swap.comment or "")[:80]}',
             })
+
+    send_results = request.session.pop('monitoring_send_1c_results', None)
 
     params = {
         'type': 'monitorings',
@@ -2249,13 +2253,139 @@ def board_monitoring_queue(request, kind):
         'back': back,
         'rows': rows,
         'count': len(rows),
+        'send_results': send_results or [],
         'hint': {
             'autohub': 'Снятие: удалённая — page_remote.hub_avg=-1; салон — hub_start=сейчас. Повторный запрос Autohub не пойдёт.',
             'push': 'Снятие: send=True (как после успешной отправки письма).',
-            'send_1c': 'Снятие: status_code=0, status=skipped_monitoring (из очереди status_code=60).',
+            'send_1c': 'Отправка: estimation_send_1c(rlk, estimation). Успех → status_code=200. Снятие вручную: status_code=0.',
         }.get(kind, ''),
     }
     return render(request, 'website/board_monitoring_queue.html', {'params': params})
+
+
+def _monitoring_send_1c_one(swap):
+    """
+    Отправка одной записи очереди через estimation_send_1c.
+    Возвращает dict для UI: title, ok, status_code, text, error.
+    """
+    from task_manager.views import estimation_send_1c_result
+
+    est = swap.estimation
+    rlk = swap.rlk or (est.rlk if est else None)
+    title = _monitoring_estimation_title(est) if est else (f'РЛК {rlk.id}' if rlk else f'swap #{swap.pk}')
+    base = {
+        'swap_id': swap.pk,
+        'title': title,
+        'rlk_id': getattr(rlk, 'id', None),
+        'estimation_id': getattr(est, 'id', None),
+    }
+    if rlk is None or est is None:
+        return {
+            **base,
+            'ok': False,
+            'status_code': None,
+            'text': '',
+            'error': 'Нет rlk или estimation — estimation_send_1c недоступна',
+        }
+
+    result = estimation_send_1c_result(rlk.id, est.id)
+    now = DT.datetime.now()
+    text = (result.get('text') or '')[:500]
+    if result.get('ok'):
+        swap.status_code = result.get('status_code') or 200
+        swap.status = 'Ok'
+        swap.status_date = now
+        if text:
+            comment = (swap.comment or '').strip()
+            note = f'1c: {text[:200]}'
+            swap.comment = f'{comment}; {note}' if comment else note
+            if len(swap.comment) > 512:
+                swap.comment = swap.comment[:512]
+        swap.save(update_fields=['status_code', 'status', 'status_date', 'comment'])
+    else:
+        err = result.get('error') or f'HTTP {result.get("status_code")}'
+        swap.status_date = now
+        swap.status = f'error:{err}'[:100]
+        if result.get('status_code') is not None:
+            # оставляем в очереди (60), но пишем ответ
+            comment = (swap.comment or '').strip()
+            note = f'1c fail {result.get("status_code")}: {text[:150] or err}'
+            swap.comment = (f'{comment}; {note}' if comment else note)[:512]
+        swap.save(update_fields=['status', 'status_date', 'comment'])
+
+    return {
+        **base,
+        'ok': bool(result.get('ok')),
+        'status_code': result.get('status_code'),
+        'text': text or result.get('error') or '',
+        'error': result.get('error'),
+    }
+
+
+@login_required
+@require_http_methods(['POST'])
+def board_monitoring_queue_send_1c(request):
+    """Отправить в 1С одну или все записи очереди send_1c."""
+    from django.contrib import messages
+
+    back = _monitoring_queue_back_url(request)
+    item_id = (request.POST.get('id') or '').strip()
+    send_all = request.POST.get('send_all') == '1'
+    results = []
+
+    if send_all:
+        for swap in list(_monitoring_qs_send_1c()[:200]):
+            try:
+                results.append(_monitoring_send_1c_one(swap))
+            except Exception as exc:
+                results.append({
+                    'swap_id': swap.pk,
+                    'title': f'swap #{swap.pk}',
+                    'ok': False,
+                    'status_code': None,
+                    'text': '',
+                    'error': str(exc),
+                })
+    elif item_id:
+        try:
+            pk = int(item_id)
+        except (TypeError, ValueError):
+            pk = None
+        if pk is not None:
+            swap = RegSwapKors.objects.filter(pk=pk).select_related(
+                'estimation', 'estimation__rlk', 'rlk',
+            ).first()
+            if swap is None:
+                results.append({
+                    'swap_id': pk,
+                    'title': f'swap #{pk}',
+                    'ok': False,
+                    'status_code': None,
+                    'text': '',
+                    'error': 'Запись не найдена',
+                })
+            else:
+                try:
+                    results.append(_monitoring_send_1c_one(swap))
+                except Exception as exc:
+                    results.append({
+                        'swap_id': pk,
+                        'title': f'swap #{pk}',
+                        'ok': False,
+                        'status_code': None,
+                        'text': '',
+                        'error': str(exc),
+                    })
+
+    request.session['monitoring_send_1c_results'] = results
+    ok_n = sum(1 for r in results if r.get('ok'))
+    fail_n = len(results) - ok_n
+    if results:
+        messages.info(
+            request,
+            f'Отправка в 1С: успешно {ok_n}, ошибок {fail_n} (детали ниже).',
+        )
+    return HttpResponseRedirect(f'/monitorings/queue/send_1c/?back={back}')
 
 
 @login_required

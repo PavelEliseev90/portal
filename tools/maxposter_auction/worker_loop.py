@@ -238,14 +238,26 @@ def run_calc_and_autobid(email: str, password: str, dealer_id: str, out_json: st
                         {
                             "LotOfferId": int(lot_offer_id),
                             "LotId": int(lot_id),
-                            "bid": int(amount),
-                            "bidMadeAt": now,
-                            "dealerId": int(dealer_id) if str(dealer_id).isdigit() else dealer_id,
+                            "Bid": int(amount),
+                            "BidMadeAt": now,
+                            "DealerId": int(dealer_id) if str(dealer_id).isdigit() else dealer_id,
+                            "Comment": "Автоставка worker",
                         },
                         timeout=60,
                     )
                 except Exception as exc:
-                    logger.warning("portal bid_set failed lot=%s: %s", lot_id, exc)
+                    err_body = ""
+                    if isinstance(exc, urllib.error.HTTPError):
+                        try:
+                            err_body = exc.read().decode("utf-8", errors="replace")[:300]
+                        except Exception:
+                            err_body = ""
+                    logger.warning(
+                        "portal bid_set failed lot=%s: %s %s",
+                        lot_id,
+                        exc,
+                        err_body,
+                    )
             else:
                 stats["bid_fail"] += 1
                 logger.warning("bid fail lot=%s: %s", lot_id, bid_resp.get("error") or bid_resp)
