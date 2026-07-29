@@ -2,10 +2,12 @@
 
 Помесячно и разрез ЦГ×месяц.
 
-Источник: TradeInFunnel.
-Период: date_sale.
-ЦГ пересчитывается по price_sale (пороги как у ЦНА).
+Источник: DocCarShipment (отгрузки / продажи).
+Период: dataTime.
+ЦГ пересчитывается по сумме продажи (amount, пороги как у ЦНА).
 Ячейка: количество продаж · медиана цены продаж.
+
+Для detail-таблицы подтягиваем витринные поля из TradeInFunnel по rlk_id.
 """
 
 from __future__ import annotations
@@ -16,8 +18,9 @@ from typing import Optional
 
 from analytics.models import TradeInFunnel
 
+from documents.models import DocCarShipment
+
 from eco.estimation_zg_analytics import (
-    DATE_INVALID,
     ZG_COLORS,
     ZG_ORDER,
     _iter_months,
@@ -46,34 +49,27 @@ def build_sales_zg_analytics(
     date_end: datetime,
     unit_id: Optional[int] = None,
 ) -> dict:
-    qs = TradeInFunnel.objects.filter(
-        date_sale__gte=date_start,
-        date_sale__lte=date_end,
-        date_sale__isnull=False,
-    ).exclude(date_sale=DATE_INVALID)
-
-    # Отдельно фильтруем по цене, чтобы ЦГ была корректной по price_sale
-    qs = qs.filter(price_sale__gt=0)
+    qs = DocCarShipment.objects.filter(
+        active=True,
+        dataTime__gte=date_start,
+        dataTime__lte=date_end,
+    ).filter(amount__gt=0)
 
     if unit_id:
-        qs = qs.filter(unit_id=unit_id)
+        qs = qs.filter(unit__id=unit_id)
 
     # month -> zg -> aggregation
     bucket = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'prices': []}))
     zg_totals = defaultdict(lambda: {'count': 0, 'prices': []})
     month_totals = defaultdict(int)
 
-    rows = qs.only(
-        'date_sale',
-        'price_sale',
-        'zg_name',
-    )
+    rows = qs.only('dataTime', 'amount')
 
     for row in rows.iterator(chunk_size=2000):
-        if not row.date_sale:
+        if not row.dataTime:
             continue
-        mk = _month_key(row.date_sale)
-        price = float(row.price_sale or 0)
+        mk = _month_key(row.dataTime)
+        price = float(row.amount or 0)
         if price <= 0:
             continue
         zg = zg_from_price(price)
@@ -169,52 +165,68 @@ def build_sales_zg_detail(
     date_start, date_end = _month_bounds(month_key)
     target_zg = normalize_zg_name(zg)
 
-    qs = TradeInFunnel.objects.filter(
-        date_sale__gte=date_start,
-        date_sale__lte=date_end,
-        date_sale__isnull=False,
-    ).exclude(date_sale=DATE_INVALID)
-    qs = qs.filter(price_sale__gt=0)
+    ship_qs = DocCarShipment.objects.filter(
+        active=True,
+        dataTime__gte=date_start,
+        dataTime__lte=date_end,
+    ).filter(amount__gt=0)
 
     if unit_id:
-        qs = qs.filter(unit_id=unit_id)
+        ship_qs = ship_qs.filter(unit__id=unit_id)
 
-    rows = []
+    ship_items = []
+    rlk_ids = set()
     prices = []
-    for row in qs.only(
-        'rlk_id',
-        'rlk_number',
-        'date_rlk',
-        'date_sale',
-        'mark_name',
-        'model_name',
-        'vin',
-        'unit_name',
-        'unit_source_name',
-        'type_reception_name',
-        'stage',
-        'price_sale',
-    ).order_by('-date_sale'):
-        price = float(row.price_sale or 0)
+
+    for s in ship_qs.only('rlk_id', 'dataTime', 'amount').iterator(chunk_size=2000):
+        if not s.dataTime or not s.rlk_id:
+            continue
+        price = float(s.amount or 0)
         if price <= 0:
             continue
         row_zg = zg_from_price(price)
         if row_zg != target_zg:
             continue
+        rlk_ids.add(s.rlk_id)
         prices.append(price)
-        rows.append({
-            'rlk_id': row.rlk_id,
-            'rlk_number': row.rlk_number or '',
-            'date_sale': row.date_sale,
-            'date_rlk': row.date_rlk,
-            'mark': row.mark_name or '',
-            'model': row.model_name or '',
-            'vin': row.vin or '',
-            'unit': row.unit_name or '',
-            'unit_source': row.unit_source_name or '',
-            'type_name': row.type_reception_name or '',
-            'stage': row.stage or '',
+        ship_items.append({
+            'rlk_id': s.rlk_id,
+            'date_sale': s.dataTime,
             'price_sale': price,
+        })
+
+    funnel_map = {}
+    if rlk_ids:
+        funnels = TradeInFunnel.objects.filter(rlk_id__in=rlk_ids).only(
+            'rlk_id',
+            'rlk_number',
+            'date_rlk',
+            'mark_name',
+            'model_name',
+            'vin',
+            'unit_name',
+            'unit_source_name',
+            'type_reception_name',
+            'stage',
+        )
+        funnel_map = {f.rlk_id: f for f in funnels}
+
+    rows = []
+    for item in sorted(ship_items, key=lambda x: x['date_sale'], reverse=True):
+        f = funnel_map.get(item['rlk_id'])
+        rows.append({
+            'rlk_id': item['rlk_id'],
+            'rlk_number': (f.rlk_number if f else '') or '',
+            'date_sale': item['date_sale'],
+            'date_rlk': (f.date_rlk if f else None),
+            'mark': (f.mark_name if f else '') or '',
+            'model': (f.model_name if f else '') or '',
+            'vin': (f.vin if f else '') or '',
+            'unit': (f.unit_name if f else '') or '',
+            'unit_source': (f.unit_source_name if f else '') or '',
+            'type_name': (f.type_reception_name if f else '') or '',
+            'stage': (f.stage if f else '') or '',
+            'price_sale': item['price_sale'],
         })
 
     total = len(rows)
