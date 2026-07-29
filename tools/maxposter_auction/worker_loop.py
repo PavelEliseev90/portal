@@ -257,42 +257,48 @@ def run_calc_and_autobid(email: str, password: str, dealer_id: str, out_json: st
 
 
 def run_outcomes(email: str, password: str, dealer_id: str) -> dict:
+    """Только bulk Maxposter statusGroup 2→3→4 (без очереди портала и Playwright)."""
     portal = _portal_base()
-    url = (
-        f"{portal}/api/avito_auction_outcome_queue/"
-        f"?limit=30&lookback_days=30&dealer_id={urllib.parse.quote(str(dealer_id))}"
-    )
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        q = json.loads(resp.read().decode("utf-8", errors="replace") or "{}")
+    try:
+        bulk_row = _http_json(
+            f"{_local_base()}/api/outcomes/wins",
+            {
+                "email": email,
+                "password": password,
+                "dealerId": dealer_id,
+                "portalBase": portal,
+                "items": [],
+            },
+            timeout=300,
+        )
+    except Exception as exc:
+        if "409" in str(exc) or "Conflict" in str(exc):
+            logger.info("outcome bulk skip: already running (409)")
+            return {"ok": True, "skipped": True, "reason": "busy", "okCount": 0, "failCount": 0, "total": 0}
+        logger.warning("outcome bulk fail: %s", exc)
+        return {"ok": False, "error": str(exc)[:500], "okCount": 0, "failCount": 1, "total": 0}
 
-    if q.get("enabled") is False:
-        return {"ok": True, "skipped": True, "reason": "disabled"}
-    items = [it for it in (q.get("items") or []) if isinstance(it, dict)]
-    items = [it for it in items if not it.get("dealerId") or str(it.get("dealerId")) == str(dealer_id)]
-    ok_n = fail_n = 0
-    for item in items:
-        try:
-            row = _http_json(
-                f"{_local_base()}/api/outcomes",
-                {
-                    "email": email,
-                    "password": password,
-                    "dealerId": dealer_id,
-                    "portalBase": portal,
-                    "items": [item],
-                },
-                timeout=180,
-            )
-            if row.get("ok"):
-                ok_n += 1
-            else:
-                fail_n += 1
-        except Exception as exc:
-            fail_n += 1
-            logger.warning("outcome fail: %s", exc)
-        time.sleep(0.7)
-    return {"ok": fail_n == 0, "okCount": ok_n, "failCount": fail_n, "total": len(items)}
+    summary = bulk_row.get("summary") or {}
+    results = bulk_row.get("results") or []
+    ok_n = sum(1 for r in results if r.get("ok"))
+    fail_n = sum(1 for r in results if not r.get("ok") and not r.get("skipped"))
+    logger.info(
+        "outcome bulk-only: waiting_api=%s wins_api=%s archive_api=%s ok=%s fail=%s becameWon=%s",
+        summary.get("waitingApiOffers"),
+        summary.get("winsApiOffers"),
+        summary.get("archiveApiOffers"),
+        ok_n,
+        fail_n,
+        summary.get("becameWon"),
+    )
+    return {
+        "ok": bool(bulk_row.get("ok", fail_n == 0)),
+        "okCount": ok_n,
+        "failCount": fail_n,
+        "total": len(results),
+        "summary": summary,
+        "syncedLotOfferIds": bulk_row.get("syncedLotOfferIds") or [],
+    }
 
 
 def run_one_cycle(out_json: str) -> dict:

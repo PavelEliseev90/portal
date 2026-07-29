@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 import traceback
 from datetime import datetime
 
@@ -34,6 +35,14 @@ LOGIN_URL = "https://app.maxposter.ru/login"
 PROFILE_SWITCH_URL = "https://app.maxposter.ru/profile-switch"
 AUCTION_URL = "https://app.maxposter.ru/dealer/auction"
 OFFERS_URL = "https://mp-gateway.maxposter.ru/maxposter-web/v1/auction/lots/offers/list"
+AUTOHUB_OFFERS_URL = (
+    "https://api-gateway.maxposter.ru/web/1/autohub-auction/lots/offers/list"
+)
+STATUS_GROUP_ACTIVE = 1
+STATUS_GROUP_WAITING = 2
+STATUS_GROUP_WON = 3
+STATUS_GROUP_ARCHIVE = 4
+SORT_FIELD_OFFER_UPDATED = "lotOfferUpdatedAt"
 
 EMAIL_ENV = "MAXPOSTER_EMAIL"
 PASSWORD_ENV = "MAXPOSTER_PASSWORD"
@@ -56,6 +65,10 @@ _SKIP_HEADERS = frozenset({
 
 def _is_offers_list(req) -> bool:
     return req.method == "POST" and "auction/lots/offers/list" in req.url
+
+
+def _is_autohub_offers_list(req) -> bool:
+    return req.method == "POST" and "autohub-auction/lots/offers/list" in (req.url or "")
 
 
 def _headers_from_request(req) -> dict:
@@ -153,6 +166,24 @@ def _offers_body(cursor_value: str, limit: int, *, sort_field: str = SORT_FIELD)
     Тело offers/list как в PowerShell:
     filters: только statusGroup=1 (активные), без outbidForExternalUser.
     """
+    return _autohub_offers_body(
+        STATUS_GROUP_ACTIVE,
+        cursor_value,
+        limit,
+        sort_field=sort_field,
+        use_count=True,
+    )
+
+
+def _autohub_offers_body(
+    status_group: int,
+    cursor_value: str,
+    limit: int,
+    *,
+    sort_field: str = SORT_FIELD_OFFER_UPDATED,
+    use_count: bool = False,
+) -> dict:
+    """Тело autohub offers/list (новый gateway Maxposter / Autohub)."""
     return {
         "pagination": {
             "mode": "cursor",
@@ -160,12 +191,16 @@ def _offers_body(cursor_value: str, limit: int, *, sort_field: str = SORT_FIELD)
                 "operation": "lt",
                 "value": cursor_value,
                 "limit": limit,
-                "useCount": True,
+                "useCount": use_count,
                 "sortField": sort_field,
             },
         },
         "filters": [
-            {"field": "statusGroup", "type": "integer", "value": {"integer": 1}},
+            {
+                "field": "statusGroup",
+                "type": "integer",
+                "value": {"integer": int(status_group)},
+            },
         ],
     }
 
@@ -253,9 +288,10 @@ def _headers_for_browser_fetch(extra_headers: dict | None) -> dict:
     return out
 
 
-def api_offers_page(
+def _api_offers_post(
     ctx,
     *,
+    url: str,
     cursor_value: str,
     limit: int,
     extra_headers: dict | None = None,
@@ -267,11 +303,20 @@ def api_offers_page(
     else:
         body = _offers_body(cursor_value, limit)
     resp = ctx.request.post(
-        OFFERS_URL,
+        url,
         data=json.dumps(body),
         headers=headers,
         timeout=60_000,
     )
+    if resp.status == 429:
+        # Одна пауза и повтор — иначе rate-limit валит весь bulk.
+        time.sleep(2.5)
+        resp = ctx.request.post(
+            url,
+            data=json.dumps(body),
+            headers=headers,
+            timeout=60_000,
+        )
     if not resp.ok:
         if resp.status == 403:
             raise MaxposterAuthError(
@@ -282,6 +327,42 @@ def api_offers_page(
     return resp.json()
 
 
+def api_offers_page(
+    ctx,
+    *,
+    cursor_value: str,
+    limit: int,
+    extra_headers: dict | None = None,
+    body_base: dict | None = None,
+) -> dict:
+    return _api_offers_post(
+        ctx,
+        url=OFFERS_URL,
+        cursor_value=cursor_value,
+        limit=limit,
+        extra_headers=extra_headers,
+        body_base=body_base,
+    )
+
+
+def api_autohub_offers_page(
+    ctx,
+    *,
+    cursor_value: str,
+    limit: int,
+    extra_headers: dict | None = None,
+    body_base: dict | None = None,
+) -> dict:
+    return _api_offers_post(
+        ctx,
+        url=AUTOHUB_OFFERS_URL,
+        cursor_value=cursor_value,
+        limit=limit,
+        extra_headers=extra_headers,
+        body_base=body_base,
+    )
+
+
 def _api_offers_page_or_fetch(
     ctx,
     page,
@@ -290,10 +371,12 @@ def _api_offers_page_or_fetch(
     limit: int,
     extra_headers: dict | None = None,
     body_base: dict | None = None,
+    url: str = OFFERS_URL,
 ) -> dict:
     """API через Playwright request; при ошибке — fetch из контекста страницы (как SPA)."""
+    api_fn = api_autohub_offers_page if url == AUTOHUB_OFFERS_URL else api_offers_page
     try:
-        return api_offers_page(
+        return api_fn(
             ctx,
             cursor_value=cursor_value,
             limit=limit,
@@ -305,12 +388,15 @@ def _api_offers_page_or_fetch(
     except Exception as exc:
         if page is None:
             raise
-        print(f"api_offers_page failed ({exc!r}), пробуем page.fetch…")
+        # 429 — не долбить через page.fetch, это только усугубляет лимит.
+        if "429" in str(exc):
+            raise
+        print(f"api offers/list failed ({exc!r}), пробуем page.fetch…")
         if body_base is not None:
             body = _body_with_cursor(body_base, cursor_value)
         else:
             body = _offers_body(cursor_value, limit)
-        return _fetch_via_page(page, body, extra_headers)
+        return _fetch_via_page(page, body, extra_headers, url=url)
 
 
 def _warm_auction_headers(page, session_headers: dict | None) -> dict:
@@ -440,7 +526,13 @@ def _goto_auction(page) -> None:
     page.goto(AUCTION_URL, wait_until="load", timeout=60_000)
 
 
-def _fetch_via_page(page, body: dict, extra_headers: dict | None = None) -> dict:
+def _fetch_via_page(
+    page,
+    body: dict,
+    extra_headers: dict | None = None,
+    *,
+    url: str = OFFERS_URL,
+) -> dict:
     """Запрос из контекста страницы (cookies + заголовки как у SPA)."""
     safe_headers = _headers_for_browser_fetch(extra_headers)
     return page.evaluate(
@@ -461,8 +553,90 @@ def _fetch_via_page(page, body: dict, extra_headers: dict | None = None) -> dict
             if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + text.slice(0, 500));
             return JSON.parse(text);
         }""",
-        {"url": OFFERS_URL, "body": body, "extraHeaders": safe_headers},
+        {"url": url, "body": body, "extraHeaders": safe_headers},
     )
+
+
+def fetch_autohub_offers_all(
+    ctx,
+    page,
+    *,
+    status_group: int,
+    extra_headers: dict | None = None,
+    limit: int = 50,
+    max_pages: int = 20,
+    sort_field: str = SORT_FIELD_OFFER_UPDATED,
+    page_pause_sec: float = 0.35,
+) -> list[dict]:
+    """Офферы вкладки autohub (statusGroup) по cursor; при 429 — частичный результат."""
+    body_base = _autohub_offers_body(
+        status_group,
+        "",
+        limit,
+        sort_field=sort_field,
+        use_count=False,
+    )
+    all_offers: list[dict] = []
+    seen_ids: set = set()
+    cursor_value = ""
+    page_num = 0
+    payload: dict | None = None
+
+    while page_num < max(1, int(max_pages)):
+        page_num += 1
+        try:
+            payload = _api_offers_page_or_fetch(
+                ctx,
+                page,
+                cursor_value=cursor_value,
+                limit=limit,
+                extra_headers=extra_headers,
+                body_base=body_base,
+                url=AUTOHUB_OFFERS_URL,
+            )
+        except Exception as exc:
+            if "429" in str(exc):
+                print(
+                    f"autohub statusGroup={status_group}: HTTP 429 на p{page_num}, "
+                    f"останавливаем пагинацию (уже {len(all_offers)} офферов)",
+                    flush=True,
+                )
+                break
+            raise
+        offers = payload.get("offers") or []
+        _log_offers_payload(
+            f"  autohub statusGroup={status_group} p{page_num}",
+            payload,
+            _body_with_cursor(body_base, cursor_value),
+        )
+        if not offers:
+            break
+
+        new_added = 0
+        for offer in offers:
+            oid = offer.get("lotOfferId")
+            if oid is not None:
+                if oid in seen_ids:
+                    continue
+                seen_ids.add(oid)
+            all_offers.append(offer)
+            new_added += 1
+
+        cursor = (payload.get("pagination") or {}).get("cursor") or {}
+        next_value = cursor.get("value") or ""
+        if not next_value or new_added == 0:
+            break
+        if next_value == cursor_value:
+            break
+        cursor_value = next_value
+        if page_pause_sec > 0 and page_num < max(1, int(max_pages)):
+            time.sleep(float(page_pause_sec))
+
+    print(
+        f"autohub offers/list statusGroup={status_group}: "
+        f"pages={page_num}, offers={len(all_offers)}"
+    )
+    return all_offers
 
 
 def _fetch_via_page_cursor(page, body_base: dict, cursor_value: str, extra_headers: dict | None = None) -> dict:

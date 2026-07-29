@@ -161,12 +161,14 @@ start_server.bat
 | Решение автоставки | `POST /api/avito_auction_auto_bid_decide/` |
 | Очередь итогов | `GET /api/avito_auction_outcome_queue/` |
 | Запись итога | `POST /api/avito_auction_outcome_set/` |
+| Bulk итогов (waiting + wins + архив) | `POST /api/outcomes/wins` (`statusGroup=2→3→4`) |
 
 ### Итоги завершённых лотов
 
-1. Очередь с портала (`outcome_queue`)  
-2. Страница лота Maxposter (`…/view`) под той же сессией  
-3. Разбор статуса → запись на портал; при **won** / **not_taken** — чат + email  
+1. Bulk API Maxposter по вкладкам: «Продавец выбирает» (`2`) → «Вас выбрали» (`3`) → «Архив» (`4`) — **без очереди портала и без Playwright /view**  
+2. Разбор `status.status` → запись на портал; при **won** / **not_taken** — чат + email  
+
+Маппинг `status.status` из архива: `seller_chose_nothing` → `no_selection`, `bidder_refused_*` → `we_refused`, `not_purchased` → `not_redeemed`, `seller_canceled_archive` → `canceled`.
 
 В viewer: **«Итоги лотов»** или автоцепочка «Итоги после обновления».
 

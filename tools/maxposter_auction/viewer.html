@@ -2266,7 +2266,6 @@
   async function runOutcomePoll({ silent = false, reason = "" } = {}){
     const { email, password } = getAuthForApi();
     const dealerId = getSelectedDealerId();
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const setOutcomeStatus = (text) => {
       if ($("loadedMeta")) $("loadedMeta").textContent = text;
       if ($("dealerStatusLine")) {
@@ -2316,113 +2315,76 @@
 
     try{
       const startMsg = reason
-        ? `Итоги: старт (${reason})…`
-        : "Итоги: читаю очередь с портала…";
+        ? `Итоги: bulk API 2→3→4 (${reason})…`
+        : "Итоги: bulk API Maxposter (statusGroup 2→3→4), без очереди портала…";
       setOutcomeStatus(startMsg);
       logOutcome({ ok: true, skipped: true, msg: startMsg });
 
-      const queueUrl = `${getPortalApiUrls().outcomeQueue}?limit=50&lookback_days=30&dealer_id=${encodeURIComponent(dealerId)}`;
-      const qResp = await fetch(queueUrl, { cache: "no-store" });
-      const qData = await qResp.json().catch(() => ({}));
-      if (!qResp.ok){
-        throw new Error(qData?.error || `очередь HTTP ${qResp.status}`);
+      setOutcomeStatus("Итоги: запрос statusGroup=2,3,4…");
+      const { resp: wResp, data: wData } = await fetchJsonWithTimeout("/api/outcomes/wins", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          dealerId,
+          portalBase: getPortalBase(),
+          items: [],
+        }),
+      }, 5 * 60 * 1000);
+
+      if (wResp.status === 409){
+        throw new Error("сервер занят — подождите и повторите");
       }
-      if (qData.enabled === false){
-        const msg = "Итоги: опрос выключен в настройках портала";
-        setOutcomeStatus(msg);
-        logOutcome({ ok: false, skipped: true, msg });
-        return { ok: false, reason: "disabled" };
+      if (!wResp.ok){
+        const errText = wData?.error || `HTTP ${wResp.status}`;
+        for (const ln of (wData?.logLines || []).slice(-50)){
+          if (ln) logOutcome({ ok: false, msg: String(ln).slice(0, 320) });
+        }
+        throw new Error(String(errText).slice(0, 800));
       }
 
-      let items = Array.isArray(qData.items) ? qData.items.slice() : [];
-      // Портал уже фильтрует по dealer_id; страховка на клиенте
-      items = items.filter((it) => !it?.dealerId || String(it.dealerId) === String(dealerId));
-      if (!items.length){
-        const msg = `Итоги: очередь пуста (портал: ${qData.count ?? 0}, площадка ${dealerId}: 0)`;
-        setOutcomeStatus(msg);
-        logOutcome({ ok: true, skipped: true, msg });
-        return { ok: true, count: 0 };
-      }
+      const bulk = wData?.bulk || wData;
+      const wSummary = bulk?.summary || wData?.summary || {};
+      const wResults = bulk?.results || wData?.results || [];
+      const syncedBulkIds = wSummary.syncedLotOfferIds || wData.syncedLotOfferIds || [];
+      const wOk = wSummary.ok ?? wResults.filter((r) => r.ok).length;
+      const wFail = wSummary.fail ?? wResults.filter((r) => !r.ok && !r.skipped).length;
+      const wWinsApi = wSummary.winsApiOffers ?? 0;
+      const wWaitApi = wSummary.waitingApiOffers ?? 0;
+      const wArchApi = wSummary.archiveApiOffers ?? 0;
+      const wBecame = wSummary.becameWon ?? 0;
+      const bulkApiTotal = Number(wWaitApi || 0) + Number(wWinsApi || 0) + Number(wArchApi || 0);
 
       logOutcome({
         ok: true,
-        msg: `Итоги: в очереди ${items.length} лот(ов), опрашиваю по одному…`,
-        count: items.length,
+        msg: `Итоги bulk: waiting=${wWaitApi} wins=${wWinsApi} archive=${wArchApi} записано=${wOk} ошибок=${wFail} новых побед=${wBecame} finals=${syncedBulkIds.length}`,
       });
 
-      let okN = 0;
-      let failN = 0;
-      let wonN = 0;
-      const by = {};
-
-      for (let i = 0; i < items.length; i++){
-        const item = items[i];
-        const car = item.car ? ` «${item.car}»` : "";
-        const progress = `${i + 1}/${items.length}`;
-        setOutcomeStatus(`Итоги: ${progress} lotId=${item.lotId ?? "—"}…`);
-        if (btn) btn.innerHTML = `<span class="spin"></span>${progress}`;
-        logOutcome({
-          ok: true,
-          skipped: true,
-          msg: `Итоги [${progress}]: проверяю лот ${item.lotId ?? "—"} / offer ${item.lotOfferId}${car}`,
-        });
-
-        try{
-          const { resp, data } = await fetchJsonWithTimeout("/api/outcomes", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              email,
-              password,
-              dealerId,
-              portalBase: getPortalBase(),
-              items: [item],
-              limit: 1,
-            }),
-          }, 3 * 60 * 1000);
-
-          if (resp.status === 409){
-            throw new Error("сервер занят — подождите и повторите");
-          }
-          const row = (data?.outcome_result?.results || [])[0] || {};
-          if (!resp.ok || data?.ok === false || row.ok === false){
-            failN += 1;
-            by.error = (by.error || 0) + 1;
-            const err = row.error || data?.error || `HTTP ${resp.status}`;
-            logOutcome({
-              ok: false,
-              msg: `Итоги [${progress}]: ошибка лот ${item.lotId ?? "—"} — ${String(err).slice(0, 220)}${car}`,
-            });
-          } else {
-            okN += 1;
-            const portal = row.portal || {};
-            const code = portal.outcomeCode || "?";
-            by[code] = (by[code] || 0) + 1;
-            if (portal.becameWon) wonN += 1;
-            logOutcome({
-              ok: true,
-              msg: `Итоги [${progress}]: ${(row.msg || `${item.lotId}: → ${code}`)}${car}`,
-            });
-          }
-        }catch(err){
-          failN += 1;
-          by.error = (by.error || 0) + 1;
-          logOutcome({
-            ok: false,
-            msg: `Итоги [${progress}]: сбой — ${String(err?.message || err).slice(0, 220)}${car}`,
-          });
+      for (const ln of (wData?.logLines || bulk?.logLines || []).slice(-80)){
+        const s = String(ln);
+        if (s && /BULK|autohub|HTTP|Auth|429|WINS_|WAITING_|ARCHIVE_|нет на портале/i.test(s)){
+          const bad = /\bERR\b|HTTP 429|HTTP 403|сбой|Traceback|RuntimeError/i.test(s);
+          logOutcome({ ok: !bad, msg: s.slice(0, 320) });
         }
-
-        await sleep(700);
+      }
+      for (const wr of wResults.slice(0, 60)){
+        if (wr.msg) logOutcome({ ok: !!wr.ok, msg: wr.msg });
       }
 
-      const byTxt = Object.entries(by).map(([k, v]) => `${k}=${v}`).join(", ");
-      const msg = `Итоги готовы: ok=${okN}, ошибок=${failN}${wonN ? `, выиграно=${wonN}` : ""}${byTxt ? ` · ${byTxt}` : ""}`;
+      if (bulkApiTotal === 0){
+        const msg = "Итоги: Maxposter API вернул 0 офферов (вкладки 2/3/4) — проверьте сессию и dealerId";
+        setOutcomeStatus(msg);
+        logOutcome({ ok: false, msg });
+        return { ok: false, count: 0, reason: "empty_api" };
+      }
+
+      const msg = `Итоги готовы (только bulk): API=${bulkApiTotal}, записано=${wOk}, ошибок=${wFail}${wBecame ? `, выиграно=${wBecame}` : ""}`;
       setOutcomeStatus(msg);
-      logOutcome({ ok: failN === 0, msg, count: okN + failN });
-      return { ok: failN === 0, count: okN + failN };
+      logOutcome({ ok: wFail === 0, msg, count: wOk });
+      return { ok: wFail === 0, count: wOk, bulk: wSummary };
     }catch(err){
-      const msg = `Итоги: ошибка — ${String(err?.message || err).slice(0, 280)}`;
+      const msg = `Итоги: ошибка — ${String(err?.message || err).slice(0, 400)}`;
       setOutcomeStatus(msg);
       logOutcome({ ok: false, msg });
       return { ok: false, error: msg };

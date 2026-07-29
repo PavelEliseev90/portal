@@ -47,6 +47,7 @@ class _OutcomeWorker:
         self._page = None
         self._email = None
         self._dealer_id = None
+        self._session_headers = None
         # Сессия Maxposter — в каталоге инстанса, не в общем бандле.
         self._script_dir = HERE
 
@@ -65,6 +66,7 @@ class _OutcomeWorker:
                 pass
         self._page = self._ctx = self._browser = self._pw = None
         self._email = self._dealer_id = None
+        self._session_headers = None
 
     def _ensure(self, email: str, password: str, dealer_id: str):
         import script_outcome as so
@@ -75,7 +77,7 @@ class _OutcomeWorker:
             or str(self._dealer_id or "") != str(dealer_id or "")
         )
         if not need_new:
-            return
+            return self._session_headers or {}
         self._close()
         from playwright.sync_api import sync_playwright
 
@@ -83,9 +85,12 @@ class _OutcomeWorker:
         self._browser = self._pw.chromium.launch(headless=True)
         self._ctx = self._browser.new_context(user_agent=so.USER_AGENT, locale="ru-RU")
         self._page = self._ctx.new_page()
-        so._ensure_session(self._page, self._ctx, email, password, dealer_id, self._script_dir)
+        self._session_headers = so._ensure_session(
+            self._page, self._ctx, email, password, dealer_id, self._script_dir
+        )
         self._email = email
         self._dealer_id = dealer_id
+        return self._session_headers or {}
 
     def _run_one(self, job: dict) -> dict:
         import script_outcome as so
@@ -125,11 +130,63 @@ class _OutcomeWorker:
                 self._close()
             raise
 
+    def _run_bulk_outcomes(self, job: dict) -> dict:
+        import script_outcome as so
+        from maxposter_session import MaxposterAuthError, clear_session
+
+        email = job["email"]
+        password = job["password"]
+        dealer_id = job.get("dealer_id") or ""
+        portal_base = job.get("portal_base") or "https://ah.kors-group.com"
+        queue_items = job.get("items")
+
+        os.environ["PORTAL_BASE"] = portal_base.rstrip("/")
+        os.environ["APP_DIR"] = HERE
+        os.environ["MAXPOSTER_EMAIL"] = email
+        os.environ["MAXPOSTER_PASSWORD"] = password
+        if dealer_id:
+            os.environ["MAXPOSTER_DEALER_ID"] = str(dealer_id)
+
+        buf_out = io.StringIO()
+        buf_err = io.StringIO()
+        try:
+            with redirect_stdout(buf_out), redirect_stderr(buf_err):
+                headers = self._ensure(email, password, dealer_id)
+                result = so.sync_all_bulk(
+                    self._page,
+                    self._ctx,
+                    session_headers=headers,
+                    dealer_id=dealer_id,
+                    queue_items=queue_items,
+                )
+            log_text = (buf_out.getvalue() or "") + (buf_err.getvalue() or "")
+            log_lines = [ln for ln in log_text.splitlines() if ln.strip()]
+            if isinstance(result, dict):
+                result = dict(result)
+                result["logLines"] = log_lines[-200:]
+            return result
+        except MaxposterAuthError:
+            if dealer_id:
+                clear_session(self._script_dir, email, dealer_id)
+            self._close()
+            raise
+        except Exception as exc:
+            log_text = (buf_out.getvalue() or "") + (buf_err.getvalue() or "")
+            raise RuntimeError(
+                f"{exc}\n--- bulk log ---\n{log_text[-3000:]}"
+            ) from exc
+
+    def _run_wins_bulk(self, job: dict) -> dict:
+        return self._run_bulk_outcomes(job)
+
     def _loop(self):
         while True:
             job, box = self._queue.get()
             try:
-                box["result"] = self._run_one(job)
+                if job.get("kind") in ("wins_bulk", "bulk_outcomes"):
+                    box["result"] = self._run_bulk_outcomes(job)
+                else:
+                    box["result"] = self._run_one(job)
                 box["error"] = None
             except Exception as exc:
                 box["result"] = None
@@ -155,6 +212,35 @@ class _OutcomeWorker:
         if box["error"] is not None:
             raise box["error"]
         return box["result"]
+
+    def poll_wins_bulk(
+        self,
+        *,
+        email: str,
+        password: str,
+        dealer_id: str,
+        portal_base: str,
+        items: list | None = None,
+        timeout: float = 300,
+    ) -> dict:
+        done = threading.Event()
+        box = {"done": done, "result": None, "error": None}
+        self._queue.put((
+            {
+                "kind": "bulk_outcomes",
+                "email": email,
+                "password": password,
+                "dealer_id": dealer_id,
+                "portal_base": portal_base,
+                "items": items,
+            },
+            box,
+        ))
+        if not done.wait(timeout):
+            raise TimeoutError(f"Таймаут bulk outcomes ({int(timeout)} сек)")
+        if box["error"] is not None:
+            raise box["error"]
+        return box["result"] or {}
 
 
 _outcome_session = _OutcomeWorker()
@@ -482,7 +568,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.rstrip("/")
-        if route not in {"/api/reload", "/api/bid", "/api/clear_lots", "/api/outcomes"}:
+        if route not in {"/api/reload", "/api/bid", "/api/clear_lots", "/api/outcomes", "/api/outcomes/wins"}:
             self._send_json(404, {"ok": False, "error": "Not found"})
             return
 
@@ -563,6 +649,54 @@ class Handler(SimpleHTTPRequestHandler):
                 })
             finally:
                 _reload_lock.release()
+            return
+
+        if route == "/api/outcomes/wins":
+            if not is_frozen() and not os.path.exists(SCRIPT_OUTCOME_PATH):
+                self._send_json(500, {"ok": False, "error": f"Script not found: {SCRIPT_OUTCOME_PATH}"})
+                return
+            if not _outcome_lock.acquire(blocking=False):
+                self._send_json(409, {"ok": False, "error": "Outcome poll already running"})
+                return
+            try:
+                portal_base = str(body.get("portalBase") or env.get("PORTAL_BASE") or "").rstrip("/")
+                items = body.get("items") if isinstance(body.get("items"), list) else None
+                try:
+                    wins = _outcome_session.poll_wins_bulk(
+                        email=email,
+                        password=password,
+                        dealer_id=dealer_id,
+                        portal_base=portal_base or "https://ah.kors-group.com",
+                        items=items,
+                        timeout=300,
+                    )
+                    summary = wins.get("summary") or {}
+                    wins_bulk = wins.get("winsBulk")
+                    archive_bulk = wins.get("archiveBulk")
+                    waiting_bulk = wins.get("waitingBulk")
+                    ok = bool(wins.get("ok", True))
+                    self._send_json(200 if ok else 500, {
+                        "ok": ok,
+                        "bulk": wins,
+                        "waitingBulk": waiting_bulk,
+                        "winsBulk": wins_bulk,
+                        "archiveBulk": archive_bulk,
+                        "wonLotOfferIds": summary.get("wonLotOfferIds") or [],
+                        "syncedLotOfferIds": summary.get("syncedLotOfferIds") or wins.get("syncedLotOfferIds") or [],
+                        "summary": summary,
+                        "results": wins.get("results") or [],
+                        "logLines": wins.get("logLines") or [],
+                        "error": wins.get("error"),
+                    })
+                except Exception as exc:
+                    self._send_json(500, {
+                        "ok": False,
+                        "error": str(exc)[:2000],
+                        "winsBulk": {"ok": False, "error": str(exc)[:500]},
+                        "logLines": str(exc).splitlines()[-80:],
+                    })
+            finally:
+                _outcome_lock.release()
             return
 
         if route == "/api/outcomes":
