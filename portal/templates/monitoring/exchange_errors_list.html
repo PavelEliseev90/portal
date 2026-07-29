@@ -11,8 +11,35 @@
 			<h2 class="mb-1" style="color: #002a5a;">Ошибки обмена с 1С</h2>
 			<p class="text-muted small mb-0">
 				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
-				· найдено: <strong>{{ params.total_count }}</strong>
+				· в выборке: <strong>{{ params.total_count }}</strong>
 			</p>
+		</div>
+	</div>
+
+	{% if params.purged_count %}
+	<div class="alert alert-success py-2 small mb-3">
+		Удалено записей: <strong>{{ params.purged_count }}</strong>
+	</div>
+	{% endif %}
+
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #ef4444;">
+				<div class="text-muted small">За последние 24 часа</div>
+				<div class="fs-3 fw-bold text-danger">{{ params.exchange_errors_24h }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #002a5a;">
+				<div class="text-muted small">Всего в базе</div>
+				<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.exchange_errors_total }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #64748b;">
+				<div class="text-muted small">В выбранном периоде</div>
+				<div class="fs-3 fw-bold text-secondary">{{ params.total_count }}</div>
+			</div>
 		</div>
 	</div>
 
@@ -49,6 +76,26 @@
 				<button type="submit" class="btn btn-primary btn-sm">Применить</button>
 				<a href="{% url 'monitoring:exchange_errors_list' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
 			</div>
+		</div>
+	</form>
+
+	<form method="post" action="{% url 'monitoring:exchange_errors_purge' %}" class="portal-panel mb-3"
+		onsubmit="return confirm('Удалить ошибки обмена за выбранный период{% if params.exchange_type %} (тип: {{ params.exchange_type }}){% endif %}?');">
+		{% csrf_token %}
+		<input type="hidden" name="date_start" value="{{ params.date_start|date:'Y-m-d' }}">
+		<input type="hidden" name="date_end" value="{{ params.date_end|date:'Y-m-d' }}">
+		{% if params.exchange_type %}
+		<input type="hidden" name="exchange_type" value="{{ params.exchange_type }}">
+		{% endif %}
+		<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+			<div class="small text-muted">
+				Очистка логов за период
+				<strong>{{ params.date_start|date:'d.m.Y' }} — {{ params.date_end|date:'d.m.Y' }}</strong>
+				{% if params.exchange_type %}· тип <strong>{{ params.exchange_type }}</strong>{% endif %}
+			</div>
+			<button type="submit" class="btn btn-outline-danger btn-sm">
+				<span class="bi bi-trash"></span> Удалить записи за период ({{ params.total_count }})
+			</button>
 		</div>
 	</form>
 

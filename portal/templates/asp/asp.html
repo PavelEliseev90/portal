@@ -57,16 +57,96 @@
     <h3 class="deal-section-title"><span class="bi bi-clipboard-check me-1" aria-hidden="true"></span> Отдел оценки</h3>
     <div class="row g-1">
       <div class="col-12 col-sm-auto">
-        <div class="metric-card">
-          <div class="metric-card-value"><span class="icon-doc"></span> Рабочие листы</div>
-          <div class="metric-card-value text-muted fs-8"> Рабочие листы Trade-in</div>          
-        </div>               
+        <a href="/rlks_trade_in/" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-doc"></span> Рабочие листы</div>
+            <div class="metric-card-value text-muted fs-8"> Рабочие листы Trade-in</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="/eco/online/" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="icon-doc"></span> Онлайн-оценки</div>
+            <div class="metric-card-value text-muted fs-8"> Входящие заявки на оценку</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:tradein_funnel' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-funnel"></span> Воронка оценок</div>
+            <div class="metric-card-value text-muted fs-8"> Этапы и конверсия Trade-in</div>
+          </div>
+        </a>
       </div>
       <div class="col-12 col-sm-auto">
         <a href="/estimations/kolesa-reception/" class="text-decoration-none text-dark">
           <div class="metric-card">
             <div class="metric-card-value"><span class="icon-cd"></span> Второй комплект колес</div>
             <div class="metric-card-value text-muted fs-8"> Приёмка 2КК на складе</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-panel">
+    <h3 class="deal-section-title"><span class="bi bi-bar-chart-line me-1" aria-hidden="true"></span> Отчёты по оценке и продажам</h3>
+    <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:estimation_zg_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-bar-chart-steps"></span> Оценки по ЦГ</div>
+            <div class="metric-card-value text-muted fs-8"> Динамика оценок по ценовым группам</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:autohub_zg_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-pie-chart"></span> Autohub по ЦГ</div>
+            <div class="metric-card-value text-muted fs-8"> Рыночные данные Autohub по ЦГ</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:sales_zg_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-cash-stack"></span> Продажи по ЦГ</div>
+            <div class="metric-card-value text-muted fs-8"> Отгрузки: количество и медиана цены</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:market_model_trends' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-graph-up-arrow"></span> Тренд рынка</div>
+            <div class="metric-card-value text-muted fs-8"> Динамика рынка по моделям</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:tradein_funnel_simple_export' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-file-earmark-excel"></span> Выгрузка TradeInFunnel</div>
+            <div class="metric-card-value text-muted fs-8"> Excel по воронке Trade-in</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:interactive_pricing_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-graph-up"></span> Ценообразование</div>
+            <div class="metric-card-value text-muted fs-8"> Интерактивный отчёт по ценам</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:interactive_evaluations_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-search"></span> Интерактивные оценки</div>
+            <div class="metric-card-value text-muted fs-8"> Детальный отчёт по оценкам</div>
           </div>
         </a>
       </div>

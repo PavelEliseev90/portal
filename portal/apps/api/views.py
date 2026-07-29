@@ -897,12 +897,16 @@ def _as_int_local(value):
 
 def get_car_object(car, unit):
         
-    uin          = car.get('Uin', '').upper()
+    uin = car.get('Uin', '').upper()
 
-    car_object, created = RefCarsOrganization.objects.filter(Q(lo_uin = uin) 
-                                                            and Q(is_new = True)).get_or_create(
-                                                                lo_uin = uin,
-                                                                is_new = True)
+    car_object = (
+        RefCarsOrganization.objects
+        .filter(lo_uin=uin, is_new=True)
+        .order_by('-pk')
+        .first()
+    )
+    if car_object is None:
+        car_object = RefCarsOrganization(lo_uin=uin, is_new=True)
     car_object.date_refresh     = datetime.now()    
     car_object.organization     = get_organization(car['Organization'])    
     car_object.unit             = unit
@@ -5095,7 +5099,11 @@ def get_worksheet(worksheet):
         rlk_object.unit_dc          = get_unit(worksheet['UnitDC'])
 
     if 'TradeInManager' in worksheet:
-        rlk_object.manager_trade_in = worksheet['TradeInManager']
+        trade_in_manager = worksheet['TradeInManager']
+        if isinstance(trade_in_manager, dict):
+            rlk_object.manager_trade_in = (trade_in_manager.get('Name') or '')[:512]
+        elif trade_in_manager:
+            rlk_object.manager_trade_in = str(trade_in_manager)[:512]
     
     if 'Footing' in worksheet:
         rlk_object.footing = get_worksheet(worksheet['Footing'])
@@ -5190,8 +5198,10 @@ def get_order(order):
     if 'Recomendations' in order:
         load_recomendations(order_object, order['Recomendations'])
 
-    load_works_zn(order_object, order['Works'])
-    load_products_zn(order_object, order['Products'])
+    if 'Works' in order:
+        load_works_zn(order_object, order['Works'])
+    if 'Products' in order:
+        load_products_zn(order_object, order['Products'])
 
     return order_object
 
@@ -5467,8 +5477,10 @@ def load_performers(order_object, performers):
 
 def load_products_zn(order_object, products_zn):
     DocZNProduct.objects.filter(zn = order_object).delete()
-    for product_zn in products_zn:
-        product = get_product(product_zn['Product'])
+    for product_zn in products_zn or []:
+        product = get_product(product_zn.get('Product'))
+        if product is None:
+            continue
         product_zn_object = DocZNProduct()
         product_zn_object.zn           = order_object
         product_zn_object.product      = product
@@ -5484,8 +5496,10 @@ def load_products_zn(order_object, products_zn):
 
 def load_works_zn(order_object, works_zn):
     DocZNWork.objects.filter(zn = order_object).delete()
-    for work_zn in works_zn:
-        work = get_work(work_zn['Work'])
+    for work_zn in works_zn or []:
+        work = get_work(work_zn.get('Work'))
+        if work is None:
+            continue
         work_zn_object = DocZNWork()
         work_zn_object.zn           = order_object
         work_zn_object.work         = work
@@ -5500,10 +5514,23 @@ def load_works_zn(order_object, works_zn):
         work_zn_object.save()
         
 def get_product(product):
-    article = product['Article']
-    name    = product['Name']
-    uin     = product['Uin']
-    products_object = RefProduct.objects.filter(uin = uin)
+    if isinstance(product, str):
+        uin = product.strip()
+        if not uin:
+            return None
+        product_object = RefProduct.objects.filter(uin=uin).first()
+        if product_object is None:
+            product_object = RefProduct(uin=uin, name=uin)
+            product_object.save()
+        return product_object
+
+    if not isinstance(product, dict):
+        return None
+
+    article = product.get('Article', '')
+    name    = product.get('Name', '')
+    uin     = product.get('Uin', '')
+    products_object = RefProduct.objects.filter(uin=uin)
     if len(products_object) == 0:
         product_object = RefProduct()
     else:
@@ -5511,8 +5538,8 @@ def get_product(product):
     product_object.uin          = uin
     product_object.name         = name
     product_object.article      = article
-    product_object.article_dop  = product['ArticleDop']
-    product_object.manufacturer = product['Manufacturer']
+    product_object.article_dop  = product.get('ArticleDop', '')
+    product_object.manufacturer = product.get('Manufacturer', '')
     product_object.save()
     return product_object 
 
@@ -5527,9 +5554,22 @@ def get_type_item_zn(type_str):
         return refType.save()
 
 def get_work(work):
-    article = work['Article']
-    name    = work['Name']
-    uin     = work['Uin']
+    if isinstance(work, str):
+        uin = work.strip()
+        if not uin:
+            return None
+        work_object = RefWork.objects.filter(uin=uin).first()
+        if work_object is None:
+            work_object = RefWork(uin=uin, name=uin)
+            work_object.save()
+        return work_object
+
+    if not isinstance(work, dict):
+        return None
+
+    article = work.get('Article', '')
+    name    = work.get('Name', '')
+    uin     = work.get('Uin', '')
     works_object = RefWork.objects.filter(uin = uin)
     if len(works_object) == 0:
         work_object = RefWork()
@@ -5542,9 +5582,22 @@ def get_work(work):
     return work_object 
 
 def get_service(service):
-    article = service['Article']
-    name    = service['Name']
-    uin     = service['Uin']
+    if isinstance(service, str):
+        uin = service.strip()
+        if not uin:
+            return None
+        service_object = RefService.objects.filter(uin=uin).first()
+        if service_object is None:
+            service_object = RefService(uin=uin, name=uin)
+            service_object.save()
+        return service_object
+
+    if not isinstance(service, dict):
+        return None
+
+    article = service.get('Article', '')
+    name    = service.get('Name', '')
+    uin     = service.get('Uin', '')
     service_object = RefService.objects.filter(uin = uin)
     if len(service_object) == 0:
         service_object = RefService()

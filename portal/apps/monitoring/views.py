@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
+from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from api.models import Exchange1CErrorLog
@@ -19,8 +22,8 @@ def _parse_date_range(request, default_days=30):
     today = timezone.now().date()
     default_end = today
     default_start = today - timedelta(days=default_days)
-    date_start = request.GET.get('date_start') or str(default_start)
-    date_end = request.GET.get('date_end') or str(default_end)
+    date_start = request.GET.get('date_start') or request.POST.get('date_start') or str(default_start)
+    date_end = request.GET.get('date_end') or request.POST.get('date_end') or str(default_end)
     try:
         ds = timezone.datetime.strptime(date_start, '%Y-%m-%d').date()
         de = timezone.datetime.strptime(date_end, '%Y-%m-%d').date()
@@ -31,18 +34,32 @@ def _parse_date_range(request, default_days=30):
         return default_start, default_end
 
 
+def _exchange_errors_counts():
+    since_24h = timezone.now() - timedelta(hours=24)
+    return {
+        'exchange_errors_24h': Exchange1CErrorLog.objects.filter(date_create__gte=since_24h).count(),
+        'exchange_errors_total': Exchange1CErrorLog.objects.count(),
+    }
+
+
+def _exchange_errors_queryset(date_start, date_end, exchange_type=''):
+    next_day = date_end + timedelta(days=1)
+    qs = Exchange1CErrorLog.objects.filter(
+        date_create__date__gte=date_start,
+        date_create__date__lt=next_day,
+    )
+    if exchange_type:
+        qs = qs.filter(exchange_type=exchange_type)
+    return qs
+
+
 @login_required
 @user_passes_test(_staff_required, login_url='/login/')
 def hub(request):
     """Главная панель мониторинга."""
-    since_24h = timezone.now() - timedelta(hours=24)
-    exchange_errors_24h = Exchange1CErrorLog.objects.filter(date_create__gte=since_24h).count()
-    exchange_errors_total = Exchange1CErrorLog.objects.count()
-
     params = {
         'type': 'monitoring_hub',
-        'exchange_errors_24h': exchange_errors_24h,
-        'exchange_errors_total': exchange_errors_total,
+        **_exchange_errors_counts(),
     }
     return render(request, 'monitoring/hub.html', {'params': params})
 
@@ -52,15 +69,8 @@ def hub(request):
 def exchange_errors_list(request):
     """Список ошибок обмена с 1С."""
     date_start, date_end = _parse_date_range(request)
-    next_day = date_end + timedelta(days=1)
     exchange_type = request.GET.get('exchange_type', '').strip()
-
-    qs = Exchange1CErrorLog.objects.filter(
-        date_create__date__gte=date_start,
-        date_create__date__lt=next_day,
-    )
-    if exchange_type:
-        qs = qs.filter(exchange_type=exchange_type)
+    qs = _exchange_errors_queryset(date_start, date_end, exchange_type)
 
     type_choices = (
         Exchange1CErrorLog.objects.order_by('exchange_type')
@@ -101,8 +111,30 @@ def exchange_errors_list(request):
         'paginator': paginator,
         'per_page': per_page,
         'query_without_page': query_without_page,
+        'purged_count': request.GET.get('purged'),
+        **_exchange_errors_counts(),
     }
     return render(request, 'monitoring/exchange_errors_list.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def exchange_errors_purge(request):
+    """Удаление ошибок обмена за выбранный период."""
+    date_start, date_end = _parse_date_range(request)
+    exchange_type = request.POST.get('exchange_type', '').strip()
+    qs = _exchange_errors_queryset(date_start, date_end, exchange_type)
+    deleted_count, _ = qs.delete()
+
+    query = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'purged': deleted_count,
+    }
+    if exchange_type:
+        query['exchange_type'] = exchange_type
+    return redirect(f"{reverse('monitoring:exchange_errors_list')}?{urlencode(query)}")
 
 
 @login_required
