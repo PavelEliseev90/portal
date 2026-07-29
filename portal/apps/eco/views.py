@@ -13275,6 +13275,114 @@ def autohub_zg_analytics(request):
 
 
 @login_required
+def sales_zg_analytics(request):
+    """Продажи по ЦГ × месяц."""
+    from eco.sales_zg_analytics import build_sales_zg_analytics
+    import json as _json
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'sales_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    unit_id = _get_int(request.GET.get('unit_id'))
+
+    data = build_sales_zg_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+    )
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+
+    params = {
+        'type': 'sales_zg_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+        },
+        'summary': data['summary'],
+        'month_labels': data['month_labels'],
+        'month_keys': data['month_keys'],
+        'pivot_rows': data['pivot_rows'],
+        'pivot_footer': data['pivot_footer'],
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'detail_base': '/eco/sales-zg/detail/',
+        'units': units,
+        'hint': (
+            'Продажи: Trade-In, период по date_sale. ЦГ пересчитывается по price_sale '
+            '(пороги как у ЦНА). В ячейке: кол-во · медиана цены продаж.'
+        ),
+    }
+    return render(request, 'lo/sales_zg_analytics.html', {'params': params})
+
+
+@login_required
+def sales_zg_detail(request):
+    """Расшифровка: продажи за месяц × ЦГ."""
+    from eco.sales_zg_analytics import build_sales_zg_detail
+    from eco.estimation_zg_analytics import normalize_zg_name
+    from urllib.parse import urlencode
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'sales_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    month_key = (request.GET.get('month') or '').strip()
+    zg = normalize_zg_name(request.GET.get('zg') or '')
+    unit_id = _get_int(request.GET.get('unit_id'))
+
+    back_qs = {
+        'date_start': request.GET.get('date_start') or '',
+        'date_end': request.GET.get('date_end') or '',
+        'unit_id': unit_id or '',
+    }
+    back_url = '/eco/sales-zg/'
+    back_qs = {k: v for k, v in back_qs.items() if v}
+    if back_qs:
+        back_url += '?' + urlencode(back_qs)
+
+    if not month_key or len(month_key) != 7:
+        params = {
+            'type': 'sales_zg_analytics',
+            'nav_selected': 4,
+            'request': request,
+            'error': 'Не указан месяц (ожидается YYYY-MM).',
+            'back_url': back_url,
+        }
+        return render(request, 'lo/sales_zg_detail.html', {'params': params})
+
+    detail = build_sales_zg_detail(month_key=month_key, zg=zg, unit_id=unit_id)
+
+    params = {
+        'type': 'sales_zg_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'detail': detail,
+        'source': 'sales',
+        'back_url': back_url,
+    }
+    return render(request, 'lo/sales_zg_detail.html', {'params': params})
+
+
+@login_required
 def estimation_zg_detail(request):
     """Расшифровка: оценки или Autohub за выбранные месяц × ЦГ."""
     from eco.estimation_zg_analytics import (
