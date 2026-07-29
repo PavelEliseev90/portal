@@ -2337,16 +2337,72 @@
       let items = Array.isArray(qData.items) ? qData.items.slice() : [];
       // Портал уже фильтрует по dealer_id; страховка на клиенте
       items = items.filter((it) => !it?.dealerId || String(it.dealerId) === String(dealerId));
+
+      logOutcome({
+        ok: true,
+        msg: items.length
+          ? `Итоги: в очереди ${items.length} лот(ов), сначала bulk API (wins + архив)…`
+          : "Итоги: очередь пуста — bulk API (wins + архив)…",
+        count: items.length,
+      });
+
+      let syncedBulkIds = new Set();
+      try{
+        setOutcomeStatus("Итоги: bulk API (statusGroup=3 wins + statusGroup=4 архив)…");
+        const { resp: wResp, data: wData } = await fetchJsonWithTimeout("/api/outcomes/wins", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            email,
+            password,
+            dealerId,
+            portalBase: getPortalBase(),
+            items,
+          }),
+        }, 5 * 60 * 1000);
+        if (wResp.status === 409){
+          throw new Error("сервер занят — подождите и повторите");
+        }
+        const bulk = wData?.bulk || wData;
+        const wSummary = bulk?.summary || wData?.summary || wData?.winsBulk?.summary || {};
+        const wResults = bulk?.results || wData?.results || wData?.winsBulk?.results || [];
+        syncedBulkIds = new Set((wSummary.syncedLotOfferIds || wData.syncedLotOfferIds || []).map(String));
+        const wOk = wSummary.ok ?? wResults.filter((r) => r.ok).length;
+        const wWinsApi = wSummary.winsApiOffers ?? wSummary.apiOffers ?? 0;
+        const wArchApi = wSummary.archiveApiOffers ?? (wData?.archiveBulk?.summary?.apiOffers) ?? 0;
+        const wBecame = wSummary.becameWon ?? 0;
+        logOutcome({
+          ok: wResp.ok,
+          msg: `Итоги bulk: wins API=${wWinsApi} archive API=${wArchApi} записано=${wOk} новых побед=${wBecame} synced=${syncedBulkIds.size}`,
+        });
+        for (const wr of wResults.slice(0, 30)){
+          if (wr.msg) logOutcome({ ok: !!wr.ok, msg: wr.msg });
+        }
+        if (syncedBulkIds.size){
+          const before = items.length;
+          items = items.filter((it) => !syncedBulkIds.has(String(it.lotOfferId)));
+          logOutcome({
+            ok: true,
+            msg: `Итоги: bulk — пропуск Playwright для ${before - items.length} лот(ов)`,
+          });
+        }
+      }catch(err){
+        logOutcome({
+          ok: false,
+          msg: `Итоги bulk API: сбой — ${String(err?.message || err).slice(0, 220)} (далее Playwright)`,
+        });
+      }
+
       if (!items.length){
-        const msg = `Итоги: очередь пуста (портал: ${qData.count ?? 0}, площадка ${dealerId}: 0)`;
+        const msg = "Итоги: очередь закрыта bulk API, Playwright не нужен";
         setOutcomeStatus(msg);
         logOutcome({ ok: true, skipped: true, msg });
-        return { ok: true, count: 0 };
+        return { ok: true, count: syncedBulkIds.size };
       }
 
       logOutcome({
         ok: true,
-        msg: `Итоги: в очереди ${items.length} лот(ов), опрашиваю по одному…`,
+        msg: `Итоги: Playwright для ${items.length} лот(ов)…`,
         count: items.length,
       });
 

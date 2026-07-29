@@ -270,6 +270,37 @@ def run_outcomes(email: str, password: str, dealer_id: str) -> dict:
         return {"ok": True, "skipped": True, "reason": "disabled"}
     items = [it for it in (q.get("items") or []) if isinstance(it, dict)]
     items = [it for it in items if not it.get("dealerId") or str(it.get("dealerId")) == str(dealer_id)]
+
+    synced_bulk: set[str] = set()
+    try:
+        bulk_row = _http_json(
+            f"{_local_base()}/api/outcomes/wins",
+            {
+                "email": email,
+                "password": password,
+                "dealerId": dealer_id,
+                "portalBase": portal,
+                "items": items,
+            },
+            timeout=300,
+        )
+        for oid in bulk_row.get("syncedLotOfferIds") or []:
+            synced_bulk.add(str(oid))
+        summary = bulk_row.get("summary") or {}
+        logger.info(
+            "outcome bulk: wins_api=%s archive_api=%s ok=%s becameWon=%s synced=%s",
+            summary.get("winsApiOffers"),
+            summary.get("archiveApiOffers"),
+            summary.get("ok"),
+            summary.get("becameWon"),
+            len(synced_bulk),
+        )
+    except Exception as exc:
+        logger.warning("outcome bulk fail: %s", exc)
+
+    if synced_bulk:
+        items = [it for it in items if str(it.get("lotOfferId")) not in synced_bulk]
+
     ok_n = fail_n = 0
     for item in items:
         try:

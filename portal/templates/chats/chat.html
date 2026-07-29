@@ -94,7 +94,7 @@ z-index: 1030;">
                         <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
                     </div>
                     <div id="chat-emoji-wrap" class="d-none border rounded bg-white shadow-sm mt-1" style="position: absolute; bottom: 100%; left: 0; right: 0; z-index: 1060; overflow: hidden;">
-                        <emoji-picker id="chat-emoji-picker"></emoji-picker>
+                        <div id="chat-emoji-picker-host"></div>
                     </div>
                 </div>
     
@@ -293,7 +293,8 @@ z-index: 1030;">
 </script>
 
 <script type="module">
-    import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+    const EMOJI_PICKER_MODULE = 'https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js';
+    let emojiPickerLoadPromise = null;
 
     function insertAtCursor(textarea, text) {
         const el = textarea;
@@ -306,19 +307,7 @@ z-index: 1030;">
         el.focus();
     }
 
-    const btn = document.getElementById('chat-emoji-btn');
-    const wrap = document.getElementById('chat-emoji-wrap');
-    const picker = document.getElementById('chat-emoji-picker');
-    const ta = document.getElementById('message');
-
-    if (btn && wrap && picker && ta) {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const open = wrap.classList.toggle('d-none');
-            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
-        });
-
+    function bindEmojiPicker(picker, wrap, btn, ta) {
         picker.addEventListener('emoji-click', function (e) {
             var u = e.detail && e.detail.unicode;
             if (!u && e.detail && e.detail.emoji) {
@@ -329,6 +318,44 @@ z-index: 1030;">
             }
             wrap.classList.add('d-none');
             btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    async function ensureEmojiPicker(wrap, btn, ta) {
+        if (!emojiPickerLoadPromise) {
+            emojiPickerLoadPromise = import(EMOJI_PICKER_MODULE).then(function () {
+                const host = document.getElementById('chat-emoji-picker-host');
+                if (!host || host.querySelector('emoji-picker')) {
+                    return;
+                }
+                const picker = document.createElement('emoji-picker');
+                picker.id = 'chat-emoji-picker';
+                host.appendChild(picker);
+                bindEmojiPicker(picker, wrap, btn, ta);
+            });
+        }
+        return emojiPickerLoadPromise;
+    }
+
+    const btn = document.getElementById('chat-emoji-btn');
+    const wrap = document.getElementById('chat-emoji-wrap');
+    const ta = document.getElementById('message');
+
+    if (btn && wrap && ta) {
+        btn.addEventListener('click', async function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const willOpen = wrap.classList.contains('d-none');
+            if (willOpen) {
+                try {
+                    await ensureEmojiPicker(wrap, btn, ta);
+                } catch (err) {
+                    console.error('emoji-picker load failed', err);
+                    return;
+                }
+            }
+            wrap.classList.toggle('d-none');
+            btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
 
         document.addEventListener('click', function (e) {

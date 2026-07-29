@@ -1,10 +1,8 @@
 """
 Опрос итогов завершённых лотов Maxposter (решение продавца).
 
-Для каждого lotOfferId из очереди портала открывает
-  https://app.maxposter.ru/dealer/auction/{lotOfferId}/view
-перехватывает JSON API и/или читает тексты со страницы, затем
-POST /api/avito_auction_outcome_set/ на портал.
+1. Bulk API «Вас выбрали» (statusGroup=3) и архив (statusGroup=4) → итог на портал.
+2. Очередь портала — Playwright /view только для оставшихся лотов.
 """
 from __future__ import annotations
 
@@ -27,10 +25,21 @@ from maxposter_session import (
 from playwright.sync_api import TimeoutError as PWTimeout
 from playwright.sync_api import sync_playwright
 
-from script_auction import USER_AGENT, _extract_authorization_header, _login, _select_dealer
+from script_auction import (
+    SORT_FIELD,
+    STATUS_GROUP_ARCHIVE,
+    STATUS_GROUP_WON,
+    USER_AGENT,
+    fetch_autohub_offers_all,
+    _extract_authorization_header,
+    _login,
+    _select_dealer,
+)
 
 LOGIN_URL = "https://app.maxposter.ru/login"
 AUCTION_URL = "https://app.maxposter.ru/dealer/auction"
+AUCTION_WINS_URL = "https://app.maxposter.ru/dealer/auction?type=old&tab=3"
+AUCTION_ARCHIVE_URL = "https://app.maxposter.ru/dealer/auction?type=old&tab=4"
 VIEW_URL_TPL = "https://app.maxposter.ru/dealer/auction/{lot_offer_id}/view"
 
 EMAIL_ENV = "MAXPOSTER_EMAIL"
@@ -39,7 +48,54 @@ DEALER_ID_ENV = "MAXPOSTER_DEALER_ID"
 PORTAL_BASE_ENV = "PORTAL_BASE"
 OUTCOME_ITEMS_ENV = "OUTCOME_ITEMS_JSON"
 OUTCOME_LIMIT_ENV = "OUTCOME_LIMIT"
+OUTCOME_BULK_PAGE_LIMIT_ENV = "OUTCOME_BULK_PAGE_LIMIT"
+OUTCOME_WINS_PAGE_LIMIT_ENV = "OUTCOME_WINS_PAGE_LIMIT"
+OUTCOME_WINS_MAX_PAGES_ENV = "OUTCOME_WINS_MAX_PAGES"
+OUTCOME_ARCHIVE_MAX_PAGES_ENV = "OUTCOME_ARCHIVE_MAX_PAGES"
+OUTCOME_SKIP_BULK_WINS_ENV = "OUTCOME_SKIP_BULK_WINS"
+OUTCOME_SKIP_BULK_ARCHIVE_ENV = "OUTCOME_SKIP_BULK_ARCHIVE"
 OUTCOME_LOG_NAME = "outcome_poll.log"
+
+BULK_PAGE_LIMIT_DEFAULT = 50
+WINS_MAX_PAGES_DEFAULT = 15
+ARCHIVE_MAX_PAGES_DEFAULT = 25
+
+# status.status из autohub offers/list → outcome_code портала
+AUTOHUB_STATUS_TO_OUTCOME: dict[str, str] = {
+    "won": "won",
+    "winner": "won",
+    "seller_chose_you": "won",
+    "seller_chose_nothing": "no_selection",
+    "seller_chose_other": "lost",
+    "seller_chose_another": "lost",
+    "chose_other_bidder": "lost",
+    "lost": "lost",
+    "not_purchased": "not_redeemed",
+    "not_redeemed": "not_redeemed",
+    "bidder_refused": "we_refused",
+    "bidder_refused_other_reason": "we_refused",
+    "bidder_refused_price": "we_refused",
+    "bidder_refused_other": "we_refused",
+    "seller_canceled": "canceled",
+    "seller_canceled_archive": "canceled",
+    "seller_cancelled": "canceled",
+    "canceled": "canceled",
+    "cancelled": "canceled",
+    "not_taken": "not_taken",
+    "not_processed": "not_taken",
+    "waiting_seller": "waiting_seller",
+    "waiting_for_seller": "waiting_seller",
+}
+
+FINAL_OUTCOME_CODES = frozenset({
+    "won",
+    "lost",
+    "no_selection",
+    "not_redeemed",
+    "we_refused",
+    "not_taken",
+    "canceled",
+})
 
 INTERESTING_TEXT_RE = re.compile(
     r"аукцион|решени|продавц|выигр|выбран|выбрал|проигра|отмен|"
@@ -132,6 +188,197 @@ def push_outcome(item: dict, extracted: dict) -> dict:
         "raw": extracted.get("raw") or "",
     }
     return _http_json("POST", url, payload)
+
+
+def _bulk_page_limit() -> int:
+    for env_name in (OUTCOME_WINS_PAGE_LIMIT_ENV, OUTCOME_BULK_PAGE_LIMIT_ENV):
+        raw = _env(env_name, "")
+        if raw:
+            try:
+                return max(1, min(100, int(raw)))
+            except (TypeError, ValueError):
+                pass
+    return BULK_PAGE_LIMIT_DEFAULT
+
+
+def _wins_page_limit() -> int:
+    return _bulk_page_limit()
+
+
+def _wins_max_pages() -> int:
+    try:
+        return max(1, min(50, int(_env(OUTCOME_WINS_MAX_PAGES_ENV, str(WINS_MAX_PAGES_DEFAULT)) or WINS_MAX_PAGES_DEFAULT)))
+    except (TypeError, ValueError):
+        return WINS_MAX_PAGES_DEFAULT
+
+
+def _archive_max_pages() -> int:
+    try:
+        return max(1, min(100, int(_env(OUTCOME_ARCHIVE_MAX_PAGES_ENV, str(ARCHIVE_MAX_PAGES_DEFAULT)) or ARCHIVE_MAX_PAGES_DEFAULT)))
+    except (TypeError, ValueError):
+        return ARCHIVE_MAX_PAGES_DEFAULT
+
+
+def _skip_bulk_wins() -> bool:
+    return _env(OUTCOME_SKIP_BULK_WINS_ENV, "").lower() in ("1", "true", "yes")
+
+
+def _skip_bulk_archive() -> bool:
+    return _env(OUTCOME_SKIP_BULK_ARCHIVE_ENV, "").lower() in ("1", "true", "yes")
+
+
+def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> str | None:
+    code = (status_code or "").strip().lower()
+    if not code:
+        return None
+    if code in AUTOHUB_STATUS_TO_OUTCOME:
+        return AUTOHUB_STATUS_TO_OUTCOME[code]
+    if code.startswith("bidder_refused"):
+        return "we_refused"
+    if code.startswith("seller_canceled") or code.startswith("seller_cancelled"):
+        return "canceled"
+    if "chose_nothing" in code:
+        return "no_selection"
+    if "chose_other" in code or code.endswith("_lost"):
+        return "lost"
+    if code in ("won", "winner") or code.endswith("_won"):
+        return "won"
+
+    name = (status_name or "").lower()
+    if "никого не выбрал" in name:
+        return "no_selection"
+    if "не выкуплен" in name:
+        return "not_redeemed"
+    if "наш отказ" in name or name.startswith("отказ"):
+        return "we_refused"
+    if "отменен" in name or "отменён" in name:
+        return "canceled"
+    if "не взял" in name or "не обработ" in name:
+        return "not_taken"
+    if "выбрал друг" in name or "проигра" in name:
+        return "lost"
+    if "вас выбрали" in name or "выбран" in name:
+        return "won"
+    return None
+
+
+def _offer_car_label(offer: dict) -> str:
+    lot = offer.get("lot") or {}
+    vehicle = lot.get("vehicle") or {}
+    brand = (vehicle.get("brand") or {}).get("name") or ""
+    model = (vehicle.get("model") or {}).get("name") or ""
+    year = vehicle.get("year")
+    if isinstance(year, dict):
+        year = year.get("name") or year.get("id") or ""
+    return " ".join(str(x).strip() for x in (brand, model, year) if str(x).strip()).strip()
+
+
+def _portal_item_from_api_offer(offer: dict, dealer_id: str | None = None) -> dict:
+    lot = offer.get("lot") or {}
+    return {
+        "lotOfferId": offer.get("lotOfferId"),
+        "lotId": lot.get("lotId"),
+        "dealerId": offer.get("dealerId") or dealer_id,
+        "bid": offer.get("bid"),
+        "car": _offer_car_label(offer),
+    }
+
+
+def _extracted_from_api_offer(
+    offer: dict,
+    *,
+    status_group: int,
+    outcome_code: str | None = None,
+) -> dict | None:
+    status = offer.get("status") or {}
+    if isinstance(status, dict):
+        status_code = str(status.get("status") or "")
+        status_name = str(status.get("name") or "")
+    else:
+        status_code = str(status or "")
+        status_name = ""
+    code = outcome_code or _map_autohub_status_to_outcome(status_code, status_name)
+    if not code:
+        return None
+    if code == "waiting_seller":
+        return None
+    lot_offer_id = offer.get("lotOfferId")
+    title = status_name or "Аукцион завершен"
+    detail = status_name or title
+    return {
+        "title": title,
+        "detail": detail,
+        "blob": f"autohub offers/list statusGroup={status_group}",
+        "status": status_code,
+        "outcomeCode": code,
+        "raw": json.dumps(
+            {
+                "source": "autohub_offers_list",
+                "statusGroup": status_group,
+                "lotOfferId": lot_offer_id,
+                "status": status,
+                "isWinner": offer.get("isWinner"),
+                "isFinished": offer.get("isFinished"),
+            },
+            ensure_ascii=False,
+        )[:8000],
+    }
+
+
+def _extracted_won_from_api_offer(offer: dict) -> dict:
+    extracted = _extracted_from_api_offer(
+        offer, status_group=STATUS_GROUP_WON, outcome_code="won"
+    )
+    if extracted:
+        if not extracted.get("detail"):
+            extracted["detail"] = "Вас выбрали"
+        return extracted
+    status = offer.get("status") or {}
+    if isinstance(status, dict):
+        status_code = str(status.get("status") or "won")
+        status_name = str(status.get("name") or "Вас выбрали")
+    else:
+        status_code = str(status or "won")
+        status_name = "Вас выбрали"
+    lot_offer_id = offer.get("lotOfferId")
+    return {
+        "title": status_name or "Аукцион завершен",
+        "detail": "Вас выбрали",
+        "blob": "autohub offers/list statusGroup=3",
+        "status": status_code,
+        "outcomeCode": "won",
+        "raw": json.dumps(
+            {
+                "source": "autohub_offers_list",
+                "statusGroup": STATUS_GROUP_WON,
+                "lotOfferId": lot_offer_id,
+                "status": status,
+            },
+            ensure_ascii=False,
+        )[:8000],
+    }
+
+
+def _warm_archive_headers(page, session_headers: dict | None = None) -> dict:
+    headers = dict(session_headers or {})
+    try:
+        page.goto(AUCTION_ARCHIVE_URL, wait_until="domcontentloaded", timeout=45_000)
+        page.wait_for_timeout(400)
+        headers.update(_extract_authorization_header(page))
+    except Exception as exc:
+        print(f"Прогрев archive tab: {exc}")
+    return headers
+
+
+def _warm_wins_headers(page, session_headers: dict | None = None) -> dict:
+    headers = dict(session_headers or {})
+    try:
+        page.goto(AUCTION_WINS_URL, wait_until="domcontentloaded", timeout=45_000)
+        page.wait_for_timeout(400)
+        headers.update(_extract_authorization_header(page))
+    except Exception as exc:
+        print(f"Прогрев wins tab: {exc}")
+    return headers
 
 
 def _warm_headers(page, session_headers: dict | None = None) -> dict:
@@ -440,6 +687,442 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
     return row
 
 
+def _push_bulk_row(
+    item: dict,
+    extracted: dict,
+    *,
+    source: str,
+    idx: int = 0,
+    total: int = 0,
+) -> dict:
+    lot_offer_id = item.get("lotOfferId")
+    tag = f"[{idx}/{total}] " if total else ""
+    try:
+        portal = push_outcome(item, extracted)
+    except RuntimeError as exc:
+        err = str(exc)
+        if "404" in err and "offer not found" in err.lower():
+            return {
+                "ok": False,
+                "skipped": True,
+                "source": source,
+                "lotOfferId": lot_offer_id,
+                "lotId": item.get("lotId"),
+                "car": item.get("car") or "",
+                "error": "offer not on portal",
+                "msg": f"{tag}{source} skip offer {lot_offer_id}: нет на портале",
+            }
+        raise
+
+    code = portal.get("outcomeCode") or extracted.get("outcomeCode") or "?"
+    prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
+    chat_info = portal.get("chat") or {}
+    row = {
+        "ok": True,
+        "source": source,
+        "lotOfferId": lot_offer_id,
+        "lotId": item.get("lotId") or portal.get("lotId"),
+        "lotPk": item.get("lotPk"),
+        "car": item.get("car") or "",
+        "bid": item.get("bid"),
+        "extracted": {
+            "status": extracted.get("status"),
+            "outcomeCode": extracted.get("outcomeCode"),
+            "title": extracted.get("title"),
+            "detail": extracted.get("detail"),
+        },
+        "portal": {
+            "outcomeCode": code,
+            "outcomeTitle": portal.get("outcomeTitle"),
+            "outcomeDetail": portal.get("outcomeDetail"),
+            "statusCode": portal.get("statusCode") or "?",
+            "prevOutcome": prev,
+            "becameWon": portal.get("becameWon"),
+            "email": portal.get("email"),
+            "chat": chat_info,
+        },
+        "msg": (
+            f"{tag}{source} lot {item.get('lotId')} / offer {lot_offer_id}: "
+            f"{prev} → {code} ({extracted.get('title') or ''})"
+        ),
+    }
+    return row
+
+
+def _push_won_row(item: dict, extracted: dict, *, idx: int = 0, total: int = 0) -> dict:
+    return _push_bulk_row(item, extracted, source="bulk_wins", idx=idx, total=total)
+
+
+def sync_wins_bulk(
+    page,
+    ctx,
+    *,
+    session_headers: dict | None = None,
+    dealer_id: str | None = None,
+    queue_items: list[dict] | None = None,
+) -> dict:
+    """
+    Список «Вас выбрали» через autohub API → outcome=won на портал.
+    Возвращает wonLotOfferIds — их можно убрать из Playwright-очереди.
+    """
+    headers = _warm_wins_headers(page, session_headers)
+    offers = fetch_autohub_offers_all(
+        ctx,
+        page,
+        status_group=STATUS_GROUP_WON,
+        extra_headers=headers,
+        limit=_wins_page_limit(),
+        max_pages=_wins_max_pages(),
+    )
+    queue_ids = {
+        int(it["lotOfferId"])
+        for it in (queue_items or [])
+        if it.get("lotOfferId") is not None
+    }
+    results: list[dict] = []
+    won_ids: set[int] = set()
+    synced_ids: set[int] = set()
+    became_won = 0
+    fail = 0
+    skipped = 0
+
+    # Все «Вас выбрали» с API — не только пересечение с очередью (могли не попасть в queue).
+    targets = offers
+    if queue_ids:
+        in_queue = sum(
+            1 for o in offers
+            if o.get("lotOfferId") is not None and int(o.get("lotOfferId")) in queue_ids
+        )
+        print(
+            f"WINS_BULK queue overlap: {in_queue}/{len(offers)} API wins in portal queue "
+            f"(push all API wins)",
+            flush=True,
+        )
+
+    total = len(targets)
+    print(f"WINS_BULK start offers={len(offers)} push={total}", flush=True)
+
+    for idx, offer in enumerate(targets, 1):
+        lot_offer_id = offer.get("lotOfferId")
+        if lot_offer_id is None:
+            continue
+        try:
+            lot_offer_id = int(lot_offer_id)
+        except (TypeError, ValueError):
+            continue
+        won_ids.add(lot_offer_id)
+
+        item = _portal_item_from_api_offer(offer, dealer_id)
+        extracted = _extracted_won_from_api_offer(offer)
+        car = item.get("car") or "—"
+        print(
+            f"WINS_BULK[{idx}/{total}] lotOfferId={lot_offer_id} "
+            f"lotId={item.get('lotId')} «{car}»",
+            flush=True,
+        )
+        try:
+            row = _push_won_row(item, extracted, idx=idx, total=total)
+            results.append(row)
+            if row.get("skipped"):
+                skipped += 1
+                print(row.get("msg") or "WINS_BULK skip", flush=True)
+                continue
+            if not row.get("ok"):
+                fail += 1
+                continue
+            synced_ids.add(lot_offer_id)
+            if (row.get("portal") or {}).get("becameWon"):
+                became_won += 1
+            print(row.get("msg") or "WINS_BULK ok", flush=True)
+        except Exception as exc:
+            fail += 1
+            err = str(exc)[:300]
+            results.append({
+                "ok": False,
+                "source": "bulk_wins",
+                "lotOfferId": lot_offer_id,
+                "lotId": item.get("lotId"),
+                "car": car,
+                "error": err,
+                "msg": f"WINS_BULK[{idx}/{total}] error offer {lot_offer_id}: {err}",
+            })
+            print(results[-1]["msg"], flush=True)
+
+    summary = {
+        "apiOffers": len(offers),
+        "pushed": total,
+        "ok": sum(1 for r in results if r.get("ok")),
+        "fail": fail,
+        "skipped": skipped,
+        "becameWon": became_won,
+        "wonLotOfferIds": sorted(won_ids),
+        "syncedLotOfferIds": sorted(synced_ids),
+    }
+    print(
+        f"WINS_BULK done api={summary['apiOffers']} ok={summary['ok']} "
+        f"fail={fail} skip={skipped} becameWon={became_won}",
+        flush=True,
+    )
+    return {
+        "ok": fail == 0,
+        "results": results,
+        "summary": summary,
+    }
+
+
+def sync_archive_bulk(
+    page,
+    ctx,
+    *,
+    session_headers: dict | None = None,
+    dealer_id: str | None = None,
+    queue_items: list[dict] | None = None,
+) -> dict:
+    """
+    Список «Архив» через autohub API (statusGroup=4) → финальные итоги на портал.
+    """
+    headers = _warm_archive_headers(page, session_headers)
+    offers = fetch_autohub_offers_all(
+        ctx,
+        page,
+        status_group=STATUS_GROUP_ARCHIVE,
+        extra_headers=headers,
+        limit=_bulk_page_limit(),
+        max_pages=_archive_max_pages(),
+        sort_field=SORT_FIELD,
+    )
+    queue_ids = {
+        int(it["lotOfferId"])
+        for it in (queue_items or [])
+        if it.get("lotOfferId") is not None
+    }
+    results: list[dict] = []
+    archive_ids: set[int] = set()
+    synced_ids: set[int] = set()
+    fail = 0
+    skipped = 0
+    unmapped = 0
+
+    if queue_ids:
+        in_queue = sum(
+            1 for o in offers
+            if o.get("lotOfferId") is not None and int(o.get("lotOfferId")) in queue_ids
+        )
+        print(
+            f"ARCHIVE_BULK queue overlap: {in_queue}/{len(offers)} API archive in portal queue "
+            f"(push mappable finals)",
+            flush=True,
+        )
+
+    targets = offers
+    total = len(targets)
+    print(f"ARCHIVE_BULK start offers={len(offers)} push={total}", flush=True)
+
+    for idx, offer in enumerate(targets, 1):
+        lot_offer_id = offer.get("lotOfferId")
+        if lot_offer_id is None:
+            continue
+        try:
+            lot_offer_id = int(lot_offer_id)
+        except (TypeError, ValueError):
+            continue
+        archive_ids.add(lot_offer_id)
+
+        extracted = _extracted_from_api_offer(offer, status_group=STATUS_GROUP_ARCHIVE)
+        if not extracted:
+            unmapped += 1
+            status = offer.get("status") or {}
+            st = status.get("status") if isinstance(status, dict) else status
+            print(
+                f"ARCHIVE_BULK[{idx}/{total}] skip lotOfferId={lot_offer_id} "
+                f"unmapped status={st!r}",
+                flush=True,
+            )
+            continue
+
+        item = _portal_item_from_api_offer(offer, dealer_id)
+        car = item.get("car") or "—"
+        code = extracted.get("outcomeCode") or "?"
+        print(
+            f"ARCHIVE_BULK[{idx}/{total}] lotOfferId={lot_offer_id} "
+            f"lotId={item.get('lotId')} status={extracted.get('status')} → {code} «{car}»",
+            flush=True,
+        )
+        try:
+            row = _push_bulk_row(
+                item,
+                extracted,
+                source="bulk_archive",
+                idx=idx,
+                total=total,
+            )
+            results.append(row)
+            if row.get("skipped"):
+                skipped += 1
+                print(row.get("msg") or "ARCHIVE_BULK skip", flush=True)
+                continue
+            if not row.get("ok"):
+                fail += 1
+                continue
+            portal_code = (row.get("portal") or {}).get("outcomeCode") or code
+            if portal_code in FINAL_OUTCOME_CODES:
+                synced_ids.add(lot_offer_id)
+            print(row.get("msg") or "ARCHIVE_BULK ok", flush=True)
+        except Exception as exc:
+            fail += 1
+            err = str(exc)[:300]
+            results.append({
+                "ok": False,
+                "source": "bulk_archive",
+                "lotOfferId": lot_offer_id,
+                "lotId": item.get("lotId"),
+                "car": car,
+                "error": err,
+                "msg": f"ARCHIVE_BULK[{idx}/{total}] error offer {lot_offer_id}: {err}",
+            })
+            print(results[-1]["msg"], flush=True)
+
+    summary = {
+        "apiOffers": len(offers),
+        "pushed": total - unmapped,
+        "ok": sum(1 for r in results if r.get("ok")),
+        "fail": fail,
+        "skipped": skipped,
+        "unmapped": unmapped,
+        "archiveLotOfferIds": sorted(archive_ids),
+        "syncedLotOfferIds": sorted(synced_ids),
+    }
+    print(
+        f"ARCHIVE_BULK done api={summary['apiOffers']} ok={summary['ok']} "
+        f"fail={fail} skip={skipped} unmapped={unmapped}",
+        flush=True,
+    )
+    return {
+        "ok": fail == 0,
+        "results": results,
+        "summary": summary,
+    }
+
+
+def _merged_synced_ids(*bulks: dict | None) -> list[int]:
+    out: set[int] = set()
+    for bulk in bulks:
+        if not bulk:
+            continue
+        for oid in (bulk.get("summary") or {}).get("syncedLotOfferIds") or []:
+            try:
+                out.add(int(oid))
+            except (TypeError, ValueError):
+                pass
+        for row in bulk.get("results") or []:
+            if not row.get("ok") or row.get("skipped"):
+                continue
+            code = (row.get("portal") or {}).get("outcomeCode") or ""
+            if code in FINAL_OUTCOME_CODES:
+                oid = row.get("lotOfferId")
+                if oid is not None:
+                    try:
+                        out.add(int(oid))
+                    except (TypeError, ValueError):
+                        pass
+    return sorted(out)
+
+
+def sync_all_bulk(
+    page,
+    ctx,
+    *,
+    session_headers: dict | None = None,
+    dealer_id: str | None = None,
+    queue_items: list[dict] | None = None,
+) -> dict:
+    """Bulk wins (statusGroup=3) + archive (statusGroup=4) → портал."""
+    wins_bulk: dict | None = None
+    archive_bulk: dict | None = None
+    headers = dict(session_headers or {})
+
+    if not _skip_bulk_wins():
+        wins_bulk = sync_wins_bulk(
+            page,
+            ctx,
+            session_headers=headers,
+            dealer_id=dealer_id,
+            queue_items=queue_items,
+        )
+        headers = wins_bulk.get("sessionHeaders") or headers
+
+    if not _skip_bulk_archive():
+        archive_bulk = sync_archive_bulk(
+            page,
+            ctx,
+            session_headers=headers,
+            dealer_id=dealer_id,
+            queue_items=queue_items,
+        )
+
+    results: list[dict] = []
+    if wins_bulk:
+        results.extend(wins_bulk.get("results") or [])
+    if archive_bulk:
+        results.extend(archive_bulk.get("results") or [])
+
+    synced = _merged_synced_ids(wins_bulk, archive_bulk)
+    ws = (wins_bulk or {}).get("summary") or {}
+    as_ = (archive_bulk or {}).get("summary") or {}
+    summary = {
+        "winsApiOffers": ws.get("apiOffers", 0),
+        "archiveApiOffers": as_.get("apiOffers", 0),
+        "ok": sum(1 for r in results if r.get("ok")),
+        "fail": sum(1 for r in results if not r.get("ok") and not r.get("skipped")),
+        "skipped": sum(1 for r in results if r.get("skipped")),
+        "becameWon": ws.get("becameWon", 0),
+        "wonLotOfferIds": ws.get("wonLotOfferIds") or [],
+        "archiveLotOfferIds": as_.get("archiveLotOfferIds") or [],
+        "syncedLotOfferIds": synced,
+    }
+    ok = True
+    if wins_bulk and not wins_bulk.get("ok", True):
+        ok = False
+    if archive_bulk and not archive_bulk.get("ok", True):
+        ok = False
+    return {
+        "ok": ok,
+        "winsBulk": wins_bulk,
+        "archiveBulk": archive_bulk,
+        "results": results,
+        "summary": summary,
+        "syncedLotOfferIds": synced,
+        "wonLotOfferIds": summary["wonLotOfferIds"],
+    }
+
+
+def filter_queue_after_bulk(items: list[dict], *bulks: dict | None) -> list[dict]:
+    """Убираем из Playwright-очереди лоты с финальным итогом из bulk API."""
+    synced = set(_merged_synced_ids(*bulks))
+    if not synced:
+        return items
+    out = []
+    for it in items:
+        oid = it.get("lotOfferId")
+        try:
+            oid_int = int(oid) if oid is not None else None
+        except (TypeError, ValueError):
+            oid_int = None
+        if oid_int is not None and oid_int in synced:
+            print(
+                f"OUTCOME_SKIP_PLAYWRIGHT lotOfferId={oid_int} "
+                f"(final via bulk API)",
+                flush=True,
+            )
+            continue
+        out.append(it)
+    return out
+
+
+def filter_queue_after_wins(items: list[dict], wins_bulk: dict | None) -> list[dict]:
+    return filter_queue_after_bulk(items, wins_bulk)
+
+
 def _load_items() -> tuple[list[dict], dict]:
     """Возвращает (items, meta) — meta нужна viewer'у при пустой очереди."""
     meta: dict = {
@@ -499,6 +1182,8 @@ def _build_summary(results: list[dict]) -> dict:
     fail = 0
     won_now = 0
     for r in results:
+        if r.get("skipped"):
+            continue
         if not r.get("ok"):
             fail += 1
             by_code["error"] = by_code.get("error", 0) + 1
@@ -533,16 +1218,22 @@ def main():
     )
 
     results = []
-    if not items:
-        reason = "disabled" if not queue_meta.get("enabled") else "empty"
-        _log(f"OUTCOME_EMPTY reason={reason} — лотов для опроса нет")
+    bulk: dict | None = None
+    wins_bulk: dict | None = None
+    archive_bulk: dict | None = None
+
+    if not items and queue_meta.get("enabled") is False:
+        _log("OUTCOME_DISABLED — опрос выключен на портале")
         payload = {
             "ok": True,
             "count": 0,
             "okCount": 0,
             "results": [],
-            "reason": reason,
+            "reason": "disabled",
             "summary": _build_summary([]),
+            "winsBulk": None,
+            "archiveBulk": None,
+            "bulk": None,
             "logLines": list(_LOG_LINES),
             **queue_meta,
         }
@@ -556,17 +1247,60 @@ def main():
         browser = p.chromium.launch(headless=True)
         ctx = browser.new_context(user_agent=USER_AGENT, locale="ru-RU")
         page = ctx.new_page()
+        session_headers: dict = {}
         try:
             try:
-                _ensure_session(page, ctx, email, password, dealer_id, script_dir)
+                session_headers = _ensure_session(page, ctx, email, password, dealer_id, script_dir)
             except MaxposterAuthError:
                 if dealer_id:
                     clear_session(script_dir, email, dealer_id)
                 raise
 
-            for idx, item in enumerate(items, 1):
+            if not _skip_bulk_wins() or not _skip_bulk_archive():
+                parts = []
+                if not _skip_bulk_wins():
+                    parts.append("statusGroup=3")
+                if not _skip_bulk_archive():
+                    parts.append("statusGroup=4")
+                _log(f"BULK: autohub offers/list {', '.join(parts)} …")
                 try:
-                    row = process_item(page, item, idx=idx, total=len(items))
+                    bulk = sync_all_bulk(
+                        page,
+                        ctx,
+                        session_headers=session_headers,
+                        dealer_id=dealer_id,
+                        queue_items=items,
+                    )
+                    wins_bulk = bulk.get("winsBulk")
+                    archive_bulk = bulk.get("archiveBulk")
+                    results.extend(bulk.get("results") or [])
+                    bs = bulk.get("summary") or {}
+                    _log(
+                        f"BULK summary wins_api={bs.get('winsApiOffers')} "
+                        f"archive_api={bs.get('archiveApiOffers')} "
+                        f"ok={bs.get('ok')} becameWon={bs.get('becameWon')} "
+                        f"synced={len(bs.get('syncedLotOfferIds') or [])}"
+                    )
+                except MaxposterAuthError:
+                    if dealer_id:
+                        clear_session(script_dir, email, dealer_id)
+                    raise
+                except Exception as exc:
+                    _log(f"BULK_ERR: {str(exc)[:300]}")
+                    bulk = {"ok": False, "error": str(exc)[:300], "results": [], "summary": {}}
+
+            playwright_items = filter_queue_after_bulk(items, bulk)
+            if len(playwright_items) < len(items):
+                _log(
+                    f"OUTCOME_PLAYWRIGHT queue={len(playwright_items)} "
+                    f"(was {len(items)}, bulk skip {len(items) - len(playwright_items)})"
+                )
+            elif not playwright_items and not items:
+                _log("OUTCOME_QUEUE_EMPTY — Playwright не нужен (bulk only)")
+
+            for idx, item in enumerate(playwright_items, 1):
+                try:
+                    row = process_item(page, item, idx=idx, total=len(playwright_items))
                     results.append(row)
                     _log(row.get("msg") or f"OUTCOME row {idx}")
                 except MaxposterAuthError:
@@ -603,10 +1337,69 @@ def main():
         "okCount": ok_n,
         "results": results,
         "summary": summary,
+        "winsBulk": wins_bulk,
+        "archiveBulk": archive_bulk,
+        "bulk": bulk,
+        "syncedLotOfferIds": (bulk or {}).get("syncedLotOfferIds") or [],
         "logLines": list(_LOG_LINES),
         **queue_meta,
     }
     print(json.dumps(payload, ensure_ascii=False), flush=True)
+
+
+def main_bulk_only() -> dict:
+    """Bulk wins + archive — для /api/outcomes/wins."""
+    global _LOG_LINES
+    _LOG_LINES = []
+    email = _env_required(EMAIL_ENV)
+    password = _env_required(PASSWORD_ENV)
+    dealer_id = _env(DEALER_ID_ENV)
+    script_dir = _app_dir()
+    limit = int(_env(OUTCOME_LIMIT_ENV, "50") or "50")
+    queue_items: list[dict] | None = None
+    raw = _env(OUTCOME_ITEMS_ENV)
+    if raw:
+        data = json.loads(raw)
+        if isinstance(data, dict):
+            queue_items = list(data.get("items") or [])
+        elif isinstance(data, list):
+            queue_items = data
+    else:
+        queue = fetch_outcome_queue(limit=limit, dealer_id=dealer_id, lookback_days=30)
+        queue_items = list(queue.get("items") or [])
+
+    _log("=" * 72)
+    _log(f"BULK_ONLY dealer={dealer_id or '-'} portal={_portal_base()}")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        ctx = browser.new_context(user_agent=USER_AGENT, locale="ru-RU")
+        page = ctx.new_page()
+        try:
+            session_headers = _ensure_session(page, ctx, email, password, dealer_id, script_dir)
+            bulk = sync_all_bulk(
+                page,
+                ctx,
+                session_headers=session_headers,
+                dealer_id=dealer_id,
+                queue_items=queue_items,
+            )
+        finally:
+            browser.close()
+
+    payload = {
+        **bulk,
+        "logLines": list(_LOG_LINES),
+        "wonLotOfferIds": bulk.get("wonLotOfferIds") or [],
+        "syncedLotOfferIds": bulk.get("syncedLotOfferIds") or [],
+    }
+    print(json.dumps(payload, ensure_ascii=False), flush=True)
+    return payload
+
+
+def main_wins_bulk_only() -> dict:
+    """Обратная совместимость."""
+    return main_bulk_only()
 
 
 if __name__ == "__main__":
