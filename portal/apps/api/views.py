@@ -635,12 +635,21 @@ def avito_auction_outcome_set(request):
       "blob": "…",
       "status": "ended",
       "outcomeCode": "waiting_seller",  // опционально, иначе классификация по тексту
-      "raw": "…"
+      "raw": "…",
+      "dealerId": 2107,
+      "offerPayload": { … }  // полный offer из Autohub — upsert если нет на портале
     }
+
+    Если оффера нет, а offerPayload передан — создаём лот/оффер из API
+    (для монитора, статистики и последующего calculate_car).
     """
-    from auction_avito.models import AvitoLotOffer
     from auction_avito.services.outcome import apply_offer_outcome
-    from auction_avito.services.offer_api import build_offer_state_response, resolve_offer_by_ids
+    from auction_avito.services.offer_api import (
+        build_offer_state_response,
+        lot_needs_calculation,
+        resolve_offer_by_ids,
+        upsert_offer_from_outcome_payload,
+    )
 
     data, parse_error = _parse_1c_exchange_body(request)
     if parse_error is not None:
@@ -650,7 +659,30 @@ def avito_auction_outcome_set(request):
 
     lot_offer_id = data.get('lotOfferId') or data.get('LotOfferId')
     lot_id = data.get('lotId') or data.get('LotId')
+    offer_payload = data.get('offerPayload') or data.get('offer')
+    dealer_id = data.get('dealerId') or data.get('dealer_id')
+    offer_created = False
+
     offer = resolve_offer_by_ids(lot_offer_id=lot_offer_id, lot_id=lot_id)
+    if isinstance(offer_payload, dict) and offer_payload.get('lotOfferId'):
+        # Нет на портале — создаём; уже есть — освежаем vehicle/raw из Autohub.
+        upserted, created, upsert_err = upsert_offer_from_outcome_payload(
+            offer_payload,
+            dealer_id=dealer_id,
+        )
+        if upsert_err and offer is None:
+            return JsonResponse(
+                {
+                    'error': upsert_err,
+                    'lotOfferId': lot_offer_id,
+                    'lotId': lot_id,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        if upserted is not None:
+            offer = upserted
+            offer_created = created
+
     if not offer:
         return JsonResponse(
             {'error': 'offer not found', 'lotOfferId': lot_offer_id, 'lotId': lot_id},
@@ -668,7 +700,16 @@ def avito_auction_outcome_set(request):
         send_email=data.get('sendEmail', True) is not False,
     )
     state = build_offer_state_response(offer)
-    return JsonResponse({**result, **state}, status=status.HTTP_200_OK)
+    needs_calc = offer_created or lot_needs_calculation(offer.lot)
+    return JsonResponse(
+        {
+            **result,
+            **state,
+            'offerCreated': offer_created,
+            'needsCalculation': needs_calc,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(['POST'])

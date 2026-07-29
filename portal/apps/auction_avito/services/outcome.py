@@ -191,7 +191,7 @@ _LOST_RE = re.compile(
 # Не использовать голое «решения продавца» — ловит «Пожелания продавца».
 _WAIT_RE = re.compile(
     r'(?:ждём|ждем)\s+решения(?:\s+продавца)?|'
-    r'ожида(?:ем|ние)\s+решени|'
+    r'ожида(?:ем|ет|ние)\s+решени|'
     r'обычно\s+на\s+это\s+уходит\s+день',
     re.I,
 )
@@ -399,7 +399,16 @@ def classify_outcome_text(
     # 3) Ожидание решения — ДО won по слабым совпадениям в blob.
     strong_won_primary = bool(_WON_RE.search(primary))
     strong_lost_primary = bool(_LOST_RE.search(primary))
-    wait_in_primary = bool(_WAIT_RE.search(primary) or raw_status == OUTCOME_WAITING)
+    wait_in_primary = bool(
+        _WAIT_RE.search(primary)
+        or raw_status == OUTCOME_WAITING
+        or raw_status in (
+            'seller_decision_waiting',
+            'waiting_for_seller_decision',
+            'seller_decision_pending',
+            'waiting_for_seller',
+        )
+    )
     wait_anywhere = wait_in_primary or bool(_WAIT_RE.search(haystack))
 
     if wait_anywhere and not strong_won_primary and not strong_lost_primary:
@@ -861,7 +870,10 @@ def apply_offer_outcome(
         if (
             outcome_code in FINAL_OUTCOMES
             and text_code in ('', OUTCOME_UNKNOWN, OUTCOME_WAITING)
-        ) or text_code in ('', OUTCOME_UNKNOWN):
+        ) or text_code in ('', OUTCOME_UNKNOWN) or (
+            outcome_code == OUTCOME_WAITING
+            and text_code in ('', OUTCOME_UNKNOWN, OUTCOME_WAITING)
+        ):
             classified = {
                 'outcome_code': outcome_code,
                 'outcome_title': _norm_spaces(title) or OUTCOME_NAMES.get(outcome_code, ''),
@@ -875,6 +887,8 @@ def apply_offer_outcome(
                 OUTCOME_CANCELED, OUTCOME_NO_SELECTION,
                 OUTCOME_NOT_REDEEMED, OUTCOME_WE_REFUSED, OUTCOME_NOT_TAKEN,
             ):
+                classified['status_code'] = 'finished'
+            if outcome_code == OUTCOME_WAITING:
                 classified['status_code'] = 'finished'
 
     # Защита от ложного won: наша ставка ниже maxBid лота → победы быть не может.

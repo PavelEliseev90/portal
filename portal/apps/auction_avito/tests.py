@@ -232,6 +232,18 @@ class OutcomeClassifyTests(SimpleTestCase):
         self.assertEqual(d['outcome_code'], 'waiting_seller')
         self.assertEqual(d['status_code'], 'finished')
 
+    def test_waiting_seller_decision_waiting_status(self):
+        """statusGroup=2: status.seller_decision_waiting + «Ожидает решения продавца»."""
+        from auction_avito.services.outcome import classify_outcome_text
+
+        d = classify_outcome_text(
+            title='Ожидает решения продавца',
+            detail='Ожидает решения продавца',
+            status_code='seller_decision_waiting',
+        )
+        self.assertEqual(d['outcome_code'], 'waiting_seller')
+        self.assertEqual(d['status_code'], 'finished')
+
     def test_waiting_not_false_won_from_notification_blob(self):
         """Шаблон Maxposter про «выбрал предложение ДЦ» + «ждём продавца» ≠ won."""
         from auction_avito.services.outcome import classify_outcome_text

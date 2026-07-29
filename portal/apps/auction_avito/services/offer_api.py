@@ -1,7 +1,7 @@
 """API-сериализация состояния оффера/ставки для парсера и внешних клиентов."""
 from __future__ import annotations
 
-from auction_avito.models import AvitoBidHistory, AvitoLotOffer
+from auction_avito.models import AvitoBidHistory, AvitoBidderAccount, AvitoLotOffer
 from auction_avito.services.bid_history import extract_bid_comment
 
 
@@ -12,6 +12,72 @@ def _int_or_none(value):
         return int(round(float(value)))
     except (TypeError, ValueError):
         return None
+
+
+def resolve_bidder_account(dealer_id) -> AvitoBidderAccount | None:
+    """Активный аккаунт площадки; если нет активного — любой с этим dealer_id."""
+    if dealer_id in (None, ''):
+        return None
+    try:
+        did = int(dealer_id)
+    except (TypeError, ValueError):
+        return None
+    account = (
+        AvitoBidderAccount.objects
+        .filter(dealer_id=did, is_active=True)
+        .order_by('id')
+        .first()
+    )
+    if account is not None:
+        return account
+    return (
+        AvitoBidderAccount.objects
+        .filter(dealer_id=did)
+        .order_by('id')
+        .first()
+    )
+
+
+def lot_needs_calculation(lot) -> bool:
+    """Нет успешного расчёта с ценой выкупа — имеет смысл дернуть calculate_car."""
+    if lot is None:
+        return True
+    from auction_avito.models import AvitoLotCalculation
+    return not (
+        AvitoLotCalculation.objects
+        .filter(lot=lot, is_success=True, estimation_price__isnull=False)
+        .exists()
+    )
+
+
+def upsert_offer_from_outcome_payload(
+    offer_payload: dict,
+    *,
+    dealer_id=None,
+) -> tuple[AvitoLotOffer | None, bool, str | None]:
+    """
+    Создаёт/обновляет оффер из полного тела Autohub offers/list.
+    Возвращает (offer, created, error).
+    """
+    if not isinstance(offer_payload, dict) or not offer_payload.get('lotOfferId'):
+        return None, False, 'offerPayload.lotOfferId required'
+
+    from auction_avito.services.sync import upsert_offer_from_api
+
+    if dealer_id in (None, ''):
+        dealer_id = offer_payload.get('dealerId')
+    account = resolve_bidder_account(dealer_id)
+    if account is None:
+        return None, False, f'bidder account not found for dealerId={dealer_id}'
+
+    existed = AvitoLotOffer.objects.filter(
+        lot_offer_id=offer_payload['lotOfferId'],
+    ).exists()
+    try:
+        offer = upsert_offer_from_api(account, offer_payload)
+    except Exception as exc:
+        return None, False, f'offer upsert failed: {exc}'
+    return offer, (not existed), None
 
 
 def resolve_offer_by_ids(

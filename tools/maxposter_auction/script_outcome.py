@@ -95,6 +95,7 @@ AUTOHUB_STATUS_TO_OUTCOME: dict[str, str] = {
     "seller_chooses": "waiting_seller",
     "waiting_for_seller_decision": "waiting_seller",
     "seller_decision_pending": "waiting_seller",
+    "seller_decision_waiting": "waiting_seller",
 }
 
 FINAL_OUTCOME_CODES = frozenset({
@@ -190,6 +191,7 @@ def push_outcome(item: dict, extracted: dict) -> dict:
     payload = {
         "lotOfferId": item.get("lotOfferId"),
         "lotId": item.get("lotId"),
+        "dealerId": item.get("dealerId"),
         "title": extracted.get("title") or "",
         "detail": extracted.get("detail") or "",
         "blob": extracted.get("blob") or "",
@@ -197,7 +199,93 @@ def push_outcome(item: dict, extracted: dict) -> dict:
         "outcomeCode": extracted.get("outcomeCode") or "",
         "raw": extracted.get("raw") or "",
     }
+    offer_payload = item.get("offerPayload")
+    if isinstance(offer_payload, dict) and offer_payload.get("lotOfferId"):
+        payload["offerPayload"] = offer_payload
     return _http_json("POST", url, payload)
+
+
+def _build_calc_payload_from_offer(offer: dict, dealer_id: str | None = None) -> dict | None:
+    """Тело для /api/calculate_car/ из полного Autohub offer (как worker_loop)."""
+    if not isinstance(offer, dict):
+        return None
+    lot = dict(offer.get("lot") or {})
+    lot_offer_id = offer.get("lotOfferId")
+    lot_id = lot.get("lotId") or offer.get("lotId")
+    if lot_offer_id in (None, "") or lot_id in (None, ""):
+        return None
+    did = dealer_id if dealer_id not in (None, "") else offer.get("dealerId")
+    if did not in (None, ""):
+        try:
+            lot["dealerId"] = int(did)
+        except (TypeError, ValueError):
+            lot["dealerId"] = did
+    try:
+        lot["lotId"] = int(lot_id)
+        lot_offer_id = int(lot_offer_id)
+    except (TypeError, ValueError):
+        return None
+    if not lot.get("finishAt") and lot.get("originFinishAt"):
+        lot["finishAt"] = lot["originFinishAt"]
+    return {
+        **offer,
+        "lot": lot,
+        "lotId": lot["lotId"],
+        "lotOfferId": lot_offer_id,
+        "dealerId": lot.get("dealerId") if lot.get("dealerId") is not None else did,
+        "minPrice": lot.get("minPrice"),
+        "minAvailableBid": lot.get("minAvailableBid"),
+        "maxAvailableBid": lot.get("maxAvailableBid"),
+        "maxBid": lot.get("maxBid"),
+        "vehicle": lot.get("vehicle"),
+        "autohubVehicle": lot.get("autohubVehicle"),
+        "autoteka": lot.get("autoteka"),
+        "description": lot.get("description"),
+        "sellerPlaceName": lot.get("sellerPlaceName"),
+        "finishAt": lot.get("finishAt") or lot.get("originFinishAt"),
+        "expiresAt": lot.get("expiresAt"),
+        "originFinishAt": lot.get("originFinishAt"),
+        "images": lot.get("images") or offer.get("images"),
+        "badges": offer.get("badges") or lot.get("badges"),
+        "forceRecalc": False,
+    }
+
+
+def push_calculate_if_needed(item: dict, portal: dict) -> dict | None:
+    """
+    Если портал создал оффер или нет успешного расчёта — POST calculate_car
+    с полным offerPayload (статистика / монитор / пересчёт).
+    Ошибки расчёта не валят outcome.
+    """
+    if not (portal.get("offerCreated") or portal.get("needsCalculation")):
+        return None
+    offer = item.get("offerPayload")
+    if not isinstance(offer, dict):
+        return None
+    calc_payload = _build_calc_payload_from_offer(offer, item.get("dealerId"))
+    if not calc_payload:
+        return None
+    lot_offer_id = calc_payload.get("lotOfferId")
+    url = f"{_portal_base()}/api/calculate_car/"
+    try:
+        data = _http_json("POST", url, calc_payload, timeout=180)
+    except Exception as exc:
+        print(
+            f"CALC_FAIL lotOfferId={lot_offer_id}: {exc}",
+            flush=True,
+        )
+        return {"ok": False, "error": str(exc)}
+    answer = data.get("answer") if isinstance(data.get("answer"), dict) else data
+    price = None
+    if isinstance(answer, dict):
+        price = answer.get("estimation_price") or answer.get("buyoutPrice")
+    ok = price is not None
+    print(
+        f"{'CALC_OK' if ok else 'CALC_EMPTY'} lotOfferId={lot_offer_id} "
+        f"estimation={price} created={bool(portal.get('offerCreated'))}",
+        flush=True,
+    )
+    return {"ok": ok, "estimation_price": price, "raw": data}
 
 
 def _bulk_page_limit() -> int:
@@ -259,7 +347,7 @@ def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> s
         return "we_refused"
     if code.startswith("seller_canceled") or code.startswith("seller_cancelled"):
         return "canceled"
-    if code.startswith("waiting") or "seller_choos" in code:
+    if code.startswith("waiting") or "seller_choos" in code or "seller_decision" in code:
         return "waiting_seller"
     if "chose_nothing" in code:
         return "no_selection"
@@ -278,6 +366,8 @@ def _map_autohub_status_to_outcome(status_code: str, status_name: str = "") -> s
     if "отменен" in name or "отменён" in name:
         return "canceled"
     if "жд" in name and "решени" in name:
+        return "waiting_seller"
+    if "ожидает" in name and "решени" in name:
         return "waiting_seller"
     if "продавец выбирает" in name or "выбирает покуп" in name:
         return "waiting_seller"
@@ -309,6 +399,7 @@ def _portal_item_from_api_offer(offer: dict, dealer_id: str | None = None) -> di
         "dealerId": offer.get("dealerId") or dealer_id,
         "bid": offer.get("bid"),
         "car": _offer_car_label(offer),
+        "offerPayload": offer,
     }
 
 
@@ -682,6 +773,7 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
         flush=True,
     )
     portal = push_outcome(item, extracted)
+    calc = push_calculate_if_needed(item, portal)
     code = portal.get("outcomeCode") or "?"
     status = portal.get("statusCode") or "?"
     prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
@@ -697,6 +789,8 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
         "lotPk": item.get("lotPk"),
         "car": item.get("car") or "",
         "bid": item.get("bid"),
+        "offerCreated": bool(portal.get("offerCreated")),
+        "calculation": calc,
         "extracted": {
             "title": title,
             "detail": detail,
@@ -712,6 +806,8 @@ def process_item(page, item: dict, *, idx: int = 1, total: int = 1) -> dict:
             "becameWon": portal.get("becameWon"),
             "email": portal.get("email"),
             "chat": chat_info,
+            "offerCreated": bool(portal.get("offerCreated")),
+            "needsCalculation": bool(portal.get("needsCalculation")),
         },
         "msg": (
             f"лот {item.get('lotId')} / offer {lot_offer_id}: "
@@ -754,6 +850,8 @@ def _push_bulk_row(
             }
         raise
 
+    calc = push_calculate_if_needed(item, portal)
+
     code = portal.get("outcomeCode") or extracted.get("outcomeCode") or "?"
     prev = portal.get("prevOutcome") or item.get("outcomeCode") or "-"
     chat_info = portal.get("chat") or {}
@@ -765,6 +863,9 @@ def _push_bulk_row(
         "lotPk": item.get("lotPk"),
         "car": item.get("car") or "",
         "bid": item.get("bid"),
+        "offerCreated": bool(portal.get("offerCreated")),
+        "needsCalculation": bool(portal.get("needsCalculation")),
+        "calculation": calc,
         "extracted": {
             "status": extracted.get("status"),
             "outcomeCode": extracted.get("outcomeCode"),
@@ -780,10 +881,13 @@ def _push_bulk_row(
             "becameWon": portal.get("becameWon"),
             "email": portal.get("email"),
             "chat": chat_info,
+            "offerCreated": bool(portal.get("offerCreated")),
+            "needsCalculation": bool(portal.get("needsCalculation")),
         },
         "msg": (
             f"{tag}{source} lot {item.get('lotId')} / offer {lot_offer_id}: "
             f"{prev} → {code} ({extracted.get('title') or ''})"
+            + (" [new]" if portal.get("offerCreated") else "")
         ),
     }
     return row
