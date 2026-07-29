@@ -7,7 +7,11 @@
 {% block content %}
 <div class="container-fluid py-3">
     <h2 class="mb-3">Логи открытий страниц</h2>
-    <p class="text-muted small">Что и когда просматривали пользователи и гости (полный путь с фильтрами и обычный).</p>
+    <p class="text-muted small">
+        Что и когда просматривали пользователи и гости.
+        По умолчанию — последние 7 дней, максимальный период — {{ params.max_period_days }} дн.
+        {% if params.period_capped %}<span class="text-warning">Выбранный период сокращён до {{ params.max_period_days }} дней.</span>{% endif %}
+    </p>
 
     <form method="get" class="portal-panel mb-3">
         <div class="row g-2 align-items-end">
@@ -53,7 +57,6 @@
                     <option value="25" {% if params.per_page == 25 %}selected{% endif %}>25</option>
                     <option value="50" {% if params.per_page == 50 %}selected{% endif %}>50</option>
                     <option value="100" {% if params.per_page == 100 %}selected{% endif %}>100</option>
-                    <option value="200" {% if params.per_page == 200 %}selected{% endif %}>200</option>
                 </select>
             </div>
             <div class="col-12 col-lg-2">
@@ -137,11 +140,11 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for log in params.page_obj %}
+                    {% for log in params.page_rows %}
                     <tr>
                         <td>{{ log.created|date:"d.m.Y H:i:s" }}</td>
                         <td>{% if log.user %}{{ log.user.username }}{% else %}<span class="text-muted">аноним</span> <small>{{ log.session_key|slice:":12" }}…</small>{% endif %}</td>
-                        <td><span class="badge bg-light text-dark" title="{{ log.user_agent|truncatechars:100 }}">{{ log.device_type|default:"—" }}</span></td>
+                        <td><span class="badge bg-light text-dark">{{ log.device_type|default:"—" }}</span></td>
                         <td><code class="small">{{ log.path|truncatechars:50 }}</code></td>
                         <td><code class="small">{{ log.path_full|truncatechars:60 }}</code></td>
                         <td>{{ log.method }}</td>
@@ -153,15 +156,15 @@
                 </tbody>
             </table>
         </div>
-        {% if params.paginator.num_pages > 1 %}
+        {% if params.has_previous or params.has_next %}
         <nav class="mt-2">
             <ul class="pagination pagination-sm flex-wrap">
-                {% if params.page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a></li>
+                {% if params.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_num|add:'-1' }}">←</a></li>
                 {% endif %}
-                <li class="page-item disabled"><span class="page-link">Стр. {{ params.page_obj.number }} из {{ params.paginator.num_pages }}</span></li>
-                {% if params.page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a></li>
+                <li class="page-item disabled"><span class="page-link">Стр. {{ params.page_num }}</span></li>
+                {% if params.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_num|add:'1' }}">→</a></li>
                 {% endif %}
             </ul>
         </nav>

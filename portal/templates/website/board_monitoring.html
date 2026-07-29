@@ -349,6 +349,14 @@
         </div>
       </div>
     </div>
+
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+      <a href="{% url 'monitoring:hub' %}" class="kors-metric-card {% if params.exchange_errors_24h > 0 %}status-danger{% elif params.exchange_errors_total > 0 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Ошибки API / 1С</h3>
+        <div class="metric-value">{{ params.exchange_errors_24h }}</div>
+        <div class="metric-label">за 24 ч · всего {{ params.exchange_errors_total }}</div>
+      </a>
+    </div>
   </div>
 
   <!-- Статус обновлений -->
@@ -569,6 +577,11 @@
         <div class="kors-panel__body kors-chip-row">
           <span class="kors-badge kors-badge-success">Автохаб — {{params.autohab|date:'d.m.Y'}}</span>
           <span class="kors-badge kors-badge-success">Робомойки — {{params.robowash|date:'d.m.Y'}}</span>
+          {% if params.exchange_errors_24h > 0 %}
+            <a class="kors-badge kors-badge-danger" href="{% url 'monitoring:hub' %}">Ошибки API — 24ч: {{ params.exchange_errors_24h }} / всего: {{ params.exchange_errors_total }}</a>
+          {% else %}
+            <a class="kors-badge kors-badge-success" href="{% url 'monitoring:hub' %}">Ошибки API — 24ч: {{ params.exchange_errors_24h }} / всего: {{ params.exchange_errors_total }}</a>
+          {% endif %}
         </div>
       </div>
 
