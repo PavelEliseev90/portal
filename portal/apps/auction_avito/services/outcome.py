@@ -897,6 +897,14 @@ def apply_offer_outcome(
         }
 
     now = timezone.now()
+    new_code = (classified.get('outcome_code') or '').strip()
+    outcome_unchanged = bool(
+        prev_outcome
+        and new_code
+        and prev_outcome == new_code
+        and offer.outcome_synced_at is not None
+    )
+
     offer.outcome_code = classified['outcome_code'] or offer.outcome_code
     offer.outcome_title = classified['outcome_title'] or offer.outcome_title
     offer.outcome_detail = classified['outcome_detail'] or offer.outcome_detail
@@ -904,7 +912,10 @@ def apply_offer_outcome(
         offer.outcome_raw = raw[:20000]
     elif blob or title or detail:
         offer.outcome_raw = _norm_spaces(f'{title}\n{detail}\n{blob}')[:20000]
-    offer.outcome_synced_at = now
+    # Не двигаем outcome_synced_at при повторном том же итоге —
+    # иначе «история за сегодня» засоряется каждым bulk-sync.
+    if not outcome_unchanged:
+        offer.outcome_synced_at = now
 
     new_status = classified.get('status_code') or offer.status_code
     new_status = normalize_maxposter_status(new_status)
@@ -932,8 +943,10 @@ def apply_offer_outcome(
 
     update_fields = [
         'outcome_code', 'outcome_title', 'outcome_detail', 'outcome_raw',
-        'outcome_synced_at', 'status_code', 'status_name',
+        'status_code', 'status_name',
     ]
+    if not outcome_unchanged:
+        update_fields.append('outcome_synced_at')
 
     email_result = {'sent': False, 'reason': 'skipped'}
     chat_result = {'sent': False, 'reason': 'skipped'}
@@ -947,11 +960,10 @@ def apply_offer_outcome(
     )
     new_code = (offer.outcome_code or '').strip()
 
-    # В чат лота — короткий статус при любом известном итоге.
-    # Дубликаты отсекает notify_* (в т.ч. waiting_seller → waiting_seller,
-    # если сообщения ещё не было — отправим).
-    # won / not_taken — win-письмо разово + чат.
-    if notify_chat and became_win_notify:
+    # В чат лота — только при смене итога (дубли отсекает и notify_*).
+    if outcome_unchanged:
+        chat_result = {'sent': False, 'reason': 'unchanged'}
+    elif notify_chat and became_win_notify:
         try:
             if offer.outcome_code == OUTCOME_WON:
                 sent = notify_auction_won(offer)
@@ -1001,9 +1013,12 @@ def apply_offer_outcome(
         'statusName': offer.status_name,
         'becameWon': became_won,
         'becameWinNotify': became_win_notify,
+        'outcomeUnchanged': outcome_unchanged,
         'email': email_result,
         'chat': chat_result,
-        'outcomeSyncedAt': now.isoformat(),
+        'outcomeSyncedAt': (
+            offer.outcome_synced_at.isoformat() if offer.outcome_synced_at else ''
+        ),
     }
     logger.info(
         'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r '

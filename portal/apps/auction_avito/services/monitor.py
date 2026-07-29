@@ -293,7 +293,11 @@ def monitor_history_today_count(*, dealer_ids: list[int] | None = None) -> int:
     ).exclude(outcome_code='')
     if dealer_ids:
         outs = outs.filter(account__dealer_id__in=dealer_ids)
-    n_outs = outs.count()
+    # KPI как в ленте: уникальные пары лот + код итога
+    n_outs = len({
+        (o['lot__lot_id'], o['outcome_code'])
+        for o in outs.values('lot__lot_id', 'outcome_code')
+    })
 
     hands = AvitoLotOffer.objects.filter(
         handed_to_work_at__gte=start,
@@ -419,7 +423,7 @@ def monitor_today_history(*, dealer_ids: list[int] | None = None, limit: int = 2
             'place': '',
         })
 
-    # 3) Итоги (смена outcome)
+    # 3) Итоги (смена outcome) — по лоту один раз на код итога (первое время sync).
     out_qs = (
         AvitoLotOffer.objects
         .select_related('lot', 'lot__vehicle_avito', 'account')
@@ -428,15 +432,25 @@ def monitor_today_history(*, dealer_ids: list[int] | None = None, limit: int = 2
     )
     if dealer_ids:
         out_qs = out_qs.filter(account__dealer_id__in=dealer_ids)
-    for offer in out_qs.order_by('-outcome_synced_at')[:150]:
+    seen_lot_outcomes: set[tuple] = set()
+    for offer in out_qs.order_by('outcome_synced_at', 'id')[:400]:
         lot = offer.lot
         code = (offer.outcome_code or '').strip()
+        lot_id = getattr(lot, 'lot_id', None) or offer.pk
+        dedupe_key = (lot_id, code)
+        if dedupe_key in seen_lot_outcomes:
+            continue
+        seen_lot_outcomes.add(dedupe_key)
         label = OUTCOME_NAMES.get(code, code)
         detail_bits = [label]
-        if offer.outcome_title:
-            detail_bits.append(offer.outcome_title)
+        title = (offer.outcome_title or '').strip()
+        if title and title.casefold() != label.casefold():
+            detail_bits.append(title)
+        detail = (offer.outcome_detail or '').strip()
+        if detail and detail.casefold() not in {b.casefold() for b in detail_bits}:
+            detail_bits.append(detail)
         events.append({
-            'id': f'out-{offer.pk}-{int(offer.outcome_synced_at.timestamp()) if offer.outcome_synced_at else 0}',
+            'id': f'out-{lot_id}-{code}',
             'kind': 'outcome',
             'kindLabel': 'Итог',
             'at': offer.outcome_synced_at,
