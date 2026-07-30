@@ -28,6 +28,8 @@ from eco.estimation_zg_analytics import (
     _month_bounds,
     _month_key,
     _month_label,
+    _unit_color,
+    _unit_label,
     normalize_zg_name,
     zg_from_price,
 )
@@ -40,6 +42,76 @@ def _sale_cell(count: int, prices: list, month_key: str = '') -> dict:
         'med_price': int(round(_median(prices))) if not empty else 0,
         'empty': empty,
         'month_key': month_key,
+    }
+
+
+def _build_sales_unit_breakdown(
+    unit_bucket,
+    unit_names: dict,
+    month_keys: list,
+    month_labels: list,
+    month_totals: dict,
+) -> dict:
+    """График и сводная таблица: месяцы × ДЦ (продажи)."""
+    unit_totals = defaultdict(lambda: {'count': 0, 'prices': []})
+    for mk in month_keys:
+        for uid, cell in unit_bucket[mk].items():
+            unit_totals[uid]['count'] += cell['count']
+            unit_totals[uid]['prices'].extend(cell['prices'])
+
+    unit_list = sorted(
+        unit_totals.keys(),
+        key=lambda u: (-unit_totals[u]['count'], _unit_label(u, unit_names.get(u))),
+    )
+
+    datasets = []
+    for i, uid in enumerate(unit_list):
+        label = _unit_label(uid, unit_names.get(uid))
+        datasets.append({
+            'label': label,
+            'unit_id': uid,
+            'backgroundColor': _unit_color(i),
+            'data': [unit_bucket[mk][uid]['count'] for mk in month_keys],
+        })
+
+    pivot_rows = []
+    for uid in unit_list:
+        cells = []
+        for mk in month_keys:
+            cell = unit_bucket[mk][uid]
+            cells.append(_sale_cell(cell['count'], cell['prices'], mk))
+        ut = unit_totals[uid]
+        pivot_rows.append({
+            'unit_id': uid,
+            'unit_name': _unit_label(uid, unit_names.get(uid)),
+            'cells': cells,
+            'total': _sale_cell(ut['count'], ut['prices']),
+        })
+
+    grand_total = sum(month_totals.values())
+    grand_prices = []
+    for mk in month_keys:
+        for uid in unit_bucket[mk]:
+            grand_prices.extend(unit_bucket[mk][uid]['prices'])
+    pivot_footer = {
+        'unit_name': 'Итого',
+        'cells': [
+            _sale_cell(month_totals[mk], [
+                p for uid in unit_bucket[mk] for p in unit_bucket[mk][uid]['prices']
+            ], mk)
+            for mk in month_keys
+        ],
+        'total': _sale_cell(grand_total, grand_prices),
+        'is_total': True,
+    }
+
+    return {
+        'labels': month_labels,
+        'month_keys': month_keys,
+        'datasets': datasets,
+        'month_totals': [month_totals[mk] for mk in month_keys],
+        'pivot_rows': pivot_rows,
+        'pivot_footer': pivot_footer,
     }
 
 
@@ -60,10 +132,12 @@ def build_sales_zg_analytics(
 
     # month -> zg -> aggregation
     bucket = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'prices': []}))
+    unit_bucket = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'prices': []}))
+    unit_names = {}
     zg_totals = defaultdict(lambda: {'count': 0, 'prices': []})
     month_totals = defaultdict(int)
 
-    rows = qs.only('dataTime', 'amount')
+    rows = qs.select_related('unit').only('dataTime', 'amount', 'unit_id', 'unit__name')
 
     for row in rows.iterator(chunk_size=2000):
         if not row.dataTime:
@@ -78,6 +152,12 @@ def build_sales_zg_analytics(
         zg_totals[zg]['count'] += 1
         zg_totals[zg]['prices'].append(price)
         month_totals[mk] += 1
+        if not unit_id:
+            uid = int(row.unit_id or 0)
+            if row.unit is not None and row.unit.name:
+                unit_names[uid] = str(row.unit.name).strip()
+            unit_bucket[mk][uid]['count'] += 1
+            unit_bucket[mk][uid]['prices'].append(price)
 
     months = _iter_months(date_start, date_end)
     month_keys = [_month_key(m) for m in months]
@@ -137,6 +217,16 @@ def build_sales_zg_analytics(
 
     grand_med_price = int(round(_median(grand_prices))) if grand_prices else 0
 
+    unit_breakdown = None
+    if not unit_id:
+        unit_breakdown = _build_sales_unit_breakdown(
+            unit_bucket,
+            unit_names,
+            month_keys,
+            month_labels,
+            month_totals,
+        )
+
     return {
         'month_keys': month_keys,
         'month_labels': month_labels,
@@ -146,6 +236,9 @@ def build_sales_zg_analytics(
             'datasets': datasets,
             'month_totals': chart_month_totals,
         },
+        'unit_chart': unit_breakdown,
+        'unit_pivot_rows': (unit_breakdown or {}).get('pivot_rows', []),
+        'unit_pivot_footer': (unit_breakdown or {}).get('pivot_footer'),
         'pivot_rows': pivot_rows,
         'pivot_footer': pivot_footer,
         'summary': {
