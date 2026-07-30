@@ -62,16 +62,17 @@ def _float_or_none(val):
         return None
 
 
-def resolve_txt_kf(zg: str, settings_obj=None, *, dc=None) -> float:
+def resolve_txt_kf_info(zg: str, settings_obj=None, *, dc=None) -> tuple:
     """
-    Коэффициент ТХТ (ИРЦ) для ценовой группы.
+    Коэффициент ТХТ (ИРЦ) для ценовой группы + источник.
     Приоритет: настройки аукциона Авито → поля ДЦ → 100.
+    Возвращает (kf: float, source: str).
     """
     field = TXT_COEFF_FIELDS.get(zg)
     if settings_obj is not None and field:
         val = _float_or_none(getattr(settings_obj, field, None))
         if val is not None and val != 0:
-            return val
+            return val, 'настройки аукциона'
 
     if dc is not None:
         primary, fallback = _DC_TXT_FALLBACK.get(zg, (None, None))
@@ -80,9 +81,14 @@ def resolve_txt_kf(zg: str, settings_obj=None, *, dc=None) -> float:
                 continue
             val = _float_or_none(getattr(dc, attr, None))
             if val is not None and val != 0:
-                return val
+                return val, 'ДЦ'
 
-    return 100.0
+    return 100.0, 'по умолчанию'
+
+
+def resolve_txt_kf(zg: str, settings_obj=None, *, dc=None) -> float:
+    """Коэффициент ТХТ (ИРЦ) для ценовой группы."""
+    return resolve_txt_kf_info(zg, settings_obj, dc=dc)[0]
 
 
 def get_avito_commission(settings_obj=None) -> int:
