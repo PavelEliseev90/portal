@@ -8622,6 +8622,7 @@ def settings_diagnostic(request):
             settings_estimation = RegEstimationsSettings()
 
         apply_diagnostic_post_to_settings(settings_estimation, request.POST)
+        settings_estimation.iznos_with_ss = request.POST.get('iznos_with_ss') == 'on'
         settings_estimation.save()
         return HttpResponseRedirect(request.build_absolute_uri())
 

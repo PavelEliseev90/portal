@@ -76,7 +76,7 @@ def upsert_offer_from_outcome_payload(
     try:
         offer = upsert_offer_from_api(account, offer_payload)
     except Exception as exc:
-        return None, False, f'offer upsert failed: {exc}'
+        return None, False, f'offer upsert failed: {type(exc).__name__}: {exc}'
     return offer, (not existed), None
 
 
