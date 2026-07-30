@@ -8680,6 +8680,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
+                        'add'       : True,
                         'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
                         'name'      : "кузовной"
                     }
@@ -8690,6 +8691,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
+                        'add'       : True,
                         'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
                         'name'      : "кузовной"
                     }
