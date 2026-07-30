@@ -763,6 +763,69 @@ class AvitoAuctionSettings(models.Model):
         default='0.05',
     )
 
+    txt_coeff_200 = models.DecimalField(
+        'ТХТ коэф. ЦГ 200',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='ИРЦ токсичного стока для ЦГ до 200 тыс. ₽. Пусто — из настроек ДЦ.',
+    )
+    txt_coeff_400 = models.DecimalField(
+        'ТХТ коэф. ЦГ 400',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_700 = models.DecimalField(
+        'ТХТ коэф. ЦГ 700',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_1200 = models.DecimalField(
+        'ТХТ коэф. ЦГ 1 200',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_2000 = models.DecimalField(
+        'ТХТ коэф. ЦГ 2 000',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_3000 = models.DecimalField(
+        'ТХТ коэф. ЦГ 3 000',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_5000 = models.DecimalField(
+        'ТХТ коэф. ЦГ 5 000',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    txt_coeff_5001 = models.DecimalField(
+        'ТХТ коэф. ЦГ 5 000+',
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    avito_commission = models.PositiveIntegerField(
+        'Комиссия Авито, ₽',
+        default=0,
+        help_text='Фиксированная сумма, вычитается из цены выкупа после финансирования.',
+    )
+
     win_notify_emails = models.TextField(
         'Email при выигрыше лота (общий fallback)',
         blank=True,
@@ -805,6 +868,24 @@ class AvitoAuctionSettings(models.Model):
             val = getattr(self, field)
             if val is not None and val < 0:
                 raise ValidationError({field: 'Вес не может быть отрицательным.'})
+        for field in TXT_COEFF_FIELD_NAMES:
+            val = getattr(self, field, None)
+            if val is not None and val < 0:
+                raise ValidationError({field: 'Коэффициент не может быть отрицательным.'})
+        if self.avito_commission is not None and self.avito_commission < 0:
+            raise ValidationError({'avito_commission': 'Комиссия не может быть отрицательной.'})
+
+
+TXT_COEFF_FIELD_NAMES = (
+    'txt_coeff_200',
+    'txt_coeff_400',
+    'txt_coeff_700',
+    'txt_coeff_1200',
+    'txt_coeff_2000',
+    'txt_coeff_3000',
+    'txt_coeff_5000',
+    'txt_coeff_5001',
+)
 
 
 class AvitoAutoBidDecision(models.Model):

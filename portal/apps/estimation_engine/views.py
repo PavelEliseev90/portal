@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from refs.price_groups import normalize_price_group_display
 from car_preparation.models import (
     RefCarPreparationWork,
     RefPreparationMaterial,
@@ -415,6 +416,14 @@ def _parse_diagnostic_status(value):
     return v if v in allowed else EstimationRule.DIAG_STATUS_ANY
 
 
+def _normalize_price_group_input(raw):
+    text = (raw or '').strip()
+    if not text:
+        return ''
+    normalized = normalize_price_group_display(text)
+    return '' if normalized == 'Неопределена' else normalized
+
+
 def _facts_from_request(request):
     src = request.POST if request.method == 'POST' else request.GET
     count_type_ids = src.getlist('damage_count_type_id[]') if hasattr(src, 'getlist') else []
@@ -446,7 +455,7 @@ def _facts_from_request(request):
         'damage_counts': damage_counts,
         'body_type_id': src.get('body_type_id') or '',
         'body_type': (src.get('body_type') or '').strip(),
-        'price_group': (src.get('price_group') or '').strip(),
+        'price_group': _normalize_price_group_input(src.get('price_group')),
         'paint_type': (src.get('paint_type') or '').strip(),
         'under_instrument': src.get('under_instrument') in ('1', 'true', 'on', True),
         'windshield_heat': src.get('windshield_heat') in ('1', 'true', 'on', 'yes', True),
@@ -621,7 +630,7 @@ def rule_create(request):
             element_id=request.POST.get('element_id') or None,
             damage_type_ref_id=request.POST.get('damage_type_id') or None,
             min_damage_count=max(0, int(request.POST.get('min_damage_count') or 0)),
-            price_group=request.POST.get('price_group', '').strip(),
+            price_group=_normalize_price_group_input(request.POST.get('price_group')),
             paint_type=request.POST.get('paint_type', '').strip(),
             under_instrument=request.POST.get('under_instrument') == 'on',
             windshield_heat=_parse_flag_choice(request.POST.get('windshield_heat')),
@@ -675,7 +684,7 @@ def rule_edit(request, rule_id):
         rule.element_id = request.POST.get('element_id') or None
         rule.damage_type_ref_id = request.POST.get('damage_type_id') or None
         rule.min_damage_count = max(0, int(request.POST.get('min_damage_count') or 0))
-        rule.price_group = request.POST.get('price_group', '').strip()
+        rule.price_group = _normalize_price_group_input(request.POST.get('price_group'))
         rule.paint_type = request.POST.get('paint_type', '').strip()
         rule.under_instrument = request.POST.get('under_instrument') == 'on'
         rule.windshield_heat = _parse_flag_choice(request.POST.get('windshield_heat'))
@@ -1079,7 +1088,7 @@ def rules_preview_api(request):
             'damage_counts': data.get('damage_counts') or {},
             'body_type_id': data.get('body_type_id') or '',
             'body_type': (data.get('body_type') or '').strip(),
-            'price_group': (data.get('price_group') or '').strip(),
+            'price_group': _normalize_price_group_input(data.get('price_group')),
             'paint_type': (data.get('paint_type') or '').strip(),
             'under_instrument': bool(data.get('under_instrument')),
             'windshield_heat': bool(data.get('windshield_heat')),
