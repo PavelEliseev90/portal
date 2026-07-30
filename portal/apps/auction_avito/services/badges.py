@@ -58,11 +58,11 @@ def sync_lot_badges_records(lot, badges=None, badges_by_style=None) -> int:
         AvitoLotBadge.objects.create(
             lot=lot,
             avito_badge_id=badge_avito_id(b, idx),
-            badge_type=(b.get('badgeType') or '').strip(),
-            title=(b.get('title') or '').strip(),
+            badge_type=(b.get('badgeType') or '').strip()[:50],
+            title=(b.get('title') or '').strip()[:300],
             description=(b.get('description') or '').strip(),
             priority=b.get('priority') or 0,
-            style=style or (b.get('style') or ''),
+            style=(style or (b.get('style') or ''))[:30],
         )
         count += 1
     return count
@@ -84,11 +84,11 @@ def sync_offer_badges_records(offer, offer_data: dict) -> int:
         AvitoOfferBadge.objects.create(
             offer=offer,
             avito_badge_id=badge_avito_id(b, idx),
-            badge_type=(b.get('badgeType') or '').strip(),
-            title=(b.get('title') or '').strip(),
+            badge_type=(b.get('badgeType') or '').strip()[:50],
+            title=(b.get('title') or '').strip()[:300],
             description=(b.get('description') or '').strip(),
             priority=b.get('priority') or 0,
-            style=style or (b.get('style') or ''),
+            style=(style or (b.get('style') or ''))[:30],
         )
         count += 1
     return count

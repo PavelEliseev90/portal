@@ -905,8 +905,8 @@ def apply_offer_outcome(
         and offer.outcome_synced_at is not None
     )
 
-    offer.outcome_code = classified['outcome_code'] or offer.outcome_code
-    offer.outcome_title = classified['outcome_title'] or offer.outcome_title
+    offer.outcome_code = (classified['outcome_code'] or offer.outcome_code or '')[:40]
+    offer.outcome_title = (classified['outcome_title'] or offer.outcome_title or '')[:300]
     offer.outcome_detail = classified['outcome_detail'] or offer.outcome_detail
     if raw:
         offer.outcome_raw = raw[:20000]
@@ -921,10 +921,12 @@ def apply_offer_outcome(
     new_status = normalize_maxposter_status(new_status)
     if new_status in ('won', 'lost', 'finished', 'inprogress', 'canceled'):
         offer.status_code = new_status if new_status != 'canceled' else 'finished'
-        offer.status_name = STATUS_NAMES.get(
-            offer.status_code,
-            classified.get('outcome_title') or offer.status_name or offer.status_code,
-        )
+        offer.status_name = (
+            STATUS_NAMES.get(
+                offer.status_code,
+                classified.get('outcome_title') or offer.status_name or offer.status_code,
+            ) or ''
+        )[:100]
         if offer.outcome_code == OUTCOME_WON:
             offer.status_code = 'won'
             offer.status_name = STATUS_NAMES['won']
@@ -940,6 +942,9 @@ def apply_offer_outcome(
             offer.status_name = STATUS_NAMES['finished']
             if offer.outcome_code in FINAL_OUTCOMES and not offer.outcome_detail:
                 offer.outcome_detail = OUTCOME_NAMES.get(offer.outcome_code, '')
+
+    offer.status_code = (offer.status_code or '')[:30]
+    offer.status_name = (offer.status_name or '')[:100]
 
     update_fields = [
         'outcome_code', 'outcome_title', 'outcome_detail', 'outcome_raw',

@@ -212,7 +212,7 @@ class AvitoLotVehicle(models.Model):
     wheel_name = models.CharField('Руль', max_length=50, blank=True, default='')
     vehicle_type_name = models.CharField('Тип ТС', max_length=100, blank=True, default='')
     registration_in_russia = models.CharField('Учёт в РФ', max_length=100, blank=True, default='')
-    registration_number = models.CharField('Госномер', max_length=20, blank=True, default='')
+    registration_number = models.CharField('Госномер', max_length=50, blank=True, default='')
 
     class Meta:
         db_table = 'avitoLotVehicle'
@@ -317,7 +317,7 @@ class AvitoAutotekaReport(models.Model):
     )
     state_status = models.CharField(
         'state.status',
-        max_length=30,
+        max_length=50,
         blank=True,
         default='',
         help_text='success | incomplete | …',
@@ -335,9 +335,9 @@ class AvitoAutotekaEvent(models.Model):
         on_delete=models.CASCADE,
         related_name='events',
     )
-    event_type = models.CharField('type', max_length=50, db_index=True)
-    status = models.CharField('status', max_length=20, blank=True, default='')
-    description = models.CharField('description', max_length=500, blank=True, default='')
+    event_type = models.CharField('type', max_length=100, db_index=True)
+    status = models.CharField('status', max_length=50, blank=True, default='')
+    description = models.TextField('description', blank=True, default='')
 
     class Meta:
         db_table = 'avitoAutotekaEvent'

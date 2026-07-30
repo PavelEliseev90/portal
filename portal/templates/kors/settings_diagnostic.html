@@ -19,6 +19,18 @@
   <form method="post">
     {% csrf_token %}
 
+    <div class="settings-diagnostic-panel card bg-white bg-opacity-75 mb-3">
+      <div class="card-body">
+        <label class="fs-6">Общие настройки расчёта</label>
+        <hr style="width: 75%;">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="iznos_with_ss" name="iznos_with_ss" {% if params.settings.settings_estimation.iznos_with_ss %}checked{% endif %}>
+          <label class="form-check-label" for="iznos_with_ss">Повышенный износ с учётом слесарного ремонта</label>
+        </div>
+        <div class="form-text">Коррекция повышенного износа применяется после вычета затрат на слесарный участок.</div>
+      </div>
+    </div>
+
     {% for range in params.diagnostic_price_groups %}
       {% include 'kors/partials/settings_diagnostic_price_group.html' with range=range %}
     {% empty %}
