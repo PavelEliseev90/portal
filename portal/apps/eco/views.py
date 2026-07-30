@@ -13148,6 +13148,7 @@ def estimation_zg_analytics(request):
     from eco.estimation_zg_analytics import (
         build_estimation_zg_analytics,
         normalize_accepted_filter,
+        normalize_chart_view,
     )
     import json as _json
 
@@ -13172,6 +13173,9 @@ def estimation_zg_analytics(request):
     analyst_id = _get_int(request.GET.get('analyst_id'))
     type_id = _get_int(request.GET.get('type_id'))
     accepted = normalize_accepted_filter(request.GET.get('accepted'))
+    chart_view = normalize_chart_view(request.GET.get('chart_view'))
+    if unit_id:
+        chart_view = 'zg'
 
     data = build_estimation_zg_analytics(
         date_start=date_start,
@@ -13200,6 +13204,7 @@ def estimation_zg_analytics(request):
             'analyst_id': analyst_id or '',
             'type_id': type_id or '',
             'accepted': accepted,
+            'chart_view': chart_view,
         },
         'summary': data['summary'],
         'zg_summary': data['zg_summary'],
@@ -13207,7 +13212,11 @@ def estimation_zg_analytics(request):
         'month_keys': data['month_keys'],
         'pivot_rows': data['pivot_rows'],
         'pivot_footer': data['pivot_footer'],
+        'unit_pivot_rows': data.get('unit_pivot_rows') or [],
+        'unit_pivot_footer': data.get('unit_pivot_footer'),
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'unit_chart_json': _json.dumps(data.get('unit_chart') or {}, ensure_ascii=False),
+        'show_unit_view': not bool(unit_id),
         'detail_base': '/eco/estimation-zg/detail/',
         'units': units,
         'staffs': staffs,
@@ -13282,6 +13291,7 @@ def autohub_zg_analytics(request):
 def sales_zg_analytics(request):
     """Продажи по ЦГ × месяц."""
     from eco.sales_zg_analytics import build_sales_zg_analytics
+    from eco.estimation_zg_analytics import normalize_chart_view
     import json as _json
 
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
@@ -13300,6 +13310,9 @@ def sales_zg_analytics(request):
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
 
     unit_id = _get_int(request.GET.get('unit_id'))
+    chart_view = normalize_chart_view(request.GET.get('chart_view'))
+    if unit_id:
+        chart_view = 'zg'
 
     data = build_sales_zg_analytics(
         date_start=date_start,
@@ -13317,13 +13330,18 @@ def sales_zg_analytics(request):
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
             'unit_id': unit_id or '',
+            'chart_view': chart_view,
         },
         'summary': data['summary'],
         'month_labels': data['month_labels'],
         'month_keys': data['month_keys'],
         'pivot_rows': data['pivot_rows'],
         'pivot_footer': data['pivot_footer'],
+        'unit_pivot_rows': data.get('unit_pivot_rows') or [],
+        'unit_pivot_footer': data.get('unit_pivot_footer'),
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'unit_chart_json': _json.dumps(data.get('unit_chart') or {}, ensure_ascii=False),
+        'show_unit_view': not bool(unit_id),
         'detail_base': '/eco/sales-zg/detail/',
         'units': units,
         'hint': (
