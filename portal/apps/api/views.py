@@ -68,8 +68,12 @@ from profiles.models import Profiles
 
 @api_view(['POST'])
 def calculation_car(request):
-    body_unicode    = request.body.decode().replace("'", '"')
-    data            = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Expected JSON object'}, status=status.HTTP_400_BAD_REQUEST)
+
     unit_object     = get_unit(data["Car"]["Unit"])
     car_object      = get_car_object(data["Car"], unit_object)
     rlk_object      = get_worksheet(data["Rlk"])
@@ -167,9 +171,12 @@ def calculation_car(request):
 
 @api_view(['POST'])
 def calculation_car_start_success(request):
-    
-    body_unicode    = request.body.decode().replace("'", '"')
-    data            = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Expected JSON object'}, status=status.HTTP_400_BAD_REQUEST)
+
     unit_object     = get_unit(data["Car"]["Unit"])
     car_object      = get_car_object(data["Car"], unit_object)
     rlk_object      = get_worksheet(data["Rlk"])
@@ -273,8 +280,12 @@ def calculation_car_submit_soglasovanie(request):
         submit_calculation_soglasovanie_from_1c,
     )
 
-    body_unicode = request.body.decode().replace("'", '"')
-    data = json.loads(body_unicode)
+    data, parse_error = _parse_1c_exchange_body(request)
+    if parse_error is not None:
+        return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Expected JSON object'}, status=status.HTTP_400_BAD_REQUEST)
+
     uin = data.get('Uin') or ''
     calculation_object = CarCalculations.objects.filter(uin=uin).select_related(
         'car', 'rlk', 'unit',
