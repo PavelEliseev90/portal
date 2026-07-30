@@ -165,6 +165,12 @@
       <a href="{% url 'auction_avito:lot_list' %}" class="btn btn-outline-secondary btn-sm">
         <span class="bi bi-arrow-left"></span> К списку
       </a>
+      <form method="post" action="{% url 'auction_avito:lot_recalculate' params.lot.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm" title="Принудительный пересчёт выкупа (как /api/calculate_car/ с forceRecalc)">
+          <span class="bi bi-arrow-repeat"></span> Пересчитать выкуп
+        </button>
+      </form>
       {% if params.primary_offer and params.primary_offer.lot_offer_id %}
         <a href="https://app.maxposter.ru/dealer/auction/{{ params.primary_offer.lot_offer_id }}/view"
            class="btn btn-outline-primary btn-sm"
@@ -362,13 +368,21 @@
             {% endif %}
 
           {% elif params.tab == 'calculations' %}
-            {% if params.latest_calculation or params.calculations %}
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <span class="fw-semibold text-secondary small">Расчёты выкупа</span>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <span class="fw-semibold text-secondary small">Расчёты выкупа</span>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
                 {% if params.latest_calculation %}
                   <span class="badge bg-primary">Актуальный: {{ params.latest_calculation.estimation_price|formatted_number }} ₽</span>
                 {% endif %}
+                <form method="post" action="{% url 'auction_avito:lot_recalculate' params.lot.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    <span class="bi bi-arrow-repeat"></span> Пересчитать выкуп
+                  </button>
+                </form>
               </div>
+            </div>
+            {% if params.latest_calculation or params.calculations %}
               {% if params.latest_calculation %}
                 <div class="aav-kpi mb-3">
                   <div class="aav-kpi-item">

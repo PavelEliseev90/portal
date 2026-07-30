@@ -1310,10 +1310,10 @@ def calculate_car(request):
             from auction_avito.models import AvitoAuctionSettings
             from auction_avito.services.auction_calc_settings import (
                 get_avito_commission,
-                resolve_txt_kf,
+                resolve_txt_kf_info,
             )
             auction_settings = AvitoAuctionSettings.get_solo()
-            kf = resolve_txt_kf(zg, auction_settings, dc=dc)
+            kf, kf_source = resolve_txt_kf_info(zg, auction_settings, dc=dc)
             avito_commission_amount = get_avito_commission(auction_settings)
 
             if percent_torg < 0:
@@ -1352,7 +1352,10 @@ def calculate_car(request):
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "ЦНА * ИРЦ ТХТ / посчитана цена с учетом продажи в токсичном стоке",
+                'comment'   : (
+                    "ЦНА × ТХТ {kf}% ({src}, ЦГ {zg}) / цена с учетом продажи в токсичном стоке"
+                    .format(kf=kf, src=kf_source, zg=zg)
+                ),
                 'name'      : "цена в токсичной продаже"
             }
             list_info_price.append(inf_price)

@@ -1,6 +1,7 @@
 """
 Сохранение лота и истории расчётов из POST /api/calculate_car/.
 """
+import json
 from datetime import timedelta
 
 from django.db import transaction
@@ -115,11 +116,20 @@ def get_reusable_calculation(payload: dict, *, force: bool = False, max_age=None
     if age_sec is None:
         # Непонятные даты — безопаснее пересчитать, чем падать
         return None
-    # Часы в будущем (перекос) — считаем свежим
-    if age_sec < 0:
-        return calc
     if age_sec > ttl.total_seconds():
         return None
+
+    # После смены настроек формулы (ТХТ, комиссия и т.п.) старый кэш невалиден.
+    try:
+        from auction_avito.models import AvitoAuctionSettings
+        settings_updated = AvitoAuctionSettings.get_solo().updated_at
+        # settings_updated - calculated_at > 0 → настройки новее расчёта
+        delta = _age_seconds(calc.calculated_at, settings_updated)
+        if delta is not None and delta > 0:
+            return None
+    except Exception:
+        pass
+
     return calc
 
 
@@ -467,3 +477,214 @@ def build_calculation_sync_response(calc) -> dict | None:
     state['lotId'] = offer.lot.lot_id if offer.lot_id else state.get('lotId')
     state['lotOfferId'] = offer.lot_offer_id
     return state
+
+
+def _ensure_vehicle_year_dict(vehicle: dict) -> dict:
+    """calculate_car ждёт vehicle.year.id."""
+    out = dict(vehicle or {})
+    year = out.get('year')
+    if isinstance(year, dict):
+        if year.get('id') in (None, '') and year.get('name') not in (None, ''):
+            try:
+                year = {**year, 'id': int(year['name'])}
+            except (TypeError, ValueError):
+                pass
+        out['year'] = year
+        return out
+    if year not in (None, ''):
+        try:
+            y = int(year)
+            out['year'] = {'id': y, 'name': str(y)}
+        except (TypeError, ValueError):
+            out['year'] = {'id': year, 'name': str(year)}
+    return out
+
+
+def build_calculate_car_payload_from_lot(lot, *, force_recalc: bool = True) -> dict:
+    """
+    Собирает тело для /api/calculate_car/ из сохранённого лота/оффера.
+    Приоритет: raw_offer_json → raw_lot_json → поля моделей vehicle_*.
+    """
+    offer = (
+        lot.offers
+        .select_related('account')
+        .order_by('-updated_at', '-id')
+        .first()
+    )
+    payload = {}
+
+    raw_offer = getattr(offer, 'raw_offer_json', None) if offer else None
+    if isinstance(raw_offer, dict) and raw_offer:
+        payload = dict(raw_offer)
+
+    raw_lot = lot.raw_lot_json if isinstance(lot.raw_lot_json, dict) else {}
+    if raw_lot:
+        lot_block = dict(payload.get('lot') or {})
+        for key, value in raw_lot.items():
+            if lot_block.get(key) in (None, '', [], {}):
+                lot_block[key] = value
+        if lot_block.get('lotId') in (None, ''):
+            lot_block['lotId'] = lot.lot_id
+        payload['lot'] = lot_block
+
+    payload['lotId'] = lot.lot_id
+    if offer and offer.lot_offer_id:
+        payload['lotOfferId'] = offer.lot_offer_id
+    if offer and offer.account_id:
+        payload.setdefault('dealerId', offer.account.dealer_id)
+        payload.setdefault('bidderId', offer.account.bidder_id)
+    if getattr(lot, 'venue_id', None) and lot.venue_id:
+        payload.setdefault('dealerId', lot.venue.dealer_id)
+
+    # Дозаполнение из нормализованных моделей, если сырого JSON мало.
+    ah = getattr(lot, 'vehicle_autohub', None)
+    va = getattr(lot, 'vehicle_avito', None)
+
+    if not isinstance(payload.get('autohubVehicle'), dict) or not payload.get('autohubVehicle'):
+        if ah and ah.modification_id:
+            payload['autohubVehicle'] = {
+                'brandID': ah.brand_id,
+                'modelID': ah.model_id,
+                'generationID': ah.generation_id,
+                'modificationID': ah.modification_id,
+                'complectationID': ah.complectation_id,
+                'bodyConfigurationID': ah.body_configuration_id,
+                'year': ah.year,
+                'kmDistance': ah.km_distance,
+                'ownerCount': ah.owner_count,
+                'bodyType': ah.body_type or '',
+                'bodyDoorCount': ah.body_door_count,
+                'driveType': ah.drive_type or '',
+                'engineType': ah.engine_type or '',
+                'engineVolume': ah.engine_volume,
+                'enginePower': ah.engine_power,
+                'gearboxType': ah.gearbox_type or '',
+                'armored': bool(ah.armored),
+                'equipment': ah.equipment_ids or [],
+            }
+
+    if not isinstance(payload.get('vehicle'), dict) or not payload.get('vehicle'):
+        year = None
+        mileage = None
+        if va:
+            year = va.year
+            mileage = va.mileage
+        if ah:
+            year = year or ah.year
+            mileage = mileage if mileage not in (None, '') else ah.km_distance
+        if year is not None or mileage is not None:
+            payload['vehicle'] = {
+                'mileage': mileage,
+                'year': {'id': year, 'name': str(year) if year is not None else ''},
+            }
+            if va:
+                payload['vehicle'].update({
+                    'brand': {'id': va.brand_id, 'name': va.brand_name or ''},
+                    'model': {'id': va.model_id, 'name': va.model_name or ''},
+                    'generation': {'id': va.generation_id, 'name': va.generation_name or ''},
+                    'modification': {'id': va.modification_id, 'name': va.modification_name or ''},
+                })
+    else:
+        payload['vehicle'] = _ensure_vehicle_year_dict(payload['vehicle'])
+
+    if payload.get('minPrice') in (None, ''):
+        min_price = lot.min_price
+        if min_price is None:
+            min_price = (payload.get('lot') or {}).get('minPrice')
+        if min_price is None and offer:
+            min_price = (offer.raw_offer_json or {}).get('minPrice')
+        if min_price is not None:
+            payload['minPrice'] = min_price
+
+    if force_recalc:
+        payload['forceRecalc'] = True
+
+    return normalize_calculate_car_request(payload)
+
+
+def validate_calculate_car_payload(payload):
+    """Короткая проверка перед вызовом calculate_car. None = ок."""
+    if not isinstance(payload, dict):
+        return 'Пустой payload расчёта'
+    vehicle = payload.get('vehicle') or {}
+    ah = payload.get('autohubVehicle') or {}
+    year = vehicle.get('year') if isinstance(vehicle, dict) else None
+    year_id = year.get('id') if isinstance(year, dict) else year
+    mileage = vehicle.get('mileage') if isinstance(vehicle, dict) else None
+    if year_id in (None, ''):
+        return 'Нет года выпуска (vehicle.year) — синхронизируйте лот с Maxposter'
+    if mileage in (None, ''):
+        return 'Нет пробега (vehicle.mileage) — синхронизируйте лот с Maxposter'
+    if payload.get('minPrice') in (None, ''):
+        return 'Нет minPrice — синхронизируйте лот с Maxposter'
+    if not isinstance(ah, dict) or ah.get('modificationID') in (None, ''):
+        return 'Нет autohubVehicle.modificationID — синхронизируйте лот с Maxposter'
+    return None
+
+
+def run_calculate_car_for_lot(lot, *, user=None, force_recalc: bool = True) -> dict:
+    """
+    Тот же путь, что POST /api/calculate_car/: собирает payload из лота и вызывает view.
+    Возвращает {ok, answer|error, status_code, payload_error?}.
+    """
+    from rest_framework.test import APIRequestFactory, force_authenticate
+    from api.views import calculate_car
+
+    payload = build_calculate_car_payload_from_lot(lot, force_recalc=force_recalc)
+    err = validate_calculate_car_payload(payload)
+    if err:
+        return {'ok': False, 'error': err, 'status_code': 400, 'payload': payload}
+
+    factory = APIRequestFactory()
+    req = factory.post('/api/calculate_car/', payload, format='json')
+    if user is not None:
+        force_authenticate(req, user=user)
+    response = calculate_car(req)
+    status_code = getattr(response, 'status_code', 500)
+    data = getattr(response, 'data', None)
+    if data is None:
+        try:
+            data = json.loads(response.content.decode('utf-8'))
+        except Exception:
+            data = {'error': 'empty response'}
+
+    if status_code >= 400:
+        error = ''
+        if isinstance(data, dict):
+            error = data.get('error') or data.get('answer') or str(data)
+        else:
+            error = str(data)
+        return {
+            'ok': False,
+            'error': error or f'HTTP {status_code}',
+            'status_code': status_code,
+            'data': data,
+            'payload': payload,
+        }
+
+    # calculate_car почти всегда HTTP 200: при сбое answer — строка или dict с error
+    answer = data.get('answer') if isinstance(data, dict) else data
+    if isinstance(answer, str):
+        return {
+            'ok': False,
+            'error': answer,
+            'status_code': status_code,
+            'data': data,
+            'payload': payload,
+        }
+    if isinstance(answer, dict) and answer.get('error') and answer.get('estimation_price') in (None, ''):
+        return {
+            'ok': False,
+            'error': answer.get('error'),
+            'status_code': status_code,
+            'data': data,
+            'payload': payload,
+        }
+
+    return {
+        'ok': True,
+        'answer': answer,
+        'status_code': status_code,
+        'data': data,
+        'payload': payload,
+    }

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Prefetch, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 from datetime import datetime, time as dt_time
 from urllib.parse import urlencode
@@ -640,6 +641,46 @@ def lot_detail(request, pk):
         'bid_history': get_lot_bid_history(lot),
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
+
+
+@login_required
+@require_POST
+def lot_recalculate(request, pk):
+    """
+    Принудительный пересчёт выкупа лота — тот же путь, что /api/calculate_car/
+    (Maxposter + формула + настройки аукциона, forceRecalc=True).
+    """
+    lot = get_object_or_404(
+        AvitoLot.objects.select_related(
+            'venue', 'vehicle_avito', 'vehicle_autohub',
+        ).prefetch_related('offers__account'),
+        pk=pk,
+    )
+    from auction_avito.services.calculate import run_calculate_car_for_lot
+
+    result = run_calculate_car_for_lot(lot, user=request.user, force_recalc=True)
+    if result.get('ok'):
+        answer = result.get('answer') or {}
+        price = answer.get('estimation_price')
+        zg = answer.get('zg') or answer.get('price_group') or ''
+        kf = answer.get('kf')
+        parts = ['Пересчёт выполнен']
+        if price not in (None, ''):
+            try:
+                parts.append('выкуп {:,.0f} ₽'.format(float(price)).replace(',', ' '))
+            except (TypeError, ValueError):
+                parts.append(f'выкуп {price}')
+        if zg:
+            parts.append(f'ЦГ {zg}')
+        if kf not in (None, ''):
+            parts.append(f'kf={kf}')
+        messages.success(request, ' · '.join(parts))
+    else:
+        messages.error(
+            request,
+            'Пересчёт не выполнен: {}'.format(result.get('error') or 'неизвестная ошибка'),
+        )
+    return redirect(f"{reverse('auction_avito:lot_detail', kwargs={'pk': pk})}?tab=calculations")
 
 
 @login_required

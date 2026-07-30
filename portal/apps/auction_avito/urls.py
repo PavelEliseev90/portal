@@ -18,6 +18,7 @@ urlpatterns = [
     path('settings/', views.auction_settings, name='auction_settings'),
     path('settings/test-win-email/', views.auction_settings_test_win_email, name='auction_settings_test_win_email'),
     path('lots/<int:pk>/', views.lot_detail, name='lot_detail'),
+    path('lots/<int:pk>/recalculate/', views.lot_recalculate, name='lot_recalculate'),
     path('lots/<int:pk>/chat/send/', views.lot_chat_send, name='lot_chat_send'),
     path('lots/<int:pk>/load-images/', views.lot_load_images, name='lot_load_images'),
     path('lots/<int:pk>/upload-images/', views.lot_upload_images, name='lot_upload_images'),
