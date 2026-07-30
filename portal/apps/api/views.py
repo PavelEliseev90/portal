@@ -711,16 +711,27 @@ def avito_auction_outcome_set(request):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    result = apply_offer_outcome(
-        offer,
-        title=data.get('title') or data.get('outcomeTitle') or '',
-        detail=data.get('detail') or data.get('outcomeDetail') or '',
-        blob=data.get('blob') or data.get('text') or '',
-        status_code=data.get('status') or data.get('statusCode') or '',
-        outcome_code=data.get('outcomeCode') or data.get('outcome_code') or '',
-        raw=data.get('raw') or '',
-        send_email=data.get('sendEmail', True) is not False,
-    )
+    try:
+        result = apply_offer_outcome(
+            offer,
+            title=data.get('title') or data.get('outcomeTitle') or '',
+            detail=data.get('detail') or data.get('outcomeDetail') or '',
+            blob=data.get('blob') or data.get('text') or '',
+            status_code=data.get('status') or data.get('statusCode') or '',
+            outcome_code=data.get('outcomeCode') or data.get('outcome_code') or '',
+            raw=data.get('raw') or '',
+            send_email=data.get('sendEmail', True) is not False,
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {
+                'error': f'{type(exc).__name__}: {exc}',
+                'lotOfferId': lot_offer_id,
+                'lotId': lot_id,
+                'offerPk': getattr(offer, 'pk', None),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
     state = build_offer_state_response(offer)
     needs_calc = offer_created or lot_needs_calculation(offer.lot)
     return JsonResponse(

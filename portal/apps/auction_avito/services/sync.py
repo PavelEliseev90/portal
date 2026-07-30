@@ -96,6 +96,42 @@ def _dt(value):
     return dt
 
 
+def _clip(value, max_len: int) -> str:
+    text = '' if value is None else str(value)
+    if max_len <= 0:
+        return ''
+    return text[:max_len]
+
+
+def _named(obj, default: str = '') -> str:
+    """Достаёт name из dict/{name} или строки API."""
+    if isinstance(obj, dict):
+        val = obj.get('name')
+        if val in (None, ''):
+            val = obj.get('id')
+        return '' if val in (None, '') else str(val)
+    if obj in (None, ''):
+        return default
+    return str(obj)
+
+
+def _named_id(obj):
+    if isinstance(obj, dict):
+        return obj.get('id')
+    return None
+
+
+def _as_int(value):
+    if value in (None, ''):
+        return None
+    if isinstance(value, dict):
+        value = value.get('name') or value.get('id')
+    try:
+        return int(float(str(value).replace(' ', '').replace(',', '.')))
+    except (TypeError, ValueError):
+        return None
+
+
 def sync_lot_images(lot, images: list, *, replace: bool = True) -> int:
     """
     Сохраняет фото лота из массива API (lot.images[]).
@@ -116,8 +152,8 @@ def sync_lot_images(lot, images: list, *, replace: bool = True) -> int:
             image_id=image_id,
             defaults={
                 'source': AvitoLotImage.SOURCE_AVITO,
-                'url': img.get('url') or '',
-                'url_preview': img.get('urlPreview') or '',
+                'url': _clip(img.get('url') or '', 2048),
+                'url_preview': _clip(img.get('urlPreview') or '', 2048),
                 'file': None,
                 'sort_order': base_order + i if not replace else i,
             },
@@ -145,7 +181,7 @@ def sync_lot_equipment(lot, equipment: list | None) -> int:
     for eq in equipment or []:
         AvitoLotEquipment.objects.create(
             lot=lot,
-            name=eq.get('name') or '',
+            name=_clip(eq.get('name') or '', 300),
             values=eq.get('values') or [],
         )
         count += 1
@@ -173,7 +209,7 @@ def _upsert_lot(lot_data: dict, *, venue: AvitoVenue | None = None) -> AvitoLot:
 
     full_defaults = {
         'description': lot_data.get('description') or '',
-        'seller_place_name': lot_data.get('sellerPlaceName') or '',
+        'seller_place_name': _clip(lot_data.get('sellerPlaceName') or '', 500),
         'min_price': lot_data.get('minPrice'),
         'min_available_bid': lot_data.get('minAvailableBid'),
         'max_available_bid': lot_data.get('maxAvailableBid'),
@@ -247,30 +283,30 @@ def _upsert_vehicle_avito(lot: AvitoLot, vehicle: dict):
     AvitoLotVehicle.objects.update_or_create(
         lot=lot,
         defaults={
-            'brand_id': (vehicle.get('brand') or {}).get('id'),
-            'brand_name': (vehicle.get('brand') or {}).get('name') or '',
-            'model_id': (vehicle.get('model') or {}).get('id'),
-            'model_name': (vehicle.get('model') or {}).get('name') or '',
-            'generation_id': (vehicle.get('generation') or {}).get('id'),
-            'generation_name': (vehicle.get('generation') or {}).get('name') or '',
-            'modification_id': (vehicle.get('modification') or {}).get('id'),
-            'modification_name': (vehicle.get('modification') or {}).get('name') or '',
-            'configuration_id': (vehicle.get('configuration') or {}).get('id'),
-            'configuration_name': (vehicle.get('configuration') or {}).get('name') or '',
-            'year': (vehicle.get('year') or {}).get('name') or (vehicle.get('year') or {}).get('id'),
-            'mileage': vehicle.get('mileage'),
-            'body_type_name': (vehicle.get('bodyType') or {}).get('name') or '',
-            'engine_type_name': (vehicle.get('engineType') or {}).get('name') or '',
-            'transmission_name': (vehicle.get('transmission') or {}).get('name') or '',
-            'drive_name': (vehicle.get('drive') or {}).get('name') or '',
-            'color_name': (vehicle.get('color') or {}).get('name') or '',
-            'condition_name': (vehicle.get('condition') or {}).get('name') or '',
-            'owners_count_name': (vehicle.get('ownersCount') or {}).get('name') or '',
-            'doors_count': (vehicle.get('doorsCount') or {}).get('name'),
-            'wheel_name': (vehicle.get('wheel') or {}).get('name') or '',
-            'vehicle_type_name': (vehicle.get('vehicleType') or {}).get('name') or '',
-            'registration_in_russia': (vehicle.get('registrationInRussia') or {}).get('name') or '',
-            'registration_number': vehicle.get('registrationNumber') or '',
+            'brand_id': _named_id(vehicle.get('brand')),
+            'brand_name': _clip(_named(vehicle.get('brand')), 200),
+            'model_id': _named_id(vehicle.get('model')),
+            'model_name': _clip(_named(vehicle.get('model')), 200),
+            'generation_id': _named_id(vehicle.get('generation')),
+            'generation_name': _clip(_named(vehicle.get('generation')), 300),
+            'modification_id': _named_id(vehicle.get('modification')),
+            'modification_name': _clip(_named(vehicle.get('modification')), 300),
+            'configuration_id': _named_id(vehicle.get('configuration')),
+            'configuration_name': _clip(_named(vehicle.get('configuration')), 200),
+            'year': _as_int(vehicle.get('year')),
+            'mileage': _as_int(vehicle.get('mileage')),
+            'body_type_name': _clip(_named(vehicle.get('bodyType')), 100),
+            'engine_type_name': _clip(_named(vehicle.get('engineType')), 100),
+            'transmission_name': _clip(_named(vehicle.get('transmission')), 100),
+            'drive_name': _clip(_named(vehicle.get('drive')), 100),
+            'color_name': _clip(_named(vehicle.get('color')), 100),
+            'condition_name': _clip(_named(vehicle.get('condition')), 100),
+            'owners_count_name': _clip(_named(vehicle.get('ownersCount')), 50),
+            'doors_count': _as_int(vehicle.get('doorsCount')),
+            'wheel_name': _clip(_named(vehicle.get('wheel')), 50),
+            'vehicle_type_name': _clip(_named(vehicle.get('vehicleType')), 100),
+            'registration_in_russia': _clip(_named(vehicle.get('registrationInRussia')), 100),
+            'registration_number': _clip(vehicle.get('registrationNumber') or '', 50),
         },
     )
 
@@ -287,16 +323,16 @@ def _upsert_vehicle_autohub(lot: AvitoLot, ah: dict):
             'modification_id': ah.get('modificationID'),
             'complectation_id': ah.get('complectationID'),
             'body_configuration_id': ah.get('bodyConfigurationID'),
-            'year': ah.get('year'),
-            'km_distance': ah.get('kmDistance'),
-            'owner_count': ah.get('ownerCount'),
-            'body_type': ah.get('bodyType') or '',
-            'body_door_count': ah.get('bodyDoorCount'),
-            'drive_type': ah.get('driveType') or '',
-            'engine_type': ah.get('engineType') or '',
+            'year': _as_int(ah.get('year')),
+            'km_distance': _as_int(ah.get('kmDistance')),
+            'owner_count': _as_int(ah.get('ownerCount')),
+            'body_type': _clip(ah.get('bodyType') or '', 50),
+            'body_door_count': _as_int(ah.get('bodyDoorCount')),
+            'drive_type': _clip(ah.get('driveType') or '', 30),
+            'engine_type': _clip(ah.get('engineType') or '', 30),
             'engine_volume': ah.get('engineVolume'),
             'engine_power': ah.get('enginePower'),
-            'gearbox_type': ah.get('gearboxType') or '',
+            'gearbox_type': _clip(ah.get('gearboxType') or '', 30),
             'armored': ah.get('armored', False),
             'equipment_ids': ah.get('equipment') or [],
         },
@@ -325,14 +361,14 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
     autoteka = lot_data.get('autoteka') or {}
     report, _ = AvitoAutotekaReport.objects.update_or_create(
         lot=lot,
-        defaults={'state_status': (autoteka.get('state') or {}).get('status') or ''},
+        defaults={'state_status': _clip((autoteka.get('state') or {}).get('status') or '', 50)},
     )
     report.events.all().delete()
     for ev in (autoteka.get('report') or {}).get('events') or []:
         AvitoAutotekaEvent.objects.create(
             report=report,
-            event_type=ev.get('type') or '',
-            status=ev.get('status') or '',
+            event_type=_clip(ev.get('type') or '', 100),
+            status=_clip(ev.get('status') or '', 50),
             description=ev.get('description') or '',
         )
 
@@ -356,8 +392,8 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
         defaults={
             'lot': lot,
             'account': account,
-            'status_code': status_code,
-            'status_name': status_name or '',
+            'status_code': _clip(status_code or '', 30),
+            'status_name': _clip(status_name or '', 100),
             'bid': offer_data.get('bid'),
             'bid_made_at': _dt(offer_data.get('bidMadeAt')),
             'min_bid_step': offer_data.get('minBidStep'),
@@ -371,10 +407,10 @@ def upsert_offer_from_api(account: AvitoBidderAccount, offer_data: dict) -> Avit
             'is_buyout_on_site_available': offer_data.get('isBuyoutOnSiteAvailable', False),
             'is_inspection_on_site_available': offer_data.get('isInspectionOnSiteAvailable', False),
             'bid_made_by_avito_user_id': (bid_user.get('id') if bid_user else None),
-            'bid_made_by_email': bid_user.get('email') or '',
-            'bid_made_by_first_name': bid_user.get('firstName') or '',
-            'bid_made_by_last_name': bid_user.get('lastName') or '',
-            'bid_made_by_middle_name': bid_user.get('middleName') or '',
+            'bid_made_by_email': _clip(bid_user.get('email') or '', 254),
+            'bid_made_by_first_name': _clip(bid_user.get('firstName') or '', 100),
+            'bid_made_by_last_name': _clip(bid_user.get('lastName') or '', 100),
+            'bid_made_by_middle_name': _clip(bid_user.get('middleName') or '', 100),
             'raw_offer_json': offer_data,
         },
     )
