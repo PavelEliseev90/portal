@@ -10460,8 +10460,8 @@
                             </div>
                               <div class="modal-body">
                                 {% for info in params.price.list_info_price %}
-                                  {% if info.add %}
-                                    <div class="card bg-success bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                                  {% if info.add == True %}
+                                    <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                       <div class="card-body" >
                                         <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                         <br>
@@ -10469,7 +10469,7 @@
                                       </div>
                                     </div>
                                   {% else %}
-                                    <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                                    <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                       <div class="card-body" >
                                         <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                         <br>
@@ -10493,13 +10493,23 @@
                             </div>
                               <div class="modal-body">
                                 {% for info in params.price_autohub.list_info_price %}
-                                  <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                    <div class="card-body" >
-                                      <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                      <br>
-                                      {{info.comment}}
-                                    </div>
+                                {% if info.add == True %}
+                                <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                  <div class="card-body" >
+                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                    <br>
+                                    {{info.comment}}
                                   </div>
+                                </div>
+                              {% else %}
+                                <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                  <div class="card-body" >
+                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                    <br>
+                                    {{info.comment}}
+                                  </div>
+                                </div>
+                              {% endif %}
                                 {% endfor %}
                               </div>
                             
@@ -10516,13 +10526,23 @@
                             </div>
                               <div class="modal-body">
                                 {% for info in params.price_custom.list_info_price %}
-                                  <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                    <div class="card-body" >
-                                      <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                      <br>
-                                      {{info.comment}}
-                                    </div>
+                                {% if info.add == True %}
+                                <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                  <div class="card-body" >
+                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                    <br>
+                                    {{info.comment}}
                                   </div>
+                                </div>
+                              {% else %}
+                                <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                  <div class="card-body" >
+                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                    <br>
+                                    {{info.comment}}
+                                  </div>
+                                </div>
+                              {% endif %}
                                 {% endfor %}
                               </div>
                             
@@ -11001,13 +11021,23 @@
                           <hr>
 
                           {% for info in params.price_kors.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         
                         </div>
@@ -11529,13 +11559,23 @@
                           <hr>
 
                           {% for info in params.price_autohub.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         
                         </div>
@@ -11937,8 +11977,8 @@
                           <hr>
 
                           {% for info in params.price.list_info_price %}
-                              {% if info.add %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              {% if info.add == True %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -11946,7 +11986,7 @@
                                 </div>
                               </div>
                             {% else %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -12283,13 +12323,23 @@
                           <hr>
 
                           {% for info in params.price_custom.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         
                         </div>
@@ -14387,13 +14437,23 @@
                               <hr>
     
                               {% for info in params.price_kors.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -14915,13 +14975,23 @@
                               <hr>
     
                               {% for info in params.price_autohub.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -15323,8 +15393,8 @@
                               <hr>
     
                               {% for info in params.price.list_info_price %}
-                              {% if info.add %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              {% if info.add == True %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -15332,7 +15402,7 @@
                                 </div>
                               </div>
                             {% else %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -15669,13 +15739,23 @@
                               <hr>
     
                               {% for info in params.price_custom.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -15698,8 +15778,8 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price.list_info_price %}
-                              {% if info.add %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              {% if info.add == True %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -15707,7 +15787,7 @@
                                 </div>
                               </div>
                             {% else %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -15731,13 +15811,23 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price_autohub.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             </div>
                           
@@ -15754,13 +15844,23 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price_custom.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             </div>
                           
@@ -17693,13 +17793,23 @@
                               <hr>
     
                               {% for info in params.price_kors.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -18218,13 +18328,23 @@
                               <hr>
     
                               {% for info in params.price_autohub.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -18617,8 +18737,8 @@
                               <hr>
     
                               {% for info in params.price.list_info_price %}
-                              {% if info.add %}
-                              <div class="card bg-success bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -18626,7 +18746,7 @@
                                 </div>
                               </div>
                             {% else %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -18954,13 +19074,23 @@
                               <hr>
     
                               {% for info in params.price_custom.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             
                             </div>
@@ -18983,8 +19113,8 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price.list_info_price %}
-                              {% if info.add %}
-                              <div class="card bg-success bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -18992,7 +19122,7 @@
                                 </div>
                               </div>
                             {% else %}
-                              <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                                 <div class="card-body" >
                                   <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                                   <br>
@@ -19016,13 +19146,23 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price_autohub.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             </div>
                           
@@ -19039,13 +19179,23 @@
                           </div>
                             <div class="modal-body">
                               {% for info in params.price_custom.list_info_price %}
-                                <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                                  <div class="card-body" >
-                                    <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                    <br>
-                                    {{info.comment}}
-                                  </div>
+                              {% if info.add == True %}
+                              <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
                                 </div>
+                              </div>
+                            {% else %}
+                              <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                                <div class="card-body" >
+                                  <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                                  <br>
+                                  {{info.comment}}
+                                </div>
+                              </div>
+                            {% endif %}
                               {% endfor %}
                             </div>
                           
@@ -22643,13 +22793,23 @@
                       </div>
                         <div class="modal-body">
                           {% for info in params.price_kors.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         </div>
                       
@@ -22666,8 +22826,8 @@
                       </div>
                         <div class="modal-body">
                           {% for info in params.price.list_info_price %}
-                          {% if info.add %}
-                          <div class="card bg-success bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                             <div class="card-body" >
                               <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
                               <br>
@@ -22675,7 +22835,7 @@
                             </div>
                           </div>
                         {% else %}
-                          <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
                             <div class="card-body" >
                               <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
                               <br>
@@ -22699,13 +22859,23 @@
                       </div>
                         <div class="modal-body">
                           {% for info in params.price_autohub.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         </div>
                       
@@ -22722,13 +22892,23 @@
                       </div>
                         <div class="modal-body">
                           {% for info in params.price_custom.list_info_price %}
-                            <div class="card bg-secondary bg-gradient bg-opacity-10" style="margin: 0.2rem;">
-                              <div class="card-body" >
-                                <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
-                                <br>
-                                {{info.comment}}
-                              </div>
+                          {% if info.add == True %}
+                          <div class="card bg-success bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-success"> + {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
                             </div>
+                          </div>
+                        {% else %}
+                          <div class="card bg-danger bg-gradient bg-opacity-25" style="margin: 0.2rem;">
+                            <div class="card-body" >
+                              <label class="fw-bold fs-5"> {{info.price|floatformat:"2g"}} &#8381</label> <label class="text-danger"> - {{info.dif|floatformat:"2g"}} &#8381 </label>
+                              <br>
+                              {{info.comment}}
+                            </div>
+                          </div>
+                        {% endif %}
                           {% endfor %}
                         </div>
                       

@@ -8534,6 +8534,31 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             auction_comment = ''
 
         #ИТОГ
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                        
         estimation_price    = round(price, -2)
         amount_sum          = amount_mcu + amount_podgotovka + amount_ss
         profit              = round(price_sale - price - amount_sum, -2)
@@ -8672,31 +8697,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     interactiv_rlk.page_soglasovanie.save()
             except:
                 s= 1   
-        if defer_iznos:
-            if iznos_data > 0 and amount_ss > 0:
-                if iznos_data > amount_ss:
-                    price           = price + amount_ss
-                    diff            = amount_ss
-                    inf_price = {
-                        'price'     : price,
-                        'dif'       : diff,
-                        'add'       : True,
-                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-                        'name'      : "кузовной"
-                    }
-                    list_info_price.append(inf_price)
-                elif iznos_data < amount_ss:
-                    price           = price + iznos_data
-                    diff            = iznos_data
-                    inf_price = {
-                        'price'     : price,
-                        'dif'       : diff,
-                        'add'       : True,
-                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-                        'name'      : "кузовной"
-                    }
-                    list_info_price.append(inf_price)
-                    
+        
         price = {
             'kors_price_reception'          : kors_price_reception,
             'profit'                        : profit,
@@ -11313,6 +11314,32 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             auction_comment = ''
 
         #ИТОГ
+        #ИТОГ
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                    
         estimation_price    = round(price, -2)
         amount_sum          = amount_mcu + amount_podgotovka + amount_ss
         profit              = round(price_sale - price - amount_sum, -2)
@@ -11433,29 +11460,6 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         except:
             s= 1   
         
-        if defer_iznos:
-            if iznos_data > 0 and amount_ss > 0:
-                if iznos_data > amount_ss:
-                    price           = price + amount_ss
-                    diff            = amount_ss
-                    inf_price = {
-                        'price'     : price,
-                        'dif'       : diff,
-                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-                        'name'      : "кузовной"
-                    }
-                    list_info_price.append(inf_price)
-                elif iznos_data < amount_ss:
-                    price           = price + iznos_data
-                    diff            = iznos_data
-                    inf_price = {
-                        'price'     : price,
-                        'dif'       : diff,
-                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
-                        'name'      : "кузовной"
-                    }
-                    list_info_price.append(inf_price)
-
         price = {
             'iznos_data'                    : iznos_data,
             'kors_price_reception'          : kors_price_reception,
