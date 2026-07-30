@@ -70,9 +70,13 @@ def send_web_socket_message(group, chat, user, text, estimation_id):
 def add_swap(rlk):
     
     try:
-        
-        swap        = RegSwapKors()
-        swap.rlk    = rlk
+        if rlk is None:
+            return
+        # Уже в очереди по этому РЛК — дубль не создаём.
+        if RegSwapKors.objects.filter(rlk=rlk, status_code=60).exists():
+            return
+        swap = RegSwapKors()
+        swap.rlk = rlk
         swap.save()
         
     except:
