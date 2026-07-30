@@ -905,11 +905,18 @@ def _parse_optional_int(raw):
     return int(raw)
 
 
+def _parse_optional_decimal(raw):
+    raw = (raw or '').strip().replace(',', '.')
+    if raw == '':
+        return None
+    return raw
+
+
 @login_required
 @require_http_methods(['GET', 'POST'])
 def auction_settings(request):
     """Настройки автоставок и коэффициентов рекомендаций выкупа."""
-    from auction_avito.models import AvitoBidderAccount
+    from auction_avito.models import AvitoBidderAccount, TXT_COEFF_FIELD_NAMES
     from auction_avito.services.monitor import platform_email_rows
 
     settings_obj = AvitoAuctionSettings.get_solo()
@@ -931,6 +938,12 @@ def auction_settings(request):
             settings_obj.weight_rdo = request.POST.get('weight_rdo') or '0.55'
             settings_obj.weight_kor = request.POST.get('weight_kor') or '0.25'
             settings_obj.weight_txt = request.POST.get('weight_txt') or '0.05'
+            for field in TXT_COEFF_FIELD_NAMES:
+                setattr(settings_obj, field, _parse_optional_decimal(request.POST.get(field)))
+            try:
+                settings_obj.avito_commission = max(0, int(request.POST.get('avito_commission') or 0))
+            except (TypeError, ValueError):
+                settings_obj.avito_commission = 0
             settings_obj.outcome_poll_enabled = request.POST.get('outcome_poll_enabled') == 'on'
             settings_obj.win_notify_emails = (request.POST.get('win_notify_emails') or '').strip()
             settings_obj.full_clean()

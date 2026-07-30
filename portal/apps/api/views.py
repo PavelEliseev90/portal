@@ -539,6 +539,17 @@ def avito_auction_settings(request):
         'weight_rdo': float(s.weight_rdo),
         'weight_kor': float(s.weight_kor),
         'weight_txt': float(s.weight_txt),
+        'txt_coefficients': {
+            '200': float(s.txt_coeff_200) if s.txt_coeff_200 is not None else None,
+            '400': float(s.txt_coeff_400) if s.txt_coeff_400 is not None else None,
+            '700': float(s.txt_coeff_700) if s.txt_coeff_700 is not None else None,
+            '1 200': float(s.txt_coeff_1200) if s.txt_coeff_1200 is not None else None,
+            '2 000': float(s.txt_coeff_2000) if s.txt_coeff_2000 is not None else None,
+            '3 000': float(s.txt_coeff_3000) if s.txt_coeff_3000 is not None else None,
+            '5 000': float(s.txt_coeff_5000) if s.txt_coeff_5000 is not None else None,
+            '5 000+': float(s.txt_coeff_5001) if s.txt_coeff_5001 is not None else None,
+        },
+        'avito_commission': int(s.avito_commission or 0),
         'outcome_poll_enabled': s.outcome_poll_enabled,
         'win_notify_emails': s.win_notify_emails or '',
         'updated_at': s.updated_at.isoformat() if s.updated_at else None,
@@ -1043,6 +1054,7 @@ def calculate_car(request):
     finance_price = 0
     iznos_price = 0
     discount_torg = 0
+    avito_commission_amount = 0
     zna = 0
     day_sale_all = 90
     zg = 'Неопределена'
@@ -1063,6 +1075,13 @@ def calculate_car(request):
             upsert_lot_from_calculate_request(info)
             answer = answer_from_cached_calculation(cached)
             answer = attach_avito_sync_to_answer(answer, cached)
+            import logging
+            lot_id_cached = info.get('lotId') or (info.get('lot') or {}).get('lotId')
+            logging.getLogger(__name__).info(
+                'calculate_car cache hit lot_id=%s calc_id=%s',
+                lot_id_cached,
+                cached.pk,
+            )
             return JsonResponse({'answer': answer}, status=status.HTTP_200_OK)
 
         autohubVehicle  = info['autohubVehicle']
@@ -1203,7 +1222,6 @@ def calculate_car(request):
             
             if zna < 200000:
                 zg              = '200'
-                kf              = getattr(dc, 'correction_txt_200', None) if getattr(dc, 'correction_txt_200', None) not in (None, 0) else dc.ratio_avtohub_txt_200
                 percent_ss      = getattr(dc, 'markup_txt_200',   None) if getattr(dc, 'markup_txt_200',   None) not in (None, 0) else dc.percent_txt_200
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_200', None) if getattr(dc, 'max_discount_bargain_percent_200', None) not in (None, 0) else dc.percent_torg_txt_200
                 percent_sale_1C = getattr(dc, 'correction_test_1c_200', None) if getattr(dc, 'correction_test_1c_200', None) not in (None, 0) else dc.ratio_1с_test_price_200
@@ -1212,7 +1230,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_200',     None) if getattr(dc, 'correction_kor_200',     None) not in (None, 0) else dc.ratio_avtohub_kor_200
             elif zna < 400000:
                 zg              = '400'
-                kf              = getattr(dc, 'correction_txt_400', None) if getattr(dc, 'correction_txt_400', None) not in (None, 0) else dc.ratio_avtohub_txt_400
                 percent_ss      = getattr(dc, 'markup_txt_400',   None) if getattr(dc, 'markup_txt_400',   None) not in (None, 0) else dc.percent_txt_400
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_400', None) if getattr(dc, 'max_discount_bargain_percent_400', None) not in (None, 0) else dc.percent_torg_txt_400
                 percent_sale_1C = getattr(dc, 'correction_test_1c_400', None) if getattr(dc, 'correction_test_1c_400', None) not in (None, 0) else dc.ratio_1с_test_price_400
@@ -1221,7 +1238,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_400',     None) if getattr(dc, 'correction_kor_400',     None) not in (None, 0) else dc.ratio_avtohub_kor_400        
             elif zna < 700000:
                 zg              = '700'
-                kf              = getattr(dc, 'correction_txt_700', None) if getattr(dc, 'correction_txt_700', None) not in (None, 0) else dc.ratio_avtohub_txt_700
                 percent_ss      = getattr(dc, 'markup_txt_700',   None) if getattr(dc, 'markup_txt_700',   None) not in (None, 0) else dc.percent_txt_700
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_700', None) if getattr(dc, 'max_discount_bargain_percent_700', None) not in (None, 0) else dc.percent_torg_txt_700
                 percent_sale_1C = getattr(dc, 'correction_test_1c_700', None) if getattr(dc, 'correction_test_1c_700', None) not in (None, 0) else dc.ratio_1с_test_price_700
@@ -1230,7 +1246,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_700',     None) if getattr(dc, 'correction_kor_700',     None) not in (None, 0) else dc.ratio_avtohub_kor_700            
             elif zna < 1200000:
                 zg              = '1 200'
-                kf              = getattr(dc, 'correction_txt_1200', None) if getattr(dc, 'correction_txt_1200', None) not in (None, 0) else dc.ratio_avtohub_txt_1200
                 percent_ss      = getattr(dc, 'markup_txt_1200',   None) if getattr(dc, 'markup_txt_1200',   None) not in (None, 0) else dc.percent_txt_1200
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_1200', None) if getattr(dc, 'max_discount_bargain_percent_1200', None) not in (None, 0) else dc.percent_torg_txt_1200
                 percent_sale_1C = getattr(dc, 'correction_test_1c_1200', None) if getattr(dc, 'correction_test_1c_1200', None) not in (None, 0) else dc.ratio_1с_test_price_1200
@@ -1239,7 +1254,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_1200',     None) if getattr(dc, 'correction_kor_1200',     None) not in (None, 0) else dc.ratio_avtohub_kor_1200            
             elif zna < 2000000:
                 zg              = '2 000'
-                kf              = getattr(dc, 'correction_txt_2000', None) if getattr(dc, 'correction_txt_2000', None) not in (None, 0) else dc.ratio_avtohub_txt_2000
                 percent_ss      = getattr(dc, 'markup_txt_2000',   None) if getattr(dc, 'markup_txt_2000',   None) not in (None, 0) else dc.percent_txt_2000
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_2000', None) if getattr(dc, 'max_discount_bargain_percent_2000', None) not in (None, 0) else dc.percent_torg_txt_2000
                 percent_sale_1C = getattr(dc, 'correction_test_1c_2000', None) if getattr(dc, 'correction_test_1c_2000', None) not in (None, 0) else dc.ratio_1с_test_price_2000
@@ -1248,7 +1262,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_2000',     None) if getattr(dc, 'correction_kor_2000',     None) not in (None, 0) else dc.ratio_avtohub_kor_2000            
             elif zna < 3000000:
                 zg              = '3 000'
-                kf              = getattr(dc, 'correction_txt_3000', None) if getattr(dc, 'correction_txt_3000', None) not in (None, 0) else dc.ratio_avtohub_txt_3000
                 percent_ss      = getattr(dc, 'markup_txt_3000',   None) if getattr(dc, 'markup_txt_3000',   None) not in (None, 0) else dc.percent_txt_3000
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_3000', None) if getattr(dc, 'max_discount_bargain_percent_3000', None) not in (None, 0) else dc.percent_torg_txt_3000
                 percent_sale_1C = getattr(dc, 'correction_test_1c_3000', None) if getattr(dc, 'correction_test_1c_3000', None) not in (None, 0) else dc.ratio_1с_test_price_3000
@@ -1257,7 +1270,6 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_3000',     None) if getattr(dc, 'correction_kor_3000',     None) not in (None, 0) else dc.ratio_avtohub_kor_3000
             elif zna < 5000000:
                 zg              = '5 000'
-                kf              = getattr(dc, 'correction_txt_5000', None) if getattr(dc, 'correction_txt_5000', None) not in (None, 0) else dc.ratio_avtohub_txt_5000
                 percent_ss      = getattr(dc, 'markup_txt_5000',   None) if getattr(dc, 'markup_txt_5000',   None) not in (None, 0) else dc.percent_txt_5000
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_5000', None) if getattr(dc, 'max_discount_bargain_percent_5000', None) not in (None, 0) else dc.percent_torg_txt_5000
                 percent_sale_1C = getattr(dc, 'correction_test_1c_5000', None) if getattr(dc, 'correction_test_1c_5000', None) not in (None, 0) else dc.ratio_1с_test_price_5000
@@ -1266,13 +1278,21 @@ def calculate_car(request):
                 percent_sale_kor= getattr(dc, 'correction_kor_5000',     None) if getattr(dc, 'correction_kor_5000',     None) not in (None, 0) else dc.ratio_avtohub_kor_5000            
             else:
                 zg              = '5 000+'
-                kf              = getattr(dc, 'correction_txt_5001', None) if getattr(dc, 'correction_txt_5001', None) not in (None, 0) else dc.ratio_avtohub_txt_5001
                 percent_ss      = getattr(dc, 'markup_txt_5001',   None) if getattr(dc, 'markup_txt_5001',   None) not in (None, 0) else dc.percent_txt_5001
                 percent_torg    = getattr(dc, 'max_discount_bargain_percent_5001', None) if getattr(dc, 'max_discount_bargain_percent_5001', None) not in (None, 0) else dc.percent_torg_txt_5001
                 percent_sale_1C = getattr(dc, 'correction_test_1c_5001', None) if getattr(dc, 'correction_test_1c_5001', None) not in (None, 0) else dc.ratio_1с_test_price_5001
                 percent_sale    = getattr(dc, 'correction_test_5001',    None) if getattr(dc, 'correction_test_5001',    None) not in (None, 0) else dc.ratio_avtohub_test_price_5001
                 percent_sale_rdo= getattr(dc, 'correction_rdo_5001',     None) if getattr(dc, 'correction_rdo_5001',     None) not in (None, 0) else dc.ratio_avtohub_rdo_5001
                 percent_sale_kor= getattr(dc, 'correction_kor_5001',     None) if getattr(dc, 'correction_kor_5001',     None) not in (None, 0) else dc.ratio_avtohub_kor_5001            
+
+            from auction_avito.models import AvitoAuctionSettings
+            from auction_avito.services.auction_calc_settings import (
+                get_avito_commission,
+                resolve_txt_kf,
+            )
+            auction_settings = AvitoAuctionSettings.get_solo()
+            kf = resolve_txt_kf(zg, auction_settings, dc=dc)
+            avito_commission_amount = get_avito_commission(auction_settings)
 
             if percent_torg < 0:
                 percent_torg = percent_torg * -1
@@ -1356,6 +1376,18 @@ def calculate_car(request):
                 'name'      : "финансирование"
             }
             list_info_price.append(inf_price)
+
+            if avito_commission_amount > 0:
+                price_old = price
+                price = price - avito_commission_amount
+                diff = avito_commission_amount
+                inf_price = {
+                    'price': price,
+                    'dif': diff,
+                    'comment': 'Комиссия Авито ' + str(avito_commission_amount) + ' ₽',
+                    'name': 'комиссия Авито',
+                }
+                list_info_price.append(inf_price)
         
         #Смотрим автотеку
         
@@ -1477,6 +1509,7 @@ def calculate_car(request):
             'finance_price'                 : finance_price,
             'iznos_price'                   : iznos_price,
             'discount_torg'                 : discount_torg,
+            'avito_commission'              : avito_commission_amount,
             'auction'                       : auction
         }
 
@@ -6254,14 +6287,11 @@ def get_stage_price(name):
         return ref.save()
     
 def get_group_price(name):
-    refCount = RefGroupPrice.objects.filter(name = name).count()
-    if refCount > 0:
-        ref = RefGroupPrice.objects.filter(name = name)[0]
-        return ref
-    else:
-        ref = RefGroupPrice()
-        ref.name = name
-        return ref.save()
+    from refs.price_groups import resolve_price_group_ref
+
+    if name in (None, ''):
+        return None
+    return resolve_price_group_ref(name, create=True)
     
 def get_category_customer(category_customer):
     if category_customer == '':

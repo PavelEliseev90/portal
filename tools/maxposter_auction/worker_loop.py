@@ -127,7 +127,7 @@ def _build_calc_payload(offer: dict, dealer_id: str) -> dict:
         "originFinishAt": lot.get("originFinishAt"),
         "images": lot.get("images") or offer.get("images"),
         "badges": offer.get("badges") or lot.get("badges"),
-        "forceRecalc": True,
+        "forceRecalc": _env_bool("WORKER_FORCE_RECALC", False),
     }
     return payload
 

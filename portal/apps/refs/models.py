@@ -1685,6 +1685,11 @@ class RefGroupPrice(models.Model):
     label_1c = models.CharField("Наименование для 1С", max_length=20, blank=True, default='')
     is_active = models.BooleanField("Активна", default=True)
 
+    def save(self, *args, **kwargs):
+        from refs.price_groups import apply_canonical_price_group_fields
+        apply_canonical_price_group_fields(self)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         if self.code:
             return "{} ({})".format(self.name, self.code)

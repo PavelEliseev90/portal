@@ -18,30 +18,14 @@ from dateutil.relativedelta import relativedelta
 from django.db.models import Q
 
 from analytics.models import TradeInFunnel
-from refs.price_groups import PRICE_GROUP_RANGES
-
+from refs.price_groups import (
+    PRICE_GROUP_RANGES,
+    ZG_ORDER,
+    normalize_price_group_display as normalize_zg_name,
+    zg_display_from_price as zg_from_price,
+)
 
 DATE_INVALID = datetime(1, 1, 1)
-
-ZG_ORDER = [row['name'] for row in PRICE_GROUP_RANGES] + ['Неопределена']
-
-ZG_ALIASES = {
-    '200': '200',
-    '400': '400',
-    '700': '700',
-    '1200': '1 200',
-    '1 200': '1 200',
-    '1 200 ': '1 200',
-    '2000': '2 000',
-    '2 000': '2 000',
-    '3000': '3 000',
-    '3 000': '3 000',
-    '5000': '5 000',
-    '5 000': '5 000',
-    '5001': '5 000+',
-    '5 000+': '5 000+',
-    '5000+': '5 000+',
-}
 
 ZG_COLORS = {
     '200': '#94a3b8',
@@ -81,31 +65,6 @@ def normalize_chart_view(raw) -> str:
     return 'unit' if v in ('unit', 'dc', 'units', 'дц') else 'zg'
 
 
-def zg_from_price(price) -> str:
-    """ЦГ по порогам воронки (включительно <=), как update_trade_in_funnel по ЦНА."""
-    try:
-        value = float(price or 0)
-    except (TypeError, ValueError):
-        value = 0
-    if value <= 0:
-        return 'Неопределена'
-    if value <= 200_000:
-        return '200'
-    if value <= 400_000:
-        return '400'
-    if value <= 700_000:
-        return '700'
-    if value <= 1_200_000:
-        return '1 200'
-    if value <= 2_000_000:
-        return '2 000'
-    if value <= 3_000_000:
-        return '3 000'
-    if value <= 5_000_000:
-        return '5 000'
-    return '5 000+'
-
-
 def _median(values) -> float:
     vals = [float(v) for v in values if v is not None]
     if not vals:
@@ -137,18 +96,6 @@ def _segment_key(car) -> str:
         if mod.pk:
             return f'mod:{mod.pk}'
     return f'car:{car.pk}'
-
-
-def normalize_zg_name(raw: Optional[str], price=None) -> str:
-    if raw:
-        key = str(raw).strip()
-        if key in ZG_ALIASES:
-            return ZG_ALIASES[key]
-        compact = key.replace(' ', '')
-        for alias, name in ZG_ALIASES.items():
-            if alias.replace(' ', '') == compact:
-                return name
-    return zg_from_price(price)
 
 
 def resolve_funnel_price(row: TradeInFunnel):

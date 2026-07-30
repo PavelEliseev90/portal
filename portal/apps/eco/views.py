@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
 from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
+from register.estimation_iznos import apply_iznos_taxi_correction
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
@@ -6529,7 +6530,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             percent_ss = percent_ss * -1
                                                 
         price = zna 
-        
+        iznos_data = 0
         # повышенный износ / такси
         if estimation.iznos and estimation.taxi:
             price_new  = price - (price * 40 / 100)
@@ -6542,6 +6543,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 'name'      : "износ"
             }
             list_info_price.append(inf_price)
+            
             if estimation.auction_auto_no_user != True:
                 auction = True
                 auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6. "
@@ -6556,6 +6558,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 'comment'  : "Цена скоректирована c учетом повышенного износа ",  
                 'name'      : "износ" 
             }
+            iznos_data = diff
             iznos_price = diff
             list_info_price.append(inf_price)
         elif estimation.taxi:
@@ -6576,7 +6579,8 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 auction_success = True
 
         
-
+        defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
+        
         #Считаем авто в продаже 
         price_sale_rdo = 0
         price_sale_kor = 0
@@ -8441,7 +8445,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 'comment'   : "Цена скоректирована с учетом затрат на слесарный ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
                 'name'      : "слесарный"
             }
-            list_info_price.append(inf_price)     
+            list_info_price.append(inf_price)
 
         if amount_podgotovka > 0:
             price           = price - amount_podgotovka
@@ -8668,7 +8672,29 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     interactiv_rlk.page_soglasovanie.save()
             except:
                 s= 1   
-
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                    
         price = {
             'kors_price_reception'          : kors_price_reception,
             'profit'                        : profit,
@@ -8733,7 +8759,6 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
 def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger='', save_history=None):
 
     try:
-        
         
         estimation              = cd.estimation
         interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(estimation = estimation).first()
@@ -9479,8 +9504,9 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         if percent_ss < 0:
             percent_ss = percent_ss * -1
                                                 
-        price = zna 
-        # повышенный износ / такси
+        price = zna
+        
+         # повышенный износ / такси
         if estimation.iznos and estimation.taxi:
             price_new  = price - (price * 40 / 100)
             diff       = price - price_new
@@ -9494,7 +9520,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             list_info_price.append(inf_price)
             if estimation.auction_auto_no_user != True:
                 auction = True
-                auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6."
+                auction_comment = auction_comment + "Повышенный износ и использование в такси. Коэфицент 0.6. "
                 auction_success = True
         elif estimation.iznos:
             price_new  = price - (price * 10 / 100)
@@ -9503,7 +9529,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'  : "Цена скоректирована c учетом повышенного износа",  
+                'comment'  : "Цена скоректирована c учетом повышенного износа ",  
                 'name'      : "износ" 
             }
             iznos_price = diff
@@ -9515,11 +9541,15 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'  : "Цена скоректирована c учетом использования в такси",  
+                'comment'  : "Цена скоректирована c учетом использования в такси ",  
                 'name'      : "износ" 
             }
             iznos_price = diff
             list_info_price.append(inf_price)
+            if estimation.auction_auto_no_user != True:
+                auction = True
+                auction_comment = auction_comment + "Использование в такси. Коэфицент " + str(kf_auction)
+                auction_success = True
 
         #Считаем авто в продаже 
         price_sale_rdo = 0
@@ -11180,7 +11210,19 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 'comment'   : "Цена скоректирована с учетом затрат на слесарный ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
                 'name'      : "слесарный"
             }
-            list_info_price.append(inf_price)     
+            list_info_price.append(inf_price)
+
+        price, iznos_price, auction, auction_comment, auction_success = apply_iznos_taxi_correction(
+            price,
+            estimation,
+            kf_auction=kf_auction,
+            list_info_price=list_info_price,
+            auction=auction,
+            auction_comment=auction_comment,
+            auction_success=auction_success,
+            defer_iznos=defer_iznos,
+            after_ss=True,
+        )
 
         if amount_podgotovka > 0:
             price           = price - amount_podgotovka
@@ -11388,8 +11430,32 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 estimation.page_soglasovanie.save()
         except:
             s= 1   
+        
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
 
         price = {
+            'iznos_data'                    : iznos_data,
             'kors_price_reception'          : kors_price_reception,
             'profit'                        : profit,
             'hub_sale_price_avg'            : hub_sale_price_avg,

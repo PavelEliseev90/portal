@@ -10,6 +10,7 @@ from typing import Any
 
 from django.db.models import Prefetch
 
+from refs.price_groups import normalize_price_group_display
 from .models import (
     EstimationRule,
     EstimationRuleCondition,
@@ -419,8 +420,11 @@ def rule_matches(rule: EstimationRule, facts: dict[str, Any]) -> tuple[bool, str
         if not matched:
             need = ', '.join(sorted(allowed_bodies['labels'])) or '—'
             return False, f'кузов: нужно один из «{need}», факт «{facts.get("body_type") or "—"}»'
-    if rule.price_group and _norm(rule.price_group) != _norm(facts.get('price_group')):
-        return False, f'ЦГ: нужно «{rule.price_group}»'
+    if rule.price_group:
+        rule_pg = normalize_price_group_display(rule.price_group)
+        fact_pg = normalize_price_group_display(facts.get('price_group'))
+        if rule_pg != fact_pg:
+            return False, f'ЦГ: нужно «{rule.price_group}»'
     if rule.paint_type and _norm(rule.paint_type) != _norm(facts.get('paint_type')):
         return False, f'краска: нужно «{rule.paint_type}»'
     if rule.under_instrument and not facts.get('under_instrument'):

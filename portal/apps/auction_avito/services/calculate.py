@@ -6,6 +6,8 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
+from refs.price_groups import normalize_price_group_display
+
 from auction_avito.models import (
     AvitoAutotekaEvent,
     AvitoAutotekaReport,
@@ -385,7 +387,7 @@ def save_calculation_result(
     calc.profit = _int_or_none(result.get('profit'))
     calc.zna = _int_or_none(result.get('zna'))
     calc.avg_days_in_sale = _int_or_none(result.get('hub_price_avg'))
-    calc.price_group = str(result.get('zg') or '')[:30]
+    calc.price_group = normalize_price_group_display(result.get('zg'), price=result.get('zna'))[:30]
     calc.kf = result.get('kf')
     calc.price_sale = _int_or_none(result.get('price_sale') or result.get('sale'))
     calc.price_sale_rdo = _int_or_none(result.get('price_sale_rdo'))

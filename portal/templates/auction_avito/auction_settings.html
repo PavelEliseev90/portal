@@ -102,6 +102,64 @@
     </div>
 
     <div class="portal-panel mb-3">
+      <h5 class="mb-3">Расчёт выкупа (аукцион)</h5>
+      <p class="small text-muted mb-3">
+        Коэффициенты ТХТ (ИРЦ токсичного стока) по ценовым группам используются в
+        <code>/api/calculate_car/</code>. Пустое поле — fallback на настройки ДЦ (id=90).
+        Повторный запрос рынка Maxposter не чаще 1 раза в 2 часа на лот (кэш расчёта);
+        принудительный пересчёт — <code>forceRecalc: true</code> в теле запроса.
+      </p>
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 200</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_200"
+                 value="{{ auction_settings.txt_coeff_200|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 400</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_400"
+                 value="{{ auction_settings.txt_coeff_400|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 700</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_700"
+                 value="{{ auction_settings.txt_coeff_700|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 1 200</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_1200"
+                 value="{{ auction_settings.txt_coeff_1200|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 2 000</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_2000"
+                 value="{{ auction_settings.txt_coeff_2000|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 3 000</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_3000"
+                 value="{{ auction_settings.txt_coeff_3000|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 5 000</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_5000"
+                 value="{{ auction_settings.txt_coeff_5000|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ЦГ 5 000+</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="txt_coeff_5001"
+                 value="{{ auction_settings.txt_coeff_5001|default_if_none:''|unlocalize }}" placeholder="из ДЦ">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Комиссия Авито, ₽</label>
+          <input type="number" step="1" min="0" class="form-control" name="avito_commission"
+                 value="{{ auction_settings.avito_commission|default:0|unlocalize }}">
+          <div class="form-text">Вычитается после финансирования в формуле выкупа.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
       <h5 class="mb-3">Коэффициенты рекомендаций выкупа</h5>
       <p class="small text-muted">Веса этапов УС на момент продажи (страница
         <a href="{% url 'auction_avito:buyout_recommendations' %}">рекомендаций</a>).

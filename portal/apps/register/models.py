@@ -376,6 +376,11 @@ class RegEstimationsSettings(models.Model):
     auction_kf_5001     = models.FloatField('% от расчитанной цены аукцион цг 5 000 +',      default=0.0, blank=True, null=True)
 
     max_kf_iznos = models.FloatField("Максимальный % разницы коэфицента износа", default=0.0, blank=True, null=True)
+    iznos_with_ss = models.BooleanField(
+        'Повышенный износ с учётом слесарного ремонта',
+        default=False,
+        help_text='Коррекция повышенного износа применяется после вычета затрат на слесарный участок.',
+    )
 
     wheel_danger_amount_200             = models.IntegerField('Рулевая рейка не исправен сумма 200',      default=0, null=True, blank=True)       #'// 
     wheel_danger_kf_200                 = models.IntegerField('Рулевая рейка не исправен коэфицент 200',      default=0, null=True, blank=True)       #'// 
@@ -3719,30 +3724,16 @@ def update_trade_in_funnel(interactiv_rlk):
     if zna <= 0:
         zg_id = 0
         zg_name = ''
-    elif zna <= 200000:
-        zg_id = 7
-        zg_name = '200'
-    elif zna <= 400000:
-        zg_id = 1
-        zg_name = '400'
-    elif zna <= 700000:
-        zg_id = 6
-        zg_name = '700'
-    elif zna <= 1200000:
-        zg_id = 2
-        zg_name = '1 200'
-    elif zna <= 2000000:
-        zg_id = 3
-        zg_name = '2 000'
-    elif zna <= 3000000:
-        zg_id = 4
-        zg_name = '3 000'
-    elif zna <= 5000000:
-        zg_id = 11
-        zg_name = '5 000'
-    elif zna > 5000000:
-        zg_id = 12
-        zg_name = '5 000+'
+    else:
+        from refs.price_groups import PRICE_GROUP_LEGACY_PKS, price_group_code, zg_display_from_price
+        zg_name = zg_display_from_price(zna)
+        if zg_name == 'Неопределена':
+            zg_id = 0
+            zg_name = ''
+        else:
+            code = price_group_code(zg_name)
+            legacy_ids = PRICE_GROUP_LEGACY_PKS.get(code, [])
+            zg_id = legacy_ids[0] if legacy_ids else 0
 
     zna_custom = _safe_float(getattr(estimation_rlk, 'custom_zna', 0), 0)
 

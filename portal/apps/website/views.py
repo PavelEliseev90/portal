@@ -66,6 +66,7 @@ from website.autopricing_settings import (
     push_units_settings_to_1c,
     save_autopricing_unit_settings,
 )
+from refs.price_groups import get_unit_correction_kf_1c
 
 #Настройки параметров доступа
 #server_im      = 'http://k01srv1c05/ralfa01eliseev/hs/mb/'
@@ -7658,6 +7659,7 @@ def korsavto_settings_dc(request):
             estimation_settings.bumper_zad_replace_kf_5001           = int(request.POST.get('bumper_zad_replace_kf_5001', 0))
 
             estimation_settings.max_kf_iznos = float(request.POST.get('max_kf_iznos', 0))
+            estimation_settings.iznos_with_ss = request.POST.get('iznos_with_ss') == 'on'
 
             for key in request.POST.keys():
                 if key.startswith('workdata_') and key.find('normo') > 0:
@@ -9956,80 +9958,7 @@ def refresh_estimation_balance_unit(id_rlk):
                                         unit                = car_organization.unit
                                         stage               = car_organization.stage_price
                                         zg                  = car_organization.group_price
-                                        kf                  = 100
-                                        
-                                        if zg.name == '200':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_200
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_200
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_200
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_200
-                                        elif zg.name == '400':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_400
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_400
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_400
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_400  
-                                        elif zg.name == '700':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_700
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_700
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_700
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_700 
-                                        elif zg.name == '1200' or zg.name == '1 200':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_1200
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_1200
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_1200
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_1200
-                                        elif zg.name == '2000' or zg.name == '2 000':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_2000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_2000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_2000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_2000 
-                                        elif zg.name == '3000' or zg.name == '3 000' or zg.name == '3 001+':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_3000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_3000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_3000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_3000
-                                        elif zg.name == '5000' or zg.name == '5 000':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_5000
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_5000
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_5000
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_5000
-                                        elif zg.name == '5 000' or zg.name == '5 000+':
-                                            if stage.pk == 1:
-                                                kf = unit.correction_txt_1c_5001
-                                            elif stage.pk == 2:
-                                                kf = unit.correction_rdo_1c_5001
-                                            elif stage.pk == 3:
-                                                kf = unit.correction_kor_1c_5001
-                                            elif stage.pk == 4:
-                                                kf = unit.correction_test_1c_5001
+                                        kf                  = get_unit_correction_kf_1c(unit, stage.pk, zg, default=100)
 
                                         if interactiv_rlk.estimation != None:
                                             
