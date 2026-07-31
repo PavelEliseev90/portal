@@ -9070,6 +9070,32 @@
                   <hr class="my-3">
                 </div>
 
+                <div class="portal-panel mb-2" style="margin: 0.2rem;">
+                  <form method="post" class="row g-2 align-items-end p-2">
+                    {% csrf_token %}
+                    <div class="col-12 col-md-7">
+                      <label class="form-label mb-1" for="estimation_settings_id">Настройки ценообразования (выкуп)</label>
+                      <select class="form-select form-select-sm" name="estimation_settings_id" id="estimation_settings_id" required>
+                        {% for s in params.estimation_settings_list %}
+                          <option value="{{ s.id }}" {% if params.current_estimation_settings and params.current_estimation_settings.id == s.id %}selected{% endif %}>
+                            #{{ s.id }}{% if s.name %} — {{ s.name }}{% endif %}
+                          </option>
+                        {% empty %}
+                          <option value="" disabled>Нет профилей RegEstimationsSettings</option>
+                        {% endfor %}
+                      </select>
+                      {% if params.current_estimation_settings %}
+                        <div class="form-text">Сейчас применено: #{{ params.current_estimation_settings.id }}{% if params.current_estimation_settings.name %} — {{ params.current_estimation_settings.name }}{% endif %}</div>
+                      {% endif %}
+                    </div>
+                    <div class="col-12 col-md-5">
+                      <button type="submit" name="apply_estimation_settings" value="1" class="btn btn-primary btn-sm">
+                        Применить и пересчитать
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
                 <main>
 
                   <div class="row g-1">

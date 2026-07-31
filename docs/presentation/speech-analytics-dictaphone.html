@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Презентация проекта KG Speech: офлайн речевая аналитика диктофонов на портале Корс Групп">
+  <title>KG Speech — речевая аналитика диктофонов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0c1a1f;
+      --ink-2: #14303a;
+      --panel: #10262e;
+      --soft: #eef4f2;
+      --paper: #f7faf8;
+      --line: #d5e0dc;
+      --text: #132228;
+      --muted: #5a6f76;
+      --teal: #0d7a6f;
+      --teal-deep: #095a52;
+      --teal-soft: #d8f0eb;
+      --amber: #c4781a;
+      --amber-soft: #fef0d8;
+      --ok: #1f7a45;
+      --ok-soft: #ddf5e6;
+      --warn: #a15c12;
+      --nav-w: 272px;
+      --header-h: 58px;
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Manrope", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--soft);
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 200;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0 1rem 0 1.1rem;
+      background: var(--ink);
+      color: #f3faf7;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .brand strong {
+      font-size: clamp(0.9rem, 2.4vw, 1.05rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .brand span {
+      font-size: 0.72rem;
+      opacity: 0.72;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-actions { display: flex; gap: 0.45rem; flex-shrink: 0; }
+    .btn-top {
+      border: 0;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 0.42rem 0.75rem;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 650;
+      text-decoration: none;
+      color: #f3faf7;
+      background: rgba(255,255,255,.12);
+    }
+    .btn-top:hover { background: rgba(255,255,255,.22); }
+    .btn-top.primary { background: var(--teal); }
+    .btn-top.primary:hover { background: var(--teal-deep); }
+    .btn-menu { display: none; }
+
+    .layout {
+      display: flex;
+      padding-top: var(--header-h);
+      min-height: 100vh;
+    }
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--nav-w);
+      height: calc(100vh - var(--header-h));
+      overflow: auto;
+      background: var(--panel);
+      color: #e7f2ef;
+      padding: 1rem 0 2rem;
+      z-index: 150;
+    }
+    .sidebar h2 {
+      margin: 0 1rem 0.7rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.55;
+      font-weight: 700;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.48rem 1rem;
+      color: #c9ddd8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+    }
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: rgba(255,255,255,.06);
+      color: #fff;
+      border-left-color: #3dcfb8;
+    }
+
+    .main {
+      margin-left: var(--nav-w);
+      width: calc(100% - var(--nav-w));
+      padding: 1.5rem 1.4rem 3.5rem;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      padding: clamp(1.6rem, 4vw, 2.8rem);
+      background:
+        radial-gradient(900px 420px at 90% -10%, rgba(61,207,184,.28), transparent 55%),
+        radial-gradient(700px 380px at 0% 100%, rgba(196,120,26,.18), transparent 50%),
+        linear-gradient(145deg, #0c1a1f 0%, #14363f 55%, #0d4f48 100%);
+      color: #f4fbf8;
+      margin-bottom: 1.4rem;
+    }
+    .hero-kicker {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9fe8d9;
+      margin-bottom: 0.85rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.7rem;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 5vw, 3.1rem);
+      line-height: 1.12;
+      max-width: 14ch;
+    }
+    .hero p {
+      margin: 0;
+      max-width: 42rem;
+      font-size: 1.05rem;
+      color: rgba(244,251,248,.86);
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.3rem;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 650;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+
+    section.block {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.3rem 1.4rem;
+      margin-bottom: 1rem;
+      scroll-margin-top: calc(var(--header-h) + 12px);
+    }
+    section.block h2 {
+      margin: 0 0 0.85rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    section.block h3 {
+      margin: 1.1rem 0 0.45rem;
+      font-size: 1rem;
+      font-weight: 750;
+    }
+    .lead {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    .tile {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.95rem 1rem;
+    }
+    .tile strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.95rem;
+    }
+    .tile p, .tile li { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .tile ul { margin: 0; padding-left: 1.1rem; }
+    .tile.ok { background: var(--ok-soft); border-color: #b7e4c7; }
+    .tile.teal { background: var(--teal-soft); border-color: #b7e2da; }
+    .tile.amber { background: var(--amber-soft); border-color: #f0d4a4; }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 0.2rem 0 0.4rem;
+    }
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem 0.9rem;
+    }
+    .stat b {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--teal-deep);
+      letter-spacing: -0.02em;
+    }
+    .stat span {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.55rem;
+      align-items: stretch;
+    }
+    .flow-step {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem 0.75rem;
+      text-align: center;
+    }
+    .flow-step .n {
+      display: inline-flex;
+      width: 1.55rem;
+      height: 1.55rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 750;
+      margin-bottom: 0.45rem;
+    }
+    .flow-step strong { display: block; font-size: 0.86rem; margin-bottom: 0.25rem; }
+    .flow-step span { display: block; font-size: 0.78rem; color: var(--muted); }
+
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    table.data th,
+    table.data td {
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    table.data th {
+      background: #e8f1ee;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-2);
+    }
+    table.data tr:last-child td { border-bottom: 0; }
+    code {
+      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      font-size: 0.84em;
+      background: #e8eef0;
+      padding: 0.08rem 0.35rem;
+      border-radius: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .pill.done { background: var(--ok-soft); color: var(--ok); }
+    .pill.partial { background: var(--amber-soft); color: var(--warn); }
+    .pill.todo { background: #e8eef0; color: var(--muted); }
+    .pill.bonus { background: var(--teal-soft); color: var(--teal-deep); }
+
+    .callout {
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin: 0.85rem 0 0;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .callout.note { border-color: #b7e2da; background: var(--teal-soft); }
+    .callout.warn { border-color: #f0d4a4; background: var(--amber-soft); }
+    .callout strong { display: block; margin-bottom: 0.25rem; }
+
+    .footer-note {
+      margin-top: 1.2rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 1100px) {
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 860px) {
+      .btn-menu { display: inline-flex; }
+      .sidebar {
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; width: 100%; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .topbar, .sidebar, .btn-menu { display: none !important; }
+      .main { margin: 0; width: 100%; padding: 0; }
+      section.block, .hero { break-inside: avoid; box-shadow: none; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>KG Speech</strong>
+      <span>Речевая аналитика диктофонов · Корс Групп</span>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn-top btn-menu" id="menuBtn">Меню</button>
+      <button type="button" class="btn-top" onclick="window.print()">Печать / PDF</button>
+      <a class="btn-top primary" href="../speech_analytics_dictaphone_PROJECT.md">Технический план</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <h2>Содержание</h2>
+      <a href="#goal">Цель проекта</a>
+      <a href="#do">Что делаем</a>
+      <a href="#out">Что на выходе</a>
+      <a href="#capabilities">Возможности</a>
+      <a href="#flow">Как работает</a>
+      <a href="#tech">Технологии</a>
+      <a href="#foundation">Что уже есть</a>
+      <a href="#roadmap">Этапы</a>
+      <a href="#mono">Mono: кто говорит</a>
+      <a href="#scope">Границы</a>
+      <a href="#need">Что нужно для старта</a>
+    </nav>
+
+    <main class="main">
+      <div class="hero" id="top">
+        <div class="hero-kicker">Внутренний проект · офлайн · без CVC</div>
+        <h1>Речевая аналитика диктофонов</h1>
+        <p>
+          Понимаем, как менеджер общался с клиентом: полная расшифровка разговора,
+          проверка скрипта по чек-листу, срабатывания тематик с таймингами и подсказки
+          по пробелам — на своей инфраструктуре.
+        </p>
+        <div class="hero-meta">
+          <span class="chip">Диктофон + РЛК</span>
+          <span class="chip">Vosk offline</span>
+          <span class="chip">Настраиваемый чек-лист</span>
+          <span class="chip">Дообучаемый словарь</span>
+        </div>
+      </div>
+
+      <section class="block" id="goal">
+        <h2>Цель проекта</h2>
+        <p class="lead">
+          Дать контролю качества и руководителям ОП объективную картину живого общения
+          в салоне — без облачного CVC и без обязательного ручного прослушивания каждой записи.
+        </p>
+        <div class="stat-row">
+          <div class="stat"><b>Текст</b><span>полная расшифровка</span></div>
+          <div class="stat"><b>Чек-лист</b><span>всё ли предложено</span></div>
+          <div class="stat"><b>Тайминг</b><span>где сработала фраза</span></div>
+          <div class="stat"><b>Офлайн</b><span>свои серверы</span></div>
+        </div>
+        <div class="grid-2" style="margin-top:1rem">
+          <div class="tile">
+            <strong>Бизнес-вопросы</strong>
+            <ul>
+              <li>Как вёл беседу менеджер?</li>
+              <li>Предложен ли трейд-ин, кредит, тест-драйв…?</li>
+              <li>Корректна ли речь и полнота скрипта?</li>
+              <li>Где именно в разговоре это прозвучало?</li>
+            </ul>
+          </div>
+          <div class="tile teal">
+            <strong>Ответ системы</strong>
+            <ul>
+              <li>Транскрипт с таймкодами</li>
+              <li>Баллы по пунктам чек-листа</li>
+              <li>Цитаты и подсветка срабатываний</li>
+              <li>Подсказки: чего не хватило в разговоре</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="do">
+        <h2>Что делаем</h2>
+        <div class="grid-3">
+          <div class="tile">
+            <strong>1. Распознаём речь</strong>
+            <p>Офлайн STT на отдельном ПК (Vosk). Фрагмент визита из диктофона, привязанный к РЛК менеджера.</p>
+          </div>
+          <div class="tile">
+            <strong>2. Анализируем текст</strong>
+            <p>Тематики и фразы чек-листа, в т.ч. со склонениями. Фиксируем, на какой секунде сработало.</p>
+          </div>
+          <div class="tile">
+            <strong>3. Показываем на портале</strong>
+            <p>Расшифровка, чек-лист, подсказки, отчёты. CVC не отключаем — свой контур рядом.</p>
+          </div>
+        </div>
+        <h3>Дополнительно в контуре</h3>
+        <div class="grid-2">
+          <div class="tile ok">
+            <strong>Словарь терминов</strong>
+            <p>Бренды, модели, «трейд-ин», сленг салона — добавление слов и пересборка языковой модели (Debian), как вы уже делали.</p>
+          </div>
+          <div class="tile amber">
+            <strong>Бонус: кто сказал</strong>
+            <p>В моноканале — эталон голоса менеджера + diarization, чтобы понять, что фразу произнёс именно он.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="out">
+        <h2>Что получим на выходе</h2>
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Артефакт</th>
+              <th>Описание</th>
+              <th>Для кого</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Полный текст разговора</strong></td>
+              <td>Расшифровка фрагмента РЛК с таймингами фраз и слов</td>
+              <td>КК, РОП, обучение</td>
+            </tr>
+            <tr>
+              <td><strong>Чек-лист визита</strong></td>
+              <td>Пункты скрипта: выполнено / не найдено, баллы, % покрытия</td>
+              <td>Контроль качества</td>
+            </tr>
+            <tr>
+              <td><strong>Карта срабатываний</strong></td>
+              <td>«Трейд-ин» @ 03:12 — цитата, тематика, score матча</td>
+              <td>Разбор конкретного кейса</td>
+            </tr>
+            <tr>
+              <td><strong>Подсказки</strong></td>
+              <td>Список того, чего не прозвучало в беседе</td>
+              <td>Обратная связь менеджеру</td>
+            </tr>
+            <tr>
+              <td><strong>Отчёты</strong></td>
+              <td>% выполнения чек-листа по менеджерам / ДЦ / периоду</td>
+              <td>Руководство</td>
+            </tr>
+            <tr>
+              <td><strong>Версии модели</strong></td>
+              <td>Какой словарь/модель распознали запись — для аудита</td>
+              <td>IT / развитие</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout note">
+          <strong>Пример смысла для бизнеса</strong>
+          Не «чёрный ящик CVC», а прозрачный разбор: слышим аудио → видим текст → видим,
+          какие пункты скрипта закрыты и на каких словах.
+        </div>
+      </section>
+
+      <section class="block" id="capabilities">
+        <h2>Возможности системы</h2>
+        <div class="grid-2">
+          <div class="tile">
+            <strong>Распознавание</strong>
+            <ul>
+              <li>Офлайн, без интернета</li>
+              <li>Русская модель Vosk 0.22 (полный словарь ~800k слов)</li>
+              <li>Нормализация аудио, таймкоды</li>
+              <li>Очередь по рабочим листам менеджера</li>
+            </ul>
+          </div>
+          <div class="tile">
+            <strong>Аналитика скрипта</strong>
+            <ul>
+              <li>Настраиваемые тематики и фразы</li>
+              <li>Поиск со склонениями (лемматизация)</li>
+              <li>Синонимы и пороги срабатывания</li>
+              <li>Ручная корректировка контролёром</li>
+            </ul>
+          </div>
+          <div class="tile">
+            <strong>Обучение словаря</strong>
+            <ul>
+              <li>Справочник терминов на портале</li>
+              <li>Пересборка LM/графа на Debian</li>
+              <li>Выкладка новой версии на STT-ПК</li>
+              <li>Учёт отраслевой лексики автобизнеса</li>
+            </ul>
+          </div>
+          <div class="tile">
+            <strong>Портал</strong>
+            <ul>
+              <li>Уже есть загрузка диктофонов</li>
+              <li>Экраны тематик / вопросов / контроля</li>
+              <li>Привязка записи к РЛК</li>
+              <li>Отдельный контур от CVC</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="flow">
+        <h2>Как работает</h2>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="n">1</div>
+            <strong>Диктофон</strong>
+            <span>Загрузка на портал</span>
+          </div>
+          <div class="flow-step">
+            <div class="n">2</div>
+            <strong>РЛК</strong>
+            <span>Привязка к визиту</span>
+          </div>
+          <div class="flow-step">
+            <div class="n">3</div>
+            <strong>STT-ПК</strong>
+            <span>Vosk офлайн</span>
+          </div>
+          <div class="flow-step">
+            <div class="n">4</div>
+            <strong>Скоринг</strong>
+            <span>Тематики + леммы</span>
+          </div>
+          <div class="flow-step">
+            <div class="n">5</div>
+            <strong>Результат</strong>
+            <span>Чек-лист и UI</span>
+          </div>
+        </div>
+        <h3>Роли машин</h3>
+        <table class="data">
+          <thead>
+            <tr><th>Где</th><th>Роль</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Портал (Django)</td><td>Загрузка, очередь, настройки, UI, скоринг, отчёты</td></tr>
+            <tr><td>STT-компьютер</td><td>Распознавание речи Vosk, без доступа в интернет для STT</td></tr>
+            <tr><td>Debian (build)</td><td>Пересборка словаря / языковой модели</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block" id="tech">
+        <h2>Технологии</h2>
+        <div class="grid-3">
+          <div class="tile">
+            <strong>Speech-to-Text</strong>
+            <p>Vosk / Kaldi, модель <code>vosk-model-ru-0.22</code>, слова с conf, опционально recasepunc</p>
+          </div>
+          <div class="tile">
+            <strong>Аудио</strong>
+            <p>ffmpeg, pydub — нормализация, mono/8–16 kHz, нарезка фрагмента РЛК</p>
+          </div>
+          <div class="tile">
+            <strong>Портал</strong>
+            <p>Django: apps <code>recognition</code>, API очередей, РЛК, шаблоны UI</p>
+          </div>
+          <div class="tile">
+            <strong>NLP чек-листа</strong>
+            <p>Фразы + лемматизация (pymorphy2 / natasha), fuzzy как страховка от ошибок STT</p>
+          </div>
+          <div class="tile">
+            <strong>Словарь</strong>
+            <p>Справочник терминов → lexicon → rebuild <code>HCLG.fst</code> / LM на Debian</p>
+          </div>
+          <div class="tile">
+            <strong>Бонус diarization</strong>
+            <p>Speaker embedding + эталон голоса менеджера (pyannote / speechbrain, офлайн)</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="foundation">
+        <h2>Что уже есть на портале</h2>
+        <p class="lead">Проект не с нуля: переиспользуем загрузку, очереди, экраны тематик и привязку к РЛК.</p>
+        <table class="data">
+          <thead>
+            <tr><th>Экран / API</th><th>Путь</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Загрузка диктофонов</td><td><code>/voice_recorders/</code></td></tr>
+            <tr><td>Очередь и расшифровки ОП</td><td><code>/recognitions/op/</code></td></tr>
+            <tr><td>Тематики и фразы</td><td><code>/recognitions/tematiks_op/</code></td></tr>
+            <tr><td>Вопросы чек-листа</td><td><code>/recognitions/questions/</code></td></tr>
+            <tr><td>Контроль</td><td><code>/recognitions/control/</code></td></tr>
+            <tr><td>API воркера</td><td><code>/api/get_records_queue/</code>, <code>post_records_queue/</code></td></tr>
+            <tr><td>Модель Vosk</td><td><code>D:\vosk\vosk-model-ru-0.22_1\</code></td></tr>
+            <tr><td>CVC (не трогаем)</td><td><code>/recognitions/cvc_*</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block" id="roadmap">
+        <h2>Этапы реализации</h2>
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Релиз</th>
+              <th>Содержание</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>R0</strong></td>
+              <td>Описание проекта, скоуп, презентация, пилот</td>
+              <td><span class="pill partial">в работе</span></td>
+            </tr>
+            <tr>
+              <td><strong>R1</strong></td>
+              <td>STT-воркер по очереди РЛК + полная расшифровка с таймингами на портале</td>
+              <td><span class="pill todo">далее</span></td>
+            </tr>
+            <tr>
+              <td><strong>R2</strong></td>
+              <td>Чек-лист KG, срабатывания, склонения, подсказки</td>
+              <td><span class="pill todo">далее</span></td>
+            </tr>
+            <tr>
+              <td><strong>R3</strong></td>
+              <td>Словарь терминов → Debian rebuild → версии модели</td>
+              <td><span class="pill todo">далее</span></td>
+            </tr>
+            <tr>
+              <td><strong>R4</strong></td>
+              <td>Пилот, отчёты, раскатка ДЦ</td>
+              <td><span class="pill todo">далее</span></td>
+            </tr>
+            <tr>
+              <td><strong>R5</strong></td>
+              <td>Mono: менеджер vs клиент по эталону голоса</td>
+              <td><span class="pill bonus">бонус</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block" id="mono">
+        <h2>Mono-канал: кто сказал фразу</h2>
+        <p class="lead">
+          В диктофоне один канал — в отличие от телефонии. Если есть эталон голоса менеджера,
+          можно с высокой вероятностью помечать реплики: менеджер / другой / неуверенно.
+        </p>
+        <div class="grid-2">
+          <div class="tile teal">
+            <strong>Как</strong>
+            <ul>
+              <li>30–60 сек образца голоса сотрудника</li>
+              <li>Голосовой отпечаток (embedding)</li>
+              <li>Сравнение каждой реплики с эталоном</li>
+              <li>Score + порог в чек-листе</li>
+            </ul>
+          </div>
+          <div class="tile amber">
+            <strong>Ограничения</strong>
+            <ul>
+              <li>Шум зала, музыка, третий голос</li>
+              <li>Перекрытие речи</li>
+              <li>Не 100%, а вероятностная оценка</li>
+              <li>Делаем после базового STT и чек-листа</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warn">
+          <strong>Для цели «всё ли предложено»</strong>
+          Часто достаточно самого факта фразы в тексте. Роль «сказал менеджер» усиливает
+          доказательность и отсекает речь клиента — полезный бонус, не блокер MVP.
+        </div>
+      </section>
+
+      <section class="block" id="scope">
+        <h2>Границы проекта</h2>
+        <div class="grid-2">
+          <div class="tile ok">
+            <strong>В скоупе</strong>
+            <ul>
+              <li>Диктофоны и РЛК</li>
+              <li>Офлайн STT на своём ПК</li>
+              <li>Внутренний чек-лист KG</li>
+              <li>Словарь и дообучение LM</li>
+            </ul>
+          </div>
+          <div class="tile">
+            <strong>Вне скоупа (сейчас)</strong>
+            <ul>
+              <li>Отключение или переписывание CVC</li>
+              <li>Облачные STT (Yandex/Google…)</li>
+              <li>Телефония как первый приоритет</li>
+              <li>«Понимание как человек» без калибровки фраз</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="need">
+        <h2>Что нужно для старта реализации</h2>
+        <table class="data">
+          <thead>
+            <tr><th>#</th><th>Вопрос</th><th>Зачем</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>STT-машина и доступ к аудио портала</td><td>Запуск воркера</td></tr>
+            <tr><td>2</td><td>Пилотный ДЦ / период</td><td>Ограничить первую волну</td></tr>
+            <tr><td>3</td><td>Эталонный чек-лист 10–20 пунктов + фразы</td><td>Скоринг R2</td></tr>
+            <tr><td>4</td><td>Debian-скрипты пересборки модели</td><td>Словарь R3</td></tr>
+            <tr><td>5</td><td>Подтверждение работы очереди РЛК</td><td><code>refresh_queue_recognition</code></td></tr>
+          </tbody>
+        </table>
+        <div class="callout note">
+          <strong>Первый технический шаг (R1)</strong>
+          Воркер на STT-ПК → <code>get/post_records_queue</code> → JSON с текстом и таймингами →
+          проверка на экране <code>/recognitions/op/</code>.
+        </div>
+        <p class="footer-note">
+          Документы: технический план <code>docs/speech_analytics_dictaphone_PROJECT.md</code>,
+          canvas в Cursor <code>speech-analytics-dictaphone</code>.
+          Презентация актуальна на 31.07.2026 · Корс Групп · KG Speech.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menuBtn');
+    menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    const links = [...sidebar.querySelectorAll('a')];
+    const sections = links
+      .map((a) => document.querySelector(a.getAttribute('href')))
+      .filter(Boolean);
+
+    const setActive = () => {
+      const y = window.scrollY + 80;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= y) current = s;
+      }
+      links.forEach((a) => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+      });
+    };
+    window.addEventListener('scroll', setActive, { passive: true });
+    setActive();
+
+    links.forEach((a) => {
+      a.addEventListener('click', () => sidebar.classList.remove('open'));
+    });
+  </script>
+</body>
+</html>

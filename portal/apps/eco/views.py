@@ -3862,6 +3862,8 @@ def doc(request, id):
         price_autohub       = {}
         price_custom        = {}
         price_autohub_k     = {}
+        estimation_settings_list = list()
+        current_estimation_settings = None
 
         repair_info         = list()
         estimation_history  = list()
@@ -3957,14 +3959,19 @@ def doc(request, id):
                         if agreements > 0:
                             agreement = DocCarAgreement.objects.filter(nomer__icontains = lo.agreement_number).filter(active = True).filter(unit__name__icontains = lo.agreement_unit.name)[0]
 
-            price_autohub_k = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k', body_info=body, salon_info=salon, persist=False)
-            price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito', body_info=body, salon_info=salon, persist=False)
-            price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub', body_info=body, salon_info=salon, persist=False)
-            price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom', body_info=body, salon_info=salon, persist=False)
+            current_estimation_settings = resolve_estimation_settings(
+                interactiv_rlk=interactiv_rlk,
+                estimation=estimation,
+            )
+            price_autohub_k = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k', body_info=body, salon_info=salon, estimation_settings=current_estimation_settings, persist=False)
+            price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito', body_info=body, salon_info=salon, estimation_settings=current_estimation_settings, persist=False)
+            price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub', body_info=body, salon_info=salon, estimation_settings=current_estimation_settings, persist=False)
+            price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom', body_info=body, salon_info=salon, estimation_settings=current_estimation_settings, persist=False)
             
             if page == 20:
                 from prices_car.models import CarCalculations
                 calcs = CarCalculations.objects.filter(rlk__uin__in = DocRLK.objects.filter(uin__in = DocRLK.objects.filter(uin = interactiv_rlk.rlk.uin).values_list('footing__uin', flat=True).exclude(footing__uin = None)).filter(eco = False).values_list('uin', flat=True))
+                estimation_settings_list = list(RegEstimationsSettings.objects.all().order_by('id'))
 
                 if lo != None and lo.agreement_number != '':
                     query_balance_unit = RegEstimationBalanceUnit.objects.filter(unit = lo.agreement_unit).filter(date__gte = balance_date_start).filter(date__lte = balance_date_end).aggregate(Sum('amount'))
@@ -4207,11 +4214,53 @@ def doc(request, id):
                 'price_recalc_history'  : get_price_recalc_history_for_estimation(estimation, interactiv_rlk=interactiv_rlk),
                 'express_auction_store' : express_auction_store,
                 'express_lots'          : express_lots,
+                'estimation_settings_list': estimation_settings_list,
+                'current_estimation_settings': current_estimation_settings,
             }
     
     elif request.method == "POST":
         
         reg_interactiv_ocenka = interactiv_rlk.estimation
+
+        if 'apply_estimation_settings' in request.POST:
+            if not (request.user.is_superuser or getattr(request.user.profiles, 'eco_page_price_info', False)):
+                return HttpResponseRedirect(request.path_info + '?page=20')
+            from register.interactive_price_history import ensure_page_soglasovanie
+            settings_id = request.POST.get('estimation_settings_id')
+            try:
+                selected_settings = RegEstimationsSettings.objects.get(pk=int(settings_id))
+            except (TypeError, ValueError, RegEstimationsSettings.DoesNotExist):
+                return HttpResponseRedirect(request.path_info + '?page=20')
+
+            soglasovanie = ensure_page_soglasovanie(
+                interactiv_rlk=interactiv_rlk,
+                estimation=reg_interactiv_ocenka,
+            )
+            soglasovanie.settings = selected_settings
+            soglasovanie.save(update_fields=['settings'])
+            if interactiv_rlk.page_soglasovanie_id != soglasovanie.pk:
+                interactiv_rlk.page_soglasovanie = soglasovanie
+                interactiv_rlk.save(update_fields=['page_soglasovanie'])
+            if reg_interactiv_ocenka.page_soglasovanie_id != soglasovanie.pk:
+                reg_interactiv_ocenka.page_soglasovanie = soglasovanie
+                reg_interactiv_ocenka.save(update_fields=['page_soglasovanie'])
+
+            body_info = get_body_estimation_cached(reg_interactiv_ocenka)
+            salon_info = get_salon_estimation_cached(reg_interactiv_ocenka)
+            for calc_type in ('autohub_k', 'avito', 'autohub', 'custom'):
+                estimations_price_calculation(
+                    interactiv_rlk,
+                    reg_interactiv_ocenka,
+                    type_calculation=calc_type,
+                    body_info=body_info,
+                    salon_info=salon_info,
+                    estimation_settings=selected_settings,
+                    user=request.user,
+                    trigger='admin_settings_switch',
+                    save_history=True,
+                    persist=True,
+                )
+            return HttpResponseRedirect(request.path_info + '?page=20')
         
         if 'cancel_auction' in request.POST:
             comment_cancel_auction = request.POST.get('auction_cancel', '')
@@ -5747,6 +5796,30 @@ def get_estimation_settings():
     return cached
 
 
+def resolve_estimation_settings(interactiv_rlk=None, estimation=None, estimation_settings=None):
+    """
+    Приоритет настроек выкупа:
+    1) явно переданный estimation_settings
+    2) FK page_soglasovanie.settings
+    3) глобальный RegEstimationsSettings.last()
+    """
+    if estimation_settings is not None:
+        return estimation_settings
+
+    soglasovanie = None
+    if interactiv_rlk is not None and getattr(interactiv_rlk, 'page_soglasovanie', None) is not None:
+        soglasovanie = interactiv_rlk.page_soglasovanie
+    elif estimation is not None and getattr(estimation, 'page_soglasovanie', None) is not None:
+        soglasovanie = estimation.page_soglasovanie
+
+    if soglasovanie is not None and getattr(soglasovanie, 'settings_id', None):
+        settings_obj = getattr(soglasovanie, 'settings', None)
+        if settings_obj is not None:
+            return settings_obj
+
+    return get_estimation_settings()
+
+
 def _get_body_salon_cache():
     cache = _body_salon_cache.get()
     if cache is None:
@@ -5780,11 +5853,11 @@ def get_salon_estimation_cached(estimation):
 def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, remote=False, user=None, trigger='', save_history=None, body_info=None, salon_info=None, estimation_settings=None, persist=True):
 
     try:
-        if estimation_settings is None:
-            estimation_settings = get_estimation_settings()
-        # if interactiv_rlk.page_soglasovanie != None:
-        #     if interactiv_rlk.page_soglasovanie.settings != None:
-        #         estimation_settings = interactiv_rlk.page_soglasovanie.settings 
+        estimation_settings = resolve_estimation_settings(
+            interactiv_rlk=interactiv_rlk,
+            estimation=estimation,
+            estimation_settings=estimation_settings,
+        )
 
         modification            = estimation.modification
         
