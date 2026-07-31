@@ -644,15 +644,15 @@ def build_autohub_first_last_page(
     unit_id=None,
     car_query='',
     trigger='',
-    only_changed=False,
+    only_changed=True,
     page=1,
     per_page=50,
 ):
     """
-    Быстрый отчёт «было → стало» только для autohub:
-    1) агрегация estimation_id в SQL
-    2) детали первого/последнего — только для текущей страницы
-    3) метаданные авто — из InteractivePricingSnapshot
+    Быстрый отчёт «было / стало» только для autohub:
+    — только оценки с ≥2 ненулевыми пересчётами
+    — детали первого/последнего только для текущей страницы
+    — метаданные авто из InteractivePricingSnapshot
     """
     from collections import defaultdict
 
@@ -669,6 +669,10 @@ def build_autohub_first_last_page(
         trigger=trigger,
         car_query=car_query,
     )
+    # Ненулевые пересчёты: есть цена выкупа, ЦНА или авторасчёт
+    filtered = filtered.filter(
+        Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0)
+    )
 
     total_recalcs = filtered.count()
 
@@ -681,12 +685,9 @@ def build_autohub_first_last_page(
             first_date=Min('date'),
             last_date=Max('date'),
         )
+        .filter(recalc_count__gte=2)
         .order_by('-last_date')
     )
-
-    if only_changed:
-        # Дешёвый прокси: есть минимум 2 пересчёта для сравнения
-        agg_qs = agg_qs.filter(recalc_count__gte=2)
 
     paginator = Paginator(agg_qs, per_page)
     page_obj = paginator.get_page(page)
@@ -700,6 +701,9 @@ def build_autohub_first_last_page(
             .filter(
                 estimation_id__in=est_ids,
                 price_calculation='autohub',
+            )
+            .filter(
+                Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0)
             )
             .only(
                 'id', 'estimation_id', 'date', 'trigger',
@@ -731,20 +735,29 @@ def build_autohub_first_last_page(
     for agg in page_rows:
         est_id = agg['estimation_id']
         hist_list = history_by_est.get(est_id) or []
-        if not hist_list:
+        if len(hist_list) < 2:
             continue
         first = hist_list[0]
         last = hist_list[-1]
-        has_pair = len(hist_list) >= 2 and first.pk != last.pk
+        if first.pk == last.pk:
+            continue
+
         first_vals = _history_values(first)
         last_vals = _history_values(last)
+        has_pair = True
+        cars_with_pair += 1
 
-        delta_price = (last_vals['estimation_price'] - first_vals['estimation_price']) if has_pair else None
+        delta_price = last_vals['estimation_price'] - first_vals['estimation_price']
+        delta_zna = last_vals['zna'] - first_vals['zna']
+        delta_auto = last_vals['price_auto_2'] - first_vals['price_auto_2']
+        delta_before = last_vals['price_before_kd'] - first_vals['price_before_kd']
+        delta_after = last_vals['price_after_kd'] - first_vals['price_after_kd']
+        delta_recovery = last_vals['amount_recovery'] - first_vals['amount_recovery']
+        delta_bcp = last_vals['cna_expenses'] - first_vals['cna_expenses']
+        kf_changed = (first_vals['kf'] or '') != (last_vals['kf'] or '')
 
-        if has_pair:
-            cars_with_pair += 1
-            if delta_price:
-                changed_count += 1
+        if delta_price or delta_zna or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
+            changed_count += 1
 
         snap = snaps.get(est_id)
         extra = getattr(snap, 'extra_payload', None) or {} if snap else {}
@@ -762,20 +775,20 @@ def build_autohub_first_last_page(
             'analyst_after_name': getattr(snap, 'analyst_after_name', None) or '—',
             'price_reception': getattr(snap, 'price_reception', None) or 0,
             'price_auto_auction': bool(extra.get('price_auto_auction')),
-            'recalc_count': agg['recalc_count'],
+            'recalc_count': len(hist_list),
             'has_pair': has_pair,
             'first_date': first_vals['date'],
             'last_date': last_vals['date'],
             'first': first_vals,
             'last': last_vals,
             'delta_estimation_price': delta_price,
-            'delta_zna': (last_vals['zna'] - first_vals['zna']) if has_pair else None,
-            'delta_price_auto_2': (last_vals['price_auto_2'] - first_vals['price_auto_2']) if has_pair else None,
-            'delta_price_before_kd': (last_vals['price_before_kd'] - first_vals['price_before_kd']) if has_pair else None,
-            'delta_price_after_kd': (last_vals['price_after_kd'] - first_vals['price_after_kd']) if has_pair else None,
-            'delta_amount_recovery': (last_vals['amount_recovery'] - first_vals['amount_recovery']) if has_pair else None,
-            'delta_cna_expenses': (last_vals['cna_expenses'] - first_vals['cna_expenses']) if has_pair else None,
-            'kf_changed': has_pair and (first_vals['kf'] or '') != (last_vals['kf'] or ''),
+            'delta_zna': delta_zna,
+            'delta_price_auto_2': delta_auto,
+            'delta_price_before_kd': delta_before,
+            'delta_price_after_kd': delta_after,
+            'delta_amount_recovery': delta_recovery,
+            'delta_cna_expenses': delta_bcp,
+            'kf_changed': kf_changed,
         })
 
     return {
