@@ -3861,7 +3861,7 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         #         self.status = RefStatusEstimation.objects.get(pk = 1)
         # else:
         #     self.status = RefStatusEstimation.objects.get(pk = 1)
-        if self.no_auto_status == False:
+        if self.no_auto_status == None or self.no_auto_status == False:
             if self.estimation == None:
                 self.status = RefStatusEstimation.objects.get(pk = 1)
             elif self.estimation.vin == '' and self.estimation.number_body == '':
