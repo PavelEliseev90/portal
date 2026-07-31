@@ -31,6 +31,7 @@ TRIGGER_LABELS = {
     'refresh_all': 'Обновление всех данных ценообразования',
     'refresh_data1c': 'Обновление в 1С',
     'admin_settings_switch': 'Смена настроек ценообразования (админ)',
+    'batch_recalc': 'Массовый пересчёт (скрипт)',
 }
 
 _history_context = contextvars.ContextVar('interactive_price_history_context', default=None)
