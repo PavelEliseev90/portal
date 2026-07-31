@@ -50,7 +50,8 @@
 <div class="report-page">
   <div class="report-header">
     <h2>История перерасчётов Autohub</h2>
-    </div>
+    <p>Последняя запись оценки сравнивается с первой записью с той же ЦНА. Влияние затрат = Δ затрат; влияние КФ = Δ цены выкупа − Δ затрат.</p>
+  </div>
 
   <div class="report-filter">
     <form method="get" class="row g-3 align-items-end">
@@ -134,7 +135,7 @@
 
   {% if params.view_mode == 'compare' %}
   <div class="panel">
-    <h3>Было / стало </h3>
+    <h3>Было / стало (последняя vs первая с той же ЦНА)</h3>
     <div class="table-responsive">
       <table class="table table-sm">
         <thead>
@@ -158,7 +159,10 @@
             <th class="text-end">ЦНА</th>
             <th class="text-end">КФ</th>
             <th class="text-end">БЦП</th>
+            <th class="text-end">Цена выкупа</th>
             <th class="text-end">Затраты</th>
+            <th class="text-end" title="Δ затрат (стало − было)">Влияние затрат</th>
+            <th class="text-end" title="Δ цены выкупа − Δ затрат">Влияние КФ</th>
             <th class="text-end">N</th>
           </tr>
         </thead>
@@ -209,14 +213,23 @@
             <td class="text-end pair-cell {% if row.delta_cna_expenses %}changed {% if row.delta_cna_expenses > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
               {{ row.first.cna_expenses|floatformat:0 }}<span class="sep">/</span>{{ row.last.cna_expenses|floatformat:0 }}
             </td>
+            <td class="text-end pair-cell {% if row.delta_estimation_price %}changed {% if row.delta_estimation_price > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.estimation_price|floatformat:0 }}<span class="sep">/</span>{{ row.last.estimation_price|floatformat:0 }}
+            </td>
             <td class="text-end pair-cell {% if row.delta_amount_recovery %}changed {% if row.delta_amount_recovery > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
               {{ row.first.amount_recovery|floatformat:0 }}<span class="sep">/</span>{{ row.last.amount_recovery|floatformat:0 }}
             </td>
-            <td class="text-end">{{ row.recalc_count }}</td>
+            <td class="text-end {% if row.influence_costs > 0 %}diff-positive{% elif row.influence_costs < 0 %}diff-negative{% else %}diff-zero{% endif %}">
+              {% if row.influence_costs > 0 %}+{% endif %}{{ row.influence_costs|floatformat:0 }}
+            </td>
+            <td class="text-end {% if row.influence_kf > 0 %}diff-positive{% elif row.influence_kf < 0 %}diff-negative{% else %}diff-zero{% endif %}">
+              {% if row.influence_kf > 0 %}+{% endif %}{{ row.influence_kf|floatformat:0 }}
+            </td>
+            <td class="text-end" title="Записей с этой ЦНА / всего autohub">{{ row.same_zna_count }}/{{ row.recalc_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="21" class="text-center py-5 text-muted">
+            <td colspan="24" class="text-center py-5 text-muted">
               Нет оценок с ≥2 ненулевыми пересчётами Autohub. Измените фильтры или дождитесь массового пересчёта.
             </td>
           </tr>

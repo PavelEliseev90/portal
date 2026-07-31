@@ -13380,8 +13380,13 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
         'КФ стало',
         'БЦП было',
         'БЦП стало',
+        'Цена выкупа было',
+        'Цена выкупа стало',
+        'Δ цены выкупа',
         'Затраты было',
         'Затраты стало',
+        'Влияние затрат',
+        'Влияние КФ',
         'Кол-во пересчётов',
     ]
     ws.append(headers)
@@ -13429,13 +13434,18 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
             last.get('kf') or '',
             first.get('cna_expenses') or 0,
             last.get('cna_expenses') or 0,
+            first.get('estimation_price') or 0,
+            last.get('estimation_price') or 0,
+            row.get('delta_estimation_price') if row.get('delta_estimation_price') is not None else '',
             first.get('amount_recovery') or 0,
             last.get('amount_recovery') or 0,
+            row.get('influence_costs') if row.get('influence_costs') is not None else '',
+            row.get('influence_kf') if row.get('influence_kf') is not None else '',
             row.get('recalc_count') or 0,
         ])
 
     from openpyxl.utils import get_column_letter
-    widths = [10, 10, 16, 16, 22, 14, 18, 22, 18, 18, 16, 16, 14] + [14] * 17
+    widths = [10, 10, 16, 16, 22, 14, 18, 22, 18, 18, 16, 16, 14] + [14] * 22
     for idx, width in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(idx)].width = min(width, 28)
 
