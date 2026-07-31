@@ -50,7 +50,7 @@
 <div class="report-page">
   <div class="report-header">
     <h2>История перерасчётов Autohub</h2>
-    <p>Последняя запись оценки сравнивается с первой записью с той же ЦНА. Влияние затрат = Δ затрат; влияние КФ = Δ цены выкупа − Δ затрат.</p>
+    <p>Последняя запись vs первая с той же ЦНА. Влияние затрат = затраты стало − было. Остаток Δ цены выкупа: при смене КФ → «влияние КФ», иначе → «влияние повышенного износа СС».</p>
   </div>
 
   <div class="report-filter">
@@ -161,8 +161,9 @@
             <th class="text-end">БЦП</th>
             <th class="text-end">Цена выкупа</th>
             <th class="text-end">Затраты</th>
-            <th class="text-end" title="Δ затрат (стало − было)">Влияние затрат</th>
-            <th class="text-end" title="Δ цены выкупа − Δ затрат">Влияние КФ</th>
+            <th class="text-end" title="затраты стало − было">Влияние затрат</th>
+            <th class="text-end" title="Δ цены выкупа − влияние затрат, если КФ изменился">Влияние КФ</th>
+            <th class="text-end" title="Δ цены выкупа − влияние затрат, если КФ не изменился">Влияние повышенного износа СС</th>
             <th class="text-end">N</th>
           </tr>
         </thead>
@@ -222,15 +223,18 @@
             <td class="text-end {% if row.influence_costs > 0 %}diff-positive{% elif row.influence_costs < 0 %}diff-negative{% else %}diff-zero{% endif %}">
               {% if row.influence_costs > 0 %}+{% endif %}{{ row.influence_costs|floatformat:0 }}
             </td>
-            <td class="text-end {% if row.influence_kf > 0 %}diff-positive{% elif row.influence_kf < 0 %}diff-negative{% else %}diff-zero{% endif %}">
-              {% if row.influence_kf > 0 %}+{% endif %}{{ row.influence_kf|floatformat:0 }}
+            <td class="text-end {% if row.influence_kf %}{% if row.influence_kf > 0 %}diff-positive{% elif row.influence_kf < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
+              {% if row.kf_changed %}{% if row.influence_kf > 0 %}+{% endif %}{{ row.influence_kf|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end {% if row.influence_iznos_ss %}{% if row.influence_iznos_ss > 0 %}diff-positive{% elif row.influence_iznos_ss < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
+              {% if not row.kf_changed %}{% if row.influence_iznos_ss > 0 %}+{% endif %}{{ row.influence_iznos_ss|floatformat:0 }}{% else %}—{% endif %}
             </td>
             <td class="text-end" title="Записей с этой ЦНА / всего autohub">{{ row.same_zna_count }}/{{ row.recalc_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="24" class="text-center py-5 text-muted">
-              Нет оценок с ≥2 ненулевыми пересчётами Autohub. Измените фильтры или дождитесь массового пересчёта.
+            <td colspan="25" class="text-center py-5 text-muted">
+              Нет оценок с ≥2 ненулевыми пересчётами Autohub с одной ЦНА. Измените фильтры или дождитесь массового пересчёта.
             </td>
           </tr>
           {% endfor %}
