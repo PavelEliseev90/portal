@@ -728,6 +728,12 @@ def build_autohub_first_last_page(
         for s in InteractivePricingSnapshot.objects.filter(estimation_id__in=est_ids)
     } if est_ids else {}
 
+    from register.models import RegInteractivOcenka
+    estimations = {
+        e.id: e
+        for e in RegInteractivOcenka.objects.filter(id__in=est_ids).select_related('status')
+    } if est_ids else {}
+
     compare_data = []
     changed_count = 0
     cars_with_pair = 0
@@ -750,6 +756,11 @@ def build_autohub_first_last_page(
         delta_price = last_vals['estimation_price'] - first_vals['estimation_price']
         delta_zna = last_vals['zna'] - first_vals['zna']
         delta_auto = last_vals['price_auto_2'] - first_vals['price_auto_2']
+        first_auto = first_vals['price_auto_2'] or 0
+        if first_auto:
+            delta_auto_percent = round((delta_auto / float(first_auto)) * 100, 1)
+        else:
+            delta_auto_percent = None
         delta_before = last_vals['price_before_kd'] - first_vals['price_before_kd']
         delta_after = last_vals['price_after_kd'] - first_vals['price_after_kd']
         delta_recovery = last_vals['amount_recovery'] - first_vals['amount_recovery']
@@ -760,16 +771,24 @@ def build_autohub_first_last_page(
             changed_count += 1
 
         snap = snaps.get(est_id)
+        est_obj = estimations.get(est_id)
         extra = getattr(snap, 'extra_payload', None) or {} if snap else {}
+        status_name = getattr(snap, 'status_name', None) or ''
+        if not status_name and est_obj is not None and getattr(est_obj, 'status', None) is not None:
+            status_name = est_obj.status.name or ''
+        rlk_id = getattr(snap, 'rlk_id', None)
+        if not rlk_id and est_obj is not None:
+            rlk_id = getattr(est_obj, 'rlk_id', None)
+
         compare_data.append({
             'estimation_id': est_id,
-            'rlk_id': getattr(snap, 'rlk_id', None),
+            'rlk_id': rlk_id,
             'start_estimation': getattr(snap, 'start_estimation', None) or first_vals['date'],
             'unit_name': getattr(snap, 'unit_name', None) or '—',
             'unit_source': getattr(snap, 'unit_source', None) or '—',
-            'status_name': getattr(snap, 'status_name', None) or '—',
+            'status_name': status_name or '—',
             'model': getattr(snap, 'model_name', None) or '—',
-            'vin': getattr(snap, 'vin', None) or '',
+            'vin': getattr(snap, 'vin', None) or getattr(est_obj, 'vin', '') or '',
             'staff_name': getattr(snap, 'staff_name', None) or '—',
             'analyst_before_name': getattr(snap, 'analyst_before_name', None) or '—',
             'analyst_after_name': getattr(snap, 'analyst_after_name', None) or '—',
@@ -784,6 +803,7 @@ def build_autohub_first_last_page(
             'delta_estimation_price': delta_price,
             'delta_zna': delta_zna,
             'delta_price_auto_2': delta_auto,
+            'delta_price_auto_2_percent': delta_auto_percent,
             'delta_price_before_kd': delta_before,
             'delta_price_after_kd': delta_after,
             'delta_amount_recovery': delta_recovery,

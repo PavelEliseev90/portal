@@ -50,8 +50,7 @@
 <div class="report-page">
   <div class="report-header">
     <h2>История перерасчётов Autohub</h2>
-    <p>Только оценки с ≥2 ненулевыми пересчётами Autohub. В столбцах: было / стало.</p>
-  </div>
+    </div>
 
   <div class="report-filter">
     <form method="get" class="row g-3 align-items-end">
@@ -92,7 +91,7 @@
     </form>
   </div>
 
-  <div class="d-flex flex-wrap gap-2 mb-3 view-tabs">
+  <div class="d-flex flex-wrap gap-2 mb-3 view-tabs align-items-center">
     <a class="btn btn-outline-secondary {% if params.view_mode == 'compare' %}active{% endif %}"
        href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
       Было / стало
@@ -101,6 +100,12 @@
        href="?view=journal&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
       Журнал
     </a>
+    {% if params.view_mode == 'compare' %}
+    <a class="btn btn-success ms-auto"
+       href="?view=compare&export=xlsx&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
+      Excel
+    </a>
+    {% endif %}
   </div>
 
   <div class="row g-3 mb-3">
@@ -129,9 +134,9 @@
 
   {% if params.view_mode == 'compare' %}
   <div class="panel">
-    <h3>Было / стало (первый и последний ненулевой Autohub)</h3>
+    <h3>Было / стало </h3>
     <div class="table-responsive">
-      <table class="table table-sm table-hover align-middle table-sticky mb-0">
+      <table class="table table-sm">
         <thead>
           <tr>
             <th></th>
@@ -148,6 +153,8 @@
             <th class="text-end">Согл. до КД</th>
             <th class="text-end">Согл. после КД</th>
             <th class="text-end">Авторасчет</th>
+            <th class="text-end">Δ ₽</th>
+            <th class="text-end">Δ %</th>
             <th class="text-end">ЦНА</th>
             <th class="text-end">КФ</th>
             <th class="text-end">БЦП</th>
@@ -187,6 +194,12 @@
             <td class="text-end pair-cell {% if row.delta_price_auto_2 %}changed {% if row.delta_price_auto_2 > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
               {{ row.first.price_auto_2|floatformat:0 }}<span class="sep">/</span>{{ row.last.price_auto_2|floatformat:0 }}
             </td>
+            <td class="text-end {% if row.delta_price_auto_2 > 0 %}diff-positive{% elif row.delta_price_auto_2 < 0 %}diff-negative{% else %}diff-zero{% endif %}">
+              {% if row.delta_price_auto_2 > 0 %}+{% endif %}{{ row.delta_price_auto_2|floatformat:0 }}
+            </td>
+            <td class="text-end {% if row.delta_price_auto_2_percent > 0 %}diff-positive{% elif row.delta_price_auto_2_percent < 0 %}diff-negative{% else %}diff-zero{% endif %}">
+              {% if row.delta_price_auto_2_percent != None %}{% if row.delta_price_auto_2_percent > 0 %}+{% endif %}{{ row.delta_price_auto_2_percent }}%{% else %}—{% endif %}
+            </td>
             <td class="text-end pair-cell {% if row.delta_zna %}changed {% if row.delta_zna > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
               {{ row.first.zna|floatformat:0 }}<span class="sep">/</span>{{ row.last.zna|floatformat:0 }}
             </td>
@@ -203,7 +216,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="19" class="text-center py-5 text-muted">
+            <td colspan="21" class="text-center py-5 text-muted">
               Нет оценок с ≥2 ненулевыми пересчётами Autohub. Измените фильтры или дождитесь массового пересчёта.
             </td>
           </tr>
