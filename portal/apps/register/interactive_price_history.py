@@ -429,3 +429,301 @@ def get_price_recalc_history_for_estimation(estimation, interactiv_rlk=None, lim
         .order_by('-date', '-id')[:limit]
     )
     return [_build_history_row(item) for item in qs]
+
+
+def build_price_recalc_history_queryset(
+    *,
+    date_start=None,
+    date_end=None,
+    unit_id=None,
+    calc_type='',
+    trigger='',
+    car_query='',
+):
+    """Отфильтрованный queryset истории перерасчётов для отчёта."""
+    from register.models import RegInteractivOcenkaPrice
+
+    qs = (
+        RegInteractivOcenkaPrice.objects
+        .select_related(
+            'author',
+            'user',
+            'estimation',
+            'estimation__rlk',
+            'estimation__rlk__unit',
+            'estimation__rlk__unit_dc',
+            'estimation__modification',
+            'estimation__modification__model',
+            'estimation__modification__model__mark',
+            'page_soglasovanie',
+        )
+        .order_by('-date', '-id')
+    )
+
+    if date_start is not None:
+        qs = qs.filter(date__gte=date_start)
+    if date_end is not None:
+        qs = qs.filter(date__lte=date_end)
+    if unit_id:
+        qs = qs.filter(
+            Q(estimation__rlk__unit_id=unit_id) | Q(estimation__rlk__unit_dc_id=unit_id)
+        )
+    if calc_type:
+        qs = qs.filter(price_calculation=calc_type)
+    if trigger:
+        qs = qs.filter(trigger=trigger)
+
+    car_query = (car_query or '').strip()
+    if car_query:
+        car_q = (
+            Q(estimation__vin__icontains=car_query)
+            | Q(estimation__mark_name__icontains=car_query)
+            | Q(estimation__model_name__icontains=car_query)
+            | Q(estimation__modification_name__icontains=car_query)
+        )
+        if car_query.isdigit():
+            car_id = int(car_query)
+            car_q |= Q(estimation__rlk_id=car_id) | Q(estimation_id=car_id)
+        qs = qs.filter(car_q)
+
+    return qs
+
+
+def _delta_fields(item, prev):
+    if prev is None:
+        return {
+            'has_prev': False,
+            'prev_estimation_price': None,
+            'delta_estimation_price': None,
+            'prev_cna_expenses': None,
+            'delta_cna_expenses': None,
+            'prev_amount_recovery': None,
+            'delta_amount_recovery': None,
+            'prev_price_auto_1': None,
+            'delta_price_auto_1': None,
+            'prev_price_auto_2': None,
+            'delta_price_auto_2': None,
+            'prev_price_auto_3': None,
+            'delta_price_auto_3': None,
+            'calc_type_changed': False,
+            'prev_type_label': None,
+        }
+
+    prev_recovery = prev.amount_recovery or (
+        (prev.amount_podgotovka or 0) + (prev.amount_ss or 0) + (prev.amount_mcu or 0)
+    )
+    curr_recovery = item.amount_recovery or (
+        (item.amount_podgotovka or 0) + (item.amount_ss or 0) + (item.amount_mcu or 0)
+    )
+    return {
+        'has_prev': True,
+        'prev_estimation_price': prev.estimation_price or 0,
+        'delta_estimation_price': (item.estimation_price or 0) - (prev.estimation_price or 0),
+        'prev_cna_expenses': prev.cna_expenses or 0,
+        'delta_cna_expenses': (item.cna_expenses or 0) - (prev.cna_expenses or 0),
+        'prev_amount_recovery': prev_recovery,
+        'delta_amount_recovery': curr_recovery - prev_recovery,
+        'prev_price_auto_1': prev.price_auto_1 or 0,
+        'delta_price_auto_1': (item.price_auto_1 or 0) - (prev.price_auto_1 or 0),
+        'prev_price_auto_2': prev.price_auto_2 or 0,
+        'delta_price_auto_2': (item.price_auto_2 or 0) - (prev.price_auto_2 or 0),
+        'prev_price_auto_3': prev.price_auto_3 or 0,
+        'delta_price_auto_3': (item.price_auto_3 or 0) - (prev.price_auto_3 or 0),
+        'calc_type_changed': (prev.price_calculation or '') != (item.price_calculation or ''),
+        'prev_type_label': PRICE_CALCULATION_LABELS.get(
+            prev.price_calculation, prev.price_calculation or '—'
+        ),
+    }
+
+
+def _car_meta_from_item(item):
+    estimation = item.estimation
+    rlk = getattr(estimation, 'rlk', None) if estimation else None
+    unit = None
+    if rlk is not None:
+        unit = rlk.unit_dc or rlk.unit
+
+    mark = ''
+    model = ''
+    if estimation is not None:
+        mark = estimation.mark_name or ''
+        model = estimation.model_name or ''
+        if (not mark or not model) and estimation.modification_id:
+            try:
+                mod = estimation.modification
+                if mod and getattr(mod, 'model', None):
+                    if not model:
+                        model = mod.model.name or ''
+                    if not mark and getattr(mod.model, 'mark', None):
+                        mark = mod.model.mark.name or ''
+            except Exception:
+                pass
+
+    vin = getattr(estimation, 'vin', '') or ''
+    car_label = ' '.join(x for x in (mark, model) if x).strip()
+    if vin:
+        car_label = f'{car_label} · {vin}'.strip(' ·') if car_label else vin
+
+    return {
+        'estimation_id': item.estimation_id,
+        'rlk_id': getattr(rlk, 'id', None) if rlk else None,
+        'vin': vin,
+        'car_label': car_label or '—',
+        'unit_name': getattr(unit, 'name', None) or '—',
+        'unit_id': getattr(unit, 'id', None),
+        'settings_id': (
+            getattr(item.page_soglasovanie, 'settings_id', None)
+            if item.page_soglasovanie_id else None
+        ),
+    }
+
+
+def _recovery_amount(item):
+    return item.amount_recovery or (
+        (item.amount_podgotovka or 0) + (item.amount_ss or 0) + (item.amount_mcu or 0)
+    )
+
+
+def enrich_price_recalc_history_rows(items):
+    """
+    Строки отчёта с автомобилем/ДЦ и Δ к предыдущему перерасчёту той же оценки.
+    """
+    from collections import defaultdict
+
+    from register.models import RegInteractivOcenkaPrice
+
+    items = list(items)
+    est_ids = {item.estimation_id for item in items if item.estimation_id}
+    prev_map = {}
+    if est_ids:
+        history_by_est = defaultdict(list)
+        for hist in (
+            RegInteractivOcenkaPrice.objects
+            .filter(estimation_id__in=est_ids)
+            .order_by('estimation_id', 'date', 'id')
+            .only(
+                'id', 'estimation_id', 'date', 'price_calculation',
+                'estimation_price', 'cna_expenses', 'amount_recovery',
+                'amount_podgotovka', 'amount_ss', 'amount_mcu',
+                'price_auto_1', 'price_auto_2', 'price_auto_3',
+            )
+        ):
+            history_by_est[hist.estimation_id].append(hist)
+        for hist_list in history_by_est.values():
+            for idx, hist in enumerate(hist_list):
+                if idx > 0:
+                    prev_map[hist.pk] = hist_list[idx - 1]
+
+    rows = []
+    for item in items:
+        row = _build_history_row(item)
+        row.update(_car_meta_from_item(item))
+        row.update(_delta_fields(item, prev_map.get(item.pk)))
+        rows.append(row)
+
+    return rows
+
+
+def build_first_last_comparison_rows(qs, *, only_changed=False, limit=500):
+    """
+    Сравнение «было → стало»: первый и последний перерасчёт по каждой оценке
+    в отфильтрованной выборке.
+    """
+    from collections import defaultdict
+
+    by_est = defaultdict(list)
+    for item in qs.order_by('estimation_id', 'date', 'id'):
+        if not item.estimation_id:
+            continue
+        by_est[item.estimation_id].append(item)
+
+    rows = []
+    for hist_list in by_est.values():
+        first = hist_list[0]
+        last = hist_list[-1]
+        recalc_count = len(hist_list)
+        has_pair = recalc_count >= 2 and first.pk != last.pk
+
+        first_price = first.estimation_price or 0
+        last_price = last.estimation_price or 0
+        first_bcp = first.cna_expenses or 0
+        last_bcp = last.cna_expenses or 0
+        first_recovery = _recovery_amount(first)
+        last_recovery = _recovery_amount(last)
+        first_auto_1 = first.price_auto_1 or 0
+        last_auto_1 = last.price_auto_1 or 0
+        first_before = first.price_before_kd or 0
+        last_before = last.price_before_kd or 0
+        first_after = first.price_after_kd or 0
+        last_after = last.price_after_kd or 0
+
+        delta_price = (last_price - first_price) if has_pair else None
+        delta_bcp = (last_bcp - first_bcp) if has_pair else None
+        delta_recovery = (last_recovery - first_recovery) if has_pair else None
+        delta_auto_1 = (last_auto_1 - first_auto_1) if has_pair else None
+        delta_before = (last_before - first_before) if has_pair else None
+        delta_after = (last_after - first_after) if has_pair else None
+
+        if only_changed and has_pair:
+            if not any([
+                delta_price, delta_bcp, delta_recovery, delta_auto_1, delta_before, delta_after,
+            ]):
+                continue
+
+        meta = _car_meta_from_item(last)
+        first_author = ''
+        if first.author_id:
+            first_author = first.author.get_full_name() or first.author.username
+        elif first.user_id:
+            first_author = first.user.name
+        last_author = ''
+        if last.author_id:
+            last_author = last.author.get_full_name() or last.author.username
+        elif last.user_id:
+            last_author = last.user.name
+
+        rows.append({
+            **meta,
+            'recalc_count': recalc_count,
+            'has_pair': has_pair,
+            'first_date': first.date,
+            'last_date': last.date,
+            'first_type': first.price_calculation,
+            'last_type': last.price_calculation,
+            'first_type_label': PRICE_CALCULATION_LABELS.get(
+                first.price_calculation, first.price_calculation or '—'
+            ),
+            'last_type_label': PRICE_CALCULATION_LABELS.get(
+                last.price_calculation, last.price_calculation or '—'
+            ),
+            'type_changed': has_pair and (first.price_calculation or '') != (last.price_calculation or ''),
+            'first_trigger_label': TRIGGER_LABELS.get(first.trigger, first.trigger or '—'),
+            'last_trigger_label': TRIGGER_LABELS.get(last.trigger, last.trigger or '—'),
+            'first_author': first_author or '—',
+            'last_author': last_author or '—',
+            'first_estimation_price': first_price,
+            'last_estimation_price': last_price,
+            'delta_estimation_price': delta_price,
+            'first_cna_expenses': first_bcp,
+            'last_cna_expenses': last_bcp,
+            'delta_cna_expenses': delta_bcp,
+            'first_amount_recovery': first_recovery,
+            'last_amount_recovery': last_recovery,
+            'delta_amount_recovery': delta_recovery,
+            'first_price_auto_1': first_auto_1,
+            'last_price_auto_1': last_auto_1,
+            'delta_price_auto_1': delta_auto_1,
+            'first_price_before_kd': first_before,
+            'last_price_before_kd': last_before,
+            'delta_price_before_kd': delta_before,
+            'first_price_after_kd': first_after,
+            'last_price_after_kd': last_after,
+            'delta_price_after_kd': delta_after,
+        })
+
+    def _sort_key(row):
+        d = row.get('last_date') or row.get('first_date')
+        return d.timestamp() if d else 0
+
+    rows.sort(key=_sort_key, reverse=True)
+    return rows[:limit]
