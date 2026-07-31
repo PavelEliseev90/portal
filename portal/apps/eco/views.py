@@ -13189,6 +13189,153 @@ def interactive_pricing_report(request):
     return render(request, 'lo/interactive_pricing_report.html', {'params': params})
 
 
+def price_recalc_history_report(request):
+    """История перерасчётов ценообразования: фильтры ДЦ / авто / тип расчёта и Δ к предыдущему."""
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'price_recalc_history_report',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    from register.interactive_price_history import (
+        PRICE_CALCULATION_LABELS,
+        TRIGGER_LABELS,
+        build_first_last_comparison_rows,
+        build_price_recalc_history_queryset,
+        enrich_price_recalc_history_rows,
+    )
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=13)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    calc_type = (request.GET.get('calc_type') or '').strip()
+    trigger = (request.GET.get('trigger') or '').strip()
+    car_query = (request.GET.get('car') or '').strip()
+    view_mode = (request.GET.get('view') or 'compare').strip()
+    if view_mode not in ('compare', 'journal'):
+        view_mode = 'compare'
+    only_changed = (request.GET.get('only_changed') or '') in ('1', 'true', 'on', 'yes')
+
+    base_qs = build_price_recalc_history_queryset(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+        calc_type=calc_type,
+        trigger=trigger,
+        car_query=car_query,
+    )
+
+    total_recalcs = base_qs.count()
+
+    type_breakdown = []
+    for item in base_qs.values('price_calculation').annotate(c=Count('id')).order_by('-c'):
+        key = item['price_calculation'] or ''
+        type_breakdown.append({
+            'key': key,
+            'label': PRICE_CALCULATION_LABELS.get(key, key or '—'),
+            'count': item['c'],
+            'share': round((item['c'] / total_recalcs * 100), 1) if total_recalcs else 0,
+        })
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    calc_type_choices = [
+        {'key': key, 'label': label}
+        for key, label in PRICE_CALCULATION_LABELS.items()
+    ]
+    trigger_choices = [
+        {'key': key, 'label': label}
+        for key, label in TRIGGER_LABELS.items()
+    ]
+
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'calc_type': calc_type,
+        'trigger': trigger,
+        'car': car_query,
+        'view': view_mode,
+        'only_changed': only_changed,
+    }
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        query_params.pop('page')
+    base_query_string = query_params.urlencode()
+
+    compare_data = []
+    table_data = []
+    page_obj = None
+    paginator = None
+    total_count = 0
+    changed_count = 0
+    cars_with_pair = 0
+
+    if view_mode == 'compare':
+        compare_data = build_first_last_comparison_rows(
+            base_qs,
+            only_changed=only_changed,
+            limit=1000,
+        )
+        total_count = len(compare_data)
+        cars_with_pair = sum(1 for row in compare_data if row.get('has_pair'))
+        changed_count = sum(
+            1 for row in compare_data
+            if row.get('has_pair') and row.get('delta_estimation_price')
+        )
+        per_page = 100
+        page_number = _get_int(request.GET.get('page')) or 1
+        paginator = Paginator(compare_data, per_page)
+        page_obj = paginator.get_page(page_number)
+        compare_data = list(page_obj.object_list)
+    else:
+        total_count = total_recalcs
+        per_page = 100
+        page_number = _get_int(request.GET.get('page')) or 1
+        paginator = Paginator(base_qs, per_page)
+        page_obj = paginator.get_page(page_number)
+        table_data = enrich_price_recalc_history_rows(page_obj.object_list)
+        changed_count = sum(
+            1 for row in table_data
+            if row.get('has_prev') and row.get('delta_estimation_price')
+        )
+
+    params = {
+        'type': 'price_recalc_history_report',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'view_mode': view_mode,
+        'summary': {
+            'total_recalcs': total_recalcs,
+            'total_rows': total_count,
+            'changed_count': changed_count,
+            'cars_with_pair': cars_with_pair,
+            'page_size': len(compare_data if view_mode == 'compare' else table_data),
+        },
+        'type_breakdown': type_breakdown,
+        'table_data': table_data,
+        'compare_data': compare_data,
+        'total_count': total_count,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'base_query': base_query_string,
+        'units': units,
+        'calc_type_choices': calc_type_choices,
+        'trigger_choices': trigger_choices,
+    }
+    return render(request, 'lo/price_recalc_history_report.html', {'params': params})
+
+
 def interactive_evaluations_report(request):
     """Расширенный отчет по интерактивным оценкам и согласованию цен"""
     
