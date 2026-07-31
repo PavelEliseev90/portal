@@ -637,6 +637,34 @@ def enrich_price_recalc_history_rows(items):
     return rows
 
 
+def _zna_key(value):
+    try:
+        return round(float(value or 0), 2)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _pick_first_last_same_zna(hist_list):
+    """
+    Последняя запись оценки + первая запись с той же ЦНА.
+    Возвращает (first, last, same_zna_count) или None.
+    """
+    if not hist_list or len(hist_list) < 2:
+        return None
+    last = hist_list[-1]
+    last_zna = _zna_key(last.zna)
+    if last_zna <= 0:
+        return None
+    same = [item for item in hist_list if _zna_key(item.zna) == last_zna]
+    if len(same) < 2:
+        return None
+    first = same[0]
+    last_same = same[-1]
+    if first.pk == last_same.pk:
+        return None
+    return first, last_same, len(same)
+
+
 def build_autohub_first_last_page(
     *,
     date_start=None,
@@ -649,17 +677,17 @@ def build_autohub_first_last_page(
     per_page=50,
 ):
     """
-    Быстрый отчёт «было / стало» только для autohub:
-    — только оценки с ≥2 ненулевыми пересчётами
-    — детали первого/последнего только для текущей страницы
-    — метаданные авто из InteractivePricingSnapshot
+    Отчёт «было / стало» Autohub:
+    — берём последнюю ненулевую запись оценки
+    — к ней ищем первую запись с той же ЦНА
+    — сравниваем эту пару
     """
     from collections import defaultdict
 
     from analytics.models import InteractivePricingSnapshot
     from django.core.paginator import Paginator
-    from django.db.models import Count, Max, Min
-    from register.models import RegInteractivOcenkaPrice
+    from django.db.models import Count, Max
+    from register.models import RegInteractivOcenka, RegInteractivOcenkaPrice
 
     filtered = build_price_recalc_history_queryset(
         date_start=date_start,
@@ -669,37 +697,38 @@ def build_autohub_first_last_page(
         trigger=trigger,
         car_query=car_query,
     )
-    # Ненулевые пересчёты: есть цена выкупа, ЦНА или авторасчёт
     filtered = filtered.filter(
         Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0)
     )
 
     total_recalcs = filtered.count()
 
+    # Кандидаты: ≥2 пересчёта; точная пара по ЦНА проверяется ниже
     agg_qs = (
         filtered
         .order_by()
         .values('estimation_id')
         .annotate(
             recalc_count=Count('id'),
-            first_date=Min('date'),
             last_date=Max('date'),
         )
         .filter(recalc_count__gte=2)
         .order_by('-last_date')
     )
 
-    paginator = Paginator(agg_qs, per_page)
-    page_obj = paginator.get_page(page)
-    page_rows = list(page_obj.object_list)
-    est_ids = [row['estimation_id'] for row in page_rows if row.get('estimation_id')]
+    candidate_ids = list(agg_qs.values_list('estimation_id', flat=True))
+    total_candidates = len(candidate_ids)
 
-    history_by_est = defaultdict(list)
-    if est_ids:
+    # Собираем валидные пары: последняя запись + первая с той же ЦНА
+    valid_pairs = []  # (est_id, first, last, same_count, all_count)
+    chunk_size = 200
+    for offset in range(0, total_candidates, chunk_size):
+        chunk_ids = candidate_ids[offset:offset + chunk_size]
+        history_by_est = defaultdict(list)
         hist_qs = (
             RegInteractivOcenkaPrice.objects
             .filter(
-                estimation_id__in=est_ids,
+                estimation_id__in=chunk_ids,
                 price_calculation='autohub',
             )
             .filter(
@@ -723,12 +752,24 @@ def build_autohub_first_last_page(
         for hist in hist_qs:
             history_by_est[hist.estimation_id].append(hist)
 
+        for est_id in chunk_ids:
+            hist_list = history_by_est.get(est_id) or []
+            picked = _pick_first_last_same_zna(hist_list)
+            if not picked:
+                continue
+            first, last, same_count = picked
+            valid_pairs.append((est_id, first, last, same_count, len(hist_list)))
+
+    total_valid = len(valid_pairs)
+    paginator = Paginator(valid_pairs, per_page)
+    page_obj = paginator.get_page(page)
+    page_pairs = list(page_obj.object_list)
+    est_ids = [item[0] for item in page_pairs]
+
     snaps = {
         s.estimation_id: s
         for s in InteractivePricingSnapshot.objects.filter(estimation_id__in=est_ids)
     } if est_ids else {}
-
-    from register.models import RegInteractivOcenka
     estimations = {
         e.id: e
         for e in RegInteractivOcenka.objects.filter(id__in=est_ids).select_related('status')
@@ -738,23 +779,14 @@ def build_autohub_first_last_page(
     changed_count = 0
     cars_with_pair = 0
 
-    for agg in page_rows:
-        est_id = agg['estimation_id']
-        hist_list = history_by_est.get(est_id) or []
-        if len(hist_list) < 2:
-            continue
-        first = hist_list[0]
-        last = hist_list[-1]
-        if first.pk == last.pk:
-            continue
-
+    for est_id, first, last, same_count, all_count in page_pairs:
         first_vals = _history_values(first)
         last_vals = _history_values(last)
         has_pair = True
         cars_with_pair += 1
 
         delta_price = last_vals['estimation_price'] - first_vals['estimation_price']
-        delta_zna = last_vals['zna'] - first_vals['zna']
+        delta_zna = last_vals['zna'] - first_vals['zna']  # ожидаемо 0 при той же ЦНА
         delta_auto = last_vals['price_auto_2'] - first_vals['price_auto_2']
         first_auto = first_vals['price_auto_2'] or 0
         if first_auto:
@@ -766,8 +798,10 @@ def build_autohub_first_last_page(
         delta_recovery = last_vals['amount_recovery'] - first_vals['amount_recovery']
         delta_bcp = last_vals['cna_expenses'] - first_vals['cna_expenses']
         kf_changed = (first_vals['kf'] or '') != (last_vals['kf'] or '')
+        influence_costs = delta_recovery
+        influence_kf = delta_price - delta_recovery
 
-        if delta_price or delta_zna or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
+        if delta_price or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
             changed_count += 1
 
         snap = snaps.get(est_id)
@@ -794,7 +828,8 @@ def build_autohub_first_last_page(
             'analyst_after_name': getattr(snap, 'analyst_after_name', None) or '—',
             'price_reception': getattr(snap, 'price_reception', None) or 0,
             'price_auto_auction': bool(extra.get('price_auto_auction')),
-            'recalc_count': len(hist_list),
+            'recalc_count': all_count,
+            'same_zna_count': same_count,
             'has_pair': has_pair,
             'first_date': first_vals['date'],
             'last_date': last_vals['date'],
@@ -808,6 +843,8 @@ def build_autohub_first_last_page(
             'delta_price_after_kd': delta_after,
             'delta_amount_recovery': delta_recovery,
             'delta_cna_expenses': delta_bcp,
+            'influence_costs': influence_costs,
+            'influence_kf': influence_kf,
             'kf_changed': kf_changed,
         })
 
@@ -815,7 +852,7 @@ def build_autohub_first_last_page(
         'compare_data': compare_data,
         'page_obj': page_obj,
         'paginator': paginator,
-        'total_count': paginator.count,
+        'total_count': total_valid,
         'total_recalcs': total_recalcs,
         'changed_count': changed_count,
         'cars_with_pair': cars_with_pair,
