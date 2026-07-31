@@ -1,108 +1,58 @@
 {% extends 'base_web.html' %}
 {% load static %}
 
-{% block title %} - История перерасчётов ценообразования {% endblock %}
+{% block title %} - История перерасчётов Autohub {% endblock %}
 
 {% block content %}
 <style>
-  .report-page {
-    padding: 1rem 1.5rem 2.5rem;
-  }
+  .report-page { padding: 1rem 1.5rem 2.5rem; }
   .report-header h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #002a5a;
-    margin-bottom: 0.25rem;
+    font-size: 1.5rem; font-weight: 700; color: #002a5a; margin-bottom: 0.25rem;
   }
-  .report-header p {
-    color: #6c7a92;
-    margin-bottom: 1.25rem;
-  }
+  .report-header p { color: #6c7a92; margin-bottom: 1.25rem; }
   .report-filter {
-    background: #fff;
-    border-radius: 1.2rem;
+    background: #fff; border-radius: 1.2rem;
     border: 1px solid rgba(0, 42, 90, 0.08);
     box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
+    padding: 1.25rem; margin-bottom: 1.25rem;
   }
   .metric-card {
-    background: #fff;
-    border-radius: 1.2rem;
+    background: #fff; border-radius: 1.2rem;
     border: 1px solid rgba(0, 42, 90, 0.08);
     box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
-    padding: 1rem 1.15rem;
-    height: 100%;
+    padding: 1rem 1.15rem; height: 100%;
   }
-  .metric-card h4 {
-    font-size: 0.85rem;
-    color: #6c7a92;
-    margin-bottom: 0.35rem;
-  }
-  .metric-card .value {
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: #002a5a;
-  }
-  .metric-card .sub {
-    color: #6c7a92;
-    font-size: 0.85rem;
-  }
+  .metric-card h4 { font-size: 0.85rem; color: #6c7a92; margin-bottom: 0.35rem; }
+  .metric-card .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; }
+  .metric-card .sub { color: #6c7a92; font-size: 0.85rem; }
   .panel {
-    background: #fff;
-    border-radius: 1.2rem;
+    background: #fff; border-radius: 1.2rem;
     border: 1px solid rgba(0, 42, 90, 0.08);
     box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
     padding: 1.25rem;
   }
-  .panel h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #002a5a;
-    margin-bottom: 1rem;
-  }
+  .panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin-bottom: 1rem; }
   .table-sticky thead th {
-    position: sticky;
-    top: 0;
-    background: #f8f9fc;
-    z-index: 1;
-    white-space: nowrap;
+    position: sticky; top: 0; background: #f8f9fc; z-index: 1; white-space: nowrap;
   }
   .diff-positive { color: #0f9d58; font-weight: 600; }
   .diff-negative { color: #d93025; font-weight: 600; }
   .diff-zero { color: #6c7a92; }
-  .type-pill {
-    display: inline-block;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    background: #eef2f8;
-    font-size: 0.8rem;
-  }
-  .type-pill.changed {
-    background: #fff3cd;
-  }
   .was-became {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.1rem;
-    line-height: 1.2;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; line-height: 1.2;
   }
-  .was-became .was {
-    color: #6c7a92;
-    font-size: 0.8rem;
-  }
-  .view-tabs .btn.active {
-    background: #002a5a;
-    border-color: #002a5a;
-    color: #fff;
+  .was-became .was { color: #6c7a92; font-size: 0.78rem; }
+  .view-tabs .btn.active { background: #002a5a; border-color: #002a5a; color: #fff; }
+  .cost-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.25rem 0.6rem; border-radius: 999px; background: #f3f4f6; font-size: 0.8rem;
   }
 </style>
 
 <div class="report-page">
   <div class="report-header">
-    <h2>История перерасчётов ценообразования</h2>
-    <p>Сравнение «было → стало» и журнал изменений с фильтром по ДЦ, автомобилю и типу расчёта</p>
+    <h2>История перерасчётов Autohub</h2>
+    <p>Сравнение первого и последнего перерасчёта (тип = Autohub). Поля как в отчёте по интерактивным оценкам + ЦНА и КФ.</p>
   </div>
 
   <div class="report-filter">
@@ -127,16 +77,7 @@
       </div>
       <div class="col-md-3">
         <label class="form-label">Автомобиль</label>
-        <input type="text" class="form-control" name="car" value="{{ params.filters.car }}" placeholder="VIN, марка, модель, ID РЛК">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Тип расчёта</label>
-        <select class="form-select" name="calc_type">
-          <option value="">Все</option>
-          {% for item in params.calc_type_choices %}
-            <option value="{{ item.key }}" {% if params.filters.calc_type == item.key %}selected{% endif %}>{{ item.label }}</option>
-          {% endfor %}
-        </select>
+        <input type="text" class="form-control" name="car" value="{{ params.filters.car }}" placeholder="VIN, модель, ID РЛК">
       </div>
       <div class="col-md-3">
         <label class="form-label">Событие</label>
@@ -151,7 +92,7 @@
       <div class="col-md-3">
         <div class="form-check mt-4">
           <input class="form-check-input" type="checkbox" name="only_changed" value="1" id="only_changed" {% if params.filters.only_changed %}checked{% endif %}>
-          <label class="form-check-label" for="only_changed">Только с изменениями</label>
+          <label class="form-check-label" for="only_changed">Только с ≥2 пересчётами</label>
         </div>
       </div>
       {% endif %}
@@ -163,169 +104,158 @@
 
   <div class="d-flex flex-wrap gap-2 mb-3 view-tabs">
     <a class="btn btn-outline-secondary {% if params.view_mode == 'compare' %}active{% endif %}"
-       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&calc_type={{ params.filters.calc_type }}&trigger={{ params.filters.trigger }}{% if params.filters.only_changed %}&only_changed=1{% endif %}">
+       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}{% if params.filters.only_changed %}&only_changed=1{% endif %}">
       Было → стало
     </a>
     <a class="btn btn-outline-secondary {% if params.view_mode == 'journal' %}active{% endif %}"
-       href="?view=journal&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&calc_type={{ params.filters.calc_type }}&trigger={{ params.filters.trigger }}">
-      Журнал перерасчётов
+       href="?view=journal&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
+      Журнал
     </a>
   </div>
 
   <div class="row g-3 mb-3">
     <div class="col-md-3 col-6">
       <div class="metric-card">
-        <h4>Перерасчётов</h4>
+        <h4>Перерасчётов Autohub</h4>
         <div class="value">{{ params.summary.total_recalcs }}</div>
-        <div class="sub">За выбранный период</div>
+        <div class="sub">За период</div>
       </div>
     </div>
     <div class="col-md-3 col-6">
       <div class="metric-card">
-        <h4>{% if params.view_mode == 'compare' %}Автомобилей{% else %}На странице{% endif %}</h4>
+        <h4>{% if params.view_mode == 'compare' %}Автомобилей{% else %}Записей{% endif %}</h4>
         <div class="value">{{ params.summary.total_rows }}</div>
-        <div class="sub">{% if params.view_mode == 'compare' %}В сравнении{% else %}Записей журнала{% endif %}</div>
+        <div class="sub">В выборке</div>
       </div>
     </div>
     <div class="col-md-3 col-6">
       <div class="metric-card">
-        <h4>{% if params.view_mode == 'compare' %}С парой пересчётов{% else %}Δ цены ≠ 0{% endif %}</h4>
-        <div class="value">{% if params.view_mode == 'compare' %}{{ params.summary.cars_with_pair }}{% else %}{{ params.summary.changed_count }}{% endif %}</div>
-        <div class="sub">{% if params.view_mode == 'compare' %}Есть первый и последний{% else %}На текущей странице{% endif %}</div>
+        <h4>С парой пересчётов</h4>
+        <div class="value">{{ params.summary.cars_with_pair }}</div>
+        <div class="sub">На странице</div>
       </div>
     </div>
     <div class="col-md-3 col-6">
       <div class="metric-card">
         <h4>Δ цены ≠ 0</h4>
         <div class="value">{{ params.summary.changed_count }}</div>
-        <div class="sub">{% if params.view_mode == 'compare' %}По цене выкупа{% else %}На текущей странице{% endif %}</div>
+        <div class="sub">На странице</div>
       </div>
     </div>
   </div>
-
-  {% if params.type_breakdown %}
-  <div class="panel mb-3">
-    <h3>Распределение по типу расчёта</h3>
-    <div class="row g-2">
-      {% for item in params.type_breakdown %}
-      <div class="col-md-3 col-6">
-        <div class="d-flex justify-content-between align-items-center border rounded px-2 py-1">
-          <span class="small">{{ item.label }}</span>
-          <span class="fw-semibold">{{ item.count }} <span class="text-muted small">({{ item.share }}%)</span></span>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
   {% if params.view_mode == 'compare' %}
   <div class="panel">
-    <h3>Было → стало (первый и последний перерасчёт за период)</h3>
+    <h3>Было → стало (первый и последний Autohub за период)</h3>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle table-sticky mb-0">
         <thead>
           <tr>
-            <th>ДЦ</th>
+            <th></th>
+            <th>Период пересчётов</th>
+            <th>Подразделение</th>
+            <th>Тип приема</th>
+            <th>Статус</th>
             <th>Автомобиль</th>
-            <th>Пересчётов</th>
-            <th>Период</th>
-            <th>Тип расчёта</th>
-            <th class="text-end">Цена выкупа</th>
-            <th class="text-end">Δ</th>
-            <th class="text-end">БЦП</th>
-            <th class="text-end">Δ</th>
-            <th class="text-end">Затраты</th>
-            <th class="text-end">Δ</th>
-            <th class="text-end">auto 1</th>
-            <th class="text-end">Δ</th>
-            <th class="text-end">до КД</th>
-            <th class="text-end">после КД</th>
+            <th>ВИН</th>
+            <th>Оценщик</th>
+            <th>Аналитик до</th>
+            <th>Аналитик после</th>
+            <th class="text-end">Цена оценщика</th>
+            <th class="text-end">Согл. до КД</th>
+            <th class="text-end">Согл. после КД</th>
+            <th class="text-end">Авторасчет</th>
+            <th class="text-end">Δ до</th>
+            <th class="text-end">Δ после</th>
+            <th class="text-end">ЦНА</th>
+            <th>КФ</th>
+            <th>Затраты</th>
+            <th class="text-end">N</th>
           </tr>
         </thead>
         <tbody>
           {% for row in params.compare_data %}
           <tr>
-            <td>{{ row.unit_name }}</td>
             <td>
               {% if row.rlk_id %}
-                <a href="/eco/{{ row.rlk_id }}/?page=20" class="fw-semibold text-decoration-none">{{ row.car_label }}</a>
-                <div class="text-muted small">РЛК {{ row.rlk_id }}{% if row.estimation_id %} · оценка {{ row.estimation_id }}{% endif %}</div>
-              {% else %}
-                <div class="fw-semibold">{{ row.car_label }}</div>
+                <a href="/eco/{{ row.rlk_id }}/?page=20" target="_blank"><span class="icon-doc"></span></a>
               {% endif %}
             </td>
-            <td class="text-center">{{ row.recalc_count }}</td>
             <td class="text-nowrap small">
               {% if row.has_pair %}
                 {{ row.first_date|date:"d.m.Y H:i" }}<br>→ {{ row.last_date|date:"d.m.Y H:i" }}
               {% else %}
                 {{ row.first_date|date:"d.m.Y H:i" }}
-                <div class="text-muted">один перерасчёт</div>
+              {% endif %}
+            </td>
+            <td>{{ row.unit_name }}</td>
+            <td>{{ row.unit_source }}</td>
+            <td>{{ row.status_name }}</td>
+            <td>{{ row.model }}</td>
+            <td>{{ row.vin }}</td>
+            <td>{{ row.staff_name }}</td>
+            <td>{{ row.analyst_before_name }}</td>
+            <td>{{ row.analyst_after_name|default:"—" }}</td>
+            <td class="text-end">{{ row.price_reception|floatformat:0 }}</td>
+            <td class="text-end">
+              <div class="was-became">
+                {% if row.has_pair %}<span class="was">было {{ row.first.price_before_kd|floatformat:0 }}</span>{% endif %}
+                <span class="fw-semibold">{{ row.last.price_before_kd|floatformat:0 }}</span>
+              </div>
+            </td>
+            <td class="text-end">
+              <div class="was-became">
+                {% if row.has_pair %}<span class="was">было {{ row.first.price_after_kd|floatformat:0 }}</span>{% endif %}
+                <span class="fw-semibold">{{ row.last.price_after_kd|floatformat:0 }}</span>
+              </div>
+            </td>
+            <td class="text-end">
+              <div class="was-became">
+                {% if row.has_pair %}<span class="was">было {{ row.first.price_auto_2|floatformat:0 }}</span>{% endif %}
+                <span class="fw-semibold">{{ row.last.price_auto_2|floatformat:0 }}</span>
+              </div>
+            </td>
+            <td class="text-end {% if row.has_pair %}{% if row.delta_price_before_kd > 0 %}diff-positive{% elif row.delta_price_before_kd < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
+              {% if row.has_pair %}{% if row.delta_price_before_kd > 0 %}+{% endif %}{{ row.delta_price_before_kd|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end {% if row.has_pair %}{% if row.delta_price_after_kd > 0 %}diff-positive{% elif row.delta_price_after_kd < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
+              {% if row.has_pair %}{% if row.delta_price_after_kd > 0 %}+{% endif %}{{ row.delta_price_after_kd|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end">
+              <div class="was-became">
+                {% if row.has_pair %}<span class="was">было {{ row.first.zna|floatformat:0 }}</span>{% endif %}
+                <span class="fw-semibold">{{ row.last.zna|floatformat:0 }}</span>
+              </div>
+              {% if row.has_pair and row.delta_zna %}
+                <div class="small {% if row.delta_zna > 0 %}diff-positive{% else %}diff-negative{% endif %}">
+                  {% if row.delta_zna > 0 %}+{% endif %}{{ row.delta_zna|floatformat:0 }}
+                </div>
               {% endif %}
             </td>
             <td>
-              {% if row.has_pair %}
-                <span class="type-pill {% if row.type_changed %}changed{% endif %}">{{ row.first_type_label }}</span>
-                <div class="small mt-1">→ <span class="type-pill {% if row.type_changed %}changed{% endif %}">{{ row.last_type_label }}</span></div>
+              {% if row.has_pair and row.kf_changed %}
+                <div class="small text-muted">было {{ row.first.kf|default:"—" }}</div>
+                <div class="fw-semibold">{{ row.last.kf|default:"—" }}</div>
               {% else %}
-                <span class="type-pill">{{ row.first_type_label }}</span>
+                {{ row.last.kf|default:"—" }}
               {% endif %}
             </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_estimation_price|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_estimation_price|floatformat:0 }}</span>
+            <td>
+              <div class="cost-badge">{{ row.last.amount_recovery|floatformat:0 }} ₽</div>
+              {% if row.has_pair %}
+                <div class="text-muted small">было {{ row.first.amount_recovery|floatformat:0 }}</div>
+              {% endif %}
+              <div class="text-muted small">
+                П: {{ row.last.amount_podgotovka|floatformat:0 }},
+                С: {{ row.last.amount_ss|floatformat:0 }},
+                К: {{ row.last.amount_mcu|floatformat:0 }}
               </div>
             </td>
-            <td class="text-end text-nowrap {% if row.has_pair %}{% if row.delta_estimation_price > 0 %}diff-positive{% elif row.delta_estimation_price < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_cna_expenses|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_cna_expenses|floatformat:0 }}</span>
-              </div>
-            </td>
-            <td class="text-end text-nowrap {% if row.has_pair %}{% if row.delta_cna_expenses > 0 %}diff-positive{% elif row.delta_cna_expenses < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_cna_expenses > 0 %}+{% endif %}{{ row.delta_cna_expenses|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_amount_recovery|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_amount_recovery|floatformat:0 }}</span>
-              </div>
-            </td>
-            <td class="text-end text-nowrap {% if row.has_pair %}{% if row.delta_amount_recovery > 0 %}diff-positive{% elif row.delta_amount_recovery < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_amount_recovery > 0 %}+{% endif %}{{ row.delta_amount_recovery|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_price_auto_1|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_price_auto_1|floatformat:0 }}</span>
-              </div>
-            </td>
-            <td class="text-end text-nowrap {% if row.has_pair %}{% if row.delta_price_auto_1 > 0 %}diff-positive{% elif row.delta_price_auto_1 < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_price_auto_1 > 0 %}+{% endif %}{{ row.delta_price_auto_1|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_price_before_kd|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_price_before_kd|floatformat:0 }}</span>
-              </div>
-            </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first_price_after_kd|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last_price_after_kd|floatformat:0 }}</span>
-              </div>
-            </td>
+            <td class="text-end">{{ row.recalc_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="15" class="text-center py-5 text-muted">
-              Нет данных для отображения. Попробуйте изменить фильтры.
-            </td>
+            <td colspan="20" class="text-center py-5 text-muted">Нет данных. Измените фильтры.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -334,7 +264,7 @@
   </div>
   {% else %}
   <div class="panel">
-    <h3>Журнал перерасчётов</h3>
+    <h3>Журнал перерасчётов Autohub</h3>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle table-sticky mb-0">
         <thead>
@@ -343,18 +273,14 @@
             <th>ДЦ</th>
             <th>Автомобиль</th>
             <th>Событие</th>
-            <th>Тип расчёта</th>
-            <th>Кто</th>
             <th class="text-end">Цена</th>
-            <th class="text-end">Δ цена</th>
-            <th class="text-end">БЦП</th>
-            <th class="text-end">Δ БЦП</th>
-            <th class="text-end">Затраты</th>
-            <th class="text-end">Δ затраты</th>
-            <th class="text-end">auto 1</th>
-            <th class="text-end">Δ a1</th>
+            <th class="text-end">Δ</th>
             <th class="text-end">до КД</th>
             <th class="text-end">после КД</th>
+            <th class="text-end">Авторасчет</th>
+            <th class="text-end">ЦНА</th>
+            <th>КФ</th>
+            <th class="text-end">Затраты</th>
           </tr>
         </thead>
         <tbody>
@@ -365,43 +291,25 @@
             <td>
               {% if row.rlk_id %}
                 <a href="/eco/{{ row.rlk_id }}/?page=20" class="fw-semibold text-decoration-none">{{ row.car_label }}</a>
-                <div class="text-muted small">РЛК {{ row.rlk_id }}{% if row.estimation_id %} · оценка {{ row.estimation_id }}{% endif %}</div>
               {% else %}
-                <div class="fw-semibold">{{ row.car_label }}</div>
+                {{ row.car_label }}
               {% endif %}
             </td>
             <td>{{ row.trigger_label }}</td>
-            <td>
-              <span class="type-pill {% if row.calc_type_changed %}changed{% endif %}">{{ row.type_label }}</span>
-              {% if row.calc_type_changed %}
-                <div class="text-muted small">было: {{ row.prev_type_label }}</div>
-              {% endif %}
-            </td>
-            <td>{{ row.author_name }}</td>
-            <td class="text-end text-nowrap">{{ row.estimation_price|floatformat:0 }}</td>
-            <td class="text-end text-nowrap {% if row.has_prev %}{% if row.delta_estimation_price > 0 %}diff-positive{% elif row.delta_estimation_price < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
+            <td class="text-end">{{ row.estimation_price|floatformat:0 }}</td>
+            <td class="text-end {% if row.has_prev %}{% if row.delta_estimation_price > 0 %}diff-positive{% elif row.delta_estimation_price < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
               {% if row.has_prev %}{% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}{% else %}—{% endif %}
             </td>
-            <td class="text-end text-nowrap">{{ row.cna_expenses|floatformat:0 }}</td>
-            <td class="text-end text-nowrap {% if row.has_prev %}{% if row.delta_cna_expenses > 0 %}diff-positive{% elif row.delta_cna_expenses < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_prev %}{% if row.delta_cna_expenses > 0 %}+{% endif %}{{ row.delta_cna_expenses|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end text-nowrap">{{ row.amount_recovery|floatformat:0 }}</td>
-            <td class="text-end text-nowrap {% if row.has_prev %}{% if row.delta_amount_recovery > 0 %}diff-positive{% elif row.delta_amount_recovery < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_prev %}{% if row.delta_amount_recovery > 0 %}+{% endif %}{{ row.delta_amount_recovery|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end text-nowrap">{{ row.price_auto_1|floatformat:0 }}</td>
-            <td class="text-end text-nowrap {% if row.has_prev %}{% if row.delta_price_auto_1 > 0 %}diff-positive{% elif row.delta_price_auto_1 < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_prev %}{% if row.delta_price_auto_1 > 0 %}+{% endif %}{{ row.delta_price_auto_1|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="text-end text-nowrap">{{ row.price_before_kd|floatformat:0 }}</td>
-            <td class="text-end text-nowrap">{{ row.price_after_kd|floatformat:0 }}</td>
+            <td class="text-end">{{ row.price_before_kd|floatformat:0 }}</td>
+            <td class="text-end">{{ row.price_after_kd|floatformat:0 }}</td>
+            <td class="text-end">{{ row.price_auto_2|floatformat:0 }}</td>
+            <td class="text-end">{{ row.zna|floatformat:0 }}</td>
+            <td>{{ row.kf|default:"—" }}</td>
+            <td class="text-end">{{ row.amount_recovery|floatformat:0 }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="16" class="text-center py-5 text-muted">
-              Нет данных для отображения. Попробуйте изменить фильтры.
-            </td>
+            <td colspan="12" class="text-center py-5 text-muted">Нет данных.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -414,9 +322,7 @@
   <nav class="mt-3">
     <ul class="pagination justify-content-center">
       <li class="page-item {% if not params.page_obj.has_previous %}disabled{% endif %}">
-        <a class="page-link" href="{% if params.page_obj.has_previous %}?page={{ params.page_obj.previous_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">
-          Назад
-        </a>
+        <a class="page-link" href="{% if params.page_obj.has_previous %}?page={{ params.page_obj.previous_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">Назад</a>
       </li>
       {% for num in params.paginator.page_range %}
         {% if num >= params.page_obj.number|add:'-2' and num <= params.page_obj.number|add:'2' %}
@@ -426,9 +332,7 @@
         {% endif %}
       {% endfor %}
       <li class="page-item {% if not params.page_obj.has_next %}disabled{% endif %}">
-        <a class="page-link" href="{% if params.page_obj.has_next %}?page={{ params.page_obj.next_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">
-          Вперед
-        </a>
+        <a class="page-link" href="{% if params.page_obj.has_next %}?page={{ params.page_obj.next_page_number }}{% if params.base_query %}&{{ params.base_query }}{% endif %}{% else %}#{% endif %}">Вперед</a>
       </li>
     </ul>
   </nav>

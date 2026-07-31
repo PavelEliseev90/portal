@@ -436,55 +436,46 @@ def build_price_recalc_history_queryset(
     date_start=None,
     date_end=None,
     unit_id=None,
-    calc_type='',
+    calc_type='autohub',
     trigger='',
     car_query='',
 ):
-    """Отфильтрованный queryset истории перерасчётов для отчёта."""
+    """Отфильтрованный queryset истории перерасчётов для отчёта (по умолчанию только autohub)."""
+    from analytics.models import InteractivePricingSnapshot
     from register.models import RegInteractivOcenkaPrice
 
     qs = (
         RegInteractivOcenkaPrice.objects
-        .select_related(
-            'author',
-            'user',
-            'estimation',
-            'estimation__rlk',
-            'estimation__rlk__unit',
-            'estimation__rlk__unit_dc',
-            'estimation__modification',
-            'estimation__modification__model',
-            'estimation__modification__model__mark',
-            'page_soglasovanie',
-        )
+        .filter(estimation_id__isnull=False)
         .order_by('-date', '-id')
     )
+
+    calc_type = (calc_type or 'autohub').strip() or 'autohub'
+    qs = qs.filter(price_calculation=calc_type)
 
     if date_start is not None:
         qs = qs.filter(date__gte=date_start)
     if date_end is not None:
         qs = qs.filter(date__lte=date_end)
-    if unit_id:
-        qs = qs.filter(
-            Q(estimation__rlk__unit_id=unit_id) | Q(estimation__rlk__unit_dc_id=unit_id)
-        )
-    if calc_type:
-        qs = qs.filter(price_calculation=calc_type)
     if trigger:
         qs = qs.filter(trigger=trigger)
 
     car_query = (car_query or '').strip()
-    if car_query:
-        car_q = (
-            Q(estimation__vin__icontains=car_query)
-            | Q(estimation__mark_name__icontains=car_query)
-            | Q(estimation__model_name__icontains=car_query)
-            | Q(estimation__modification_name__icontains=car_query)
-        )
-        if car_query.isdigit():
-            car_id = int(car_query)
-            car_q |= Q(estimation__rlk_id=car_id) | Q(estimation_id=car_id)
-        qs = qs.filter(car_q)
+    needs_snapshot = bool(unit_id) or bool(car_query)
+    if needs_snapshot:
+        snap = InteractivePricingSnapshot.objects.all()
+        if unit_id:
+            snap = snap.filter(unit_id=unit_id)
+        if car_query:
+            car_q = (
+                Q(vin__icontains=car_query)
+                | Q(model_name__icontains=car_query)
+            )
+            if car_query.isdigit():
+                car_id = int(car_query)
+                car_q |= Q(rlk_id=car_id) | Q(estimation_id=car_id)
+            snap = snap.filter(car_q)
+        qs = qs.filter(estimation_id__in=snap.values('estimation_id'))
 
     return qs
 
@@ -584,9 +575,29 @@ def _recovery_amount(item):
     )
 
 
+def _history_values(item):
+    return {
+        'date': item.date,
+        'estimation_price': item.estimation_price or 0,
+        'cna_expenses': item.cna_expenses or 0,
+        'zna': item.zna or 0,
+        'kf': item.kf or '',
+        'zg': item.zg or '',
+        'price_auto_1': item.price_auto_1 or 0,
+        'price_auto_2': item.price_auto_2 or 0,
+        'price_auto_3': item.price_auto_3 or 0,
+        'price_before_kd': item.price_before_kd or 0,
+        'price_after_kd': item.price_after_kd or 0,
+        'amount_podgotovka': item.amount_podgotovka or 0,
+        'amount_ss': item.amount_ss or 0,
+        'amount_mcu': item.amount_mcu or 0,
+        'amount_recovery': _recovery_amount(item),
+    }
+
+
 def enrich_price_recalc_history_rows(items):
     """
-    Строки отчёта с автомобилем/ДЦ и Δ к предыдущему перерасчёту той же оценки.
+    Строки журнала: лёгкая Δ к предыдущему autohub-перерасчёту той же оценки.
     """
     from collections import defaultdict
 
@@ -599,13 +610,14 @@ def enrich_price_recalc_history_rows(items):
         history_by_est = defaultdict(list)
         for hist in (
             RegInteractivOcenkaPrice.objects
-            .filter(estimation_id__in=est_ids)
+            .filter(estimation_id__in=est_ids, price_calculation='autohub')
             .order_by('estimation_id', 'date', 'id')
             .only(
                 'id', 'estimation_id', 'date', 'price_calculation',
                 'estimation_price', 'cna_expenses', 'amount_recovery',
                 'amount_podgotovka', 'amount_ss', 'amount_mcu',
                 'price_auto_1', 'price_auto_2', 'price_auto_3',
+                'zna', 'kf',
             )
         ):
             history_by_est[hist.estimation_id].append(hist)
@@ -624,106 +636,153 @@ def enrich_price_recalc_history_rows(items):
     return rows
 
 
-def build_first_last_comparison_rows(qs, *, only_changed=False, limit=500):
+def build_autohub_first_last_page(
+    *,
+    date_start=None,
+    date_end=None,
+    unit_id=None,
+    car_query='',
+    trigger='',
+    only_changed=False,
+    page=1,
+    per_page=50,
+):
     """
-    Сравнение «было → стало»: первый и последний перерасчёт по каждой оценке
-    в отфильтрованной выборке.
+    Быстрый отчёт «было → стало» только для autohub:
+    1) агрегация estimation_id в SQL
+    2) детали первого/последнего — только для текущей страницы
+    3) метаданные авто — из InteractivePricingSnapshot
     """
     from collections import defaultdict
 
-    by_est = defaultdict(list)
-    for item in qs.order_by('estimation_id', 'date', 'id'):
-        if not item.estimation_id:
-            continue
-        by_est[item.estimation_id].append(item)
+    from analytics.models import InteractivePricingSnapshot
+    from django.core.paginator import Paginator
+    from django.db.models import Count, Max, Min
+    from register.models import RegInteractivOcenkaPrice
 
-    rows = []
-    for hist_list in by_est.values():
+    filtered = build_price_recalc_history_queryset(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+        calc_type='autohub',
+        trigger=trigger,
+        car_query=car_query,
+    )
+
+    total_recalcs = filtered.count()
+
+    agg_qs = (
+        filtered
+        .order_by()
+        .values('estimation_id')
+        .annotate(
+            recalc_count=Count('id'),
+            first_date=Min('date'),
+            last_date=Max('date'),
+        )
+        .order_by('-last_date')
+    )
+
+    if only_changed:
+        # Дешёвый прокси: есть минимум 2 пересчёта для сравнения
+        agg_qs = agg_qs.filter(recalc_count__gte=2)
+
+    paginator = Paginator(agg_qs, per_page)
+    page_obj = paginator.get_page(page)
+    page_rows = list(page_obj.object_list)
+    est_ids = [row['estimation_id'] for row in page_rows if row.get('estimation_id')]
+
+    history_by_est = defaultdict(list)
+    if est_ids:
+        hist_qs = (
+            RegInteractivOcenkaPrice.objects
+            .filter(
+                estimation_id__in=est_ids,
+                price_calculation='autohub',
+            )
+            .only(
+                'id', 'estimation_id', 'date', 'trigger',
+                'estimation_price', 'cna_expenses', 'zna', 'kf', 'zg',
+                'price_auto_1', 'price_auto_2', 'price_auto_3',
+                'price_before_kd', 'price_after_kd',
+                'amount_podgotovka', 'amount_ss', 'amount_mcu', 'amount_recovery',
+            )
+            .order_by('estimation_id', 'date', 'id')
+        )
+        if date_start is not None:
+            hist_qs = hist_qs.filter(date__gte=date_start)
+        if date_end is not None:
+            hist_qs = hist_qs.filter(date__lte=date_end)
+        if trigger:
+            hist_qs = hist_qs.filter(trigger=trigger)
+        for hist in hist_qs:
+            history_by_est[hist.estimation_id].append(hist)
+
+    snaps = {
+        s.estimation_id: s
+        for s in InteractivePricingSnapshot.objects.filter(estimation_id__in=est_ids)
+    } if est_ids else {}
+
+    compare_data = []
+    changed_count = 0
+    cars_with_pair = 0
+
+    for agg in page_rows:
+        est_id = agg['estimation_id']
+        hist_list = history_by_est.get(est_id) or []
+        if not hist_list:
+            continue
         first = hist_list[0]
         last = hist_list[-1]
-        recalc_count = len(hist_list)
-        has_pair = recalc_count >= 2 and first.pk != last.pk
+        has_pair = len(hist_list) >= 2 and first.pk != last.pk
+        first_vals = _history_values(first)
+        last_vals = _history_values(last)
 
-        first_price = first.estimation_price or 0
-        last_price = last.estimation_price or 0
-        first_bcp = first.cna_expenses or 0
-        last_bcp = last.cna_expenses or 0
-        first_recovery = _recovery_amount(first)
-        last_recovery = _recovery_amount(last)
-        first_auto_1 = first.price_auto_1 or 0
-        last_auto_1 = last.price_auto_1 or 0
-        first_before = first.price_before_kd or 0
-        last_before = last.price_before_kd or 0
-        first_after = first.price_after_kd or 0
-        last_after = last.price_after_kd or 0
+        delta_price = (last_vals['estimation_price'] - first_vals['estimation_price']) if has_pair else None
 
-        delta_price = (last_price - first_price) if has_pair else None
-        delta_bcp = (last_bcp - first_bcp) if has_pair else None
-        delta_recovery = (last_recovery - first_recovery) if has_pair else None
-        delta_auto_1 = (last_auto_1 - first_auto_1) if has_pair else None
-        delta_before = (last_before - first_before) if has_pair else None
-        delta_after = (last_after - first_after) if has_pair else None
+        if has_pair:
+            cars_with_pair += 1
+            if delta_price:
+                changed_count += 1
 
-        if only_changed and has_pair:
-            if not any([
-                delta_price, delta_bcp, delta_recovery, delta_auto_1, delta_before, delta_after,
-            ]):
-                continue
-
-        meta = _car_meta_from_item(last)
-        first_author = ''
-        if first.author_id:
-            first_author = first.author.get_full_name() or first.author.username
-        elif first.user_id:
-            first_author = first.user.name
-        last_author = ''
-        if last.author_id:
-            last_author = last.author.get_full_name() or last.author.username
-        elif last.user_id:
-            last_author = last.user.name
-
-        rows.append({
-            **meta,
-            'recalc_count': recalc_count,
+        snap = snaps.get(est_id)
+        extra = getattr(snap, 'extra_payload', None) or {} if snap else {}
+        compare_data.append({
+            'estimation_id': est_id,
+            'rlk_id': getattr(snap, 'rlk_id', None),
+            'start_estimation': getattr(snap, 'start_estimation', None) or first_vals['date'],
+            'unit_name': getattr(snap, 'unit_name', None) or '—',
+            'unit_source': getattr(snap, 'unit_source', None) or '—',
+            'status_name': getattr(snap, 'status_name', None) or '—',
+            'model': getattr(snap, 'model_name', None) or '—',
+            'vin': getattr(snap, 'vin', None) or '',
+            'staff_name': getattr(snap, 'staff_name', None) or '—',
+            'analyst_before_name': getattr(snap, 'analyst_before_name', None) or '—',
+            'analyst_after_name': getattr(snap, 'analyst_after_name', None) or '—',
+            'price_reception': getattr(snap, 'price_reception', None) or 0,
+            'price_auto_auction': bool(extra.get('price_auto_auction')),
+            'recalc_count': agg['recalc_count'],
             'has_pair': has_pair,
-            'first_date': first.date,
-            'last_date': last.date,
-            'first_type': first.price_calculation,
-            'last_type': last.price_calculation,
-            'first_type_label': PRICE_CALCULATION_LABELS.get(
-                first.price_calculation, first.price_calculation or '—'
-            ),
-            'last_type_label': PRICE_CALCULATION_LABELS.get(
-                last.price_calculation, last.price_calculation or '—'
-            ),
-            'type_changed': has_pair and (first.price_calculation or '') != (last.price_calculation or ''),
-            'first_trigger_label': TRIGGER_LABELS.get(first.trigger, first.trigger or '—'),
-            'last_trigger_label': TRIGGER_LABELS.get(last.trigger, last.trigger or '—'),
-            'first_author': first_author or '—',
-            'last_author': last_author or '—',
-            'first_estimation_price': first_price,
-            'last_estimation_price': last_price,
+            'first_date': first_vals['date'],
+            'last_date': last_vals['date'],
+            'first': first_vals,
+            'last': last_vals,
             'delta_estimation_price': delta_price,
-            'first_cna_expenses': first_bcp,
-            'last_cna_expenses': last_bcp,
-            'delta_cna_expenses': delta_bcp,
-            'first_amount_recovery': first_recovery,
-            'last_amount_recovery': last_recovery,
-            'delta_amount_recovery': delta_recovery,
-            'first_price_auto_1': first_auto_1,
-            'last_price_auto_1': last_auto_1,
-            'delta_price_auto_1': delta_auto_1,
-            'first_price_before_kd': first_before,
-            'last_price_before_kd': last_before,
-            'delta_price_before_kd': delta_before,
-            'first_price_after_kd': first_after,
-            'last_price_after_kd': last_after,
-            'delta_price_after_kd': delta_after,
+            'delta_zna': (last_vals['zna'] - first_vals['zna']) if has_pair else None,
+            'delta_price_auto_2': (last_vals['price_auto_2'] - first_vals['price_auto_2']) if has_pair else None,
+            'delta_price_before_kd': (last_vals['price_before_kd'] - first_vals['price_before_kd']) if has_pair else None,
+            'delta_price_after_kd': (last_vals['price_after_kd'] - first_vals['price_after_kd']) if has_pair else None,
+            'delta_amount_recovery': (last_vals['amount_recovery'] - first_vals['amount_recovery']) if has_pair else None,
+            'delta_cna_expenses': (last_vals['cna_expenses'] - first_vals['cna_expenses']) if has_pair else None,
+            'kf_changed': has_pair and (first_vals['kf'] or '') != (last_vals['kf'] or ''),
         })
 
-    def _sort_key(row):
-        d = row.get('last_date') or row.get('first_date')
-        return d.timestamp() if d else 0
-
-    rows.sort(key=_sort_key, reverse=True)
-    return rows[:limit]
+    return {
+        'compare_data': compare_data,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'total_count': paginator.count,
+        'total_recalcs': total_recalcs,
+        'changed_count': changed_count,
+        'cars_with_pair': cars_with_pair,
+    }
