@@ -798,8 +798,16 @@ def build_autohub_first_last_page(
         delta_recovery = last_vals['amount_recovery'] - first_vals['amount_recovery']
         delta_bcp = last_vals['cna_expenses'] - first_vals['cna_expenses']
         kf_changed = (first_vals['kf'] or '') != (last_vals['kf'] or '')
+        # Влияние затрат = затраты стало − было
         influence_costs = delta_recovery
-        influence_kf = delta_price - delta_recovery
+        # Остаток изменения цены выкупа после затрат
+        residual_price = delta_price - influence_costs
+        if kf_changed:
+            influence_kf = residual_price
+            influence_iznos_ss = 0
+        else:
+            influence_kf = 0
+            influence_iznos_ss = residual_price
 
         if delta_price or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
             changed_count += 1
@@ -845,6 +853,7 @@ def build_autohub_first_last_page(
             'delta_cna_expenses': delta_bcp,
             'influence_costs': influence_costs,
             'influence_kf': influence_kf,
+            'influence_iznos_ss': influence_iznos_ss,
             'kf_changed': kf_changed,
         })
 

@@ -13376,6 +13376,7 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
         'Затраты стало',
         'Влияние затрат',
         'Влияние КФ',
+        'Влияние повышенного износа СС',
         'Кол-во пересчётов',
     ]
     ws.append(headers)
@@ -13429,7 +13430,8 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
             first.get('amount_recovery') or 0,
             last.get('amount_recovery') or 0,
             row.get('influence_costs') if row.get('influence_costs') is not None else '',
-            row.get('influence_kf') if row.get('influence_kf') is not None else '',
+            row.get('influence_kf') if row.get('kf_changed') else '',
+            row.get('influence_iznos_ss') if not row.get('kf_changed') else '',
             row.get('recalc_count') or 0,
         ])
 
