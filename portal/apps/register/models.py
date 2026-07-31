@@ -4115,6 +4115,7 @@ class RegInteractivOcenkaPrice(models.Model):
         indexes = [
             models.Index(fields=['estimation', '-date']),
             models.Index(fields=['page_soglasovanie', '-date']),
+            models.Index(fields=['price_calculation', 'date']),
         ]
 
 
