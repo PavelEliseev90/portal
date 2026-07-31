@@ -30,6 +30,7 @@ TRIGGER_LABELS = {
     'refresh_kors': 'Обновление 1С / Kors',
     'refresh_all': 'Обновление всех данных ценообразования',
     'refresh_data1c': 'Обновление в 1С',
+    'admin_settings_switch': 'Смена настроек ценообразования (админ)',
 }
 
 _history_context = contextvars.ContextVar('interactive_price_history_context', default=None)
