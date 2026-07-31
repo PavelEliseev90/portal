@@ -13253,15 +13253,22 @@ def price_recalc_history_report(request):
     cars_with_pair = 0
 
     if view_mode == 'compare':
+        export_xlsx = (request.GET.get('export') or '').lower() in ('xlsx', 'excel', '1')
         result = build_autohub_first_last_page(
             date_start=date_start,
             date_end=date_end,
             unit_id=unit_id,
             car_query=car_query,
             trigger=trigger,
-            page=page_number,
-            per_page=50,
+            page=1 if export_xlsx else page_number,
+            per_page=20000 if export_xlsx else 50,
         )
+        if export_xlsx:
+            return _export_price_recalc_history_xlsx(
+                result['compare_data'],
+                date_start=date_start,
+                date_end=date_end,
+            )
         compare_data = result['compare_data']
         page_obj = result['page_obj']
         paginator = result['paginator']
@@ -13322,6 +13329,118 @@ def price_recalc_history_report(request):
         'trigger_choices': trigger_choices,
     }
     return render(request, 'lo/price_recalc_history_report.html', {'params': params})
+
+
+def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
+    """Выгрузка сравнения Autohub было/стало в Excel."""
+    from io import BytesIO
+
+    from openpyxl.styles import Alignment, Font
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Autohub было-стало'
+
+    headers = [
+        'РЛК',
+        'Оценка',
+        'Первый пересчёт',
+        'Последний пересчёт',
+        'Подразделение',
+        'Тип приема',
+        'Статус',
+        'Автомобиль',
+        'VIN',
+        'Оценщик',
+        'Аналитик до',
+        'Аналитик после',
+        'Цена оценщика',
+        'Согл. до КД было',
+        'Согл. до КД стало',
+        'Согл. после КД было',
+        'Согл. после КД стало',
+        'Авторасчет было',
+        'Авторасчет стало',
+        'Δ Авторасчет ₽',
+        'Δ Авторасчет %',
+        'ЦНА было',
+        'ЦНА стало',
+        'КФ было',
+        'КФ стало',
+        'БЦП было',
+        'БЦП стало',
+        'Затраты было',
+        'Затраты стало',
+        'Кол-во пересчётов',
+    ]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(wrap_text=True, vertical='center')
+
+    def _fmt_dt(value):
+        if not value:
+            return ''
+        try:
+            return value.strftime('%d.%m.%Y %H:%M')
+        except Exception:
+            return str(value)
+
+    for row in rows:
+        first = row.get('first') or {}
+        last = row.get('last') or {}
+        delta_pct = row.get('delta_price_auto_2_percent')
+        ws.append([
+            row.get('rlk_id') or '',
+            row.get('estimation_id') or '',
+            _fmt_dt(row.get('first_date')),
+            _fmt_dt(row.get('last_date')),
+            row.get('unit_name') or '',
+            row.get('unit_source') or '',
+            row.get('status_name') or '',
+            row.get('model') or '',
+            row.get('vin') or '',
+            row.get('staff_name') or '',
+            row.get('analyst_before_name') or '',
+            row.get('analyst_after_name') or '',
+            row.get('price_reception') or 0,
+            first.get('price_before_kd') or 0,
+            last.get('price_before_kd') or 0,
+            first.get('price_after_kd') or 0,
+            last.get('price_after_kd') or 0,
+            first.get('price_auto_2') or 0,
+            last.get('price_auto_2') or 0,
+            row.get('delta_price_auto_2') if row.get('delta_price_auto_2') is not None else '',
+            delta_pct if delta_pct is not None else '',
+            first.get('zna') or 0,
+            last.get('zna') or 0,
+            first.get('kf') or '',
+            last.get('kf') or '',
+            first.get('cna_expenses') or 0,
+            last.get('cna_expenses') or 0,
+            first.get('amount_recovery') or 0,
+            last.get('amount_recovery') or 0,
+            row.get('recalc_count') or 0,
+        ])
+
+    from openpyxl.utils import get_column_letter
+    widths = [10, 10, 16, 16, 22, 14, 18, 22, 18, 18, 16, 16, 14] + [14] * 17
+    for idx, width in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(idx)].width = min(width, 28)
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    start_label = date_start.strftime('%Y%m%d') if date_start else 'start'
+    end_label = date_end.strftime('%Y%m%d') if date_end else 'end'
+    filename = f'price_recalc_autohub_{start_label}_{end_label}.xlsx'
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
 def interactive_evaluations_report(request):
