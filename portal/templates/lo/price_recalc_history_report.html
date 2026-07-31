@@ -38,21 +38,19 @@
   .diff-positive { color: #0f9d58; font-weight: 600; }
   .diff-negative { color: #d93025; font-weight: 600; }
   .diff-zero { color: #6c7a92; }
-  .was-became {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; line-height: 1.2;
+  .pair-cell {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
-  .was-became .was { color: #6c7a92; font-size: 0.78rem; }
+  .pair-cell .sep { color: #9aa6b8; margin: 0 0.2rem; }
+  .pair-cell.changed { font-weight: 600; }
   .view-tabs .btn.active { background: #002a5a; border-color: #002a5a; color: #fff; }
-  .cost-badge {
-    display: inline-flex; align-items: center; gap: 0.3rem;
-    padding: 0.25rem 0.6rem; border-radius: 999px; background: #f3f4f6; font-size: 0.8rem;
-  }
 </style>
 
 <div class="report-page">
   <div class="report-header">
     <h2>История перерасчётов Autohub</h2>
-    <p>Сравнение первого и последнего перерасчёта (тип = Autohub). Поля как в отчёте по интерактивным оценкам + ЦНА и КФ.</p>
+    <p>Только оценки с ≥2 ненулевыми пересчётами Autohub. В столбцах: было / стало.</p>
   </div>
 
   <div class="report-filter">
@@ -88,14 +86,6 @@
           {% endfor %}
         </select>
       </div>
-      {% if params.view_mode == 'compare' %}
-      <div class="col-md-3">
-        <div class="form-check mt-4">
-          <input class="form-check-input" type="checkbox" name="only_changed" value="1" id="only_changed" {% if params.filters.only_changed %}checked{% endif %}>
-          <label class="form-check-label" for="only_changed">Только с ≥2 пересчётами</label>
-        </div>
-      </div>
-      {% endif %}
       <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Показать</button>
       </div>
@@ -104,8 +94,8 @@
 
   <div class="d-flex flex-wrap gap-2 mb-3 view-tabs">
     <a class="btn btn-outline-secondary {% if params.view_mode == 'compare' %}active{% endif %}"
-       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}{% if params.filters.only_changed %}&only_changed=1{% endif %}">
-      Было → стало
+       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
+      Было / стало
     </a>
     <a class="btn btn-outline-secondary {% if params.view_mode == 'journal' %}active{% endif %}"
        href="?view=journal&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
@@ -114,30 +104,23 @@
   </div>
 
   <div class="row g-3 mb-3">
-    <div class="col-md-3 col-6">
+    <div class="col-md-4 col-6">
       <div class="metric-card">
-        <h4>Перерасчётов Autohub</h4>
+        <h4>Ненулевых перерасчётов</h4>
         <div class="value">{{ params.summary.total_recalcs }}</div>
-        <div class="sub">За период</div>
+        <div class="sub">Autohub за период</div>
       </div>
     </div>
-    <div class="col-md-3 col-6">
+    <div class="col-md-4 col-6">
       <div class="metric-card">
-        <h4>{% if params.view_mode == 'compare' %}Автомобилей{% else %}Записей{% endif %}</h4>
+        <h4>Автомобилей (≥2)</h4>
         <div class="value">{{ params.summary.total_rows }}</div>
         <div class="sub">В выборке</div>
       </div>
     </div>
-    <div class="col-md-3 col-6">
+    <div class="col-md-4 col-6">
       <div class="metric-card">
-        <h4>С парой пересчётов</h4>
-        <div class="value">{{ params.summary.cars_with_pair }}</div>
-        <div class="sub">На странице</div>
-      </div>
-    </div>
-    <div class="col-md-3 col-6">
-      <div class="metric-card">
-        <h4>Δ цены ≠ 0</h4>
+        <h4>С изменениями</h4>
         <div class="value">{{ params.summary.changed_count }}</div>
         <div class="sub">На странице</div>
       </div>
@@ -146,13 +129,13 @@
 
   {% if params.view_mode == 'compare' %}
   <div class="panel">
-    <h3>Было → стало (первый и последний Autohub за период)</h3>
+    <h3>Было / стало (первый и последний ненулевой Autohub)</h3>
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle table-sticky mb-0">
         <thead>
           <tr>
             <th></th>
-            <th>Период пересчётов</th>
+            <th>Период</th>
             <th>Подразделение</th>
             <th>Тип приема</th>
             <th>Статус</th>
@@ -165,11 +148,10 @@
             <th class="text-end">Согл. до КД</th>
             <th class="text-end">Согл. после КД</th>
             <th class="text-end">Авторасчет</th>
-            <th class="text-end">Δ до</th>
-            <th class="text-end">Δ после</th>
             <th class="text-end">ЦНА</th>
-            <th>КФ</th>
-            <th>Затраты</th>
+            <th class="text-end">КФ</th>
+            <th class="text-end">БЦП</th>
+            <th class="text-end">Затраты</th>
             <th class="text-end">N</th>
           </tr>
         </thead>
@@ -182,11 +164,9 @@
               {% endif %}
             </td>
             <td class="text-nowrap small">
-              {% if row.has_pair %}
-                {{ row.first_date|date:"d.m.Y H:i" }}<br>→ {{ row.last_date|date:"d.m.Y H:i" }}
-              {% else %}
-                {{ row.first_date|date:"d.m.Y H:i" }}
-              {% endif %}
+              {{ row.first_date|date:"d.m.Y H:i" }}
+              <span class="text-muted">/</span>
+              {{ row.last_date|date:"d.m.Y H:i" }}
             </td>
             <td>{{ row.unit_name }}</td>
             <td>{{ row.unit_source }}</td>
@@ -197,65 +177,35 @@
             <td>{{ row.analyst_before_name }}</td>
             <td>{{ row.analyst_after_name|default:"—" }}</td>
             <td class="text-end">{{ row.price_reception|floatformat:0 }}</td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first.price_before_kd|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last.price_before_kd|floatformat:0 }}</span>
-              </div>
+
+            <td class="text-end pair-cell {% if row.delta_price_before_kd %}changed {% if row.delta_price_before_kd > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.price_before_kd|floatformat:0 }}<span class="sep">/</span>{{ row.last.price_before_kd|floatformat:0 }}
             </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first.price_after_kd|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last.price_after_kd|floatformat:0 }}</span>
-              </div>
+            <td class="text-end pair-cell {% if row.delta_price_after_kd %}changed {% if row.delta_price_after_kd > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.price_after_kd|floatformat:0 }}<span class="sep">/</span>{{ row.last.price_after_kd|floatformat:0 }}
             </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first.price_auto_2|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last.price_auto_2|floatformat:0 }}</span>
-              </div>
+            <td class="text-end pair-cell {% if row.delta_price_auto_2 %}changed {% if row.delta_price_auto_2 > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.price_auto_2|floatformat:0 }}<span class="sep">/</span>{{ row.last.price_auto_2|floatformat:0 }}
             </td>
-            <td class="text-end {% if row.has_pair %}{% if row.delta_price_before_kd > 0 %}diff-positive{% elif row.delta_price_before_kd < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_price_before_kd > 0 %}+{% endif %}{{ row.delta_price_before_kd|floatformat:0 }}{% else %}—{% endif %}
+            <td class="text-end pair-cell {% if row.delta_zna %}changed {% if row.delta_zna > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.zna|floatformat:0 }}<span class="sep">/</span>{{ row.last.zna|floatformat:0 }}
             </td>
-            <td class="text-end {% if row.has_pair %}{% if row.delta_price_after_kd > 0 %}diff-positive{% elif row.delta_price_after_kd < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_pair %}{% if row.delta_price_after_kd > 0 %}+{% endif %}{{ row.delta_price_after_kd|floatformat:0 }}{% else %}—{% endif %}
+            <td class="text-end pair-cell {% if row.kf_changed %}changed{% endif %}">
+              {{ row.first.kf|default:"—" }}<span class="sep">/</span>{{ row.last.kf|default:"—" }}
             </td>
-            <td class="text-end">
-              <div class="was-became">
-                {% if row.has_pair %}<span class="was">было {{ row.first.zna|floatformat:0 }}</span>{% endif %}
-                <span class="fw-semibold">{{ row.last.zna|floatformat:0 }}</span>
-              </div>
-              {% if row.has_pair and row.delta_zna %}
-                <div class="small {% if row.delta_zna > 0 %}diff-positive{% else %}diff-negative{% endif %}">
-                  {% if row.delta_zna > 0 %}+{% endif %}{{ row.delta_zna|floatformat:0 }}
-                </div>
-              {% endif %}
+            <td class="text-end pair-cell {% if row.delta_cna_expenses %}changed {% if row.delta_cna_expenses > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.cna_expenses|floatformat:0 }}<span class="sep">/</span>{{ row.last.cna_expenses|floatformat:0 }}
             </td>
-            <td>
-              {% if row.has_pair and row.kf_changed %}
-                <div class="small text-muted">было {{ row.first.kf|default:"—" }}</div>
-                <div class="fw-semibold">{{ row.last.kf|default:"—" }}</div>
-              {% else %}
-                {{ row.last.kf|default:"—" }}
-              {% endif %}
-            </td>
-            <td>
-              <div class="cost-badge">{{ row.last.amount_recovery|floatformat:0 }} ₽</div>
-              {% if row.has_pair %}
-                <div class="text-muted small">было {{ row.first.amount_recovery|floatformat:0 }}</div>
-              {% endif %}
-              <div class="text-muted small">
-                П: {{ row.last.amount_podgotovka|floatformat:0 }},
-                С: {{ row.last.amount_ss|floatformat:0 }},
-                К: {{ row.last.amount_mcu|floatformat:0 }}
-              </div>
+            <td class="text-end pair-cell {% if row.delta_amount_recovery %}changed {% if row.delta_amount_recovery > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.amount_recovery|floatformat:0 }}<span class="sep">/</span>{{ row.last.amount_recovery|floatformat:0 }}
             </td>
             <td class="text-end">{{ row.recalc_count }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="20" class="text-center py-5 text-muted">Нет данных. Измените фильтры.</td>
+            <td colspan="19" class="text-center py-5 text-muted">
+              Нет оценок с ≥2 ненулевыми пересчётами Autohub. Измените фильтры или дождитесь массового пересчёта.
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -274,12 +224,11 @@
             <th>Автомобиль</th>
             <th>Событие</th>
             <th class="text-end">Цена</th>
-            <th class="text-end">Δ</th>
             <th class="text-end">до КД</th>
             <th class="text-end">после КД</th>
             <th class="text-end">Авторасчет</th>
             <th class="text-end">ЦНА</th>
-            <th>КФ</th>
+            <th class="text-end">КФ</th>
             <th class="text-end">Затраты</th>
           </tr>
         </thead>
@@ -297,19 +246,16 @@
             </td>
             <td>{{ row.trigger_label }}</td>
             <td class="text-end">{{ row.estimation_price|floatformat:0 }}</td>
-            <td class="text-end {% if row.has_prev %}{% if row.delta_estimation_price > 0 %}diff-positive{% elif row.delta_estimation_price < 0 %}diff-negative{% else %}diff-zero{% endif %}{% else %}diff-zero{% endif %}">
-              {% if row.has_prev %}{% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}{% else %}—{% endif %}
-            </td>
             <td class="text-end">{{ row.price_before_kd|floatformat:0 }}</td>
             <td class="text-end">{{ row.price_after_kd|floatformat:0 }}</td>
             <td class="text-end">{{ row.price_auto_2|floatformat:0 }}</td>
             <td class="text-end">{{ row.zna|floatformat:0 }}</td>
-            <td>{{ row.kf|default:"—" }}</td>
+            <td class="text-end">{{ row.kf|default:"—" }}</td>
             <td class="text-end">{{ row.amount_recovery|floatformat:0 }}</td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="12" class="text-center py-5 text-muted">Нет данных.</td>
+            <td colspan="11" class="text-center py-5 text-muted">Нет данных.</td>
           </tr>
           {% endfor %}
         </tbody>

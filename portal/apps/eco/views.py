@@ -13232,7 +13232,6 @@ def price_recalc_history_report(request):
     view_mode = (request.GET.get('view') or 'compare').strip()
     if view_mode not in ('compare', 'journal'):
         view_mode = 'compare'
-    only_changed = (request.GET.get('only_changed') or '') in ('1', 'true', 'on', 'yes')
     page_number = _get_int(request.GET.get('page')) or 1
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
@@ -13248,7 +13247,6 @@ def price_recalc_history_report(request):
         'trigger': trigger,
         'car': car_query,
         'view': view_mode,
-        'only_changed': only_changed,
     }
 
     query_params = request.GET.copy()
@@ -13272,7 +13270,6 @@ def price_recalc_history_report(request):
             unit_id=unit_id,
             car_query=car_query,
             trigger=trigger,
-            only_changed=only_changed,
             page=page_number,
             per_page=50,
         )
@@ -13293,6 +13290,7 @@ def price_recalc_history_report(request):
                 trigger=trigger,
                 car_query=car_query,
             )
+            .filter(Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0))
             .select_related(
                 'author',
                 'user',
