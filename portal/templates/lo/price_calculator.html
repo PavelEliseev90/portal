@@ -1,5 +1,6 @@
 {% extends 'base_web.html' %}
 {% load l10n %}
+{% load custom_template_tags %}
 
 {% block title %} — Калькулятор выкупа {% endblock %}
 {% block title_navbar %} — Калькулятор выкупа {% endblock %}
@@ -18,17 +19,17 @@
   .pc-hint { font-size: .82rem; color: #6c7a92; }
   .pc-badge { padding: .9rem 1rem; height: 100%; }
   .pc-badge .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: #8ea1ba; }
-  .pc-badge .pair { font-size: 1.05rem; font-weight: 650; color: #002a5a; margin: .2rem 0; }
-  .pc-badge .delta { font-size: .9rem; font-weight: 600; }
+  .pc-badge .pair { font-size: 1.05rem; font-weight: 650; color: #002a5a; margin: .2rem 0; font-variant-numeric: tabular-nums; }
+  .pc-badge .delta { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .delta-pos { color: #0f9d58; }
   .delta-neg { color: #dc2626; }
   .delta-zero { color: #94a3b8; }
   .pc-sep { color: #94a3b8; margin: 0 .25rem; }
   .table-pc th { white-space: nowrap; font-size: .75rem; color: #5b6b82; }
-  .table-pc td { font-size: .82rem; vertical-align: middle; }
+  .table-pc td { font-size: .82rem; vertical-align: middle; font-variant-numeric: tabular-nums; }
   .table-pc .pair { white-space: nowrap; }
   .table-pc .pc-cost-break { white-space: normal; line-height: 1.35; max-width: 18rem; margin-left: auto; }
-  .table-pc .pc-est-cell { min-width: 9rem; }
+  .table-pc .pc-est-cell { min-width: 9rem; font-variant-numeric: normal; }
   .table-pc .pc-est-name { font-weight: 600; color: #002a5a; }
   details.pc-adv > summary {
     cursor: pointer; font-weight: 600; color: #002a5a; margin-bottom: .75rem; list-style: none;
@@ -175,13 +176,15 @@
         <div class="col-12 col-md-4">
           <div class="pc-badge">
             <div class="t">{{ b.label }}</div>
-            <div class="pair">{{ b.before|floatformat:0 }}<span class="pc-sep">→</span>{{ b.after|floatformat:0 }}</div>
-            <div class="delta {% if b.delta > 0 %}delta-pos{% elif b.delta < 0 %}delta-neg{% else %}delta-zero{% endif %}">
-              {% if b.delta > 0 %}+{% endif %}{{ b.delta|floatformat:0 }}
+            <div class="pair">{{ b.before|formatted_number }}<span class="pc-sep">→</span>{{ b.after|formatted_number }}</div>
+            {% if b.delta %}
+            <div class="delta {% if b.delta > 0 %}delta-pos{% else %}delta-neg{% endif %}">
+              {% if b.delta > 0 %}+{% endif %}{{ b.delta|formatted_number }}
               {% if b.delta_pct != None %}
               ( {% if b.delta_pct > 0 %}+{% endif %}{{ b.delta_pct|unlocalize }}% )
               {% endif %}
             </div>
+            {% endif %}
           </div>
         </div>
         {% endfor %}
@@ -190,7 +193,7 @@
 
     <div class="pc-panel">
       <h3>Как меняется расчёт</h3>
-      <p class="pc-hint mt-0 mb-2">Только цифры выкупа: было → стало. Разбивка затрат: подготовка / СС / МКУ.</p>
+      <p class="pc-hint mt-0 mb-2">Было → стало. В затратах нули не показываем.</p>
       <div class="table-responsive">
         <table class="table table-sm table-bordered align-middle table-pc mb-0">
           <thead>
@@ -212,33 +215,47 @@
                 {% if row.vin %}<div class="small text-muted">{{ row.vin }}</div>{% endif %}
               </td>
               <td class="text-end">
-                <div class="pair">{{ row.before.estimation_price|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.estimation_price|floatformat:0 }}</div>
-                <div class="small {% if row.delta_estimation_price > 0 %}delta-pos{% elif row.delta_estimation_price < 0 %}delta-neg{% else %}delta-zero{% endif %}">
-                  {% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}
+                <div class="pair">{{ row.before.estimation_price|formatted_number }}<span class="pc-sep">→</span>{{ row.after.estimation_price|formatted_number }}</div>
+                {% if row.delta_estimation_price %}
+                <div class="small {% if row.delta_estimation_price > 0 %}delta-pos{% else %}delta-neg{% endif %}">
+                  {% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|formatted_number }}
                   {% if row.delta_pct_estimation != None %}
                   ({% if row.delta_pct_estimation > 0 %}+{% endif %}{{ row.delta_pct_estimation|unlocalize }}%)
                   {% endif %}
                 </div>
+                {% endif %}
               </td>
               <td class="text-end">
-                <div class="pair">{{ row.before.amount_recovery|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.amount_recovery|floatformat:0 }}</div>
+                <div class="pair">{{ row.before.amount_recovery|formatted_number }}<span class="pc-sep">→</span>{{ row.after.amount_recovery|formatted_number }}</div>
+                {% if row.before.amount_podgotovka or row.after.amount_podgotovka or row.before.amount_ss or row.after.amount_ss or row.before.amount_mcu or row.after.amount_mcu %}
                 <div class="small text-muted pc-cost-break">
-                  подг. {{ row.before.amount_podgotovka|floatformat:0 }}→{{ row.after.amount_podgotovka|floatformat:0 }}
-                  · СС {{ row.before.amount_ss|floatformat:0 }}→{{ row.after.amount_ss|floatformat:0 }}
-                  · МКУ {{ row.before.amount_mcu|floatformat:0 }}→{{ row.after.amount_mcu|floatformat:0 }}
+                  {% if row.before.amount_podgotovka or row.after.amount_podgotovka %}
+                  подг. {{ row.before.amount_podgotovka|formatted_number }}→{{ row.after.amount_podgotovka|formatted_number }}
+                  {% endif %}
+                  {% if row.before.amount_ss or row.after.amount_ss %}
+                  {% if row.before.amount_podgotovka or row.after.amount_podgotovka %} · {% endif %}СС {{ row.before.amount_ss|formatted_number }}→{{ row.after.amount_ss|formatted_number }}
+                  {% endif %}
+                  {% if row.before.amount_mcu or row.after.amount_mcu %}
+                  {% if row.before.amount_podgotovka or row.after.amount_podgotovka or row.before.amount_ss or row.after.amount_ss %} · {% endif %}МКУ {{ row.before.amount_mcu|formatted_number }}→{{ row.after.amount_mcu|formatted_number }}
+                  {% endif %}
                 </div>
-                <div class="small {% if row.delta_amount_recovery > 0 %}delta-pos{% elif row.delta_amount_recovery < 0 %}delta-neg{% else %}delta-zero{% endif %}">
-                  {% if row.delta_amount_recovery > 0 %}+{% endif %}{{ row.delta_amount_recovery|floatformat:0 }}
+                {% endif %}
+                {% if row.delta_amount_recovery %}
+                <div class="small {% if row.delta_amount_recovery > 0 %}delta-pos{% else %}delta-neg{% endif %}">
+                  {% if row.delta_amount_recovery > 0 %}+{% endif %}{{ row.delta_amount_recovery|formatted_number }}
                   {% if row.delta_pct_recovery != None %}
                   ({% if row.delta_pct_recovery > 0 %}+{% endif %}{{ row.delta_pct_recovery|unlocalize }}%)
                   {% endif %}
                 </div>
+                {% endif %}
               </td>
               <td class="text-end">
-                <div class="pair">{{ row.before.cna_expenses|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.cna_expenses|floatformat:0 }}</div>
-                <div class="small {% if row.delta_cna > 0 %}delta-pos{% elif row.delta_cna < 0 %}delta-neg{% else %}delta-zero{% endif %}">
-                  {% if row.delta_cna > 0 %}+{% endif %}{{ row.delta_cna|floatformat:0 }}
+                <div class="pair">{{ row.before.cna_expenses|formatted_number }}<span class="pc-sep">→</span>{{ row.after.cna_expenses|formatted_number }}</div>
+                {% if row.delta_cna %}
+                <div class="small {% if row.delta_cna > 0 %}delta-pos{% else %}delta-neg{% endif %}">
+                  {% if row.delta_cna > 0 %}+{% endif %}{{ row.delta_cna|formatted_number }}
                 </div>
+                {% endif %}
               </td>
             </tr>
             {% empty %}
