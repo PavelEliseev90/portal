@@ -5894,6 +5894,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         zachita_ot_ubitka   = 0
         finance_price       = 0
         iznos_price         = 0
+        iznos_ss_compensation = 0
         damage_gear         = False
         damage_wheels       = False
 
@@ -8621,6 +8622,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 if iznos_data > amount_ss:
                     price           = price + amount_ss
                     diff            = amount_ss
+                    iznos_ss_compensation = diff
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
@@ -8629,9 +8631,10 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         'name'      : "кузовной"
                     }
                     list_info_price.append(inf_price)
-                elif iznos_data < amount_ss:
+                elif iznos_data <= amount_ss:
                     price           = price + iznos_data
                     diff            = iznos_data
+                    iznos_ss_compensation = diff
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
@@ -8887,6 +8890,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         zachita_ot_ubitka   = 0
         finance_price       = 0
         iznos_price         = 0
+        iznos_ss_compensation = 0
         damage_gear         = False
         damage_wheels       = False
 
@@ -11402,6 +11406,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 if iznos_data > amount_ss:
                     price           = price + amount_ss
                     diff            = amount_ss
+                    iznos_ss_compensation = diff
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
@@ -11410,9 +11415,10 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                         'name'      : "кузовной"
                     }
                     list_info_price.append(inf_price)
-                elif iznos_data < amount_ss:
+                elif iznos_data <= amount_ss:
                     price           = price + iznos_data
                     diff            = iznos_data
+                    iznos_ss_compensation = diff
                     inf_price = {
                         'price'     : price,
                         'dif'       : diff,
