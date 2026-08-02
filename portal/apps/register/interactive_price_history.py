@@ -907,10 +907,11 @@ def build_autohub_first_last_page(
         }
     estimations = {}
     if est_ids:
+        # values(), не .only() на ChangeloggableMixin — иначе RecursionError
         estimations = {
-            e.id: e
-            for e in RegInteractivOcenka.objects.filter(id__in=est_ids).select_related('status').only(
-                'id', 'vin', 'rlk_id', 'status', 'status__id', 'status__name',
+            row['id']: row
+            for row in RegInteractivOcenka.objects.filter(id__in=est_ids).values(
+                'id', 'vin', 'rlk_id', 'status_id', 'status__name',
             )
         }
 
@@ -962,14 +963,14 @@ def build_autohub_first_last_page(
             changed_count += 1
 
         snap = snaps.get(est_id)
-        est_obj = estimations.get(est_id)
+        est_row = estimations.get(est_id) or {}
         extra = getattr(snap, 'extra_payload', None) or {} if snap else {}
         status_name = getattr(snap, 'status_name', None) or ''
-        if not status_name and est_obj is not None and getattr(est_obj, 'status', None) is not None:
-            status_name = est_obj.status.name or ''
+        if not status_name:
+            status_name = est_row.get('status__name') or ''
         rlk_id = getattr(snap, 'rlk_id', None)
-        if not rlk_id and est_obj is not None:
-            rlk_id = getattr(est_obj, 'rlk_id', None)
+        if not rlk_id:
+            rlk_id = est_row.get('rlk_id')
 
         compare_data.append({
             'estimation_id': est_id,
@@ -979,7 +980,7 @@ def build_autohub_first_last_page(
             'unit_source': getattr(snap, 'unit_source', None) or '—',
             'status_name': status_name or '—',
             'model': getattr(snap, 'model_name', None) or '—',
-            'vin': getattr(snap, 'vin', None) or getattr(est_obj, 'vin', '') or '',
+            'vin': getattr(snap, 'vin', None) or est_row.get('vin') or '',
             'staff_name': getattr(snap, 'staff_name', None) or '—',
             'analyst_before_name': getattr(snap, 'analyst_before_name', None) or '—',
             'analyst_after_name': getattr(snap, 'analyst_after_name', None) or '—',
