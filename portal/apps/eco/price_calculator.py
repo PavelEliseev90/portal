@@ -164,6 +164,30 @@ def lever_definitions(zg_code: str) -> list[dict]:
     return levers
 
 
+def load_full_settings():
+    """Полный профиль настроек отдельным запросом (одна таблица < лимита PG 1664)."""
+    from register.models import RegEstimationsSettings
+    return RegEstimationsSettings.objects.order_by('id').last()
+
+
+def load_unit_for_calculator(unit_id: Optional[int], zg_code: str = '', fallback_unit=None):
+    """Загрузка ДЦ отдельным SELECT * (без JOIN с другими широкими таблицами)."""
+    from refs.models import RefUnit
+    if unit_id:
+        unit = RefUnit.objects.filter(pk=unit_id).first()
+        if unit is not None:
+            return unit
+    if fallback_unit is not None and getattr(fallback_unit, 'pk', None):
+        return RefUnit.objects.filter(pk=fallback_unit.pk).first() or fallback_unit
+    return (
+        RefUnit.objects
+        .filter(buauto=True, active_eco=True)
+        .exclude(name='')
+        .order_by('name')
+        .first()
+    )
+
+
 def read_baseline_levers(unit, settings_obj, zg_code: str) -> dict:
     code = zg_code
     kf = getattr(unit, f'correction_txt_{code}', None)
@@ -283,20 +307,32 @@ def _restore_attrs(obj, backup: dict):
         setattr(obj, name, value)
 
 
-def _resolve_unit(rlk):
-    unit = getattr(rlk, 'unit', None)
-    if unit is not None:
-        return unit
+def _resolve_unit_id(rlk) -> Optional[int]:
+    """ID ДЦ без загрузки RefUnit (unit / DocRLK / remote)."""
+    uid = getattr(rlk, 'unit_id', None)
+    if uid:
+        return uid
     doc = getattr(rlk, 'rlk', None)
     if doc is not None:
-        unit = getattr(doc, 'unit', None) or getattr(doc, 'unit_dc', None)
-        if unit is not None:
-            return unit
+        uid = getattr(doc, 'unit_id', None) or getattr(doc, 'unit_dc_id', None)
+        if uid:
+            return uid
     estimation = getattr(rlk, 'estimation', None)
     if estimation is not None:
         remote = getattr(estimation, 'page_remote', None)
-        if remote is not None and getattr(remote, 'unit', None) is not None:
-            return remote.unit
+        if remote is not None:
+            uid = getattr(remote, 'unit_id', None)
+            if uid:
+                return uid
+    return None
+
+
+def _resolve_unit(rlk, units_map: Optional[dict] = None):
+    uid = _resolve_unit_id(rlk)
+    if uid and units_map is not None and uid in units_map:
+        return units_map[uid]
+    if uid:
+        return load_unit_for_calculator(uid)
     return None
 
 
@@ -389,7 +425,7 @@ def run_price_calculator(
         get_salon_estimation_cached,
         resolve_estimation_settings,
     )
-    from register.models import RegEstimationsSettings, RegInteractivOcenkaRLK
+    from register.models import RegInteractivOcenkaRLK
     from refs.models import RefUnit
 
     overrides = overrides or {}
@@ -401,20 +437,17 @@ def run_price_calculator(
         .filter(estimation__start_estimation__gte=date_start)
         .filter(estimation__start_estimation__lte=date_end)
         .filter(zg_price_q(zg_code))
+        # Нельзя select_related несколько RefUnit сразу: ~419 колонок × N > лимита PG 1664
         .select_related(
             'estimation',
             'estimation__page_salon',
             'estimation__page_remote',
-            'estimation__page_remote__unit',
             'estimation__page_soglasovanie',
             'estimation__modification',
             'estimation__modification__model',
             'estimation__modification__model__mark',
             'page_soglasovanie',
-            'unit',
             'rlk',
-            'rlk__unit',
-            'rlk__unit_dc',
         )
         .order_by('-estimation__start_estimation', '-estimation_id')
     )
@@ -424,15 +457,26 @@ def run_price_calculator(
     total_found = qs.count()
     items = list(qs[:limit])
 
+    # ДЦ — отдельный SELECT * (одна таблица), не JOIN в основной выборке
+    unit_ids = {_resolve_unit_id(rlk) for rlk in items}
+    unit_ids.discard(None)
+    if unit_id:
+        unit_ids.add(unit_id)
+    units_map = {
+        u.id: u
+        for u in RefUnit.objects.filter(id__in=unit_ids)
+    } if unit_ids else {}
+
     ref_unit = None
     if unit_id:
-        ref_unit = RefUnit.objects.filter(pk=unit_id).first()
+        ref_unit = units_map.get(unit_id) or load_unit_for_calculator(unit_id)
     if ref_unit is None and items:
-        ref_unit = _resolve_unit(items[0])
+        ref_unit = _resolve_unit(items[0], units_map)
     if ref_unit is None:
-        ref_unit = RefUnit.objects.filter(buauto=True, active_eco=True).order_by('name').first()
+        ref_unit = load_unit_for_calculator(None)
 
-    settings_base = RegEstimationsSettings.objects.order_by('id').last()
+    # Полные settings отдельным запросом (не в JOIN)
+    settings_base = load_full_settings()
     if settings_base is None:
         return {
             'error': 'Не найден профиль RegEstimationsSettings',
@@ -478,7 +522,7 @@ def run_price_calculator(
             error_counter['нет estimation'] += 1
             continue
 
-        unit = _resolve_unit(rlk)
+        unit = _resolve_unit(rlk, units_map)
         if unit is None:
             err_count += 1
             error_counter['нет ДЦ (unit)'] += 1
@@ -489,7 +533,7 @@ def run_price_calculator(
         sog = getattr(rlk, 'page_soglasovanie', None) or getattr(estimation, 'page_soglasovanie', None)
         before = _snapshot_from_soglasovanie(sog, estimation)
 
-        original_unit = rlk.unit
+        original_unit_id = rlk.unit_id
         unit_backup = None
         settings_backup = None
         est_settings = None
@@ -566,7 +610,7 @@ def run_price_calculator(
                 _restore_attrs(est_settings, settings_backup)
             if unit_backup is not None:
                 _restore_attrs(unit, unit_backup)
-            rlk.unit = original_unit
+            rlk.unit_id = original_unit_id
 
         ok_count += 1
         for key in sum_before:
@@ -609,13 +653,9 @@ def run_price_calculator(
         })
 
     badges = [
-        _badge('Выкуп (сумма)', sum_before['estimation_price'], sum_after['estimation_price']),
-        _badge('Затраты всего', sum_before['amount_recovery'], sum_after['amount_recovery']),
-        _badge('Подготовка', sum_before['amount_podgotovka'], sum_after['amount_podgotovka']),
-        _badge('Слесарка (СС)', sum_before['amount_ss'], sum_after['amount_ss']),
-        _badge('Кузовной (МКУ)', sum_before['amount_mcu'], sum_after['amount_mcu']),
+        _badge('Выкуп', sum_before['estimation_price'], sum_after['estimation_price']),
+        _badge('Затраты', sum_before['amount_recovery'], sum_after['amount_recovery']),
         _badge('БЦП', sum_before['cna_expenses'], sum_after['cna_expenses']),
-        _badge('Финансирование', sum_before['finance_price'], sum_after['finance_price']),
     ]
 
     zg_name = next((r['name'] for r in PRICE_GROUP_RANGES if r['code'] == zg_code), zg_code)
