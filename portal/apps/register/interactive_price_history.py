@@ -513,7 +513,11 @@ def build_price_recalc_history_queryset(
                 car_id = int(car_query)
                 car_q |= Q(rlk_id=car_id) | Q(estimation_id=car_id)
             snap = snap.filter(car_q)
-        qs = qs.filter(estimation_id__in=snap.values('estimation_id'))
+        # Список id вместо subquery — быстрее для GROUP BY по истории
+        est_ids = list(snap.values_list('estimation_id', flat=True))
+        if not est_ids:
+            return qs.none()
+        qs = qs.filter(estimation_id__in=est_ids)
 
     return qs
 
@@ -691,22 +695,79 @@ def _zna_key(value):
 def _pick_first_last_same_zna(hist_list):
     """
     Последняя запись оценки + первая запись с той же ЦНА.
+    Работает и с model-инстансами, и с dict (values).
     Возвращает (first, last, same_zna_count) или None.
     """
     if not hist_list or len(hist_list) < 2:
         return None
+
+    def _get(obj, key):
+        if isinstance(obj, dict):
+            return obj.get(key)
+        return getattr(obj, key, None)
+
+    def _pk(obj):
+        return _get(obj, 'id') or _get(obj, 'pk')
+
     last = hist_list[-1]
-    last_zna = _zna_key(last.zna)
+    last_zna = _zna_key(_get(last, 'zna'))
     if last_zna <= 0:
         return None
-    same = [item for item in hist_list if _zna_key(item.zna) == last_zna]
+    same = [item for item in hist_list if _zna_key(_get(item, 'zna')) == last_zna]
     if len(same) < 2:
         return None
     first = same[0]
     last_same = same[-1]
-    if first.pk == last_same.pk:
+    if _pk(first) == _pk(last_same):
         return None
     return first, last_same, len(same)
+
+
+_HISTORY_VALUE_FIELDS = (
+    'id', 'estimation_id', 'date', 'trigger',
+    'estimation_price', 'cna_expenses', 'zna', 'kf', 'zg',
+    'price_auto_1', 'price_auto_2', 'price_auto_3',
+    'price_before_kd', 'price_after_kd',
+    'amount_podgotovka', 'amount_ss', 'amount_mcu', 'amount_recovery',
+    'iznos', 'taxi', 'k_i', 'iznos_price', 'iznos_data',
+    'iznos_with_ss', 'iznos_ss_compensation',
+)
+
+
+def _history_values_from_mapping(item):
+    """values()-dict или model → словарь для отчёта."""
+    def g(key, default=0):
+        if isinstance(item, dict):
+            val = item.get(key, default)
+        else:
+            val = getattr(item, key, default)
+        return val if val is not None else default
+
+    recovery = g('amount_recovery') or (g('amount_podgotovka') + g('amount_ss') + g('amount_mcu'))
+    return {
+        'date': g('date', None),
+        'estimation_price': g('estimation_price') or 0,
+        'cna_expenses': g('cna_expenses') or 0,
+        'zna': g('zna') or 0,
+        'kf': g('kf', '') or '',
+        'zg': g('zg', '') or '',
+        'price_auto_1': g('price_auto_1') or 0,
+        'price_auto_2': g('price_auto_2') or 0,
+        'price_auto_3': g('price_auto_3') or 0,
+        'price_before_kd': g('price_before_kd') or 0,
+        'price_after_kd': g('price_after_kd') or 0,
+        'amount_podgotovka': g('amount_podgotovka') or 0,
+        'amount_ss': g('amount_ss') or 0,
+        'amount_mcu': g('amount_mcu') or 0,
+        'amount_recovery': recovery or 0,
+        'iznos': bool(g('iznos', False)),
+        'taxi': bool(g('taxi', False)),
+        'k_i': g('k_i') or 0,
+        'iznos_price': g('iznos_price') or 0,
+        'iznos_data': g('iznos_data') or 0,
+        'iznos_with_ss': bool(g('iznos_with_ss', False)),
+        'iznos_ss_compensation': g('iznos_ss_compensation') or 0,
+    }
 
 
 def build_autohub_first_last_page(
@@ -721,17 +782,20 @@ def build_autohub_first_last_page(
     per_page=50,
 ):
     """
-    Отчёт «было / стало» Autohub:
-    — берём последнюю ненулевую запись оценки
-    — к ней ищем первую запись с той же ЦНА
-    — сравниваем эту пару
+    Отчёт «было / стало» Autohub (ускоренный):
+    1) агрегация кандидатов (≥2) одним запросом
+    2) лёгкий values()-проход только id/zna/date для пар
+    3) полные поля — только для строк текущей страницы
     """
     from collections import defaultdict
 
     from analytics.models import InteractivePricingSnapshot
     from django.core.paginator import Paginator
-    from django.db.models import Count, Max
+    from django.db.models import Count, Max, Q
     from register.models import RegInteractivOcenka, RegInteractivOcenkaPrice
+
+    page = max(1, int(page or 1))
+    per_page = max(1, min(int(per_page or 50), 20000))
 
     filtered = build_price_recalc_history_queryset(
         date_start=date_start,
@@ -745,10 +809,8 @@ def build_autohub_first_last_page(
         Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0)
     )
 
-    total_recalcs = filtered.count()
-
-    # Кандидаты: ≥2 пересчёта; точная пара по ЦНА проверяется ниже
-    agg_qs = (
+    # Кандидаты ≥2; total_recalcs — сумма по ним (без отдельного COUNT всей таблицы)
+    agg_rows = list(
         filtered
         .order_by()
         .values('estimation_id')
@@ -759,80 +821,115 @@ def build_autohub_first_last_page(
         .filter(recalc_count__gte=2)
         .order_by('-last_date')
     )
+    candidate_ids = [row['estimation_id'] for row in agg_rows if row.get('estimation_id')]
+    recalc_by_est = {row['estimation_id']: row['recalc_count'] for row in agg_rows}
+    total_recalcs = sum(recalc_by_est.values()) if recalc_by_est else 0
 
-    candidate_ids = list(agg_qs.values_list('estimation_id', flat=True))
-    total_candidates = len(candidate_ids)
-
-    # Собираем валидные пары: последняя запись + первая с той же ЦНА
-    valid_pairs = []  # (est_id, first, last, same_count, all_count)
-    chunk_size = 200
-    for offset in range(0, total_candidates, chunk_size):
-        chunk_ids = candidate_ids[offset:offset + chunk_size]
-        history_by_est = defaultdict(list)
-        hist_qs = (
+    # Лёгкий проход: только поля для выбора пары
+    history_by_est = defaultdict(list)
+    if candidate_ids:
+        light_qs = (
             RegInteractivOcenkaPrice.objects
             .filter(
-                estimation_id__in=chunk_ids,
+                estimation_id__in=candidate_ids,
                 price_calculation='autohub',
             )
             .filter(
                 Q(estimation_price__gt=0) | Q(zna__gt=0) | Q(price_auto_2__gt=0)
             )
-            .only(
-                'id', 'estimation_id', 'date', 'trigger',
-                'estimation_price', 'cna_expenses', 'zna', 'kf', 'zg',
-                'price_auto_1', 'price_auto_2', 'price_auto_3',
-                'price_before_kd', 'price_after_kd',
-                'amount_podgotovka', 'amount_ss', 'amount_mcu', 'amount_recovery',
-                'iznos', 'taxi', 'k_i', 'iznos_price', 'iznos_data',
-                'iznos_with_ss', 'iznos_ss_compensation',
-            )
-            .order_by('estimation_id', 'date', 'id')
         )
         if date_start is not None:
-            hist_qs = hist_qs.filter(date__gte=date_start)
+            light_qs = light_qs.filter(date__gte=date_start)
         if date_end is not None:
-            hist_qs = hist_qs.filter(date__lte=date_end)
+            light_qs = light_qs.filter(date__lte=date_end)
         if trigger:
-            hist_qs = hist_qs.filter(trigger=trigger)
-        for hist in hist_qs:
-            history_by_est[hist.estimation_id].append(hist)
+            light_qs = light_qs.filter(trigger=trigger)
 
-        for est_id in chunk_ids:
-            hist_list = history_by_est.get(est_id) or []
-            picked = _pick_first_last_same_zna(hist_list)
-            if not picked:
-                continue
-            first, last, same_count = picked
-            valid_pairs.append((est_id, first, last, same_count, len(hist_list)))
+        # Chunk IN() — иначе огромный список id
+        chunk_size = 400
+        for offset in range(0, len(candidate_ids), chunk_size):
+            chunk_ids = candidate_ids[offset:offset + chunk_size]
+            for row in (
+                light_qs
+                .filter(estimation_id__in=chunk_ids)
+                .order_by('estimation_id', 'date', 'id')
+                .values('id', 'estimation_id', 'date', 'zna')
+                .iterator(chunk_size=2000)
+            ):
+                history_by_est[row['estimation_id']].append(row)
+
+    valid_pairs = []  # (est_id, first_id, last_id, same_count, all_count)
+    for est_id in candidate_ids:
+        hist_list = history_by_est.get(est_id) or []
+        picked = _pick_first_last_same_zna(hist_list)
+        if not picked:
+            continue
+        first, last, same_count = picked
+        valid_pairs.append((
+            est_id,
+            first['id'],
+            last['id'],
+            same_count,
+            recalc_by_est.get(est_id) or len(hist_list),
+        ))
 
     total_valid = len(valid_pairs)
     paginator = Paginator(valid_pairs, per_page)
     page_obj = paginator.get_page(page)
     page_pairs = list(page_obj.object_list)
     est_ids = [item[0] for item in page_pairs]
+    pair_ids = []
+    for _est, first_id, last_id, _sc, _ac in page_pairs:
+        pair_ids.append(first_id)
+        pair_ids.append(last_id)
 
-    snaps = {
-        s.estimation_id: s
-        for s in InteractivePricingSnapshot.objects.filter(estimation_id__in=est_ids)
-    } if est_ids else {}
-    estimations = {
-        e.id: e
-        for e in RegInteractivOcenka.objects.filter(id__in=est_ids).select_related('status')
-    } if est_ids else {}
+    # Полные строки только для пар на странице
+    full_by_id = {}
+    if pair_ids:
+        for row in (
+            RegInteractivOcenkaPrice.objects
+            .filter(id__in=pair_ids)
+            .values(*_HISTORY_VALUE_FIELDS)
+        ):
+            full_by_id[row['id']] = row
+
+    snaps = {}
+    if est_ids:
+        snaps = {
+            s.estimation_id: s
+            for s in InteractivePricingSnapshot.objects.filter(estimation_id__in=est_ids).only(
+                'estimation_id', 'rlk_id', 'start_estimation',
+                'unit_name', 'unit_source', 'status_name',
+                'model_name', 'vin',
+                'staff_name', 'analyst_before_name', 'analyst_after_name',
+                'price_reception', 'extra_payload',
+            )
+        }
+    estimations = {}
+    if est_ids:
+        estimations = {
+            e.id: e
+            for e in RegInteractivOcenka.objects.filter(id__in=est_ids).select_related('status').only(
+                'id', 'vin', 'rlk_id', 'status', 'status__id', 'status__name',
+            )
+        }
 
     compare_data = []
     changed_count = 0
     cars_with_pair = 0
 
-    for est_id, first, last, same_count, all_count in page_pairs:
-        first_vals = _history_values(first)
-        last_vals = _history_values(last)
+    for est_id, first_id, last_id, same_count, all_count in page_pairs:
+        first = full_by_id.get(first_id)
+        last = full_by_id.get(last_id)
+        if not first or not last:
+            continue
+        first_vals = _history_values_from_mapping(first)
+        last_vals = _history_values_from_mapping(last)
         has_pair = True
         cars_with_pair += 1
 
         delta_price = last_vals['estimation_price'] - first_vals['estimation_price']
-        delta_zna = last_vals['zna'] - first_vals['zna']  # ожидаемо 0 при той же ЦНА
+        delta_zna = last_vals['zna'] - first_vals['zna']
         delta_auto = last_vals['price_auto_2'] - first_vals['price_auto_2']
         first_auto = first_vals['price_auto_2'] or 0
         if first_auto:
@@ -844,9 +941,7 @@ def build_autohub_first_last_page(
         delta_recovery = last_vals['amount_recovery'] - first_vals['amount_recovery']
         delta_bcp = last_vals['cna_expenses'] - first_vals['cna_expenses']
         kf_changed = (first_vals['kf'] or '') != (last_vals['kf'] or '')
-        # Влияние затрат = затраты стало − было
         influence_costs = delta_recovery
-        # Остаток изменения цены выкупа после затрат
         residual_price = delta_price - influence_costs
         delta_iznos_price = last_vals['iznos_price'] - first_vals['iznos_price']
         delta_iznos_data = last_vals['iznos_data'] - first_vals['iznos_data']
@@ -858,7 +953,6 @@ def build_autohub_first_last_page(
             influence_iznos_ss = 0
         else:
             influence_kf = 0
-            # Если в истории есть суммы износа — берём их Δ, иначе остаток цены
             if first_vals['iznos_price'] or last_vals['iznos_price'] or first_vals['iznos_data'] or last_vals['iznos_data']:
                 influence_iznos_ss = delta_iznos_price if (first_vals['iznos_price'] or last_vals['iznos_price']) else delta_iznos_data
             else:
