@@ -3852,7 +3852,7 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
     count_answer                        = models.IntegerField('Ответов ЕЦО', default=0, null=True, blank=True)
     seconds_answer                      = models.IntegerField('Среднее время ответа', default=0, null=True, blank=True)
     seconds_estimation                  = models.IntegerField('Секунд оценки', default=0, null=True, blank=True)
-    
+    no_auto_status                      = models.BooleanField("Не менять статус автоматически", default = False, null=True, blank=True)
     
     def save(self, *args, **kwargs):
          
@@ -3861,31 +3861,32 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         #         self.status = RefStatusEstimation.objects.get(pk = 1)
         # else:
         #     self.status = RefStatusEstimation.objects.get(pk = 1)
-        if self.estimation == None:
-            self.status = RefStatusEstimation.objects.get(pk = 1)
-        elif self.estimation.vin == '' and self.estimation.number_body == '':
-            self.status = RefStatusEstimation.objects.get(pk = 1)
-        elif self.estimation != None and self.estimation.returned:
-            self.status = RefStatusEstimation.objects.get(pk = 7)
-        elif self.estimation != None and self.estimation.page_remote != None and self.estimation.page_remote.end_estimation == None:
-            self.status = RefStatusEstimation.objects.get(pk = 9) 
-        elif self.estimation != None and self.estimation.end_estimation != None and self.page_soglasovanie != None:
-            count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
-            count_success_answer = RegInteractivOcenkaRLK.objects.exclude(rlk = self.rlk).filter(estimation = self.estimation).filter(status__id = 8).count()
-            if count_success_answer > 0:
-                self.status = RefStatusEstimation.objects.get(pk = 10)                    
-            elif count_success > 0:
-                self.status = RefStatusEstimation.objects.get(pk = 8)                    
-            elif self.page_soglasovanie.price_before_kd == 0:
-                self.status = RefStatusEstimation.objects.get(pk = 3)
-            elif self.page_soglasovanie.price_before_kd > 0 and not self.page_soglasovanie.no_diagnostica and self.page_soglasovanie.comment_diagnostica == '':
-                self.status = RefStatusEstimation.objects.get(pk = 5)
-            elif self.page_soglasovanie.price_after_kd == 0 and (self.page_soglasovanie.no_diagnostica or self.page_soglasovanie.comment_diagnostica != ''):
-                self.status = RefStatusEstimation.objects.get(pk = 6)
-            elif self.page_soglasovanie.price_after_kd > 0:
-                self.status = RefStatusEstimation.objects.get(pk = 4)   
-        else:
-            self.status = RefStatusEstimation.objects.get(pk = 2)
+        if self.no_auto_status == None or self.no_auto_status == False:
+            if self.estimation == None:
+                self.status = RefStatusEstimation.objects.get(pk = 1)
+            elif self.estimation.vin == '' and self.estimation.number_body == '':
+                self.status = RefStatusEstimation.objects.get(pk = 1)
+            elif self.estimation != None and self.estimation.returned:
+                self.status = RefStatusEstimation.objects.get(pk = 7)
+            elif self.estimation != None and self.estimation.page_remote != None and self.estimation.page_remote.end_estimation == None:
+                self.status = RefStatusEstimation.objects.get(pk = 9) 
+            elif self.estimation != None and self.estimation.end_estimation != None and self.page_soglasovanie != None:
+                count_success = DocLO.objects.filter(rlk = self.rlk).filter(active = True).count()
+                count_success_answer = RegInteractivOcenkaRLK.objects.exclude(rlk = self.rlk).filter(estimation = self.estimation).filter(status__id = 8).count()
+                if count_success_answer > 0:
+                    self.status = RefStatusEstimation.objects.get(pk = 10)                    
+                elif count_success > 0:
+                    self.status = RefStatusEstimation.objects.get(pk = 8)                    
+                elif self.page_soglasovanie.price_before_kd == 0:
+                    self.status = RefStatusEstimation.objects.get(pk = 3)
+                elif self.page_soglasovanie.price_before_kd > 0 and not self.page_soglasovanie.no_diagnostica and self.page_soglasovanie.comment_diagnostica == '':
+                    self.status = RefStatusEstimation.objects.get(pk = 5)
+                elif self.page_soglasovanie.price_after_kd == 0 and (self.page_soglasovanie.no_diagnostica or self.page_soglasovanie.comment_diagnostica != ''):
+                    self.status = RefStatusEstimation.objects.get(pk = 6)
+                elif self.page_soglasovanie.price_after_kd > 0:
+                    self.status = RefStatusEstimation.objects.get(pk = 4)   
+            else:
+                self.status = RefStatusEstimation.objects.get(pk = 2)
 
         try:
             if self.rlk != None and self.estimation != None:

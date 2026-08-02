@@ -199,7 +199,7 @@ def _build_history_row(item):
         'id': item.pk,
         'date': item.date,
         'type_calculation': item.price_calculation,
-        'type_label': PRICE_CALCULATION_LABELS.get(item.price_calculation, item.price_calculation or '—'),
+        'type_label': item.price_calculation, #PRICE_CALCULATION_LABELS.get(item.price_calculation, item.price_calculation or '—'),
         'trigger': item.trigger,
         'trigger_label': TRIGGER_LABELS.get(item.trigger, item.trigger or '—'),
         'author_name': author_name or '—',

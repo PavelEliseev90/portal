@@ -577,11 +577,12 @@
                             <select class="search-select kors-form-control" id="store_id" name="store_id">
                               <option selected></option>
                               {% for store in params.selected.stores %}
-                                <option value="{{store.slug}}" {% if params.interactiv_rlk.store.id == store.slug %} selected {% endif %}> {{store.name}} </option>
+                                <option value="{{store.slug_store}}" {% if params.interactiv_rlk.store.id == store.slug_store %} selected {% endif %}> {{store.slug_name}} </option>
                               {% endfor %}
                             </select>
                             <label class="fs-6" for="store_id">Стоянка</label>
                           </div>
+
 
                         </div>
 

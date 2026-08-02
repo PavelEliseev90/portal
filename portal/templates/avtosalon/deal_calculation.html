@@ -433,11 +433,27 @@
 
         {% if params.approval_status_label %}
 
-        
-        
-
         <div class="deal-section">
-          <h6 class="deal-section-title">Статус согласования</h6>
+          <h6 class="deal-section-title">Статус согласования {% if params.approval_km_rule_total is not None %}
+            <div class="small text mt-2 fs-8">
+              КВП {{ params.calc.kvp|floatformat:"2g" }} ₽
+              {% if params.approval_kvp_ok %}
+                выше рассчитанного КМ.
+                {% if params.approval_auto_min_dc_ok %}
+                  Оба условия автосогласования выполнены.
+                {% else %}
+                  КВП не выше мин. КМ ДЦ — автоматическое согласование невозможно.
+                {% endif %}
+              {% else %}
+                не выше рассчитанного КМ — автоматическое согласование невозможно.
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="small text mt-2">Рассчитанный КМ по правилу не определён — автоматическое согласование невозможно.</div>
+            {% endif %}</h6>
+
+          
+
           <div class="car-info-item mb-2">
             <span class="badge {% if params.approval_status == 'director_rejected' or params.approval_status == 'uk_rejected' %}bg-danger{% elif params.approval_final_without_uk or params.approval_status == 'uk_approved' %}bg-success{% elif params.approval_status == 'pending_uk' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ params.approval_status_label }}</span>
           </div>
@@ -526,6 +542,7 @@
           </form>
 
         </div>
+
         {% endif %}
 
       </div>
@@ -535,9 +552,10 @@
         <div id='km_result' class="deal-section {% if params.approval_kvp_ok %}bg-success{% else %}bg-danger{% endif %} bg-opacity-75 text-white">
           
           <h3 class="deal-section-title text-white">Минимальный КМ (правило)</h3>
-
+          
+          <div class="mb-2">
           {% if params.cumulative_data.brand_km %}
-            <div class="mb-2">
+            
               <div class="price-item">
                 <span class="price-item-label text-white opacity-75">Бренд:</span>
                 <span class="price-item-value text-white">{{ params.cumulative_data.brand_km.brand }}</span>
@@ -550,84 +568,85 @@
                 <span class="price-item-label text-white opacity-75">Мин. КМ ДЦ:</span>
                 <span class="price-item-value text-white">{{ params.cumulative_data.brand_km.km_min_dc|floatformat:"2g" }}</span>
               </div>
+            
+            {% else %}
+              <div class="metric-card-value fs-7 text-white opacity-75 mb-2">Нет настроек КМ по бренду</div>
+            {% endif %}
+            
+            <div class="price-item">
+              <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
+                Итог по правилу{% if params.km_breakdown.available %} ({% if params.km_breakdown.with_trade_in %}с trade-in{% else %}без trade-in{% endif %}){% endif %}:
+                {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
+                <button type="button"
+                        class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#kmBreakdownModal"
+                        title="Разбор расчёта КМ">
+                  <span class="icon-doc"></span>
+                
+                </button>
+                {% endif %}
+              </span>
+              {% if params.approval_km_rule_total is not None %}
+                <span class="price-item-value text-white">{{ params.approval_km_rule_total|floatformat:"2g" }} ₽</span>
+              {% else %}
+                <span class="price-item-value text-white">не рассчитан</span>
+              {% endif %} 
+              
             </div>
-          {% else %}
-            <div class="metric-card-value fs-7 text-white opacity-75 mb-2">Нет настроек КМ по бренду</div>
-          {% endif %}
+
+            <div class="price-item">
+              <span class="price-item-label text-white opacity-75">Согласуемое КВП:</span>
+              <span class="price-item-value text-white">{{ params.calc.kvp|floatformat:"2g" }} ₽</span>
+            </div>
+            
+
+          </div>
           
-          <div class="price-item">
-            <span class="price-item-label text-white opacity-75 d-inline-flex align-items-center gap-1 flex-wrap">
-              Итог по правилу{% if params.approval_km_rule_frozen %} <span class="small opacity-75">(снимок)</span>{% endif %}{% if params.km_breakdown.available %} ({% if params.km_breakdown.with_trade_in %}с trade-in{% else %}без trade-in{% endif %}){% endif %}:
-              {% if user.profiles.price_car_new_all and params.km_breakdown.available %}
-              <button type="button"
-                      class="btn btn-link btn-sm p-0 text-white text-decoration-none opacity-75 lh-1"
-                      data-bs-toggle="modal"
-                      data-bs-target="#kmBreakdownModal"
-                      title="Разбор расчёта КМ">
-                <span class="icon-doc"></span>
-                <span class="small">Подробно</span>
-              </button>
-              {% endif %}
-            </span>
-            {% if params.approval_km_rule_total is not None %}
-              <span class="price-item-value text-white">{{ params.approval_km_rule_total|floatformat:"2g" }} ₽</span>
-            {% else %}
-              <span class="price-item-value text-white">не рассчитан</span>
-            {% endif %}
-          </div>
-
-          {% if params.approval_km_rule_total is not None %}
-          <div class="small text-white mt-2">
-            КВП {{ params.calc.kvp|floatformat:"0g" }} ₽
-            {% if params.approval_kvp_ok %}
-              выше рассчитанного КМ.
-              {% if params.approval_auto_min_dc_ok %}
-                Оба условия автосогласования выполнены.
-              {% else %}
-                КВП не выше мин. КМ ДЦ — автоматическое согласование невозможно.
-              {% endif %}
-            {% else %}
-              не выше рассчитанного КМ — автоматическое согласование невозможно.
-            {% endif %}
-          </div>
-          {% else %}
-          <div class="small text-white mt-2">Рассчитанный КМ по правилу не определён — автоматическое согласование невозможно.</div>
-          {% endif %}
-
-          {% if user.profiles.price_car_new_all %}
-          <form method="post" class="mt-2 mb-0">
-            {% csrf_token %}
-            <input type="hidden" name="recalculate_km" value="1">
-            <button type="submit" class="btn btn-sm btn-outline-light w-100"
-                    title="Пересчитать расчётный КМ с учётом trade-in и заново проверить автосогласование">
-              Пересчитать КМ
-            </button>
-          </form>
-          {% endif %}
-
-          {% if params.client_suggestions_enabled %}
-          <div class="mt-3" id="clientSuggestionsWrap">
-            <button type="button"
-                    class="btn btn-calculate-sm w-100 text-white border-white"
-                    id="clientSuggestionsBtn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#clientSuggestionsModal"
-                    data-count-url="{% url 'avtosalon:deal_calc_client_suggestions_count' params.calc.pk %}"
-                    data-list-url="{% url 'avtosalon:deal_calc_client_suggestions_list' params.calc.pk %}"
-                    disabled>
-              <span class="icon-doc"></span>
-              Предложения для клиента
-              <span id="clientSuggestionsCount" class="badge text-bg-light text-dark ms-1">…</span>
-            </button>
-            <div class="small text-white opacity-75 mt-1">
-              {% if params.car.complectation_autoru_id %}
-              Альтернативы той же модели и комплектации на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
-              {% else %}
-              Альтернативы той же модели на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
-              {% endif %}
+          <div class="row g-1">
+            {% if user.profiles.price_car_new_all %}
+              <div class="col-12 col-sm-auto">
+                <form method="post" class="">
+                {% csrf_token %}
+                <input type="hidden" name="recalculate_km" value="1">
+                <button type="submit" class="btn btn-calculate-sm"
+                        title="Пересчитать расчётный КМ с учётом trade-in и заново проверить автосогласование">
+                  Пересчитать КМ
+                </button>
+              </form>
             </div>
+            {% endif %}
+            {% if params.client_suggestions_enabled %}
+              <div class="col-12 col-sm-auto">
+                <div class="" id="clientSuggestionsWrap">
+                  <button type="button"
+                          class="btn btn-calculate-sm "
+                          id="clientSuggestionsBtn"
+                          data-bs-toggle="modal"
+                          data-bs-target="#clientSuggestionsModal"
+                          data-count-url="{% url 'avtosalon:deal_calc_client_suggestions_count' params.calc.pk %}"
+                          data-list-url="{% url 'avtosalon:deal_calc_client_suggestions_list' params.calc.pk %}"
+                          disabled>
+                    <span class="icon-doc"></span>
+                    Альтернативы
+                    <span id="clientSuggestionsCount" class="badge text-bg-light text-dark ms-1">…</span>
+                  </button>
+                  <!--
+                  <div class="small text-white opacity-75 mt-1">
+                    {% if params.car.complectation_autoru_id %}
+                    Альтернативы той же модели и комплектации на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
+                    {% else %}
+                    Альтернативы той же модели на складе ДЦ (товарный, статус «Склад») с более низким расчётным КМ. Жёлтые автомобили — в начале списка.
+                    {% endif %}
+                  </div>
+                  -->
+                </div>
+              </div>
+            {% endif %}
           </div>
-          {% endif %}
+          
+
+          
           
         </div>
 
@@ -692,12 +711,12 @@
           </div>
           -->
 
-          <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
+          <div style=" padding-top: 1.5rem; border-top: 2px solid #e0e7ef;">
             <div class="total-card">
               <p style="margin: 0 0 0.5rem 0; font-size: 1rem; opacity: 0.9;">Итого по сделке:</p>
               <h2 id="itog">{{ params.calc.amount|default:params.total_amount|floatformat:"0g" }} ₽</h2>
               <br>
-              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽{% if params.approval_km_rule_total is not None %} · итог по правилу {{ params.approval_km_rule_total|floatformat:"0g" }} ₽{% if params.approval_km_rule_frozen %} <span class="small text-muted">(снимок)</span>{% endif %}{% endif %} · мин. КМ ДЦ {{ params.approval_min_km_dc|floatformat:"0g" }} ₽</h5>
+              <h5 id="itog_km">КВ {{ params.calc.kvp|floatformat:"0g" }} ₽{% if params.approval_km_rule_total is not None %} {% endif %} </h5>
             </div>
           </div>
 
