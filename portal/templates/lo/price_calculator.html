@@ -154,9 +154,19 @@
         {% if params.result.changed_levers %}
         Изменены: {{ params.result.changed_levers|join:", " }}.
         {% else %}
-        Рычаги как в текущих настройках (Δ должны быть около нуля).
+        Рычаги как в текущих настройках — what-if не гонялся (быстрый путь).
         {% endif %}
       </p>
+      {% if params.result.top_errors %}
+      <div class="alert alert-warning py-2 small mb-3">
+        Ошибки: {{ params.result.top_errors|join:" · " }}
+        {% if params.result.sample_errors %}
+        <ul class="mb-0 mt-1">
+          {% for e in params.result.sample_errors %}<li><code>{{ e }}</code></li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endif %}
       <div class="row g-3">
         {% for b in params.result.badges %}
         <div class="col-6 col-md-3 col-xl-2">
