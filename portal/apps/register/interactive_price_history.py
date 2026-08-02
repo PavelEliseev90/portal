@@ -228,6 +228,13 @@ def _build_history_row(item):
         'amount_recovery': item.amount_recovery or (
             (item.amount_podgotovka or 0) + (item.amount_ss or 0) + (item.amount_mcu or 0)
         ),
+        'iznos': bool(getattr(item, 'iznos', False)),
+        'taxi': bool(getattr(item, 'taxi', False)),
+        'k_i': getattr(item, 'k_i', 0) or 0,
+        'iznos_price': getattr(item, 'iznos_price', 0) or 0,
+        'iznos_data': getattr(item, 'iznos_data', 0) or 0,
+        'iznos_with_ss': bool(getattr(item, 'iznos_with_ss', False)),
+        'iznos_ss_compensation': getattr(item, 'iznos_ss_compensation', 0) or 0,
         'comment': item.comment or '',
     }
 
@@ -263,6 +270,29 @@ def record_interactive_price_recalculation(
             snapshot.pop(key, None)
         recovery = _resolve_recovery_amounts(safe_result, soglasovanie)
 
+        iznos_flag = False
+        taxi_flag = False
+        k_i_val = 0
+        if estimation is not None:
+            iznos_flag = bool(getattr(estimation, 'iznos', False))
+            taxi_flag = bool(getattr(estimation, 'taxi', False))
+            k_i_val = getattr(estimation, 'k_i', 0) or 0
+        if safe_result:
+            if 'iznos' in safe_result:
+                iznos_flag = bool(safe_result.get('iznos'))
+            if 'taxi' in safe_result:
+                taxi_flag = bool(safe_result.get('taxi'))
+            if safe_result.get('k_i') not in (None, ''):
+                try:
+                    k_i_val = float(safe_result.get('k_i') or 0)
+                except (TypeError, ValueError):
+                    pass
+
+        iznos_price_val = (safe_result.get('iznos_price') if safe_result else 0) or 0
+        iznos_data_val = (safe_result.get('iznos_data') if safe_result else 0) or iznos_price_val or 0
+        iznos_with_ss_val = bool(safe_result.get('iznos_with_ss')) if safe_result else False
+        iznos_ss_comp_val = (safe_result.get('iznos_ss_compensation') if safe_result else 0) or 0
+
         record = RegInteractivOcenkaPrice(
             date=timezone.now(),
             price_calculation=type_calculation or '',
@@ -286,6 +316,13 @@ def record_interactive_price_recalculation(
             discount_torg=(safe_result.get('discount_torg') if safe_result else None) or getattr(soglasovanie, 'discount_torg', 0) or 0,
             finance_price=(safe_result.get('finance_price') if safe_result else None) or getattr(soglasovanie, 'finance_price', 0) or 0,
             zachita_ot_ubitka=(safe_result.get('zachita_ot_ubitka') if safe_result else None) or getattr(soglasovanie, 'zachita_ot_ubitka', 0) or 0,
+            iznos=iznos_flag,
+            taxi=taxi_flag,
+            k_i=k_i_val,
+            iznos_price=iznos_price_val,
+            iznos_data=iznos_data_val,
+            iznos_with_ss=iznos_with_ss_val,
+            iznos_ss_compensation=iznos_ss_comp_val,
             raw_calculation_json=safe_result,
             **snapshot,
         )
@@ -593,6 +630,13 @@ def _history_values(item):
         'amount_ss': item.amount_ss or 0,
         'amount_mcu': item.amount_mcu or 0,
         'amount_recovery': _recovery_amount(item),
+        'iznos': bool(getattr(item, 'iznos', False)),
+        'taxi': bool(getattr(item, 'taxi', False)),
+        'k_i': getattr(item, 'k_i', 0) or 0,
+        'iznos_price': getattr(item, 'iznos_price', 0) or 0,
+        'iznos_data': getattr(item, 'iznos_data', 0) or 0,
+        'iznos_with_ss': bool(getattr(item, 'iznos_with_ss', False)),
+        'iznos_ss_compensation': getattr(item, 'iznos_ss_compensation', 0) or 0,
     }
 
 
@@ -740,6 +784,8 @@ def build_autohub_first_last_page(
                 'price_auto_1', 'price_auto_2', 'price_auto_3',
                 'price_before_kd', 'price_after_kd',
                 'amount_podgotovka', 'amount_ss', 'amount_mcu', 'amount_recovery',
+                'iznos', 'taxi', 'k_i', 'iznos_price', 'iznos_data',
+                'iznos_with_ss', 'iznos_ss_compensation',
             )
             .order_by('estimation_id', 'date', 'id')
         )
@@ -802,12 +848,21 @@ def build_autohub_first_last_page(
         influence_costs = delta_recovery
         # Остаток изменения цены выкупа после затрат
         residual_price = delta_price - influence_costs
+        delta_iznos_price = last_vals['iznos_price'] - first_vals['iznos_price']
+        delta_iznos_data = last_vals['iznos_data'] - first_vals['iznos_data']
+        delta_iznos_ss_comp = (
+            last_vals['iznos_ss_compensation'] - first_vals['iznos_ss_compensation']
+        )
         if kf_changed:
             influence_kf = residual_price
             influence_iznos_ss = 0
         else:
             influence_kf = 0
-            influence_iznos_ss = residual_price
+            # Если в истории есть суммы износа — берём их Δ, иначе остаток цены
+            if first_vals['iznos_price'] or last_vals['iznos_price'] or first_vals['iznos_data'] or last_vals['iznos_data']:
+                influence_iznos_ss = delta_iznos_price if (first_vals['iznos_price'] or last_vals['iznos_price']) else delta_iznos_data
+            else:
+                influence_iznos_ss = residual_price
 
         if delta_price or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
             changed_count += 1
@@ -854,6 +909,9 @@ def build_autohub_first_last_page(
             'influence_costs': influence_costs,
             'influence_kf': influence_kf,
             'influence_iznos_ss': influence_iznos_ss,
+            'delta_iznos_price': delta_iznos_price,
+            'delta_iznos_data': delta_iznos_data,
+            'delta_iznos_ss_compensation': delta_iznos_ss_comp,
             'kf_changed': kf_changed,
         })
 

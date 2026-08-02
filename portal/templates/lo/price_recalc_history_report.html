@@ -161,9 +161,12 @@
             <th class="text-end">БЦП</th>
             <th class="text-end">Цена выкупа</th>
             <th class="text-end">Затраты</th>
+            <th class="text-center">Износ</th>
+            <th class="text-end">Сумма износа</th>
+            <th class="text-end">Компенс. СС</th>
             <th class="text-end" title="затраты стало − было">Влияние затрат</th>
             <th class="text-end" title="Δ цены выкупа − влияние затрат, если КФ изменился">Влияние КФ</th>
-            <th class="text-end" title="Δ цены выкупа − влияние затрат, если КФ не изменился">Влияние повышенного износа СС</th>
+            <th class="text-end" title="Δ износа / остаток цены, если КФ не изменился">Влияние повышенного износа СС</th>
             <th class="text-end">N</th>
           </tr>
         </thead>
@@ -220,6 +223,21 @@
             <td class="text-end pair-cell {% if row.delta_amount_recovery %}changed {% if row.delta_amount_recovery > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
               {{ row.first.amount_recovery|floatformat:0 }}<span class="sep">/</span>{{ row.last.amount_recovery|floatformat:0 }}
             </td>
+            <td class="text-center small">
+              {% if row.first.iznos or row.last.iznos %}
+                {% if row.first.iznos %}да{% else %}нет{% endif %}<span class="sep">/</span>{% if row.last.iznos %}да{% else %}нет{% endif %}
+                {% if row.first.taxi or row.last.taxi %}<div class="text-muted">такси</div>{% endif %}
+                {% if row.first.k_i or row.last.k_i %}<div class="text-muted">k_i {{ row.first.k_i }} / {{ row.last.k_i }}</div>{% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="text-end pair-cell {% if row.delta_iznos_price %}changed {% if row.delta_iznos_price > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.iznos_price|floatformat:0 }}<span class="sep">/</span>{{ row.last.iznos_price|floatformat:0 }}
+            </td>
+            <td class="text-end pair-cell {% if row.delta_iznos_ss_compensation %}changed {% if row.delta_iznos_ss_compensation > 0 %}diff-positive{% else %}diff-negative{% endif %}{% endif %}">
+              {{ row.first.iznos_ss_compensation|floatformat:0 }}<span class="sep">/</span>{{ row.last.iznos_ss_compensation|floatformat:0 }}
+            </td>
             <td class="text-end {% if row.influence_costs > 0 %}diff-positive{% elif row.influence_costs < 0 %}diff-negative{% else %}diff-zero{% endif %}">
               {% if row.influence_costs > 0 %}+{% endif %}{{ row.influence_costs|floatformat:0 }}
             </td>
@@ -233,7 +251,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="25" class="text-center py-5 text-muted">
+            <td colspan="28" class="text-center py-5 text-muted">
               Нет оценок с ≥2 ненулевыми пересчётами Autohub с одной ЦНА. Измените фильтры или дождитесь массового пересчёта.
             </td>
           </tr>
