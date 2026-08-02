@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
+from refs.price_groups import price_group_code as _price_group_code_from_zg
 from profiles.models import Profiles
 from documents.models import DocZNWorkKA, DocZNProductKA, DocZNServicesKA, DocServiceItem, DocCarShipment, DocCarAgreement, DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket, get_info_max, get_info_max_znak, kors_estimation_data
@@ -184,6 +185,14 @@ def _get_int(value):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _zg_settings_suffix(zg) -> str:
+    """Суффикс полей RegEstimationsSettings: 1200, 5001 — без пробелов из «1 200» / «5 000+»."""
+    code = _price_group_code_from_zg(zg)
+    if code:
+        return code
+    return str(zg or '').replace(' ', '').replace('+', '')
 
 
 def _build_tradein_querysets(date_start, date_end, unit_id=None, staff_id=None, analyst_id=None, type_reception_id=None):
@@ -7542,13 +7551,14 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         # Безопасность - расчет для каждого пункта, если выбрано "не исправны" или "есть замечания"
         # Используем только минимальную сумму опасности для обоих случаев
         if estimation.page_test_drive != None and (estimation.page_test_drive.airbag == 0 or estimation.page_test_drive.airbag == 2):
-            # Получаем значения для текущей ценовой группы
-            airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{zg}', 0)
-            airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{zg}', 0)
-            airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{zg}', 0)
-            airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{zg}', 0)
-            seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{zg}', 0)
-            srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{zg}', 0)
+            # Получаем значения для текущей ценовой группы (код без пробелов: 1200, не «1 200»)
+            _zg_sfx = _zg_settings_suffix(zg)
+            airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{_zg_sfx}', 0)
+            airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{_zg_sfx}', 0)
+            airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{_zg_sfx}', 0)
+            airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{_zg_sfx}', 0)
+            seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{_zg_sfx}', 0)
+            srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{_zg_sfx}', 0)
             
             # Подушка водителя
             if estimation.page_test_drive.airbag_driver_issue and airbag_driver_danger_amount_min > 0:
@@ -8820,6 +8830,8 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         return price
     except Exception as exc:
         error = f'{type(exc).__name__}: {exc}'
+        if (trigger or '').startswith('price_calculator'):
+            raise
         return None
 
 
@@ -10455,13 +10467,14 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         # Безопасность - расчет для каждого пункта, если выбрано "не исправны" или "есть замечания"
         # Используем только минимальную сумму опасности для обоих случаев
         if cd.page_test_drive_copy != None and (cd.page_test_drive_copy.airbag == 0 or cd.page_test_drive_copy.airbag == 2):
-            # Получаем значения для текущей ценовой группы
-            airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{zg}', 0)
-            airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{zg}', 0)
-            airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{zg}', 0)
-            airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{zg}', 0)
-            seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{zg}', 0)
-            srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{zg}', 0)
+            # Получаем значения для текущей ценовой группы (код без пробелов: 1200, не «1 200»)
+            _zg_sfx = _zg_settings_suffix(zg)
+            airbag_driver_danger_amount_min = getattr(estimation_settings, f'airbag_driver_danger_amount_min_{_zg_sfx}', 0)
+            airbag_passenger_danger_amount_min = getattr(estimation_settings, f'airbag_passenger_danger_amount_min_{_zg_sfx}', 0)
+            airbag_side_danger_amount_min = getattr(estimation_settings, f'airbag_side_danger_amount_min_{_zg_sfx}', 0)
+            airbag_knee_danger_amount_min = getattr(estimation_settings, f'airbag_knee_danger_amount_min_{_zg_sfx}', 0)
+            seat_belt_restore_danger_amount_min = getattr(estimation_settings, f'seat_belt_restore_danger_amount_min_{_zg_sfx}', 0)
+            srs_block_danger_amount_min = getattr(estimation_settings, f'srs_block_danger_amount_min_{_zg_sfx}', 0)
             
             # Подушка водителя
             if cd.page_test_drive_copy.airbag_driver_issue and airbag_driver_danger_amount_min > 0:
@@ -13239,7 +13252,7 @@ def price_calculator(request):
             lever['changed'] = bool(base_v) != bool(lever['value'])
         else:
             try:
-                lever['changed'] = abs(float(lever['value'] or 0) - float(base_v or 0)) >= 1e-6
+                lever['changed'] = abs(float(lever['value'] or 0) - float(base_v or 0)) >= 0.05
             except (TypeError, ValueError):
                 lever['changed'] = False
 
@@ -13270,8 +13283,9 @@ def price_calculator(request):
         'result': result,
         'ran': bool(do_run),
         'hint': (
-            'Пересчёт Autohub без записи. «Было» — текущие настройки, «стало» — с вашими рычагами. '
-            'ДЦ в фильтрах задаёт и выборку, и стартовые значения параметров.'
+            'Пересчёт Autohub без записи. «Было» — авторасчёт с согласования (если есть), '
+            'иначе текущий пересчёт; «стало» — с вашими рычагами. '
+            'ДЦ задаёт выборку и стартовые параметры.'
         ),
     }
     return render(request, 'lo/price_calculator.html', {'params': params})

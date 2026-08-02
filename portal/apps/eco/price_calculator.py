@@ -1,18 +1,16 @@
 """Визуальный what-if калькулятор выкупа по ЦГ (без записи в БД)."""
 from __future__ import annotations
 
-from copy import copy
+from collections import Counter
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from django.db.models import Q
 
 from refs.price_groups import PRICE_GROUP_RANGES, RANGE_BY_CODE, zg_display_from_price
 
-# Код ЦГ в полях RefUnit / RegEstimationsSettings
 ZG_CODES = [row['code'] for row in PRICE_GROUP_RANGES]
 
-# Суффиксы настроек повреждений / доплат для выбранной ЦГ
 SETTINGS_ZG_AMOUNT_FIELDS = [
     ('windshield', 'Лобовое стекло', '₽'),
     ('windshield_heat', 'Лобовое с подогревом', '₽'),
@@ -54,23 +52,26 @@ for prefix, title in _DAMAGE_PARTS:
 
 
 def zg_code_from_param(raw) -> Optional[str]:
+    from refs.price_groups import price_group_code
+    code = price_group_code(raw)
+    if code:
+        return code
     value = str(raw or '').strip()
     if not value:
         return None
-    compact = value.replace(' ', '')
+    compact = value.replace(' ', '').replace('+', '')
     for row in PRICE_GROUP_RANGES:
-        if value == row['code'] or value == row['name'] or compact == row['code'] or compact == row['name'].replace(' ', ''):
+        if compact == row['code'] or compact == row['name'].replace(' ', '').replace('+', ''):
             return row['code']
     aliases = {
         '5000+': '5001',
-        '5 000+': '5001',
-        '3001+': '3000',
-        '3 001+': '3000',
+        '5000': '5000',
+        '3001': '3000',
     }
-    return aliases.get(value) or aliases.get(compact)
+    return aliases.get(compact)
 
 
-def zg_price_q(zg_code: str, field: str = 'estimation__hub_avg') -> Q:
+def _range_q(field: str, zg_code: str) -> Q:
     rng = RANGE_BY_CODE[zg_code]
     min_p = float(rng['min_price_rub'] or 0)
     max_p = rng['max_price_rub']
@@ -81,6 +82,16 @@ def zg_price_q(zg_code: str, field: str = 'estimation__hub_avg') -> Q:
     return Q(**{f'{field}__gt': min_p, f'{field}__lte': max_p})
 
 
+def zg_price_q(zg_code: str) -> Q:
+    """ЦНА на оценке или (если 0) на remote."""
+    on_est = _range_q('estimation__hub_avg', zg_code)
+    on_remote = (
+        (Q(estimation__hub_avg__isnull=True) | Q(estimation__hub_avg=0))
+        & _range_q('estimation__page_remote__hub_avg', zg_code)
+    )
+    return on_est | on_remote
+
+
 def _num(value, default=0.0):
     try:
         if value in (None, ''):
@@ -88,6 +99,10 @@ def _num(value, default=0.0):
         return float(value)
     except (TypeError, ValueError):
         return float(default)
+
+
+def _same_num(a, b, eps=0.05):
+    return abs(_num(a) - _num(b)) < eps
 
 
 def _pct_delta(before, after):
@@ -114,7 +129,6 @@ def _badge(label, before, after, *, unit='₽'):
 
 
 def lever_definitions(zg_code: str) -> list[dict]:
-    """Список рычагов UI: key, label, unit, group, source."""
     code = zg_code
     levers = [
         {'key': 'kf', 'label': 'ИРЦ ТХТ (КФ)', 'unit': '%', 'group': 'buyout', 'source': 'dc'},
@@ -151,7 +165,6 @@ def lever_definitions(zg_code: str) -> list[dict]:
 
 
 def read_baseline_levers(unit, settings_obj, zg_code: str) -> dict:
-    """Текущие значения рычагов с ДЦ + профиля настроек."""
     code = zg_code
     kf = getattr(unit, f'correction_txt_{code}', None)
     if kf in (None, 0):
@@ -184,7 +197,6 @@ def read_baseline_levers(unit, settings_obj, zg_code: str) -> dict:
 
 
 def parse_overrides_from_request(get, zg_code: str, baseline: dict) -> dict:
-    """Разбор POST/GET overrides; пустые → baseline."""
     out = dict(baseline)
     for lever in lever_definitions(zg_code):
         key = lever['key']
@@ -198,58 +210,98 @@ def parse_overrides_from_request(get, zg_code: str, baseline: dict) -> dict:
     return out
 
 
-def apply_overrides_to_unit(unit, zg_code: str, overrides: dict):
-    """Копия ДЦ с подменёнными ИРЦ/защитами для ЦГ."""
-    dc = copy(unit)
-    code = zg_code
-    kf = overrides.get('kf')
-    ss = overrides.get('percent_ss')
-    torg = overrides.get('percent_torg')
-    if kf is not None:
-        setattr(dc, f'correction_txt_{code}', kf)
-        setattr(dc, f'ratio_avtohub_txt_{code}', kf)
-    if ss is not None:
-        setattr(dc, f'markup_txt_{code}', ss)
-        setattr(dc, f'percent_txt_{code}', ss)
-    if torg is not None:
-        setattr(dc, f'max_discount_bargain_percent_{code}', torg)
-        setattr(dc, f'percent_torg_txt_{code}', torg)
-    return dc
+def changed_lever_labels(zg_code: str, baseline: dict, effective: dict) -> list:
+    labels = []
+    for lever in lever_definitions(zg_code):
+        key = lever['key']
+        b = baseline.get(key)
+        a = effective.get(key)
+        if lever['unit'] == 'bool':
+            if bool(b) != bool(a):
+                labels.append(lever['label'])
+        elif not _same_num(a, b):
+            labels.append(lever['label'])
+    return labels
 
 
-def apply_overrides_to_settings(settings_obj, zg_code: str, overrides: dict):
-    """Копия профиля настроек с подменой полей ЦГ."""
-    st = copy(settings_obj)
+def _unit_override_fields(zg_code: str, overrides: dict) -> dict:
     code = zg_code
+    fields = {}
+    if 'kf' in overrides:
+        fields[f'correction_txt_{code}'] = overrides['kf']
+        fields[f'ratio_avtohub_txt_{code}'] = overrides['kf']
+    if 'percent_ss' in overrides:
+        fields[f'markup_txt_{code}'] = overrides['percent_ss']
+        fields[f'percent_txt_{code}'] = overrides['percent_ss']
+    if 'percent_torg' in overrides:
+        fields[f'max_discount_bargain_percent_{code}'] = overrides['percent_torg']
+        fields[f'percent_torg_txt_{code}'] = overrides['percent_torg']
+    return fields
+
+
+def _settings_override_fields(zg_code: str, overrides: dict) -> dict:
+    code = zg_code
+    fields = {}
     if 'auction_kf' in overrides:
-        setattr(st, f'auction_kf_{code}', overrides['auction_kf'])
+        fields[f'auction_kf_{code}'] = overrides['auction_kf']
     if 'iznos_with_ss' in overrides:
-        st.iznos_with_ss = bool(overrides['iznos_with_ss'])
+        fields['iznos_with_ss'] = bool(overrides['iznos_with_ss'])
     if 'financity_all' in overrides:
-        st.all_percent_financity = overrides['financity_all']
+        fields['all_percent_financity'] = overrides['financity_all']
     if 'days_stok_all' in overrides:
-        st.all_days_stok_financity = overrides['days_stok_all']
+        fields['all_days_stok_financity'] = overrides['days_stok_all']
     if 'financity_zg' in overrides:
-        setattr(st, f'percent_financity_{code}', overrides['financity_zg'])
+        fields[f'percent_financity_{code}'] = overrides['financity_zg']
     if 'days_stok_zg' in overrides:
-        setattr(st, f'days_stok_financity_{code}', overrides['days_stok_zg'])
+        fields[f'days_stok_financity_{code}'] = overrides['days_stok_zg']
     if 'izp' in overrides:
-        setattr(st, f'izp_{code}', overrides['izp'])
+        fields[f'izp_{code}'] = overrides['izp']
     if 'izp_v' in overrides:
-        setattr(st, f'izp_{code}_v', overrides['izp_v'])
+        fields[f'izp_{code}_v'] = overrides['izp_v']
     for key, _label, _unit in SETTINGS_ZG_AMOUNT_FIELDS:
         ov_key = f'amt_{key}'
         if ov_key in overrides:
-            setattr(st, f'{key}_{code}', overrides[ov_key])
+            fields[f'{key}_{code}'] = overrides[ov_key]
     for key, _label, _unit in SETTINGS_ZG_DAMAGE_FIELDS:
         ov_key = f'dmg_{key}'
         if ov_key in overrides:
-            setattr(st, f'{key}_{code}', overrides[ov_key])
-    return st
+            fields[f'{key}_{code}'] = overrides[ov_key]
+    return fields
+
+
+def _patch_attrs(obj, fields: dict) -> dict:
+    """Временный setattr, возвращает старые значения для отката."""
+    backup = {}
+    for name, value in fields.items():
+        backup[name] = getattr(obj, name, None)
+        setattr(obj, name, value)
+    return backup
+
+
+def _restore_attrs(obj, backup: dict):
+    for name, value in backup.items():
+        setattr(obj, name, value)
+
+
+def _resolve_unit(rlk):
+    unit = getattr(rlk, 'unit', None)
+    if unit is not None:
+        return unit
+    doc = getattr(rlk, 'rlk', None)
+    if doc is not None:
+        unit = getattr(doc, 'unit', None) or getattr(doc, 'unit_dc', None)
+        if unit is not None:
+            return unit
+    estimation = getattr(rlk, 'estimation', None)
+    if estimation is not None:
+        remote = getattr(estimation, 'page_remote', None)
+        if remote is not None and getattr(remote, 'unit', None) is not None:
+            return remote.unit
+    return None
 
 
 def _snapshot_from_result(result: Optional[dict]) -> dict:
-    if not result:
+    if not result or not isinstance(result, dict) or result.get('__error__'):
         return {
             'ok': False,
             'estimation_price': 0,
@@ -287,6 +339,41 @@ def _snapshot_from_result(result: Optional[dict]) -> dict:
     }
 
 
+def _snapshot_from_soglasovanie(sog, estimation=None) -> Optional[dict]:
+    if sog is None:
+        return None
+    price = _num(getattr(sog, 'price_auto_2', 0))
+    zna = _num(getattr(sog, 'price_zna_2', 0))
+    if price <= 0 and zna <= 0:
+        return None
+    pod = _num(getattr(sog, 'amount_podgotovka', 0))
+    ss = _num(getattr(sog, 'amount_ss', 0))
+    mcu = _num(getattr(sog, 'amount_mcu', 0))
+    recovery = _num(getattr(sog, 'amount_recovery', 0)) or (pod + ss + mcu)
+    if zna <= 0 and estimation is not None:
+        zna = _num(getattr(estimation, 'hub_avg', 0))
+        if zna <= 0:
+            remote = getattr(estimation, 'page_remote', None)
+            zna = _num(getattr(remote, 'hub_avg', 0)) if remote else 0
+    return {
+        'ok': True,
+        'estimation_price': price,
+        'cna_expenses': _num(getattr(sog, 'price_auto_bcp_2', 0)),
+        'zna': zna,
+        'zg': zg_display_from_price(zna) if zna else '',
+        'kf': '',
+        'amount_podgotovka': pod,
+        'amount_ss': ss,
+        'amount_mcu': mcu,
+        'amount_recovery': recovery,
+        'zachita_ot_ubitka': _num(getattr(sog, 'zachita_ot_ubitka', 0)),
+        'discount_torg': _num(getattr(sog, 'discount_torg', 0)),
+        'finance_price': _num(getattr(sog, 'finance_price', 0)),
+        'iznos_price': 0,
+        'source': 'soglasovanie',
+    }
+
+
 def run_price_calculator(
     *,
     date_start: datetime,
@@ -306,7 +393,7 @@ def run_price_calculator(
     from refs.models import RefUnit
 
     overrides = overrides or {}
-    limit = max(1, min(int(limit or 100), 300))
+    limit = max(1, min(int(limit or 100), 150))
 
     qs = (
         RegInteractivOcenkaRLK.objects
@@ -318,11 +405,16 @@ def run_price_calculator(
             'estimation',
             'estimation__page_salon',
             'estimation__page_remote',
+            'estimation__page_remote__unit',
             'estimation__page_soglasovanie',
             'estimation__modification',
+            'estimation__modification__model',
+            'estimation__modification__model__mark',
             'page_soglasovanie',
             'unit',
             'rlk',
+            'rlk__unit',
+            'rlk__unit_dc',
         )
         .order_by('-estimation__start_estimation', '-estimation_id')
     )
@@ -332,12 +424,11 @@ def run_price_calculator(
     total_found = qs.count()
     items = list(qs[:limit])
 
-    # ДЦ для дефолтных рычагов
     ref_unit = None
     if unit_id:
         ref_unit = RefUnit.objects.filter(pk=unit_id).first()
     if ref_unit is None and items:
-        ref_unit = items[0].unit
+        ref_unit = _resolve_unit(items[0])
     if ref_unit is None:
         ref_unit = RefUnit.objects.filter(buauto=True, active_eco=True).order_by('name').first()
 
@@ -354,12 +445,15 @@ def run_price_calculator(
             'total_found': 0,
             'shown': 0,
             'ref_unit': ref_unit,
+            'sample_errors': [],
         }
 
     baseline_levers = read_baseline_levers(ref_unit, settings_base, zg_code) if ref_unit else {}
-    # overrides уже должны быть полными; если нет — baseline
     effective = dict(baseline_levers)
-    effective.update({k: v for k, v in (overrides or {}).items() if k in baseline_levers or k in overrides})
+    effective.update(overrides or {})
+    levers_changed = changed_lever_labels(zg_code, baseline_levers, effective)
+    unit_fields = _unit_override_fields(zg_code, effective)
+    settings_fields = _settings_override_fields(zg_code, effective)
 
     rows = []
     sum_before = {
@@ -374,60 +468,105 @@ def run_price_calculator(
     sum_after = {k: 0.0 for k in sum_before}
     ok_count = 0
     err_count = 0
+    error_counter = Counter()
+    sample_errors = []
 
     for rlk in items:
         estimation = rlk.estimation
-        if estimation is None or rlk.unit is None:
+        if estimation is None:
             err_count += 1
+            error_counter['нет estimation'] += 1
             continue
 
-        body_info = get_body_estimation_cached(estimation)
-        salon_info = get_salon_estimation_cached(estimation)
-        est_settings = resolve_estimation_settings(
-            interactiv_rlk=rlk,
-            estimation=estimation,
-            estimation_settings=None,
-        ) or settings_base
+        unit = _resolve_unit(rlk)
+        if unit is None:
+            err_count += 1
+            error_counter['нет ДЦ (unit)'] += 1
+            if len(sample_errors) < 8:
+                sample_errors.append(f'id={estimation.pk}: нет ДЦ')
+            continue
+
+        sog = getattr(rlk, 'page_soglasovanie', None) or getattr(estimation, 'page_soglasovanie', None)
+        before = _snapshot_from_soglasovanie(sog, estimation)
 
         original_unit = rlk.unit
-        try:
-            before_raw = estimations_price_calculation(
-                rlk,
-                estimation,
-                type_calculation='autohub',
-                body_info=body_info,
-                salon_info=salon_info,
-                estimation_settings=est_settings,
-                persist=False,
-                save_history=False,
-                trigger='price_calculator_base',
-            )
-            before = _snapshot_from_result(before_raw)
+        unit_backup = None
+        settings_backup = None
+        est_settings = None
 
-            patched_unit = apply_overrides_to_unit(original_unit, zg_code, effective)
-            patched_settings = apply_overrides_to_settings(est_settings, zg_code, effective)
-            rlk.unit = patched_unit
-            after_raw = estimations_price_calculation(
-                rlk,
-                estimation,
-                type_calculation='autohub',
-                body_info=body_info,
-                salon_info=salon_info,
-                estimation_settings=patched_settings,
-                persist=False,
-                save_history=False,
-                trigger='price_calculator_whatif',
-            )
-            after = _snapshot_from_result(after_raw)
-        except Exception:
+        try:
+            # Подставляем unit на RLK, если он был только на DocRLK / remote
+            rlk.unit = unit
+
+            body_info = get_body_estimation_cached(estimation)
+            salon_info = get_salon_estimation_cached(estimation)
+            est_settings = resolve_estimation_settings(
+                interactiv_rlk=rlk,
+                estimation=estimation,
+                estimation_settings=None,
+            ) or settings_base
+
+            # «Было»: с согласования, иначе один прогон текущих настроек
+            if before is None:
+                before_raw = estimations_price_calculation(
+                    rlk,
+                    estimation,
+                    type_calculation='autohub',
+                    body_info=body_info,
+                    salon_info=salon_info,
+                    estimation_settings=est_settings,
+                    persist=False,
+                    save_history=False,
+                    trigger='price_calculator_base',
+                )
+                before = _snapshot_from_result(before_raw)
+                if before['ok']:
+                    before['source'] = 'recalc'
+
+            if not before or not before.get('ok'):
+                err_count += 1
+                error_counter['нет базовой цены / ЦНА=0'] += 1
+                if len(sample_errors) < 8:
+                    sample_errors.append(f'id={estimation.pk}: нет базовой цены (ЦНА/авторасчёт)')
+                continue
+
+            # Если рычаги не менялись — «стало» = «было» (быстрый путь)
+            if not levers_changed:
+                after = dict(before)
+            else:
+                unit_backup = _patch_attrs(unit, unit_fields)
+                settings_backup = _patch_attrs(est_settings, settings_fields)
+                after_raw = estimations_price_calculation(
+                    rlk,
+                    estimation,
+                    type_calculation='autohub',
+                    body_info=body_info,
+                    salon_info=salon_info,
+                    estimation_settings=est_settings,
+                    persist=False,
+                    save_history=False,
+                    trigger='price_calculator_whatif',
+                )
+                after = _snapshot_from_result(after_raw)
+                if not after.get('ok'):
+                    err_count += 1
+                    error_counter['what-if вернул пусто'] += 1
+                    if len(sample_errors) < 8:
+                        sample_errors.append(f'id={estimation.pk}: what-if пустой результат')
+                    continue
+        except Exception as exc:
             err_count += 1
+            msg = f'{type(exc).__name__}: {exc}'
+            error_counter[msg.split(':')[0]] += 1
+            if len(sample_errors) < 8:
+                sample_errors.append(f'id={getattr(estimation, "pk", "?")}: {msg[:180]}')
             continue
         finally:
+            if settings_backup is not None and est_settings is not None:
+                _restore_attrs(est_settings, settings_backup)
+            if unit_backup is not None:
+                _restore_attrs(unit, unit_backup)
             rlk.unit = original_unit
-
-        if not before['ok'] and not after['ok']:
-            err_count += 1
-            continue
 
         ok_count += 1
         for key in sum_before:
@@ -440,24 +579,25 @@ def run_price_calculator(
             mod = estimation.modification
             if mod is not None:
                 model = getattr(mod, 'name', '') or ''
-                mark = getattr(getattr(mod, 'model', None), 'mark', None)
-                mark = getattr(mark, 'name', '') if mark else ''
+                mark_obj = getattr(getattr(mod, 'model', None), 'mark', None)
+                mark = getattr(mark_obj, 'name', '') if mark_obj else ''
         except Exception:
             pass
 
-        row = {
+        rows.append({
             'estimation_id': estimation.pk,
             'rlk_id': getattr(rlk, 'rlk_id', None) or rlk.pk,
             'vin': estimation.vin or '',
-            'unit_name': getattr(original_unit, 'name', '') or '—',
+            'unit_name': getattr(unit, 'name', '') or '—',
             'mark': mark or '',
             'model': model or '',
             'start_estimation': estimation.start_estimation,
             'zna_before': before['zna'],
             'zna_after': after['zna'],
-            'zg': after['zg'] or before['zg'] or zg_display_from_price(before['zna'] or after['zna']),
+            'zg': after.get('zg') or before.get('zg') or zg_display_from_price(before['zna'] or after['zna']),
             'before': before,
             'after': after,
+            'before_source': before.get('source') or '',
             'delta_estimation_price': after['estimation_price'] - before['estimation_price'],
             'delta_amount_recovery': after['amount_recovery'] - before['amount_recovery'],
             'delta_podgotovka': after['amount_podgotovka'] - before['amount_podgotovka'],
@@ -466,8 +606,7 @@ def run_price_calculator(
             'delta_cna': after['cna_expenses'] - before['cna_expenses'],
             'delta_pct_estimation': _pct_delta(before['estimation_price'], after['estimation_price']),
             'delta_pct_recovery': _pct_delta(before['amount_recovery'], after['amount_recovery']),
-        }
-        rows.append(row)
+        })
 
     badges = [
         _badge('Выкуп (сумма)', sum_before['estimation_price'], sum_after['estimation_price']),
@@ -479,18 +618,8 @@ def run_price_calculator(
         _badge('Финансирование', sum_before['finance_price'], sum_after['finance_price']),
     ]
 
-    changed_levers = []
-    for lever in lever_definitions(zg_code):
-        key = lever['key']
-        b = baseline_levers.get(key)
-        a = effective.get(key)
-        if lever['unit'] == 'bool':
-            if bool(b) != bool(a):
-                changed_levers.append(lever['label'])
-        elif abs(_num(a) - _num(b)) >= 1e-6:
-            changed_levers.append(lever['label'])
-
     zg_name = next((r['name'] for r in PRICE_GROUP_RANGES if r['code'] == zg_code), zg_code)
+    top_errors = [f'{name}: {cnt}' for name, cnt in error_counter.most_common(6)]
 
     return {
         'error': '',
@@ -499,7 +628,7 @@ def run_price_calculator(
         'baseline_levers': baseline_levers,
         'overrides': effective,
         'levers': lever_definitions(zg_code),
-        'changed_levers': changed_levers,
+        'changed_levers': levers_changed,
         'total_found': total_found,
         'shown': len(rows),
         'ok_count': ok_count,
@@ -508,6 +637,8 @@ def run_price_calculator(
         'ref_unit': ref_unit,
         'zg_code': zg_code,
         'zg_name': zg_name,
+        'sample_errors': sample_errors,
+        'top_errors': top_errors,
         'summary': {
             'before': sum_before,
             'after': sum_after,
