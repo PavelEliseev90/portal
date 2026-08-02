@@ -29,8 +29,32 @@
 <div class="portal-page">
 	
 	<div class="portal-header">
-		<h2>Рабочий лист</h2>
+		<h2>Рабочий лист {% if params.alfa %} * АльфаАвто {% else %} * КорсАвто {% endif %} </h2>
 		<p> {% if params.object.unit.ib.alfa %} Альфа - авто {% endif %} № {{params.object.nomer}} от {{params.object.dataTime}}  </p>  
+	</div>
+	
+	<div class="portal-panel">
+		{% for rl_out in params.doc_out_ib %}
+			
+			<h6 class="mb-3"><span class="icon-doc"></span> Рабочий лист трейдин из АльфаАвто</h6>
+
+			<div class="row g-1">
+				<div class="col">
+					<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Номер</div>
+					<div class="metric-card-value-portal">{{rl_out.nomer}} </div>								
+				</div>
+				<div class="col">
+					<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Подразделение</div>
+					<div class="metric-card-value-portal">{% if rl_out.unit == None %} {{rl_out.unit_dc.name}} {% else %} {{rl_out.unit.name}} {% endif %}</div>								
+				</div>
+				<div class="col">
+					<a class="btn-calculate-sm" href="/rlks_trade_in/{{rl_out.id}}/">
+						<span class="icon-mbri-play"> Открыть</span>
+					</a>
+				</div>
+			</div>
+			
+		{% endfor %}
 	</div>
 
 	<div class="row">

@@ -6408,8 +6408,9 @@ def rlk_trade_in(request, id):
             
             return HttpResponseRedirect(request.build_absolute_uri())   
 
-    
+    alfa        = False 
     docs        = DocRLK.objects.filter(pk = id).filter(eco = True).order_by('-dataTime')
+    
     subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     docs        = docs.annotate(
         status_estimation    = Subquery(subquery.values('status__name')[:1])).annotate(
@@ -6446,13 +6447,18 @@ def rlk_trade_in(request, id):
         signal_city_name  = Subquery(subquery_signal.values('city_name')[:1])).annotate(
         signal_region_name  = Subquery(subquery_signal.values('region_name__name')[:1]))
         
-
     estimation  = None
     chat        = None
     page_obj = ''
-
+    doc_out_ib = None
     if len(docs) > 0:
         page_obj = docs[0]
+
+        if page_obj.unit != None:
+            if page_obj.unit.ib.alfa:
+                alfa = page_obj.unit.ib.alfa
+        doc_out_ib = DocRLK.objects.exclude(pk = id).filter(uin = page_obj.uin).order_by('-dataTime') 
+    
         if page_obj.lo_pk != None:
             estimation  = RegInteractivOcenkaRLK.objects.get(pk=page_obj.lo_pk)
             chat = Chat.objects.filter(name=id, slug='rlk_' + str(id)).first()
@@ -6471,8 +6477,9 @@ def rlk_trade_in(request, id):
         'user'          : request.user,
         'estimation'    : estimation,
         'selected'      : selected,
-        'chat'          : chat
-
+        'chat'          : chat,
+        'doc_out_ib'    : doc_out_ib,
+        'alfa'          : alfa
 
     }
     return render(request, 'website/doc_rlk_tradein.html', {'params':params}) 
@@ -10863,11 +10870,11 @@ def test(request):
     # # send_km_car_1C()
     
     
-    # from background_task.models import Task
-    # task = Task.objects.all()
-    # for ts in task:
-    #     ts.locked_by = ''
-    #     ts.save()
+    from background_task.models import Task
+    task = Task.objects.all()
+    for ts in task:
+        ts.locked_by = ''
+        ts.save()
 
     # refresh_avtoteka_vin()
 

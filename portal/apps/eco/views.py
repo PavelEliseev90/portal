@@ -3911,7 +3911,12 @@ def doc(request, id):
                     kors_estimation_data(estimation.id)
                 elif refresh == 'all':
                     get_info_max(interactiv_rlk, estimation.id)
-                    kors_estimation_data(estimation.id)
+                    # kors_estimation_data(estimation.id)
+                    price_autohub_k = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub_k', body_info=body, salon_info=salon, save_history=True, user=user)
+                    price           = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='avito', body_info=body, salon_info=salon, save_history=True, user=user )
+                    price_autohub   = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='autohub', body_info=body, salon_info=salon, save_history=True, user=user)
+                    price_custom    = estimations_price_calculation(interactiv_rlk, estimation, type_calculation='custom', body_info=body, salon_info=salon, save_history=True, user=user)
+                    
                 elif refresh == 'data1c':
                     from task_manager.views import estimation_send_1c
                     try:
@@ -3932,17 +3937,17 @@ def doc(request, id):
                     except:
                         s= 1
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
-                if refresh in ('autohub', 'znak', 'kors', 'all', 'data1c'):
-                    estimation.refresh_from_db()
-                    record_interactive_price_refresh(
-                        interactiv_rlk=interactiv_rlk,
-                        estimation=estimation,
-                        user=request.user,
-                        refresh_kind=refresh,
-                        price_calculation_fn=estimations_price_calculation,
-                        body_info=body,
-                        salon_info=salon,
-                    )
+                # if refresh in ('autohub', 'znak', 'kors', 'all', 'data1c'):
+                #     estimation.refresh_from_db()
+                #     record_interactive_price_refresh(
+                #         interactiv_rlk=interactiv_rlk,
+                #         estimation=estimation,
+                #         user=request.user,
+                #         refresh_kind=refresh,
+                #         price_calculation_fn=estimations_price_calculation,
+                #         body_info=body,
+                #         salon_info=salon,
+                #     )
                 return HttpResponseRedirect(request.path_info + '?page=' + str(page))
                 
             balance_count = RegEstimationBalanceUnit.objects.filter(estimation = estimation).count()
@@ -8611,6 +8616,31 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             auction_comment = ''
 
         #ИТОГ
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                        
         estimation_price    = round(price, -2)
         amount_sum          = amount_mcu + amount_podgotovka + amount_ss
         profit              = round(price_sale - price - amount_sum, -2)
@@ -8749,23 +8779,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     interactiv_rlk.page_soglasovanie.save()
             except:
                 s= 1   
-        iznos_ss_compensation = 0
-        if defer_iznos and iznos_data > 0 and amount_ss > 0:
-            if iznos_data >= amount_ss:
-                price = price + amount_ss
-                diff = amount_ss
-            else:
-                price = price + iznos_data
-                diff = iznos_data
-            inf_price = {
-                'price': price,
-                'dif': diff,
-                'comment': "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',
-                'name': "кузовной"
-            }
-            list_info_price.append(inf_price)
-            iznos_ss_compensation = diff
-                    
+        
         price = {
             'kors_price_reception'          : kors_price_reception,
             'profit'                        : profit,
@@ -11382,6 +11396,32 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             auction_comment = ''
 
         #ИТОГ
+        #ИТОГ
+        if defer_iznos:
+            if iznos_data > 0 and amount_ss > 0:
+                if iznos_data > amount_ss:
+                    price           = price + amount_ss
+                    diff            = amount_ss
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                elif iznos_data < amount_ss:
+                    price           = price + iznos_data
+                    diff            = iznos_data
+                    inf_price = {
+                        'price'     : price,
+                        'dif'       : diff,
+                        'add'       : True,
+                        'comment'   : "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                        'name'      : "кузовной"
+                    }
+                    list_info_price.append(inf_price)
+                    
         estimation_price    = round(price, -2)
         amount_sum          = amount_mcu + amount_podgotovka + amount_ss
         profit              = round(price_sale - price - amount_sum, -2)
@@ -11502,23 +11542,6 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         except:
             s= 1   
         
-        iznos_ss_compensation = 0
-        if defer_iznos and iznos_data > 0 and amount_ss > 0:
-            if iznos_data >= amount_ss:
-                price = price + amount_ss
-                diff = amount_ss
-            else:
-                price = price + iznos_data
-                diff = iznos_data
-            inf_price = {
-                'price': price,
-                'dif': diff,
-                'comment': "Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',
-                'name': "кузовной"
-            }
-            list_info_price.append(inf_price)
-            iznos_ss_compensation = diff
-
         price = {
             'iznos_data'                    : iznos_data,
             'kors_price_reception'          : kors_price_reception,
