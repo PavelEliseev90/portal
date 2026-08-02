@@ -24,6 +24,7 @@ urlpatterns = [
     path('efficiency/analyst/<int:analyst_id>/', views.eco_analyst_detail, name='eco_analyst_detail'),
     path('staff-performance/',                  views.staff_performance_analysis, name='staff_performance'),
     path('pricing-report/',                     views.interactive_pricing_report, name='interactive_pricing_report'),
+    path('price-calculator/',                   views.price_calculator, name='price_calculator'),
     path('price-recalc-history/',               views.price_recalc_history_report, name='price_recalc_history_report'),
     path('interactive-evaluations/',            views.interactive_evaluations_report, name='interactive_evaluations_report'),
 

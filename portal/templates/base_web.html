@@ -183,7 +183,7 @@
                                     </a>
                                 </li>
                                 
-                                <div class="collapse {% if params.type == 'eco' or params.type == 'interactive_evaluations_report' or params.type == 'price_recalc_history_report' or params.type == 'estimation_zg_analytics' or params.type == 'sales_funnel'  or params.type == 'eco_efficiency' or params.type == 'eco_funnel' or params.type == 'korsavto_settings' or params.type == 'auction_avito_list' or params.type == 'auction_avito_detail' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <div class="collapse {% if params.type == 'eco' or params.type == 'interactive_evaluations_report' or params.type == 'price_recalc_history_report' or params.type == 'price_calculator' or params.type == 'estimation_zg_analytics' or params.type == 'sales_funnel'  or params.type == 'eco_efficiency' or params.type == 'eco_funnel' or params.type == 'korsavto_settings' or params.type == 'auction_avito_list' or params.type == 'auction_avito_detail' %} show {% endif %}" id="collapse_eco" style="transition: 0.5s; padding-left: 1.5rem;">
 
                                     <li class="nav-item">
                                         <a class="nav-link text-{% if params.type == 'eco' %}secondary active {% else %}white {% endif %}" href="/eco/">
@@ -224,6 +224,12 @@
                                             <a class="nav-link text-{% if params.type == 'eco_funnel' %}secondary active {% else %}white {% endif %}" href="/eco/interactive-evaluations/">
                                                 <span class="sidebar-icon bi bi-display"></span>
                                                 Отчет по интерактивным оценкам
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link text-{% if params.type == 'price_calculator' %}secondary active {% else %}white {% endif %}" href="/eco/price-calculator/">
+                                                <span class="sidebar-icon bi bi-calculator"></span>
+                                                Калькулятор выкупа
                                             </a>
                                         </li>
                                         <li class="nav-item">

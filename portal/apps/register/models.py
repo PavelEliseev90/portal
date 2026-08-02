@@ -4101,6 +4101,20 @@ class RegInteractivOcenkaPrice(models.Model):
     price_after_kd      = models.IntegerField('Согласованная после КД', default=0, null=True, blank=True)
     price_bcp           = models.IntegerField('БЦП согласованный', default=0, null=True, blank=True)
 
+    iznos               = models.BooleanField('Повышенный износ', default=False, null=True, blank=True)
+    taxi                = models.BooleanField('Использование в такси', default=False, null=True, blank=True)
+    k_i                 = models.FloatField('Коэффициент износа', default=0.0, null=True, blank=True)
+    iznos_price         = models.FloatField('Сумма коррекции повышенного износа', default=0.00, null=True, blank=True)
+    iznos_data          = models.FloatField('Сумма износа до учёта СС', default=0.00, null=True, blank=True)
+    iznos_with_ss       = models.BooleanField('Износ с учётом слесарки', default=False, null=True, blank=True)
+    iznos_ss_compensation = models.FloatField(
+        'Компенсация износа слесаркой',
+        default=0.00,
+        null=True,
+        blank=True,
+        help_text='Сколько вернули к цене из-за влияния СС на износ',
+    )
+
     comment   = models.CharField("Комментарий", max_length=1500, default='', null=True, blank=True)
 
     def __str__(self):
