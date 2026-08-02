@@ -1,4 +1,4 @@
-"""Аналитика оценок по ценовым группам (помесячно).
+"""Аналитика оценок по ценовым группам (помесячно и по дням).
 
 Источник оценок: TradeInFunnel.
 «Оценка» — дата начала оценки в периоде.
@@ -139,6 +139,16 @@ def _month_label(dt: datetime) -> str:
     return f'{months[dt.month]} {dt.year}'
 
 
+def _day_key(dt: datetime) -> str:
+    return dt.strftime('%Y-%m-%d')
+
+
+def _day_label(dt: datetime, *, with_year: bool = False) -> str:
+    if with_year:
+        return dt.strftime('%d.%m.%y')
+    return dt.strftime('%d.%m')
+
+
 def _iter_months(date_start: datetime, date_end: datetime):
     cur = date_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     end = date_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -146,6 +156,16 @@ def _iter_months(date_start: datetime, date_end: datetime):
     while cur <= end:
         out.append(cur)
         cur = cur + relativedelta(months=1)
+    return out
+
+
+def _iter_days(date_start: datetime, date_end: datetime):
+    cur = date_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = date_end.replace(hour=0, minute=0, second=0, microsecond=0)
+    out = []
+    while cur <= end:
+        out.append(cur)
+        cur = cur + relativedelta(days=1)
     return out
 
 
@@ -168,13 +188,13 @@ def _cell(total: int, accepted: int, month_key: str = '') -> dict:
 def _build_estimation_unit_breakdown(
     unit_bucket,
     unit_names: dict,
-    month_keys: list,
-    month_labels: list,
-    month_totals: dict,
+    period_keys: list,
+    period_labels: list,
+    period_totals: dict,
 ) -> dict:
-    """График и сводная таблица: месяцы × ДЦ (оценки)."""
+    """График и сводная таблица: периоды × ДЦ (оценки)."""
     unit_totals = defaultdict(lambda: {'total': 0, 'accepted': 0})
-    for mk in month_keys:
+    for mk in period_keys:
         for uid, cell in unit_bucket[mk].items():
             unit_totals[uid]['total'] += cell['total']
             unit_totals[uid]['accepted'] += cell['accepted']
@@ -191,18 +211,18 @@ def _build_estimation_unit_breakdown(
             'label': label,
             'unit_id': uid,
             'backgroundColor': _unit_color(i),
-            'data': [unit_bucket[mk][uid]['total'] for mk in month_keys],
-            'accepted': [unit_bucket[mk][uid]['accepted'] for mk in month_keys],
+            'data': [unit_bucket[mk][uid]['total'] for mk in period_keys],
+            'accepted': [unit_bucket[mk][uid]['accepted'] for mk in period_keys],
             'rate': [
                 _pct(unit_bucket[mk][uid]['accepted'], unit_bucket[mk][uid]['total'])
-                for mk in month_keys
+                for mk in period_keys
             ],
         })
 
     pivot_rows = []
     for uid in unit_list:
         cells = []
-        for mk in month_keys:
+        for mk in period_keys:
             cell = unit_bucket[mk][uid]
             cells.append(_cell(cell['total'], cell['accepted'], mk))
         ut = unit_totals[uid]
@@ -214,11 +234,11 @@ def _build_estimation_unit_breakdown(
         })
 
     footer_cells = [
-        _cell(month_totals[mk]['total'], month_totals[mk]['accepted'], mk)
-        for mk in month_keys
+        _cell(period_totals[mk]['total'], period_totals[mk]['accepted'], mk)
+        for mk in period_keys
     ]
-    grand_total = sum(v['total'] for v in month_totals.values())
-    grand_accepted = sum(v['accepted'] for v in month_totals.values())
+    grand_total = sum(v['total'] for v in period_totals.values())
+    grand_accepted = sum(v['accepted'] for v in period_totals.values())
     pivot_footer = {
         'unit_name': 'Итого',
         'cells': footer_cells,
@@ -227,12 +247,34 @@ def _build_estimation_unit_breakdown(
     }
 
     return {
-        'labels': month_labels,
-        'month_keys': month_keys,
+        'labels': period_labels,
+        'month_keys': period_keys,
         'datasets': datasets,
-        'month_totals': [month_totals[mk]['total'] for mk in month_keys],
+        'month_totals': [period_totals[mk]['total'] for mk in period_keys],
         'pivot_rows': pivot_rows,
         'pivot_footer': pivot_footer,
+    }
+
+
+def _build_zg_chart(bucket, zg_list, period_keys, period_labels, period_totals) -> dict:
+    datasets = []
+    for zg in zg_list:
+        datasets.append({
+            'label': f'ЦГ {zg}',
+            'zg': zg,
+            'backgroundColor': ZG_COLORS.get(zg, '#94a3b8'),
+            'data': [bucket[mk][zg]['total'] for mk in period_keys],
+            'accepted': [bucket[mk][zg]['accepted'] for mk in period_keys],
+            'rate': [
+                _pct(bucket[mk][zg]['accepted'], bucket[mk][zg]['total'])
+                for mk in period_keys
+            ],
+        })
+    return {
+        'labels': period_labels,
+        'month_keys': period_keys,
+        'datasets': datasets,
+        'month_totals': [period_totals[mk]['total'] for mk in period_keys],
     }
 
 
@@ -268,10 +310,13 @@ def build_estimation_zg_analytics(
         qs = qs.filter(type_reception_id=type_id)
 
     bucket = defaultdict(lambda: defaultdict(lambda: {'total': 0, 'accepted': 0}))
+    day_bucket = defaultdict(lambda: defaultdict(lambda: {'total': 0, 'accepted': 0}))
     unit_bucket = defaultdict(lambda: defaultdict(lambda: {'total': 0, 'accepted': 0}))
+    day_unit_bucket = defaultdict(lambda: defaultdict(lambda: {'total': 0, 'accepted': 0}))
     unit_names = {}
     zg_totals = defaultdict(lambda: {'total': 0, 'accepted': 0})
     month_totals = defaultdict(lambda: {'total': 0, 'accepted': 0})
+    day_totals = defaultdict(lambda: {'total': 0, 'accepted': 0})
 
     rows = qs.only(
         'date_start_estimation',
@@ -295,24 +340,36 @@ def build_estimation_zg_analytics(
         if accepted_filter == 'no' and acc:
             continue
         mk = _month_key(row.date_start_estimation)
+        dk = _day_key(row.date_start_estimation)
         zg = normalize_zg_name(row.zg_name, resolve_funnel_price(row))
         accepted_n = 1 if acc else 0
         bucket[mk][zg]['total'] += 1
         bucket[mk][zg]['accepted'] += accepted_n
+        day_bucket[dk][zg]['total'] += 1
+        day_bucket[dk][zg]['accepted'] += accepted_n
         zg_totals[zg]['total'] += 1
         zg_totals[zg]['accepted'] += accepted_n
         month_totals[mk]['total'] += 1
         month_totals[mk]['accepted'] += accepted_n
+        day_totals[dk]['total'] += 1
+        day_totals[dk]['accepted'] += accepted_n
         if not unit_id:
             uid = int(row.unit_id or 0)
             if row.unit_name:
                 unit_names[uid] = str(row.unit_name).strip()
             unit_bucket[mk][uid]['total'] += 1
             unit_bucket[mk][uid]['accepted'] += accepted_n
+            day_unit_bucket[dk][uid]['total'] += 1
+            day_unit_bucket[dk][uid]['accepted'] += accepted_n
 
     months = _iter_months(date_start, date_end)
     month_keys = [_month_key(m) for m in months]
     month_labels = [_month_label(m) for m in months]
+
+    days = _iter_days(date_start, date_end)
+    day_with_year = bool(days) and days[0].year != days[-1].year
+    day_keys = [_day_key(d) for d in days]
+    day_labels = [_day_label(d, with_year=day_with_year) for d in days]
 
     seen = set()
     for mk in month_keys:
@@ -321,19 +378,8 @@ def build_estimation_zg_analytics(
     if not zg_list:
         zg_list = [row['name'] for row in PRICE_GROUP_RANGES]
 
-    datasets = []
-    for zg in zg_list:
-        datasets.append({
-            'label': f'ЦГ {zg}',
-            'zg': zg,
-            'backgroundColor': ZG_COLORS.get(zg, '#94a3b8'),
-            'data': [bucket[mk][zg]['total'] for mk in month_keys],
-            'accepted': [bucket[mk][zg]['accepted'] for mk in month_keys],
-            'rate': [
-                _pct(bucket[mk][zg]['accepted'], bucket[mk][zg]['total'])
-                for mk in month_keys
-            ],
-        })
+    chart = _build_zg_chart(bucket, zg_list, month_keys, month_labels, month_totals)
+    chart_day = _build_zg_chart(day_bucket, zg_list, day_keys, day_labels, day_totals)
 
     # Pivot: строки = ЦГ, столбцы = месяцы; ячейка = оценки / принято / %
     pivot_rows = []
@@ -376,6 +422,7 @@ def build_estimation_zg_analytics(
         })
 
     unit_breakdown = None
+    unit_day_breakdown = None
     if not unit_id:
         unit_breakdown = _build_estimation_unit_breakdown(
             unit_bucket,
@@ -384,18 +431,24 @@ def build_estimation_zg_analytics(
             month_labels,
             month_totals,
         )
+        unit_day_breakdown = _build_estimation_unit_breakdown(
+            day_unit_bucket,
+            unit_names,
+            day_keys,
+            day_labels,
+            day_totals,
+        )
 
     return {
         'month_keys': month_keys,
         'month_labels': month_labels,
+        'day_keys': day_keys,
+        'day_labels': day_labels,
         'zg_list': zg_list,
-        'chart': {
-            'labels': month_labels,
-            'month_keys': month_keys,
-            'datasets': datasets,
-            'month_totals': [month_totals[mk]['total'] for mk in month_keys],
-        },
+        'chart': chart,
+        'chart_day': chart_day,
         'unit_chart': unit_breakdown,
+        'unit_chart_day': unit_day_breakdown,
         'unit_pivot_rows': (unit_breakdown or {}).get('pivot_rows', []),
         'unit_pivot_footer': (unit_breakdown or {}).get('pivot_footer'),
         'pivot_rows': pivot_rows,
@@ -406,6 +459,7 @@ def build_estimation_zg_analytics(
             'accepted': grand_accepted,
             'rate': _pct(grand_accepted, grand_total),
             'months': len(month_keys),
+            'days': len(day_keys),
         },
         'accepted_filter': accepted_filter,
         'month_keys': month_keys,
@@ -596,11 +650,30 @@ def build_autohub_zg_analytics(
     }
 
 
-def _month_bounds(month_key: str):
-    """YYYY-MM → (date_start, date_end) inclusive."""
-    start = datetime.strptime(month_key + '-01', '%Y-%m-%d')
+def _period_bounds(period_key: str):
+    """YYYY-MM или YYYY-MM-DD → (date_start, date_end) inclusive."""
+    key = (period_key or '').strip()
+    if len(key) == 10:
+        start = datetime.strptime(key, '%Y-%m-%d')
+        end = start.replace(hour=23, minute=59, second=59, microsecond=0)
+        return start, end
+    start = datetime.strptime(key + '-01', '%Y-%m-%d')
     end = (start + relativedelta(months=1)) - relativedelta(seconds=1)
     return start, end
+
+
+def _period_label(period_key: str) -> str:
+    key = (period_key or '').strip()
+    if len(key) == 10:
+        dt = datetime.strptime(key, '%Y-%m-%d')
+        return dt.strftime('%d.%m.%Y')
+    start, _ = _period_bounds(key)
+    return _month_label(start)
+
+
+def _month_bounds(month_key: str):
+    """YYYY-MM → (date_start, date_end) inclusive. Совместимость со старым API."""
+    return _period_bounds(month_key)
 
 
 def build_estimation_zg_detail(
@@ -613,8 +686,8 @@ def build_estimation_zg_detail(
     type_id: Optional[int] = None,
     accepted: Optional[str] = None,
 ) -> dict:
-    """Список оценок за месяц × ЦГ."""
-    date_start, date_end = _month_bounds(month_key)
+    """Список оценок за месяц/день × ЦГ."""
+    date_start, date_end = _period_bounds(month_key)
     target_zg = normalize_zg_name(zg)
     accepted_filter = normalize_accepted_filter(accepted)
 
@@ -672,7 +745,7 @@ def build_estimation_zg_detail(
     return {
         'source': 'estimations',
         'month_key': month_key,
-        'month_label': _month_label(date_start),
+        'month_label': _period_label(month_key),
         'zg': target_zg,
         'rows': rows,
         'summary': {

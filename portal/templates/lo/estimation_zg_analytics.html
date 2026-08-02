@@ -41,6 +41,7 @@
   .rate-mid { color: #d97706; font-weight: 600; }
   .rate-low { color: #dc2626; font-weight: 600; }
   .chart-wrap { position: relative; height: 380px; }
+  .chart-wrap-day { height: 420px; }
   .chart-mode .btn { border-radius: 999px; font-size: .82rem; }
   .chart-split .btn { border-radius: 999px; font-size: .82rem; }
   .pill-unit {
@@ -190,6 +191,20 @@
     <p class="zg-hint mb-0" id="chartHint">{{ params.hint }} Клик по столбцу открывает расшифровку или фильтр по ДЦ.</p>
   </div>
 
+  <div class="zg-panel">
+    <div class="zg-panel-head">
+      <h3 id="chartDayTitle">Оценки по дням (стек по ЦГ)</h3>
+      <div class="btn-group chart-mode" role="group" aria-label="Режим дневного графика">
+        <button type="button" class="btn btn-sm btn-primary" id="chartDayModeAbs" data-mode="absolute">Количество</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="chartDayModeShare" data-mode="normalized">Доли, %</button>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap-day">
+      <canvas id="zgChartDay"></canvas>
+    </div>
+    <p class="zg-hint mb-0">Разбивка по дням в том же фильтре. При длинном периоде столбцы плотные — сузьте даты. Клик по дню открывает расшифровку.</p>
+  </div>
+
   <div class="zg-panel" id="panelZgTable" {% if params.filters.chart_view == 'unit' %}style="display:none"{% endif %}>
     <h3>Оценки: ЦГ × месяц</h3>
     <p class="zg-hint mt-0 mb-2">В ячейке: <strong>оценки / принято (процент приёма)</strong>. ЦГ по ЦНА. Ячейка кликабельна.</p>
@@ -331,6 +346,8 @@
   const DETAIL_BASE = "{{ params.detail_base }}";
   const CHART_ZG = {{ params.chart_json|safe }};
   const CHART_UNIT = {{ params.unit_chart_json|safe }};
+  const CHART_DAY_ZG = {{ params.chart_day_json|safe }};
+  const CHART_DAY_UNIT = {{ params.unit_chart_day_json|safe }};
   const INITIAL_SPLIT = "{{ params.filters.chart_view|default:'zg' }}";
   const FILTER_QS = {
     date_start: "{{ params.filters.date_start }}",
@@ -342,8 +359,12 @@
     accepted: "{{ params.filters.accepted }}",
   };
 
-  function monthBounds(monthKey) {
-    const [y, m] = monthKey.split('-').map(Number);
+  function periodBounds(periodKey) {
+    if (!periodKey) return null;
+    if (periodKey.length === 10) {
+      return { start: periodKey, end: periodKey };
+    }
+    const [y, m] = periodKey.split('-').map(Number);
     const lastDay = new Date(y, m, 0).getDate();
     return {
       start: `${y}-${String(m).padStart(2, '0')}-01`,
@@ -351,10 +372,10 @@
     };
   }
 
-  function detailUrl(source, monthKey, zg) {
+  function detailUrl(source, periodKey, zg) {
     const p = new URLSearchParams();
     p.set('source', source);
-    p.set('month', monthKey);
+    p.set('month', periodKey);
     p.set('zg', zg);
     Object.keys(FILTER_QS).forEach((k) => {
       if (FILTER_QS[k] && !(k === 'accepted' && FILTER_QS[k] === 'all')) p.set(k, FILTER_QS[k]);
@@ -362,12 +383,14 @@
     return DETAIL_BASE + '?' + p.toString();
   }
 
-  function unitFilterUrl(unitId, monthKey) {
-    const b = monthBounds(monthKey);
+  function unitFilterUrl(unitId, periodKey) {
+    const b = periodBounds(periodKey);
     const p = new URLSearchParams(window.location.search);
     p.set('unit_id', String(unitId));
-    p.set('date_start', b.start);
-    p.set('date_end', b.end);
+    if (b) {
+      p.set('date_start', b.start);
+      p.set('date_end', b.end);
+    }
     p.set('chart_view', 'zg');
     return '?' + p.toString();
   }
@@ -384,11 +407,17 @@
 
   function makeStackedChart(canvasId, configs) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas || !configs.zg || !configs.zg.labels) return;
+    if (!canvas || !configs.zg || !configs.zg.labels) return null;
 
     let split = configs.initialSplit === 'unit' && configs.unit && configs.unit.labels ? 'unit' : 'zg';
     let valueMode = 'absolute';
     let chart = null;
+    const periodWord = configs.periodWord || 'месяц';
+    const titleEl = configs.titleId ? document.getElementById(configs.titleId) : null;
+    const titleZg = configs.titleZg || '';
+    const titleUnit = configs.titleUnit || '';
+    const manageTables = !!configs.manageTables;
+    const dense = !!configs.dense;
 
     function currentData() {
       return split === 'unit' ? configs.unit : configs.zg;
@@ -398,8 +427,8 @@
       const chartData = currentData();
       if (!chartData || !chartData.labels) return;
 
-      const monthTotals = chartData.month_totals || [];
-      const monthKeys = chartData.month_keys || [];
+      const periodTotals = chartData.month_totals || [];
+      const periodKeys = chartData.month_keys || [];
       const baseDatasets = (chartData.datasets || []).map((ds) => ({
         label: ds.label,
         zg: ds.zg || (ds.label || '').replace(/^ЦГ\s+/, ''),
@@ -418,7 +447,7 @@
           unit_id: ds.unit_id,
           data: valueMode === 'normalized'
             ? ds.absolute.map((n, i) => {
-                const mt = Number(monthTotals[i] || 0);
+                const mt = Number(periodTotals[i] || 0);
                 return mt > 0 ? Math.round(1000 * Number(n || 0) / mt) / 10 : 0;
               })
             : ds.absolute.slice(),
@@ -428,6 +457,7 @@
           backgroundColor: ds.backgroundColor,
           borderWidth: 0,
           stack: 'stack',
+          maxBarThickness: dense ? 18 : 48,
         }));
       }
 
@@ -443,15 +473,15 @@
             if (!elements || !elements.length) return;
             const el = elements[0];
             const ds = chart.data.datasets[el.datasetIndex];
-            const monthKey = monthKeys[el.index];
-            if (!monthKey || Number(ds.absolute[el.index] || 0) <= 0) return;
+            const periodKey = periodKeys[el.index];
+            if (!periodKey || Number(ds.absolute[el.index] || 0) <= 0) return;
             if (split === 'unit' && ds.unit_id != null) {
-              window.location.href = unitFilterUrl(ds.unit_id, monthKey);
+              window.location.href = unitFilterUrl(ds.unit_id, periodKey);
               return;
             }
             const zg = ds.zg || '';
             if (!zg) return;
-            window.location.href = detailUrl('estimations', monthKey, zg);
+            window.location.href = detailUrl('estimations', periodKey, zg);
           },
           plugins: {
             legend: { position: 'bottom' },
@@ -473,23 +503,27 @@
                 footer(items) {
                   if (!items.length) return '';
                   const i = items[0].dataIndex;
-                  let monthTotal = 0, monthAcc = 0;
+                  let periodTotal = 0, periodAcc = 0;
                   baseDatasets.forEach((ds) => {
-                    monthTotal += Number(ds.absolute[i] || 0);
-                    monthAcc += Number(ds.accepted[i] || 0);
+                    periodTotal += Number(ds.absolute[i] || 0);
+                    periodAcc += Number(ds.accepted[i] || 0);
                   });
                   if (hasAccept) {
-                    const mr = monthTotal ? Math.round(1000 * monthAcc / monthTotal) / 10 : 0;
+                    const mr = periodTotal ? Math.round(1000 * periodAcc / periodTotal) / 10 : 0;
                     const hint = split === 'unit' ? 'клик — фильтр по ДЦ' : 'клик — расшифровка';
-                    return `Итого месяц: ${monthTotal} / ${monthAcc} (${mr}%) · ${hint}`;
+                    return `Итого ${periodWord}: ${periodTotal} / ${periodAcc} (${mr}%) · ${hint}`;
                   }
-                  return `Итого: ${monthTotal}`;
+                  return `Итого: ${periodTotal}`;
                 }
               }
             }
           },
           scales: {
-            x: { stacked: true, grid: { display: false } },
+            x: {
+              stacked: true,
+              grid: { display: false },
+              ticks: dense ? { maxRotation: 90, minRotation: 45, autoSkip: true, maxTicksLimit: 45 } : {},
+            },
             y: {
               stacked: true,
               beginAtZero: true,
@@ -512,18 +546,19 @@
 
     function updateSplitUi() {
       const isUnit = split === 'unit';
-      const title = document.getElementById('chartTitle');
-      const panelZg = document.getElementById('panelZgTable');
-      const panelUnit = document.getElementById('panelUnitTable');
-      const input = document.getElementById('chartViewInput');
-      const btnZg = document.getElementById('splitModeZg');
-      const btnUnit = document.getElementById('splitModeUnit');
-      if (title) title.textContent = isUnit ? 'Оценки по месяцам (стек по ДЦ)' : 'Оценки по месяцам (стек по ЦГ)';
-      if (panelZg) panelZg.style.display = isUnit ? 'none' : '';
-      if (panelUnit) panelUnit.style.display = isUnit ? '' : 'none';
-      if (input) input.value = split;
-      if (btnZg) btnZg.className = 'btn btn-sm ' + (!isUnit ? 'btn-secondary' : 'btn-outline-secondary');
-      if (btnUnit) btnUnit.className = 'btn btn-sm ' + (isUnit ? 'btn-secondary' : 'btn-outline-secondary');
+      if (titleEl) titleEl.textContent = isUnit ? titleUnit : titleZg;
+      if (manageTables) {
+        const panelZg = document.getElementById('panelZgTable');
+        const panelUnit = document.getElementById('panelUnitTable');
+        const input = document.getElementById('chartViewInput');
+        const btnZg = document.getElementById('splitModeZg');
+        const btnUnit = document.getElementById('splitModeUnit');
+        if (panelZg) panelZg.style.display = isUnit ? 'none' : '';
+        if (panelUnit) panelUnit.style.display = isUnit ? '' : 'none';
+        if (input) input.value = split;
+        if (btnZg) btnZg.className = 'btn btn-sm ' + (!isUnit ? 'btn-secondary' : 'btn-outline-secondary');
+        if (btnUnit) btnUnit.className = 'btn btn-sm ' + (isUnit ? 'btn-secondary' : 'btn-outline-secondary');
+      }
     }
 
     function setSplit(next) {
@@ -533,29 +568,67 @@
       renderChart();
     }
 
+    function setValueMode(mode, absBtnId, shareBtnId) {
+      valueMode = mode;
+      renderChart();
+      const absBtn = document.getElementById(absBtnId);
+      const shareBtn = document.getElementById(shareBtnId);
+      if (absBtn) absBtn.className = 'btn btn-sm ' + (mode === 'absolute' ? 'btn-primary' : 'btn-outline-primary');
+      if (shareBtn) shareBtn.className = 'btn btn-sm ' + (mode === 'normalized' ? 'btn-primary' : 'btn-outline-primary');
+    }
+
     renderChart();
     updateSplitUi();
 
-    document.getElementById('chartModeAbs').addEventListener('click', () => {
-      valueMode = 'absolute';
-      renderChart();
-      document.getElementById('chartModeAbs').className = 'btn btn-sm btn-primary';
-      document.getElementById('chartModeShare').className = 'btn btn-sm btn-outline-primary';
-    });
-    document.getElementById('chartModeShare').addEventListener('click', () => {
-      valueMode = 'normalized';
-      renderChart();
-      document.getElementById('chartModeAbs').className = 'btn btn-sm btn-outline-primary';
-      document.getElementById('chartModeShare').className = 'btn btn-sm btn-primary';
-    });
-
-    const btnZg = document.getElementById('splitModeZg');
-    const btnUnit = document.getElementById('splitModeUnit');
-    if (btnZg) btnZg.addEventListener('click', () => setSplit('zg'));
-    if (btnUnit) btnUnit.addEventListener('click', () => setSplit('unit'));
+    return { setSplit, setValueMode };
   }
 
-  makeStackedChart('zgChart', { zg: CHART_ZG, unit: CHART_UNIT, initialSplit: INITIAL_SPLIT });
+  const monthCtrl = makeStackedChart('zgChart', {
+    zg: CHART_ZG,
+    unit: CHART_UNIT,
+    initialSplit: INITIAL_SPLIT,
+    periodWord: 'месяц',
+    titleId: 'chartTitle',
+    titleZg: 'Оценки по месяцам (стек по ЦГ)',
+    titleUnit: 'Оценки по месяцам (стек по ДЦ)',
+    manageTables: true,
+  });
+
+  const dayCtrl = makeStackedChart('zgChartDay', {
+    zg: CHART_DAY_ZG,
+    unit: CHART_DAY_UNIT,
+    initialSplit: INITIAL_SPLIT,
+    periodWord: 'день',
+    titleId: 'chartDayTitle',
+    titleZg: 'Оценки по дням (стек по ЦГ)',
+    titleUnit: 'Оценки по дням (стек по ДЦ)',
+    manageTables: false,
+    dense: true,
+  });
+
+  document.getElementById('chartModeAbs').addEventListener('click', () => {
+    if (monthCtrl) monthCtrl.setValueMode('absolute', 'chartModeAbs', 'chartModeShare');
+  });
+  document.getElementById('chartModeShare').addEventListener('click', () => {
+    if (monthCtrl) monthCtrl.setValueMode('normalized', 'chartModeAbs', 'chartModeShare');
+  });
+  document.getElementById('chartDayModeAbs').addEventListener('click', () => {
+    if (dayCtrl) dayCtrl.setValueMode('absolute', 'chartDayModeAbs', 'chartDayModeShare');
+  });
+  document.getElementById('chartDayModeShare').addEventListener('click', () => {
+    if (dayCtrl) dayCtrl.setValueMode('normalized', 'chartDayModeAbs', 'chartDayModeShare');
+  });
+
+  const btnZg = document.getElementById('splitModeZg');
+  const btnUnit = document.getElementById('splitModeUnit');
+  if (btnZg) btnZg.addEventListener('click', () => {
+    if (monthCtrl) monthCtrl.setSplit('zg');
+    if (dayCtrl) dayCtrl.setSplit('zg');
+  });
+  if (btnUnit) btnUnit.addEventListener('click', () => {
+    if (monthCtrl) monthCtrl.setSplit('unit');
+    if (dayCtrl) dayCtrl.setSplit('unit');
+  });
 })();
 </script>
 {% endblock %}

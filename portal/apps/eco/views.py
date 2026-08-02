@@ -5,7 +5,6 @@ from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
 from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
-from register.estimation_iznos import apply_iznos_taxi_correction
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from profiles.models import Profiles
@@ -8802,7 +8801,13 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             'zachita_ot_ubitka'             : zachita_ot_ubitka,
             'finance_price'                 : finance_price,
             'run_sum'                       : run_sum,
+            'iznos'                         : bool(getattr(estimation, 'iznos', False)),
+            'taxi'                          : bool(getattr(estimation, 'taxi', False)),
+            'k_i'                           : getattr(estimation, 'k_i', 0) or 0,
             'iznos_price'                   : iznos_price,
+            'iznos_data'                    : iznos_data,
+            'iznos_with_ss'                 : bool(defer_iznos),
+            'iznos_ss_compensation'         : iznos_ss_compensation,
             'discount_torg'                 : discount_torg,
             'estimation_settings'           : estimation_settings
         }
@@ -9581,8 +9586,8 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             percent_ss = percent_ss * -1
                                                 
         price = zna
-        
-         # повышенный износ / такси
+        iznos_data = 0
+        # повышенный износ / такси
         if estimation.iznos and estimation.taxi:
             price_new  = price - (price * 40 / 100)
             diff       = price - price_new
@@ -9608,6 +9613,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 'comment'  : "Цена скоректирована c учетом повышенного износа ",  
                 'name'      : "износ" 
             }
+            iznos_data = diff
             iznos_price = diff
             list_info_price.append(inf_price)
         elif estimation.taxi:
@@ -9626,6 +9632,8 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 auction = True
                 auction_comment = auction_comment + "Использование в такси. Коэфицент " + str(kf_auction)
                 auction_success = True
+
+        defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
 
         #Считаем авто в продаже 
         price_sale_rdo = 0
@@ -11288,18 +11296,6 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             }
             list_info_price.append(inf_price)
 
-        price, iznos_price, auction, auction_comment, auction_success = apply_iznos_taxi_correction(
-            price,
-            estimation,
-            kf_auction=kf_auction,
-            list_info_price=list_info_price,
-            auction=auction,
-            auction_comment=auction_comment,
-            auction_success=auction_success,
-            defer_iznos=defer_iznos,
-            after_ss=True,
-        )
-
         if amount_podgotovka > 0:
             price           = price - amount_podgotovka
             diff            = amount_podgotovka
@@ -11565,7 +11561,12 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             'zachita_ot_ubitka'             : zachita_ot_ubitka,
             'finance_price'                 : finance_price,
             'run_sum'                       : run_sum,
+            'iznos'                         : bool(getattr(estimation, 'iznos', False)),
+            'taxi'                          : bool(getattr(estimation, 'taxi', False)),
+            'k_i'                           : getattr(estimation, 'k_i', 0) or 0,
             'iznos_price'                   : iznos_price,
+            'iznos_with_ss'                 : bool(defer_iznos),
+            'iznos_ss_compensation'         : iznos_ss_compensation,
             'discount_torg'                 : discount_torg,
             'estimation_settings'           : estimation_settings
         }
@@ -13200,6 +13201,105 @@ def interactive_pricing_report(request):
     return render(request, 'lo/interactive_pricing_report.html', {'params': params})
 
 
+@login_required
+def price_calculator(request):
+    """What-if калькулятор выкупа по ЦГ: рычаги настроек без записи в БД."""
+    from eco.price_calculator import (
+        lever_definitions,
+        parse_overrides_from_request,
+        read_baseline_levers,
+        run_price_calculator,
+        zg_code_from_param,
+    )
+    from refs.price_groups import PRICE_GROUP_RANGES
+    from register.models import RegEstimationsSettings
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'price_calculator',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    zg_code = zg_code_from_param(request.GET.get('zg') or '1200') or '1200'
+    limit = _get_int(request.GET.get('limit')) or 80
+    limit = max(1, min(limit, 300))
+    do_run = (request.GET.get('run') or '') in ('1', 'true', 'yes')
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    ref_unit = units.filter(pk=unit_id).first() if unit_id else units.first()
+    settings_base = RegEstimationsSettings.objects.order_by('id').last()
+    baseline = {}
+    if ref_unit and settings_base:
+        baseline = read_baseline_levers(ref_unit, settings_base, zg_code)
+
+    overrides = parse_overrides_from_request(request.GET, zg_code, baseline) if baseline else {}
+    result = None
+    if do_run and baseline:
+        result = run_price_calculator(
+            date_start=date_start,
+            date_end=date_end,
+            zg_code=zg_code,
+            unit_id=unit_id,
+            overrides=overrides,
+            limit=limit,
+        )
+
+    levers = lever_definitions(zg_code)
+    values = overrides or baseline
+    for lever in levers:
+        lever['value'] = values.get(lever['key'], baseline.get(lever['key'], 0))
+        base_v = baseline.get(lever['key'])
+        if lever['unit'] == 'bool':
+            lever['changed'] = bool(base_v) != bool(lever['value'])
+        else:
+            try:
+                lever['changed'] = abs(float(lever['value'] or 0) - float(base_v or 0)) >= 1e-6
+            except (TypeError, ValueError):
+                lever['changed'] = False
+
+    levers_by_group = {
+        'buyout': [x for x in levers if x['group'] == 'buyout'],
+        'finance': [x for x in levers if x['group'] == 'finance'],
+        'iznos': [x for x in levers if x['group'] == 'iznos'],
+        'amounts': [x for x in levers if x['group'] == 'amounts'],
+        'damage': [x for x in levers if x['group'] == 'damage'],
+    }
+
+    params = {
+        'type': 'price_calculator',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+            'zg': zg_code,
+            'limit': limit,
+        },
+        'price_groups': PRICE_GROUP_RANGES,
+        'units': units,
+        'baseline_levers': baseline,
+        'overrides': values,
+        'levers_by_group': levers_by_group,
+        'result': result,
+        'ran': bool(do_run),
+        'hint': (
+            'Пересчёт Autohub без записи. «Было» — текущие настройки, «стало» — с вашими рычагами. '
+            'ДЦ в фильтрах задаёт и выборку, и стартовые значения параметров.'
+        ),
+    }
+    return render(request, 'lo/price_calculator.html', {'params': params})
+
+
 def price_recalc_history_report(request):
     """История перерасчётов autohub: было→стало / журнал, поля как в интерактивных оценках + ЦНА/КФ."""
     if not request.user.is_authenticated:
@@ -13385,6 +13485,14 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
         'Δ цены выкупа',
         'Затраты было',
         'Затраты стало',
+        'Износ было',
+        'Износ стало',
+        'k_i было',
+        'k_i стало',
+        'Сумма износа было',
+        'Сумма износа стало',
+        'Компенс. СС было',
+        'Компенс. СС стало',
         'Влияние затрат',
         'Влияние КФ',
         'Влияние повышенного износа СС',
@@ -13440,6 +13548,14 @@ def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
             row.get('delta_estimation_price') if row.get('delta_estimation_price') is not None else '',
             first.get('amount_recovery') or 0,
             last.get('amount_recovery') or 0,
+            'да' if first.get('iznos') else 'нет',
+            'да' if last.get('iznos') else 'нет',
+            first.get('k_i') or 0,
+            last.get('k_i') or 0,
+            first.get('iznos_price') or 0,
+            last.get('iznos_price') or 0,
+            first.get('iznos_ss_compensation') or 0,
+            last.get('iznos_ss_compensation') or 0,
             row.get('influence_costs') if row.get('influence_costs') is not None else '',
             row.get('influence_kf') if row.get('kf_changed') else '',
             row.get('influence_iznos_ss') if not row.get('kf_changed') else '',
@@ -13632,6 +13748,8 @@ def estimation_zg_analytics(request):
         'unit_pivot_footer': data.get('unit_pivot_footer'),
         'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
         'unit_chart_json': _json.dumps(data.get('unit_chart') or {}, ensure_ascii=False),
+        'chart_day_json': _json.dumps(data.get('chart_day') or {}, ensure_ascii=False),
+        'unit_chart_day_json': _json.dumps(data.get('unit_chart_day') or {}, ensure_ascii=False),
         'show_unit_view': not bool(unit_id),
         'detail_base': '/eco/estimation-zg/detail/',
         'units': units,
@@ -13640,7 +13758,7 @@ def estimation_zg_analytics(request):
         'types': types,
         'hint': (
             'Оценки: воронка Trade-In, ЦГ по ЦНА (zg_name). '
-            '«Принята» — date_reception_success. Месяцы — по дате начала оценки.'
+            '«Принята» — date_reception_success. Месяцы и дни — по дате начала оценки.'
         ),
     }
     return render(request, 'lo/estimation_zg_analytics.html', {'params': params})
@@ -13876,12 +13994,12 @@ def estimation_zg_detail(request):
     if back_qs:
         back_url += '?' + urlencode(back_qs)
 
-    if not month_key or len(month_key) != 7:
+    if not month_key or len(month_key) not in (7, 10):
         params = {
             'type': 'estimation_zg_analytics',
             'nav_selected': 4,
             'request': request,
-            'error': 'Не указан месяц (ожидается YYYY-MM).',
+            'error': 'Не указан период (ожидается YYYY-MM или YYYY-MM-DD).',
             'back_url': back_url,
         }
         return render(request, 'lo/estimation_zg_detail.html', {'params': params})

@@ -1,0 +1,238 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — Калькулятор выкупа {% endblock %}
+{% block title_navbar %} — Калькулятор выкупа {% endblock %}
+
+{% block content %}
+<style>
+  .pc-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .pc-page h2 { font-size: 1.55rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .pc-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
+  .pc-panel, .pc-badge {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06);
+  }
+  .pc-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .pc-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 .85rem; }
+  .pc-hint { font-size: .82rem; color: #6c7a92; }
+  .pc-badge { padding: .9rem 1rem; height: 100%; }
+  .pc-badge .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: #8ea1ba; }
+  .pc-badge .pair { font-size: 1.05rem; font-weight: 650; color: #002a5a; margin: .2rem 0; }
+  .pc-badge .delta { font-size: .9rem; font-weight: 600; }
+  .delta-pos { color: #0f9d58; }
+  .delta-neg { color: #dc2626; }
+  .delta-zero { color: #94a3b8; }
+  .pc-sep { color: #94a3b8; margin: 0 .25rem; }
+  .table-pc th { white-space: nowrap; font-size: .75rem; color: #5b6b82; }
+  .table-pc td { font-size: .82rem; vertical-align: middle; }
+  .table-pc .pair { white-space: nowrap; }
+  details.pc-adv > summary {
+    cursor: pointer; font-weight: 600; color: #002a5a; margin-bottom: .75rem; list-style: none;
+  }
+  details.pc-adv > summary::-webkit-details-marker { display: none; }
+  .lever-changed { background: #fffbeb; }
+  .btn-calc { border-radius: 999px; padding: .45rem 1.2rem; }
+  .form-label { font-size: .78rem; color: #5b6b82; }
+</style>
+
+<div class="pc-page">
+  <h2>Калькулятор выкупа</h2>
+  <p class="lead">{{ params.hint }}</p>
+
+  <form method="get" class="pc-panel">
+    <input type="hidden" name="run" value="1">
+    <div class="row g-3 align-items-end">
+      <div class="col-6 col-md-2">
+        <label class="form-label">С</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">По</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">ДЦ (выборка + стартовые параметры)</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все ДЦ</option>
+          {% for u in params.units %}
+          <option value="{{ u.id }}" {% if params.filters.unit_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">Ценовая группа</label>
+        <select class="form-select" name="zg">
+          {% for g in params.price_groups %}
+          <option value="{{ g.code }}" {% if params.filters.zg == g.code %}selected{% endif %}>ЦГ {{ g.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-1">
+        <label class="form-label">Лимит</label>
+        <input type="number" class="form-control" name="limit" min="1" max="300" value="{{ params.filters.limit }}">
+      </div>
+      <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-primary btn-calc w-100">Пересчитать</button>
+      </div>
+    </div>
+
+    <hr class="my-3">
+    <h3>Выкуп: ключевые %</h3>
+    <div class="row g-3 mb-3">
+      {% for lever in params.levers_by_group.buyout %}
+      <div class="col-6 col-md-3">
+        <label class="form-label">{{ lever.label }} <span class="text-muted">({{ lever.unit }})</span></label>
+        <input type="number" step="any" class="form-control {% if lever.changed %}lever-changed{% endif %}"
+               name="ov_{{ lever.key }}" value="{{ lever.value|unlocalize }}">
+      </div>
+      {% endfor %}
+      {% for lever in params.levers_by_group.iznos %}
+      <div class="col-6 col-md-3">
+        <label class="form-label">{{ lever.label }}</label>
+        <select class="form-select {% if lever.changed %}lever-changed{% endif %}" name="ov_{{ lever.key }}">
+          <option value="0" {% if not lever.value %}selected{% endif %}>нет</option>
+          <option value="1" {% if lever.value %}selected{% endif %}>да</option>
+        </select>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h3>Финансирование</h3>
+    <div class="row g-3 mb-3">
+      {% for lever in params.levers_by_group.finance %}
+      <div class="col-6 col-md-3">
+        <label class="form-label">{{ lever.label }}{% if lever.unit %} <span class="text-muted">({{ lever.unit }})</span>{% endif %}</label>
+        <input type="number" step="any" class="form-control {% if lever.changed %}lever-changed{% endif %}"
+               name="ov_{{ lever.key }}" value="{{ lever.value|unlocalize }}">
+      </div>
+      {% endfor %}
+    </div>
+
+    <details class="pc-adv mb-3">
+      <summary>Фиксированные доплаты ЦГ (лобовое, оптика, АКБ, ТО) ▾</summary>
+      <div class="row g-3">
+        {% for lever in params.levers_by_group.amounts %}
+        <div class="col-6 col-md-3">
+          <label class="form-label">{{ lever.label }} <span class="text-muted">({{ lever.unit }})</span></label>
+          <input type="number" step="any" class="form-control {% if lever.changed %}lever-changed{% endif %}"
+                 name="ov_{{ lever.key }}" value="{{ lever.value|unlocalize }}">
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="pc-adv">
+      <summary>Пороги / КФ повреждений по направлениям ▾</summary>
+      <div class="row g-3">
+        {% for lever in params.levers_by_group.damage %}
+        <div class="col-6 col-md-3">
+          <label class="form-label">{{ lever.label }} <span class="text-muted">({{ lever.unit }})</span></label>
+          <input type="number" step="any" class="form-control {% if lever.changed %}lever-changed{% endif %}"
+                 name="ov_{{ lever.key }}" value="{{ lever.value|unlocalize }}">
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+      <button type="submit" class="btn btn-primary btn-calc">Пересчитать выборку</button>
+      <a class="btn btn-outline-secondary btn-calc" href="/eco/price-calculator/?zg={{ params.filters.zg }}&unit_id={{ params.filters.unit_id }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&limit={{ params.filters.limit }}">Сбросить рычаги</a>
+    </div>
+  </form>
+
+  {% if params.ran and params.result %}
+    {% if params.result.error %}
+    <div class="alert alert-warning">{{ params.result.error }}</div>
+    {% else %}
+
+    <div class="pc-panel">
+      <h3 class="mb-1">Итог по выборке</h3>
+      <p class="pc-hint mt-0 mb-3">
+        ЦГ {{ params.result.zg_name }} · найдено {{ params.result.total_found }},
+        посчитано {{ params.result.shown }}{% if params.result.err_count %}, ошибок {{ params.result.err_count }}{% endif %}.
+        {% if params.result.changed_levers %}
+        Изменены: {{ params.result.changed_levers|join:", " }}.
+        {% else %}
+        Рычаги как в текущих настройках (Δ должны быть около нуля).
+        {% endif %}
+      </p>
+      <div class="row g-3">
+        {% for b in params.result.badges %}
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="pc-badge">
+            <div class="t">{{ b.label }}</div>
+            <div class="pair">{{ b.before|floatformat:0 }}<span class="pc-sep">→</span>{{ b.after|floatformat:0 }}</div>
+            <div class="delta {% if b.delta > 0 %}delta-pos{% elif b.delta < 0 %}delta-neg{% else %}delta-zero{% endif %}">
+              {% if b.delta > 0 %}+{% endif %}{{ b.delta|floatformat:0 }}
+              {% if b.delta_pct != None %}
+              ( {% if b.delta_pct > 0 %}+{% endif %}{{ b.delta_pct|unlocalize }}% )
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="pc-panel">
+      <h3>Оценки: было / стало</h3>
+      <p class="pc-hint mt-0 mb-2">Выкуп и затраты после Autohub-пересчёта. Затраты: подготовка / слесарка / кузовной.</p>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle table-pc mb-0">
+          <thead>
+            <tr>
+              <th></th>
+              <th>ДЦ</th>
+              <th>Авто</th>
+              <th>VIN</th>
+              <th class="text-end">ЦНА</th>
+              <th class="text-end">Выкуп</th>
+              <th class="text-end">Δ выкуп</th>
+              <th class="text-end">Затраты</th>
+              <th class="text-end">Подг.</th>
+              <th class="text-end">СС</th>
+              <th class="text-end">МКУ</th>
+              <th class="text-end">БЦП</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in params.result.rows %}
+            <tr>
+              <td>
+                {% if row.rlk_id %}
+                <a href="/eco/{{ row.rlk_id }}/?page=20" target="_blank" title="Открыть оценку"><span class="icon-doc"></span></a>
+                {% endif %}
+              </td>
+              <td>{{ row.unit_name }}</td>
+              <td>{{ row.mark }} {{ row.model }}</td>
+              <td class="small">{{ row.vin }}</td>
+              <td class="text-end">{{ row.zna_before|floatformat:0 }}</td>
+              <td class="text-end pair">{{ row.before.estimation_price|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.estimation_price|floatformat:0 }}</td>
+              <td class="text-end {% if row.delta_estimation_price > 0 %}delta-pos{% elif row.delta_estimation_price < 0 %}delta-neg{% else %}delta-zero{% endif %}">
+                {% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}
+                {% if row.delta_pct_estimation != None %}<div class="small">{% if row.delta_pct_estimation > 0 %}+{% endif %}{{ row.delta_pct_estimation|unlocalize }}%</div>{% endif %}
+              </td>
+              <td class="text-end pair">{{ row.before.amount_recovery|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_recovery|floatformat:0 }}</td>
+              <td class="text-end pair">{{ row.before.amount_podgotovka|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_podgotovka|floatformat:0 }}</td>
+              <td class="text-end pair">{{ row.before.amount_ss|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_ss|floatformat:0 }}</td>
+              <td class="text-end pair">{{ row.before.amount_mcu|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_mcu|floatformat:0 }}</td>
+              <td class="text-end pair">{{ row.before.cna_expenses|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.cna_expenses|floatformat:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="12" class="text-center text-muted py-4">Нет оценок в фильтре или все без ЦНА Autohub в этой ЦГ.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  {% elif params.ran %}
+    <div class="alert alert-light border">Не удалось загрузить параметры — выберите ДЦ и ЦГ.</div>
+  {% else %}
+    <div class="pc-panel">
+      <p class="mb-0 pc-hint">Выберите период, ЦГ и при необходимости ДЦ, при необходимости поправьте рычаги и нажмите «Пересчитать».</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
