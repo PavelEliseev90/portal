@@ -27,6 +27,9 @@
   .table-pc th { white-space: nowrap; font-size: .75rem; color: #5b6b82; }
   .table-pc td { font-size: .82rem; vertical-align: middle; }
   .table-pc .pair { white-space: nowrap; }
+  .table-pc .pc-cost-break { white-space: normal; line-height: 1.35; max-width: 18rem; margin-left: auto; }
+  .table-pc .pc-est-cell { min-width: 9rem; }
+  .table-pc .pc-est-name { font-weight: 600; color: #002a5a; }
   details.pc-adv > summary {
     cursor: pointer; font-weight: 600; color: #002a5a; margin-bottom: .75rem; list-style: none;
   }
@@ -169,7 +172,7 @@
       {% endif %}
       <div class="row g-3">
         {% for b in params.result.badges %}
-        <div class="col-6 col-md-3 col-xl-2">
+        <div class="col-12 col-md-4">
           <div class="pc-badge">
             <div class="t">{{ b.label }}</div>
             <div class="pair">{{ b.before|floatformat:0 }}<span class="pc-sep">→</span>{{ b.after|floatformat:0 }}</div>
@@ -186,51 +189,60 @@
     </div>
 
     <div class="pc-panel">
-      <h3>Оценки: было / стало</h3>
-      <p class="pc-hint mt-0 mb-2">Выкуп и затраты после Autohub-пересчёта. Затраты: подготовка / слесарка / кузовной.</p>
+      <h3>Как меняется расчёт</h3>
+      <p class="pc-hint mt-0 mb-2">Только цифры выкупа: было → стало. Разбивка затрат: подготовка / СС / МКУ.</p>
       <div class="table-responsive">
         <table class="table table-sm table-bordered align-middle table-pc mb-0">
           <thead>
             <tr>
-              <th></th>
-              <th>ДЦ</th>
-              <th>Авто</th>
-              <th>VIN</th>
-              <th class="text-end">ЦНА</th>
+              <th>Оценка</th>
               <th class="text-end">Выкуп</th>
-              <th class="text-end">Δ выкуп</th>
               <th class="text-end">Затраты</th>
-              <th class="text-end">Подг.</th>
-              <th class="text-end">СС</th>
-              <th class="text-end">МКУ</th>
               <th class="text-end">БЦП</th>
             </tr>
           </thead>
           <tbody>
             {% for row in params.result.rows %}
             <tr>
-              <td>
+              <td class="pc-est-cell">
                 {% if row.rlk_id %}
                 <a href="/eco/{{ row.rlk_id }}/?page=20" target="_blank" title="Открыть оценку"><span class="icon-doc"></span></a>
                 {% endif %}
+                <span class="pc-est-name">{{ row.mark }} {{ row.model }}</span>
+                {% if row.vin %}<div class="small text-muted">{{ row.vin }}</div>{% endif %}
               </td>
-              <td>{{ row.unit_name }}</td>
-              <td>{{ row.mark }} {{ row.model }}</td>
-              <td class="small">{{ row.vin }}</td>
-              <td class="text-end">{{ row.zna_before|floatformat:0 }}</td>
-              <td class="text-end pair">{{ row.before.estimation_price|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.estimation_price|floatformat:0 }}</td>
-              <td class="text-end {% if row.delta_estimation_price > 0 %}delta-pos{% elif row.delta_estimation_price < 0 %}delta-neg{% else %}delta-zero{% endif %}">
-                {% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}
-                {% if row.delta_pct_estimation != None %}<div class="small">{% if row.delta_pct_estimation > 0 %}+{% endif %}{{ row.delta_pct_estimation|unlocalize }}%</div>{% endif %}
+              <td class="text-end">
+                <div class="pair">{{ row.before.estimation_price|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.estimation_price|floatformat:0 }}</div>
+                <div class="small {% if row.delta_estimation_price > 0 %}delta-pos{% elif row.delta_estimation_price < 0 %}delta-neg{% else %}delta-zero{% endif %}">
+                  {% if row.delta_estimation_price > 0 %}+{% endif %}{{ row.delta_estimation_price|floatformat:0 }}
+                  {% if row.delta_pct_estimation != None %}
+                  ({% if row.delta_pct_estimation > 0 %}+{% endif %}{{ row.delta_pct_estimation|unlocalize }}%)
+                  {% endif %}
+                </div>
               </td>
-              <td class="text-end pair">{{ row.before.amount_recovery|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_recovery|floatformat:0 }}</td>
-              <td class="text-end pair">{{ row.before.amount_podgotovka|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_podgotovka|floatformat:0 }}</td>
-              <td class="text-end pair">{{ row.before.amount_ss|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_ss|floatformat:0 }}</td>
-              <td class="text-end pair">{{ row.before.amount_mcu|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.amount_mcu|floatformat:0 }}</td>
-              <td class="text-end pair">{{ row.before.cna_expenses|floatformat:0 }}<span class="pc-sep">/</span>{{ row.after.cna_expenses|floatformat:0 }}</td>
+              <td class="text-end">
+                <div class="pair">{{ row.before.amount_recovery|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.amount_recovery|floatformat:0 }}</div>
+                <div class="small text-muted pc-cost-break">
+                  подг. {{ row.before.amount_podgotovka|floatformat:0 }}→{{ row.after.amount_podgotovka|floatformat:0 }}
+                  · СС {{ row.before.amount_ss|floatformat:0 }}→{{ row.after.amount_ss|floatformat:0 }}
+                  · МКУ {{ row.before.amount_mcu|floatformat:0 }}→{{ row.after.amount_mcu|floatformat:0 }}
+                </div>
+                <div class="small {% if row.delta_amount_recovery > 0 %}delta-pos{% elif row.delta_amount_recovery < 0 %}delta-neg{% else %}delta-zero{% endif %}">
+                  {% if row.delta_amount_recovery > 0 %}+{% endif %}{{ row.delta_amount_recovery|floatformat:0 }}
+                  {% if row.delta_pct_recovery != None %}
+                  ({% if row.delta_pct_recovery > 0 %}+{% endif %}{{ row.delta_pct_recovery|unlocalize }}%)
+                  {% endif %}
+                </div>
+              </td>
+              <td class="text-end">
+                <div class="pair">{{ row.before.cna_expenses|floatformat:0 }}<span class="pc-sep">→</span>{{ row.after.cna_expenses|floatformat:0 }}</div>
+                <div class="small {% if row.delta_cna > 0 %}delta-pos{% elif row.delta_cna < 0 %}delta-neg{% else %}delta-zero{% endif %}">
+                  {% if row.delta_cna > 0 %}+{% endif %}{{ row.delta_cna|floatformat:0 }}
+                </div>
+              </td>
             </tr>
             {% empty %}
-            <tr><td colspan="12" class="text-center text-muted py-4">Нет оценок в фильтре или все без ЦНА Autohub в этой ЦГ.</td></tr>
+            <tr><td colspan="4" class="text-center text-muted py-4">Нет оценок в фильтре или все без ЦНА Autohub в этой ЦГ.</td></tr>
             {% endfor %}
           </tbody>
         </table>

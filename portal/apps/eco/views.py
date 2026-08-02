@@ -13219,13 +13219,14 @@ def price_calculator(request):
     """What-if калькулятор выкупа по ЦГ: рычаги настроек без записи в БД."""
     from eco.price_calculator import (
         lever_definitions,
+        load_full_settings,
+        load_unit_for_calculator,
         parse_overrides_from_request,
         read_baseline_levers,
         run_price_calculator,
         zg_code_from_param,
     )
     from refs.price_groups import PRICE_GROUP_RANGES
-    from register.models import RegEstimationsSettings
 
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
         params = {
@@ -13247,9 +13248,16 @@ def price_calculator(request):
     limit = max(1, min(limit, 300))
     do_run = (request.GET.get('run') or '') in ('1', 'true', 'yes')
 
-    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-    ref_unit = units.filter(pk=unit_id).first() if unit_id else units.first()
-    settings_base = RegEstimationsSettings.objects.order_by('id').last()
+    # Только id/name для селекта — RefUnit ~419 колонок, полный SELECT * всех ДЦ не нужен
+    units = (
+        RefUnit.objects
+        .filter(buauto=True, active_eco=True)
+        .exclude(name='')
+        .order_by('name')
+        .only('id', 'name')
+    )
+    ref_unit = load_unit_for_calculator(unit_id) if unit_id else load_unit_for_calculator(None)
+    settings_base = load_full_settings()
     baseline = {}
     if ref_unit and settings_base:
         baseline = read_baseline_levers(ref_unit, settings_base, zg_code)
