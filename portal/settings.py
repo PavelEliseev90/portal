@@ -389,3 +389,19 @@ MYKORS_EXPORT_BATCH_LIMIT = int('0')  # 0 = all stock
 MYKORS_SKIP_UNCHANGED = '1'
 MYKORS_PORTAL_PUBLIC_BASE_URL = 'https://ah.kors-group.com'
 MYKORS_PHOTOS_LIMIT = int('50')
+
+# --- MSSQL: выгрузка TradeInFunnel (/eco/funnel/simple-export/) ---
+# Пример: set MSSQL_TRADEINFUNNEL_ENABLED=1
+MSSQL_TRADEINFUNNEL = {
+    'enabled': os.getenv('MSSQL_TRADEINFUNNEL_ENABLED', '0') in ('1', 'true', 'True', 'yes'),
+    'driver': os.getenv('MSSQL_TRADEINFUNNEL_DRIVER', 'ODBC Driver 17 for SQL Server'),
+    'server': os.getenv('MSSQL_TRADEINFUNNEL_SERVER', ''),
+    'database': os.getenv('MSSQL_TRADEINFUNNEL_DATABASE', ''),
+    'user': os.getenv('MSSQL_TRADEINFUNNEL_USER', ''),
+    'password': os.getenv('MSSQL_TRADEINFUNNEL_PASSWORD', ''),
+    'trusted': os.getenv('MSSQL_TRADEINFUNNEL_TRUSTED', '0') in ('1', 'true', 'True', 'yes'),
+    'table': os.getenv('MSSQL_TRADEINFUNNEL_TABLE', 'dbo.TradeInFunnel'),
+    'encrypt': os.getenv('MSSQL_TRADEINFUNNEL_ENCRYPT', 'yes'),
+    'trust_server_certificate': os.getenv('MSSQL_TRADEINFUNNEL_TRUST_CERT', 'yes'),
+}
+
