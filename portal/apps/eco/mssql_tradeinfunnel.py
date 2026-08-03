@@ -6,12 +6,49 @@ import datetime as DT
 from typing import Iterable, Optional
 
 
+# Предпочтительный порядок, если DRIVER не задан явно / не установлен.
+_DRIVER_CANDIDATES = (
+    'ODBC Driver 18 for SQL Server',
+    'ODBC Driver 17 for SQL Server',
+    'ODBC Driver 13 for SQL Server',
+    'SQL Server Native Client 11.0',
+    'SQL Server',  # старый драйвер Windows (часто единственный на сервере)
+)
+
+
+def _installed_odbc_drivers() -> list:
+    try:
+        import pyodbc
+        return list(pyodbc.drivers())
+    except Exception:
+        return []
+
+
+def resolve_odbc_driver(preferred: str = '') -> str:
+    """Вернуть имя установленного ODBC-драйвера SQL Server."""
+    installed = _installed_odbc_drivers()
+    preferred = (preferred or '').strip()
+    if preferred and preferred in installed:
+        return preferred
+    for name in _DRIVER_CANDIDATES:
+        if name in installed:
+            return name
+    # ничего подходящего — вернём preferred или дефолт (ошибка уже на connect)
+    return preferred or _DRIVER_CANDIDATES[0]
+
+
+def _is_modern_msodbcsql(driver: str) -> bool:
+    """Encrypt/TrustServerCertificate поддерживают ODBC Driver 13+."""
+    return 'ODBC Driver' in (driver or '') and 'SQL Server' in (driver or '')
+
+
 def mssql_config() -> dict:
     from django.conf import settings
     cfg = getattr(settings, 'MSSQL_TRADEINFUNNEL', None) or {}
+    preferred = (cfg.get('driver') or '').strip()
     return {
         'enabled': bool(cfg.get('enabled')),
-        'driver': cfg.get('driver') or 'ODBC Driver 17 for SQL Server',
+        'driver': resolve_odbc_driver(preferred),
         'server': (cfg.get('server') or '').strip(),
         'database': (cfg.get('database') or '').strip(),
         'user': (cfg.get('user') or '').strip(),
@@ -35,13 +72,16 @@ def mssql_configured() -> bool:
 
 
 def _connection_string(cfg: dict) -> str:
+    driver = cfg['driver']
     parts = [
-        f"DRIVER={{{cfg['driver']}}}",
+        f"DRIVER={{{driver}}}",
         f"SERVER={cfg['server']}",
         f"DATABASE={cfg['database']}",
-        f"Encrypt={cfg['encrypt']}",
-        f"TrustServerCertificate={cfg['trust_server_certificate']}",
     ]
+    # Encrypt=* есть у Microsoft ODBC Driver 13/17/18; у старого "SQL Server" — нет
+    if _is_modern_msodbcsql(driver):
+        parts.append(f"Encrypt={cfg['encrypt']}")
+        parts.append(f"TrustServerCertificate={cfg['trust_server_certificate']}")
     if cfg['trusted']:
         parts.append('Trusted_Connection=yes')
     else:
