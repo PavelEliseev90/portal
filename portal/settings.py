@@ -390,19 +390,17 @@ MYKORS_SKIP_UNCHANGED = '1'
 MYKORS_PORTAL_PUBLIC_BASE_URL = 'https://ah.kors-group.com'
 MYKORS_PHOTOS_LIMIT = int('50')
 
-# --- MSSQL: выгрузка TradeInFunnel (/eco/funnel/simple-export/) ---
-# Пример: set MSSQL_TRADEINFUNNEL_ENABLED=1
+
+
 MSSQL_TRADEINFUNNEL = {
-    'enabled': os.getenv('MSSQL_TRADEINFUNNEL_ENABLED', '0') in ('1', 'true', 'True', 'yes'),
-    # Пусто = автовыбор из установленных (18 → 17 → 13 → Native Client → SQL Server)
+    'enabled': os.getenv('MSSQL_TRADEINFUNNEL_ENABLED', '1') in ('1', 'true', 'True', 'yes'),
     'driver': os.getenv('MSSQL_TRADEINFUNNEL_DRIVER', ''),
-    'server': os.getenv('MSSQL_TRADEINFUNNEL_SERVER', ''),
-    'database': os.getenv('MSSQL_TRADEINFUNNEL_DATABASE', ''),
-    'user': os.getenv('MSSQL_TRADEINFUNNEL_USER', ''),
-    'password': os.getenv('MSSQL_TRADEINFUNNEL_PASSWORD', ''),
+    'server': os.getenv('MSSQL_TRADEINFUNNEL_SERVER', 'a01-srv-fa'),
+    'database': os.getenv('MSSQL_TRADEINFUNNEL_DATABASE', 'rBi'),
+    'user': os.getenv('MSSQL_TRADEINFUNNEL_USER', 'sa'),
+    'password': os.getenv('MSSQL_TRADEINFUNNEL_PASSWORD', 'Adelaida200712'),
     'trusted': os.getenv('MSSQL_TRADEINFUNNEL_TRUSTED', '0') in ('1', 'true', 'True', 'yes'),
     'table': os.getenv('MSSQL_TRADEINFUNNEL_TABLE', 'dbo.TradeInFunnel'),
     'encrypt': os.getenv('MSSQL_TRADEINFUNNEL_ENCRYPT', 'yes'),
     'trust_server_certificate': os.getenv('MSSQL_TRADEINFUNNEL_TRUST_CERT', 'yes'),
-}
-
+}2
