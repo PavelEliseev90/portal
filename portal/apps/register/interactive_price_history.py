@@ -770,6 +770,67 @@ def _history_values_from_mapping(item):
     }
 
 
+def _recovery_from_light(row) -> float:
+    if not row:
+        return 0.0
+    recovery = row.get('amount_recovery')
+    if recovery:
+        return float(recovery)
+    return float(
+        (row.get('amount_podgotovka') or 0)
+        + (row.get('amount_ss') or 0)
+        + (row.get('amount_mcu') or 0)
+    )
+
+
+def _is_settings_impact_pair(first, last) -> bool:
+    """
+    Оставляем пары для анализа настроек:
+    - смена КФ
+    - снижение сумм ремонта
+    - возврат слесарки в повышенный износ (компенсация СС / флаг iznos_with_ss)
+
+    Не показываем случаи, где просто добавили ремонт (затраты выросли без КФ/износа).
+    """
+    if not first or not last:
+        return False
+    kf_changed = (first.get('kf') or '') != (last.get('kf') or '')
+    delta_recovery = _recovery_from_light(last) - _recovery_from_light(first)
+    delta_ss_comp = float(last.get('iznos_ss_compensation') or 0) - float(
+        first.get('iznos_ss_compensation') or 0
+    )
+    iznos_ss_flag_changed = bool(first.get('iznos_with_ss')) != bool(last.get('iznos_with_ss'))
+
+    # «Добавили ремонт» и нет сигнала по КФ/износу — шум
+    if delta_recovery > 0 and not kf_changed and not delta_ss_comp and not iznos_ss_flag_changed:
+        return False
+
+    if kf_changed:
+        return True
+    if delta_recovery < 0:
+        return True
+    if delta_ss_comp or iznos_ss_flag_changed:
+        return True
+    return False
+
+
+def _pair_impact_tags(first, last) -> list:
+    tags = []
+    kf_changed = (first.get('kf') or '') != (last.get('kf') or '')
+    delta_recovery = _recovery_from_light(last) - _recovery_from_light(first)
+    delta_ss_comp = float(last.get('iznos_ss_compensation') or 0) - float(
+        first.get('iznos_ss_compensation') or 0
+    )
+    iznos_ss_flag_changed = bool(first.get('iznos_with_ss')) != bool(last.get('iznos_with_ss'))
+    if kf_changed:
+        tags.append('kf')
+    if delta_recovery < 0:
+        tags.append('costs_down')
+    if delta_ss_comp or iznos_ss_flag_changed:
+        tags.append('iznos_ss')
+    return tags
+
+
 def build_autohub_first_last_page(
     *,
     date_start=None,
@@ -778,13 +839,14 @@ def build_autohub_first_last_page(
     car_query='',
     trigger='',
     only_changed=True,
+    focus_settings=True,
     page=1,
     per_page=50,
 ):
     """
     Отчёт «было / стало» Autohub (ускоренный):
     1) агрегация кандидатов (≥2) одним запросом
-    2) лёгкий values()-проход только id/zna/date для пар
+    2) лёгкий values()-проход для пар + фильтр «настройки, не добавление ремонтов»
     3) полные поля — только для строк текущей страницы
     """
     from collections import defaultdict
@@ -825,7 +887,12 @@ def build_autohub_first_last_page(
     recalc_by_est = {row['estimation_id']: row['recalc_count'] for row in agg_rows}
     total_recalcs = sum(recalc_by_est.values()) if recalc_by_est else 0
 
-    # Лёгкий проход: только поля для выбора пары
+    # Лёгкий проход: поля для пары + фильтра влияния настроек
+    light_fields = (
+        'id', 'estimation_id', 'date', 'zna', 'kf',
+        'amount_recovery', 'amount_podgotovka', 'amount_ss', 'amount_mcu',
+        'iznos_ss_compensation', 'iznos_with_ss',
+    )
     history_by_est = defaultdict(list)
     if candidate_ids:
         light_qs = (
@@ -853,24 +920,31 @@ def build_autohub_first_last_page(
                 light_qs
                 .filter(estimation_id__in=chunk_ids)
                 .order_by('estimation_id', 'date', 'id')
-                .values('id', 'estimation_id', 'date', 'zna')
+                .values(*light_fields)
                 .iterator(chunk_size=2000)
             ):
                 history_by_est[row['estimation_id']].append(row)
 
-    valid_pairs = []  # (est_id, first_id, last_id, same_count, all_count)
+    valid_pairs = []  # (est_id, first_id, last_id, same_count, all_count, impact_tags)
+    skipped_added_repairs = 0
     for est_id in candidate_ids:
         hist_list = history_by_est.get(est_id) or []
         picked = _pick_first_last_same_zna(hist_list)
         if not picked:
             continue
         first, last, same_count = picked
+        if focus_settings and not _is_settings_impact_pair(first, last):
+            delta_recovery = _recovery_from_light(last) - _recovery_from_light(first)
+            if delta_recovery > 0:
+                skipped_added_repairs += 1
+            continue
         valid_pairs.append((
             est_id,
             first['id'],
             last['id'],
             same_count,
             recalc_by_est.get(est_id) or len(hist_list),
+            _pair_impact_tags(first, last),
         ))
 
     total_valid = len(valid_pairs)
@@ -879,9 +953,9 @@ def build_autohub_first_last_page(
     page_pairs = list(page_obj.object_list)
     est_ids = [item[0] for item in page_pairs]
     pair_ids = []
-    for _est, first_id, last_id, _sc, _ac in page_pairs:
-        pair_ids.append(first_id)
-        pair_ids.append(last_id)
+    for item in page_pairs:
+        pair_ids.append(item[1])
+        pair_ids.append(item[2])
 
     # Полные строки только для пар на странице
     full_by_id = {}
@@ -918,8 +992,11 @@ def build_autohub_first_last_page(
     compare_data = []
     changed_count = 0
     cars_with_pair = 0
+    impact_kf_count = 0
+    impact_costs_down_count = 0
+    impact_iznos_ss_count = 0
 
-    for est_id, first_id, last_id, same_count, all_count in page_pairs:
+    for est_id, first_id, last_id, same_count, all_count, impact_tags in page_pairs:
         first = full_by_id.get(first_id)
         last = full_by_id.get(last_id)
         if not first or not last:
@@ -928,6 +1005,12 @@ def build_autohub_first_last_page(
         last_vals = _history_values_from_mapping(last)
         has_pair = True
         cars_with_pair += 1
+        if 'kf' in impact_tags:
+            impact_kf_count += 1
+        if 'costs_down' in impact_tags:
+            impact_costs_down_count += 1
+        if 'iznos_ss' in impact_tags:
+            impact_iznos_ss_count += 1
 
         delta_price = last_vals['estimation_price'] - first_vals['estimation_price']
         delta_zna = last_vals['zna'] - first_vals['zna']
@@ -954,12 +1037,15 @@ def build_autohub_first_last_page(
             influence_iznos_ss = 0
         else:
             influence_kf = 0
-            if first_vals['iznos_price'] or last_vals['iznos_price'] or first_vals['iznos_data'] or last_vals['iznos_data']:
+            # Приоритет: явная компенсация СС → сумма износа → остаток Δ цены
+            if delta_iznos_ss_comp:
+                influence_iznos_ss = delta_iznos_ss_comp
+            elif first_vals['iznos_price'] or last_vals['iznos_price'] or first_vals['iznos_data'] or last_vals['iznos_data']:
                 influence_iznos_ss = delta_iznos_price if (first_vals['iznos_price'] or last_vals['iznos_price']) else delta_iznos_data
             else:
                 influence_iznos_ss = residual_price
 
-        if delta_price or delta_auto or delta_before or delta_after or delta_recovery or kf_changed:
+        if delta_price or delta_auto or delta_before or delta_after or delta_recovery or kf_changed or delta_iznos_ss_comp:
             changed_count += 1
 
         snap = snaps.get(est_id)
@@ -989,6 +1075,7 @@ def build_autohub_first_last_page(
             'recalc_count': all_count,
             'same_zna_count': same_count,
             'has_pair': has_pair,
+            'impact_tags': impact_tags,
             'first_date': first_vals['date'],
             'last_date': last_vals['date'],
             'first': first_vals,
@@ -1018,4 +1105,9 @@ def build_autohub_first_last_page(
         'total_recalcs': total_recalcs,
         'changed_count': changed_count,
         'cars_with_pair': cars_with_pair,
+        'skipped_added_repairs': skipped_added_repairs,
+        'focus_settings': bool(focus_settings),
+        'impact_kf_count': impact_kf_count,
+        'impact_costs_down_count': impact_costs_down_count,
+        'impact_iznos_ss_count': impact_iznos_ss_count,
     }
