@@ -221,6 +221,23 @@ def sync_tradeinfunnel_to_mssql(
                 inserted += len(chunk)
 
         conn.commit()
+
+        filtr_parts = [
+            f"{date_start.strftime('%Y-%m-%d')}…{date_end.strftime('%Y-%m-%d')}",
+        ]
+        if unit_name:
+            filtr_parts.append(f'Unit={unit_name}')
+        if unit_source_name:
+            filtr_parts.append(f'Source={unit_source_name}')
+        filtr = '; '.join(filtr_parts)
+
+        try:
+            from powerbi.views import add_statistic
+            add_statistic('TradeInFunnel', inserted, deleted, filtr)
+        except Exception:
+            # История в bi_logs не должна ломать саму выгрузку
+            pass
+
         return {
             'ok': True,
             'deleted': deleted,
@@ -228,6 +245,7 @@ def sync_tradeinfunnel_to_mssql(
             'table': table,
             'server': cfg['server'],
             'database': cfg['database'],
+            'filtr': filtr,
         }
     except Exception:
         try:
