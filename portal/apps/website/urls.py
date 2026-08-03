@@ -44,6 +44,11 @@ urlpatterns = [
    path('monitorings/queue/<str:kind>/', views.board_monitoring_queue, name='board_monitoring_queue'),
    path('monitorings/queue/<str:kind>/dismiss/', views.board_monitoring_queue_dismiss, name='board_monitoring_queue_dismiss'),
    path('monitorings/queue/send_1c/send/', views.board_monitoring_queue_send_1c, name='board_monitoring_queue_send_1c'),
+   path(
+       'monitorings/sync_tradeinfunnel/',
+       views.board_monitoring_sync_tradeinfunnel,
+       name='board_monitoring_sync_tradeinfunnel',
+   ),
 
    # Справочники
    path('refs/',                 views.refs),
