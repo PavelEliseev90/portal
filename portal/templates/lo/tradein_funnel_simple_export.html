@@ -22,11 +22,14 @@
 
 <div class="exp-page">
   <h2>Выгрузка TradeInFunnel</h2>
-  <p class="lead">Простая выгрузка в Excel. Период обязателен (по дате начала оценки).</p>
+  <p class="lead">Excel или загрузка в MSSQL. Период обязателен (по дате начала оценки). В БД: сначала очистка периода, затем INSERT.</p>
 
   <div class="exp-card">
     {% if params.error %}
     <div class="alert alert-warning py-2">{{ params.error }}</div>
+    {% endif %}
+    {% if params.success %}
+    <div class="alert alert-success py-2">{{ params.success }}</div>
     {% endif %}
 
     <form method="get" class="mb-3">
@@ -57,12 +60,26 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-auto d-flex gap-2">
+        <div class="col-12 d-flex flex-wrap gap-2">
           <button type="submit" class="btn btn-outline-secondary" name="preview" value="1">Посчитать</button>
           <button type="submit" class="btn btn-primary" name="export" value="1">Excel</button>
+          <button type="submit" class="btn btn-success" name="load_mssql" value="1"
+                  {% if not params.mssql_configured %}title="Настройте MSSQL_TRADEINFUNNEL_* в settings / env"{% endif %}>
+            Загрузить в MSSQL
+          </button>
         </div>
       </div>
     </form>
+
+    {% if not params.mssql_configured %}
+    <div class="alert alert-light border small py-2">
+      MSSQL пока не настроен. Нужны переменные:
+      <code>MSSQL_TRADEINFUNNEL_ENABLED=1</code>,
+      <code>SERVER</code>, <code>DATABASE</code>,
+      <code>USER</code>/<code>PASSWORD</code> или <code>TRUSTED=1</code>.
+      Пакет: <code>pip install pyodbc</code>. Таблица: <code>scripts/mssql_create_tradeinfunnel.sql</code>.
+    </div>
+    {% endif %}
 
     {% if params.rows_count != None and not params.error %}
     <div class="alert alert-light border mb-0">
@@ -73,27 +90,20 @@
     </div>
     {% endif %}
 
-    <p class="exp-hint mb-2"><strong>Поля в файле:</strong></p>
+    <p class="exp-hint mb-2"><strong>Поля (Excel / MSSQL):</strong></p>
     <ul class="exp-fields">
-      <li>Дата</li>
-      <li>ДЦ оценки</li>
-      <li>Подразделение источник</li>
-      <li>Тип оценки</li>
-      <li>Марка</li>
-      <li>Модель</li>
-      <li>Пробег</li>
-      <li>Год</li>
-      <li>VIN</li>
-      <li>Номер РЛ</li>
-      <li>Дата РЛ</li>
-      <li>Принят</li>
-      <li>Статус оценки</li>
-      <li>Затраты на подготовку</li>
-      <li>Затраты кузовной участок</li>
-      <li>Затраты слесарный участок</li>
-      <li>Цена до КД</li>
-      <li>Цена после КД</li>
-      <li>Рынок руб.</li>
+      <li>EstimationDate — Дата</li>
+      <li>UnitName — ДЦ оценки</li>
+      <li>UnitSourceName — источник</li>
+      <li>TypeReceptionName — Тип оценки</li>
+      <li>MarkName / ModelName</li>
+      <li>RunKm / Year / Vin</li>
+      <li>RlkNumber / RlkDate</li>
+      <li>Accepted — Принят</li>
+      <li>Stage — Статус</li>
+      <li>CostPreparation / CostMcu / CostSs</li>
+      <li>PriceBeforeKd / PriceAfterKd</li>
+      <li>MarketPriceRub — Рынок</li>
     </ul>
     <p class="exp-hint mb-0">{{ params.field_hint }}</p>
   </div>

@@ -14265,10 +14265,14 @@ def market_model_month_detail(request):
 
 @login_required
 def tradein_funnel_simple_export(request):
-    """Лёгкая выгрузка TradeInFunnel в Excel. Период обязателен."""
+    """Лёгкая выгрузка TradeInFunnel: Excel и/или MSSQL (delete периода + insert)."""
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
     from openpyxl.utils import get_column_letter
     from urllib.parse import quote
+    from eco.mssql_tradeinfunnel import (
+        mssql_configured,
+        sync_tradeinfunnel_to_mssql,
+    )
 
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
         params = {'type': 'tradein_funnel_simple_export', 'nav_selected': 4, 'request': request}
@@ -14281,15 +14285,18 @@ def tradein_funnel_simple_export(request):
     date_start_raw = (request.GET.get('date_start') or '').strip()
     date_end_raw = (request.GET.get('date_end') or '').strip()
     do_export = request.GET.get('export') == '1'
+    do_mssql = request.GET.get('load_mssql') == '1'
     unit_id = _get_int(request.GET.get('unit_id'))
     unit_source_id = _get_int(request.GET.get('unit_source_id') or request.GET.get('source_unit_id'))
 
     error = ''
+    success = ''
     rows_count = None
     date_start = None
     date_end = None
+    mssql_result = None
 
-    if do_export or date_start_raw or date_end_raw:
+    if do_export or do_mssql or date_start_raw or date_end_raw:
         if not date_start_raw or not date_end_raw:
             error = 'Укажите период: дату начала и окончания.'
         else:
@@ -14298,6 +14305,7 @@ def tradein_funnel_simple_export(request):
             if date_start > date_end:
                 error = 'Дата начала больше даты окончания.'
 
+    qs = None
     if not error and date_start and date_end:
         qs = TradeInFunnel.objects.filter(
             date_start_estimation__gte=date_start,
@@ -14309,7 +14317,33 @@ def tradein_funnel_simple_export(request):
             qs = qs.filter(unit_source_id=unit_source_id)
         rows_count = qs.count()
 
-        if do_export:
+        if do_mssql:
+            try:
+                unit_name = None
+                unit_source_name = None
+                if unit_id:
+                    u = RefUnit.objects.filter(pk=unit_id).only('name').first()
+                    unit_name = (u.name if u else '') or None
+                if unit_source_id:
+                    u = RefUnit.objects.filter(pk=unit_source_id).only('name').first()
+                    unit_source_name = (u.name if u else '') or None
+
+                items = list(qs.order_by('date_start_estimation').iterator(chunk_size=2000))
+                mssql_result = sync_tradeinfunnel_to_mssql(
+                    date_start=date_start,
+                    date_end=date_end,
+                    items=items,
+                    unit_name=unit_name,
+                    unit_source_name=unit_source_name,
+                )
+                success = (
+                    'MSSQL: удалено {deleted}, загружено {inserted} '
+                    '→ {database} / {table}'
+                ).format(**mssql_result)
+            except Exception as exc:
+                error = f'Ошибка загрузки в MSSQL: {exc}'
+
+        if do_export and not error:
             headers = [
                 'Дата',
                 'ДЦ оценки',
@@ -14424,7 +14458,10 @@ def tradein_funnel_simple_export(request):
         'nav_selected': 4,
         'request': request,
         'error': error,
+        'success': success,
         'rows_count': rows_count,
+        'mssql_configured': mssql_configured(),
+        'mssql_result': mssql_result,
         'filters': {
             'date_start': date_start_raw or default_start.strftime('%Y-%m-%d'),
             'date_end': date_end_raw or default_end.strftime('%Y-%m-%d'),
@@ -14435,7 +14472,8 @@ def tradein_funnel_simple_export(request):
         'source_units': source_units,
         'field_hint': (
             'Дата = начало оценки; ДЦ = unit_name; рынок = ЦНА (zna); '
-            'затраты: подготовка / MCU / SS; цены до/после КД.'
+            'затраты: подготовка / MCU / SS; цены до/после КД. '
+            'MSSQL: сначала DELETE по EstimationDate за период (и фильтры ДЦ), затем INSERT.'
         ),
     }
     return render(request, 'lo/tradein_funnel_simple_export.html', {'params': params})
