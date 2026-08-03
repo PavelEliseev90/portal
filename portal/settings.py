@@ -403,4 +403,4 @@ MSSQL_TRADEINFUNNEL = {
     'table': os.getenv('MSSQL_TRADEINFUNNEL_TABLE', 'dbo.TradeInFunnel'),
     'encrypt': os.getenv('MSSQL_TRADEINFUNNEL_ENCRYPT', 'yes'),
     'trust_server_certificate': os.getenv('MSSQL_TRADEINFUNNEL_TRUST_CERT', 'yes'),
-}2
+}
