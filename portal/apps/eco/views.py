@@ -13360,6 +13360,12 @@ def price_recalc_history_report(request):
     view_mode = (request.GET.get('view') or 'compare').strip()
     if view_mode not in ('compare', 'journal'):
         view_mode = 'compare'
+    # Django: при checked приходят focus_settings=0 и =1 — берём последнее
+    focus_values = request.GET.getlist('focus_settings')
+    if focus_values:
+        focus_settings = str(focus_values[-1]).strip().lower() not in ('0', 'false', 'no', 'off')
+    else:
+        focus_settings = True
     page_number = _get_int(request.GET.get('page')) or 1
 
     units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
@@ -13375,6 +13381,7 @@ def price_recalc_history_report(request):
         'trigger': trigger,
         'car': car_query,
         'view': view_mode,
+        'focus_settings': '1' if focus_settings else '0',
     }
 
     query_params = request.GET.copy()
@@ -13390,6 +13397,10 @@ def price_recalc_history_report(request):
     total_recalcs = 0
     changed_count = 0
     cars_with_pair = 0
+    skipped_added_repairs = 0
+    impact_kf_count = 0
+    impact_costs_down_count = 0
+    impact_iznos_ss_count = 0
 
     if view_mode == 'compare':
         export_xlsx = (request.GET.get('export') or '').lower() in ('xlsx', 'excel', '1')
@@ -13399,6 +13410,7 @@ def price_recalc_history_report(request):
             unit_id=unit_id,
             car_query=car_query,
             trigger=trigger,
+            focus_settings=focus_settings,
             page=1 if export_xlsx else page_number,
             per_page=20000 if export_xlsx else 50,
         )
@@ -13415,6 +13427,10 @@ def price_recalc_history_report(request):
         total_recalcs = result['total_recalcs']
         changed_count = result['changed_count']
         cars_with_pair = result['cars_with_pair']
+        skipped_added_repairs = result.get('skipped_added_repairs') or 0
+        impact_kf_count = result.get('impact_kf_count') or 0
+        impact_costs_down_count = result.get('impact_costs_down_count') or 0
+        impact_iznos_ss_count = result.get('impact_iznos_ss_count') or 0
     else:
         base_qs = (
             build_price_recalc_history_queryset(
@@ -13457,6 +13473,11 @@ def price_recalc_history_report(request):
             'changed_count': changed_count,
             'cars_with_pair': cars_with_pair,
             'page_size': len(compare_data if view_mode == 'compare' else table_data),
+            'skipped_added_repairs': skipped_added_repairs,
+            'impact_kf_count': impact_kf_count,
+            'impact_costs_down_count': impact_costs_down_count,
+            'impact_iznos_ss_count': impact_iznos_ss_count,
+            'focus_settings': focus_settings,
         },
         'table_data': table_data,
         'compare_data': compare_data,
