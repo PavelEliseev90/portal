@@ -45,12 +45,23 @@
   .pair-cell .sep { color: #9aa6b8; margin: 0 0.2rem; }
   .pair-cell.changed { font-weight: 600; }
   .view-tabs .btn.active { background: #002a5a; border-color: #002a5a; color: #fff; }
+  .impact-tag {
+    display: inline-block; font-size: .68rem; font-weight: 600;
+    padding: .12rem .4rem; border-radius: 999px; margin: .1rem .15rem .1rem 0;
+    background: #eef3f9; color: #365178;
+  }
+  .impact-tag.kf { background: #fff4e5; color: #9a5b00; }
+  .impact-tag.costs_down { background: #e8f7ef; color: #0f7a45; }
+  .impact-tag.iznos_ss { background: #efe8ff; color: #5b3da8; }
 </style>
 
 <div class="report-page">
   <div class="report-header">
     <h2>История перерасчётов Autohub</h2>
-    <p>Последняя запись vs первая с той же ЦНА. Влияние затрат = затраты стало − было. Остаток Δ цены выкупа: при смене КФ → «влияние КФ», иначе → «влияние повышенного износа СС».</p>
+    <p>
+      Цель: влияние <strong>КФ</strong>, <strong>снижения ремонтов</strong> и <strong>возврата СС в повышенный износ</strong>.
+      По умолчанию скрыты авто, где просто добавили ремонт (затраты выросли без смены КФ/износа).
+    </p>
   </div>
 
   <div class="report-filter">
@@ -86,6 +97,18 @@
           {% endfor %}
         </select>
       </div>
+      {% if params.view_mode == 'compare' %}
+      <div class="col-md-4">
+        <div class="form-check mt-4">
+          <input type="hidden" name="focus_settings" value="0">
+          <input class="form-check-input" type="checkbox" name="focus_settings" value="1" id="focusSettings"
+                 {% if params.filters.focus_settings != '0' %}checked{% endif %}>
+          <label class="form-check-label" for="focusSettings">
+            Только КФ / снижение ремонта / износ↔СС
+          </label>
+        </div>
+      </div>
+      {% endif %}
       <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Показать</button>
       </div>
@@ -94,7 +117,7 @@
 
   <div class="d-flex flex-wrap gap-2 mb-3 view-tabs align-items-center">
     <a class="btn btn-outline-secondary {% if params.view_mode == 'compare' %}active{% endif %}"
-       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
+       href="?view=compare&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}&focus_settings={{ params.filters.focus_settings }}">
       Было / стало
     </a>
     <a class="btn btn-outline-secondary {% if params.view_mode == 'journal' %}active{% endif %}"
@@ -103,44 +126,52 @@
     </a>
     {% if params.view_mode == 'compare' %}
     <a class="btn btn-success ms-auto"
-       href="?view=compare&export=xlsx&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}">
+       href="?view=compare&export=xlsx&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}&unit_id={{ params.filters.unit_id }}&car={{ params.filters.car|urlencode }}&trigger={{ params.filters.trigger }}&focus_settings={{ params.filters.focus_settings }}">
       Excel
     </a>
     {% endif %}
   </div>
 
   <div class="row g-3 mb-3">
-    <div class="col-md-4 col-6">
+    <div class="col-md-3 col-6">
       <div class="metric-card">
-        <h4>Ненулевых перерасчётов</h4>
-        <div class="value">{{ params.summary.total_recalcs }}</div>
-        <div class="sub">Autohub у авто с ≥2 пересчётами</div>
-      </div>
-    </div>
-    <div class="col-md-4 col-6">
-      <div class="metric-card">
-        <h4>Автомобилей (≥2)</h4>
+        <h4>В выборке</h4>
         <div class="value">{{ params.summary.total_rows }}</div>
-        <div class="sub">В выборке</div>
+        <div class="sub">пар с одной ЦНА{% if params.summary.focus_settings %} (фокус настроек){% endif %}</div>
       </div>
     </div>
-    <div class="col-md-4 col-6">
+    <div class="col-md-3 col-6">
       <div class="metric-card">
-        <h4>С изменениями</h4>
-        <div class="value">{{ params.summary.changed_count }}</div>
-        <div class="sub">На странице</div>
+        <h4>Смена КФ</h4>
+        <div class="value">{{ params.summary.impact_kf_count }}</div>
+        <div class="sub">на странице</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Снижение ремонта</h4>
+        <div class="value">{{ params.summary.impact_costs_down_count }}</div>
+        <div class="sub">на странице</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="metric-card">
+        <h4>Износ ↔ СС</h4>
+        <div class="value">{{ params.summary.impact_iznos_ss_count }}</div>
+        <div class="sub">{% if params.summary.skipped_added_repairs %}скрыто «добавили ремонт»: {{ params.summary.skipped_added_repairs }}{% else %}компенсация / флаг{% endif %}</div>
       </div>
     </div>
   </div>
 
   {% if params.view_mode == 'compare' %}
   <div class="panel">
-    <h3>Было / стало (последняя vs первая с той же ЦНА)</h3>
+    <h3>Было / стало — влияние настроек (КФ, снижение ремонта, износ↔СС)</h3>
     <div class="table-responsive">
       <table class="table table-sm">
         <thead>
           <tr>
             <th></th>
+            <th>Сигнал</th>
             <th>Период</th>
             <th>Подразделение</th>
             <th>Тип приема</th>
@@ -177,6 +208,15 @@
               {% if row.rlk_id %}
                 <a href="/eco/{{ row.rlk_id }}/?page=20" target="_blank"><span class="icon-doc"></span></a>
               {% endif %}
+            </td>
+            <td class="small">
+              {% for tag in row.impact_tags %}
+                {% if tag == 'kf' %}<span class="impact-tag kf">КФ</span>{% endif %}
+                {% if tag == 'costs_down' %}<span class="impact-tag costs_down">−ремонт</span>{% endif %}
+                {% if tag == 'iznos_ss' %}<span class="impact-tag iznos_ss">износ↔СС</span>{% endif %}
+              {% empty %}
+                —
+              {% endfor %}
             </td>
             <td class="text-nowrap small">
               {{ row.first_date|date:"d.m.Y H:i" }}
@@ -251,8 +291,8 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="28" class="text-center py-5 text-muted">
-              Нет оценок с ≥2 ненулевыми пересчётами Autohub с одной ЦНА. Измените фильтры или дождитесь массового пересчёта.
+            <td colspan="29" class="text-center py-5 text-muted">
+              Нет пар под фокус (КФ / снижение ремонта / износ↔СС). Снимите фильтр «Только КФ…» или измените период.
             </td>
           </tr>
           {% endfor %}
