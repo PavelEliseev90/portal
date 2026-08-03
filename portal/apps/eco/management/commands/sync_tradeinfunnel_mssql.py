@@ -10,8 +10,6 @@
 """
 from __future__ import annotations
 
-import datetime as DT
-
 from django.core.management.base import BaseCommand, CommandError
 
 
@@ -41,7 +39,11 @@ class Command(BaseCommand):
             raise CommandError('--days должен быть >= 1')
 
         from analytics.models import TradeInFunnel
-        from eco.mssql_tradeinfunnel import mssql_configured, sync_tradeinfunnel_to_mssql
+        from eco.mssql_tradeinfunnel import (
+            mssql_configured,
+            run_tradeinfunnel_mssql_sync,
+        )
+        import datetime as DT
 
         now = DT.datetime.now()
         date_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -73,12 +75,11 @@ class Command(BaseCommand):
                 'MSSQL не настроен (MSSQL_TRADEINFUNNEL_ENABLED / SERVER / DATABASE / …)'
             )
 
-        items = list(qs.order_by('date_start_estimation').iterator(chunk_size=2000))
-        result = sync_tradeinfunnel_to_mssql(
-            date_start=date_start,
-            date_end=date_end,
-            items=items,
-        )
+        try:
+            result = run_tradeinfunnel_mssql_sync(days=days)
+        except Exception as exc:
+            raise CommandError(str(exc)) from exc
+
         self.stdout.write(self.style.SUCCESS(
             'MSSQL OK: удалено {deleted}, загружено {inserted} → {database} / {table} '
             '(запись в bi_logs: TradeInFunnel)'.format(**result)
