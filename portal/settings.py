@@ -394,7 +394,8 @@ MYKORS_PHOTOS_LIMIT = int('50')
 # Пример: set MSSQL_TRADEINFUNNEL_ENABLED=1
 MSSQL_TRADEINFUNNEL = {
     'enabled': os.getenv('MSSQL_TRADEINFUNNEL_ENABLED', '0') in ('1', 'true', 'True', 'yes'),
-    'driver': os.getenv('MSSQL_TRADEINFUNNEL_DRIVER', 'ODBC Driver 17 for SQL Server'),
+    # Пусто = автовыбор из установленных (18 → 17 → 13 → Native Client → SQL Server)
+    'driver': os.getenv('MSSQL_TRADEINFUNNEL_DRIVER', ''),
     'server': os.getenv('MSSQL_TRADEINFUNNEL_SERVER', ''),
     'database': os.getenv('MSSQL_TRADEINFUNNEL_DATABASE', ''),
     'user': os.getenv('MSSQL_TRADEINFUNNEL_USER', ''),
