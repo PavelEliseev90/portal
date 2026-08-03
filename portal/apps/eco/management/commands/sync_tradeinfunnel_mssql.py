@@ -80,7 +80,6 @@ class Command(BaseCommand):
             items=items,
         )
         self.stdout.write(self.style.SUCCESS(
-            'MSSQL OK: удалено {deleted}, загружено {inserted} → {database} / {table}'.format(
-                **result
-            )
+            'MSSQL OK: удалено {deleted}, загружено {inserted} → {database} / {table} '
+            '(запись в bi_logs: TradeInFunnel)'.format(**result)
         ))
