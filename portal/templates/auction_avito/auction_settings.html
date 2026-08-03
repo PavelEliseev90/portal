@@ -156,7 +156,13 @@
           <label class="form-label">Комиссия Авито, ₽</label>
           <input type="number" step="1" min="0" class="form-control" name="avito_commission"
                  value="{{ auction_settings.avito_commission|default:0|unlocalize }}">
-          <div class="form-text">Вычитается после финансирования в формуле выкупа.</div>
+          <div class="form-text">Фиксированная сумма после финансирования.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Комиссия Авито, %</label>
+          <input type="number" step="0.01" min="0" class="form-control" name="avito_commission_percent"
+                 value="{{ auction_settings.avito_commission_percent|default:0|unlocalize }}">
+          <div class="form-text">Процент от цены после финансирования (например 2.30). Складывается с суммой ₽.</div>
         </div>
       </div>
     </div>

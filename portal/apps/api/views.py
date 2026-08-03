@@ -561,6 +561,7 @@ def avito_auction_settings(request):
             '5 000+': float(s.txt_coeff_5001) if s.txt_coeff_5001 is not None else None,
         },
         'avito_commission': int(s.avito_commission or 0),
+        'avito_commission_percent': float(s.avito_commission_percent or 0),
         'outcome_poll_enabled': s.outcome_poll_enabled,
         'win_notify_emails': s.win_notify_emails or '',
         'updated_at': s.updated_at.isoformat() if s.updated_at else None,
@@ -1225,7 +1226,7 @@ def calculate_car(request):
 
             analyticsByActualSales  = data['analyticsByActualSales']
             zna                     = analyticsByActualSales['avgPriceWithCorrection']
-            day_sale_all            = analyticsByActualSales['avgDaysInSale']
+            # Дни финансирования: не avgDaysInSale Автохаб, а «по» этапа РДО по ЦГ (ниже после определения zg)
             
             if zna == 0:
                 raise ValueError('Цена рынка (zna) равна 0 — расчёт невозможен')
@@ -1309,12 +1310,19 @@ def calculate_car(request):
 
             from auction_avito.models import AvitoAuctionSettings
             from auction_avito.services.auction_calc_settings import (
-                get_avito_commission,
+                resolve_avito_commission_amount,
                 resolve_txt_kf_info,
             )
+            from refs.price_group_stage_days import get_rdo_days_to
+            from refs.price_groups import price_group_code as _price_group_code
+
             auction_settings = AvitoAuctionSettings.get_solo()
             kf, kf_source = resolve_txt_kf_info(zg, auction_settings, dc=dc)
-            avito_commission_amount = get_avito_commission(auction_settings)
+
+            # Финансирование: дни = верхняя граница этапа РДО («по» / порог 2) для ЦГ автомобиля
+            rdo_days = get_rdo_days_to(_price_group_code(zg) or zg)
+            if rdo_days > 0:
+                day_sale_all = rdo_days
 
             if percent_torg < 0:
                 percent_torg = percent_torg * -1
@@ -1397,19 +1405,33 @@ def calculate_car(request):
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "Финансирование " + str(fin)  + "% для продажи авто за " + str(round(day_sale_all)) + " дней",
+                'comment'   : (
+                    "Финансирование " + str(fin) + "% для продажи авто за "
+                    + str(round(day_sale_all)) + " дн. (по этапу РДО, ЦГ " + str(zg) + ")"
+                ),
                 'name'      : "финансирование"
             }
             list_info_price.append(inf_price)
 
+            avito_commission_info = resolve_avito_commission_amount(price, auction_settings)
+            avito_commission_amount = avito_commission_info['total']
             if avito_commission_amount > 0:
-                price_old = price
                 price = price - avito_commission_amount
                 diff = avito_commission_amount
+                comment_parts = []
+                if avito_commission_info['fixed'] > 0:
+                    comment_parts.append('{0} ₽'.format(avito_commission_info['fixed']))
+                if avito_commission_info['percent'] > 0:
+                    comment_parts.append(
+                        '{pct:g}% = {amt} ₽'.format(
+                            pct=avito_commission_info['percent'],
+                            amt=avito_commission_info['percent_amount'],
+                        )
+                    )
                 inf_price = {
                     'price': price,
                     'dif': diff,
-                    'comment': 'Комиссия Авито ' + str(avito_commission_amount) + ' ₽',
+                    'comment': 'Комиссия Авито ' + ' + '.join(comment_parts),
                     'name': 'комиссия Авито',
                 }
                 list_info_price.append(inf_price)

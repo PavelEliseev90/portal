@@ -825,6 +825,13 @@ class AvitoAuctionSettings(models.Model):
         default=0,
         help_text='Фиксированная сумма, вычитается из цены выкупа после финансирования.',
     )
+    avito_commission_percent = models.DecimalField(
+        'Комиссия Авито, %',
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        help_text='Процент от цены выкупа после финансирования (например 2.30). Складывается с фиксированной суммой.',
+    )
 
     win_notify_emails = models.TextField(
         'Email при выигрыше лота (общий fallback)',
@@ -874,6 +881,8 @@ class AvitoAuctionSettings(models.Model):
                 raise ValidationError({field: 'Коэффициент не может быть отрицательным.'})
         if self.avito_commission is not None and self.avito_commission < 0:
             raise ValidationError({'avito_commission': 'Комиссия не может быть отрицательной.'})
+        if self.avito_commission_percent is not None and self.avito_commission_percent < 0:
+            raise ValidationError({'avito_commission_percent': 'Процент комиссии не может быть отрицательным.'})
 
 
 TXT_COEFF_FIELD_NAMES = (

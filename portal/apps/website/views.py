@@ -9508,6 +9508,93 @@ def settings_autopricing_korsavto_table(request):
 
 
 @login_required
+def settings_price_group_stage_days(request):
+    """
+    Глобальная матрица сроков этапов УС по ЦГ.
+    Каждое сохранение — новый снимок (история).
+    """
+    from django.contrib import messages
+    from refs.price_group_stage_days import (
+        DEFAULT_STAGE_DAYS_BY_CODE,
+        PriceGroupStageDaysSnapshot,
+        ensure_initial_snapshot,
+        get_latest_snapshot,
+        save_stage_days_snapshot,
+    )
+    from refs.price_groups import get_active_price_groups
+    from refs.models import RefStagePrice
+
+    if not request.user.profiles.korsavto_settings and not request.user.is_superuser:
+        return render(request, 'errors/403.html')
+
+    ensure_initial_snapshot(user=request.user)
+    snapshot = get_latest_snapshot()
+
+    if request.method == 'POST':
+        comment = (request.POST.get('comment') or '').strip()
+        rows = []
+        for pg in get_active_price_groups():
+            key = str(pg.pk)
+            try:
+                d1 = int(request.POST.get('days_1_{}'.format(key), '0') or 0)
+                d2 = int(request.POST.get('days_2_{}'.format(key), '0') or 0)
+                d3 = int(request.POST.get('days_3_{}'.format(key), '0') or 0)
+            except (TypeError, ValueError):
+                d1 = d2 = d3 = 0
+            rows.append({
+                'price_group_id': pg.pk,
+                'days_1': max(0, d1),
+                'days_2': max(0, d2),
+                'days_3': max(0, d3),
+            })
+        save_stage_days_snapshot(rows=rows, user=request.user, comment=comment)
+        messages.success(request, 'Сохранён новый снимок матрицы сроков этапов.')
+        return HttpResponseRedirect(request.path)
+
+    lines_by_pg = {}
+    if snapshot:
+        for line in snapshot.lines.select_related('price_group').all():
+            lines_by_pg[line.price_group_id] = line
+
+    matrix_rows = []
+    for pg in get_active_price_groups():
+        line = lines_by_pg.get(pg.pk)
+        if line:
+            d1, d2, d3 = line.days_1, line.days_2, line.days_3
+        else:
+            d1, d2, d3 = DEFAULT_STAGE_DAYS_BY_CODE.get((pg.code or '').strip(), (0, 0, 0))
+        matrix_rows.append({
+            'price_group': pg,
+            'days_1': d1,
+            'days_2': d2,
+            'days_3': d3,
+        })
+
+    history = list(
+        PriceGroupStageDaysSnapshot.objects
+        .select_related('created_by')
+        .order_by('-created_at', '-id')[:30]
+    )
+    stages = list(RefStagePrice.objects.filter(pk__in=[4, 2, 3, 1]))
+    stages_by_pk = {s.pk: s for s in stages}
+    stage_labels = [
+        stages_by_pk.get(4, None),
+        stages_by_pk.get(2, None),
+        stages_by_pk.get(3, None),
+        stages_by_pk.get(1, None),
+    ]
+
+    params = {
+        'type': 'settings_price_group_stage_days',
+        'snapshot': snapshot,
+        'matrix_rows': matrix_rows,
+        'history': history,
+        'stage_labels': stage_labels,
+    }
+    return render(request, 'kors/settings_price_group_stage_days.html', {'params': params})
+
+
+@login_required
 def settings_new_cars_pricing(request):
     """Страница настроек ценообразования новых автомобилей (лендинг с ссылкой на правила КМ)."""
     params = {'type': 'settings_new_cars_pricing'}

@@ -985,6 +985,12 @@ def auction_settings(request):
                 settings_obj.avito_commission = max(0, int(request.POST.get('avito_commission') or 0))
             except (TypeError, ValueError):
                 settings_obj.avito_commission = 0
+            try:
+                from decimal import Decimal, InvalidOperation
+                pct_raw = (request.POST.get('avito_commission_percent') or '0').replace(',', '.')
+                settings_obj.avito_commission_percent = max(Decimal('0'), Decimal(pct_raw))
+            except (TypeError, ValueError, InvalidOperation):
+                settings_obj.avito_commission_percent = 0
             settings_obj.outcome_poll_enabled = request.POST.get('outcome_poll_enabled') == 'on'
             settings_obj.win_notify_emails = (request.POST.get('win_notify_emails') or '').strip()
             settings_obj.full_clean()
