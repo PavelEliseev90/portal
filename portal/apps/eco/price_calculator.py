@@ -380,7 +380,8 @@ def _snapshot_from_soglasovanie(sog, estimation=None) -> Optional[dict]:
         return None
     price = _num(getattr(sog, 'price_auto_2', 0))
     zna = _num(getattr(sog, 'price_zna_2', 0))
-    if price <= 0 and zna <= 0:
+    # Без суммы выкупа «было» бесполезно (0→цена портит выборку)
+    if price <= 0:
         return None
     pod = _num(getattr(sog, 'amount_podgotovka', 0))
     ss = _num(getattr(sog, 'amount_ss', 0))
@@ -574,6 +575,12 @@ def run_price_calculator(
                     sample_errors.append(f'id={estimation.pk}: нет базовой цены (ЦНА/авторасчёт)')
                 continue
 
+            # Не берём в выборку 0→цена (нет реального «было»)
+            if (before.get('estimation_price') or 0) <= 0 or (before.get('cna_expenses') or 0) <= 0:
+                err_count += 1
+                error_counter['базовый выкуп/БЦП = 0'] += 1
+                continue
+
             # Если рычаги не менялись — «стало» = «было» (быстрый путь)
             if not levers_changed:
                 after = dict(before)
@@ -597,6 +604,10 @@ def run_price_calculator(
                     error_counter['what-if вернул пусто'] += 1
                     if len(sample_errors) < 8:
                         sample_errors.append(f'id={estimation.pk}: what-if пустой результат')
+                    continue
+                if (after.get('estimation_price') or 0) <= 0 or (after.get('cna_expenses') or 0) <= 0:
+                    err_count += 1
+                    error_counter['what-if выкуп/БЦП = 0'] += 1
                     continue
         except Exception as exc:
             err_count += 1
