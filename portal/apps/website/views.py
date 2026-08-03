@@ -1981,11 +1981,69 @@ def board_monitoring(request):
         'express_cars_count_24h': express_cars_count_24h,
         'exchange_errors_24h'   : exchange_errors_24h,
         'exchange_errors_total' : exchange_errors_total,
-        'now'                   : now_dt
+        'now'                   : now_dt,
+        'tradein_funnel_bi'     : next(
+            (x for x in power_bi if x.get('title') == 'TradeInFunnel'),
+            None,
+        ),
+        'mssql_tradeinfunnel_configured': _mssql_tradeinfunnel_configured(),
+        'tif_sync_flash'        : _tradeinfunnel_sync_flash(request),
 
     }
     
     return render(request, 'website/board_monitoring.html', {"params": params}) 
+
+
+def _mssql_tradeinfunnel_configured():
+    try:
+        from eco.mssql_tradeinfunnel import mssql_configured
+        return mssql_configured()
+    except Exception:
+        return False
+
+
+def _tradeinfunnel_sync_flash(request):
+    """Сообщение после кнопки «Обновить» (?tif_ok=1 / ?tif_err=...)."""
+    if request.GET.get('tif_ok') == '1':
+        return {
+            'ok': True,
+            'text': 'TradeInFunnel → MSSQL: удалено {d}, загружено {i} (за {days} дн.)'.format(
+                d=request.GET.get('deleted', '?'),
+                i=request.GET.get('inserted', '?'),
+                days=request.GET.get('days', '60'),
+            ),
+        }
+    err = (request.GET.get('tif_err') or '').strip()
+    if err:
+        return {'ok': False, 'text': err[:500]}
+    return None
+
+
+@login_required
+@require_http_methods(['POST'])
+def board_monitoring_sync_tradeinfunnel(request):
+    """Ручной запуск выгрузки TradeInFunnel → MSSQL с мониторинга (как ночное задание)."""
+    from urllib.parse import urlencode
+
+    days_raw = (request.POST.get('days') or '60').strip()
+    try:
+        days = max(1, int(days_raw))
+    except (TypeError, ValueError):
+        days = 60
+
+    try:
+        from eco.mssql_tradeinfunnel import run_tradeinfunnel_mssql_sync
+        result = run_tradeinfunnel_mssql_sync(days=days)
+        qs = urlencode({
+            'tif_ok': '1',
+            'deleted': result.get('deleted', 0),
+            'inserted': result.get('inserted', 0),
+            'days': days,
+        })
+    except Exception as exc:
+        qs = urlencode({'tif_err': str(exc)[:400]})
+
+    return HttpResponseRedirect(f'/monitorings/?{qs}')
 
 
 @csrf_exempt

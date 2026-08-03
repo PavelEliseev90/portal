@@ -271,6 +271,14 @@
     <p>Мониторинг состояния интеграций и сервисов</p>
   </div>
 
+  {% if params.tif_sync_flash %}
+  <div class="kors-panel mb-2" style="border-color:{% if params.tif_sync_flash.ok %}var(--ok-fg){% else %}var(--bad-fg){% endif %};">
+    <div class="kors-panel__body" style="color:{% if params.tif_sync_flash.ok %}var(--ok-fg){% else %}var(--bad-fg){% endif %};">
+      {{ params.tif_sync_flash.text }}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Основные статусы интеграций -->
   <h3 class="section-title">Статус интеграций</h3>
   <div class="row g-2 mb-2">
@@ -401,17 +409,28 @@
       </div>
     {% endfor %}
 
-    {% for bi in params.power_bi %}
-      {% if bi.title == 'TradeInFunnel' %}
-      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <div class="kors-metric-card {% if bi.error == 2 %}status-danger{% elif bi.error == 1 %}status-warning{% else %}status-success{% endif %}">
-          <h3>Воронка Trade-In</h3>
-          <div class="metric-value">{{ bi.date|date:'d.m.Y H:i' }}</div>
-          <div class="metric-label">+{{ bi.add }} / −{{ bi.delite }}</div>
+    {% with bi=params.tradein_funnel_bi %}
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+      <div class="kors-metric-card {% if not bi %}status-warning{% elif bi.error == 2 %}status-danger{% elif bi.error == 1 %}status-warning{% else %}status-success{% endif %}">
+        <h3>Воронка Trade-In</h3>
+        <div class="metric-value">{% if bi %}{{ bi.date|date:'d.m.Y H:i' }}{% else %}—{% endif %}</div>
+        <div class="metric-label">
+          {% if bi %}+{{ bi.add }} / −{{ bi.delite }}{% else %}ещё не выгружали{% endif %}
         </div>
+        <form method="post" action="{% url 'website:board_monitoring_sync_tradeinfunnel' %}"
+              style="margin-top:.45rem;"
+              onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='…';">
+          {% csrf_token %}
+          <input type="hidden" name="days" value="60">
+          <button type="submit" class="kors-btn-toggle {% if params.mssql_tradeinfunnel_configured %}success{% else %}danger{% endif %}"
+                  {% if not params.mssql_tradeinfunnel_configured %}disabled title="MSSQL не настроен"{% endif %}
+                  style="width:100%;font-size:.72rem;padding:.25rem .4rem;">
+            Обновить (60 дн.)
+          </button>
+        </form>
       </div>
-      {% endif %}
-    {% endfor %}
+    </div>
+    {% endwith %}
   </div>
 
   

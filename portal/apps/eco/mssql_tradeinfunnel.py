@@ -258,3 +258,40 @@ def sync_tradeinfunnel_to_mssql(
             conn.close()
         except Exception:
             pass
+
+
+def run_tradeinfunnel_mssql_sync(days: int = 60) -> dict:
+    """
+    Выгрузка за последние N дней от «сейчас»: DELETE периода + INSERT.
+    Пишет запись в bi_logs (внутри sync_tradeinfunnel_to_mssql).
+    """
+    from analytics.models import TradeInFunnel
+
+    if days < 1:
+        raise ValueError('days must be >= 1')
+    if not mssql_configured():
+        raise RuntimeError(
+            'MSSQL не настроен (MSSQL_TRADEINFUNNEL_ENABLED / SERVER / DATABASE / …)'
+        )
+
+    now = DT.datetime.now()
+    date_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    date_start = (now - DT.timedelta(days=days)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    qs = TradeInFunnel.objects.filter(
+        date_start_estimation__gte=date_start,
+        date_start_estimation__lte=date_end,
+    ).exclude(date_start_estimation__isnull=True)
+    items = list(qs.order_by('date_start_estimation').iterator(chunk_size=2000))
+    result = sync_tradeinfunnel_to_mssql(
+        date_start=date_start,
+        date_end=date_end,
+        items=items,
+    )
+    result['days'] = days
+    result['date_start'] = date_start
+    result['date_end'] = date_end
+    result['source_count'] = len(items)
+    return result
