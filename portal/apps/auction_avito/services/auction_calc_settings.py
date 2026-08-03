@@ -92,7 +92,7 @@ def resolve_txt_kf(zg: str, settings_obj=None, *, dc=None) -> float:
 
 
 def get_avito_commission(settings_obj=None) -> int:
-    """Сумма комиссии Авито, ₽ (вычитается после финансирования)."""
+    """Фиксированная сумма комиссии Авито, ₽."""
     if settings_obj is None:
         from auction_avito.models import AvitoAuctionSettings
         settings_obj = AvitoAuctionSettings.get_solo()
@@ -100,6 +100,38 @@ def get_avito_commission(settings_obj=None) -> int:
         return max(0, int(settings_obj.avito_commission or 0))
     except (TypeError, ValueError):
         return 0
+
+
+def get_avito_commission_percent(settings_obj=None) -> float:
+    """Процент комиссии Авито (например 2.3)."""
+    if settings_obj is None:
+        from auction_avito.models import AvitoAuctionSettings
+        settings_obj = AvitoAuctionSettings.get_solo()
+    val = _float_or_none(getattr(settings_obj, 'avito_commission_percent', None))
+    if val is None:
+        return 0.0
+    return max(0.0, val)
+
+
+def resolve_avito_commission_amount(base_price, settings_obj=None) -> dict:
+    """
+    Итоговая комиссия Авито после финансирования:
+      fixed ₽ + base_price × percent / 100
+    """
+    fixed = get_avito_commission(settings_obj)
+    percent = get_avito_commission_percent(settings_obj)
+    try:
+        base = float(base_price or 0)
+    except (TypeError, ValueError):
+        base = 0.0
+    percent_amount = int(round(base * percent / 100.0)) if percent > 0 and base > 0 else 0
+    total = max(0, fixed + percent_amount)
+    return {
+        'fixed': fixed,
+        'percent': percent,
+        'percent_amount': percent_amount,
+        'total': total,
+    }
 
 
 def txt_coefficients_dict(settings_obj) -> dict:

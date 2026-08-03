@@ -529,3 +529,27 @@ class UnitPriceGroupSettingsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(UnitPriceGroupSettings, UnitPriceGroupSettingsAdmin)
+
+from refs.price_group_stage_days import (  # noqa: E402
+    PriceGroupStageDaysLine,
+    PriceGroupStageDaysSnapshot,
+)
+
+
+class PriceGroupStageDaysLineInline(admin.TabularInline):
+    model = PriceGroupStageDaysLine
+    extra = 0
+    autocomplete_fields = ('price_group',)
+
+
+class PriceGroupStageDaysSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created_at', 'created_by', 'comment')
+    list_filter = ('created_at',)
+    search_fields = ('comment', 'created_by__username')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at', '-id')
+    inlines = [PriceGroupStageDaysLineInline]
+
+
+admin.site.register(PriceGroupStageDaysSnapshot, PriceGroupStageDaysSnapshotAdmin)

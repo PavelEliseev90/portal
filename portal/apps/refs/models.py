@@ -2469,96 +2469,58 @@ class RefCarsOrganization(models.Model):
 
         return info
     
+    def _apply_group_and_stage_by_cost_days(self, days):
+        """ЦГ по СС + этап УС по матрице сроков (PriceGroupStageDays*)."""
+        from refs.price_group_stage_days import (
+            days_until_next_stage,
+            get_latest_thresholds_by_code,
+            resolve_stage_pk,
+        )
+        from refs.price_groups import PRICE_GROUP_LEGACY_PKS
+
+        cost_price = self.cost_price or 0
+        if cost_price <= 0:
+            self.group_price = None
+            self.days_next_stage = 0
+            return
+
+        # Пороги СС → код ЦГ (как legacy)
+        if cost_price < 200000:
+            code = '200'
+        elif cost_price < 400000:
+            code = '400'
+        elif cost_price < 700000:
+            code = '700'
+        elif cost_price < 1200000:
+            code = '1200'
+        elif cost_price < 2000000:
+            code = '2000'
+        elif cost_price < 3000000:
+            code = '3000'
+        elif cost_price < 5000000:
+            code = '5000'
+        else:
+            code = '5001'
+
+        pks = PRICE_GROUP_LEGACY_PKS.get(code) or []
+        group = None
+        if pks:
+            group = RefGroupPrice.objects.filter(pk=pks[0]).first()
+        if group is None:
+            group = RefGroupPrice.objects.filter(code=code, is_active=True).order_by('sort_order', 'id').first()
+        self.group_price = group
+
+        thresholds = get_latest_thresholds_by_code()
+        stage_pk = resolve_stage_pk(days, code, thresholds)
+        self.stage_price = RefStagePrice.objects.filter(pk=stage_pk).first()
+        self.days_next_stage = days_until_next_stage(days, code, thresholds)
+
     def refresh_data(self):
         now = datetime.now()
-        delta = now - self.lo_link_date 
+        delta = now - self.lo_link_date
         days = delta.days
         self.days_in_stok = days
-        zg = None
-        cost_price = self.cost_price
-        if cost_price > 0:
-            if cost_price < 200000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 7)
-                if days < 3:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 14:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 24:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 400000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 1)
-                if days < 4:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 25:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 34:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 700000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 6)
-                if days < 5:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 30:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 39:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 1200000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 2)
-                if days < 5:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 36:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 49:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 2000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 3)
-                if days < 7:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 41:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 54:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 3000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 4)
-                if days < 10:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 45:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 59:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 5000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 11)
-                if days < 12:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 55:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 69:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            else:
-                self.group_price    = RefGroupPrice.objects.get(pk = 12)
-                if days < 12:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 55:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 69:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-        else:
-            self.group_price    = None
+        self._apply_group_and_stage_by_cost_days(days)
         self.save()
         return days
 
@@ -2996,94 +2958,10 @@ class RefCarsOrganization(models.Model):
     
     def update(self):
         now = datetime.now()
-        delta = now - self.lo_link_date 
+        delta = now - self.lo_link_date
         days = delta.days
         self.days_in_stok = days
-        zg = None
-        cost_price = self.cost_price
-        if cost_price > 0:
-            if cost_price < 200000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 7)
-                if days < 3:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 14:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 24:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 400000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 1)
-                if days < 4:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 25:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 34:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 700000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 6)
-                if days < 5:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 30:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 39:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 1200000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 2)
-                if days < 5:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 36:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 49:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 2000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 3)
-                if days < 7:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 41:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 54:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 3000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 4)
-                if days < 10:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 45:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 59:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            elif cost_price < 5000000:
-                self.group_price    = RefGroupPrice.objects.get(pk = 11)
-                if days < 12:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 55:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 69:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-            else:
-                self.group_price    = RefGroupPrice.objects.get(pk = 12)
-                if days < 12:
-                    self.stage_price = RefStagePrice.objects.get(pk = 4)
-                elif days < 55:
-                    self.stage_price = RefStagePrice.objects.get(pk = 2)
-                elif days < 69:
-                    self.stage_price = RefStagePrice.objects.get(pk = 3)
-                else:
-                    self.stage_price = RefStagePrice.objects.get(pk = 1)
-        else:
-            self.group_price    = None 
+        self._apply_group_and_stage_by_cost_days(days)
         try:
             if self.name == '':
                 self.name = '' + self.modification_autoru.model.mark.name + ' ' + self.modification_autoru.model.name + ' ' + self.modification_autoru.model.name
@@ -3444,3 +3322,7 @@ class RefAllowableDiscountKm(models.Model):
 
 
 from .unit_price_group_settings import UnitPriceGroupSettings  # noqa: E402,F401
+from .price_group_stage_days import (  # noqa: E402,F401
+    PriceGroupStageDaysSnapshot,
+    PriceGroupStageDaysLine,
+)

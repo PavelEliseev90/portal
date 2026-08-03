@@ -1,0 +1,153 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Сроки этапов УС по ЦГ {% endblock %}
+{% block title_navbar %} — Сроки этапов УС по ЦГ {% endblock %}
+
+{% block content %}
+<style>
+  .stage-days-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .stage-days-page h2 { font-size: 1.45rem; font-weight: 600; color: #002a5a; margin: 0 0 .25rem; }
+  .stage-days-page .lead { color: #6c7a92; margin-bottom: 1.1rem; font-size: .92rem; }
+  .stage-card {
+    background: #fff; border-radius: 1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 12px 28px rgba(0,23,61,.05); padding: 1.1rem 1.25rem; margin-bottom: 1rem;
+  }
+  .stage-card h3 { font-size: .95rem; font-weight: 600; color: #002a5a; margin: 0 0 .75rem; }
+  .stage-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .stage-table th, .stage-table td { padding: .45rem .55rem; border-bottom: 1px solid #e8eef5; vertical-align: middle; }
+  .stage-table th { color: #6c7a92; font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+  .stage-table input[type=number] { width: 5.5rem; max-width: 100%; }
+  .stage-hint { font-size: .8rem; color: #6c7a92; margin-top: .75rem; }
+  .hist-meta { font-size: .8rem; color: #6c7a92; }
+</style>
+
+<div class="stage-days-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <h2>Сроки этапов УС по ценовым группам</h2>
+      <p class="lead mb-0">
+        Глобальная матрица: сколько дней на складе автомобиль в каждой ЦГ находится на этапе УС.
+        Каждое сохранение создаёт новый снимок (история).
+      </p>
+    </div>
+    <a href="/settings/" class="btn btn-outline-secondary">&larr; Назад</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} py-2">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="stage-card">
+    <h3>
+      Текущая матрица
+      {% if params.snapshot %}
+      <span class="hist-meta fw-normal">
+        — снимок #{{ params.snapshot.id }}
+        от {{ params.snapshot.created_at|date:'d.m.Y H:i' }}
+        {% if params.snapshot.created_by %} · {{ params.snapshot.created_by }}{% endif %}
+      </span>
+      {% endif %}
+    </h3>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="stage-table">
+          <thead>
+            <tr>
+              <th>ЦГ</th>
+              <th>
+                Порог 1
+                <div class="hist-meta">days &lt; N → {% if params.stage_labels.0 %}{{ params.stage_labels.0.name }}{% else %}этап #4{% endif %}</div>
+              </th>
+              <th>
+                Порог 2
+                <div class="hist-meta">days &lt; N → {% if params.stage_labels.1 %}{{ params.stage_labels.1.name }}{% else %}этап #2{% endif %}</div>
+              </th>
+              <th>
+                Порог 3
+                <div class="hist-meta">days &lt; N → {% if params.stage_labels.2 %}{{ params.stage_labels.2.name }}{% else %}этап #3{% endif %}</div>
+              </th>
+              <th>
+                Иначе
+                <div class="hist-meta">{% if params.stage_labels.3 %}{{ params.stage_labels.3.name }}{% else %}этап #1{% endif %}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in params.matrix_rows %}
+            <tr>
+              <td>
+                <strong>{{ row.price_group.name }}</strong>
+                {% if row.price_group.code %}<span class="hist-meta">({{ row.price_group.code }})</span>{% endif %}
+                <input type="hidden" name="pg_{{ row.price_group.id }}" value="1">
+              </td>
+              <td>
+                <input class="form-control form-control-sm" type="number" min="0" step="1"
+                       name="days_1_{{ row.price_group.id }}" value="{{ row.days_1 }}">
+              </td>
+              <td>
+                <input class="form-control form-control-sm" type="number" min="0" step="1"
+                       name="days_2_{{ row.price_group.id }}" value="{{ row.days_2 }}">
+              </td>
+              <td>
+                <input class="form-control form-control-sm" type="number" min="0" step="1"
+                       name="days_3_{{ row.price_group.id }}" value="{{ row.days_3 }}">
+              </td>
+              <td class="hist-meta">≥ порог 3</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">Нет активных ценовых групп. Заполните справочник RefGroupPrice.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row g-2 align-items-end mt-2">
+        <div class="col-md-8">
+          <label class="form-label hist-meta mb-1">Комментарий к снимку</label>
+          <input type="text" class="form-control" name="comment" maxlength="255" placeholder="Например: продлили этап РДО для ЦГ 1200">
+        </div>
+        <div class="col-md-4 text-md-end">
+          <button type="submit" class="btn btn-primary">Сохранить новый снимок</button>
+        </div>
+      </div>
+      <p class="stage-hint mb-0">
+        Пример: пороги 5 / 36 / 49 означают: 0–4 дн. — первый этап, 5–35 — второй, 36–48 — третий, от 49 — финальный.
+        Используется в <code>RefCarsOrganization.refresh_data()</code> / <code>update()</code>.
+      </p>
+    </form>
+  </div>
+
+  <div class="stage-card">
+    <h3>История снимков</h3>
+    <div class="table-responsive">
+      <table class="stage-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Дата</th>
+            <th>Кто</th>
+            <th>Комментарий</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in params.history %}
+          <tr {% if params.snapshot and h.id == params.snapshot.id %}style="background:#eef6ff;"{% endif %}>
+            <td>{{ h.id }}</td>
+            <td>{{ h.created_at|date:'d.m.Y H:i' }}</td>
+            <td>{% if h.created_by %}{{ h.created_by }}{% else %}—{% endif %}</td>
+            <td>{{ h.comment|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">История пуста</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
