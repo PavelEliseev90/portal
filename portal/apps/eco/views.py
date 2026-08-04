@@ -14343,9 +14343,8 @@ def market_model_month_detail(request):
 @login_required
 def market_car_trends(request, slug):
     """Тренд рынка Autohub по конкретному автомобилю склада."""
-    from eco.market_model_trends import build_market_car_trends
+    from eco.market_model_trends import market_car_trends_page_params
     from refs.models import RefCarsOrganization
-    import json as _json
 
     car = RefCarsOrganization.objects.filter(slug=slug).select_related(
         'unit',
@@ -14356,41 +14355,11 @@ def market_car_trends(request, slug):
     if car is None:
         raise Http404('Автомобиль не найден')
 
-    now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
-    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
-
-    data = build_market_car_trends(car=car, date_start=date_start, date_end=date_end)
-
-    model_url = ''
-    if data['car']['mark_id'] or data['car']['model_id']:
-        from urllib.parse import urlencode
-        qs = {k: v for k, v in {
-            'mark_id': data['car']['mark_id'] or '',
-            'model_id': data['car']['model_id'] or '',
-            'mark': data['car']['mark_name'],
-            'model': data['car']['model_name'],
-            'date_start': date_start.strftime('%Y-%m-%d'),
-            'date_end': date_end.strftime('%Y-%m-%d'),
-        }.items() if v}
-        model_url = '/eco/market-trends/model/?' + urlencode(qs)
-
     params = {
         'type': 'market_car_trends',
         'nav_selected': 4,
         'request': request,
-        'data': data,
-        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
-        'filters': {
-            'date_start': date_start.strftime('%Y-%m-%d'),
-            'date_end': date_end.strftime('%Y-%m-%d'),
-        },
-        'price_edit_url': f"/cars/{car.slug}/price_edit/",
-        'model_url': model_url,
-        'list_url': '/eco/market-trends/',
+        **market_car_trends_page_params(car, request, embedded=False),
     }
     return render(request, 'lo/market_car_trends.html', {'params': params})
 

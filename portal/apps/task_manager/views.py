@@ -3022,8 +3022,24 @@ def send_push_car():
                     car_complectation   = "-"
 
                 car_year            = car.year
-                car_run             = '{:,}'.format(car.run).replace(',', ' ')
-                car_price           = '{:,}'.format(car.price).replace(',', ' ')
+                kvp_value           = int(push_user.calc.kvp or 0)
+                kvp_price           = '{:,}'.format(kvp_value).replace(',', ' ')
+                kvp_rule_value      = push_user.calc.km_raschet
+                if kvp_rule_value is None:
+                    try:
+                        from avtosalon.deal_calc_approval import resolve_approval_km_rule_total
+                        cumulative_data = car.cumulative_data() if car else None
+                        kvp_rule_value = resolve_approval_km_rule_total(
+                            push_user.calc,
+                            cumulative_data=cumulative_data,
+                        )
+                    except Exception:
+                        kvp_rule_value = None
+                kvp_rule_price = (
+                    '{:,}'.format(int(kvp_rule_value)).replace(',', ' ')
+                    if kvp_rule_value is not None
+                    else '—'
+                )
                 car_photo_url       = 'https://ah.kors-group.com' + car.get_photo_mini()
                 car_link            = 'https://ah.kors-group.com/cars/deal/calculation/' + str(push_user.calc.id) + '/'
 
@@ -3036,8 +3052,8 @@ def send_push_car():
                         'car_modification'  : car_modification,
                         'car_complectation' : car_complectation,
                         'car_year'          : car_year,
-                        'car_run'           : car_run,
-                        'car_price'         : car_price,
+                        'kvp_price'         : kvp_price,
+                        'kvp_rule_price'    : kvp_rule_price,
                         'car_photo_url'     : car_photo_url,
                         'car_link'          : car_link,
                     })

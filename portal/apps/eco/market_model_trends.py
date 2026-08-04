@@ -676,3 +676,59 @@ def build_market_car_trends(
             'last_spread': last['spread'] if last else None,
         },
     }
+
+
+def _parse_trend_date(value, default, is_end=False):
+    if not value:
+        return default
+    try:
+        year, month, day = [int(part) for part in value.split('-')]
+        parsed = default.replace(year=year, month=month, day=day)
+        if is_end:
+            parsed = parsed.replace(hour=23, minute=59, second=59, microsecond=0)
+        else:
+            parsed = parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+        return parsed
+    except Exception:
+        return default
+
+
+def market_car_trends_page_params(car, request, *, embedded=False):
+    """Контекст страницы / встраивания тренда рынка по автомобилю."""
+    import json as _json
+    from urllib.parse import urlencode
+
+    now = datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_trend_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_trend_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    data = build_market_car_trends(car=car, date_start=date_start, date_end=date_end)
+
+    model_url = ''
+    if data['car']['mark_id'] or data['car']['model_id']:
+        qs = {k: v for k, v in {
+            'mark_id': data['car']['mark_id'] or '',
+            'model_id': data['car']['model_id'] or '',
+            'mark': data['car']['mark_name'],
+            'model': data['car']['model_name'],
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+        }.items() if v}
+        model_url = '/eco/market-trends/model/?' + urlencode(qs)
+
+    slug = getattr(car, 'slug', '') or ''
+    return {
+        'data': data,
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+        },
+        'price_edit_url': f'/cars/{slug}/price_edit/?page=12',
+        'model_url': model_url,
+        'list_url': '/eco/market-trends/',
+        'embedded': embedded,
+    }
