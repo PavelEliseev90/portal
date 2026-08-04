@@ -6056,33 +6056,88 @@ def get_filial(json_filial):
         filial      = RefFilial()
         filial.uin  = uin
         filial.save()
+        created = True
     else:
         filial = filials[0]
+        created = False
 
-    filial.name           = json_filial['Name']
+    incoming_name = (json_filial.get('Name') or '').strip() if 'Name' in json_filial else None
+    old_name = filial.name or ''
+    old_unit_id = filial.unit_id
+    wipe_notes = []
+
+    # Не затираем уже заполненное имя пустым Name из неполного пакета 1С.
+    if incoming_name is not None:
+        if incoming_name:
+            filial.name = incoming_name
+        elif not old_name:
+            filial.name = incoming_name or ''
+        else:
+            wipe_notes.append(
+                'skip empty Name (keep {!r})'.format(old_name)
+            )
     
     if "Active" in json_filial:
         filial.active_eco = json_filial['Active']
     
     if "Unit" in json_filial:
-        if json_filial['Unit'] != None and json_filial['Unit'] != '':
-            filial.unit = get_unit(json_filial['Unit'])
+        unit_payload = json_filial['Unit']
+        if unit_payload != None and unit_payload != '':
+            resolved_unit = get_unit(unit_payload)
+            if resolved_unit is not None:
+                filial.unit = resolved_unit
+            elif old_unit_id:
+                # Unit пришёл, но get_unit вернул None — не обнуляем уже привязанное подразделение.
+                wipe_notes.append(
+                    'skip unresolved Unit (keep unit_id={}) payload={!r}'.format(
+                        old_unit_id, unit_payload,
+                    )
+                )
+            else:
+                filial.unit = None
         else:
-            filial.unit = None
+            # Unit: null / "" раньше unconditionally обнулял unit.
+            if old_unit_id and not created:
+                wipe_notes.append(
+                    'skip null/empty Unit (keep unit_id={})'.format(old_unit_id)
+                )
+            else:
+                filial.unit = None
     if "Store" in json_filial:
         filial.store = get_store(json_filial['Store'])
 
-    if len(json_filial['Organization']) > 0:
-        filial.organization   = get_organization(json_filial['Organization'])
-
-    # if 'Unit' in json_filial:
-    #     unit_data = json_filial['Unit']
-    #     if len(unit_data) > 0:
-    #         filial.unit   = get_unit(unit_data)
+    organization = json_filial.get('Organization')
+    if organization and len(organization) > 0:
+        filial.organization   = get_organization(organization)
 
     filial.save()
 
+    if wipe_notes:
+        try:
+            import json as _json
+            Exchange1CErrorLog.objects.create(
+                exchange_type='Filials',
+                data=_json.dumps({
+                    'uin': uin,
+                    'created': created,
+                    'old_name': old_name,
+                    'old_unit_id': old_unit_id,
+                    'incoming_name': incoming_name,
+                    'has_unit_key': 'Unit' in json_filial,
+                    'unit_payload': json_filial.get('Unit'),
+                    'notes': wipe_notes,
+                    'payload': json_filial,
+                }, ensure_ascii=False, default=str),
+                error_description=(
+                    'RefFilial protected from wipe: '
+                    + '; '.join(wipe_notes)
+                ),
+            )
+        except Exception:
+            pass
+
     return filial
+
 
 def get_calculation_car(data):
     

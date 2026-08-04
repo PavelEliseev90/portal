@@ -57,6 +57,15 @@ class AvitoVenue(models.Model):
         verbose_name='Город',
         related_name='avito_venues',
     )
+    unit = models.ForeignKey(
+        'refs.RefUnit',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Подразделение',
+        related_name='avito_venues',
+        help_text='ДЦ для создания рабочего листа в 1С при выигрыше лота на этой площадке.',
+    )
     updated_at = models.DateTimeField('Обновлено', auto_now=True)
 
     class Meta:
@@ -487,6 +496,27 @@ class AvitoLotOffer(models.Model):
         'Письмо о победе отправлено',
         null=True,
         blank=True,
+    )
+    win_rlk = models.ForeignKey(
+        'documents.DocRLK',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='avito_win_offers',
+        verbose_name='РЛ созданный при выигрыше',
+    )
+    win_rlk_uin = models.CharField('UIN РЛ 1С', max_length=200, blank=True, default='')
+    win_rlk_number = models.CharField('Номер РЛ 1С', max_length=100, blank=True, default='')
+    win_rlk_date = models.DateTimeField('Дата РЛ 1С', null=True, blank=True)
+    win_rlk_created_at = models.DateTimeField(
+        'РЛ отправлен/создан в 1С',
+        null=True,
+        blank=True,
+    )
+    win_rlk_error = models.TextField(
+        'Ошибка создания РЛ',
+        blank=True,
+        default='',
     )
     handed_to_work_at = models.DateTimeField(
         'Передан в работу',

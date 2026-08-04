@@ -194,6 +194,9 @@
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">
         <span class="bi bi-graph-up-arrow"></span> Рекомендации выкупа
       </a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:funnel' %}">
+        <span class="bi bi-funnel"></span> Воронка
+      </a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">
         <span class="bi bi-bar-chart-line"></span> Аналитика
       </a>
@@ -336,6 +339,12 @@
                 </span>
                 {% if offer.outcome_detail %}
                   <span class="small text-muted">{{ offer.outcome_detail|truncatechars:70 }}</span>
+                {% endif %}
+                {% if offer.win_rlk_number %}
+                  <span class="small text-success"
+                        title="{% if offer.win_rlk_uin %}УИН: {{ offer.win_rlk_uin }}{% endif %}">
+                    РЛ № {{ offer.win_rlk_number }}{% if offer.win_rlk_date %} от {{ offer.win_rlk_date|date:"d.m.Y" }}{% endif %}
+                  </span>
                 {% endif %}
               </div>
             {% endif %}

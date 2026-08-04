@@ -8,7 +8,8 @@
 Наша ставка: {{bid}}
 Выкуп / прибыль / ЦНА: {{buyout}} / {{profit}} / {{zna}}
 {% if outcome %}Итог Maxposter: {{outcome}}
-{% endif %}
-{% if portal_url %}Портал: {{portal_url}}
+{% endif %}{% if rlk_number %}Рабочий лист 1С: № {{rlk_number}}{% if rlk_date %} от {{rlk_date}}{% endif %}
+{% elif rlk_error %}Рабочий лист 1С: не создан ({{rlk_error}})
+{% endif %}{% if portal_url %}Портал: {{portal_url}}
 {% endif %}{% if maxposter_url %}Maxposter: {{maxposter_url}}
 {% endif %}
