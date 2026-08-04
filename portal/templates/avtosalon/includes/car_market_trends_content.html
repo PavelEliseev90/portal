@@ -1,0 +1,292 @@
+{% load l10n %}
+{% comment %}
+  Тренд рынка по автомобилю. Ожидает: mt (data, chart_json, filters, model_url, list_url, embedded).
+{% endcomment %}
+<style>
+  .mt-trends .mt-filter, .mt-trends .mt-panel, .mt-trends .mt-metric {
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 4px 16px rgba(0,23,61,.04);
+  }
+  .mt-trends .mt-filter { padding: 1rem 1.15rem; margin-bottom: 1rem; }
+  .mt-trends .mt-filter .form-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .mt-trends .mt-metric { padding: 1rem 1.1rem; height: 100%; }
+  .mt-trends .mt-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .mt-trends .mt-metric .v { font-size: 1.35rem; font-weight: 650; color: #002a5a; }
+  .mt-trends .mt-metric .s { color: #6c7a92; font-size: .85rem; }
+  .mt-trends .mt-panel { padding: 1rem 1.15rem; margin-bottom: 1rem; }
+  .mt-trends .mt-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 1rem; }
+  .mt-trends .chart-wrap { position: relative; height: 320px; }
+  .mt-trends .delta-up { color: #0f9d58; font-weight: 600; }
+  .mt-trends .delta-down { color: #dc2626; font-weight: 600; }
+  .mt-trends .delta-flat { color: #94a3b8; }
+  .mt-trends .table-mt td, .mt-trends .table-mt th { font-size: .86rem; vertical-align: middle; }
+  .mt-trends .meta-line { font-size: .9rem; color: #5b6b82; }
+  .mt-trends .hint { font-size: .82rem; color: #6c7a92; }
+</style>
+
+<div class="mt-trends">
+  {% if not mt.embedded %}
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ mt.price_edit_url }}" class="btn btn-sm btn-outline-secondary">← К ценообразованию</a>
+    <a href="{{ mt.list_url }}" class="btn btn-sm btn-outline-secondary">Список моделей</a>
+    {% if mt.model_url %}
+    <a href="{{ mt.model_url }}" class="btn btn-sm btn-outline-primary">Тренд модели</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if mt.embedded %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <p class="meta-line mb-1">
+        VIN {{ mt.data.car.vin|default:"—" }}
+        {% if mt.data.car.unit %} · {{ mt.data.car.unit }}{% endif %}
+        {% if mt.data.car.gen_label %} · {{ mt.data.car.gen_label }}{% endif %}
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      {% if mt.model_url %}
+      <a href="{{ mt.model_url }}" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">Тренд модели</a>
+      {% endif %}
+      <a href="{% url 'eco:market_car_trends' mt.data.car.slug %}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Открыть отдельно</a>
+    </div>
+  </div>
+  {% else %}
+  <h2 class="h4 fw-semibold text-primary mb-1">{{ mt.data.car.title }}</h2>
+  <p class="text-muted mb-1" style="font-size:.95rem;">Autohub-снимки этого автомобиля и сравнение с моделью / поколением.</p>
+  <p class="meta-line mb-3">
+    VIN {{ mt.data.car.vin|default:"—" }}
+    {% if mt.data.car.unit %} · {{ mt.data.car.unit }}{% endif %}
+    {% if mt.data.car.gen_label %} · {{ mt.data.car.gen_label }}{% endif %}
+  </p>
+  {% endif %}
+
+  <form class="mt-filter" method="get" action="">
+    {% if mt.embedded %}<input type="hidden" name="page" value="12">{% endif %}
+    <div class="row g-3 align-items-end">
+      <div class="col-6 col-md-2">
+        <label class="form-label">С</label>
+        <input type="date" class="form-control" name="date_start" value="{{ mt.filters.date_start }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">По</label>
+        <input type="date" class="form-control" name="date_end" value="{{ mt.filters.date_end }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Показать</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="mt-metric">
+        <div class="t">Δ avg за период</div>
+        <div class="v {% if mt.data.summary.overall_delta > 1 %}delta-up{% elif mt.data.summary.overall_delta < -1 %}delta-down{% else %}delta-flat{% endif %}">
+          {% if mt.data.summary.overall_delta != None %}{{ mt.data.summary.overall_delta|unlocalize }}%{% else %}—{% endif %}
+        </div>
+        <div class="s">{{ mt.data.summary.months_with_data }} мес. с данными</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Посл. avg</div><div class="v">{{ mt.data.summary.last_avg }}</div><div class="s">рынок в сегменте</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Посл. наша</div><div class="v">{% if mt.data.summary.last_our %}{{ mt.data.summary.last_our }}{% else %}—{% endif %}</div><div class="s">спред {% if mt.data.summary.last_spread != None %}{{ mt.data.summary.last_spread|unlocalize }}%{% else %}—{% endif %}</div></div></div>
+    <div class="col-6 col-md-3"><div class="mt-metric"><div class="t">Снимков</div><div class="v">{{ mt.data.summary.snapshots }}</div><div class="s">total {{ mt.data.summary.last_total }} · дней {{ mt.data.summary.last_days|unlocalize }}</div></div></div>
+  </div>
+
+  <div class="mt-panel">
+    <h3>Динамика снимков автомобиля</h3>
+    <div class="chart-wrap"><canvas id="carTimelineChart"></canvas></div>
+    <p class="hint mb-0 mt-2">Линии — avg_price рынка и наша price по каждому снимку; столбцы — total предложений.</p>
+  </div>
+
+  <div class="mt-panel">
+    <h3>Помесячно: авто vs модель</h3>
+    <div class="chart-wrap"><canvas id="carMonthChart"></canvas></div>
+    <p class="hint mb-0 mt-2">Сравнение последнего снимка авто в месяце с медианой модели{% if mt.data.car.gen_id %} и поколения{% endif %}.</p>
+  </div>
+
+  <div class="mt-panel">
+    <h3>По месяцам</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-mt mb-0">
+        <thead>
+          <tr>
+            <th>Месяц</th>
+            <th class="text-end">avg авто</th>
+            <th class="text-end">Δ</th>
+            <th class="text-end">наша</th>
+            <th class="text-end">спред</th>
+            <th class="text-end">total</th>
+            <th class="text-end">дней</th>
+            <th class="text-end">avg модель</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in mt.data.car_series %}
+          <tr>
+            <td>{{ s.label }}</td>
+            <td class="text-end">{% if s.has_data %}{{ s.avg_price }}{% else %}—{% endif %}</td>
+            <td class="text-end {% if s.delta > 1 %}delta-up{% elif s.delta < -1 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if s.delta != None %}{{ s.delta|unlocalize }}%{% else %}—{% endif %}
+            </td>
+            <td class="text-end">{% if s.our_price %}{{ s.our_price }}{% else %}—{% endif %}</td>
+            <td class="text-end {% if s.spread > 2 %}delta-up{% elif s.spread < -2 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if s.spread != None %}{{ s.spread|unlocalize }}%{% else %}—{% endif %}
+            </td>
+            <td class="text-end">{% if s.has_data %}{{ s.total }}{% else %}—{% endif %}</td>
+            <td class="text-end">{% if s.has_data %}{{ s.days|unlocalize }}{% else %}—{% endif %}</td>
+            <td class="text-end">{% if s.model_avg %}{{ s.model_avg }}{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-muted">Нет снимков Autohub по этому авто за период.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if mt.data.timeline %}
+  <div class="mt-panel mb-0">
+    <h3>Все снимки</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-mt mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th class="text-end">avg_price</th>
+            <th class="text-end">наша</th>
+            <th class="text-end">спред</th>
+            <th class="text-end">total</th>
+            <th class="text-end">дней</th>
+            <th class="text-end">позиция</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in mt.data.timeline %}
+          <tr>
+            <td>{{ p.date|date:"d.m.Y H:i" }}</td>
+            <td class="text-end">{{ p.avg_price }}</td>
+            <td class="text-end">{% if p.price %}{{ p.price }}{% else %}—{% endif %}</td>
+            <td class="text-end {% if p.spread > 2 %}delta-up{% elif p.spread < -2 %}delta-down{% else %}delta-flat{% endif %}">
+              {% if p.spread != None %}{{ p.spread|unlocalize }}%{% else %}—{% endif %}
+            </td>
+            <td class="text-end">{{ p.total }}</td>
+            <td class="text-end">{{ p.avg_days }}</td>
+            <td class="text-end">{% if p.position %}{{ p.position }}{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+  const data = JSON.parse('{{ mt.chart_json|escapejs }}');
+  if (!data) return;
+
+  const tl = document.getElementById('carTimelineChart');
+  if (tl && data.labels && data.labels.length) {
+    new Chart(tl.getContext('2d'), {
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'total',
+            data: data.total,
+            backgroundColor: 'rgba(148,163,184,0.4)',
+            yAxisID: 'yTotal',
+            order: 3,
+          },
+          {
+            type: 'line',
+            label: 'avg_price',
+            data: data.avg_price,
+            borderColor: '#2563eb',
+            tension: 0.2,
+            yAxisID: 'yPrice',
+            order: 1,
+          },
+          {
+            type: 'line',
+            label: 'наша price',
+            data: data.our_price,
+            borderColor: '#f59e0b',
+            borderDash: [5, 4],
+            tension: 0.2,
+            yAxisID: 'yPrice',
+            order: 0,
+          },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          yPrice: { type: 'linear', position: 'left', title: { display: true, text: 'Цена' } },
+          yTotal: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Total' } },
+        }
+      }
+    });
+  }
+
+  const mc = document.getElementById('carMonthChart');
+  if (mc && data.month_labels && data.month_labels.length) {
+    const datasets = [
+      {
+        type: 'line',
+        label: 'avg авто',
+        data: data.month_avg,
+        borderColor: '#2563eb',
+        tension: 0.25,
+        spanGaps: true,
+      },
+      {
+        type: 'line',
+        label: 'наша',
+        data: data.month_our,
+        borderColor: '#f59e0b',
+        borderDash: [5, 4],
+        tension: 0.25,
+        spanGaps: true,
+      },
+    ];
+    if (data.month_model_avg && data.month_model_avg.length) {
+      datasets.push({
+        type: 'line',
+        label: 'avg модель',
+        data: data.month_model_avg,
+        borderColor: '#94a3b8',
+        tension: 0.25,
+        spanGaps: true,
+      });
+    }
+    if (data.month_gen_avg && data.month_gen_avg.length) {
+      datasets.push({
+        type: 'line',
+        label: 'avg поколение',
+        data: data.month_gen_avg,
+        borderColor: '#0f9d58',
+        tension: 0.25,
+        spanGaps: true,
+      });
+    }
+    new Chart(mc.getContext('2d'), {
+      data: { labels: data.month_labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: { y: { title: { display: true, text: 'Цена' } } },
+      }
+    });
+  }
+})();
+</script>

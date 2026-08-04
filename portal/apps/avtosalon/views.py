@@ -1757,6 +1757,11 @@ def price_edit(request, slug):
         avtohubs = avtohub_analytics['rows']
         calculations = estimation_analytics['rows']
 
+    market_trends = None
+    if page == 12:
+        from eco.market_model_trends import market_car_trends_page_params
+        market_trends = market_car_trends_page_params(car, request, embedded=True)
+
     calc_express    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 7).order_by('-date')
     calc_autohub    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 1).order_by('-date')
     calc_1C         = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 8).order_by('-date')
@@ -1791,6 +1796,7 @@ def price_edit(request, slug):
         'page'              : page,
         'photos'            : photos,
         'can_edit_photos'   : request.user.profiles.korsavto_settings,
+        'market_trends'     : market_trends,
     }
     params.update(car_options_ctx)
     
