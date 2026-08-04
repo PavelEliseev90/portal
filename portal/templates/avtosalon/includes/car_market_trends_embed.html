@@ -1,0 +1,17 @@
+<div class="portal-panel">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h6 class="mb-0 padding-portal">Тренд рынка</h6>
+    <a href="{% url 'eco:market_car_trends' params.object.slug %}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">
+      Открыть отдельно
+    </a>
+  </div>
+  <div style="height: calc(100vh - 260px); min-height: 680px;">
+    <iframe
+      src="{% url 'eco:market_car_trends' params.object.slug %}"
+      title="Тренд рынка по автомобилю"
+      style="width: 100%; height: 100%; border: 0; border-radius: 12px; background: #fff;"
+      loading="lazy"
+      referrerpolicy="same-origin">
+    </iframe>
+  </div>
+</div>

@@ -11,15 +11,19 @@ from datetime import datetime
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
+from django.core.cache import cache
+from django.db.models import F
 
 from eco.estimation_zg_analytics import (
     _iter_months,
     _median,
     _month_key,
     _month_label,
-    _pct,
     _segment_key,
 )
+
+_CACHE_TTL = 300  # 5 мин
+_CACHE_VERSION = 'v2'
 
 
 def _car_identity(car):
@@ -71,21 +75,61 @@ def _delta_pct(curr, prev) -> Optional[float]:
     return round(100.0 * (curr - prev) / prev, 1)
 
 
-def _load_latest_segments(date_start, date_end, unit_id=None, mark_id=None, model_id=None, mark_name=None, model_name=None):
-    """(month, segment) -> snapshot dict with identity."""
+def _segment_key_from_ids(gen_id, mark_id, model_id, mod_pk, car_id) -> str:
+    """Тот же ключ, что `_segment_key`, но из плоских id (без ORM)."""
+    gen = gen_id or 0
+    mark = mark_id or 0
+    model = model_id or 0
+    if gen or mark or model:
+        return f'g:{gen}|m:{mark}|md:{model}'
+    if mod_pk:
+        return f'mod:{mod_pk}'
+    if car_id:
+        return f'car:{car_id}'
+    return 'unknown'
+
+
+def _ident_from_row(row: dict) -> dict:
+    mark_name = (row.get('mark_name') or '').strip()
+    model_name = (row.get('model_name') or '').strip()
+    if not mark_name:
+        mark_name = (row.get('car_mark') or '').strip() or '—'
+    if not model_name:
+        model_name = (row.get('car_model') or '').strip() or '—'
+    return {
+        'mark_id': row.get('mark_id') or 0,
+        'model_id': row.get('model_id') or 0,
+        'mark_name': mark_name,
+        'model_name': model_name,
+        'gen_id': row.get('gen_id') or 0,
+        'gen_label': ((row.get('gen_label') or '')[:80]),
+    }
+
+
+def _load_latest_segments(
+    date_start,
+    date_end,
+    unit_id=None,
+    mark_id=None,
+    model_id=None,
+    mark_name=None,
+    model_name=None,
+    car_id=None,
+):
+    """(month, segment) -> snapshot dict with identity.
+
+    Оптимизация: values()+annotate вместо select_related ORM-объектов;
+    обход от новых к старым — первый снимок по ключу побеждает.
+    """
     from register.models import RegEstimationRefCarsOrganizations
 
     qs = RegEstimationRefCarsOrganizations.objects.filter(
         date__gte=date_start,
         date__lte=date_end,
         avg_price__gt=0,
-    ).select_related(
-        'car',
-        'car__unit',
-        'car__modification_autoru',
-        'car__modification_autoru__model',
-        'car__modification_autoru__model__mark',
     )
+    if car_id:
+        qs = qs.filter(car_id=car_id)
     if unit_id:
         qs = qs.filter(car__unit_id=unit_id)
     if mark_id:
@@ -97,27 +141,56 @@ def _load_latest_segments(date_start, date_end, unit_id=None, mark_id=None, mode
     if model_name and not model_id:
         qs = qs.filter(car__modification_autoru__model__name__iexact=model_name)
 
+    rows = (
+        qs.annotate(
+            gen_id=F('car__modification_autoru__idSiteGeneration'),
+            mark_id=F('car__modification_autoru__model__mark_id'),
+            model_id=F('car__modification_autoru__model_id'),
+            mark_name=F('car__modification_autoru__model__mark__name'),
+            model_name=F('car__modification_autoru__model__name'),
+            gen_label=F('car__modification_autoru__name'),
+            car_vin=F('car__vin'),
+            unit_name=F('car__unit__name'),
+            car_mark=F('car__mark'),
+            car_model=F('car__model'),
+            mod_pk=F('car__modification_autoru_id'),
+        )
+        .values(
+            'date', 'avg_price', 'avg_days', 'total', 'price', 'car_id',
+            'gen_id', 'mark_id', 'model_id', 'mark_name', 'model_name',
+            'gen_label', 'car_vin', 'unit_name', 'car_mark', 'car_model', 'mod_pk',
+        )
+        .order_by('-date')
+    )
+
     latest = {}
-    for row in qs.iterator(chunk_size=2000):
-        if not row.date or not row.car_id:
+    for row in rows.iterator(chunk_size=4000):
+        dt = row.get('date')
+        if not dt or not row.get('car_id'):
             continue
-        mk = _month_key(row.date)
-        seg = _segment_key(row.car)
+        mk = _month_key(dt)
+        seg = _segment_key_from_ids(
+            row.get('gen_id'),
+            row.get('mark_id'),
+            row.get('model_id'),
+            row.get('mod_pk'),
+            row.get('car_id'),
+        )
         key = (mk, seg)
-        prev = latest.get(key)
-        if prev is not None and row.date <= prev['date']:
+        if key in latest:
             continue
-        ident = _car_identity(row.car)
+        ident = _ident_from_row(row)
         latest[key] = {
-            'date': row.date,
+            'date': dt,
             'month': mk,
             'segment': seg,
-            'avg_price': row.avg_price or 0,
-            'avg_days': row.avg_days or 0,
-            'total': row.total or 0,
-            'price': row.price or 0,
-            'vin': (row.car.vin if row.car else '') or '',
-            'unit': (row.car.unit.name if row.car and row.car.unit_id else '') or '',
+            'avg_price': row.get('avg_price') or 0,
+            'avg_days': row.get('avg_days') or 0,
+            'total': row.get('total') or 0,
+            'price': row.get('price') or 0,
+            'vin': (row.get('car_vin') or '') or '',
+            'unit': (row.get('unit_name') or '') or '',
+            'car_id': row.get('car_id'),
             **ident,
             'model_key': _model_key(ident),
         }
@@ -142,6 +215,13 @@ def _agg_month_metrics(snaps):
     }
 
 
+def _cache_key(prefix: str, **parts) -> str:
+    bits = [_CACHE_VERSION, prefix]
+    for k in sorted(parts.keys()):
+        bits.append(f'{k}={parts[k]}')
+    return 'mt:' + '|'.join(bits)
+
+
 def build_market_model_trends(
     *,
     date_start: datetime,
@@ -151,7 +231,23 @@ def build_market_model_trends(
     mark_q: str = '',
     sort: str = 'volatility',
     limit: int = 100,
+    use_cache: bool = True,
 ) -> dict:
+    ck = _cache_key(
+        'list',
+        ds=date_start.strftime('%Y-%m-%d'),
+        de=date_end.strftime('%Y-%m-%d'),
+        u=unit_id or 0,
+        m=mark_id or 0,
+        q=(mark_q or '').strip().lower(),
+        s=sort,
+        lim=limit or 0,
+    )
+    if use_cache:
+        cached = cache.get(ck)
+        if cached is not None:
+            return cached
+
     latest = _load_latest_segments(
         date_start, date_end, unit_id=unit_id, mark_id=mark_id,
         mark_name=mark_q.strip() or None,
@@ -160,7 +256,6 @@ def build_market_model_trends(
     month_keys = [_month_key(m) for m in months]
     month_labels = [_month_label(m) for m in months]
 
-    # model_key -> month -> list snaps
     by_model = defaultdict(lambda: defaultdict(list))
     meta = {}
     for snap in latest.values():
@@ -187,10 +282,8 @@ def build_market_model_trends(
             continue
         first = non_empty[0]
         last = non_empty[-1]
-        # Δ между первым и последним месяцем с данными
         price_delta = _delta_pct(last['med_avg'], first['med_avg'])
         total_delta = _delta_pct(last['med_total'], first['med_total'])
-        # Δ последний vs предыдущий с данными
         mom_delta = None
         if len(non_empty) >= 2:
             mom_delta = _delta_pct(non_empty[-1]['med_avg'], non_empty[-2]['med_avg'])
@@ -236,7 +329,7 @@ def build_market_model_trends(
     falling = sum(1 for r in rows if (r['price_delta'] or 0) < -1)
     flat = sum(1 for r in rows if r['price_delta'] is not None and abs(r['price_delta']) <= 1)
 
-    return {
+    result = {
         'month_keys': month_keys,
         'month_labels': month_labels,
         'rows': rows,
@@ -248,6 +341,9 @@ def build_market_model_trends(
             'months': len(month_keys),
         },
     }
+    if use_cache:
+        cache.set(ck, result, _CACHE_TTL)
+    return result
 
 
 def build_market_model_detail(
@@ -273,7 +369,6 @@ def build_market_model_detail(
     month_labels = [_month_label(m) for m in months]
 
     by_month = defaultdict(list)
-    by_month_gen = defaultdict(lambda: defaultdict(list))
     title_mark = mark_name or ''
     title_model = model_name or ''
     for snap in latest.values():
@@ -286,8 +381,6 @@ def build_market_model_detail(
         if model_name and not model_id and snap['model_name'].lower() != model_name.lower():
             continue
         by_month[snap['month']].append(snap)
-        gen_key = snap['gen_id'] or snap['segment']
-        by_month_gen[snap['month']][gen_key].append(snap)
         title_mark = snap['mark_name'] or title_mark
         title_model = snap['model_name'] or title_model
 
@@ -309,7 +402,6 @@ def build_market_model_detail(
             'spread': spread,
         })
 
-    # generations: list with monthly series condensed
     gen_meta = {}
     gen_month = defaultdict(lambda: defaultdict(list))
     for snap in latest.values():
@@ -413,4 +505,174 @@ def build_market_model_month_detail(
         'model_name': title_model or '—',
         'rows': rows,
         'summary': metrics,
+    }
+
+
+def build_market_car_trends(
+    *,
+    car,
+    date_start: datetime,
+    date_end: datetime,
+) -> dict:
+    """Тренд Autohub по конкретному авто + контекст модели/поколения."""
+    from register.models import RegEstimationRefCarsOrganizations
+
+    ident = _car_identity(car)
+    car_seg = _segment_key(car)
+
+    qs = (
+        RegEstimationRefCarsOrganizations.objects
+        .filter(
+            car_id=car.pk,
+            date__gte=date_start,
+            date__lte=date_end,
+            avg_price__gt=0,
+        )
+        .values('date', 'avg_price', 'avg_days', 'total', 'price', 'position')
+        .order_by('date')
+    )
+    timeline = []
+    for row in qs.iterator(chunk_size=500):
+        dt = row.get('date')
+        if not dt:
+            continue
+        timeline.append({
+            'date': dt,
+            'date_label': dt.strftime('%d.%m.%y'),
+            'month': _month_key(dt),
+            'avg_price': row.get('avg_price') or 0,
+            'avg_days': row.get('avg_days') or 0,
+            'total': row.get('total') or 0,
+            'price': row.get('price') or 0,
+            'position': row.get('position') or 0,
+            'spread': (
+                round(100.0 * ((row.get('price') or 0) - (row.get('avg_price') or 0)) / (row.get('avg_price') or 1), 1)
+                if (row.get('avg_price') or 0) > 0 and (row.get('price') or 0) > 0
+                else None
+            ),
+        })
+
+    # Последний снимок в каждом месяце по этому авто
+    months = _iter_months(date_start, date_end)
+    month_keys = [_month_key(m) for m in months]
+    month_labels = [_month_label(m) for m in months]
+    by_month_last = {}
+    for point in timeline:
+        by_month_last[point['month']] = point
+
+    car_series = []
+    prev_avg = None
+    for i, month in enumerate(month_keys):
+        point = by_month_last.get(month)
+        if not point:
+            car_series.append({
+                'month': month,
+                'label': month_labels[i],
+                'avg_price': None,
+                'total': None,
+                'days': None,
+                'our_price': None,
+                'spread': None,
+                'delta': None,
+                'has_data': False,
+            })
+            continue
+        delta = _delta_pct(point['avg_price'], prev_avg)
+        prev_avg = point['avg_price']
+        car_series.append({
+            'month': month,
+            'label': month_labels[i],
+            'avg_price': point['avg_price'],
+            'total': point['total'],
+            'days': point['avg_days'],
+            'our_price': point['price'] or None,
+            'spread': point['spread'],
+            'delta': delta,
+            'has_data': True,
+        })
+
+    # Контекст модели (все сегменты mark+model) и своего поколения
+    model_detail = None
+    if ident['mark_id'] or ident['model_id'] or (ident['mark_name'] and ident['model_name']):
+        model_detail = build_market_model_detail(
+            date_start=date_start,
+            date_end=date_end,
+            mark_id=ident['mark_id'] or None,
+            model_id=ident['model_id'] or None,
+            mark_name='' if ident['mark_id'] else ident['mark_name'],
+            model_name='' if ident['model_id'] else ident['model_name'],
+            unit_id=None,
+        )
+
+    gen_series = []
+    if model_detail and ident['gen_id']:
+        for gen in model_detail.get('generations') or []:
+            if gen.get('gen_id') == ident['gen_id']:
+                for i, month in enumerate(month_keys):
+                    g = gen['series'][i] if i < len(gen['series']) else {}
+                    gen_series.append({
+                        'month': month,
+                        'label': month_labels[i],
+                        'avg_price': g.get('med_avg') if g.get('segments') else None,
+                        'total': g.get('med_total') if g.get('segments') else None,
+                    })
+                break
+
+    non_empty = [s for s in car_series if s['has_data']]
+    overall_delta = None
+    if len(non_empty) >= 2:
+        overall_delta = _delta_pct(non_empty[-1]['avg_price'], non_empty[0]['avg_price'])
+
+    last = non_empty[-1] if non_empty else None
+    model_avg_by_month = {}
+    if model_detail:
+        for s in model_detail.get('series') or []:
+            if s.get('segments'):
+                model_avg_by_month[s['month']] = s['med_avg']
+
+    for s in car_series:
+        s['model_avg'] = model_avg_by_month.get(s['month'])
+
+    chart = {
+        'labels': [p['date_label'] for p in timeline],
+        'avg_price': [p['avg_price'] for p in timeline],
+        'our_price': [p['price'] if p['price'] else None for p in timeline],
+        'total': [p['total'] for p in timeline],
+        'days': [p['avg_days'] for p in timeline],
+        'month_labels': month_labels,
+        'month_avg': [s['avg_price'] for s in car_series],
+        'month_our': [s['our_price'] for s in car_series],
+        'month_model_avg': [model_avg_by_month.get(m) for m in month_keys],
+        'month_gen_avg': [s['avg_price'] for s in gen_series] if gen_series else [],
+    }
+
+    return {
+        'car': {
+            'id': car.pk,
+            'slug': getattr(car, 'slug', '') or '',
+            'vin': getattr(car, 'vin', '') or '',
+            'title': f"{ident['mark_name']} {ident['model_name']}".strip(),
+            'unit': (car.unit.name if getattr(car, 'unit_id', None) else '') or '',
+            'price': getattr(car, 'price', None) or 0,
+            'days_in_stok': getattr(car, 'days_in_stok', None) or 0,
+            **ident,
+            'segment': car_seg,
+        },
+        'month_keys': month_keys,
+        'month_labels': month_labels,
+        'timeline': timeline,
+        'car_series': car_series,
+        'gen_series': gen_series,
+        'model_detail': model_detail,
+        'chart': chart,
+        'summary': {
+            'snapshots': len(timeline),
+            'months_with_data': len(non_empty),
+            'overall_delta': overall_delta,
+            'last_avg': last['avg_price'] if last else 0,
+            'last_total': last['total'] if last else 0,
+            'last_days': last['days'] if last else 0,
+            'last_our': last['our_price'] if last else 0,
+            'last_spread': last['spread'] if last else None,
+        },
     }

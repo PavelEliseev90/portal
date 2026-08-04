@@ -4,7 +4,7 @@ from collections import defaultdict
 from django.shortcuts import redirect, render
 from openpyxl import Workbook
 from django.http import HttpResponse
-from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
+from register.models import BodyRefReplace, RegInteractivOcenkaRLK, SettingsMatrixAuction, RegEstimationBalanceUnit, RegEstimationsCalculationDetail, RegEstimationPodgotovka, RegEstimationSS, RegEstimationMCU, RegSwapKors, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegRegInteractivOcenkaTaskFiles, RegInteractivOcenkaTask, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaPriceIncreaseRequest, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon, RegControlDiagnostic, RegControlDiagnosticVnesh, RegControlDiagnosticSalon, RegControlDiagnosticFile, RegControlDiagnosticTestDrive, RegControlDiagnosticReferenceSelection, DiagnosticReferenceSelection, DiagnosticReferenceCategory, DiagnosticReferenceItem
 from django.core.paginator import Paginator
 from refs.models import RefCarsOrganization, RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, RefUnitGroup, RefGroupPrice
 from refs.price_groups import price_group_code as _price_group_code_from_zg
@@ -78,7 +78,7 @@ def add_swap(rlk, estimation):
         s = 1
 
 
-def send_web_socket_message(group, chat, user, text, estimation_id):
+def send_web_socket_message(group, chat, user, text, estimation_id, skip_save=False):
     
     message_json = {
             'chat_id'       : str(chat.pk),
@@ -90,7 +90,8 @@ def send_web_socket_message(group, chat, user, text, estimation_id):
             'first_name'    : user.first_name,
             'psevdo_name'   : user.profiles.eco_name,
             'eco'           : user.profiles.eco,
-            'estimation_id' : estimation_id
+            'estimation_id' : estimation_id,
+            'skip_save'     : skip_save,
         }    
     
     send_message_socket(message = message_json)
@@ -3723,6 +3724,82 @@ def express_auction_matrix(request):
         client_price = 0
     return JsonResponse(charge_bcp_for_price(client_price))
 
+
+@login_required
+def price_increase_request(request, id):
+    """Запрос повышения цены из чата интерактивной оценки."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    try:
+        rlk = DocRLK.objects.get(pk=id)
+    except DocRLK.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'not_found'}, status=404)
+
+    interactiv_rlk, _ = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
+    estimation = interactiv_rlk.estimation
+    if estimation is None:
+        return JsonResponse({'ok': False, 'error': 'no_estimation'}, status=400)
+
+    raw_price = request.POST.get('desired_price', '') or request.POST.get('price', '')
+    comment = (request.POST.get('comment', '') or '').strip()
+    try:
+        desired_price = int(str(raw_price).replace(' ', '').replace(',', '').replace('\xa0', '') or 0)
+    except (TypeError, ValueError):
+        desired_price = 0
+
+    if desired_price <= 0:
+        return JsonResponse({'ok': False, 'error': 'invalid_price'}, status=400)
+
+    from register.interactive_price_history import ensure_page_soglasovanie
+    soglasovanie = ensure_page_soglasovanie(interactiv_rlk=interactiv_rlk, estimation=estimation)
+
+    now = DT.datetime.now()
+    user = request.user
+
+    soglasovanie.price_increase_request_amount = desired_price
+    soglasovanie.price_increase_request_comment = comment
+    soglasovanie.price_increase_request_user = user
+    soglasovanie.price_increase_request_date = now
+    soglasovanie.save(update_fields=[
+        'price_increase_request_amount',
+        'price_increase_request_comment',
+        'price_increase_request_user',
+        'price_increase_request_date',
+    ])
+
+    RegInteractivOcenkaPriceIncreaseRequest.objects.create(
+        soglasovanie=soglasovanie,
+        user=user,
+        desired_price=desired_price,
+        comment=comment,
+    )
+
+    price_fmt = '{:0,.0f}'.format(desired_price).replace(',', ' ')
+    text = 'Запрос повышения цены - ' + price_fmt + ' ₽'
+    if comment:
+        text += ', ' + comment
+
+    chat = Chat.objects.filter(name=rlk.pk, slug='rlk_' + str(rlk.pk)).first()
+    if chat is None:
+        chat = Chat.objects.create(name=rlk.pk, slug='rlk_' + str(rlk.pk))
+
+    ChatMessage.objects.create(user=user, chat=chat, content=text)
+    send_web_socket_message(
+        group='rlk_' + str(id),
+        chat=chat,
+        user=user,
+        text=text,
+        estimation_id=estimation.id,
+        skip_save=True,
+    )
+
+    return JsonResponse({
+        'ok': True,
+        'desired_price': desired_price,
+        'comment': comment,
+        'message': text,
+    })
 
 @login_required
 def doc(request, id):
@@ -14261,6 +14338,61 @@ def market_model_month_detail(request):
         'back_url': back_url,
     }
     return render(request, 'lo/market_model_month_detail.html', {'params': params})
+
+
+@login_required
+def market_car_trends(request, slug):
+    """Тренд рынка Autohub по конкретному автомобилю склада."""
+    from eco.market_model_trends import build_market_car_trends
+    from refs.models import RefCarsOrganization
+    import json as _json
+
+    car = RefCarsOrganization.objects.filter(slug=slug).select_related(
+        'unit',
+        'modification_autoru',
+        'modification_autoru__model',
+        'modification_autoru__model__mark',
+    ).first()
+    if car is None:
+        raise Http404('Автомобиль не найден')
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+
+    data = build_market_car_trends(car=car, date_start=date_start, date_end=date_end)
+
+    model_url = ''
+    if data['car']['mark_id'] or data['car']['model_id']:
+        from urllib.parse import urlencode
+        qs = {k: v for k, v in {
+            'mark_id': data['car']['mark_id'] or '',
+            'model_id': data['car']['model_id'] or '',
+            'mark': data['car']['mark_name'],
+            'model': data['car']['model_name'],
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+        }.items() if v}
+        model_url = '/eco/market-trends/model/?' + urlencode(qs)
+
+    params = {
+        'type': 'market_car_trends',
+        'nav_selected': 4,
+        'request': request,
+        'data': data,
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+        },
+        'price_edit_url': f"/cars/{car.slug}/price_edit/",
+        'model_url': model_url,
+        'list_url': '/eco/market-trends/',
+    }
+    return render(request, 'lo/market_car_trends.html', {'params': params})
 
 
 @login_required
