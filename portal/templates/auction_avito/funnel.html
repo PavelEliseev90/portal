@@ -1,0 +1,321 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Воронка аукциона Авито {% endblock %}
+{% block title_navbar %} — Воронка Авито {% endblock %}
+
+{% block head %}
+<style>
+  .aav-funnel-page { padding: 0 0 2rem; }
+  .aav-funnel-hero h2 { font-size: 1.45rem; font-weight: 650; color: #002a5a; margin: 0 0 .25rem; }
+  .aav-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  .aav-kpi {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    background: #fff;
+    padding: 0.85rem 1rem;
+  }
+  .aav-kpi .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8ea1ba;
+    margin-bottom: 0.2rem;
+  }
+  .aav-kpi .value { font-size: 1.45rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
+  .aav-kpi .hint { font-size: 0.78rem; color: #6c7a92; margin-top: 0.15rem; }
+  .aav-kpi.total { border-color: #cbd5e1; background: #f8fafc; }
+  .aav-kpi.bids { border-color: #bfdbfe; background: #eff6ff; }
+  .aav-kpi.won { border-color: #bbf7d0; background: #ecfdf5; }
+  .aav-kpi.not-taken { border-color: #fde68a; background: #fffbeb; }
+  .aav-funnel-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  .aav-funnel-step {
+    flex: 1 1 140px;
+    min-width: 120px;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    color: #fff;
+    position: relative;
+  }
+  .aav-funnel-step .s-label { font-size: 0.78rem; opacity: .9; }
+  .aav-funnel-step .s-value { font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
+  .aav-funnel-step .s-pct { font-size: 0.78rem; opacity: .85; margin-top: .2rem; }
+  .aav-funnel-step.total { background: {{ params.funnel_colors.total }}; color: #1e293b; }
+  .aav-funnel-step.bids { background: {{ params.funnel_colors.with_bids }}; }
+  .aav-funnel-step.won { background: {{ params.funnel_colors.won }}; }
+  .aav-funnel-arrow {
+    display: flex; align-items: center; color: #94a3b8; font-size: 1.25rem; padding: 0 .15rem;
+  }
+  .zg-check {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .25rem .55rem; border-radius: 999px; border: 1px solid #e2e8f0;
+    background: #fff; font-size: .82rem; margin: .15rem;
+    cursor: pointer; user-select: none;
+  }
+  .zg-check input { margin: 0; }
+  .zg-check.active { background: #eef2ff; border-color: #a5b4fc; color: #3730a3; font-weight: 600; }
+  .chart-wrap { position: relative; height: 380px; }
+  .legend-dot {
+    display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .35rem; vertical-align: middle;
+  }
+  .table-funnel th { font-size: .75rem; color: #8ea1ba; text-transform: uppercase; white-space: nowrap; }
+  .table-funnel td { vertical-align: middle; font-size: .9rem; }
+  .cell-main { font-weight: 650; color: #002a5a; }
+  .bar-mini {
+    display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: #e2e8f0; min-width: 80px;
+  }
+  .bar-mini span { display: block; height: 100%; }
+  .hint { font-size: .82rem; color: #6c7a92; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page aav-funnel-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3 aav-funnel-hero">
+    <div>
+      <h2><span class="bi bi-funnel me-2"></span>Воронка аукциона Авито</h2>
+      <p class="text-muted small mb-0">
+        Лоты за период → наши ставки → «выбрали нас». Разбивка по ценовым группам из расчётов выкупа.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:monitor' %}">Монитор</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:loss_report' %}">Отчёт по лотам</a>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <form method="get" id="funnelFilterForm">
+      <div class="row g-2 align-items-end mb-2">
+        <div class="col-auto">
+          <label class="form-label small text-muted mb-1">С</label>
+          <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+        </div>
+        <div class="col-auto">
+          <label class="form-label small text-muted mb-1">По</label>
+          <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Показать</button>
+        </div>
+        <div class="col-auto">
+          <a class="btn btn-outline-secondary" href="{% url 'auction_avito:funnel' %}">Сбросить</a>
+        </div>
+      </div>
+      <div>
+        <div class="form-label small text-muted mb-1">Ценовая группа (из расчёта выкупа)</div>
+        <div class="d-flex flex-wrap align-items-center">
+          {% for zg in params.zg_choices %}
+          <label class="zg-check {% if zg in params.filters.zg %}active{% endif %}">
+            <input type="checkbox" name="zg" value="{{ zg }}"
+                   {% if zg in params.filters.zg %}checked{% endif %}>
+            {{ zg }}
+          </label>
+          {% endfor %}
+        </div>
+        <p class="hint mb-0 mt-1">Без выбора — все ЦГ. Можно отметить несколько.</p>
+      </div>
+    </form>
+  </div>
+
+  <div class="aav-funnel-steps mb-3">
+    <div class="aav-funnel-step total">
+      <div class="s-label">Всего аукционов</div>
+      <div class="s-value">{{ params.summary.total }}</div>
+      <div class="s-pct">лоты за период</div>
+    </div>
+    <div class="aav-funnel-arrow d-none d-md-flex">→</div>
+    <div class="aav-funnel-step bids">
+      <div class="s-label">С нашими ставками</div>
+      <div class="s-value">{{ params.summary.with_bids }}</div>
+      <div class="s-pct">{{ params.summary.bid_share }}% от лотов</div>
+    </div>
+    <div class="aav-funnel-arrow d-none d-md-flex">→</div>
+    <div class="aav-funnel-step won">
+      <div class="s-label">Выбрали нас</div>
+      <div class="s-value">{{ params.summary.won }}</div>
+      <div class="s-pct">{{ params.summary.win_share_of_bids }}% от ставок · {{ params.summary.win_share_of_total }}% от лотов</div>
+    </div>
+  </div>
+
+  <div class="aav-kpi-grid mb-3">
+    <div class="aav-kpi total">
+      <div class="label">Всего лотов</div>
+      <div class="value">{{ params.summary.total }}</div>
+      <div class="hint"><a href="{{ params.links.lots_all }}">открыть список</a></div>
+    </div>
+    <div class="aav-kpi bids">
+      <div class="label">С нашими ставками</div>
+      <div class="value">{{ params.summary.with_bids }}</div>
+      <div class="hint">{{ params.summary.bid_share }}%</div>
+    </div>
+    <div class="aav-kpi won">
+      <div class="label">Выбрали нас</div>
+      <div class="value">{{ params.summary.won }}</div>
+      <div class="hint"><a href="{{ params.links.lots_won }}">outcome=won</a></div>
+    </div>
+    <div class="aav-kpi not-taken">
+      <div class="label">Не обработан</div>
+      <div class="value">{{ params.summary.not_taken }}</div>
+      <div class="hint">{{ params.outcome_labels.not_taken }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Проиграли</div>
+      <div class="value">{{ params.summary.lost }}</div>
+    </div>
+    <div class="aav-kpi">
+      <div class="label">Ждут продавца</div>
+      <div class="value">{{ params.summary.waiting }}</div>
+    </div>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <h6 class="mb-0 padding-portal">Разбивка по ценовым группам</h6>
+      <div class="small text-muted">
+        <span class="legend-dot" style="background:{{ params.funnel_colors.total }}"></span>Всего
+        <span class="legend-dot ms-2" style="background:{{ params.funnel_colors.with_bids }}"></span>Ставки
+        <span class="legend-dot ms-2" style="background:{{ params.funnel_colors.won }}"></span>Выбрали нас
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="funnelZgChart"></canvas>
+    </div>
+    <p class="hint mb-0 mt-2">
+      По оси X — ценовые группы за выбранный период. В каждой группе три столбца: всего лотов, с нашими ставками, выбрали нас.
+      {{ params.hint }}
+    </p>
+  </div>
+
+  <div class="portal-panel mb-3">
+    <h6 class="mb-3 padding-portal">Таблица по ЦГ</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-funnel mb-0">
+        <thead>
+          <tr>
+            <th>ЦГ</th>
+            <th class="text-end">Всего</th>
+            <th class="text-end">Ставки</th>
+            <th class="text-end">% ставок</th>
+            <th class="text-end">Выбрали нас</th>
+            <th class="text-end">% от ставок</th>
+            <th class="text-end">% от лотов</th>
+            <th style="min-width:120px">Доля</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.rows %}
+          <tr>
+            <td class="cell-main">{{ row.zg }}</td>
+            <td class="text-end">{{ row.total }}</td>
+            <td class="text-end" style="color:{{ params.funnel_colors.with_bids }};font-weight:600">{{ row.with_bids }}</td>
+            <td class="text-end">{{ row.bid_share }}%</td>
+            <td class="text-end" style="color:{{ params.funnel_colors.won }};font-weight:600">{{ row.won }}</td>
+            <td class="text-end">{{ row.win_share_of_bids }}%</td>
+            <td class="text-end">{{ row.win_share_of_total }}%</td>
+            <td>
+              {% if row.total %}
+              <div class="bar-mini" title="ставки / выигрыши от всего">
+                <span style="width:{{ row.bid_share }}%;background:{{ params.funnel_colors.with_bids }}"></span>
+              </div>
+              <div class="bar-mini mt-1">
+                <span style="width:{{ row.win_share_of_total }}%;background:{{ params.funnel_colors.won }}"></span>
+              </div>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-muted">Нет лотов за период{% if params.filters.zg %} с выбранными ЦГ{% endif %}.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if params.rows %}
+        <tfoot>
+          <tr class="fw-semibold">
+            <td>Итого</td>
+            <td class="text-end">{{ params.summary.total }}</td>
+            <td class="text-end">{{ params.summary.with_bids }}</td>
+            <td class="text-end">{{ params.summary.bid_share }}%</td>
+            <td class="text-end">{{ params.summary.won }}</td>
+            <td class="text-end">{{ params.summary.win_share_of_bids }}%</td>
+            <td class="text-end">{{ params.summary.win_share_of_total }}%</td>
+            <td></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+  document.querySelectorAll('.zg-check input').forEach(function (input) {
+    input.addEventListener('change', function () {
+      input.closest('.zg-check').classList.toggle('active', input.checked);
+    });
+  });
+
+  const data = {{ params.chart_json|safe }};
+  const canvas = document.getElementById('funnelZgChart');
+  if (!canvas || !data || !data.labels) return;
+
+  new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: (data.datasets || []).map(function (ds) {
+        return Object.assign({}, ds, {
+          maxBarThickness: 42,
+        });
+      }),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            footer: function (items) {
+              if (!items || !items.length) return '';
+              var total = items[0] && items[0].raw != null ? Number(items[0].parsed.y) : 0;
+              var bids = items[1] && items[1].raw != null ? Number(items[1].parsed.y) : 0;
+              var won = items[2] && items[2].raw != null ? Number(items[2].parsed.y) : 0;
+              var bidPct = total > 0 ? Math.round(1000 * bids / total) / 10 : 0;
+              var winPct = bids > 0 ? Math.round(1000 * won / bids) / 10 : 0;
+              return 'Ставки: ' + bidPct + '% · Победы от ставок: ' + winPct + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Ценовая группа' },
+          grid: { display: false },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          title: { display: true, text: 'Количество лотов' },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endblock %}

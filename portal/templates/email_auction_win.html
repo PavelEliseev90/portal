@@ -171,6 +171,19 @@
         <p style="font-size: 14px; line-height: 170%;">{{outcome}}</p>
       </div>
       {% endif %}
+      {% if rlk_number %}
+      <br>
+      <div style="font-size: 14px; color: #ffffff; line-height: 170%; word-wrap: break-word;">
+        <p style="font-size: 14px; line-height: 170%; opacity:.85;">Рабочий лист 1С</p>
+        <p style="font-size: 14px; line-height: 170%;">№ {{rlk_number}}{% if rlk_date %} от {{rlk_date}}{% endif %}</p>
+      </div>
+      {% elif rlk_error %}
+      <br>
+      <div style="font-size: 14px; color: #ffffff; line-height: 170%; word-wrap: break-word;">
+        <p style="font-size: 14px; line-height: 170%; opacity:.85;">Рабочий лист 1С</p>
+        <p style="font-size: 14px; line-height: 170%;">не создан: {{rlk_error}}</p>
+      </div>
+      {% endif %}
       <br>
       {% if portal_url %}
       <a href="{{portal_url}}" target="_blank" class="v-button v-size-width" style="box-sizing: border-box;display: inline-block;text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #27ae60; background-color: #ffffff; border-radius: 0px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;border: 1px solid #ffffff;font-size: 14px;margin: 0 8px 8px 0;">

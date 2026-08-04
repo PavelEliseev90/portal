@@ -171,6 +171,16 @@
           <span class="bi bi-arrow-repeat"></span> Пересчитать выкуп
         </button>
       </form>
+      {% if params.primary_offer and not params.primary_offer.win_rlk_number %}
+      <form method="post" action="{% url 'auction_avito:lot_create_win_rlk' params.lot.pk %}" class="d-inline"
+            onsubmit="return confirm('Создать рабочий лист в 1С по подразделению площадки?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-sm"
+                title="Отправить данные лота в 1С (CreateAvitoWorksheet). Нужно подразделение на площадке.">
+          <span class="bi bi-file-earmark-plus"></span> Создать рабочий лист
+        </button>
+      </form>
+      {% endif %}
       {% if params.primary_offer and params.primary_offer.lot_offer_id %}
         <a href="https://app.maxposter.ru/dealer/auction/{{ params.primary_offer.lot_offer_id }}/view"
            class="btn btn-outline-primary btn-sm"
@@ -194,6 +204,46 @@
           </div>
           {% if params.primary_offer.outcome_detail %}
             <div class="small mt-1">{{ params.primary_offer.outcome_detail }}</div>
+          {% endif %}
+          {% if params.primary_offer.win_rlk_number or params.primary_offer.win_rlk_uin %}
+            <div class="mt-2 pt-2 border-top border-success border-opacity-25">
+              <div class="fw-semibold">Рабочий лист 1С</div>
+              <div class="small mt-1">
+                {% if params.primary_offer.win_rlk_number %}
+                  № <strong>{{ params.primary_offer.win_rlk_number }}</strong>
+                {% endif %}
+                {% if params.primary_offer.win_rlk_date %}
+                  от {{ params.primary_offer.win_rlk_date|date:"d.m.Y H:i" }}
+                {% endif %}
+              </div>
+              {% if params.primary_offer.win_rlk_uin %}
+                <div class="small text-muted mt-1">УИН: {{ params.primary_offer.win_rlk_uin }}</div>
+              {% endif %}
+            </div>
+          {% elif params.primary_offer.outcome_code == 'won' and params.primary_offer.win_rlk_error %}
+            <div class="mt-2 pt-2 border-top border-danger border-opacity-25">
+              <div class="fw-semibold">Рабочий лист 1С</div>
+              <div class="small mt-1 text-danger">не создан: {{ params.primary_offer.win_rlk_error }}</div>
+              <form method="post" action="{% url 'auction_avito:lot_create_win_rlk' params.lot.pk %}" class="mt-2"
+                    onsubmit="return confirm('Повторить создание рабочего листа в 1С?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                  <span class="bi bi-arrow-repeat"></span> Повторить создание РЛ
+                </button>
+              </form>
+            </div>
+          {% elif not params.primary_offer.win_rlk_number %}
+            <div class="mt-2 pt-2 border-top border-secondary border-opacity-25">
+              <div class="fw-semibold">Рабочий лист 1С</div>
+              <div class="small mt-1 text-muted">ещё не создан</div>
+              <form method="post" action="{% url 'auction_avito:lot_create_win_rlk' params.lot.pk %}" class="mt-2"
+                    onsubmit="return confirm('Создать рабочий лист в 1С по подразделению площадки?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-success">
+                  <span class="bi bi-file-earmark-plus"></span> Создать рабочий лист
+                </button>
+              </form>
+            </div>
           {% endif %}
           {% if params.primary_offer.outcome_synced_at %}
             <div class="small text-muted mt-1">обновлено {{ params.primary_offer.outcome_synced_at|date:"d.m.Y H:i" }}</div>
@@ -974,6 +1024,13 @@
       <div class="col-md-3">Синхронизация: {{ params.lot.synced_at|date:"d.m.Y H:i"|default:"—" }}</div>
       <div class="col-md-3">Окончание лота: {{ params.lot.finish_at|date:"d.m.Y H:i"|default:"—" }}</div>
       <div class="col-md-3">Истекает: {{ params.lot.expires_at|date:"d.m.Y H:i"|default:"—" }}</div>
+      {% if params.primary_offer %}
+        {% if params.primary_offer.win_rlk_number or params.primary_offer.win_rlk_uin %}
+      <div class="col-md-3">РЛ номер: <strong class="text-dark">{{ params.primary_offer.win_rlk_number|default:"—" }}</strong></div>
+      <div class="col-md-3">РЛ дата: <strong class="text-dark">{% if params.primary_offer.win_rlk_date %}{{ params.primary_offer.win_rlk_date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</strong></div>
+      <div class="col-md-6">РЛ УИН: <strong class="text-dark">{{ params.primary_offer.win_rlk_uin|default:"—" }}</strong></div>
+        {% endif %}
+      {% endif %}
     </div>
   </div>
 

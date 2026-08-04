@@ -45,10 +45,10 @@ class AvitoBidderAccountAdmin(admin.ModelAdmin):
 
 @admin.register(AvitoVenue)
 class AvitoVenueAdmin(admin.ModelAdmin):
-    list_display = ('dealer_id', 'name', 'city', 'updated_at')
-    search_fields = ('dealer_id', 'name', 'city__name')
-    list_filter = ('city',)
-    autocomplete_fields = ('city',)
+    list_display = ('dealer_id', 'name', 'city', 'unit', 'updated_at')
+    search_fields = ('dealer_id', 'name', 'city__name', 'unit__name')
+    list_filter = ('city', 'unit')
+    autocomplete_fields = ('city', 'unit')
 
 
 @admin.register(AvitoLot)
@@ -72,13 +72,18 @@ class AvitoLotOfferAdmin(admin.ModelAdmin):
         'bid',
         'manual_max_bid',
         'gm1_money',
+        'win_rlk_number',
         'updated_at',
     )
     list_filter = ('status_code', 'outcome_code', 'account')
-    search_fields = ('lot_offer_id',)
-    raw_id_fields = ('lot', 'account', 'car', 'bid_made_by_user')
-    readonly_fields = ('outcome_synced_at', 'win_email_sent_at')
-
+    search_fields = ('lot_offer_id', 'win_rlk_number', 'win_rlk_uin')
+    raw_id_fields = ('lot', 'account', 'car', 'bid_made_by_user', 'win_rlk')
+    readonly_fields = (
+        'outcome_synced_at',
+        'win_email_sent_at',
+        'win_rlk_created_at',
+        'win_rlk_error',
+    )
 
 @admin.register(AvitoAutotekaReport)
 class AvitoAutotekaReportAdmin(admin.ModelAdmin):

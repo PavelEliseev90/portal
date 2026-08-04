@@ -726,6 +726,15 @@ def build_win_email_html(offer) -> tuple[str, str, str]:
         headline = 'Лот не обработан / не взяли в работу — требуется внимание'
 
     outcome = f'{offer.outcome_title or ""}\n{offer.outcome_detail or ""}'.strip()
+    rlk_number = (getattr(offer, 'win_rlk_number', None) or '').strip()
+    rlk_date = getattr(offer, 'win_rlk_date', None)
+    rlk_date_str = ''
+    if rlk_date:
+        try:
+            rlk_date_str = rlk_date.strftime('%d.%m.%Y %H:%M')
+        except Exception:
+            rlk_date_str = str(rlk_date)
+    rlk_error = (getattr(offer, 'win_rlk_error', None) or '').strip()
     ctx = {
         'portal_home': _portal_public_base(),
         'portal_url': _portal_lot_url(lot),
@@ -740,6 +749,9 @@ def build_win_email_html(offer) -> tuple[str, str, str]:
         'profit': _money_email(profit),
         'zna': _money_email(zna),
         'outcome': outcome,
+        'rlk_number': rlk_number,
+        'rlk_date': rlk_date_str,
+        'rlk_error': rlk_error if not rlk_number else '',
     }
     text = get_template('email_auction_win.txt').render(ctx)
     html = get_template('email_auction_win.html').render(ctx)
@@ -773,6 +785,7 @@ def send_win_email(offer, *, emails: list[str] | None = None) -> dict[str, Any]:
             'lot',
             'lot__venue',
             'lot__venue__city',
+            'lot__venue__unit',
             'account',
             'lot__vehicle_avito',
         )
@@ -955,6 +968,7 @@ def apply_offer_outcome(
 
     email_result = {'sent': False, 'reason': 'skipped'}
     chat_result = {'sent': False, 'reason': 'skipped'}
+    rlk_result = {'ok': False, 'reason': 'skipped'}
     became_won = (
         offer.outcome_code == OUTCOME_WON
         and prev_outcome != OUTCOME_WON
@@ -964,6 +978,30 @@ def apply_offer_outcome(
         and prev_outcome not in WIN_NOTIFY_OUTCOMES
     )
     new_code = (offer.outcome_code or '').strip()
+
+    # Сначала фиксируем итог — create_win_rlk читает оффер из БД.
+    offer.save(update_fields=update_fields)
+    pending_fields: list[str] = []
+
+    # При первом выигрыше («Продавец выбрал вас») — создать РЛ в 1С до письма.
+    if became_won and not (offer.win_rlk_number or '').strip() and not offer.win_rlk_created_at:
+        try:
+            from auction_avito.services.win_rlk import create_win_rlk_in_1c
+
+            rlk_result = create_win_rlk_in_1c(offer)
+            offer.refresh_from_db(
+                fields=[
+                    'win_rlk_id', 'win_rlk_uin', 'win_rlk_number',
+                    'win_rlk_date', 'win_rlk_created_at', 'win_rlk_error',
+                ]
+            )
+        except Exception as exc:
+            rlk_result = {'ok': False, 'reason': f'rlk error: {exc}'}
+            logger.exception(
+                'avito win RLK unexpected lotOfferId=%s: %s',
+                offer.lot_offer_id,
+                exc,
+            )
 
     # В чат лота — только при смене итога (дубли отсекает и notify_*).
     if outcome_unchanged:
@@ -988,7 +1026,7 @@ def apply_offer_outcome(
                 email_result = send_win_email(offer)
                 if email_result.get('sent'):
                     offer.win_email_sent_at = now
-                    update_fields.append('win_email_sent_at')
+                    pending_fields.append('win_email_sent_at')
             except Exception as exc:
                 email_result = {'sent': False, 'reason': str(exc)}
     elif notify_chat and new_code and new_code != OUTCOME_UNKNOWN:
@@ -1004,7 +1042,8 @@ def apply_offer_outcome(
             chat_result = {'sent': False, 'reason': f'chat error: {exc}'}
             logger.warning('avito outcome chat failed lotOfferId=%s: %s', offer.lot_offer_id, exc)
 
-    offer.save(update_fields=update_fields)
+    if pending_fields:
+        offer.save(update_fields=pending_fields)
     result = {
         'ok': True,
         'lotOfferId': offer.lot_offer_id,
@@ -1021,13 +1060,14 @@ def apply_offer_outcome(
         'outcomeUnchanged': outcome_unchanged,
         'email': email_result,
         'chat': chat_result,
+        'rlk': rlk_result,
         'outcomeSyncedAt': (
             offer.outcome_synced_at.isoformat() if offer.outcome_synced_at else ''
         ),
     }
     logger.info(
         'avito outcome: lotOfferId=%s lotId=%s %s/%s → %s/%s title=%r detail=%r '
-        'becameWon=%s becameWinNotify=%s chat=%s',
+        'becameWon=%s becameWinNotify=%s chat=%s rlk=%s',
         offer.lot_offer_id,
         offer.lot.lot_id if offer.lot_id else None,
         prev_outcome or '-',
@@ -1039,5 +1079,10 @@ def apply_offer_outcome(
         became_won,
         became_win_notify,
         chat_result,
+        {
+            'ok': rlk_result.get('ok'),
+            'reason': rlk_result.get('reason'),
+            'number': rlk_result.get('number') or getattr(offer, 'win_rlk_number', ''),
+        },
     )
     return result

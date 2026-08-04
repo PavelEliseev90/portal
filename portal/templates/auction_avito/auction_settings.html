@@ -14,6 +14,7 @@
     <div class="d-flex gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'auction_avito:lot_list' %}">К лотам</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:monitor' %}">Монитор</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:funnel' %}">Воронка</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:analytics' %}">Аналитика</a>
       <a class="btn btn-outline-primary btn-sm" href="{% url 'auction_avito:buyout_recommendations' %}">Рекомендации</a>
     </div>
@@ -227,6 +228,56 @@
         {% empty %}
         <div class="col-12 text-muted small">Нет площадок в справочнике.</div>
         {% endfor %}
+      </div>
+    </div>
+
+    <div class="portal-panel mb-3">
+      <h5 class="mb-3">Подразделения площадок (РЛ в 1С)</h5>
+      <p class="small text-muted mb-3">
+        При выигрыше лота («Продавец выбрал вас») по подразделению площадки создаётся рабочий лист
+        в информационной базе 1С. В письме указываются номер и дата РЛ.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Площадка</th>
+              <th>Город</th>
+              <th>dealerId</th>
+              <th>Подразделение</th>
+              <th>ИБ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venue in venue_unit_rows %}
+            <tr>
+              <td>{{ venue.name|default:"—" }}</td>
+              <td>{{ venue.city.name|default:"—" }}</td>
+              <td class="text-muted">{{ venue.dealer_id }}</td>
+              <td style="min-width: 220px;">
+                <select class="form-select form-select-sm" name="venue_unit_{{ venue.id }}">
+                  <option value="">— не задано —</option>
+                  {% for unit in units_for_venues %}
+                  <option value="{{ unit.id }}" {% if venue.unit_id == unit.id %}selected{% endif %}>
+                    {{ unit.name }}{% if unit.ib %} ({{ unit.ib.name }}){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="small text-muted">
+                {% if venue.unit and venue.unit.ib %}
+                  {{ venue.unit.ib.name }}
+                  {% if venue.unit.ib.alfa %}<span class="badge text-bg-light">Альфа</span>{% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted small">Площадки ещё не синхронизированы.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
 

@@ -685,6 +685,44 @@ def lot_recalculate(request, pk):
 
 @login_required
 @require_POST
+def lot_create_win_rlk(request, pk):
+    """Ручное создание рабочего листа в 1С, если автосоздание не сработало."""
+    lot = get_object_or_404(_lot_detail_queryset(), pk=pk)
+    offer = lot.offers.first()
+    if offer is None:
+        messages.error(request, 'У лота нет оффера — создать рабочий лист нельзя.')
+        return redirect('auction_avito:lot_detail', pk=pk)
+
+    if (offer.win_rlk_number or '').strip():
+        messages.info(
+            request,
+            f'Рабочий лист уже создан: № {offer.win_rlk_number}'
+            + (f' (УИН {offer.win_rlk_uin})' if offer.win_rlk_uin else ''),
+        )
+        return redirect('auction_avito:lot_detail', pk=pk)
+
+    from auction_avito.services.win_rlk import create_win_rlk_in_1c
+
+    result = create_win_rlk_in_1c(offer, force=False)
+    if result.get('ok'):
+        number = result.get('number') or offer.win_rlk_number or '—'
+        uin = result.get('uin') or ''
+        msg = f'Рабочий лист создан в 1С: № {number}'
+        if uin:
+            msg += f', УИН {uin}'
+        messages.success(request, msg)
+    else:
+        messages.error(
+            request,
+            'Рабочий лист не создан: {}'.format(
+                result.get('error') or result.get('reason') or 'неизвестная ошибка'
+            ),
+        )
+    return redirect('auction_avito:lot_detail', pk=pk)
+
+
+@login_required
+@require_POST
 def lot_load_images(request, pk):
     """Загрузить фото: API (если настроен) или из сохранённого JSON."""
     lot = get_object_or_404(AvitoLot, pk=pk)
@@ -730,6 +768,15 @@ def analytics(request):
 
     ctx = build_analytics_context(request)
     return render(request, 'auction_avito/analytics.html', {'params': ctx})
+
+
+@login_required
+def funnel(request):
+    """Воронка: лоты → наши ставки → выбрали нас, разбивка по ЦГ расчёта выкупа."""
+    from auction_avito.services.funnel import build_funnel_context
+
+    ctx = build_funnel_context(request)
+    return render(request, 'auction_avito/funnel.html', {'params': ctx})
 
 
 @login_required
@@ -1010,14 +1057,57 @@ def auction_settings(request):
                 acc.win_notify_emails = (value or '').strip()
                 acc.save(update_fields=['win_notify_emails'])
 
+            # Подразделение площадки продавца: venue_unit_<venue_id>
+            for key, value in request.POST.items():
+                if not key.startswith('venue_unit_'):
+                    continue
+                try:
+                    venue_id = int(key.replace('venue_unit_', '', 1))
+                except ValueError:
+                    continue
+                venue = AvitoVenue.objects.filter(pk=venue_id).first()
+                if not venue:
+                    continue
+                unit_id = (value or '').strip()
+                if unit_id:
+                    try:
+                        venue.unit_id = int(unit_id)
+                    except ValueError:
+                        continue
+                else:
+                    venue.unit_id = None
+                venue.save(update_fields=['unit', 'updated_at'])
+
             messages.success(request, 'Настройки сохранены.')
             return redirect('auction_avito:auction_settings')
         except Exception as exc:
             messages.error(request, str(exc))
 
+    from refs.models import RefUnit
+
+    venue_unit_rows = list(
+        AvitoVenue.objects.select_related('city', 'unit', 'unit__ib')
+        .order_by('city__name', 'name', 'dealer_id')
+    )
+    units_for_venues = list(
+        RefUnit.objects.filter(buauto=True).select_related('ib').order_by('name')
+    )
+    # Если у площадки уже выбран unit не из buauto — добавим его в список.
+    assigned_ids = {v.unit_id for v in venue_unit_rows if v.unit_id}
+    known_ids = {u.pk for u in units_for_venues}
+    missing = assigned_ids - known_ids
+    if missing:
+        units_for_venues = list(
+            RefUnit.objects.filter(Q(buauto=True) | Q(pk__in=missing))
+            .select_related('ib')
+            .order_by('name')
+        )
+
     return render(request, 'auction_avito/auction_settings.html', {
         'auction_settings': settings_obj,
         'platform_email_rows': platform_email_rows(),
+        'venue_unit_rows': venue_unit_rows,
+        'units_for_venues': units_for_venues,
         'test_win_offers': _test_win_email_offer_choices(),
     })
 

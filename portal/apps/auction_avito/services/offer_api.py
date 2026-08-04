@@ -171,6 +171,12 @@ def build_offer_state_response(offer: AvitoLotOffer, *, history_limit: int = 5) 
             'detail': offer.outcome_detail or '',
             'syncedAt': _format_dt(offer.outcome_synced_at),
             'winEmailSentAt': _format_dt(offer.win_email_sent_at),
+            'winRlk': {
+                'number': offer.win_rlk_number or '',
+                'uin': offer.win_rlk_uin or '',
+                'date': _format_dt(offer.win_rlk_date),
+                'error': offer.win_rlk_error or '',
+            },
         },
         'dealerId': offer.account.dealer_id if offer.account_id else None,
         'bidderId': offer.account.bidder_id if offer.account_id else None,
