@@ -2512,6 +2512,18 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
 
     settings                        = models.ForeignKey(RegEstimationsSettings, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Настройка ценообразования" ) 
 
+    price_increase_request_amount  = models.IntegerField('Запрос повышения: желаемая цена', default=0, null=True, blank=True)
+    price_increase_request_comment = models.CharField("Запрос повышения: комментарий", max_length=5120, default='', null=True, blank=True)
+    price_increase_request_user    = models.ForeignKey(
+        User,
+        related_name="price_increase_request_user",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Запрос повышения: кто запросил",
+    )
+    price_increase_request_date    = models.DateTimeField('Запрос повышения: дата', blank=True, null=True)
+
     def __str__(self):
         return "{} / {}".format(self.start_estimation, self.end_estimation)
 
@@ -2535,6 +2547,35 @@ class RegInteractivOcenkaSoglasovanie(ChangeloggableMixin, models.Model):
         verbose_name_plural = "Данные интерактивной оценки страницы согласования"
 post_save.connect(journal_save_handler, sender=RegInteractivOcenkaSoglasovanie)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenkaSoglasovanie)
+
+
+class RegInteractivOcenkaPriceIncreaseRequest(models.Model):
+    soglasovanie = models.ForeignKey(
+        RegInteractivOcenkaSoglasovanie,
+        related_name='price_increase_requests',
+        on_delete=models.CASCADE,
+        verbose_name='Согласование',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='eco_price_increase_requests',
+        verbose_name='Кто запросил',
+    )
+    desired_price = models.IntegerField('Желаемая цена', default=0)
+    comment = models.CharField('Комментарий', max_length=5120, default='', blank=True)
+    created_at = models.DateTimeField('Дата запроса', auto_now_add=True)
+
+    def __str__(self):
+        return "{} / {} / {}".format(self.desired_price, self.user, self.created_at)
+
+    class Meta:
+        db_table = 'regInteractivOcenkaPriceIncreaseRequest'
+        verbose_name = 'Запрос повышения цены'
+        verbose_name_plural = 'Запросы повышения цены'
+        ordering = ['-created_at']
 
 class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")

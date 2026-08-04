@@ -7176,6 +7176,27 @@
                           <br>
                           <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381 </label>
                           <br>
+                          {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_amount %}
+                          <hr style="margin: 0.2rem;">
+                          <div class="alert alert-warning py-2 px-3 mb-2">
+                            <div class="fw-bold">Запрос повышения цены</div>
+                            <div>
+                              {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_user %}
+                                {% with u=params.interactiv_rlk.page_soglasovanie.price_increase_request_user %}
+                                  {% if u.profiles.eco_name %}{{ u.profiles.eco_name }}{% else %}{{ u.last_name }} {{ u.first_name }}{% endif %}
+                                {% endwith %}
+                              {% else %}—{% endif %}
+                              :
+                              {{ params.interactiv_rlk.page_soglasovanie.price_increase_request_amount|floatformat:"2g" }} &#8381
+                            </div>
+                            {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_comment %}
+                              <div class="small">{{ params.interactiv_rlk.page_soglasovanie.price_increase_request_comment }}</div>
+                            {% endif %}
+                            {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_date %}
+                              <div class="small text-muted">{{ params.interactiv_rlk.page_soglasovanie.price_increase_request_date }}</div>
+                            {% endif %}
+                          </div>
+                          {% endif %}
                           <hr>
                           <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#estimation_info_customer"> <span class="icon-mbri-users"></span> Данные для клиента</button>
 

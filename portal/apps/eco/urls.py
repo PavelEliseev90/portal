@@ -36,6 +36,7 @@ urlpatterns = [
     path('market-trends/',                      views.market_model_trends, name='market_model_trends'),
     path('market-trends/model/',                views.market_model_detail, name='market_model_detail'),
     path('market-trends/month/',                views.market_model_month_detail, name='market_model_month_detail'),
+    path('market-trends/car/<slug:slug>/',      views.market_car_trends, name='market_car_trends'),
     path('funnel/simple-export/',               views.tradein_funnel_simple_export, name='tradein_funnel_simple_export'),
     path('js/get_chats_list/',                  views.get_chats_list),
     path('js/post_chats_list/',                 views.post_chats_list),
@@ -51,6 +52,7 @@ urlpatterns = [
     path('<int:id>/control_diagnostic/<int:cd_id>/control_diagnostic_body/', views.control_diagnostic_body, name='control_diagnostic_body'),
     
     path('express-auction/matrix/',             views.express_auction_matrix, name='express_auction_matrix'),
+    path('<id>/price_increase_request/',        views.price_increase_request, name='price_increase_request'),
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

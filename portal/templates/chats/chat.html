@@ -8,7 +8,12 @@ z-index: 1030;">
 
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="offcanvasRightLabel"> Чат</h5>
+    <h5 class="offcanvas-title mb-0 me-auto" id="offcanvasRightLabel"> Чат</h5>
+    {% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}
+    <button type="button" class="btn btn-sm btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#priceIncreaseRequestModal">
+        Запрос повышения
+    </button>
+    {% endif %}
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
 </div>
 
@@ -105,6 +110,34 @@ z-index: 1030;">
 
 </div>
 </div>
+
+{% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}
+<div class="modal fade" id="priceIncreaseRequestModal" tabindex="-1" aria-labelledby="priceIncreaseRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="priceIncreaseRequestModalLabel">Запрос повышения цены</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="price_increase_desired_price" class="form-label">Желаемая цена</label>
+                    <input type="number" class="form-control" id="price_increase_desired_price" min="1" step="1" required>
+                </div>
+                <div class="mb-3">
+                    <label for="price_increase_comment" class="form-label">Комментарий</label>
+                    <textarea class="form-control" id="price_increase_comment" rows="3"></textarea>
+                </div>
+                <div id="price_increase_error" class="text-danger small d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-warning" id="price_increase_submit_btn">Запросить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <audio id="notif" src="/media_dop/music/vin.mp3"></audio>
 
@@ -289,6 +322,76 @@ z-index: 1030;">
             target.scrollIntoView();
         } 
     }
+
+    {% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}
+    (function () {
+        const submitBtn = document.getElementById('price_increase_submit_btn');
+        if (!submitBtn) return;
+
+        const csrfInput = document.querySelector('#post-form [name=csrfmiddlewaretoken]');
+        const rlkId = '{% if params.rlk %}{{ params.rlk.pk }}{% elif params.interactiv_rlk %}{{ params.interactiv_rlk.rlk_id }}{% endif %}';
+
+        submitBtn.addEventListener('click', function () {
+            const priceInput = document.getElementById('price_increase_desired_price');
+            const commentInput = document.getElementById('price_increase_comment');
+            const errEl = document.getElementById('price_increase_error');
+            const desiredPrice = (priceInput && priceInput.value || '').trim();
+            const comment = (commentInput && commentInput.value || '').trim();
+
+            errEl.classList.add('d-none');
+            errEl.textContent = '';
+
+            if (!desiredPrice || Number(desiredPrice) <= 0) {
+                errEl.textContent = 'Укажите желаемую цену';
+                errEl.classList.remove('d-none');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            const formData = new FormData();
+            formData.append('desired_price', desiredPrice);
+            formData.append('comment', comment);
+            if (csrfInput) {
+                formData.append('csrfmiddlewaretoken', csrfInput.value);
+            }
+
+            fetch('/eco/' + rlkId + '/price_increase_request/', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function (resp) {
+                return resp.json().then(function (data) {
+                    return { ok: resp.ok, data: data };
+                });
+            }).then(function (result) {
+                submitBtn.disabled = false;
+                if (!result.ok || !result.data.ok) {
+                    errEl.textContent = (result.data && result.data.error === 'invalid_price')
+                        ? 'Укажите желаемую цену'
+                        : 'Не удалось отправить запрос';
+                    errEl.classList.remove('d-none');
+                    return;
+                }
+                if (priceInput) priceInput.value = '';
+                if (commentInput) commentInput.value = '';
+                const modalEl = document.getElementById('priceIncreaseRequestModal');
+                if (modalEl && window.bootstrap && bootstrap.Modal) {
+                    const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    inst.hide();
+                } else if (window.$) {
+                    $('#priceIncreaseRequestModal').modal('hide');
+                }
+            }).catch(function () {
+                submitBtn.disabled = false;
+                errEl.textContent = 'Не удалось отправить запрос';
+                errEl.classList.remove('d-none');
+            });
+        });
+    })();
+    {% endif %}
 
 </script>
 

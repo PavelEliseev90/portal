@@ -1427,6 +1427,9 @@
 					<a href="?{% url_replace page=10 %}" class="kors-anchor-button {% if params.page == 10 %}active{% endif %}" data-tab-target="10">
 						<span>Аналитика - {{ params.tab_counts.analytics_total }}</span>                
 					</a>
+					<a href="?{% url_replace page=12 %}" class="kors-anchor-button {% if params.page == 12 %}active{% endif %}" data-tab-target="12">
+						<span>Тренд рынка</span>
+					</a>
 					<a href="?{% url_replace page=5 %}" class="kors-anchor-button" data-tab-target="5">
 						<span>История оценок - {{ params.tab_counts.estimation }}</span>                
 					</a>
@@ -1459,6 +1462,8 @@
 			{% include 'avtosalon/includes/car_price_revaluations.html' %}
 		{% elif params.page == 10 %}
 			{% include 'avtosalon/includes/car_avtohub_analytics.html' %}
+		{% elif params.page == 12 %}
+			{% include 'avtosalon/includes/car_market_trends_embed.html' %}
 		{% elif params.page == 11 %}
 			{% include 'avtosalon/includes/car_options_manage.html' %}
 		{% else %}
