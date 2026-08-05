@@ -33,10 +33,10 @@
 		<p> {% if params.object.unit.ib.alfa %} Альфа - авто {% endif %} № {{params.object.nomer}} от {{params.object.dataTime}}  </p>  
 	</div>
 	
-	<div class="portal-panel">
+	<div class="portal-panel {% if params.alfa %} bg-danger bg-opacity-25 bg-gradient {% endif %}" >
 		{% for rl_out in params.doc_out_ib %}
 			
-			<h6 class="mb-3"><span class="icon-doc"></span> Рабочий лист трейдин из АльфаАвто</h6>
+			<h6 class="mb-3"><span class="icon-doc"></span> Рабочий лист трейдин из  {% if params.alfa %} * КорсАвто {% else %} * АвльфаАвто {% endif %}</h6>
 
 			<div class="row g-1">
 				<div class="col">

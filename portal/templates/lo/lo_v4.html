@@ -13493,8 +13493,7 @@
                   <hr class="my-3">
                 </div>
 
-                {% include 'lo/partials/price_recalc_history.html' %}
-
+                
                 <main>
 
                   <div class="row g-1">
@@ -15653,694 +15652,695 @@
                   <br>
                   
                  
+                  <!--
+                    <br>
 
-                  <br>
+                    <div class="row row-cols-1 row-cols-md-4 mb-4 text-center">
+                      
+                      <div class="col">
+                        <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-50">
+                          <div class="card-header py-3">
+                            <h4 class="my-0 fw-normal">Оценщик - ЕЦО</h4>
+                          </div>
+                          <div class="card-body">
 
-                  <div class="row row-cols-1 row-cols-md-4 mb-4 text-center">
-                    
-                    <div class="col">
-                      <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-50">
-                        <div class="card-header py-3">
-                          <h4 class="my-0 fw-normal">Оценщик - ЕЦО</h4>
-                        </div>
-                        <div class="card-body">
-
-                          <ul class="list-unstyled mt-3 mb-4">
-                            
-                            <h2 class="card-title pricing-card-title">
+                            <ul class="list-unstyled mt-3 mb-4">
                               
-                              {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
-                                {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
-                              {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
-                                {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
-                              {% else %}
-                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
-                              {% endif %}
-
-                            </h2>
-
-                            <hr>
-                            <li class="fw-bold">Оценщик</li>
-
-                          <h3 class="card-title pricing-card-title">
-                            <div class="row g-1">
-                              
-                              <div class="col-sm-auto">
+                              <h2 class="card-title pricing-card-title">
                                 
-                                <span class="icon-mbri-right h5">прием</span>
-
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-
-                            <div class="row g-1">
-                              
-                              <div class="col-sm-auto">
-                                
-                                <span class="icon-mbri-left h5">продажа</span>
-                                
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            
-                          </h3>
-                          
-                          
-
-                            <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
-                            <li class="fw-bold">ЕЦО</li>
-                            
-                              <h3 class="card-title pricing-card-title">
-                              <div class="row g-1">
-                                
-                                <div class="col-sm-auto">
-                                  
-                                  <span class="icon-mbri-right h5">до кд</span>
-      
-                                </div>
-                                
-                                <div class="col-sm text-end">
-                                  {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
-                                </div>
-      
-                              </div>
-      
-                              <div class="row g-1">
-                                
-                                <div class="col-sm-auto">
-                                  
-                                  <span class="icon-mbri-right h5">после</span>
-                                  
-                                </div>
-                                
-                                <div class="col-sm text-end">
+                                {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
                                   {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
-                                </div>
-      
-                              </div>
+                                {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
+                                  {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                                {% else %}
+                                  {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
+                                {% endif %}
+
+                              </h2>
+
+                              <hr>
+                              <li class="fw-bold">Оценщик</li>
+
+                            <h3 class="card-title pricing-card-title">
                               <div class="row g-1">
                                 
                                 <div class="col-sm-auto">
                                   
-                                  <span class="icon-mbri-right h5">бцп</span>
-      
+                                  <span class="icon-mbri-right h5">прием</span>
+
                                 </div>
                                 
                                 <div class="col-sm text-end">
-                                  {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
+                                  {{params.interactiv_rlk.page_soglasovanie.price_reception|floatformat:"2g"}} &#8381
                                 </div>
-      
+
+                              </div>
+
+                              <div class="row g-1">
+                                
+                                <div class="col-sm-auto">
+                                  
+                                  <span class="icon-mbri-left h5">продажа</span>
+                                  
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.interactiv_rlk.page_soglasovanie.price_sale|floatformat:"2g"}} &#8381
+                                </div>
+
                               </div>
                               
-                              </h3>
-
-
+                            </h3>
                             
-                          </ul>
-                          </div>
-                      </div>
-                    </div>
-                  
-                    <div class="col">
-                      <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
-                        <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
-                          <h4 class="my-0 fw-normal" >Автотека</h4>
-                        </div>
-                        <div class="card-body collapse show" id="collapse_avito">
-                          
-                          <ul class="list-unstyled mt-3 mb-4">
-                            
-                            <li class="fw-bold">Рынок</li>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.avito_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.avito_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
                             
 
-                            <hr>
-
-                          
-
-                            <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
-
-                            <li class="fw-bold">Продажи</li>
-                            
-                            <div class="row g-1">
+                              <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
+                              <li class="fw-bold">ЕЦО</li>
                               
-                              <div class="col-sm text-start">
+                                <h3 class="card-title pricing-card-title">
+                                <div class="row g-1">
+                                  
+                                  <div class="col-sm-auto">
+                                    
+                                    <span class="icon-mbri-right h5">до кд</span>
+        
+                                  </div>
+                                  
+                                  <div class="col-sm text-end">
+                                    {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:"2g"}} &#8381
+                                  </div>
+        
+                                </div>
+        
+                                <div class="row g-1">
+                                  
+                                  <div class="col-sm-auto">
+                                    
+                                    <span class="icon-mbri-right h5">после</span>
+                                    
+                                  </div>
+                                  
+                                  <div class="col-sm text-end">
+                                    {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"2g"}} &#8381
+                                  </div>
+        
+                                </div>
+                                <div class="row g-1">
+                                  
+                                  <div class="col-sm-auto">
+                                    
+                                    <span class="icon-mbri-right h5">бцп</span>
+        
+                                  </div>
+                                  
+                                  <div class="col-sm text-end">
+                                    {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381
+                                  </div>
+        
+                                </div>
                                 
-                                Продажа
-                                
+                                </h3>
 
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.avito_price_market_min|floatformat:"0g"}} &#8381  
-                              </div>
 
-                              <div class="col-sm text-end">
-                                {{params.estimation.avito_price_market_max|floatformat:"0g"}} &#8381
-                              </div>
-
+                              
+                            </ul>
                             </div>
-                          
-                            
-                          </ul>
-                        
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col">
-                      <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-10">
-                        <div class="card-header py-3"  data-bs-toggle="collapse" href="#collapse_kors" role="button" aria-expanded="false" aria-controls="collapse_kors">
-                          <h4 class="my-0 fw-normal">КорсАвто</h4>
-                        </div>
-                        <div class="card-body collapse show" id="collapse_kors">
-                          <ul class="list-unstyled mt-3 mb-4">
-                            
-                            <li class="fw-bold">Склад - {{params.estimation.kors_count_store|floatformat:"0g"}} ({{params.estimation.list_data_no_active|length}}) ({{params.estimation.kors_start_store|date:"d.m.Y H:i"}})</li>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.kors_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Себестоимость
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.kors_cost_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_cost_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-
-                            <hr>
-
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG Дней на складе 
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_days_in_stok_avg|floatformat:"1g"}}
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG себестоимость
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_cost_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG затраты
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_outlay_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG кум
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_cum_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG пробег
-                                
-
-                              </div>
-                              <div class="col-sm-3">
-                                
-                              - 
-                              
-
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_run_avg|floatformat:"0g"}} км.
-                              </div>
-
-                            </div>
-
-                            <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
-
-                            <li class="fw-bold">Продажи - {{params.estimation.kors_count_sale|floatformat:"0g"}} ({{params.estimation.list_data_sale_no_active|length}}) ({{params.estimation.kors_start_sale|date:"d.m.Y H:i"}})</li>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.kors_price_market_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_price_market_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Себестоимость
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.kors_sale_cost_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_cost_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-
-                            <hr>
-
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG Дней на складе 
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_days_in_stok_avg|floatformat:"1g"}}
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG себестоимость
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_cost_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG затраты
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_outlay_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG кум
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_cum_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG пробег
-                                
-
-                              </div>
-                              <div class="col-sm-3">
-                                
-                              - 
-                              
-
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.kors_sale_run_avg|floatformat:"0g"}} км.
-                              </div>
-
-                            </div>
-                            
-                          </ul>
-                          <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
-
-                          <button type="button" class="w-100 btn btn-lg btn-outline-primary" data-bs-toggle="modal" data-bs-target="#robot_price_korsavto"> <span class="icon-mbri-info"></span> подробнее</button>
                         </div>
                       </div>
-                    </div>
                     
-                    <div class="col">
-                      <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
-                        <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
-                          <h4 class="my-0 fw-normal">ЦНА</h4>
+                      <div class="col">
+                        <div class="card mb-4 rounded-3 shadow-sm  bg-primary bg-opacity-10">
+                          <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_avito" role="button" aria-expanded="false" aria-controls="collapse_avito">
+                            <h4 class="my-0 fw-normal" >Автотека</h4>
+                          </div>
+                          <div class="card-body collapse show" id="collapse_avito">
+                            
+                            <ul class="list-unstyled mt-3 mb-4">
+                              
+                              <li class="fw-bold">Рынок</li>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.avito_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.avito_price_max|floatformat:"0g"}} &#8381
+                                </div>
+
+                              </div>
+                              
+
+                              <hr>
+
+                            
+
+                              <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
+
+                              <li class="fw-bold">Продажи</li>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.avito_price_market_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.avito_price_market_max|floatformat:"0g"}} &#8381
+                                </div>
+
+                              </div>
+                            
+                              
+                            </ul>
+                          
+                          </div>
                         </div>
-                        <div class="card-body collapse show" id="collapse_hub">
-                          <ul class="list-unstyled mt-3 mb-4">
-                            
-                            <li class="fw-bold">Рынок - {{params.estimation.hub_total|floatformat:"0g"}} ({{params.estimation.hub_start|date:"d.m.Y H:i"}})</li>
-                            
-                            <div class="row g-1">
+                      </div>
+
+                      <div class="col">
+                        <div class="card mb-4 rounded-3 shadow-sm bg-dark bg-opacity-10">
+                          <div class="card-header py-3"  data-bs-toggle="collapse" href="#collapse_kors" role="button" aria-expanded="false" aria-controls="collapse_kors">
+                            <h4 class="my-0 fw-normal">КорсАвто</h4>
+                          </div>
+                          <div class="card-body collapse show" id="collapse_kors">
+                            <ul class="list-unstyled mt-3 mb-4">
                               
-                              <div class="col-sm text-start">
-                                
-                                Продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.hub_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-                            
-
-                            <hr>
-
-                            <div class="row g-1">
+                              <li class="fw-bold">Склад - {{params.estimation.kors_count_store|floatformat:"0g"}} ({{params.estimation.list_data_no_active|length}}) ({{params.estimation.kors_start_store|date:"d.m.Y H:i"}})</li>
                               
-                              <div class="col-sm text-start">
+                              <div class="row g-1">
                                 
-                                AVG Дней на складе 
-                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.kors_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_price_max|floatformat:"0g"}} &#8381
+                                </div>
 
                               </div>
-                              <div class="col-sm-auto">
+                              <div class="row g-1">
                                 
-                              - 
+                                <div class="col-sm text-start">
+                                  
+                                  Себестоимость
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.kors_cost_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_cost_price_max|floatformat:"0g"}} &#8381
+                                </div>
+
                               </div>
 
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_days_in_stok_avg|floatformat:"1g"}}
+                              <hr>
+
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG Дней на складе 
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_days_in_stok_avg|floatformat:"1g"}}
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG себестоимость
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_cost_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG затраты
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_outlay_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG кум
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_cum_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG пробег
+                                  
+
+                                </div>
+                                <div class="col-sm-3">
+                                  
+                                - 
+                                
+
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_run_avg|floatformat:"0g"}} км.
+                                </div>
+
                               </div>
 
-                            </div>
-                            
-                            <div class="row g-1">
+                              <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
+
+                              <li class="fw-bold">Продажи - {{params.estimation.kors_count_sale|floatformat:"0g"}} ({{params.estimation.list_data_sale_no_active|length}}) ({{params.estimation.kors_start_sale|date:"d.m.Y H:i"}})</li>
                               
-                              <div class="col-sm text-start">
+                              <div class="row g-1">
                                 
-                                AVG продажа
-                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.kors_price_market_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_price_market_max|floatformat:"0g"}} &#8381
+                                </div>
 
                               </div>
-                              <div class="col-sm-auto">
+                              <div class="row g-1">
                                 
-                              - 
+                                <div class="col-sm text-start">
+                                  
+                                  Себестоимость
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.kors_sale_cost_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_cost_price_max|floatformat:"0g"}} &#8381
+                                </div>
+
+                              </div>
+
+                              <hr>
+
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG Дней на складе 
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_days_in_stok_avg|floatformat:"1g"}}
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG себестоимость
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_cost_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG затраты
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_outlay_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG кум
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_cum_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG пробег
+                                  
+
+                                </div>
+                                <div class="col-sm-3">
+                                  
+                                - 
+                                
+
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.kors_sale_run_avg|floatformat:"0g"}} км.
+                                </div>
+
                               </div>
                               
-                              <div class="col-sm text-end">
-                                {{params.price.hub_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG пробег
-                                
-
-                              </div>
-                              <div class="col-sm-3">
-                                
-                              - 
-                              
-
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_run_avg|floatformat:"0g"}} км.
-                              </div>
-
-                            </div>
-
+                            </ul>
                             <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
 
-                            <li class="fw-bold">Продажи - {{params.estimation.hub_sale_total|floatformat:"0g"}} ({{params.estimation.hub_start|date:"d.m.Y H:i"}})</li>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                Продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                                {{params.estimation.hub_sale_price_min|floatformat:"0g"}} &#8381  
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_sale_price_max|floatformat:"0g"}} &#8381
-                              </div>
-
-                            </div>
-                            
-
-                            <hr>
-
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG Дней на складе 
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_sale_days_in_stok_avg|floatformat:"1g"}}
-                              </div>
-
-                            </div>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG продажа
-                                
-
-                              </div>
-                              <div class="col-sm-auto">
-                                
-                              - 
-                              </div>
-                              
-                              <div class="col-sm text-end">
-                                {{params.price.hub_sale_price_avg|floatformat:"2g"}} &#8381
-                              </div>
-
-                            </div>
-                            
-                            <div class="row g-1">
-                              
-                              <div class="col-sm text-start">
-                                
-                                AVG пробег
-                                
-
-                              </div>
-                              <div class="col-sm-3">
-                                
-                              - 
-                              
-
-                              </div>
-
-                              <div class="col-sm text-end">
-                                {{params.estimation.hub_sale_run_avg|floatformat:"0g"}} км.
-                              </div>
-
-                            </div>
-                            
-                          </ul>
-                          <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
-
+                            <button type="button" class="w-100 btn btn-lg btn-outline-primary" data-bs-toggle="modal" data-bs-target="#robot_price_korsavto"> <span class="icon-mbri-info"></span> подробнее</button>
                           </div>
+                        </div>
                       </div>
+                      
+                      <div class="col">
+                        <div class="card mb-4 rounded-3 shadow-sm bg-secondary bg-gradient bg-opacity-10">
+                          <div class="card-header py-3" data-bs-toggle="collapse" href="#collapse_hub" role="button" aria-expanded="false" aria-controls="collapse_hub">
+                            <h4 class="my-0 fw-normal">ЦНА</h4>
+                          </div>
+                          <div class="card-body collapse show" id="collapse_hub">
+                            <ul class="list-unstyled mt-3 mb-4">
+                              
+                              <li class="fw-bold">Рынок - {{params.estimation.hub_total|floatformat:"0g"}} ({{params.estimation.hub_start|date:"d.m.Y H:i"}})</li>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.hub_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_price_max|floatformat:"0g"}} &#8381
+                                </div>
+
+                              </div>
+                              
+
+                              <hr>
+
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG Дней на складе 
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_days_in_stok_avg|floatformat:"1g"}}
+                                </div>
+
+                              </div>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.price.hub_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG пробег
+                                  
+
+                                </div>
+                                <div class="col-sm-3">
+                                  
+                                - 
+                                
+
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_run_avg|floatformat:"0g"}} км.
+                                </div>
+
+                              </div>
+
+                              <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
+
+                              <li class="fw-bold">Продажи - {{params.estimation.hub_sale_total|floatformat:"0g"}} ({{params.estimation.hub_start|date:"d.m.Y H:i"}})</li>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  Продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                  {{params.estimation.hub_sale_price_min|floatformat:"0g"}} &#8381  
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_sale_price_max|floatformat:"0g"}} &#8381
+                                </div>
+
+                              </div>
+                              
+
+                              <hr>
+
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG Дней на складе 
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_sale_days_in_stok_avg|floatformat:"1g"}}
+                                </div>
+
+                              </div>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG продажа
+                                  
+
+                                </div>
+                                <div class="col-sm-auto">
+                                  
+                                - 
+                                </div>
+                                
+                                <div class="col-sm text-end">
+                                  {{params.price.hub_sale_price_avg|floatformat:"2g"}} &#8381
+                                </div>
+
+                              </div>
+                              
+                              <div class="row g-1">
+                                
+                                <div class="col-sm text-start">
+                                  
+                                  AVG пробег
+                                  
+
+                                </div>
+                                <div class="col-sm-3">
+                                  
+                                - 
+                                
+
+                                </div>
+
+                                <div class="col-sm text-end">
+                                  {{params.estimation.hub_sale_run_avg|floatformat:"0g"}} км.
+                                </div>
+
+                              </div>
+                              
+                            </ul>
+                            <div class="hr_kors btn_block" style="height: 0.2rem;"> </div>
+
+                            </div>
+                        </div>
+                      </div>
+                      
                     </div>
-                    
-                  </div>
-              
+                  -->
+
                 </main>
 
 
