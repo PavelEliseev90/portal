@@ -440,8 +440,11 @@ def loging(request):
     login = ''
     password = ''
     result = ''
-    next = request.GET.get('next', '')
+    next = request.GET.get('next', '') or request.POST.get('next', '')
     data = ''
+
+    from estimations.mobile_gallery_utils import is_mobile_gallery_next
+    skip_current_session_update = is_mobile_gallery_next(next)
     
     if request.user.is_authenticated:
         if len(next) > 0:
@@ -464,6 +467,8 @@ def loging(request):
 
                 if user is not None:
                     if user.is_active:
+                        if skip_current_session_update:
+                            request._skip_current_session_update = True
                         dj_login(request, user)
                         if len(next) > 0:
                             return HttpResponseRedirect(next) 
@@ -493,9 +498,12 @@ def loging(request):
 
                     if user is not None:
                         if user.is_active:
-                            dj_login(request, user)
                             if next == '':
                                 next = request.POST.get('next', '')
+                                skip_current_session_update = is_mobile_gallery_next(next)
+                            if skip_current_session_update:
+                                request._skip_current_session_update = True
+                            dj_login(request, user)
                             if len(next) > 0:
                                 return HttpResponseRedirect(next) 
                             return HttpResponseRedirect('/')

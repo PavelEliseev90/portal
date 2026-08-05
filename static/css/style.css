@@ -1234,6 +1234,13 @@ body.modal-open .mobile-filters-button-container {
 	padding: 0.4rem;
 }
 
+.item-chat-body.chat-msg-price-increase,
+.item-chat-body-owner.chat-msg-price-increase{
+	background-color: #fff3cd;
+	border: 1px solid #ffc107;
+	box-shadow: inset 4px 0 0 #fd7e14;
+}
+
 .page-num {
 	margin: 0.1rem;
 }
