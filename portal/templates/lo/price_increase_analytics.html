@@ -54,13 +54,66 @@
     display: inline-block; margin-left: .35rem; padding: .1rem .45rem; border-radius: 999px;
     font-size: .68rem; font-weight: 700; vertical-align: middle;
   }
+  .mode-switch {
+    display: inline-flex; padding: .2rem; background: #eef2f7; border-radius: 999px; gap: .15rem;
+  }
+  .mode-switch .btn {
+    border: 0; border-radius: 999px; font-size: .85rem; font-weight: 600;
+    padding: .4rem .9rem; color: #5b6b82; background: transparent;
+  }
+  .mode-switch .btn.active {
+    background: #fff; color: #002a5a;
+    box-shadow: 0 2px 8px rgba(0,42,90,.12);
+  }
+  .kp-filter-badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: #e8f0f8; color: #002a5a; border-radius: 999px;
+    padding: .15rem .55rem; font-size: .78rem; margin: .15rem .15rem 0 0;
+    max-width: 100%;
+  }
+  .kp-filter-badge .lbl {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14rem;
+  }
+  .kp-filter-remove {
+    cursor: pointer; border: 0; background: transparent; color: #6c7a92; padding: 0; line-height: 1;
+  }
+  .kp-filter-remove:hover { color: #002a5a; }
+  #unitDropdown {
+    max-height: 220px; overflow-y: auto; z-index: 1050;
+    display: none; background: #fff; border: 1px solid #dee2e6;
+    border-radius: .5rem; box-shadow: 0 12px 28px rgba(0,42,90,.12);
+  }
+  #unitDropdown .list-group-item {
+    margin-bottom: 0; cursor: pointer; border: 0; border-bottom: 1px solid #f1f5f9;
+    padding: .5rem .75rem; font-size: .88rem;
+  }
+  #unitDropdown .list-group-item:last-child { border-bottom: 0; }
+  #unitDropdown .list-group-item:hover { background: #eef4fb; }
+  .rate-cell { font-weight: 650; color: #0f766e; }
+  .rate-muted { color: #94a3b8; font-weight: 500; }
 </style>
 
 <div class="zg-page">
   <h2>Анализ запросов повышения цены</h2>
-  <p class="lead">Запросы повышения из чата интерактивной оценки за период, разбивка по ЦГ и ДЦ.</p>
+  <p class="lead">Запросы повышения из чата интерактивной оценки — по месту оценки или по источнику ДЦ.</p>
 
-  <form class="zg-filter" method="get">
+  <form class="zg-filter" method="get" id="piFilterForm">
+    <div class="row g-3 align-items-end mb-2">
+      <div class="col-12">
+        <label class="form-label">Группировка</label>
+        <div class="mode-switch" role="group" aria-label="Режим группировки">
+          <button type="button" class="btn mode-btn {% if params.filters.group_by == params.group_place %}active{% endif %}"
+                  data-group="{{ params.group_place }}">
+            По месту оценки
+          </button>
+          <button type="button" class="btn mode-btn {% if params.filters.group_by == params.group_source %}active{% endif %}"
+                  data-group="{{ params.group_source }}">
+            По источнику ДЦ
+          </button>
+        </div>
+        <input type="hidden" name="group_by" id="groupByHidden" value="{{ params.filters.group_by }}">
+      </div>
+    </div>
     <div class="row g-3 align-items-end">
       <div class="col-6 col-md-2">
         <label class="form-label">Период с</label>
@@ -70,14 +123,22 @@
         <label class="form-label">по</label>
         <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
       </div>
-      <div class="col-md-3">
-        <label class="form-label">Подразделение</label>
-        <select class="form-select" name="unit_id">
-          <option value="">Все</option>
-          {% for u in params.units %}
-          <option value="{{ u.id }}" {% if params.filters.unit_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
-          {% endfor %}
-        </select>
+      <div class="col-md-5">
+        <label class="form-label">Подразделения</label>
+        <div class="position-relative" id="unitPicker">
+          <input type="text" class="form-control" id="unitSearch"
+                 placeholder="Поиск по подразделениям…" autocomplete="off">
+          <div class="list-group position-absolute w-100 mt-1" id="unitDropdown">
+            {% for u in params.units %}
+            <label class="list-group-item" data-unit-name="{{ u.name|lower }}">
+              <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ u.id }}"
+                {% if u.id in params.filters.unit_ids_list %}checked{% endif %}>
+              {{ u.name }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="selectedUnits" class="mt-1"></div>
       </div>
       <div class="col-12 col-md-auto">
         <button type="submit" class="btn btn-primary">Показать</button>
@@ -89,11 +150,14 @@
   <div class="top3-wrap">
     {% for item in params.top3 %}
     <a class="top3-card text-decoration-none"
-       href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}&amp;unit_id={% if item.unit_id %}{{ item.unit_id }}{% else %}0{% endif %}">
+       href="{{ params.detail_base }}?{{ params.detail_qs_base }}&amp;unit_id={% if item.unit_id %}{{ item.unit_id }}{% else %}0{% endif %}">
       <span class="badge-top {{ item.class }}">{{ item.label }}</span>
       <div>
         <div class="name">{{ item.unit_name }}</div>
-        <div class="cnt">{{ item.count }} запр.</div>
+        <div class="cnt">
+          {{ item.count }} запр.
+          {% if item.rate_pct != None %} · {{ item.rate_pct }}%{% endif %}
+        </div>
       </div>
     </a>
     {% endfor %}
@@ -101,28 +165,42 @@
   {% endif %}
 
   <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="zg-metric">
         <div class="t">Запросов</div>
         <div class="v">{{ params.summary.total }}</div>
         <div class="s">за период</div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
+      <div class="zg-metric">
+        <div class="t">Оценок</div>
+        <div class="v">{{ params.summary.estimations_total }}</div>
+        <div class="s">в периоде</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="zg-metric">
+        <div class="t">% с запросом</div>
+        <div class="v">{% if params.summary.rate_pct != None %}{{ params.summary.rate_pct }}%{% else %}—{% endif %}</div>
+        <div class="s">{{ params.summary.unique_estimations }} из {{ params.summary.estimations_total }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
       <div class="zg-metric">
         <div class="t">ДЦ</div>
         <div class="v">{{ params.summary.units }}</div>
         <div class="s">с запросами</div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="zg-metric">
         <div class="t">Ср. желаемая</div>
         <div class="v">{% if params.summary.avg_desired %}{{ params.summary.avg_desired|floatformat:"0g" }}{% else %}—{% endif %}</div>
         <div class="s">₽</div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="zg-metric">
         <div class="t">Ср. дельта</div>
         <div class="v">{% if params.summary.avg_delta != None %}{{ params.summary.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</div>
@@ -160,7 +238,7 @@
                 <td><span class="pill">{{ row.zg }}</span></td>
                 <td class="text-end">
                   <a class="cell-link"
-                     href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&amp;unit_id={{ params.filters.unit_id }}{% endif %}&amp;zg={{ row.zg|urlencode }}">
+                     href="{{ params.detail_base }}?{{ params.detail_qs_base }}{% for uid in params.filters.unit_ids_list %}&amp;unit_ids={{ uid }}{% endfor %}&amp;zg={{ row.zg|urlencode }}">
                     {{ row.count }}
                   </a>
                 </td>
@@ -178,13 +256,15 @@
   </div>
 
   <div class="zg-panel">
-    <h3>По дилерским центрам</h3>
+    <h3>По {{ params.unit_column_title|lower }}</h3>
     <div class="table-responsive">
       <table class="table table-sm table-hover table-zg mb-0">
         <thead>
           <tr>
-            <th>ДЦ</th>
+            <th>{{ params.unit_column_title }}</th>
+            <th class="text-end">Оценок</th>
             <th class="text-end">Запросов</th>
+            <th class="text-end">% с запросом</th>
             <th class="text-end">Ср. желаемая</th>
             <th class="text-end">Ср. дельта</th>
             <th>Частая ЦГ</th>
@@ -200,19 +280,26 @@
                 <span class="table-badge-top badge-top {{ row.top_badge.class }}">{{ row.top_badge.label }}</span>
               {% endif %}
             </td>
-            <td class="text-end">{{ row.count }}</td>
+            <td class="text-end">{{ row.estimations }}</td>
+            <td class="text-end">
+              {{ row.count }}
+              <div class="small text-muted">{{ row.estimations_with_request }} оценок</div>
+            </td>
+            <td class="text-end {% if row.rate_pct != None %}rate-cell{% else %}rate-muted{% endif %}">
+              {% if row.rate_pct != None %}{{ row.rate_pct }}%{% else %}—{% endif %}
+            </td>
             <td class="text-end">{{ row.avg_desired|floatformat:"0g" }}</td>
             <td class="text-end">{% if row.avg_delta != None %}{{ row.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</td>
             <td><span class="pill">{{ row.top_zg }}</span></td>
             <td class="text-end">
               <a class="btn btn-sm btn-outline-primary"
-                 href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}&amp;unit_id={% if row.unit_id %}{{ row.unit_id }}{% else %}0{% endif %}">
+                 href="{{ params.detail_base }}?{{ params.detail_qs_base }}&amp;unit_id={% if row.unit_id %}{{ row.unit_id }}{% else %}0{% endif %}">
                 Список оценок
               </a>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-muted">Нет запросов за период.</td></tr>
+          <tr><td colspan="8" class="text-muted">Нет запросов за период.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -225,34 +312,103 @@
 (function () {
   const data = {{ params.chart_json|safe }};
   const canvas = document.getElementById('zgChart');
-  if (!canvas || !data.labels || !data.labels.length) return;
-
-  new Chart(canvas.getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: data.labels.map(function (z) { return 'ЦГ ' + z; }),
-      datasets: [{
-        data: data.counts,
-        backgroundColor: data.colors,
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-        tooltip: {
-          callbacks: {
-            afterLabel: function (ctx) {
-              const delta = (data.avg_delta || [])[ctx.dataIndex];
-              return delta ? 'Ср. дельта: ' + Number(delta).toLocaleString('ru-RU') + ' ₽' : '';
+  if (canvas && data.labels && data.labels.length) {
+    new Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: data.labels.map(function (z) { return 'ЦГ ' + z; }),
+        datasets: [{
+          data: data.counts,
+          backgroundColor: data.colors,
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              afterLabel: function (ctx) {
+                const delta = (data.avg_delta || [])[ctx.dataIndex];
+                return delta ? 'Ср. дельта: ' + Number(delta).toLocaleString('ru-RU') + ' ₽' : '';
+              }
             }
           }
         }
       }
+    });
+  }
+
+  var form = document.getElementById('piFilterForm');
+  var search = document.getElementById('unitSearch');
+  var dropdown = document.getElementById('unitDropdown');
+  var selectedDiv = document.getElementById('selectedUnits');
+  var groupHidden = document.getElementById('groupByHidden');
+  if (!search || !dropdown) return;
+
+  // Кнопки режима группировки
+  form.querySelectorAll('.mode-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (groupHidden) groupHidden.value = btn.getAttribute('data-group') || 'place';
+      form.submit();
+    });
+  });
+
+  function updateBadges() {
+    if (!selectedDiv) return;
+    selectedDiv.innerHTML = '';
+    dropdown.querySelectorAll('input[name="unit_ids"]:checked').forEach(function (cb) {
+      var label = cb.closest('label');
+      var text = label ? label.textContent.trim() : cb.value;
+      var badge = document.createElement('span');
+      badge.className = 'kp-filter-badge';
+      var lbl = document.createElement('span');
+      lbl.className = 'lbl';
+      lbl.textContent = text;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kp-filter-remove';
+      btn.setAttribute('data-unit-id', cb.value);
+      btn.textContent = '×';
+      badge.appendChild(lbl);
+      badge.appendChild(btn);
+      selectedDiv.appendChild(badge);
+    });
+  }
+
+  function filterUnits() {
+    var q = (search.value || '').trim().toLowerCase();
+    dropdown.querySelectorAll('label.list-group-item').forEach(function (label) {
+      var name = label.getAttribute('data-unit-name') || '';
+      label.style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
+    });
+  }
+
+  search.addEventListener('focus', function () { dropdown.style.display = 'block'; filterUnits(); });
+  search.addEventListener('input', filterUnits);
+  document.addEventListener('click', function (e) {
+    if (!document.getElementById('unitPicker').contains(e.target)) {
+      dropdown.style.display = 'none';
     }
   });
+  dropdown.querySelectorAll('input[name="unit_ids"]').forEach(function (cb) {
+    cb.addEventListener('change', updateBadges);
+  });
+  if (selectedDiv) {
+    selectedDiv.addEventListener('click', function (e) {
+      var btn = e.target.closest('.kp-filter-remove');
+      if (!btn) return;
+      var id = btn.getAttribute('data-unit-id');
+      var cb = dropdown.querySelector('input[name="unit_ids"][value="' + id + '"]');
+      if (cb) {
+        cb.checked = false;
+        updateBadges();
+      }
+    });
+  }
+  updateBadges();
 })();
 </script>
 {% endblock %}

@@ -14183,61 +14183,15 @@ def sales_zg_detail(request):
 @login_required
 def price_increase_analytics(request):
     """Анализ запросов повышения цены за период."""
-    from eco.price_increase_analytics import build_price_increase_analytics
-    import json as _json
-
-    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
-        params = {
-            'type': 'price_increase_analytics',
-            'nav_selected': 4,
-            'request': request,
-        }
-        return render(request, 'errors/403.html', {'params': params})
-
-    now = DT.datetime.now()
-    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
-    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
-    unit_id = _get_int(request.GET.get('unit_id'))
-
-    data = build_price_increase_analytics(
-        date_start=date_start,
-        date_end=date_end,
-        unit_id=unit_id,
+    from eco.price_increase_analytics import (
+        build_price_increase_analytics,
+        normalize_group_by,
+        parse_unit_ids,
+        units_for_filter,
+        GROUP_PLACE,
+        GROUP_SOURCE,
     )
-    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
-
-    params = {
-        'type': 'price_increase_analytics',
-        'nav_selected': 4,
-        'request': request,
-        'filters': {
-            'date_start': date_start.strftime('%Y-%m-%d'),
-            'date_end': date_end.strftime('%Y-%m-%d'),
-            'unit_id': unit_id or '',
-        },
-        'summary': data['summary'],
-        'zg_summary': data['zg_summary'],
-        'unit_rows': data['unit_rows'],
-        'top3': data['top3'],
-        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
-        'detail_base': '/eco/price-increase-analysis/detail/',
-        'units': units,
-        'hint': (
-            'Источник: история запросов повышения цены из чата оценки. '
-            'ЦГ считается по ЦНА / цене до или после КД на момент согласования; '
-            'дельта = желаемая цена − базовая.'
-        ),
-    }
-    return render(request, 'lo/price_increase_analytics.html', {'params': params})
-
-
-@login_required
-def price_increase_analytics_detail(request):
-    """Детальный список запросов повышения по ДЦ / ЦГ."""
-    from eco.price_increase_analytics import build_price_increase_detail
+    import json as _json
     from urllib.parse import urlencode
 
     if not request.user.profiles.eco and not request.user.profiles.eco_visible:
@@ -14254,6 +14208,86 @@ def price_increase_analytics_detail(request):
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    group_by = normalize_group_by(request.GET.get('group_by') or GROUP_PLACE)
+    unit_ids = parse_unit_ids(request.GET.getlist('unit_ids'))
+    # совместимость со старым single-select
+    legacy_unit = _get_int(request.GET.get('unit_id'))
+    if legacy_unit is not None and legacy_unit not in unit_ids:
+        unit_ids.append(legacy_unit)
+
+    data = build_price_increase_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_ids=unit_ids or None,
+        group_by=group_by,
+    )
+    units = units_for_filter()
+
+    filter_qs = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'group_by': group_by,
+    }
+    detail_qs_base = urlencode(filter_qs)
+
+    params = {
+        'type': 'price_increase_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'group_by': group_by,
+            'unit_ids': [str(i) for i in unit_ids],
+            'unit_ids_list': unit_ids,
+        },
+        'summary': data['summary'],
+        'zg_summary': data['zg_summary'],
+        'unit_rows': data['unit_rows'],
+        'top3': data['top3'],
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'detail_base': '/eco/price-increase-analysis/detail/',
+        'detail_qs_base': detail_qs_base,
+        'units': units,
+        'group_place': GROUP_PLACE,
+        'group_source': GROUP_SOURCE,
+        'unit_column_title': 'Источник ДЦ' if group_by == GROUP_SOURCE else 'Место оценки',
+        'hint': (
+            'Источник: история запросов повышения цены из чата оценки. '
+            'ЦГ — по ЦНА / цене до или после КД; дельта = желаемая − базовая. '
+            '% = оценки с запросом / все оценки ДЦ за период (по дате РЛ, статус ≥ 2).'
+        ),
+    }
+    return render(request, 'lo/price_increase_analytics.html', {'params': params})
+
+
+@login_required
+def price_increase_analytics_detail(request):
+    """Детальный список запросов повышения по ДЦ / ЦГ."""
+    from eco.price_increase_analytics import (
+        build_price_increase_detail,
+        normalize_group_by,
+        parse_unit_ids,
+        GROUP_PLACE,
+    )
+    from urllib.parse import urlencode
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'price_increase_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    group_by = normalize_group_by(request.GET.get('group_by') or GROUP_PLACE)
+    unit_ids = parse_unit_ids(request.GET.getlist('unit_ids'))
     unit_id = _get_int(request.GET.get('unit_id'))
     zg = (request.GET.get('zg') or '').strip()
 
@@ -14261,17 +14295,23 @@ def price_increase_analytics_detail(request):
         k: v for k, v in {
             'date_start': request.GET.get('date_start') or '',
             'date_end': request.GET.get('date_end') or '',
+            'group_by': group_by,
         }.items() if v
     }
     back_url = '/eco/price-increase-analysis/'
     if back_qs:
-        back_url += '?' + urlencode(back_qs)
+        parts = [urlencode(back_qs)]
+        for uid in unit_ids:
+            parts.append(urlencode({'unit_ids': uid}))
+        back_url += '?' + '&'.join(parts)
 
     detail = build_price_increase_detail(
         date_start=date_start,
         date_end=date_end,
         unit_id=unit_id,
+        unit_ids=unit_ids or None,
         zg=zg or None,
+        group_by=group_by,
     )
 
     params = {
@@ -14282,10 +14322,13 @@ def price_increase_analytics_detail(request):
         'filters': {
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
-            'unit_id': unit_id or '',
+            'unit_id': unit_id if unit_id is not None else '',
+            'unit_ids': unit_ids,
             'zg': zg,
+            'group_by': group_by,
         },
         'back_url': back_url,
+        'unit_column_title': 'Источник ДЦ' if group_by == 'source' else 'Место оценки',
     }
     return render(request, 'lo/price_increase_analytics_detail.html', {'params': params})
 

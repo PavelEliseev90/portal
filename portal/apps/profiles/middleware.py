@@ -3,11 +3,15 @@
 from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import logout
+from urllib.parse import quote
 
 from chats.rlk_chat_utils import is_1c_rlk_chat_entry, is_rlk_chat_1c_session, is_rlk_chat_request
 from eco.eco_1c_utils import is_1c_eco_entry, is_eco_1c_session, is_eco_request
 from estimations.estimation_1c_utils import is_1c_estimation_entry, is_estimation_1c_session, is_estimation_request
-from estimations.mobile_gallery_utils import is_mobile_gallery_path
+from estimations.mobile_gallery_utils import (
+    is_mobile_gallery_path,
+    is_mobile_gallery_session,
+)
 
 CURRENT_SESSION_CACHE_KEY = "current_session:{}"
 CURRENT_SESSION_CACHE_TTL = getattr(settings, 'SESSION_COOKIE_AGE', 1209600)
@@ -33,7 +37,7 @@ class SingleDeviceSessionMiddleware:
         if is_eco_request(request) and is_1c_eco_entry(request):
             return self.get_response(request)
         # Загрузка фото с телефона по QR — не выбивает основной сеанс на ПК
-        if is_mobile_gallery_path(request.path_info):
+        if is_mobile_gallery_session(request) or is_mobile_gallery_path(request.path_info or request.path):
             return self.get_response(request)
 
         if not getattr(request, 'user', None) or not request.user.is_authenticated:
@@ -58,11 +62,13 @@ class SingleDeviceSessionMiddleware:
         if allowed_sk and allowed_sk != current_sk:
             logout(request)
             try:
-                next = str(request.get_full_path_info())
+                next_path = str(request.get_full_path_info())
                 from django.http import HttpResponseRedirect
                 login_url = getattr(settings, 'LOGIN_URL', '/login/')
-                return HttpResponseRedirect(login_url + "?single_device=1" + "&next=" + next)
-            except:
+                return HttpResponseRedirect(
+                    login_url + "?single_device=1&next=" + quote(next_path, safe='')
+                )
+            except Exception:
                 from django.http import HttpResponseRedirect
                 login_url = getattr(settings, 'LOGIN_URL', '/login/')
                 return HttpResponseRedirect(login_url + "?single_device=1")

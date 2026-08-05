@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional
+from typing import List, Optional
 
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
 
+from refs.models import RefUnit
 from refs.price_groups import (
     ZG_ORDER,
     normalize_price_group_display as normalize_zg_name,
@@ -34,6 +35,9 @@ TOP_BADGE_META = (
     {'rank': 3, 'label': 'Топ-3', 'class': 'badge-top-3'},
 )
 
+GROUP_PLACE = 'place'
+GROUP_SOURCE = 'source'
+
 
 def _safe_float(value) -> float:
     try:
@@ -61,6 +65,34 @@ def _unit_label(unit_id, unit_name: Optional[str] = None) -> str:
     return 'Без ДЦ'
 
 
+def normalize_group_by(raw) -> str:
+    value = (raw or GROUP_PLACE).strip().lower()
+    if value in ('source', 'источник', 'unit_dc', 'dc'):
+        return GROUP_SOURCE
+    return GROUP_PLACE
+
+
+def parse_unit_ids(raw_list) -> List[int]:
+    ids = []
+    if not raw_list:
+        return ids
+    if isinstance(raw_list, str):
+        raw_list = [raw_list]
+    for item in raw_list:
+        try:
+            ids.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    seen = set()
+    out = []
+    for i in ids:
+        if i in seen:
+            continue
+        seen.add(i)
+        out.append(i)
+    return out
+
+
 def _resolve_interactiv_rlk(soglasovanie):
     if soglasovanie is None:
         return None
@@ -70,7 +102,7 @@ def _resolve_interactiv_rlk(soglasovanie):
     return (
         RegInteractivOcenkaRLK.objects
         .filter(page_soglasovanie=soglasovanie)
-        .select_related('unit', 'rlk', 'estimation', 'staff_rlk')
+        .select_related('unit', 'rlk', 'rlk__unit_dc', 'estimation', 'staff_rlk')
         .first()
     )
 
@@ -105,7 +137,23 @@ def _user_label(user) -> str:
     return name or user.username or '—'
 
 
-def _queryset(date_start, date_end, unit_id=None):
+def _grouping_unit(interactiv, group_by: str):
+    """(unit_id, unit_name) по режиму: место оценки или источник (rlk.unit_dc)."""
+    if interactiv is None:
+        return None, ''
+    if group_by == GROUP_SOURCE:
+        rlk = getattr(interactiv, 'rlk', None)
+        unit = getattr(rlk, 'unit_dc', None) if rlk else None
+        if unit is None:
+            unit = getattr(interactiv, 'unit', None)
+    else:
+        unit = getattr(interactiv, 'unit', None)
+    if unit is None:
+        return None, ''
+    return unit.pk, unit.name or ''
+
+
+def _queryset(date_start, date_end, unit_ids=None, group_by=GROUP_PLACE):
     qs = (
         RegInteractivOcenkaPriceIncreaseRequest.objects
         .filter(created_at__gte=date_start, created_at__lte=date_end)
@@ -119,23 +167,37 @@ def _queryset(date_start, date_end, unit_id=None):
             Prefetch(
                 'soglasovanie__reginteractivocenkarlk_set',
                 queryset=RegInteractivOcenkaRLK.objects.select_related(
-                    'unit', 'rlk', 'estimation', 'staff_rlk',
+                    'unit', 'rlk', 'rlk__unit_dc', 'estimation', 'staff_rlk',
                 ),
             )
         )
         .order_by('-created_at')
     )
-    # unit_id=0 — только запросы без подразделения
-    if unit_id == 0:
-        qs = qs.filter(
-            soglasovanie__reginteractivocenkarlk__unit__isnull=True
-        ).distinct()
-    elif unit_id:
-        qs = qs.filter(soglasovanie__reginteractivocenkarlk__unit_id=unit_id).distinct()
-    return qs
+
+    ids = list(unit_ids or [])
+    if not ids:
+        return qs
+
+    want_none = 0 in ids
+    real_ids = [i for i in ids if i]
+
+    if group_by == GROUP_SOURCE:
+        q = qs.none()
+        if real_ids:
+            q = qs.filter(soglasovanie__reginteractivocenkarlk__rlk__unit_dc_id__in=real_ids)
+        if want_none:
+            q = q | qs.filter(soglasovanie__reginteractivocenkarlk__rlk__unit_dc__isnull=True)
+        return q.distinct()
+
+    q = qs.none()
+    if real_ids:
+        q = qs.filter(soglasovanie__reginteractivocenkarlk__unit_id__in=real_ids)
+    if want_none:
+        q = q | qs.filter(soglasovanie__reginteractivocenkarlk__unit__isnull=True)
+    return q.distinct()
 
 
-def _serialize_row(req) -> dict:
+def _serialize_row(req, group_by=GROUP_PLACE) -> dict:
     sog = req.soglasovanie
     interactiv = _resolve_interactiv_rlk(sog)
     estimation = None
@@ -144,10 +206,11 @@ def _serialize_row(req) -> dict:
     if estimation is None and sog is not None:
         estimation = getattr(sog, 'reginteractivocenka', None)
 
-    unit = getattr(interactiv, 'unit', None) if interactiv else None
-    unit_id = unit.pk if unit else None
-    unit_name = unit.name if unit else ''
+    unit_id, unit_name = _grouping_unit(interactiv, group_by)
+    place_unit = getattr(interactiv, 'unit', None) if interactiv else None
     rlk = getattr(interactiv, 'rlk', None) if interactiv else None
+    source_unit = getattr(rlk, 'unit_dc', None) if rlk else None
+
     base = _base_price(sog)
     desired = int(req.desired_price or 0)
     delta = desired - int(base) if base > 0 and desired > 0 else None
@@ -164,6 +227,14 @@ def _serialize_row(req) -> dict:
         'user_name': _user_label(req.user),
         'unit_id': unit_id,
         'unit_name': _unit_label(unit_id, unit_name),
+        'place_unit_name': _unit_label(
+            place_unit.pk if place_unit else None,
+            place_unit.name if place_unit else '',
+        ),
+        'source_unit_name': _unit_label(
+            source_unit.pk if source_unit else None,
+            source_unit.name if source_unit else '',
+        ),
         'rlk_id': rlk.pk if rlk else None,
         'rlk_number': getattr(rlk, 'nomer', '') if rlk else '',
         'estimation_id': estimation.pk if estimation else None,
@@ -174,8 +245,52 @@ def _serialize_row(req) -> dict:
     }
 
 
-def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
-    rows = [_serialize_row(req) for req in _queryset(date_start, date_end, unit_id=unit_id)]
+def _estimations_by_unit(date_start, date_end, group_by=GROUP_PLACE, unit_ids=None) -> dict:
+    """Кол-во интерактивных оценок за период по ДЦ (место или источник)."""
+    qs = (
+        RegInteractivOcenkaRLK.objects
+        .filter(rlk__dataTime__gte=date_start, rlk__dataTime__lte=date_end)
+        .filter(status_id__gte=2)
+    )
+    ids = [i for i in (unit_ids or []) if i]
+    if group_by == GROUP_SOURCE:
+        if ids:
+            qs = qs.filter(rlk__unit_dc_id__in=ids)
+        rows = qs.values('rlk__unit_dc_id').annotate(cnt=Count('id'))
+        return {row['rlk__unit_dc_id'] or 0: row['cnt'] for row in rows}
+
+    if ids:
+        qs = qs.filter(unit_id__in=ids)
+    rows = qs.values('unit_id').annotate(cnt=Count('id'))
+    return {row['unit_id'] or 0: row['cnt'] for row in rows}
+
+
+def build_price_increase_analytics(
+    date_start,
+    date_end,
+    unit_ids=None,
+    unit_id=None,
+    group_by=GROUP_PLACE,
+) -> dict:
+    """unit_id оставлен для обратной совместимости со старыми ссылками."""
+    group_by = normalize_group_by(group_by)
+    ids = parse_unit_ids(unit_ids) if unit_ids else []
+    if unit_id is not None and unit_id != '':
+        try:
+            uid = int(unit_id)
+        except (TypeError, ValueError):
+            uid = None
+        if uid is not None and uid not in ids:
+            ids.append(uid)
+
+    rows = [
+        _serialize_row(req, group_by=group_by)
+        for req in _queryset(date_start, date_end, unit_ids=ids or None, group_by=group_by)
+    ]
+
+    estimations_map = _estimations_by_unit(
+        date_start, date_end, group_by=group_by, unit_ids=ids or None,
+    )
 
     by_zg = defaultdict(lambda: {'count': 0, 'desired_sum': 0, 'delta_sum': 0, 'delta_n': 0})
     by_unit = defaultdict(lambda: {
@@ -186,6 +301,7 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
         'delta_sum': 0,
         'delta_n': 0,
         'zg_counts': defaultdict(int),
+        'estimation_ids': set(),
     })
 
     for row in rows:
@@ -203,6 +319,8 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
         u['count'] += 1
         u['desired_sum'] += row['desired_price']
         u['zg_counts'][zg] += 1
+        if row['estimation_id']:
+            u['estimation_ids'].add(row['estimation_id'])
         if row['delta'] is not None:
             u['delta_sum'] += row['delta']
             u['delta_n'] += 1
@@ -210,8 +328,6 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
     zg_summary = []
     for zg in ZG_ORDER:
         data = by_zg.get(zg)
-        if not data and zg == 'Неопределена':
-            continue
         if not data:
             continue
         zg_summary.append({
@@ -233,11 +349,17 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
         })
 
     unit_rows = []
-    for unit in by_unit.values():
+    for key, unit in by_unit.items():
+        est_total = estimations_map.get(key, 0)
+        with_req = len(unit['estimation_ids'])
+        rate = round(100.0 * with_req / est_total, 1) if est_total else None
         unit_rows.append({
             'unit_id': unit['unit_id'],
             'unit_name': unit['unit_name'],
             'count': unit['count'],
+            'estimations': est_total,
+            'estimations_with_request': with_req,
+            'rate_pct': rate,
             'avg_desired': int(round(unit['desired_sum'] / unit['count'])) if unit['count'] else 0,
             'avg_delta': int(round(unit['delta_sum'] / unit['delta_n'])) if unit['delta_n'] else None,
             'top_zg': max(unit['zg_counts'].items(), key=lambda x: x[1])[0] if unit['zg_counts'] else '—',
@@ -251,26 +373,27 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
             'unit_id': unit['unit_id'],
             'unit_name': unit['unit_name'],
             'count': unit['count'],
+            'rate_pct': unit['rate_pct'],
         })
-    top_rank_by_unit = {item['unit_id']: item for item in top3 if item['unit_id'] is not None}
-    # «Без ДЦ» тоже может попасть в топ
-    if any(item['unit_id'] is None for item in top3):
-        for item in top3:
-            if item['unit_id'] is None:
-                top_rank_by_unit[None] = item
+    top_rank_by_unit = {item['unit_id']: item for item in top3}
 
     for unit in unit_rows:
-        badge = top_rank_by_unit.get(unit['unit_id'])
-        unit['top_badge'] = badge
+        unit['top_badge'] = top_rank_by_unit.get(unit['unit_id'])
 
     total = len(rows)
     deltas = [r['delta'] for r in rows if r['delta'] is not None]
+    est_total_all = sum(estimations_map.values())
+    est_with_req = len({r['estimation_id'] for r in rows if r['estimation_id']})
+    overall_rate = round(100.0 * est_with_req / est_total_all, 1) if est_total_all else None
+
     summary = {
         'total': total,
         'units': len(unit_rows),
         'avg_desired': int(round(sum(r['desired_price'] for r in rows) / total)) if total else 0,
         'avg_delta': int(round(sum(deltas) / len(deltas))) if deltas else None,
-        'unique_estimations': len({r['estimation_id'] for r in rows if r['estimation_id']}),
+        'unique_estimations': est_with_req,
+        'estimations_total': est_total_all,
+        'rate_pct': overall_rate,
     }
 
     chart = {
@@ -287,36 +410,59 @@ def build_price_increase_analytics(date_start, date_end, unit_id=None) -> dict:
         'top3': top3,
         'chart': chart,
         'rows_preview': rows[:20],
+        'group_by': group_by,
     }
 
 
-def build_price_increase_detail(date_start, date_end, unit_id=None, zg=None) -> dict:
+def build_price_increase_detail(
+    date_start,
+    date_end,
+    unit_id=None,
+    unit_ids=None,
+    zg=None,
+    group_by=GROUP_PLACE,
+) -> dict:
+    group_by = normalize_group_by(group_by)
     zg_norm = normalize_zg_name(zg) if zg else ''
-    # unit_id=0 — без ДЦ: берём весь период и отфильтровываем в Python
-    qs_unit_id = None if unit_id == 0 else unit_id
-    rows = [_serialize_row(req) for req in _queryset(date_start, date_end, unit_id=qs_unit_id)]
-    if unit_id == 0:
-        rows = [r for r in rows if r['unit_id'] is None]
+
+    ids = parse_unit_ids(unit_ids) if unit_ids else []
+    if unit_id is not None and unit_id != '':
+        try:
+            uid = int(unit_id)
+        except (TypeError, ValueError):
+            uid = None
+        if uid is not None and uid not in ids:
+            ids = [uid]
+
+    rows = [
+        _serialize_row(req, group_by=group_by)
+        for req in _queryset(date_start, date_end, unit_ids=ids or None, group_by=group_by)
+    ]
     if zg_norm:
         rows = [r for r in rows if r['zg'] == zg_norm]
 
     unit_name = 'Все ДЦ'
-    if unit_id == 0:
-        unit_name = 'Без ДЦ'
-    elif unit_id:
-        unit_name = next(
-            (r['unit_name'] for r in rows if r['unit_id'] == unit_id),
-            f'ДЦ #{unit_id}',
-        )
-        if not rows:
-            from refs.models import RefUnit
-            unit = RefUnit.objects.filter(pk=unit_id).first()
-            unit_name = unit.name if unit else f'ДЦ #{unit_id}'
+    if len(ids) == 1:
+        only = ids[0]
+        if only == 0:
+            unit_name = 'Без ДЦ'
+        else:
+            unit_name = next(
+                (r['unit_name'] for r in rows if r['unit_id'] == only),
+                '',
+            )
+            if not unit_name:
+                unit = RefUnit.objects.filter(pk=only).first()
+                unit_name = unit.name if unit else f'ДЦ #{only}'
+    elif len(ids) > 1:
+        unit_name = f'Подразделения: {len(ids)}'
 
     return {
-        'unit_id': unit_id,
+        'unit_id': ids[0] if len(ids) == 1 else None,
+        'unit_ids': ids,
         'unit_name': unit_name,
         'zg': zg_norm or '',
+        'group_by': group_by,
         'rows': rows,
         'summary': {
             'total': len(rows),
@@ -328,3 +474,13 @@ def build_price_increase_detail(date_start, date_end, unit_id=None, zg=None) -> 
             ),
         },
     }
+
+
+def units_for_filter() -> List[dict]:
+    return list(
+        RefUnit.objects
+        .filter(buauto=True, active_eco=True)
+        .exclude(name='')
+        .order_by('name')
+        .values('id', 'name')
+    )

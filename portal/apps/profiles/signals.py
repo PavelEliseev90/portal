@@ -14,6 +14,8 @@ def on_user_logged_in(sender, request, user, **kwargs):
     # Вход ради загрузки фото с телефона — не перезаписываем «главный» сеанс портала
     if getattr(request, '_skip_current_session_update', False):
         return
+    if request.session.get('mobile_gallery_session'):
+        return
     # Сессии 1С не должны перезаписывать разрешённый ключ портала
     if request.session.get('rlk_chat_1c_session'):
         return

@@ -262,6 +262,10 @@
               reject(new Error('Сервер вернул не JSON'));
               return;
             }
+            if (xhr.status === 401 || xhr.status === 403) && res && res.error) {
+              reject(new Error(res.error));
+              return;
+            }
             if (xhr.status < 200 || xhr.status >= 300 || !res || res.ok !== true) {
               reject(new Error((res && res.error) || 'Ошибка загрузки'));
               return;

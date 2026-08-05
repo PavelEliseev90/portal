@@ -443,7 +443,7 @@ def loging(request):
     next = request.GET.get('next', '') or request.POST.get('next', '')
     data = ''
 
-    from estimations.mobile_gallery_utils import is_mobile_gallery_next
+    from estimations.mobile_gallery_utils import is_mobile_gallery_next, mark_mobile_gallery_session
     skip_current_session_update = is_mobile_gallery_next(next)
     
     if request.user.is_authenticated:
@@ -463,6 +463,10 @@ def loging(request):
                     error = error + "Не указан логин"
                 if password == "":
                     error = error + "Не указан пароль"
+                # next мог прийти только в POST
+                if not next:
+                    next = request.POST.get('next', '')
+                    skip_current_session_update = is_mobile_gallery_next(next)
                 user = authenticate(username=login, password=password)
 
                 if user is not None:
@@ -470,6 +474,8 @@ def loging(request):
                         if skip_current_session_update:
                             request._skip_current_session_update = True
                         dj_login(request, user)
+                        if skip_current_session_update:
+                            mark_mobile_gallery_session(request)
                         if len(next) > 0:
                             return HttpResponseRedirect(next) 
                         return HttpResponseRedirect('/')
@@ -504,6 +510,8 @@ def loging(request):
                             if skip_current_session_update:
                                 request._skip_current_session_update = True
                             dj_login(request, user)
+                            if skip_current_session_update:
+                                mark_mobile_gallery_session(request)
                             if len(next) > 0:
                                 return HttpResponseRedirect(next) 
                             return HttpResponseRedirect('/')

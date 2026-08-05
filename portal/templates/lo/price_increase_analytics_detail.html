@@ -37,7 +37,8 @@
     {% endif %}
   </h2>
   <p class="lead">
-    Запросы повышения цены за {{ params.filters.date_start }} — {{ params.filters.date_end }}.
+    Запросы повышения цены за {{ params.filters.date_start }} — {{ params.filters.date_end }}
+    · {% if params.filters.group_by == 'source' %}по источнику ДЦ{% else %}по месту оценки{% endif %}.
   </p>
 
   <div class="row g-3 mb-3">
@@ -71,7 +72,8 @@
             <th>Дата</th>
             <th>Оценка</th>
             <th>Авто</th>
-            <th>ДЦ</th>
+            <th>Место оценки</th>
+            <th>Источник ДЦ</th>
             <th>Кто запросил</th>
             <th>ЦГ</th>
             <th class="text-end">Базовая</th>
@@ -93,7 +95,8 @@
               <div>{{ row.car }}</div>
               {% if row.vin %}<div class="text-muted small">{{ row.vin }}</div>{% endif %}
             </td>
-            <td>{{ row.unit_name }}</td>
+            <td>{{ row.place_unit_name }}</td>
+            <td>{{ row.source_unit_name }}</td>
             <td>{{ row.user_name }}</td>
             <td><span class="pill">{{ row.zg }}</span></td>
             <td class="text-end">{% if row.base_price %}{{ row.base_price|floatformat:"0g" }}{% else %}—{% endif %}</td>
@@ -106,7 +109,7 @@
             <td class="comment-cell">{{ row.comment|default:"—" }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="10" class="text-muted">Нет запросов за выбранные фильтры.</td></tr>
+          <tr><td colspan="11" class="text-muted">Нет запросов за выбранные фильтры.</td></tr>
           {% endfor %}
         </tbody>
       </table>
