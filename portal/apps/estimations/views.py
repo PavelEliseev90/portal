@@ -31,6 +31,19 @@ from avtosalon.models import AvtohubComplectations, AvtohubOptions, AvtohubGroup
 
 from datetime import datetime
 
+from .mobile_gallery_utils import build_mobile_upload_url
+
+
+def _mobile_gallery_context(request, rlk_id, reg_interactiv_ocenka, osmotr_side=''):
+    return {
+        'rlk_id': rlk_id,
+        'estimation_id': reg_interactiv_ocenka.pk,
+        'upload_url': build_mobile_upload_url(request, reg_interactiv_ocenka.pk),
+        'osmotr_side': osmotr_side,
+        'inbox_count': reg_interactiv_ocenka.get_mobile_inbox_count(),
+    }
+
+
 
 import time
 from channels.layers import get_channel_layer
@@ -1718,10 +1731,11 @@ def estimation_rlk(request, rlk_id):
             'user'                          : user
         }
         
+        mobile_gallery = _mobile_gallery_context(request, rlk_id, reg_interactiv_ocenka)
         if reg_interactiv_ocenka.v > 1:
-            return render(request, 'estimation/estimation_doc_v' + str(reg_interactiv_ocenka.v) + '.html', {'params': params}) 
+            return render(request, 'estimation/estimation_doc_v' + str(reg_interactiv_ocenka.v) + '.html', {'params': params, 'mobile_gallery': mobile_gallery}) 
         else:
-            return render(request, 'estimation/estimation_doc.html', {'params': params}) 
+            return render(request, 'estimation/estimation_doc.html', {'params': params, 'mobile_gallery': mobile_gallery}) 
 
 
 def estimation(request):
@@ -2177,6 +2191,19 @@ def osmotr(request, rlk_id, type, rl_id):
             new_estimation_files.save()
             type_file = 'array_images_up'
             
+        gallery_preserved = {}
+        for key in request.POST.keys():
+            if key.startswith('photo_gallery_'):
+                uid = key.replace('photo_gallery_', '')
+                gallery_id = request.POST.get(key, '')
+                if gallery_id:
+                    src_file = RegRegInteractivOcenkaFiles.objects.filter(
+                        pk=int(gallery_id),
+                        estimation=reg_interactiv_ocenka,
+                    ).first()
+                    if src_file and src_file.file:
+                        gallery_preserved[uid] = src_file
+
         RegRegInteractivOcenkaFiles.objects.filter(estimation = reg_interactiv_ocenka).filter(type_file = type_file).delete()
 
         for key in request.POST.keys():
@@ -2207,6 +2234,13 @@ def osmotr(request, rlk_id, type, rl_id):
                 if request.FILES.get('photo_' + uid) != None:
                     file_object                 = request.FILES.get('photo_' + uid) 
                     new_estimation_files.file   = file_object
+                    new_estimation_files.blank  = False
+                elif uid in gallery_preserved:
+                    src_file = gallery_preserved[uid]
+                    new_estimation_files.file = src_file.file
+                    if src_file.file_mini:
+                        new_estimation_files.file_mini = src_file.file_mini
+                    new_estimation_files.blank = False
                 else:
                     new_estimation_files.blank  = True    
                 new_estimation_files.save()
@@ -2333,9 +2367,10 @@ def osmotr(request, rlk_id, type, rl_id):
         'rama'          : rama,
         'elements_body' : json.dumps(elements_body),
         'json_data'     : json.dumps(json_data)
-    }   
+    }
+    mobile_gallery = _mobile_gallery_context(request, rlk_id, reg_interactiv_ocenka, osmotr_side=type)
     
-    return render(request, 'estimation/estimation_doc_body_osmotr.html', {'params': params})
+    return render(request, 'estimation/estimation_doc_body_osmotr.html', {'params': params, 'mobile_gallery': mobile_gallery})
 
 
 def osmotr_salon(request, rlk_id, type, rl_id):

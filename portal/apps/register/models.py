@@ -3306,16 +3306,26 @@ class RegInteractivOcenka(ChangeloggableMixin, models.Model):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(type_file = 'endoscop').order_by('file_number')
         fotos = fotos.order_by('order', 'file_number')
         return fotos
+
+    def get_mobile_inbox_files(self):
+        return RegRegInteractivOcenkaFiles.objects.filter(
+            estimation=self,
+            type_file='mobile_inbox',
+            blank=False,
+        ).exclude(file='').order_by('-date', '-id')
+
+    def get_mobile_inbox_count(self):
+        return self.get_mobile_inbox_files().count()
     
     def get_files_all_count(self):
-        fotos       = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(blank = False).count()
+        fotos       = RegRegInteractivOcenkaFiles.objects.filter(estimation = self).filter(blank = False).exclude(type_file = 'mobile_inbox').count()
         fotos_task  = RegRegInteractivOcenkaTaskFiles.objects.filter(estimation_task__estimation = self).count()
 
         return fotos + fotos_task
     
     def get_files_all(self):
         fotos = RegRegInteractivOcenkaFiles.objects.filter(estimation = self)
-        fotos = fotos.filter(blank = False).order_by('date', 'order', 'type_file', 'file_number')
+        fotos = fotos.filter(blank = False).exclude(type_file = 'mobile_inbox').order_by('date', 'order', 'type_file', 'file_number')
 
         fotos_task  = RegRegInteractivOcenkaTaskFiles.objects.filter(estimation_task__estimation = self)
         
