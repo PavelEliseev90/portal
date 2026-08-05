@@ -679,6 +679,7 @@ class DocRLK(models.Model):
                 footing_rlk_id          = 0
                 footing_rlk_uin         = ''
                 footing_rlk_number      = ''
+                footing_rlk_date        = None
                 unit_id                 = 0
                 unit_name               = ''
                 unit_source_id          = 0
@@ -691,6 +692,7 @@ class DocRLK(models.Model):
                     footing_rlk_id        = self.footing.id or 0
                     footing_rlk_uin       = self.footing.uin or ""
                     footing_rlk_number    = self.footing.nomer or ""
+                    footing_rlk_date      = self.footing.dataTime
                 
                 if self.unit != None:
                     unit_id   = self.unit.id
@@ -738,6 +740,7 @@ class DocRLK(models.Model):
                             'footing_rlk_id'    : footing_rlk_id,
                             'footing_rlk_uin'   : footing_rlk_uin,
                             'footing_rlk_number': footing_rlk_number,
+                            'footing_rlk_date'  : footing_rlk_date,
                             'brand'             : brand,
                             'city_id'           : city_id,
                             'city_name'         : city_name,

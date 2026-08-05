@@ -120,10 +120,47 @@ def _num(value) -> float:
         return 0.0
 
 
+def enrich_footing_op_fields(items: Iterable) -> None:
+    """
+    Подставляет номер/дату РЛ ОП (footing) из DocRLK, если в воронке пусто.
+    Мутирует объекты в памяти (для Excel / MSSQL), в БД портала не пишет.
+    """
+    items = list(items) if not isinstance(items, list) else items
+    need_ids = set()
+    for item in items:
+        fid = int(getattr(item, 'footing_rlk_id', None) or 0)
+        if fid <= 0:
+            continue
+        has_number = bool((getattr(item, 'footing_rlk_number', None) or '').strip())
+        has_date = _safe_dt(getattr(item, 'footing_rlk_date', None)) is not None
+        if not has_number or not has_date:
+            need_ids.add(fid)
+    if not need_ids:
+        return
+    try:
+        from documents.models import DocRLK
+    except Exception:
+        return
+    by_id = {
+        row['id']: row
+        for row in DocRLK.objects.filter(pk__in=need_ids).values('id', 'nomer', 'dataTime')
+    }
+    for item in items:
+        fid = int(getattr(item, 'footing_rlk_id', None) or 0)
+        row = by_id.get(fid)
+        if not row:
+            continue
+        if not (getattr(item, 'footing_rlk_number', None) or '').strip():
+            item.footing_rlk_number = row.get('nomer') or ''
+        if _safe_dt(getattr(item, 'footing_rlk_date', None)) is None:
+            item.footing_rlk_date = row.get('dataTime')
+
+
 def funnel_item_to_row(item) -> tuple:
     """Кортеж значений под INSERT в dbo.TradeInFunnel (латинские колонки)."""
     est_dt = _safe_dt(item.date_start_estimation)
     rlk_dt = _safe_dt(item.date_rlk)
+    footing_dt = _safe_dt(getattr(item, 'footing_rlk_date', None))
     reception_success_dt = _safe_dt(item.date_reception_success)
     accepted_txt = 'Да' if reception_success_dt else 'Нет'
     return (
@@ -138,6 +175,8 @@ def funnel_item_to_row(item) -> tuple:
         item.vin or '',
         item.rlk_number or '',
         rlk_dt,
+        getattr(item, 'footing_rlk_number', None) or '',
+        footing_dt,
         accepted_txt,
         item.stage or '',
         _num(item.cost_plan_preparation),
@@ -161,6 +200,8 @@ INSERT_COLUMNS = (
     'Vin',
     'RlkNumber',
     'RlkDate',
+    'SourceOpRlkNumber',
+    'SourceOpRlkDate',
     'Accepted',
     'Stage',
     'CostPreparation',
@@ -170,6 +211,46 @@ INSERT_COLUMNS = (
     'PriceAfterKd',
     'MarketPriceRub',
 )
+
+# Колонки, которые могли появиться позже — при загрузке создаём, если отсутствуют.
+_ENSURE_COLUMNS = (
+    ('SourceOpRlkNumber', 'NVARCHAR(255) NULL'),
+    ('SourceOpRlkDate', 'DATETIME2(0) NULL'),
+)
+
+
+def _table_parts(table: str) -> tuple[str, str]:
+    """dbo.TradeInFunnel → ('dbo', 'TradeInFunnel')."""
+    raw = (table or 'dbo.TradeInFunnel').strip()
+    if '.' in raw:
+        schema, name = raw.split('.', 1)
+        return schema.strip('[]') or 'dbo', name.strip('[]')
+    return 'dbo', raw.strip('[]')
+
+
+def ensure_mssql_tradeinfunnel_columns(cursor, table: str) -> list[str]:
+    """
+    Создаёт недостающие столбцы РЛ ОП в MSSQL-таблице.
+    Возвращает список добавленных имён колонок.
+    """
+    schema, name = _table_parts(table)
+    added: list[str] = []
+    for col_name, col_type in _ENSURE_COLUMNS:
+        cursor.execute(
+            """
+            SELECT 1
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+            """,
+            (schema, name, col_name),
+        )
+        if cursor.fetchone():
+            continue
+        cursor.execute(
+            f'ALTER TABLE [{schema}].[{name}] ADD [{col_name}] {col_type}'
+        )
+        added.append(col_name)
+    return added
 
 
 def sync_tradeinfunnel_to_mssql(
@@ -182,16 +263,21 @@ def sync_tradeinfunnel_to_mssql(
     chunk_size: int = 500,
 ) -> dict:
     """
-    1) DELETE по EstimationDate в периоде (+ опционально UnitName / UnitSourceName)
-    2) INSERT строк из items
+    1) При необходимости ADD недостающих столбцов (SourceOpRlk*)
+    2) DELETE по EstimationDate в периоде (+ опционально UnitName / UnitSourceName)
+    3) INSERT строк из items
     """
     cfg = mssql_config()
     table = cfg['table']
-    rows = [funnel_item_to_row(item) for item in items]
+    items_list = list(items)
+    enrich_footing_op_fields(items_list)
+    rows = [funnel_item_to_row(item) for item in items_list]
 
     conn = _connect()
     try:
         cur = conn.cursor()
+        columns_added = ensure_mssql_tradeinfunnel_columns(cur, table)
+
         delete_sql = f'DELETE FROM {table} WHERE EstimationDate >= ? AND EstimationDate <= ?'
         delete_params = [date_start, date_end]
         if unit_name:
@@ -246,6 +332,7 @@ def sync_tradeinfunnel_to_mssql(
             'server': cfg['server'],
             'database': cfg['database'],
             'filtr': filtr,
+            'columns_added': columns_added,
         }
     except Exception:
         try:

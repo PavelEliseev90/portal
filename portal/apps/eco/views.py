@@ -14371,6 +14371,7 @@ def tradein_funnel_simple_export(request):
     from openpyxl.utils import get_column_letter
     from urllib.parse import quote
     from eco.mssql_tradeinfunnel import (
+        enrich_footing_op_fields,
         mssql_configured,
         sync_tradeinfunnel_to_mssql,
     )
@@ -14441,6 +14442,9 @@ def tradein_funnel_simple_export(request):
                     'MSSQL: удалено {deleted}, загружено {inserted} '
                     '→ {database} / {table}'
                 ).format(**mssql_result)
+                added_cols = mssql_result.get('columns_added') or []
+                if added_cols:
+                    success += f' (созданы столбцы: {", ".join(added_cols)})'
             except Exception as exc:
                 error = f'Ошибка загрузки в MSSQL: {exc}'
 
@@ -14457,6 +14461,8 @@ def tradein_funnel_simple_export(request):
                 'VIN',
                 'Номер РЛ',
                 'Дата РЛ',
+                'Номер РЛ ОП (источник)',
+                'Дата РЛ ОП (источник)',
                 'Принят',
                 'Статус оценки',
                 'Затраты на подготовку',
@@ -14485,8 +14491,10 @@ def tradein_funnel_simple_export(request):
                 cell.border = thin
 
             invalid = DT.datetime(1, 1, 1)
+            export_items = list(qs.order_by('date_start_estimation').iterator(chunk_size=2000))
+            enrich_footing_op_fields(export_items)
             row_i = 2
-            for item in qs.order_by('date_start_estimation').iterator(chunk_size=2000):
+            for item in export_items:
                 def _num(v):
                     try:
                         return float(v or 0)
@@ -14500,6 +14508,7 @@ def tradein_funnel_simple_export(request):
 
                 est_dt = _dt(item.date_start_estimation)
                 rlk_dt = _dt(item.date_rlk)
+                footing_dt = _dt(getattr(item, 'footing_rlk_date', None))
                 reception_success_dt = _dt(item.date_reception_success)
                 accepted_txt = 'Да' if reception_success_dt else 'Нет'
                 values = [
@@ -14514,6 +14523,8 @@ def tradein_funnel_simple_export(request):
                     item.vin or '',
                     item.rlk_number or '',
                     rlk_dt.strftime('%d.%m.%Y %H:%M') if rlk_dt else '',
+                    getattr(item, 'footing_rlk_number', None) or '',
+                    footing_dt.strftime('%d.%m.%Y %H:%M') if footing_dt else '',
                     accepted_txt,
                     item.stage or '',
                     _num(item.cost_plan_preparation),
@@ -14528,7 +14539,11 @@ def tradein_funnel_simple_export(request):
                     cell.border = thin
                 row_i += 1
 
-            widths = [18, 22, 26, 16, 14, 18, 10, 8, 20, 16, 18, 10, 16, 16, 16, 16, 14, 14, 14]
+            widths = [
+                18, 22, 26, 16, 14, 18, 10, 8, 20,
+                16, 18, 20, 20,
+                10, 16, 16, 16, 16, 14, 14, 14,
+            ]
             for i, w in enumerate(widths, start=1):
                 ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -14573,6 +14588,8 @@ def tradein_funnel_simple_export(request):
         'source_units': source_units,
         'field_hint': (
             'Дата = начало оценки; ДЦ = unit_name; рынок = ЦНА (zna); '
+            'РЛ = рабочий лист оценки (номер/дата); '
+            'РЛ ОП = рабочий лист источник ОП (footing, номер/дата); '
             'затраты: подготовка / MCU / SS; цены до/после КД. '
             'MSSQL: сначала DELETE по EstimationDate за период (и фильтры ДЦ), затем INSERT.'
         ),

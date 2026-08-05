@@ -27,8 +27,10 @@ CREATE TABLE dbo.TradeInFunnel
     RunKm                   INT              NULL,  -- Пробег
     [Year]                  INT              NULL,  -- Год
     Vin                     NVARCHAR(64)     NULL,  -- VIN
-    RlkNumber               NVARCHAR(255)    NULL,  -- Номер РЛ
-    RlkDate                 DATETIME2(0)     NULL,  -- Дата РЛ
+    RlkNumber               NVARCHAR(255)    NULL,  -- Номер РЛ оценки
+    RlkDate                 DATETIME2(0)     NULL,  -- Дата РЛ оценки
+    SourceOpRlkNumber       NVARCHAR(255)    NULL,  -- Номер РЛ ОП (источник / footing)
+    SourceOpRlkDate         DATETIME2(0)     NULL,  -- Дата РЛ ОП (источник / footing)
     Accepted                NVARCHAR(10)     NULL,  -- Принят (Да/Нет)
     Stage                   NVARCHAR(255)    NULL,  -- Статус оценки
     CostPreparation         DECIMAL(18, 2)   NULL,  -- Затраты на подготовку
@@ -54,3 +56,6 @@ GO
 CREATE NONCLUSTERED INDEX IX_TradeInFunnel_Unit_EstimationDate
     ON dbo.TradeInFunnel (UnitName, EstimationDate);
 GO
+
+-- Для уже существующей таблицы без колонок РЛ ОП выполните:
+--   scripts/mssql_alter_tradeinfunnel_source_op_rlk.sql
