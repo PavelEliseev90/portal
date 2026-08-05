@@ -167,7 +167,6 @@ def assign_inbox_file(inbox_file_id, target, user=None, estimation=None):
     inbox_file = (
         RegRegInteractivOcenkaFiles.objects
         .select_for_update()
-        .select_related('estimation')
         .get(pk=inbox_file_id)
     )
     if inbox_file.type_file != MOBILE_INBOX_TYPE_FILE or inbox_file.blank:
@@ -175,7 +174,11 @@ def assign_inbox_file(inbox_file_id, target, user=None, estimation=None):
     if estimation is not None and inbox_file.estimation_id != estimation.pk:
         raise ValueError('Файл не принадлежит этой оценке')
 
-    estimation = inbox_file.estimation
+    if estimation is None:
+        if inbox_file.estimation_id is None:
+            raise ValueError('Файл не привязан к оценке')
+        # Не используем select_related + select_for_update на nullable FK (это ломает Postgres)
+        estimation = RegInteractivOcenka.objects.get(pk=inbox_file.estimation_id)
     if not target.get('name'):
         target = dict(target)
         target['name'] = (inbox_file.name or 'photo.jpg').lower()
