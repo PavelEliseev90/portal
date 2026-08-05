@@ -77,7 +77,10 @@
       <code>MSSQL_TRADEINFUNNEL_ENABLED=1</code>,
       <code>SERVER</code>, <code>DATABASE</code>,
       <code>USER</code>/<code>PASSWORD</code> или <code>TRUSTED=1</code>.
-      Пакет: <code>pip install pyodbc</code>. Таблица: <code>scripts/mssql_create_tradeinfunnel.sql</code>.
+      Пакет: <code>pip install pyodbc</code>.
+      Новая таблица: <code>scripts/mssql_create_tradeinfunnel.sql</code>.
+      Недостающие столбцы РЛ ОП: <code>scripts/mssql_alter_tradeinfunnel_source_op_rlk.sql</code>
+      (при загрузке с портала столбцы также создаются автоматически).
     </div>
     {% endif %}
 
@@ -98,7 +101,8 @@
       <li>TypeReceptionName — Тип оценки</li>
       <li>MarkName / ModelName</li>
       <li>RunKm / Year / Vin</li>
-      <li>RlkNumber / RlkDate</li>
+      <li>RlkNumber / RlkDate — РЛ оценки</li>
+      <li>SourceOpRlkNumber / SourceOpRlkDate — РЛ ОП (источник)</li>
       <li>Accepted — Принят</li>
       <li>Stage — Статус</li>
       <li>CostPreparation / CostMcu / CostSs</li>

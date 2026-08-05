@@ -11,6 +11,11 @@ class TradeInFunnel(models.Model):
     footing_rlk_id          = models.PositiveIntegerField(null=True, blank=True, help_text='footing_ ID DocRLK')
     footing_rlk_uin         = models.CharField(max_length=255, blank=True, default="")
     footing_rlk_number      = models.CharField(max_length=255, blank=True, default="")
+    footing_rlk_date        = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Дата РЛ ОП (источник / footing)',
+    )
 
     estimation_id = models.PositiveIntegerField(null=True, blank=True, help_text='ID RegInteractivOcenka')
     
