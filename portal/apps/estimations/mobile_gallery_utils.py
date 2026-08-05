@@ -5,10 +5,20 @@ ESTIMATION_UPLOAD_MAX_AGE = 60 * 60 * 24  # 24 часа
 
 MOBILE_INBOX_TYPE_FILE = 'mobile_inbox'
 MOBILE_GALLERY_PATH_PREFIX = '/estimations/mobile-gallery/'
+MOBILE_GALLERY_SESSION_FLAG = 'mobile_gallery_session'
 
 
 def is_mobile_gallery_path(path):
+    """Только QR-загрузка с телефона (/estimations/mobile-gallery/...), не inbox на ПК."""
     return (path or '').startswith(MOBILE_GALLERY_PATH_PREFIX)
+
+
+def is_mobile_gallery_session(request):
+    """Сессия входа ради QR-загрузки фото — не должна выбивать портал на ПК."""
+    try:
+        return bool(request.session.get(MOBILE_GALLERY_SESSION_FLAG))
+    except Exception:
+        return False
 
 
 def is_mobile_gallery_next(next_url):
@@ -19,7 +29,16 @@ def is_mobile_gallery_next(next_url):
     if '://' in next_url:
         from urllib.parse import urlparse
         path = urlparse(next_url).path or ''
-    return is_mobile_gallery_path(path)
+    path = path.split('?')[0]
+    return is_mobile_gallery_path(path) or '/mobile-gallery/' in path
+
+
+def mark_mobile_gallery_session(request):
+    """Пометить текущую сессию как «только загрузка с телефона»."""
+    if not getattr(request, 'session', None):
+        return
+    request.session[MOBILE_GALLERY_SESSION_FLAG] = True
+    request.session.modified = True
 
 
 def make_estimation_upload_token(estimation_id):

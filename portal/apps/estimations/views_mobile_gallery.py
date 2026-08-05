@@ -53,6 +53,16 @@ def _require_estimation_access(request, estimation):
     return user, None
 
 
+def _mobile_gallery_api_user(request):
+    """Для upload API: JSON 401 вместо HTML-редиректа login_required."""
+    if request.user.is_authenticated:
+        return request.user, None
+    return None, _json_error(
+        'Сессия истекла или вы не авторизованы. Обновите страницу и войдите снова.',
+        status=401,
+    )
+
+
 @login_required
 @require_GET
 def mobile_gallery_upload_page(request, token):
@@ -82,9 +92,12 @@ def mobile_gallery_upload_page(request, token):
     })
 
 
-@login_required
 @require_POST
 def mobile_gallery_upload_api(request, token):
+    user, err = _mobile_gallery_api_user(request)
+    if err is not None:
+        return err
+
     estimation_id = verify_estimation_upload_token(token)
     if estimation_id is None:
         return _json_error('Ссылка недействительна или устарела', status=403)
@@ -97,13 +110,13 @@ def mobile_gallery_upload_api(request, token):
     if not uploaded_files:
         return _json_error('Выберите хотя бы одно фото')
 
-    user = get_estimation_user(request)
+    upload_user = get_estimation_user(request) or user
     created = []
     errors = []
 
     for uploaded_file in uploaded_files:
         try:
-            inbox_file = upload_to_inbox(estimation, uploaded_file, user=user)
+            inbox_file = upload_to_inbox(estimation, uploaded_file, user=upload_user)
             created.append(serialize_inbox_file(inbox_file))
         except ValueError as exc:
             errors.append(str(exc))
