@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_kolesa_reception
+from . import views_mobile_gallery
 from . import views_osmotr_test
 
 app_name = 'eco'
@@ -9,6 +10,17 @@ urlpatterns = [
 
     path('1c/<str:staff_uin>/<str:rlk_uin>/',                                  views.estimation_1c_entry, name='estimation_1c'),
     path('1c/<str:staff_uin>/<str:rlk_uin>/start/',                             views.estimation_1c_entry, {'force_start': True}, name='estimation_1c_start'),
+
+    path('mobile-gallery/<str:token>/',                                         views_mobile_gallery.mobile_gallery_upload_page, name='mobile_gallery_upload'),
+    path('mobile-gallery/<str:token>/upload/',                                views_mobile_gallery.mobile_gallery_upload_api, name='mobile_gallery_upload_api'),
+    path('<slug:rlk_id>/mobile-gallery/inbox/',                                 views_mobile_gallery.mobile_gallery_inbox_api, name='mobile_gallery_inbox'),
+    path('<slug:rlk_id>/mobile-gallery/assign/',                                views_mobile_gallery.mobile_gallery_assign_api, name='mobile_gallery_assign'),
+    path('<slug:rlk_id>/mobile-gallery/delete/<int:file_id>/',                  views_mobile_gallery.mobile_gallery_delete_api, name='mobile_gallery_delete'),
+    path('<slug:rlk_id>/mobile-gallery/qr.png',                                 views_mobile_gallery.mobile_gallery_qr_image, name='mobile_gallery_qr'),
+    path('estimation/<int:estimation_id>/mobile-gallery/inbox/',                views_mobile_gallery.mobile_gallery_inbox_by_estimation_api, name='mobile_gallery_inbox_estimation'),
+    path('estimation/<int:estimation_id>/mobile-gallery/assign/',               views_mobile_gallery.mobile_gallery_assign_by_estimation_api, name='mobile_gallery_assign_estimation'),
+    path('estimation/<int:estimation_id>/mobile-gallery/delete/<int:file_id>/', views_mobile_gallery.mobile_gallery_delete_by_estimation_api, name='mobile_gallery_delete_estimation'),
+    path('estimation/<int:estimation_id>/mobile-gallery/qr.png',                views_mobile_gallery.mobile_gallery_qr_by_estimation, name='mobile_gallery_qr_estimation'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),

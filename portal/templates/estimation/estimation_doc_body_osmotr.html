@@ -694,6 +694,9 @@
                       html += '   </div>';
                       html += '   <hr style="width:75%;">';
                       html += '   <input class="form-control"  ' + 'id="photo_' + uid + '" name="photo_' + uid + '" type="file">'
+                      html += '   <input hidden class="form-control" id="photo_gallery_' + uid + '" name="photo_gallery_' + uid + '" type="text" value="">'
+                      html += '   <button type="button" class="btn btn-outline-primary btn-sm mt-1 w-100 mobile-gallery-osmotr-btn" data-uid="' + uid + '"><span class="icon-mbri-image-slider"></span> Из галереи</button>'
+                      html += '   <div class="mobile-gallery-osmotr-preview mt-1" id="osmotr_preview_' + uid + '"></div>'
                       html += '   <input hidden class="form-control" ' + 'id="photo_x_' + uid + '" name="photo_x_' + uid + '" type="text" value="' + x_cor + '" >'
                       html += '   <input hidden class="form-control" ' + 'id="photo_y_' + uid + '" name="photo_y_' + uid + '" type="text" value="' + y_cor + '" >'
                       html += '   <input hidden class="form-control" ' + 'id="photo_text_' + uid + '" name="photo_text_' + uid + '" type="text" value="' + text_cor + '" >'
@@ -1191,5 +1194,34 @@
   </div>
 </div>
 -->
+
+{% if mobile_gallery %}
+  {% include 'estimation/partials/mobile_gallery_assets.html' %}
+  <script>
+    window._osmotrGalleryUid = null;
+    $(document).on('click', '.mobile-gallery-osmotr-btn', function () {
+      var uid = $(this).data('uid');
+      window._osmotrGalleryUid = uid;
+      if (!window.estimationMobileGallery) return;
+      window.estimationMobileGallery.openOsmotrAssign({
+        type_point: $('#photo_type_' + uid).val() || '',
+        text: $('#photo_text_' + uid).val() || '',
+        cor_x: parseInt($('#photo_x_' + uid).val() || '0', 10),
+        cor_y: parseInt($('#photo_y_' + uid).val() || '0', 10),
+        kraska: parseInt($('#photo_text_' + uid).val() || '0', 10) || 0,
+      });
+    });
+    window.mobileGalleryOsmotrAssigned = function (file) {
+      var uid = window._osmotrGalleryUid;
+      if (!uid || !file) return;
+      $('#photo_gallery_' + uid).val(file.id);
+      $('#osmotr_preview_' + uid).html(
+        '<div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">' +
+        '<img src="' + (file.thumb_url || file.url) + '" style="width:48px;height:48px;object-fit:cover;border-radius:6px;" alt="">' +
+        '<span class="small text-success">Фото из галереи привязано</span></div>'
+      );
+    };
+  </script>
+{% endif %}
 
 {% endblock %}

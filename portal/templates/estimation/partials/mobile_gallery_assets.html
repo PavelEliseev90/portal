@@ -1,0 +1,155 @@
+{% load static %}
+<style>
+  #mobile-gallery-float-btn {
+    position: fixed;
+    right: 1rem;
+    bottom: 5rem;
+    z-index: 1040;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0, 42, 90, 0.25);
+    padding: 0.65rem 1rem;
+    font-weight: 600;
+  }
+  #mobile-gallery-float-btn.has-photos {
+    animation: mobile-gallery-pulse 2s infinite;
+  }
+  @keyframes mobile-gallery-pulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(0, 42, 90, 0.25); }
+    50% { box-shadow: 0 8px 28px rgba(0, 82, 180, 0.45); }
+  }
+  #mobile-gallery-panel {
+    position: fixed;
+    right: 1rem;
+    bottom: 8.5rem;
+    z-index: 1040;
+    width: min(320px, calc(100vw - 2rem));
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 12px 40px rgba(0, 23, 61, 0.2);
+    padding: 1rem;
+  }
+  #mobile-gallery-panel img.qr-image {
+    width: 100%;
+    max-width: 220px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 0.5rem;
+  }
+  .mobile-gallery-thumb {
+    border: 2px solid transparent;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    background: #fff;
+  }
+  .mobile-gallery-thumb.selected {
+    border-color: #002a5a;
+    box-shadow: 0 0 0 2px rgba(0, 42, 90, 0.15);
+  }
+  .mobile-gallery-thumb img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+  .mobile-gallery-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%) translateY(120%);
+    background: #002a5a;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 999px;
+    z-index: 2000;
+    transition: transform 0.25s ease;
+    max-width: 90vw;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+  .mobile-gallery-toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  .mobile-gallery-toast.error {
+    background: #b42318;
+  }
+  @media (max-width: 576px) {
+    #mobile-gallery-float-btn {
+      bottom: 4.5rem;
+      right: 0.75rem;
+      font-size: 0.85rem;
+      padding: 0.55rem 0.85rem;
+    }
+    #mobile-gallery-panel {
+      bottom: 7.5rem;
+      right: 0.75rem;
+    }
+  }
+</style>
+
+<button type="button" class="btn btn-primary" id="mobile-gallery-float-btn" title="Галерея оценки">
+  <span class="icon-mbri-image-slider"></span>
+  <span id="mobile-gallery-count">{{ mobile_gallery.inbox_count|default:0 }}</span>
+</button>
+
+<div id="mobile-gallery-panel" class="d-none">
+  <div class="d-flex justify-content-between align-items-start mb-2">
+    <div>
+      <strong>Фото с телефона</strong>
+      <div class="small text-muted">Сканируйте QR или откройте ссылку</div>
+    </div>
+    <button type="button" class="btn-close" id="mobile-gallery-close" aria-label="Закрыть"></button>
+  </div>
+  <img class="qr-image mb-2" src="/estimations/estimation/{{ mobile_gallery.estimation_id }}/mobile-gallery/qr.png" alt="QR для загрузки фото">
+  <div class="d-grid gap-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="mobile-gallery-copy-link">Скопировать ссылку</button>
+    <button type="button" class="btn btn-primary btn-sm" id="mobile-gallery-open-modal">Открыть галерею</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" id="mobile-gallery-refresh-btn">Обновить</button>
+  </div>
+</div>
+
+<div class="modal fade" id="mobileGalleryModal" tabindex="-1" aria-labelledby="mobileGalleryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mobileGalleryModalLabel">Галерея оценки</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div id="mobile-gallery-empty" class="text-center text-muted py-4 {% if mobile_gallery.inbox_count %}d-none{% endif %}">
+          <div style="font-size:2rem;">📷</div>
+          <p class="mb-0">Пока нет загруженных фото.<br>Отсканируйте QR-код с телефона.</p>
+        </div>
+        <div class="row g-2" id="mobile-gallery-grid"></div>
+      </div>
+      <div class="modal-footer flex-wrap">
+        <button type="button" class="btn btn-outline-danger btn-sm" id="mobile-gallery-delete-btn">Удалить выбранные</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+        <button type="button" class="btn btn-primary btn-sm d-none" id="mobile-gallery-assign-btn">Привязать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/estimation_mobile_gallery.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+  var floatBtn = document.getElementById('mobile-gallery-float-btn');
+  if (floatBtn) {
+    floatBtn.addEventListener('click', function () {
+      var panel = document.getElementById('mobile-gallery-panel');
+      if (panel) panel.classList.toggle('d-none');
+    });
+  }
+  window.initEstimationMobileGallery({
+    rlkId: '{{ mobile_gallery.rlk_id }}',
+    estimationId: '{{ mobile_gallery.estimation_id }}',
+    inboxUrl: '/estimations/estimation/{{ mobile_gallery.estimation_id }}/mobile-gallery/inbox/',
+    assignUrl: '/estimations/estimation/{{ mobile_gallery.estimation_id }}/mobile-gallery/assign/',
+    deleteUrlBase: '/estimations/estimation/{{ mobile_gallery.estimation_id }}/mobile-gallery/delete/',
+    qrUrl: '/estimations/estimation/{{ mobile_gallery.estimation_id }}/mobile-gallery/qr.png',
+    uploadUrl: '{{ mobile_gallery.upload_url|escapejs }}',
+    osmotrSide: '{{ mobile_gallery.osmotr_side|default:"" }}',
+  });
+  });
+</script>

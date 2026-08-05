@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Загрузка фото — интерактивная оценка</title>
+  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(160deg, #f4f7fb 0%, #e8eef7 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .upload-card {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 42, 90, 0.12);
+    }
+    .upload-zone {
+      border: 2px dashed rgba(0, 42, 90, 0.25);
+      border-radius: 1rem;
+      padding: 2rem 1rem;
+      text-align: center;
+      background: #fff;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    .upload-zone.dragover {
+      border-color: #002a5a;
+      background: #f0f5ff;
+    }
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 0.5rem;
+    }
+    .thumb-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 0.5rem;
+    }
+    .badge-count {
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4" style="max-width: 480px;">
+    {% if error %}
+      <div class="card upload-card">
+        <div class="card-body text-center py-5">
+          <div class="text-danger mb-3" style="font-size: 2.5rem;">⚠</div>
+          <h5 class="mb-3">Не удалось открыть загрузку</h5>
+          <p class="text-muted">{{ error }}</p>
+        </div>
+      </div>
+    {% else %}
+      <div class="card upload-card mb-3">
+        <div class="card-body">
+          <h5 class="card-title mb-1">Фото для оценки</h5>
+          <p class="text-muted small mb-3">
+            {% if estimation.rlk %}
+              РЛ {{ estimation.rlk.nomer }}
+            {% else %}
+              Оценка #{{ estimation.id }}
+            {% endif %}
+          </p>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">В галерее оценки</span>
+            <span class="badge bg-primary badge-count" id="inbox-count">{{ inbox_count }}</span>
+          </div>
+
+          <label class="upload-zone d-block mb-3" id="upload-zone" for="file-input">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📷</div>
+            <strong>Выберите фото из галереи</strong>
+            <div class="text-muted small mt-1">или перетащите сюда</div>
+            <input type="file" id="file-input" accept="image/*" multiple class="d-none">
+          </label>
+
+          <button type="button" class="btn btn-primary w-100 btn-lg" id="btn-upload" disabled>
+            Загрузить
+          </button>
+
+          <div id="upload-status" class="mt-3 small"></div>
+        </div>
+      </div>
+
+      <div class="card upload-card">
+        <div class="card-body">
+          <h6 class="mb-2">Уже загружено</h6>
+          <div class="thumb-grid" id="uploaded-preview"></div>
+          <p class="text-muted small mt-2 mb-0">
+            На компьютере откройте раздел оценки и привяжите фото к нужному блоку через «Из галереи».
+          </p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if not error %}
+  <script>
+    (function () {
+      const uploadUrl = '{{ upload_url|escapejs }}';
+      const fileInput = document.getElementById('file-input');
+      const uploadZone = document.getElementById('upload-zone');
+      const btnUpload = document.getElementById('btn-upload');
+      const statusEl = document.getElementById('upload-status');
+      const countEl = document.getElementById('inbox-count');
+      const previewEl = document.getElementById('uploaded-preview');
+      let selectedFiles = [];
+
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+      }
+
+      function setStatus(html, isError) {
+        statusEl.innerHTML = html;
+        statusEl.className = 'mt-3 small ' + (isError ? 'text-danger' : 'text-success');
+      }
+
+      function renderPreview(files) {
+        previewEl.innerHTML = '';
+        files.forEach(function (item) {
+          const img = document.createElement('img');
+          img.src = item.thumb_url || item.url;
+          img.alt = item.name || '';
+          img.title = item.name || '';
+          previewEl.appendChild(img);
+        });
+      }
+
+      function updateSelected() {
+        btnUpload.disabled = selectedFiles.length === 0;
+        btnUpload.textContent = selectedFiles.length
+          ? 'Загрузить (' + selectedFiles.length + ')'
+          : 'Загрузить';
+      }
+
+      fileInput.addEventListener('change', function () {
+        selectedFiles = Array.from(fileInput.files || []);
+        updateSelected();
+      });
+
+      ['dragenter', 'dragover'].forEach(function (evtName) {
+        uploadZone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          uploadZone.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(function (evtName) {
+        uploadZone.addEventListener(evtName, function (e) {
+          e.preventDefault();
+          uploadZone.classList.remove('dragover');
+        });
+      });
+      uploadZone.addEventListener('drop', function (e) {
+        const files = Array.from(e.dataTransfer.files || []).filter(function (f) {
+          return (f.type || '').startsWith('image/');
+        });
+        if (!files.length) return;
+        selectedFiles = files;
+        const dt = new DataTransfer();
+        files.forEach(function (f) { dt.items.add(f); });
+        fileInput.files = dt.files;
+        updateSelected();
+      });
+
+      btnUpload.addEventListener('click', function () {
+        if (!selectedFiles.length) return;
+        btnUpload.disabled = true;
+        setStatus('Загрузка…', false);
+
+        const formData = new FormData();
+        selectedFiles.forEach(function (file) {
+          formData.append('files', file);
+        });
+
+        fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          credentials: 'same-origin',
+        })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            if (!res.ok || !res.data.ok) {
+              throw new Error((res.data && res.data.error) || 'Ошибка загрузки');
+            }
+            countEl.textContent = res.data.inbox_count;
+            const created = res.data.created || [];
+            const existing = Array.from(previewEl.querySelectorAll('img')).map(function (img) {
+              return { thumb_url: img.src, url: img.src, name: img.alt };
+            });
+            renderPreview(created.concat(existing));
+            selectedFiles = [];
+            fileInput.value = '';
+            updateSelected();
+            let msg = 'Загружено: ' + created.length;
+            if (res.data.errors && res.data.errors.length) {
+              msg += '. Ошибки: ' + res.data.errors.join('; ');
+            }
+            setStatus(msg, false);
+          })
+          .catch(function (err) {
+            setStatus(err.message || 'Ошибка загрузки', true);
+            updateSelected();
+          });
+      });
+    })();
+  </script>
+  {% endif %}
+</body>
+</html>
