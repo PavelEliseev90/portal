@@ -30,6 +30,17 @@
     </div>
 
   </div>
+
+  <div class="col-sm">
+    <div class="form-floating">
+      <select class="form-select form-select-sm" id="price_increase" name="price_increase">
+        <option value="">Все</option>
+        <option value="1">Только с повышением</option>
+        <option value="0">Без повышения</option>
+      </select>
+      <label for="price_increase">Повышение цены</label>
+    </div>
+  </div>
   
   <div class="col-auto align-self-center h-100">
     <button class="btn btn-outline-dark justify-content-center" id="btn_start_search"><span class="icon-mbri-play" > </span></button>
@@ -275,12 +286,17 @@ z-index: 1044;">
       $('#btn_start_search').trigger('click');
     });
 
+    $('#price_increase').change(function() {
+      $('#btn_start_search').trigger('click');
+    });
+
     function refresh_data_online(){
         
         var search  = $("#search").val();
         var vin     = $("#vin").val();
+        var price_increase = $("#price_increase").val() || '';
         
-        var url     = 'js/get_chats_list_online/?search=' + search + '&vin='+vin + '&page='+page;
+        var url     = 'js/get_chats_list_online/?search=' + encodeURIComponent(search) + '&vin='+encodeURIComponent(vin) + '&price_increase=' + encodeURIComponent(price_increase) + '&page='+page;
 
         // На время запроса показываем плашку и включаем shimmer-анимацию
         var $target = $('#showmore-triger');
@@ -302,7 +318,8 @@ z-index: 1044;">
             if (page === 1 && i === 0) {
               var searchTrim = (search || '').trim();
               var vinTrim = (vin || '').trim();
-              if (searchTrim.length > 0 || vinTrim.length > 0) {
+              var priceIncreaseTrim = (price_increase || '').trim();
+              if (searchTrim.length > 0 || vinTrim.length > 0 || priceIncreaseTrim.length > 0) {
                 const noDataId = 'no-data-by-filter';
                 const existing = document.getElementById(noDataId);
                 if (existing) existing.remove();
@@ -438,6 +455,10 @@ z-index: 1044;">
                 if (obj.last_msg_important) {
                   important_badge = '<span class="badge bg-warning text-dark">Важно</span> ';
                 }
+                var price_increase_badge = '';
+                if (obj.has_price_increase) {
+                  price_increase_badge = '<span class="badge bg-danger">повышение</span> ';
+                }
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -468,6 +489,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=             price_increase_badge;
                 html +=             important_badge;
                 html +=             kolesa2_estimation;
                 html +=             estimation_rlk_count;
@@ -511,7 +533,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
+                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                                                        '
                 html_list += '                    </div>'
                 html_list += '                </div>'
@@ -607,6 +629,7 @@ z-index: 1044;">
             
             var search = ($("#search").val() || '').trim().toLowerCase();
             var vin = ($("#vin").val() || '').trim().toLowerCase();
+            var priceIncreaseFilter = ($("#price_increase").val() || '').trim();
             
             function includesCI(value, query){
               return (value || '').toString().toLowerCase().includes(query);
@@ -658,6 +681,11 @@ z-index: 1044;">
                     includesCI(model, search) ||
                     includesCI(modification, search)
                   );
+                }
+                if (priceIncreaseFilter === '1') {
+                  includeInList = includeInList && !!obj.has_price_increase;
+                } else if (priceIncreaseFilter === '0') {
+                  includeInList = includeInList && !obj.has_price_increase;
                 }
 
                 var h_status_estimation_id = ' border_blue ';
@@ -738,6 +766,10 @@ z-index: 1044;">
                 if (obj.last_msg_important) {
                   important_badge = '<span class="badge bg-warning text-dark">Важно</span> ';
                 }
+                var price_increase_badge = '';
+                if (obj.has_price_increase) {
+                  price_increase_badge = '<span class="badge bg-danger">повышение</span> ';
+                }
 
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
@@ -768,6 +800,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=                  price_increase_badge;
                 html +=                  important_badge;
                 html +=                  kolesa2_estimation;
                 html +=                  estimation_rlk_count;
@@ -814,7 +847,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
+                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                    </div>'
                 html_list += '                </div>'
                 html_list += '            </div>'

@@ -2377,6 +2377,11 @@ def get_chats_list_online_info(request, id):
         ),
         auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
         kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
+        has_price_increase=Exists(
+            RegInteractivOcenkaPriceIncreaseRequest.objects.filter(
+                soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
+            )
+        ),
     )
 
     chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))[:1]
@@ -2399,6 +2404,7 @@ def get_chats_list_online(request):
 
     filtr_search = request.GET.get('search', '').strip()
     filtr_vin = request.GET.get('vin', '').strip()
+    filtr_price_increase = request.GET.get('price_increase', '').strip()
     page = int(request.GET.get('page', '1')) - 1
 
     # --- 1) Лёгкий этап: дата последнего сообщения + отбор чатов без тяжёлых аннотаций ---
@@ -2447,6 +2453,23 @@ def get_chats_list_online(request):
                     rlk_id=OuterRef('rlk_id'),
                     status_id__gte=2,
                 ).filter(search_q)
+            )
+        )
+
+    if filtr_price_increase in ('1', 'with', 'yes'):
+        chats_base = chats_base.filter(
+            Exists(
+                RegInteractivOcenkaPriceIncreaseRequest.objects.filter(
+                    soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
+                )
+            )
+        )
+    elif filtr_price_increase in ('0', 'without', 'no'):
+        chats_base = chats_base.exclude(
+            Exists(
+                RegInteractivOcenkaPriceIncreaseRequest.objects.filter(
+                    soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
+                )
             )
         )
 
@@ -2564,6 +2587,11 @@ def get_chats_list_online(request):
         ),
         auction=Subquery(subqyery_reg_interactiv.values('estimation__auction')[:1]),
         kolesa2_estimation=Subquery(subqyery_reg_interactiv.values('estimation__page_kolesa__kolesa2_estimation')[:1]),
+        has_price_increase=Exists(
+            RegInteractivOcenkaPriceIncreaseRequest.objects.filter(
+                soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
+            )
+        ),
     )
 
     chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))
@@ -4266,6 +4294,13 @@ def doc(request, id):
                 'tabindex'              : page,
                 'chat'                  : chat,
                 'messages'              : messages,
+                'has_price_increase'    : bool(
+                    getattr(getattr(interactiv_rlk, 'page_soglasovanie', None), 'price_increase_request_amount', 0)
+                    or (
+                        getattr(interactiv_rlk, 'page_soglasovanie', None)
+                        and interactiv_rlk.page_soglasovanie.price_increase_requests.exists()
+                    )
+                ),
                 'opens_infos'           : opens_infos,
                 'json_autoteka'         : json_autoteka,
                 'tab_repairs_count'     : repair_history(estimation, count = True),

@@ -82,12 +82,17 @@
           <button type="button" class="btn btn-primary w-100 btn-lg" id="btn-upload" disabled>
             Загрузить
           </button>
+          <button type="button" class="btn btn-outline-danger w-100 mt-2 d-none" id="btn-retry">
+            Повторить неудачные
+          </button>
 
           <div id="upload-status" class="mt-3 small"></div>
 
           <div id="upload-progress-wrap" class="progress mt-2 d-none" style="height: 10px;">
             <div id="upload-progress-bar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
           </div>
+
+          <div id="upload-queue" class="mt-3 small"></div>
         </div>
       </div>
 
@@ -110,12 +115,21 @@
       const fileInput = document.getElementById('file-input');
       const uploadZone = document.getElementById('upload-zone');
       const btnUpload = document.getElementById('btn-upload');
+      const btnRetry = document.getElementById('btn-retry');
       const statusEl = document.getElementById('upload-status');
       const progressWrapEl = document.getElementById('upload-progress-wrap');
       const progressBarEl = document.getElementById('upload-progress-bar');
+      const queueEl = document.getElementById('upload-queue');
       const countEl = document.getElementById('inbox-count');
       const previewEl = document.getElementById('uploaded-preview');
+
+      const MAX_SIDE = 1920;
+      const JPEG_QUALITY = 0.82;
+      const CONCURRENCY = 3;
+
       let selectedFiles = [];
+      let failedItems = [];
+      let uploading = false;
 
       function getCookie(name) {
         const value = `; ${document.cookie}`;
@@ -124,14 +138,24 @@
         return '';
       }
 
+      function fmtMB(bytes) {
+        const mb = (bytes || 0) / (1024 * 1024);
+        if (mb < 10) return mb.toFixed(1);
+        return mb.toFixed(0);
+      }
+
       function setStatus(html, isError) {
         statusEl.innerHTML = html;
         statusEl.className = 'mt-3 small ' + (isError ? 'text-danger' : 'text-success');
       }
 
       function renderPreview(files) {
+        const existing = Array.from(previewEl.querySelectorAll('img')).map(function (img) {
+          return { thumb_url: img.src, url: img.src, name: img.alt };
+        });
+        const merged = (files || []).concat(existing);
         previewEl.innerHTML = '';
-        files.forEach(function (item) {
+        merged.slice(0, 60).forEach(function (item) {
           const img = document.createElement('img');
           img.src = item.thumb_url || item.url;
           img.alt = item.name || '';
@@ -141,14 +165,196 @@
       }
 
       function updateSelected() {
-        btnUpload.disabled = selectedFiles.length === 0;
+        btnUpload.disabled = uploading || selectedFiles.length === 0;
         btnUpload.textContent = selectedFiles.length
           ? 'Загрузить (' + selectedFiles.length + ')'
           : 'Загрузить';
+        btnRetry.classList.toggle('d-none', uploading || failedItems.length === 0);
+        if (failedItems.length) {
+          btnRetry.textContent = 'Повторить неудачные (' + failedItems.length + ')';
+        }
+      }
+
+      function renderQueue(items) {
+        if (!queueEl) return;
+        if (!items || !items.length) {
+          queueEl.innerHTML = '';
+          return;
+        }
+        queueEl.innerHTML = items.map(function (it) {
+          const color = it.status === 'ok' ? 'text-success'
+            : it.status === 'error' ? 'text-danger'
+            : it.status === 'uploading' ? 'text-primary'
+            : 'text-muted';
+          const mark = it.status === 'ok' ? '✓'
+            : it.status === 'error' ? '✗'
+            : it.status === 'uploading' ? '…'
+            : '•';
+          return '<div class="' + color + '">' + mark + ' ' + (it.name || 'фото') +
+            (it.error ? ' — ' + it.error : '') + '</div>';
+        }).join('');
+      }
+
+      function compressImage(file) {
+        return new Promise(function (resolve) {
+          if (!file || !(file.type || '').startsWith('image/')) {
+            resolve(file);
+            return;
+          }
+          if ((file.type || '') === 'image/gif') {
+            resolve(file);
+            return;
+          }
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = function () {
+            URL.revokeObjectURL(url);
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            const maxSide = Math.max(w, h);
+            if (maxSide <= MAX_SIDE && file.size < 1.2 * 1024 * 1024) {
+              resolve(file);
+              return;
+            }
+            const scale = maxSide > MAX_SIDE ? (MAX_SIDE / maxSide) : 1;
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(function (blob) {
+              if (!blob || blob.size >= file.size) {
+                resolve(file);
+                return;
+              }
+              const name = (file.name || 'photo.jpg').replace(/\.(heic|heif|png|webp|jpeg)$/i, '.jpg');
+              resolve(new File([blob], name.endsWith('.jpg') ? name : (name + '.jpg'), {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              }));
+            }, 'image/jpeg', JPEG_QUALITY);
+          };
+          img.onerror = function () {
+            URL.revokeObjectURL(url);
+            resolve(file);
+          };
+          img.src = url;
+        });
+      }
+
+      function uploadOne(file, onProgress) {
+        return new Promise(function (resolve, reject) {
+          const formData = new FormData();
+          formData.append('files', file);
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', uploadUrl, true);
+          xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+          xhr.upload.onprogress = function (e) {
+            if (onProgress && e && e.lengthComputable) onProgress(e.loaded, e.total);
+          };
+          xhr.onload = function () {
+            let res = null;
+            try {
+              res = JSON.parse(xhr.responseText || '{}');
+            } catch (err) {
+              reject(new Error('Сервер вернул не JSON'));
+              return;
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !res || res.ok !== true) {
+              reject(new Error((res && res.error) || 'Ошибка загрузки'));
+              return;
+            }
+            resolve(res);
+          };
+          xhr.onerror = function () { reject(new Error('Сеть / обрыв соединения')); };
+          xhr.ontimeout = function () { reject(new Error('Таймаут')); };
+          xhr.timeout = 120000;
+          xhr.send(formData);
+        });
+      }
+
+      async function runQueue(files) {
+        uploading = true;
+        failedItems = [];
+        updateSelected();
+        if (progressWrapEl) progressWrapEl.classList.remove('d-none');
+
+        const items = files.map(function (f) {
+          return { file: f, name: f.name, status: 'pending', error: '', size: f.size || 0 };
+        });
+        renderQueue(items);
+
+        let doneBytes = 0;
+        let okCount = 0;
+        const totalBytes = items.reduce(function (s, it) { return s + (it.size || 0); }, 0);
+        let cursor = 0;
+
+        async function worker() {
+          while (cursor < items.length) {
+            const i = cursor++;
+            const item = items[i];
+            item.status = 'uploading';
+            renderQueue(items);
+            setStatus(
+              'Загрузка ' + (okCount + failedItems.length + 1) + ' / ' + items.length +
+              ' · ' + fmtMB(doneBytes) + ' / ' + fmtMB(totalBytes) + ' МБ',
+              false
+            );
+            try {
+              const prepared = await compressImage(item.file);
+              const res = await uploadOne(prepared, function (loaded, total) {
+                const base = doneBytes;
+                const percent = totalBytes
+                  ? Math.min(100, ((base + loaded) / totalBytes) * 100)
+                  : 0;
+                if (progressBarEl) progressBarEl.style.width = percent.toFixed(0) + '%';
+              });
+              item.status = 'ok';
+              okCount += 1;
+              doneBytes += item.size || 0;
+              if (res.inbox_count != null) countEl.textContent = res.inbox_count;
+              if (res.created && res.created.length) renderPreview(res.created);
+            } catch (err) {
+              item.status = 'error';
+              item.error = (err && err.message) || 'ошибка';
+              failedItems.push(item.file);
+              doneBytes += item.size || 0;
+            }
+            renderQueue(items);
+            const percent = totalBytes ? Math.min(100, (doneBytes / totalBytes) * 100) : 100;
+            if (progressBarEl) progressBarEl.style.width = percent.toFixed(0) + '%';
+          }
+        }
+
+        const workers = [];
+        for (let w = 0; w < Math.min(CONCURRENCY, items.length); w++) {
+          workers.push(worker());
+        }
+        await Promise.all(workers);
+
+        uploading = false;
+        selectedFiles = failedItems.slice();
+        updateSelected();
+
+        if (failedItems.length) {
+          setStatus(
+            'Загружено: ' + okCount + '. Не удалось: ' + failedItems.length +
+            '. Нажмите «Повторить неудачные».',
+            true
+          );
+        } else {
+          setStatus('Готово. Загружено фото: ' + okCount, false);
+          fileInput.value = '';
+          selectedFiles = [];
+          updateSelected();
+        }
       }
 
       fileInput.addEventListener('change', function () {
         selectedFiles = Array.from(fileInput.files || []);
+        failedItems = [];
         updateSelected();
       });
 
@@ -170,6 +376,7 @@
         });
         if (!files.length) return;
         selectedFiles = files;
+        failedItems = [];
         const dt = new DataTransfer();
         files.forEach(function (f) { dt.items.add(f); });
         fileInput.files = dt.files;
@@ -177,87 +384,17 @@
       });
 
       btnUpload.addEventListener('click', function () {
-        if (!selectedFiles.length) return;
-        btnUpload.disabled = true;
-        setStatus('Загрузка…', false);
+        if (!selectedFiles.length || uploading) return;
+        runQueue(selectedFiles.slice());
+      });
 
-        const totalBytes = selectedFiles.reduce(function (sum, f) {
-          const size = (f && typeof f.size === 'number') ? f.size : 0;
-          return sum + size;
-        }, 0);
-
-        function fmtMB(bytes) {
-          const mb = (bytes || 0) / (1024 * 1024);
-          if (mb < 10) return mb.toFixed(1);
-          return mb.toFixed(0);
-        }
-
-        if (progressWrapEl) {
-          progressWrapEl.classList.remove('d-none');
-        }
-        if (progressBarEl) {
-          progressBarEl.style.width = '0%';
-        }
-
-        const formData = new FormData();
-        selectedFiles.forEach(function (file) {
-          formData.append('files', file);
-        });
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', uploadUrl, true);
-        xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
-
-        xhr.upload.onprogress = function (e) {
-          if (!e) return;
-          const sentBytes = e.loaded || 0;
-          const total = (e.lengthComputable && e.total) ? e.total : totalBytes;
-          const remainingBytes = Math.max(0, (total || 0) - sentBytes);
-          const percent = total ? Math.min(100, (sentBytes / total) * 100) : 0;
-
-          if (progressBarEl) {
-            progressBarEl.style.width = percent.toFixed(0) + '%';
-          }
-
-          statusEl.textContent =
-            'Идет загрузка: ' +
-            fmtMB(sentBytes) + ' / ' + fmtMB(total) + ' МБ. ' +
-            'Осталось: ' + fmtMB(remainingBytes) + ' МБ';
-        };
-
-        xhr.onload = function () {
-          try {
-            const res = JSON.parse(xhr.responseText || '{}');
-            if (xhr.status < 200 || xhr.status >= 300 || !res || res.ok !== true) {
-              throw new Error((res && res.error) || 'Ошибка загрузки');
-            }
-            countEl.textContent = res.inbox_count;
-            const created = res.created || [];
-            const existing = Array.from(previewEl.querySelectorAll('img')).map(function (img) {
-              return { thumb_url: img.src, url: img.src, name: img.alt };
-            });
-            renderPreview(created.concat(existing));
-            selectedFiles = [];
-            fileInput.value = '';
-            updateSelected();
-
-            let msg = 'Готово. Принято фото: ' + created.length;
-            if (res.errors && res.errors.length) {
-              msg += '. Ошибки: ' + res.errors.join('; ');
-            }
-            setStatus(msg, false);
-          } catch (err) {
-            setStatus((err && err.message) ? err.message : 'Ошибка загрузки', true);
-            updateSelected();
-          }
-        };
-
-        xhr.onerror = function () {
-          setStatus('Ошибка загрузки (сеть/сервер)', true);
-          updateSelected();
-        };
-
-        xhr.send(formData);
+      btnRetry.addEventListener('click', function () {
+        if (!failedItems.length || uploading) return;
+        const retry = failedItems.slice();
+        failedItems = [];
+        selectedFiles = retry;
+        updateSelected();
+        runQueue(retry);
       });
     })();
   </script>
