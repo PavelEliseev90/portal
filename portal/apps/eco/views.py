@@ -14022,7 +14022,8 @@ def autohub_zg_analytics(request):
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    # По умолчанию 30 дней — полный год при открытии слишком тяжёлый
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
