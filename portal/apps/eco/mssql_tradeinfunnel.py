@@ -122,12 +122,38 @@ def _num(value) -> float:
 
 def enrich_footing_op_fields(items: Iterable) -> None:
     """
-    Подставляет номер/дату РЛ ОП (footing) из DocRLK, если в воронке пусто.
-    Мутирует объекты в памяти (для Excel / MSSQL), в БД портала не пишет.
+    Подставляет номер/дату РЛ ОП (источник) для выгрузки.
+
+    Основной поиск: по TradeInFunnel.rlk_uin среди всех DocRLK с этим UIN,
+    у которых заполнен footing (брать footing.nomer / footing.dataTime).
+    Fallback: по footing_rlk_id, если UIN-поиск ничего не дал.
+    Мутирует объекты в памяти, в БД портала не пишет.
     """
     items = list(items) if not isinstance(items, list) else items
+    if not items:
+        return
+    try:
+        from documents.models import DocRLK
+    except Exception:
+        return
+
+    uins = {
+        (getattr(item, 'rlk_uin', None) or '').strip()
+        for item in items
+    }
+    uins.discard('')
+    by_uin = DocRLK.resolve_op_footing_map_by_uins(uins) if uins else {}
+
     need_ids = set()
     for item in items:
+        uin = (getattr(item, 'rlk_uin', None) or '').strip()
+        info = by_uin.get(uin)
+        if info:
+            item.footing_rlk_id = info.get('id') or getattr(item, 'footing_rlk_id', None) or 0
+            item.footing_rlk_uin = info.get('uin') or ''
+            item.footing_rlk_number = info.get('number') or ''
+            item.footing_rlk_date = info.get('date')
+            continue
         fid = int(getattr(item, 'footing_rlk_id', None) or 0)
         if fid <= 0:
             continue
@@ -135,17 +161,17 @@ def enrich_footing_op_fields(items: Iterable) -> None:
         has_date = _safe_dt(getattr(item, 'footing_rlk_date', None)) is not None
         if not has_number or not has_date:
             need_ids.add(fid)
+
     if not need_ids:
-        return
-    try:
-        from documents.models import DocRLK
-    except Exception:
         return
     by_id = {
         row['id']: row
         for row in DocRLK.objects.filter(pk__in=need_ids).values('id', 'nomer', 'dataTime')
     }
     for item in items:
+        uin = (getattr(item, 'rlk_uin', None) or '').strip()
+        if uin in by_uin:
+            continue
         fid = int(getattr(item, 'footing_rlk_id', None) or 0)
         row = by_id.get(fid)
         if not row:

@@ -623,6 +623,61 @@ class DocRLK(models.Model):
             return self.reginteractivocenkarlk.estimation.year
         return 0
 
+    @staticmethod
+    def resolve_op_footing_by_tradein_uin(uin: str):
+        """
+        РЛ ОП для trade-in по UIN оценки.
+
+        У одного UIN может быть несколько DocRLK (дубли trade-in); footing
+        часто заполнен не на текущей строке, а на «сестре» с тем же UIN.
+        Берём все листы с этим UIN, у которых заполнен footing, и возвращаем
+        footing с самой свежей датой.
+        """
+        uin = (uin or '').strip()
+        if not uin:
+            return None
+        sibling = (
+            DocRLK.objects.filter(uin=uin)
+            .exclude(footing_id__isnull=True)
+            .select_related('footing')
+            .order_by('-footing__dataTime', '-footing_id', '-id')
+            .first()
+        )
+        return sibling.footing if sibling else None
+
+    @staticmethod
+    def resolve_op_footing_map_by_uins(uins):
+        """
+        Массово: trade-in UIN → dict(id, uin, number, date) по РЛ ОП (footing).
+        """
+        cleaned = {(u or '').strip() for u in (uins or []) if (u or '').strip()}
+        if not cleaned:
+            return {}
+        rows = (
+            DocRLK.objects.filter(uin__in=cleaned)
+            .exclude(footing_id__isnull=True)
+            .values(
+                'uin',
+                'footing_id',
+                'footing__uin',
+                'footing__nomer',
+                'footing__dataTime',
+            )
+            .order_by('uin', '-footing__dataTime', '-footing_id')
+        )
+        result = {}
+        for row in rows:
+            key = (row.get('uin') or '').strip()
+            if not key or key in result:
+                continue
+            result[key] = {
+                'id': row.get('footing_id') or 0,
+                'uin': (row.get('footing__uin') or '').strip(),
+                'number': (row.get('footing__nomer') or '').strip(),
+                'date': row.get('footing__dataTime'),
+            }
+        return result
+
     def save(self, *args, **kwargs):
         
         super().save(*args, **kwargs)
@@ -688,11 +743,16 @@ class DocRLK(models.Model):
                 city_name               = ''
                 brand                   = ''
 
-                if self.footing != None:
-                    footing_rlk_id        = self.footing.id or 0
-                    footing_rlk_uin       = self.footing.uin or ""
-                    footing_rlk_number    = self.footing.nomer or ""
-                    footing_rlk_date      = self.footing.dataTime
+                # РЛ ОП: не только self.footing, а поиск среди всех DocRLK
+                # с тем же UIN, у которых footing заполнен.
+                footing_op = DocRLK.resolve_op_footing_by_tradein_uin(self.uin)
+                if footing_op is None and self.footing_id:
+                    footing_op = self.footing
+                if footing_op is not None:
+                    footing_rlk_id        = footing_op.id or 0
+                    footing_rlk_uin       = footing_op.uin or ""
+                    footing_rlk_number    = footing_op.nomer or ""
+                    footing_rlk_date      = footing_op.dataTime
                 
                 if self.unit != None:
                     unit_id   = self.unit.id
