@@ -53,6 +53,7 @@ urlpatterns = [
     
     path('express-auction/matrix/',             views.express_auction_matrix, name='express_auction_matrix'),
     path('<id>/price_increase_request/',        views.price_increase_request, name='price_increase_request'),
+    path('<id>/chat_email_notify/',             views.chat_email_notify_participants, name='chat_email_notify'),
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

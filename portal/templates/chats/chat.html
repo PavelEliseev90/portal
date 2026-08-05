@@ -100,6 +100,15 @@ z-index: 1030;">
                 <div class="position-relative w-100">
                     <div class="input-group form-control bg-primary align-items-stretch flex-nowrap" style="padding: 0rem;">
                         <textarea class="form-control border-end-0" name="message" id="message" placeholder="Введите текст" value="" autocomplete="off" rows="3" required></textarea>
+                        {% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}
+                        <button type="button"
+                                class="btn btn-outline-secondary bg-white px-2"
+                                id="chat-email-notify-btn"
+                                title="Оповещение о интерактивной оценке на почту всем участникам."
+                                aria-label="Оповещение о интерактивной оценке на почту всем участникам.">
+                            <span class="icon-mbri-letter"></span>
+                        </button>
+                        {% endif %}
                         <button type="button" class="btn btn-outline-secondary bg-white px-2" id="chat-emoji-btn" title="Эмодзи" aria-expanded="false" aria-controls="chat-emoji-wrap">😀</button>
                         <button class="btn btn-dark text-white" type="submit" id='form-sumbit' name='form-sumbit'><span class="icon-mbri-play"></span></button>
                     </div>
@@ -393,6 +402,49 @@ z-index: 1030;">
                 submitBtn.disabled = false;
                 errEl.textContent = 'Не удалось отправить запрос';
                 errEl.classList.remove('d-none');
+            });
+        });
+    })();
+
+    (function () {
+        const notifyBtn = document.getElementById('chat-email-notify-btn');
+        if (!notifyBtn) return;
+
+        const csrfInput = document.querySelector('#post-form [name=csrfmiddlewaretoken]');
+        const rlkId = '{% if params.rlk %}{{ params.rlk.pk }}{% elif params.interactiv_rlk %}{{ params.interactiv_rlk.rlk_id }}{% endif %}';
+        if (!rlkId) return;
+
+        notifyBtn.addEventListener('click', function () {
+            if (!window.confirm('Отправить оповещение на почту всем участникам оценки?')) {
+                return;
+            }
+            notifyBtn.disabled = true;
+            const formData = new FormData();
+            if (csrfInput) {
+                formData.append('csrfmiddlewaretoken', csrfInput.value);
+            }
+            fetch('/eco/' + rlkId + '/chat_email_notify/', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            }).then(function (resp) {
+                return resp.json().then(function (data) {
+                    return { ok: resp.ok, data: data };
+                });
+            }).then(function (result) {
+                notifyBtn.disabled = false;
+                if (!result.ok || !result.data.ok) {
+                    const err = (result.data && result.data.error === 'no_recipients')
+                        ? 'Нет участников с email для оповещения'
+                        : 'Не удалось поставить оповещения';
+                    window.alert(err);
+                    return;
+                }
+                window.alert(result.data.message || 'Оповещения поставлены в очередь');
+            }).catch(function () {
+                notifyBtn.disabled = false;
+                window.alert('Не удалось поставить оповещения');
             });
         });
     })();
