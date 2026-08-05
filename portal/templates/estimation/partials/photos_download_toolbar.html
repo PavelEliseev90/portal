@@ -1,0 +1,181 @@
+{# Панель скачивания фото на вкладке «Все фото». Ожидает params.estimation и params.rlk / interactiv_rlk. #}
+{% with est=params.estimation %}
+{% if est %}
+<div class="photos-dl-toolbar mb-3" id="photos-dl-toolbar"
+     data-download-url="{% if params.rlk %}/eco/{{ params.rlk.pk }}/photos/download/{% elif params.interactiv_rlk %}/eco/{{ params.interactiv_rlk.rlk_id }}/photos/download/{% else %}/estimations/estimation/{{ est.pk }}/photos/download/{% endif %}"
+     data-csrf="{{ csrf_token }}">
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <button type="button" class="btn btn-sm btn-outline-primary" id="photos-dl-all">
+      <span class="bi bi-download"></span> Скачать все
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="photos-dl-toggle">
+      <span class="bi bi-check2-square"></span> Выбрать
+    </button>
+    <button type="button" class="btn btn-sm btn-primary d-none" id="photos-dl-selected" disabled>
+      <span class="bi bi-file-zip"></span> Скачать выбранные (<span id="photos-dl-count">0</span>)
+    </button>
+    <button type="button" class="btn btn-sm btn-link d-none" id="photos-dl-cancel">Отмена</button>
+    <span class="text-muted small" id="photos-dl-status"></span>
+  </div>
+</div>
+<style>
+  .photos-dl-toolbar { padding: .65rem .85rem; background: #f8fafc; border: 1px solid rgba(0,42,90,.08); border-radius: .85rem; }
+  .modern-gallery-thumbnail.photos-dl-selectable,
+  .gallery-item.photos-dl-selectable { cursor: pointer; position: relative; }
+  .modern-gallery-thumbnail.photos-dl-selectable::after,
+  .gallery-item.photos-dl-selectable::after {
+    content: ''; position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+    border: 2px solid #fff; border-radius: .3rem; background: rgba(15,23,42,.35);
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  }
+  .modern-gallery-thumbnail.photos-dl-selected,
+  .gallery-item.photos-dl-selected { outline: 3px solid #2563eb; outline-offset: 1px; }
+  .modern-gallery-thumbnail.photos-dl-selected::after,
+  .gallery-item.photos-dl-selected::after {
+    background: #2563eb; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M6.5 11.5 3 8l1.2-1.2L6.5 9.1l5.3-5.3L13 5.2z'/%3E%3C/svg%3E");
+    background-size: 14px; background-repeat: no-repeat; background-position: center;
+  }
+  .photos-dl-mode .modern-gallery-thumbnail { opacity: .92; }
+</style>
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+  ready(function () {
+    const bar = document.getElementById('photos-dl-toolbar');
+    if (!bar) return;
+    const url = bar.dataset.downloadUrl;
+    const csrf = bar.dataset.csrf || '';
+    const btnAll = document.getElementById('photos-dl-all');
+    const btnToggle = document.getElementById('photos-dl-toggle');
+    const btnSelected = document.getElementById('photos-dl-selected');
+    const btnCancel = document.getElementById('photos-dl-cancel');
+    const countEl = document.getElementById('photos-dl-count');
+    const statusEl = document.getElementById('photos-dl-status');
+    let selectMode = false;
+    const selected = new Set();
+
+    function thumbNodes() {
+      return Array.prototype.slice.call(document.querySelectorAll(
+        '#modernGalleryThumbnails .modern-gallery-thumbnail[data-dl-id], .gallery-container .gallery-item[data-dl-id]'
+      ));
+    }
+
+    function setStatus(text, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = text || '';
+      statusEl.className = 'text-muted small' + (isError ? ' text-danger' : '');
+    }
+
+    function updateCount() {
+      const n = selected.size;
+      if (countEl) countEl.textContent = String(n);
+      if (btnSelected) btnSelected.disabled = n === 0;
+    }
+
+    function setSelectMode(on) {
+      selectMode = !!on;
+      const layout = document.querySelector('.modern-gallery-layout') || document.querySelector('.gallery-container');
+      if (layout) layout.classList.toggle('photos-dl-mode', selectMode);
+      btnSelected.classList.toggle('d-none', !selectMode);
+      btnCancel.classList.toggle('d-none', !selectMode);
+      btnToggle.classList.toggle('d-none', selectMode);
+      btnAll.classList.toggle('d-none', selectMode);
+      thumbNodes().forEach(function (el) {
+        el.classList.toggle('photos-dl-selectable', selectMode);
+        if (!selectMode) el.classList.remove('photos-dl-selected');
+      });
+      if (!selectMode) {
+        selected.clear();
+        updateCount();
+        setStatus('');
+      } else {
+        setStatus('Отметьте фото в миниатюрах и нажмите «Скачать выбранные»');
+      }
+    }
+
+    function downloadZip(payload) {
+      setStatus('Готовим архив…');
+      btnAll.disabled = true;
+      btnSelected.disabled = true;
+      return fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(payload),
+      }).then(function (resp) {
+        const ct = (resp.headers.get('Content-Type') || '').toLowerCase();
+        if (!resp.ok || ct.indexOf('application/zip') === -1) {
+          return resp.text().then(function (t) {
+            let msg = 'Не удалось скачать';
+            try {
+              const j = JSON.parse(t);
+              if (j && j.error) msg = j.error;
+            } catch (e) {}
+            throw new Error(msg);
+          });
+        }
+        const disp = resp.headers.get('Content-Disposition') || '';
+        let filename = 'photos.zip';
+        const m = /filename=\"?([^\";]+)\"?/i.exec(disp);
+        if (m) filename = m[1];
+        return resp.blob().then(function (blob) {
+          return { blob: blob, filename: filename };
+        });
+      }).then(function (res) {
+        const a = document.createElement('a');
+        const href = URL.createObjectURL(res.blob);
+        a.href = href;
+        a.download = res.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(href); }, 1500);
+        setStatus('Архив скачан');
+        if (selectMode) setSelectMode(false);
+      }).catch(function (err) {
+        setStatus(err.message || 'Ошибка скачивания', true);
+      }).finally(function () {
+        btnAll.disabled = false;
+        updateCount();
+      });
+    }
+
+    btnAll.addEventListener('click', function () {
+      downloadZip({ all: true });
+    });
+    btnToggle.addEventListener('click', function () { setSelectMode(true); });
+    btnCancel.addEventListener('click', function () { setSelectMode(false); });
+    btnSelected.addEventListener('click', function () {
+      if (!selected.size) return;
+      downloadZip({ ids: Array.from(selected) });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!selectMode) return;
+      const thumb = e.target.closest('.modern-gallery-thumbnail[data-dl-id], .gallery-item[data-dl-id]');
+      if (!thumb) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = thumb.getAttribute('data-dl-id');
+      if (!id) return;
+      if (selected.has(id)) {
+        selected.delete(id);
+        thumb.classList.remove('photos-dl-selected');
+      } else {
+        selected.add(id);
+        thumb.classList.add('photos-dl-selected');
+      }
+      updateCount();
+    }, true);
+  });
+})();
+</script>
+{% endif %}
+{% endwith %}

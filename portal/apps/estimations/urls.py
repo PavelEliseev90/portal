@@ -3,6 +3,7 @@ from . import views
 from . import views_kolesa_reception
 from . import views_mobile_gallery
 from . import views_osmotr_test
+from . import views_photos_download
 
 app_name = 'eco'
 
@@ -21,6 +22,9 @@ urlpatterns = [
     path('estimation/<int:estimation_id>/mobile-gallery/assign/',               views_mobile_gallery.mobile_gallery_assign_by_estimation_api, name='mobile_gallery_assign_estimation'),
     path('estimation/<int:estimation_id>/mobile-gallery/delete/<int:file_id>/', views_mobile_gallery.mobile_gallery_delete_by_estimation_api, name='mobile_gallery_delete_estimation'),
     path('estimation/<int:estimation_id>/mobile-gallery/qr.png',                views_mobile_gallery.mobile_gallery_qr_by_estimation, name='mobile_gallery_qr_estimation'),
+
+    path('estimation/<int:estimation_id>/photos/download/',                     views_photos_download.estimation_photos_download, name='estimation_photos_download'),
+    path('<slug:rlk_id>/photos/download/',                                      views_photos_download.estimation_photos_download_by_rlk, name='estimation_photos_download_rlk'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),

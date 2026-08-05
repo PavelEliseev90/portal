@@ -88,12 +88,44 @@
           </div>
         </a>
       </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:price_increase_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-arrow-up-circle"></span> Повышения цены</div>
+            <div class="metric-card-value text-muted fs-8"> Анализ запросов повышения</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:chat_message_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-chat-quote"></span> Анализ чата</div>
+            <div class="metric-card-value text-muted fs-8"> Поиск по сообщениям оценок</div>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 
   <div class="portal-panel">
     <h3 class="deal-section-title"><span class="bi bi-bar-chart-line me-1" aria-hidden="true"></span> Отчёты по оценке и продажам</h3>
     <div class="row g-1">
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:price_increase_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-arrow-up-circle"></span> Повышения цены</div>
+            <div class="metric-card-value text-muted fs-8"> Запросы повышения по ДЦ и ЦГ</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'eco:chat_message_analytics' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-chat-quote"></span> Анализ чата</div>
+            <div class="metric-card-value text-muted fs-8"> Поиск сообщений по фразам и авторам</div>
+          </div>
+        </a>
+      </div>
       <div class="col-12 col-sm-auto">
         <a href="{% url 'eco:estimation_zg_analytics' %}" class="text-decoration-none text-dark">
           <div class="metric-card">

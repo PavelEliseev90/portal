@@ -16960,6 +16960,8 @@
                   <hr class="my-3">
                 </div>
 
+                {% include 'estimation/partials/photos_download_toolbar.html' %}
+
                 <div class="portal-panel">
                   <div class="">
 
@@ -16967,7 +16969,7 @@
                       <div class="modern-gallery-wrapper">
                         <div class="modern-gallery-container" id="modernGalleryContainer">
                           {% for files in params.estimation.get_files_all %}
-                            <div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}" data-alt="{{files.name}}">
+                            <div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}" data-alt="{{files.name}}" data-dl-id="{% if files.estimation_task_id %}t:{{ files.id }}{% else %}e:{{ files.id }}{% endif %}">
                               <img src="{{files.get_thumbnail_url}}" alt="{{files.name}}" class="modern-gallery-image" loading="lazy">
                             </div>
                           {% endfor %}
@@ -17017,7 +17019,7 @@
                       
                       <div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
                         {% for files in params.estimation.get_files_all %}
-                          <div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}">
+                          <div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{files.get_absolute_url}}" data-dl-id="{% if files.estimation_task_id %}t:{{ files.id }}{% else %}e:{{ files.id }}{% endif %}">
                             <img src="{{files.get_thumbnail_url}}" alt="{{files.name}}" class="modern-gallery-thumbnail-img" loading="lazy">
                           </div>
                         {% endfor %}

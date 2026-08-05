@@ -3836,6 +3836,13 @@ EMAIL_NOTIFY_CHAT_COMMENT = (
 
 
 @login_required
+def estimation_photos_download_eco(request, id):
+    """Скачать фото оценки ZIP — прокси на общий обработчик по РЛК."""
+    from estimations.views_photos_download import estimation_photos_download_by_rlk
+    return estimation_photos_download_by_rlk(request, id)
+
+
+@login_required
 def chat_email_notify_participants(request, id):
     """Оповещение на почту всем участникам интерактивной оценки (как при согласовании)."""
     if request.method != 'POST':
@@ -14174,6 +14181,209 @@ def sales_zg_detail(request):
 
 
 @login_required
+def price_increase_analytics(request):
+    """Анализ запросов повышения цены за период."""
+    from eco.price_increase_analytics import build_price_increase_analytics
+    import json as _json
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'price_increase_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+
+    data = build_price_increase_analytics(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+    )
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+
+    params = {
+        'type': 'price_increase_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+        },
+        'summary': data['summary'],
+        'zg_summary': data['zg_summary'],
+        'unit_rows': data['unit_rows'],
+        'top3': data['top3'],
+        'chart_json': _json.dumps(data['chart'], ensure_ascii=False),
+        'detail_base': '/eco/price-increase-analysis/detail/',
+        'units': units,
+        'hint': (
+            'Источник: история запросов повышения цены из чата оценки. '
+            'ЦГ считается по ЦНА / цене до или после КД на момент согласования; '
+            'дельта = желаемая цена − базовая.'
+        ),
+    }
+    return render(request, 'lo/price_increase_analytics.html', {'params': params})
+
+
+@login_required
+def price_increase_analytics_detail(request):
+    """Детальный список запросов повышения по ДЦ / ЦГ."""
+    from eco.price_increase_analytics import build_price_increase_detail
+    from urllib.parse import urlencode
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'price_increase_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    zg = (request.GET.get('zg') or '').strip()
+
+    back_qs = {
+        k: v for k, v in {
+            'date_start': request.GET.get('date_start') or '',
+            'date_end': request.GET.get('date_end') or '',
+        }.items() if v
+    }
+    back_url = '/eco/price-increase-analysis/'
+    if back_qs:
+        back_url += '?' + urlencode(back_qs)
+
+    detail = build_price_increase_detail(
+        date_start=date_start,
+        date_end=date_end,
+        unit_id=unit_id,
+        zg=zg or None,
+    )
+
+    params = {
+        'type': 'price_increase_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'detail': detail,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'unit_id': unit_id or '',
+            'zg': zg,
+        },
+        'back_url': back_url,
+    }
+    return render(request, 'lo/price_increase_analytics_detail.html', {'params': params})
+
+
+@login_required
+def chat_message_analytics(request):
+    """Поиск по сообщениям чатов интерактивных оценок."""
+    from eco.chat_message_analytics import (
+        authors_by_ids,
+        parse_phrases,
+        parse_user_ids,
+        search_chat_messages,
+    )
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        params = {
+            'type': 'chat_message_analytics',
+            'nav_selected': 4,
+            'request': request,
+        }
+        return render(request, 'errors/403.html', {'params': params})
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    phrases_raw = (request.GET.get('phrases') or '').strip()
+    phrases = parse_phrases(phrases_raw)
+    user_ids = parse_user_ids(request.GET.getlist('user_ids'))
+
+    # Без фраз и авторов не гоняем тяжёлый поиск по всему периоду
+    has_filters = bool(phrases or user_ids)
+    data = {
+        'rows': [],
+        'total_matched': 0,
+        'returned': 0,
+        'limited': False,
+        'limit': 300,
+        'phrases': phrases,
+    }
+    if has_filters:
+        data = search_chat_messages(
+            date_start=date_start,
+            date_end=date_end,
+            phrases=phrases,
+            user_ids=user_ids,
+        )
+
+    params = {
+        'type': 'chat_message_analytics',
+        'nav_selected': 4,
+        'request': request,
+        'filters': {
+            'date_start': date_start.strftime('%Y-%m-%d'),
+            'date_end': date_end.strftime('%Y-%m-%d'),
+            'phrases': phrases_raw,
+            'user_ids': [str(i) for i in user_ids],
+        },
+        'selected_authors': authors_by_ids(user_ids),
+        'authors_search_url': '/eco/chat-analysis/authors/',
+        'has_filters': has_filters,
+        'summary': {
+            'total': data['total_matched'],
+            'returned': data['returned'],
+            'limited': data['limited'],
+            'limit': data['limit'],
+            'phrases_count': len(phrases),
+            'authors_count': len(user_ids),
+        },
+        'rows': data['rows'],
+        'hint': (
+            'Ищем только в чатах интерактивных оценок (slug rlk_*). '
+            'Несколько фраз — через новую строку; сработает совпадение любой из них. '
+            'Автомобиль и ДЦ подтягиваются из TradeInFunnel.'
+        ),
+    }
+    return render(request, 'lo/chat_message_analytics.html', {'params': params})
+
+
+@login_required
+def chat_message_authors_search(request):
+    """AJAX: поиск авторов для фильтра анализа чата."""
+    from eco.chat_message_analytics import search_authors
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    q = (request.GET.get('q') or request.GET.get('search') or '').strip()
+    try:
+        limit = int(request.GET.get('limit') or 20)
+    except (TypeError, ValueError):
+        limit = 20
+    return JsonResponse({'ok': True, 'results': search_authors(q, limit=limit)})
+
+
+@login_required
 def estimation_zg_detail(request):
     """Расшифровка: оценки или Autohub за выбранные месяц × ЦГ."""
     from eco.estimation_zg_analytics import (
@@ -14282,7 +14492,7 @@ def market_model_trends(request):
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
@@ -14346,7 +14556,7 @@ def market_model_detail(request):
 
     now = DT.datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    default_start = (default_end - DT.timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)

@@ -1,0 +1,258 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — Запросы повышения цены {% endblock %}
+{% block title_navbar %} — Повышения {% endblock %}
+
+{% block content %}
+<style>
+  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .zg-page h2 { font-size: 1.55rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .zg-page .lead { color: #6c7a92; margin-bottom: 1.25rem; font-size: .95rem; }
+  .zg-filter, .zg-panel, .zg-metric {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06);
+  }
+  .zg-filter { padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+  .zg-filter .form-label {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; margin-bottom: .35rem;
+  }
+  .zg-metric { padding: 1rem 1.15rem; height: 100%; }
+  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .zg-metric .v { font-size: 1.65rem; font-weight: 650; color: #002a5a; line-height: 1.2; }
+  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
+  .zg-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .zg-panel h3 { font-size: 1rem; font-weight: 600; color: #002a5a; margin: 0 0 1rem; }
+  .zg-hint { font-size: .82rem; color: #6c7a92; margin-top: .75rem; }
+  .table-zg th { white-space: nowrap; font-size: .78rem; color: #5b6b82; vertical-align: bottom; }
+  .table-zg td { vertical-align: middle; font-size: .85rem; }
+  .table-zg .cell-main { font-weight: 600; color: #002a5a; }
+  .pill {
+    display: inline-block; padding: .15rem .55rem; border-radius: 999px;
+    background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600;
+  }
+  .chart-wrap { position: relative; height: 340px; }
+  a.cell-link { text-decoration: none; color: inherit; }
+  a.cell-link:hover { color: #1d4ed8; text-decoration: underline; }
+  .top3-wrap { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.25rem; }
+  .top3-card {
+    display: flex; align-items: center; gap: .75rem;
+    background: #fff; border-radius: 1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 10px 24px rgba(0,23,61,.05); padding: .75rem 1rem; min-width: 220px;
+  }
+  .badge-top {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 3.2rem; padding: .25rem .55rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .badge-top-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #78350f; }
+  .badge-top-2 { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #1e293b; }
+  .badge-top-3 { background: linear-gradient(135deg, #fdba74, #ea580c); color: #7c2d12; }
+  .top3-card .name { font-weight: 600; color: #002a5a; }
+  .top3-card .cnt { color: #6c7a92; font-size: .85rem; }
+  .table-badge-top {
+    display: inline-block; margin-left: .35rem; padding: .1rem .45rem; border-radius: 999px;
+    font-size: .68rem; font-weight: 700; vertical-align: middle;
+  }
+</style>
+
+<div class="zg-page">
+  <h2>Анализ запросов повышения цены</h2>
+  <p class="lead">Запросы повышения из чата интерактивной оценки за период, разбивка по ЦГ и ДЦ.</p>
+
+  <form class="zg-filter" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-6 col-md-2">
+        <label class="form-label">Период с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label">по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Подразделение</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for u in params.units %}
+          <option value="{{ u.id }}" {% if params.filters.unit_id|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>{{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-auto">
+        <button type="submit" class="btn btn-primary">Показать</button>
+      </div>
+    </div>
+  </form>
+
+  {% if params.top3 %}
+  <div class="top3-wrap">
+    {% for item in params.top3 %}
+    <a class="top3-card text-decoration-none"
+       href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}&amp;unit_id={% if item.unit_id %}{{ item.unit_id }}{% else %}0{% endif %}">
+      <span class="badge-top {{ item.class }}">{{ item.label }}</span>
+      <div>
+        <div class="name">{{ item.unit_name }}</div>
+        <div class="cnt">{{ item.count }} запр.</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="zg-metric">
+        <div class="t">Запросов</div>
+        <div class="v">{{ params.summary.total }}</div>
+        <div class="s">за период</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="zg-metric">
+        <div class="t">ДЦ</div>
+        <div class="v">{{ params.summary.units }}</div>
+        <div class="s">с запросами</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="zg-metric">
+        <div class="t">Ср. желаемая</div>
+        <div class="v">{% if params.summary.avg_desired %}{{ params.summary.avg_desired|floatformat:"0g" }}{% else %}—{% endif %}</div>
+        <div class="s">₽</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="zg-metric">
+        <div class="t">Ср. дельта</div>
+        <div class="v">{% if params.summary.avg_delta != None %}{{ params.summary.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</div>
+        <div class="s">к базовой цене</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-5">
+      <div class="zg-panel">
+        <h3>Разбивка по ценовым группам</h3>
+        <div class="chart-wrap">
+          <canvas id="zgChart"></canvas>
+        </div>
+        <div class="zg-hint">{{ params.hint }}</div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="zg-panel">
+        <h3>По ценовым группам</h3>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover table-zg mb-0">
+            <thead>
+              <tr>
+                <th>ЦГ</th>
+                <th class="text-end">Запросов</th>
+                <th class="text-end">Ср. желаемая</th>
+                <th class="text-end">Ср. дельта</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in params.zg_summary %}
+              <tr>
+                <td><span class="pill">{{ row.zg }}</span></td>
+                <td class="text-end">
+                  <a class="cell-link"
+                     href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&amp;unit_id={{ params.filters.unit_id }}{% endif %}&amp;zg={{ row.zg|urlencode }}">
+                    {{ row.count }}
+                  </a>
+                </td>
+                <td class="text-end">{{ row.avg_desired|floatformat:"0g" }}</td>
+                <td class="text-end">{% if row.avg_delta != None %}{{ row.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted">Нет запросов за период.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="zg-panel">
+    <h3>По дилерским центрам</h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-zg mb-0">
+        <thead>
+          <tr>
+            <th>ДЦ</th>
+            <th class="text-end">Запросов</th>
+            <th class="text-end">Ср. желаемая</th>
+            <th class="text-end">Ср. дельта</th>
+            <th>Частая ЦГ</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.unit_rows %}
+          <tr>
+            <td class="cell-main">
+              {{ row.unit_name }}
+              {% if row.top_badge %}
+                <span class="table-badge-top badge-top {{ row.top_badge.class }}">{{ row.top_badge.label }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">{{ row.count }}</td>
+            <td class="text-end">{{ row.avg_desired|floatformat:"0g" }}</td>
+            <td class="text-end">{% if row.avg_delta != None %}{{ row.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</td>
+            <td><span class="pill">{{ row.top_zg }}</span></td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary"
+                 href="{{ params.detail_base }}?date_start={{ params.filters.date_start }}&amp;date_end={{ params.filters.date_end }}&amp;unit_id={% if row.unit_id %}{{ row.unit_id }}{% else %}0{% endif %}">
+                Список оценок
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted">Нет запросов за период.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const data = {{ params.chart_json|safe }};
+  const canvas = document.getElementById('zgChart');
+  if (!canvas || !data.labels || !data.labels.length) return;
+
+  new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: data.labels.map(function (z) { return 'ЦГ ' + z; }),
+      datasets: [{
+        data: data.counts,
+        backgroundColor: data.colors,
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            afterLabel: function (ctx) {
+              const delta = (data.avg_delta || [])[ctx.dataIndex];
+              return delta ? 'Ср. дельта: ' + Number(delta).toLocaleString('ru-RU') + ' ₽' : '';
+            }
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}
