@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
@@ -700,7 +700,7 @@ def market_car_trends_page_params(car, request, *, embedded=False):
 
     now = datetime.now()
     default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    default_start = (now - relativedelta(months=5)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    default_start = (default_end - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
 
     date_start = _parse_trend_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_trend_date(request.GET.get('date_end', ''), default_end, is_end=True)

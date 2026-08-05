@@ -33,6 +33,10 @@ urlpatterns = [
     path('autohub-zg/',                         views.autohub_zg_analytics, name='autohub_zg_analytics'),
     path('sales-zg/',                          views.sales_zg_analytics, name='sales_zg_analytics'),
     path('sales-zg/detail/',                   views.sales_zg_detail, name='sales_zg_detail'),
+    path('price-increase-analysis/',           views.price_increase_analytics, name='price_increase_analytics'),
+    path('price-increase-analysis/detail/',    views.price_increase_analytics_detail, name='price_increase_analytics_detail'),
+    path('chat-analysis/',                     views.chat_message_analytics, name='chat_message_analytics'),
+    path('chat-analysis/authors/',             views.chat_message_authors_search, name='chat_message_authors_search'),
     path('market-trends/',                      views.market_model_trends, name='market_model_trends'),
     path('market-trends/model/',                views.market_model_detail, name='market_model_detail'),
     path('market-trends/month/',                views.market_model_month_detail, name='market_model_month_detail'),
@@ -54,6 +58,7 @@ urlpatterns = [
     path('express-auction/matrix/',             views.express_auction_matrix, name='express_auction_matrix'),
     path('<id>/price_increase_request/',        views.price_increase_request, name='price_increase_request'),
     path('<id>/chat_email_notify/',             views.chat_email_notify_participants, name='chat_email_notify'),
+    path('<id>/photos/download/',               views.estimation_photos_download_eco, name='estimation_photos_download'),
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

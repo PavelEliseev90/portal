@@ -1,0 +1,116 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — Запросы повышения · детально {% endblock %}
+{% block title_navbar %} — Повышения {% endblock %}
+
+{% block content %}
+<style>
+  .zg-page { padding: 1.25rem 1.5rem 3rem; background: #f4f7fb; min-height: 100vh; }
+  .zg-page h2 { font-size: 1.45rem; font-weight: 600; color: #002a5a; margin: 0 0 .35rem; }
+  .zg-page .lead { color: #6c7a92; margin-bottom: 1rem; font-size: .95rem; }
+  .zg-panel, .zg-metric {
+    background: #fff; border-radius: 1.1rem; border: 1px solid rgba(0,42,90,.08);
+    box-shadow: 0 14px 32px rgba(0,23,61,.06);
+  }
+  .zg-metric { padding: 1rem 1.15rem; height: 100%; }
+  .zg-metric .t { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: #8ea1ba; }
+  .zg-metric .v { font-size: 1.5rem; font-weight: 650; color: #002a5a; }
+  .zg-metric .s { color: #6c7a92; font-size: .85rem; }
+  .zg-panel { padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .pill {
+    display: inline-block; padding: .15rem .55rem; border-radius: 999px;
+    background: #eef2ff; color: #3730a3; font-size: .8rem; font-weight: 600;
+  }
+  .table-zg td, .table-zg th { font-size: .86rem; vertical-align: middle; }
+  .delta-pos { color: #dc2626; font-weight: 600; }
+  .comment-cell { max-width: 280px; white-space: normal; color: #64748b; font-size: .8rem; }
+</style>
+
+<div class="zg-page">
+  <a href="{{ params.back_url }}" class="btn btn-sm btn-outline-secondary mb-3">← К сводке</a>
+
+  <h2>
+    {{ params.detail.unit_name }}
+    {% if params.detail.zg %}
+      · <span class="pill">ЦГ {{ params.detail.zg }}</span>
+    {% endif %}
+  </h2>
+  <p class="lead">
+    Запросы повышения цены за {{ params.filters.date_start }} — {{ params.filters.date_end }}.
+  </p>
+
+  <div class="row g-3 mb-3">
+    <div class="col-4">
+      <div class="zg-metric">
+        <div class="t">Запросов</div>
+        <div class="v">{{ params.detail.summary.total }}</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="zg-metric">
+        <div class="t">Ср. желаемая</div>
+        <div class="v">{% if params.detail.summary.avg_desired %}{{ params.detail.summary.avg_desired|floatformat:"0g" }}{% else %}—{% endif %}</div>
+        <div class="s">₽</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="zg-metric">
+        <div class="t">Ср. дельта</div>
+        <div class="v">{% if params.detail.summary.avg_delta != None %}{{ params.detail.summary.avg_delta|floatformat:"0g" }}{% else %}—{% endif %}</div>
+        <div class="s">₽</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="zg-panel">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-zg mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Оценка</th>
+            <th>Авто</th>
+            <th>ДЦ</th>
+            <th>Кто запросил</th>
+            <th>ЦГ</th>
+            <th class="text-end">Базовая</th>
+            <th class="text-end">Желаемая</th>
+            <th class="text-end">Дельта</th>
+            <th>Комментарий</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.detail.rows %}
+          <tr>
+            <td>{% if row.created_at %}{{ row.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+            <td>
+              {% if row.rlk_id %}
+              <a href="/eco/{{ row.rlk_id }}/" target="_blank">#{{ row.rlk_id }}{% if row.rlk_number %} · {{ row.rlk_number }}{% endif %}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <div>{{ row.car }}</div>
+              {% if row.vin %}<div class="text-muted small">{{ row.vin }}</div>{% endif %}
+            </td>
+            <td>{{ row.unit_name }}</td>
+            <td>{{ row.user_name }}</td>
+            <td><span class="pill">{{ row.zg }}</span></td>
+            <td class="text-end">{% if row.base_price %}{{ row.base_price|floatformat:"0g" }}{% else %}—{% endif %}</td>
+            <td class="text-end">{{ row.desired_price|floatformat:"0g" }}</td>
+            <td class="text-end">
+              {% if row.delta != None %}
+                <span class="{% if row.delta > 0 %}delta-pos{% endif %}">{{ row.delta|floatformat:"0g" }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="comment-cell">{{ row.comment|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="10" class="text-muted">Нет запросов за выбранные фильтры.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
