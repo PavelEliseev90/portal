@@ -3829,6 +3829,65 @@ def price_increase_request(request, id):
         'message': text,
     })
 
+
+EMAIL_NOTIFY_CHAT_COMMENT = (
+    'Важные изменения по интерактивной оценке, обратите внимание на чат.'
+)
+
+
+@login_required
+def chat_email_notify_participants(request, id):
+    """Оповещение на почту всем участникам интерактивной оценки (как при согласовании)."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    try:
+        rlk = DocRLK.objects.get(pk=id)
+    except DocRLK.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'not_found'}, status=404)
+
+    interactiv_rlk, _ = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
+    estimation = interactiv_rlk.estimation
+    if estimation is None:
+        return JsonResponse({'ok': False, 'error': 'no_estimation'}, status=400)
+
+    if getattr(getattr(request.user, 'profiles', None), 'user_sb', False):
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    comment = EMAIL_NOTIFY_CHAT_COMMENT
+    created = 0
+    skipped = 0
+
+    for participant in interactiv_rlk.access_user.all():
+        email = (getattr(participant, 'email', '') or '').strip()
+        if not email:
+            skipped += 1
+            continue
+        RegInteractivOcenkaEmailPush.objects.create(
+            rlk=rlk,
+            estimation=estimation,
+            user=participant,
+            email=email,
+            comment=comment,
+        )
+        created += 1
+
+    if created == 0:
+        return JsonResponse({
+            'ok': False,
+            'error': 'no_recipients',
+            'created': 0,
+            'skipped': skipped,
+        }, status=400)
+
+    return JsonResponse({
+        'ok': True,
+        'created': created,
+        'skipped': skipped,
+        'message': 'Оповещения поставлены в очередь: ' + str(created),
+    })
+
+
 @login_required
 def doc(request, id):
      
