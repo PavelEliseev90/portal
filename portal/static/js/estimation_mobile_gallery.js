@@ -281,7 +281,18 @@
       },
       body: JSON.stringify(payload),
     })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (r) {
+        return r.text().then(function (t) {
+          let data = null;
+          try {
+            data = t ? JSON.parse(t) : null;
+          } catch (e) {
+            // Если вернулся HTML (403/500/login), покажем хотя бы начало текста
+            throw new Error('Сервер ответил не JSON. Пример ответа: ' + (t || '').slice(0, 200));
+          }
+          return { ok: r.ok, data: data };
+        });
+      })
       .then(function (res) {
         if (!res.ok || !res.data.ok) {
           throw new Error((res.data && res.data.error) || 'Не удалось привязать фото');
@@ -328,7 +339,15 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
-      }).then(function (r) { return r.json(); });
+      }).then(function (r) {
+        return r.text().then(function (t) {
+          try {
+            return t ? JSON.parse(t) : { ok: true };
+          } catch (e) {
+            throw new Error('Некорректный ответ при удалении: ' + (t || '').slice(0, 200));
+          }
+        });
+      });
     })).then(function () {
       self._toast('Удалено');
       self.refreshInbox(false);

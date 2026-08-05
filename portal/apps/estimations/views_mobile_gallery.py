@@ -176,36 +176,39 @@ def mobile_gallery_assign_api(request, rlk_id):
     if not inbox_id:
         return _json_error('Не указан файл галереи')
 
-    if payload.get('osmotr_side'):
-        try:
-            result = assign_inbox_to_osmotr_point(
-                inbox_id,
-                side=payload['osmotr_side'],
-                type_point=payload.get('type_point', ''),
-                text=payload.get('text', ''),
-                cor_x=payload.get('cor_x', 0),
-                cor_y=payload.get('cor_y', 0),
-                kraska=payload.get('kraska', 0),
-                user=user,
-                estimation=estimation,
-            )
-        except RegRegInteractivOcenkaFiles.DoesNotExist:
-            return _json_error('Файл не найден', status=404)
-        except ValueError as exc:
-            return _json_error(str(exc))
-    else:
-        input_name = normalize_input_name(payload.get('input_name', ''))
-        target = payload.get('target')
-        if not target and input_name:
-            target = get_target_for_input(input_name)
-        if not target:
-            return _json_error('Не указан раздел для привязки')
-        try:
-            result = assign_inbox_file(inbox_id, target, user=user, estimation=estimation)
-        except RegRegInteractivOcenkaFiles.DoesNotExist:
-            return _json_error('Файл не найден', status=404)
-        except ValueError as exc:
-            return _json_error(str(exc))
+    try:
+        if payload.get('osmotr_side'):
+            try:
+                result = assign_inbox_to_osmotr_point(
+                    inbox_id,
+                    side=payload['osmotr_side'],
+                    type_point=payload.get('type_point', ''),
+                    text=payload.get('text', ''),
+                    cor_x=payload.get('cor_x', 0),
+                    cor_y=payload.get('cor_y', 0),
+                    kraska=payload.get('kraska', 0),
+                    user=user,
+                    estimation=estimation,
+                )
+            except RegRegInteractivOcenkaFiles.DoesNotExist:
+                return _json_error('Файл не найден', status=404)
+            except ValueError as exc:
+                return _json_error(str(exc))
+        else:
+            input_name = normalize_input_name(payload.get('input_name', ''))
+            target = payload.get('target')
+            if not target and input_name:
+                target = get_target_for_input(input_name)
+            if not target:
+                return _json_error('Не указан раздел для привязки')
+            try:
+                result = assign_inbox_file(inbox_id, target, user=user, estimation=estimation)
+            except RegRegInteractivOcenkaFiles.DoesNotExist:
+                return _json_error('Файл не найден', status=404)
+            except ValueError as exc:
+                return _json_error(str(exc))
+    except Exception as exc:
+        return _json_error(f'Ошибка привязки: {exc}', status=500)
 
     return JsonResponse({
         'ok': True,
@@ -238,36 +241,39 @@ def mobile_gallery_assign_by_estimation_api(request, estimation_id):
     if not inbox_id:
         return _json_error('Не указан файл галереи')
 
-    if payload.get('osmotr_side'):
-        try:
-            result = assign_inbox_to_osmotr_point(
-                inbox_id,
-                side=payload['osmotr_side'],
-                type_point=payload.get('type_point', ''),
-                text=payload.get('text', ''),
-                cor_x=payload.get('cor_x', 0),
-                cor_y=payload.get('cor_y', 0),
-                kraska=payload.get('kraska', 0),
-                user=user,
-                estimation=estimation,
-            )
-        except RegRegInteractivOcenkaFiles.DoesNotExist:
-            return _json_error('Файл не найден', status=404)
-        except ValueError as exc:
-            return _json_error(str(exc))
-    else:
-        target = payload.get('target')
-        if not target:
-            input_name = normalize_input_name(payload.get('input_name', ''))
-            target = get_target_for_input(input_name)
-        if not target:
-            return _json_error('Не указан раздел для привязки')
-        try:
-            result = assign_inbox_file(inbox_id, target, user=user, estimation=estimation)
-        except RegRegInteractivOcenkaFiles.DoesNotExist:
-            return _json_error('Файл не найден', status=404)
-        except ValueError as exc:
-            return _json_error(str(exc))
+    try:
+        if payload.get('osmotr_side'):
+            try:
+                result = assign_inbox_to_osmotr_point(
+                    inbox_id,
+                    side=payload['osmotr_side'],
+                    type_point=payload.get('type_point', ''),
+                    text=payload.get('text', ''),
+                    cor_x=payload.get('cor_x', 0),
+                    cor_y=payload.get('cor_y', 0),
+                    kraska=payload.get('kraska', 0),
+                    user=user,
+                    estimation=estimation,
+                )
+            except RegRegInteractivOcenkaFiles.DoesNotExist:
+                return _json_error('Файл не найден', status=404)
+            except ValueError as exc:
+                return _json_error(str(exc))
+        else:
+            target = payload.get('target')
+            if not target:
+                input_name = normalize_input_name(payload.get('input_name', ''))
+                target = get_target_for_input(input_name)
+            if not target:
+                return _json_error('Не указан раздел для привязки')
+            try:
+                result = assign_inbox_file(inbox_id, target, user=user, estimation=estimation)
+            except RegRegInteractivOcenkaFiles.DoesNotExist:
+                return _json_error('Файл не найден', status=404)
+            except ValueError as exc:
+                return _json_error(str(exc))
+    except Exception as exc:
+        return _json_error(f'Ошибка привязки: {exc}', status=500)
 
     return JsonResponse({
         'ok': True,
