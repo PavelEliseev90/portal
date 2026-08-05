@@ -53,6 +53,7 @@ def _require_estimation_access(request, estimation):
     return user, None
 
 
+@login_required
 @require_GET
 def mobile_gallery_upload_page(request, token):
     estimation_id = verify_estimation_upload_token(token)
@@ -81,6 +82,7 @@ def mobile_gallery_upload_page(request, token):
     })
 
 
+@login_required
 @require_POST
 def mobile_gallery_upload_api(request, token):
     estimation_id = verify_estimation_upload_token(token)

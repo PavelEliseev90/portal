@@ -19,6 +19,11 @@
                 <div class="portal-panel portal-margin" style="margin: 1rem;">
                       
                     {% csrf_token %}
+                    {% if request.GET.next %}
+                      <input type="hidden" name="next" value="{{ request.GET.next }}">
+                    {% elif request.POST.next %}
+                      <input type="hidden" name="next" value="{{ request.POST.next }}">
+                    {% endif %}
 
                     <h1 class="h3 mb-3 fw-normal text-center">
                       КорсКор

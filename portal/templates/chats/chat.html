@@ -40,8 +40,11 @@ z-index: 1030;">
                     {% for message in params.messages %}
                     
                         <div class="item-chat-message{% if message.user.profiles.eco %}-owner text-end{% endif %} col-12"  style="padding:0rem;">
-                            <div class="item-chat-body{% if message.user.profiles.eco %}-owner text-end{% endif %} " >
+                            <div class="item-chat-body{% if message.user.profiles.eco %}-owner text-end{% endif %}{% if message.content|slice:':21' == 'Запрос повышения цены' %} chat-msg-price-increase{% endif %}" >
                                 <div class="item-content-chat">
+                                    {% if message.content|slice:':21' == 'Запрос повышения цены' %}
+                                      <span class="badge bg-warning text-dark mb-1">повышение</span>
+                                    {% endif %}
                                     <label class="item-subtitle mbr-fonts-style display-9 fw-bold">
                                         {% autoescape off %}
                                         {{message.content_html}}
@@ -221,10 +224,13 @@ z-index: 1030;">
                     var html = ''
                 
                     if (data.eco ){
+                        var priceIncClass = (data.message || '').indexOf('Запрос повышения цены') === 0 ? ' chat-msg-price-increase' : '';
+                        var priceIncBadge = priceIncClass ? '<span class="badge bg-warning text-dark mb-1">повышение</span>' : '';
                     
                         html = '<div class="item-chat-message-owner text-end col-12" style="padding:0rem;">';
-                        html += '   <div class="item-chat-body-owner text-end">';
+                        html += '   <div class="item-chat-body-owner text-end' + priceIncClass + '">';
                         html += '      <div class="item-content-chat">';
+                        html += priceIncBadge;
                         html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
                         html += '          ' + data.message.replace(/\n/g, '<br>') + '';
                         html += '          </label>';
@@ -241,9 +247,12 @@ z-index: 1030;">
                         scrollToBottom();
 
                     } else {
+                        var priceIncClass = (data.message || '').indexOf('Запрос повышения цены') === 0 ? ' chat-msg-price-increase' : '';
+                        var priceIncBadge = priceIncClass ? '<span class="badge bg-warning text-dark mb-1">повышение</span>' : '';
                         html = '<div class="item-chat-message col-12"  style="padding:0rem;">';
-                        html += '   <div class="item-chat-body">';
+                        html += '   <div class="item-chat-body' + priceIncClass + '">';
                         html += '      <div class="item-content-chat">';
+                        html += priceIncBadge;
                         html += '          <label class="item-subtitle mbr-fonts-style display-9 fw-bold">';
                         html += '          ' + data.message.replace(/\n/g, '<br>') + '';
                         html += '          </label>';

@@ -11,6 +11,9 @@ from .middleware import CURRENT_SESSION_CACHE_KEY, CURRENT_SESSION_CACHE_TTL
 def on_user_logged_in(sender, request, user, **kwargs):
     if not getattr(request, 'session', None):
         return
+    # Вход ради загрузки фото с телефона — не перезаписываем «главный» сеанс портала
+    if getattr(request, '_skip_current_session_update', False):
+        return
     # Сессии 1С не должны перезаписывать разрешённый ключ портала
     if request.session.get('rlk_chat_1c_session'):
         return

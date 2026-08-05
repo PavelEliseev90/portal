@@ -3880,6 +3880,21 @@ def chat_email_notify_participants(request, id):
             'skipped': skipped,
         }, status=400)
 
+    text = 'Отправлены оповещения всем участникам оценки'
+    chat = Chat.objects.filter(name=rlk.pk, slug='rlk_' + str(rlk.pk)).first()
+    if chat is None:
+        chat = Chat.objects.create(name=rlk.pk, slug='rlk_' + str(rlk.pk))
+
+    ChatMessage.objects.create(user=request.user, chat=chat, content=text)
+    send_web_socket_message(
+        group='rlk_' + str(id),
+        chat=chat,
+        user=request.user,
+        text=text,
+        estimation_id=estimation.id,
+        skip_save=True,
+    )
+
     return JsonResponse({
         'ok': True,
         'created': created,
