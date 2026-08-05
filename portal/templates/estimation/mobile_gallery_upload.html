@@ -262,7 +262,7 @@
               reject(new Error('Сервер вернул не JSON'));
               return;
             }
-            if (xhr.status === 401 || xhr.status === 403) && res && res.error) {
+            if ((xhr.status === 401 || xhr.status === 403) && res && res.error) {
               reject(new Error(res.error));
               return;
             }
