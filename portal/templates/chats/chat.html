@@ -8,7 +8,12 @@ z-index: 1030;">
 
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header">
-    <h5 class="offcanvas-title mb-0 me-auto" id="offcanvasRightLabel"> Чат</h5>
+    <h5 class="offcanvas-title mb-0 me-auto" id="offcanvasRightLabel">
+        Чат
+        {% if params.has_price_increase %}
+          <span class="badge bg-danger ms-1">повышение</span>
+        {% endif %}
+    </h5>
     {% if params.type == 'eco' and params.estimation and not params.user.profiles.user_sb %}
     <button type="button" class="btn btn-sm btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#priceIncreaseRequestModal">
         Запрос повышения

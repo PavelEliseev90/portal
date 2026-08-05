@@ -47,6 +47,25 @@
     border-color: #002a5a;
     box-shadow: 0 0 0 2px rgba(0, 42, 90, 0.15);
   }
+  .mobile-gallery-thumb {
+    position: relative;
+  }
+  .mobile-gallery-order {
+    position: absolute;
+    top: 0.35rem;
+    left: 0.35rem;
+    z-index: 2;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: #002a5a;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4rem;
+    text-align: center;
+  }
   .mobile-gallery-thumb img {
     width: 100%;
     aspect-ratio: 1;
@@ -125,7 +144,7 @@
       <div class="modal-footer flex-wrap">
         <button type="button" class="btn btn-outline-danger btn-sm" id="mobile-gallery-delete-btn">Удалить выбранные</button>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
-        <button type="button" class="btn btn-primary btn-sm d-none" id="mobile-gallery-assign-btn">Привязать</button>
+        <button type="button" class="btn btn-primary btn-sm d-none" id="mobile-gallery-assign-btn" disabled>Привязать</button>
       </div>
     </div>
   </div>
