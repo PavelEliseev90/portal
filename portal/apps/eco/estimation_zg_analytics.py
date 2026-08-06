@@ -98,6 +98,39 @@ def _segment_key(car) -> str:
     return f'car:{car.pk}'
 
 
+def _segment_key_from_row(row: dict) -> str:
+    """Тот же ключ сегмента, но из values()-словаря (без ORM-объектов)."""
+    gen = row.get('car__modification_autoru__idSiteGeneration') or 0
+    mark = row.get('car__modification_autoru__model__mark_id') or 0
+    model = row.get('car__modification_autoru__model_id') or 0
+    mod_id = row.get('car__modification_autoru_id')
+    car_id = row.get('car_id') or 0
+    if gen or mark or model:
+        return f'g:{gen}|m:{mark}|md:{model}'
+    if mod_id:
+        return f'mod:{mod_id}'
+    if car_id:
+        return f'car:{car_id}'
+    return 'unknown'
+
+
+_AUTOHUB_VALUES = (
+    'date', 'avg_price', 'avg_days', 'total', 'price', 'car_id',
+    'car__modification_autoru_id',
+    'car__modification_autoru__idSiteGeneration',
+    'car__modification_autoru__model_id',
+    'car__modification_autoru__model__mark_id',
+    'car__modification_autoru__name',
+    'car__modification_autoru__model__name',
+    'car__modification_autoru__model__mark__name',
+    'car__unit__name',
+    'car__vin',
+    'car__mark',
+    'car__model',
+    'car__modification',
+)
+
+
 def resolve_funnel_price(row: TradeInFunnel):
     for attr in ('zna', 'price_after', 'price_before', 'price_remote', 'price_reception_staff'):
         val = getattr(row, attr, None)
@@ -496,16 +529,14 @@ def build_autohub_zg_analytics(
     """
     from register.models import RegEstimationRefCarsOrganizations
 
-    qs = RegEstimationRefCarsOrganizations.objects.filter(
-        date__gte=date_start,
-        date__lte=date_end,
-        avg_price__gt=0,
-    ).select_related(
-        'car',
-        'car__modification_autoru',
-        'car__modification_autoru__model',
-        'car__modification_autoru__model__mark',
-        'car__unit',
+    qs = (
+        RegEstimationRefCarsOrganizations.objects
+        .filter(
+            date__gte=date_start,
+            date__lte=date_end,
+            avg_price__gt=0,
+        )
+        .values(*_AUTOHUB_VALUES)
     )
 
     if unit_id:
@@ -513,21 +544,23 @@ def build_autohub_zg_analytics(
 
     # (month, segment) -> latest snapshot fields
     latest = {}
-    for row in qs.iterator(chunk_size=2000):
-        if not row.date:
+    for row in qs.iterator(chunk_size=4000):
+        row_date = row.get('date')
+        if not row_date:
             continue
-        mk = _month_key(row.date)
-        seg = _segment_key(row.car)
+        mk = _month_key(row_date)
+        seg = _segment_key_from_row(row)
         key = (mk, seg)
         prev = latest.get(key)
-        if prev is None or row.date > prev['date']:
+        if prev is None or row_date > prev['date']:
+            avg_price = row.get('avg_price') or 0
             latest[key] = {
-                'date': row.date,
-                'avg_price': row.avg_price or 0,
-                'avg_days': row.avg_days or 0,
-                'total': row.total or 0,
-                'price': row.price or 0,
-                'zg': zg_from_price(row.avg_price),
+                'date': row_date,
+                'avg_price': avg_price,
+                'avg_days': row.get('avg_days') or 0,
+                'total': row.get('total') or 0,
+                'price': row.get('price') or 0,
+                'zg': zg_from_price(avg_price),
             }
 
     # month -> zg -> lists
@@ -646,7 +679,6 @@ def build_autohub_zg_analytics(
             'above_share': _pct(all_above, all_segments),
             'months': len(month_keys),
         },
-        'month_keys': month_keys,
     }
 
 
@@ -768,56 +800,54 @@ def build_autohub_zg_detail(
     date_start, date_end = _month_bounds(month_key)
     target_zg = normalize_zg_name(zg)
 
-    qs = RegEstimationRefCarsOrganizations.objects.filter(
-        date__gte=date_start,
-        date__lte=date_end,
-        avg_price__gt=0,
-    ).select_related(
-        'car',
-        'car__modification_autoru',
-        'car__modification_autoru__model',
-        'car__modification_autoru__model__mark',
-        'car__unit',
+    qs = (
+        RegEstimationRefCarsOrganizations.objects
+        .filter(
+            date__gte=date_start,
+            date__lte=date_end,
+            avg_price__gt=0,
+        )
+        .values(*_AUTOHUB_VALUES)
     )
     if unit_id:
         qs = qs.filter(car__unit_id=unit_id)
 
     latest = {}
-    for row in qs.iterator(chunk_size=2000):
-        if not row.date:
+    for row in qs.iterator(chunk_size=4000):
+        row_date = row.get('date')
+        if not row_date:
             continue
-        if _month_key(row.date) != month_key:
+        if _month_key(row_date) != month_key:
             continue
-        seg = _segment_key(row.car)
+        seg = _segment_key_from_row(row)
         prev = latest.get(seg)
-        if prev is None or row.date > prev['date']:
-            car = row.car
-            mark = ''
-            model = ''
-            mod_name = ''
-            try:
-                mark = car.modification_autoru.model.mark.name
-                model = car.modification_autoru.model.name
-                mod_name = car.modification_autoru.name
-            except Exception:
-                mark = getattr(car, 'mark', '') or ''
-                model = getattr(car, 'model', '') or ''
-                mod_name = getattr(car, 'modification', '') or ''
+        if prev is None or row_date > prev['date']:
+            mark = (row.get('car__modification_autoru__model__mark__name') or '').strip()
+            model = (row.get('car__modification_autoru__model__name') or '').strip()
+            mod_name = (row.get('car__modification_autoru__name') or '').strip()
+            if not mark:
+                mark = (row.get('car__mark') or '').strip()
+            if not model:
+                model = (row.get('car__model') or '').strip()
+            if not mod_name:
+                mod_name = (row.get('car__modification') or '').strip()
+            avg_price = row.get('avg_price') or 0
+            price = row.get('price') or 0
             latest[seg] = {
-                'date': row.date,
+                'date': row_date,
                 'segment': seg,
-                'car_id': car.pk if car else None,
-                'vin': (car.vin if car else '') or '',
-                'unit': (car.unit.name if car and car.unit_id else '') or '',
+                'car_id': row.get('car_id'),
+                'vin': (row.get('car__vin') or '').strip(),
+                'unit': (row.get('car__unit__name') or '').strip(),
                 'mark': mark,
                 'model': model,
                 'modification': mod_name,
-                'avg_price': row.avg_price or 0,
-                'avg_days': row.avg_days or 0,
-                'total': row.total or 0,
-                'price': row.price or 0,
-                'zg': zg_from_price(row.avg_price),
-                'above': bool(row.price and row.avg_price and row.price > row.avg_price),
+                'avg_price': avg_price,
+                'avg_days': row.get('avg_days') or 0,
+                'total': row.get('total') or 0,
+                'price': price,
+                'zg': zg_from_price(avg_price),
+                'above': bool(price and avg_price and price > avg_price),
             }
 
     rows = [v for v in latest.values() if v['zg'] == target_zg]

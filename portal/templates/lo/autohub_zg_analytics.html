@@ -26,6 +26,17 @@
   .zg-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
   .zg-panel-head h3 { margin: 0; }
   .zg-hint { font-size: .82rem; color: #6c7a92; margin-top: .75rem; }
+  .zg-guide {
+    background: #f8fafc; border: 1px solid rgba(0,42,90,.06); border-radius: .85rem;
+    padding: .85rem 1rem; margin-top: 1rem; font-size: .86rem; color: #334155; line-height: 1.45;
+  }
+  .zg-guide h4 { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: #8ea1ba; margin: 0 0 .5rem; }
+  .zg-guide ul { margin: 0; padding-left: 1.1rem; }
+  .zg-guide li { margin-bottom: .35rem; }
+  .zg-legend {
+    display: flex; flex-wrap: wrap; gap: .5rem .85rem; font-size: .8rem; color: #64748b; margin: .35rem 0 0;
+  }
+  .zg-legend strong { color: #002a5a; font-weight: 600; }
   .table-zg th { white-space: nowrap; font-size: .78rem; color: #5b6b82; vertical-align: bottom; }
   .table-zg td { vertical-align: middle; font-size: .85rem; }
   .table-zg .cell-main { font-weight: 600; color: #002a5a; white-space: nowrap; }
@@ -48,8 +59,10 @@
 </style>
 
 <div class="zg-page">
-  <h2>Autohub — рыночный фон по ЦГ</h2>
-  <p class="lead">Сегменты склада с дедупом; ЦГ по avg_price (пороги как у ЦНА).
+  <h2>Autohub — склад на фоне рынка по ЦГ</h2>
+  <p class="lead">
+    Смотрим автомобили <strong>нашего склада</strong> через снимки Autohub: в какой ценовой группе живёт сегмент рынка,
+    насколько рынок активный и быстрый, и не стоим ли мы дороже средней цены.
     · <a href="{% url 'eco:estimation_zg_analytics' %}">Оценки по ЦГ</a>
     · <a href="{% url 'eco:market_model_trends' %}">Тренд рынка по моделям</a>
   </p>
@@ -77,42 +90,45 @@
         <button type="submit" class="btn btn-primary">Показать</button>
       </div>
     </div>
+    {% if params.period_capped %}
+    <div class="alert alert-warning py-2 mt-3 mb-0">Период ограничен последними 366 днями — так отчёт остаётся быстрым.</div>
+    {% endif %}
   </form>
 
   <div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
       <div class="zg-metric">
-        <div class="t">Сегментов</div>
+        <div class="t">Сегментов на складе</div>
         <div class="v">{{ params.hub_summary.segments }}</div>
-        <div class="s">уникальных за период</div>
+        <div class="s">уникальных (поколение / модель)</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="zg-metric">
-        <div class="t">Мед. total</div>
+        <div class="t">Объём рынка</div>
         <div class="v">{{ params.hub_summary.med_total }}</div>
-        <div class="s">usefulSales</div>
+        <div class="s">медиана по сегментам — активность</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="zg-metric">
-        <div class="t">Мед. дней</div>
+        <div class="t">Дней в продаже</div>
         <div class="v">{{ params.hub_summary.med_days|unlocalize }}</div>
-        <div class="s">avgDaysInSale</div>
+        <div class="s">медиана — как долго «висит» рынок</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="zg-metric">
-        <div class="t">Выше рынка</div>
+        <div class="t">Дороже рынка</div>
         <div class="v">{{ params.hub_summary.above_share|unlocalize }}%</div>
-        <div class="s">наша price &gt; avg</div>
+        <div class="s">доля сегментов, где наша цена выше</div>
       </div>
     </div>
   </div>
 
   <div class="zg-panel">
     <div class="zg-panel-head">
-      <h3>Сегменты по месяцам (стек по ЦГ)</h3>
+      <h3>Микс сегментов по месяцам (стек по ЦГ)</h3>
       <div class="btn-group chart-mode" role="group" aria-label="Режим графика Autohub">
         <button type="button" class="btn btn-sm btn-primary" id="hubChartModeAbs">Количество</button>
         <button type="button" class="btn btn-sm btn-outline-primary" id="hubChartModeShare">Доли ЦГ, %</button>
@@ -122,13 +138,29 @@
       <canvas id="hubZgChart"></canvas>
     </div>
     <p class="zg-hint mb-0">{{ params.hint }} Клик по столбцу ЦГ открывает расшифровку.</p>
+    <div class="zg-guide">
+      <h4>Как этим управлять</h4>
+      <ul>
+        <li><strong>Высокая доля «дороже рынка»</strong> — проверить переоценку, скидки и КВП: риск долгого склада.</li>
+        <li><strong>Много дней в продаже + низкий объём рынка</strong> — сегмент «тяжёлый»: осторожнее с закупом, быстрее уценка.</li>
+        <li><strong>Быстрый рынок (мало дней) и мы не дороже</strong> — приоритет выдачи в продажи и закуп похожих.</li>
+        <li><strong>Сдвиг стека ЦГ по месяцам</strong> — меняется микс склада/рынка: сверить план закупа и витрину.</li>
+      </ul>
+    </div>
   </div>
 
   <div class="zg-panel">
     <h3>ЦГ × месяц</h3>
-    <p class="zg-hint mt-0 mb-2">
-      В ячейке: <strong>сегментов</strong> · мед. total · мед. дней · мед. avg_price · % выше рынка. Ячейка кликабельна.
+    <p class="zg-hint mt-0 mb-1">
+      Ячейка кликабельна. Внутри — сводка по сегментам склада в этой ценовой группе.
     </p>
+    <div class="zg-legend mb-2">
+      <span><strong>N сегм.</strong> — сколько сегментов</span>
+      <span><strong>рынок N</strong> — медиана объёма рынка</span>
+      <span><strong>N дн</strong> — медиана срока продажи</span>
+      <span><strong>ср. рынок</strong> — медиана рыночной цены (по ней ЦГ)</span>
+      <span><strong>дороже X%</strong> — доля с нашей ценой выше рынка</span>
+    </div>
     <div class="table-responsive">
       <table class="table table-sm table-bordered align-middle table-zg mb-0">
         <thead>
@@ -151,9 +183,9 @@
               {% else %}
               <a class="cell-link" href="{{ params.detail_base }}?source=autohub&month={{ cell.month_key }}&zg={{ row.zg|urlencode }}&date_start={{ params.filters.date_start }}&date_end={{ params.filters.date_end }}{% if params.filters.unit_id %}&unit_id={{ params.filters.unit_id }}{% endif %}">
               <div class="cell-main">{{ cell.segments }} сегм.</div>
-              <div class="cell-sub">total {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ cell.med_avg }}</div>
-              <div class="cell-sub">выше {{ cell.above_share|unlocalize }}%</div>
+              <div class="cell-sub">рынок {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
+              <div class="cell-sub">ср. рынок {{ cell.med_avg }}</div>
+              <div class="cell-sub">дороже {{ cell.above_share|unlocalize }}%</div>
               </a>
               {% endif %}
             </td>
@@ -163,9 +195,9 @@
               <span class="cell-empty">—</span>
               {% else %}
               <div class="cell-main">{{ row.total.segments }} сегм.</div>
-              <div class="cell-sub">total {{ row.total.med_total }} · {{ row.total.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ row.total.med_avg }}</div>
-              <div class="cell-sub">выше {{ row.total.above_share|unlocalize }}%</div>
+              <div class="cell-sub">рынок {{ row.total.med_total }} · {{ row.total.med_days|unlocalize }} дн</div>
+              <div class="cell-sub">ср. рынок {{ row.total.med_avg }}</div>
+              <div class="cell-sub">дороже {{ row.total.above_share|unlocalize }}%</div>
               {% endif %}
             </td>
           </tr>
@@ -181,17 +213,17 @@
               <span class="cell-empty">—</span>
               {% else %}
               <div class="cell-main">{{ cell.segments }} сегм.</div>
-              <div class="cell-sub">total {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ cell.med_avg }}</div>
-              <div class="cell-sub">выше {{ cell.above_share|unlocalize }}%</div>
+              <div class="cell-sub">рынок {{ cell.med_total }} · {{ cell.med_days|unlocalize }} дн</div>
+              <div class="cell-sub">ср. рынок {{ cell.med_avg }}</div>
+              <div class="cell-sub">дороже {{ cell.above_share|unlocalize }}%</div>
               {% endif %}
             </td>
             {% endfor %}
             <td class="text-center col-total">
               <div class="cell-main">{{ params.hub_pivot_footer.total.segments }} сегм.</div>
-              <div class="cell-sub">total {{ params.hub_pivot_footer.total.med_total }} · {{ params.hub_pivot_footer.total.med_days|unlocalize }} дн</div>
-              <div class="cell-sub">avg {{ params.hub_pivot_footer.total.med_avg }}</div>
-              <div class="cell-sub">выше {{ params.hub_pivot_footer.total.above_share|unlocalize }}%</div>
+              <div class="cell-sub">рынок {{ params.hub_pivot_footer.total.med_total }} · {{ params.hub_pivot_footer.total.med_days|unlocalize }} дн</div>
+              <div class="cell-sub">ср. рынок {{ params.hub_pivot_footer.total.med_avg }}</div>
+              <div class="cell-sub">дороже {{ params.hub_pivot_footer.total.above_share|unlocalize }}%</div>
             </td>
           </tr>
           {% endif %}

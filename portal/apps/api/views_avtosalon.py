@@ -39,6 +39,7 @@ from django.core import files
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegEstimationRefCarsOrganizations, RegViewsCarsOrganization, RegRefCarsOrganizationsPrice
 from datetime import datetime
 from django.db.models import Q
+from api.tasks_cars import load_photos_async, normalize_photos_payload
 
 
 def add_statistic_cars_organization(user, cars, store, type):
@@ -574,22 +575,25 @@ def refresh_cars(request):
     refresh_log.save()
 
     for car in list_load_photo:
-        
         car_object = car['Car_object']
-        load_photos(car_object, car['Photos'])
+        photos = normalize_photos_payload(car.get('Photos'))
+        # Фото — в фоне (очередь stock), ответ 1С не ждёт скачивания
+        load_photos_async(car_object.pk, photos)
 
-        image           = car_object.qr.open()
-        image_content   = image.read()
-        image_base64    = base64.b64encode(image_content)
-        car_link        = 'https://ah.kors-group.com/cars/' + str(car_object.slug) + '/'
-        
-        car_info = {
-            'Lo_Uin'    : car['Lo_uin'],
-            'QR_Base64' : str(image_base64.decode()),
-            'Lo_link'   : car_link
-        }
-        
-        list_cars.append(car_info)
+        qr_b64 = ''
+        try:
+            if car_object.qr:
+                with car_object.qr.open() as image:
+                    qr_b64 = base64.b64encode(image.read()).decode()
+        except Exception:
+            qr_b64 = ''
+
+        car_link = 'https://ah.kors-group.com/cars/' + str(car_object.slug or '') + '/'
+        list_cars.append({
+            'Lo_Uin': car['Lo_uin'],
+            'QR_Base64': qr_b64,
+            'Lo_link': car_link,
+        })
 
     info = {
         'list_cars' : list_cars
@@ -799,57 +803,4 @@ def refresh_new_cars(request):
     return JsonResponse(info, status=status.HTTP_200_OK)
 
 
-def load_photos(car, photos):
-    
-    ref_photos = RefCarsOrganizationFiles.objects.filter(сars_organization = car)
-    for ref_photo in ref_photos:
-        name    = ref_photo.name
-        delite  = True
-        for photo in photos:
-            if name == photo['Name']:
-                delite = False
-        if delite:
-            ref_photo.delete()
-
-    for photo in photos:
-        ref_photos = RefCarsOrganizationFiles.objects.filter(сars_organization = car)
-        add = True
-        for ref_photo in ref_photos:
-            if ref_photo.name == photo['Name']:
-                add = False
-        if add:
-            photo_object                    = RefCarsOrganizationFiles()
-            photo_object.сars_organization  = car
-            photo_object.name               = photo['Name']
-            photo_object.url                = photo['Url']
-            photo_object.url_mini           = photo['UrlMini']
-            photo_object.main               = photo['Main']
-            
-            if 'Date' in photo:
-                photo_object.date = photo['Date']
-
-            image_url   = photo['Url']
-            response    = requests.get(image_url, stream=True)
-            if response.status_code != requests.codes.ok:
-                continue 
-            file_name = image_url.split('/')[-1]
-            lf = tempfile.NamedTemporaryFile()
-            for block in response.iter_content(1024 * 8):
-                if not block:
-                    break
-                lf.write(block)
-            photo_object.file.save(file_name, files.File(lf)) 
-
-            image_url   = photo['UrlMini']
-            response    = requests.get(image_url, stream=True)
-            if response.status_code != requests.codes.ok:
-                continue 
-            file_name = image_url.split('/')[-1]
-            lf = tempfile.NamedTemporaryFile()
-            for block in response.iter_content(1024 * 8):
-                if not block:
-                    break
-                lf.write(block)
-            photo_object.file_mini.save(file_name, files.File(lf)) 
-
-            photo_object.save()
+# load_photos / load_photos_async — см. api.tasks_cars

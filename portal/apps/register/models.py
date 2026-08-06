@@ -5203,7 +5203,8 @@ class RegEstimationRefCarsOrganizations(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['car'])
+            models.Index(fields=['car']),
+            models.Index(fields=['date'], name='regestimati_date_autohub_idx'),
         ]
         db_table = 'regEstimationRefCarsOrganizations'
         verbose_name = "Данные по оценке автомобиля на складе"
