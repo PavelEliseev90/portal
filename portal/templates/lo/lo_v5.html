@@ -7176,9 +7176,11 @@
                           <br>
                           <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381 </label>
                           <br>
-                          {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_amount %}
+                          {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_amount or params.price_increase_latest %}
                           <hr style="margin: 0.2rem;">
-                          <div class="alert alert-warning py-2 px-3 mb-2">
+                          <div class="alert alert-warning py-2 px-3 mb-2" id="price_increase_block"
+                               data-rlk-id="{{ params.rlk.id }}"
+                               data-request-id="{% if params.price_increase_latest %}{{ params.price_increase_latest.id }}{% endif %}">
                             <div class="fw-bold">Запрос повышения цены</div>
                             <div>
                               {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_user %}
@@ -7194,6 +7196,26 @@
                             {% endif %}
                             {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_date %}
                               <div class="small text-muted">{{ params.interactiv_rlk.page_soglasovanie.price_increase_request_date }}</div>
+                            {% endif %}
+                            {% if params.can_process_price_increase and params.price_increase_latest %}
+                              <div class="form-check mt-2 mb-0">
+                                <input class="form-check-input" type="checkbox" id="price_increase_processed_cb"
+                                       {% if params.price_increase_latest.processed_at %}checked{% endif %}>
+                                <label class="form-check-label" for="price_increase_processed_cb">Отработано</label>
+                              </div>
+                              <div class="small text-muted" id="price_increase_processed_meta">
+                                {% if params.price_increase_latest.processed_at %}
+                                  {% if params.price_increase_latest.processed_by %}
+                                    {% with u=params.price_increase_latest.processed_by %}
+                                      {% if u.profiles.eco_name %}{{ u.profiles.eco_name }}{% else %}{{ u.last_name }} {{ u.first_name }}{% endif %}
+                                    {% endwith %}
+                                    ·
+                                  {% endif %}
+                                  {{ params.price_increase_latest.processed_at|date:"d.m.Y H:i" }}
+                                {% else %}
+                                  не отработан
+                                {% endif %}
+                              </div>
                             {% endif %}
                           </div>
                           {% endif %}
@@ -25605,5 +25627,7 @@
       }, 100);
     });
   </script>
+
+{% include 'lo/price_increase_processed_script.html' %}
 
 {% endblock %}

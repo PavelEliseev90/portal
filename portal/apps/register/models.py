@@ -2567,6 +2567,19 @@ class RegInteractivOcenkaPriceIncreaseRequest(models.Model):
     desired_price = models.IntegerField('Желаемая цена', default=0)
     comment = models.CharField('Комментарий', max_length=5120, default='', blank=True)
     created_at = models.DateTimeField('Дата запроса', auto_now_add=True)
+    processed_at = models.DateTimeField('Отработано', null=True, blank=True, db_index=True)
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='eco_price_increase_processed',
+        verbose_name='Кто отработал',
+    )
+
+    @property
+    def is_processed(self) -> bool:
+        return self.processed_at is not None
 
     def __str__(self):
         return "{} / {} / {}".format(self.desired_price, self.user, self.created_at)

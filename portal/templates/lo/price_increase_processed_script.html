@@ -1,0 +1,54 @@
+<script>
+(function () {
+  var cb = document.getElementById('price_increase_processed_cb');
+  var block = document.getElementById('price_increase_block');
+  if (!cb || !block) return;
+  var rlkId = block.getAttribute('data-rlk-id');
+  var requestId = block.getAttribute('data-request-id') || '';
+  var meta = document.getElementById('price_increase_processed_meta');
+  var csrf = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+  if (!csrf) {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    if (m) csrf = m[1];
+  }
+
+  cb.addEventListener('change', function () {
+    cb.disabled = true;
+    var body = new FormData();
+    body.append('processed', cb.checked ? '1' : '0');
+    if (requestId) body.append('request_id', requestId);
+    if (csrf) body.append('csrfmiddlewaretoken', csrf);
+    fetch('/eco/' + rlkId + '/price_increase_processed/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: csrf ? { 'X-CSRFToken': csrf } : {},
+      body: body,
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        cb.disabled = false;
+        if (!res.ok || !res.d.ok) {
+          cb.checked = !cb.checked;
+          alert((res.d && res.d.error) || 'Не удалось сохранить отметку');
+          return;
+        }
+        if (meta) {
+          if (res.d.processed) {
+            meta.textContent = ((res.d.processed_by || '') + (res.d.processed_at ? (' · ' + res.d.processed_at) : '')).replace(/^ · /, '');
+          } else {
+            meta.textContent = 'не отработан';
+          }
+        }
+        if (res.d.request_id) {
+          block.setAttribute('data-request-id', String(res.d.request_id));
+          requestId = String(res.d.request_id);
+        }
+      })
+      .catch(function () {
+        cb.disabled = false;
+        cb.checked = !cb.checked;
+        alert('Ошибка сети при сохранении отметки');
+      });
+  });
+})();
+</script>

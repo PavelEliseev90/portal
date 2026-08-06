@@ -153,13 +153,15 @@ def _grouping_unit(interactiv, group_by: str):
     return unit.pk, unit.name or ''
 
 
-def _queryset(date_start, date_end, unit_ids=None, group_by=GROUP_PLACE):
+def _queryset(date_start, date_end, unit_ids=None, group_by=GROUP_PLACE, processed=None):
     qs = (
         RegInteractivOcenkaPriceIncreaseRequest.objects
         .filter(created_at__gte=date_start, created_at__lte=date_end)
         .select_related(
             'user',
             'user__profiles',
+            'processed_by',
+            'processed_by__profiles',
             'soglasovanie',
             'soglasovanie__reginteractivocenka',
         )
@@ -173,6 +175,12 @@ def _queryset(date_start, date_end, unit_ids=None, group_by=GROUP_PLACE):
         )
         .order_by('-created_at')
     )
+
+    processed_norm = normalize_processed_filter(processed)
+    if processed_norm == 'yes':
+        qs = qs.filter(processed_at__isnull=False)
+    elif processed_norm == 'no':
+        qs = qs.filter(processed_at__isnull=True)
 
     ids = list(unit_ids or [])
     if not ids:
@@ -195,6 +203,16 @@ def _queryset(date_start, date_end, unit_ids=None, group_by=GROUP_PLACE):
     if want_none:
         q = q | qs.filter(soglasovanie__reginteractivocenkarlk__unit__isnull=True)
     return q.distinct()
+
+
+def normalize_processed_filter(raw) -> str:
+    """all | yes | no"""
+    value = (raw or 'all').strip().lower()
+    if value in ('1', 'yes', 'true', 'processed', 'done'):
+        return 'yes'
+    if value in ('0', 'no', 'false', 'open', 'pending', 'unprocessed'):
+        return 'no'
+    return 'all'
 
 
 def _serialize_row(req, group_by=GROUP_PLACE) -> dict:
@@ -242,6 +260,9 @@ def _serialize_row(req, group_by=GROUP_PLACE) -> dict:
         'vin': (getattr(estimation, 'vin', '') or '') if estimation else '',
         'zg': zg,
         'staff': getattr(getattr(interactiv, 'staff_rlk', None), 'name', '') if interactiv else '',
+        'processed': bool(req.processed_at),
+        'processed_at': req.processed_at,
+        'processed_by_name': _user_label(req.processed_by) if req.processed_by_id else '',
     }
 
 
@@ -271,9 +292,11 @@ def build_price_increase_analytics(
     unit_ids=None,
     unit_id=None,
     group_by=GROUP_PLACE,
+    processed=None,
 ) -> dict:
     """unit_id оставлен для обратной совместимости со старыми ссылками."""
     group_by = normalize_group_by(group_by)
+    processed_norm = normalize_processed_filter(processed)
     ids = parse_unit_ids(unit_ids) if unit_ids else []
     if unit_id is not None and unit_id != '':
         try:
@@ -285,7 +308,12 @@ def build_price_increase_analytics(
 
     rows = [
         _serialize_row(req, group_by=group_by)
-        for req in _queryset(date_start, date_end, unit_ids=ids or None, group_by=group_by)
+        for req in _queryset(
+            date_start, date_end,
+            unit_ids=ids or None,
+            group_by=group_by,
+            processed=processed_norm,
+        )
     ]
 
     estimations_map = _estimations_by_unit(
@@ -385,6 +413,8 @@ def build_price_increase_analytics(
     est_total_all = sum(estimations_map.values())
     est_with_req = len({r['estimation_id'] for r in rows if r['estimation_id']})
     overall_rate = round(100.0 * est_with_req / est_total_all, 1) if est_total_all else None
+    processed_count = sum(1 for r in rows if r.get('processed'))
+    open_count = total - processed_count
 
     summary = {
         'total': total,
@@ -394,6 +424,8 @@ def build_price_increase_analytics(
         'unique_estimations': est_with_req,
         'estimations_total': est_total_all,
         'rate_pct': overall_rate,
+        'processed_count': processed_count,
+        'open_count': open_count,
     }
 
     chart = {
@@ -411,6 +443,7 @@ def build_price_increase_analytics(
         'chart': chart,
         'rows_preview': rows[:20],
         'group_by': group_by,
+        'processed': processed_norm,
     }
 
 
@@ -421,8 +454,10 @@ def build_price_increase_detail(
     unit_ids=None,
     zg=None,
     group_by=GROUP_PLACE,
+    processed=None,
 ) -> dict:
     group_by = normalize_group_by(group_by)
+    processed_norm = normalize_processed_filter(processed)
     zg_norm = normalize_zg_name(zg) if zg else ''
 
     ids = parse_unit_ids(unit_ids) if unit_ids else []
@@ -436,7 +471,12 @@ def build_price_increase_detail(
 
     rows = [
         _serialize_row(req, group_by=group_by)
-        for req in _queryset(date_start, date_end, unit_ids=ids or None, group_by=group_by)
+        for req in _queryset(
+            date_start, date_end,
+            unit_ids=ids or None,
+            group_by=group_by,
+            processed=processed_norm,
+        )
     ]
     if zg_norm:
         rows = [r for r in rows if r['zg'] == zg_norm]
@@ -463,6 +503,7 @@ def build_price_increase_detail(
         'unit_name': unit_name,
         'zg': zg_norm or '',
         'group_by': group_by,
+        'processed': processed_norm,
         'rows': rows,
         'summary': {
             'total': len(rows),
@@ -472,6 +513,8 @@ def build_price_increase_detail(
                           / max(1, len([r for r in rows if r['delta'] is not None]))))
                 if any(r['delta'] is not None for r in rows) else None
             ),
+            'processed_count': sum(1 for r in rows if r.get('processed')),
+            'open_count': sum(1 for r in rows if not r.get('processed')),
         },
     }
 
