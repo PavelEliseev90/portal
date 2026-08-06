@@ -556,120 +556,110 @@ def _resolve_calc_context(interactiv_rlk, estimation, calc_type: str = 'autohub'
     if unit is not None and getattr(unit, 'pk', None):
         unit = RefUnit.objects.filter(pk=unit.pk).first() or unit
     zna = _resolve_estimation_zna(estimation, calc_type=calc_type)
-    price_group = resolve_price_group_by_amount(zna)
+    price_group = resolve_price_group_by_amount(zna) if zna else resolve_price_group_by_amount(
+        getattr(estimation, 'hub_avg', 0) or 0
+    )
     return unit, price_group, zna
 
 
-def _get_unit_settings_row(unit, price_group_code: str, *, created_at_lte=None):
-    """Последний снимок настроек ДЦ по коду ЦГ (не только по pk группы — учитываем дубли)."""
+def _get_history_unit_settings(unit, price_group, start_estimation):
+    """История коэффициентов: сначала по pk ЦГ, затем по code (дубли RefGroupPrice)."""
     from refs.unit_price_group_settings import UnitPriceGroupSettings
 
-    if not unit or not price_group_code:
+    if not unit or not price_group:
         return None
-    qs = UnitPriceGroupSettings.objects.filter(
-        unit_id=unit.pk,
-        price_group__code=str(price_group_code),
+
+    row = (
+        UnitPriceGroupSettings.objects
+        .filter(
+            unit_id=unit.pk,
+            price_group_id=price_group.pk,
+            created_at__lte=start_estimation,
+        )
+        .order_by('-created_at', '-id')
+        .first()
     )
-    if created_at_lte is not None:
-        qs = qs.filter(created_at__lte=created_at_lte)
-    return qs.order_by('-created_at', '-id').first()
+    if row is not None:
+        return row
+
+    code = str(getattr(price_group, 'code', '') or '').strip()
+    if not code:
+        return None
+    return (
+        UnitPriceGroupSettings.objects
+        .filter(
+            unit_id=unit.pk,
+            price_group__code=code,
+            created_at__lte=start_estimation,
+        )
+        .order_by('-created_at', '-id')
+        .first()
+    )
 
 
-def _get_history_unit_settings(unit, price_group, start_estimation):
-    code = str(getattr(price_group, 'code', '') or '')
-    return _get_unit_settings_row(unit, code, created_at_lte=start_estimation)
+def _get_latest_unit_settings(unit, price_group):
+    from refs.unit_price_group_settings import UnitPriceGroupSettings
+
+    if not unit or not price_group:
+        return None
+    row = (
+        UnitPriceGroupSettings.objects
+        .filter(unit_id=unit.pk, price_group_id=price_group.pk)
+        .order_by('-created_at', '-id')
+        .first()
+    )
+    if row is not None:
+        return row
+    code = str(getattr(price_group, 'code', '') or '').strip()
+    if not code:
+        return None
+    return (
+        UnitPriceGroupSettings.objects
+        .filter(unit_id=unit.pk, price_group__code=code)
+        .order_by('-created_at', '-id')
+        .first()
+    )
 
 
-def _read_kf_from_unit(unit, price_group_code: str) -> float:
-    code = str(price_group_code or '')
-    corr = getattr(unit, f'correction_txt_{code}', None)
-    if corr not in (None, 0):
-        return _as_float(corr)
-    return _as_float(getattr(unit, f'ratio_avtohub_txt_{code}', 0))
+def _apply_kf_to_unit(unit, price_group_code: str, settings_row) -> None:
+    """Подставить ИРЦ ТХТ в unit только если в снимке есть реальное значение."""
+    if settings_row is None or not price_group_code:
+        return
+    code = str(price_group_code)
+    corr = getattr(settings_row, 'correction_txt', None)
+    ratio = getattr(settings_row, 'ratio_avtohub_txt', None)
+    kf = corr if corr not in (None, 0) else ratio
+    if kf in (None, 0):
+        return
+    if hasattr(unit, f'correction_txt_{code}'):
+        setattr(unit, f'correction_txt_{code}', kf)
+    if hasattr(unit, f'ratio_avtohub_txt_{code}'):
+        setattr(unit, f'ratio_avtohub_txt_{code}', kf)
 
 
 def _build_compare_unit_from_history(unit, settings_row, price_group_code):
-    """BEFORE: коэффициенты строго из исторического снимка на дату оценки."""
+    """BEFORE: коэффициенты из исторического снимка на дату оценки."""
     from refs.unit_price_group_settings import sync_settings_row_to_unit
 
     compare_unit = copy.copy(unit)
     if settings_row is not None and price_group_code:
         sync_settings_row_to_unit(compare_unit, settings_row, price_group_code)
-        # Явно выставляем ИРЦ ТХТ так же, как расчёт: correction, иначе ratio
-        code = str(price_group_code)
-        corr = getattr(settings_row, 'correction_txt', None)
-        ratio = getattr(settings_row, 'ratio_avtohub_txt', None)
-        kf = corr if corr not in (None, 0) else ratio
-        if hasattr(compare_unit, f'correction_txt_{code}'):
-            setattr(compare_unit, f'correction_txt_{code}', kf)
-        if hasattr(compare_unit, f'ratio_avtohub_txt_{code}'):
-            setattr(compare_unit, f'ratio_avtohub_txt_{code}', kf)
+        _apply_kf_to_unit(compare_unit, price_group_code, settings_row)
     return compare_unit
 
 
 def _build_compare_unit_current(unit, price_group):
     """
-    AFTER: текущие коэффициенты ДЦ/ЦГ «как на экране настроек сегодня».
-    Берём latest UnitPriceGroupSettings + fallback на плоские поля RefUnit
-    (не затираем актуальные значения None из неполной записи истории).
+    AFTER: текущие коэффициенты ДЦ из RefUnit (как в боевом расчёте сегодня).
+    Если в последнем снимке настроек есть явный КФ — подставляем только его,
+    не затирая остальные поля через None.
     """
-    from refs.price_groups import get_latest_settings_map_for_unit, price_group_form_suffix
-    from website.autopricing_settings import (
-        AUTOPRICING_AUTOHUB_FIELDS,
-        AUTOPRICING_BOOL_FIELDS,
-        AUTOPRICING_MARKUP_FIELDS,
-        AUTOPRICING_NUMERIC_FIELDS,
-        _legacy_fallback_value,
-        get_autopricing_field_value,
-        mirror_autopricing_legacy_fields,
-    )
-
     compare_unit = copy.copy(unit)
     if unit is None or price_group is None:
         return compare_unit
-
-    latest_map = get_latest_settings_map_for_unit(unit)
-    suffix = price_group_form_suffix(price_group)
-
-    for field_code, _label in AUTOPRICING_NUMERIC_FIELDS + AUTOPRICING_MARKUP_FIELDS:
-        value = _legacy_fallback_value(
-            unit,
-            price_group,
-            field_code,
-            get_autopricing_field_value(unit, price_group, field_code, latest_map),
-        )
-        unit_field = f'{field_code}{suffix}'
-        if hasattr(compare_unit, unit_field):
-            setattr(compare_unit, unit_field, value)
-
-    for field_code, _label in AUTOPRICING_BOOL_FIELDS:
-        value = get_autopricing_field_value(unit, price_group, field_code, latest_map)
-        if value is None:
-            value = getattr(unit, f'{field_code}{suffix}', False)
-        unit_field = f'{field_code}{suffix}'
-        if hasattr(compare_unit, unit_field):
-            setattr(compare_unit, unit_field, bool(value))
-
-    for field_code, _label in AUTOPRICING_AUTOHUB_FIELDS:
-        value = get_autopricing_field_value(unit, price_group, field_code, latest_map)
-        if value in (None, ''):
-            value = getattr(unit, f'{field_code}{suffix}', '') or ''
-        unit_field = f'{field_code}{suffix}'
-        if hasattr(compare_unit, unit_field):
-            setattr(compare_unit, unit_field, value or '')
-
-    mirror_autopricing_legacy_fields(compare_unit, price_group)
-
-    # Явно фиксируем КФ ТХТ по той же формуле, что в расчёте цены
     code = str(getattr(price_group, 'code', '') or '')
-    corr = getattr(compare_unit, f'correction_txt_{code}', None)
-    ratio = getattr(compare_unit, f'ratio_avtohub_txt_{code}', None)
-    kf = corr if corr not in (None, 0) else ratio
-    if hasattr(compare_unit, f'correction_txt_{code}'):
-        setattr(compare_unit, f'correction_txt_{code}', kf)
-    if hasattr(compare_unit, f'ratio_avtohub_txt_{code}'):
-        setattr(compare_unit, f'ratio_avtohub_txt_{code}', kf)
-
+    latest = _get_latest_unit_settings(unit, price_group)
+    _apply_kf_to_unit(compare_unit, code, latest)
     return compare_unit
 
 
@@ -691,7 +681,7 @@ def calculate_compare_before_after(
     if unit is None:
         return None
 
-    price_group_code = str(getattr(price_group, 'code', '') or '')
+    price_group_code = str(getattr(price_group, 'code', '') or '') if price_group else ''
     settings_history = _get_history_unit_settings(unit, price_group, estimation.start_estimation)
     if settings_history is None:
         return {
@@ -704,7 +694,7 @@ def calculate_compare_before_after(
             'zna': zna,
         }
 
-    settings_current = _get_unit_settings_row(unit, price_group_code)
+    settings_current = _get_latest_unit_settings(unit, price_group)
     before_unit = _build_compare_unit_from_history(unit, settings_history, price_group_code)
     after_unit = _build_compare_unit_current(unit, price_group)
     body_info = get_body_estimation_cached(estimation)
@@ -738,9 +728,7 @@ def calculate_compare_before_after(
         'after_history_row_id': getattr(settings_current, 'pk', None),
         'after_history_row_date': getattr(settings_current, 'created_at', None),
         'before_coefficients_source': 'history',
-        'after_coefficients_source': 'current_dc_settings',
-        'before_kf_expected': _read_kf_from_unit(before_unit, price_group_code),
-        'after_kf_expected': _read_kf_from_unit(after_unit, price_group_code),
+        'after_coefficients_source': 'current_dc_unit',
         'price_group_code': price_group_code,
         'price_group_name': getattr(price_group, 'name', '') if price_group else '',
         'unit_id': getattr(unit, 'pk', None),
@@ -810,26 +798,17 @@ def compare_estimation_costs(
         'after_history_id': compare_data.get('after_history_row_id'),
         'after_date': compare_data.get('after_history_row_date'),
         'before_coefficients_source': compare_data.get('before_coefficients_source') or 'history',
-        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'current_dc_settings',
+        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'current_dc_unit',
         'before_zna': before_result.get('zna') or 0,
-        'before_kf': (
-            before_result.get('kf')
-            if before_result.get('kf') not in (None, '')
-            else compare_data.get('before_kf_expected')
-        ),
+        'before_kf': before_result.get('kf') or '',
         'after_zna': after_result.get('zna') or 0,
-        'after_kf': (
-            after_result.get('kf')
-            if after_result.get('kf') not in (None, '')
-            else compare_data.get('after_kf_expected')
-        ),
+        'after_kf': after_result.get('kf') or '',
         'after_estimation_price': after_result.get('estimation_price') or 0,
         'before_estimation_price': before_result.get('estimation_price') or 0,
         'settings_before_id': compare_data.get('profile').before_settings_id,
         'settings_after_id': compare_data.get('profile').after_settings_id,
         'price_group_code': compare_data.get('price_group_code') or '',
         'price_group_name': compare_data.get('price_group_name') or '',
-        'zna_base': compare_data.get('zna') or 0,
         'history_missing': False,
         'rows': merged,
     }
