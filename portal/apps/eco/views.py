@@ -13820,7 +13820,7 @@ def estimation_costs_compare_report(request):
         'errors': errors,
         'do_run': do_run,
         'no_history_count': no_history_count,
-        'compare_profile': 'BEFORE=settings 12, AFTER=settings 13',
+        'compare_profile': 'BEFORE=settings 12 + коэф. ДЦ/ЦГ на дату оценки, AFTER=settings 13 + текущие коэф. ДЦ/ЦГ',
     }
     return render(request, 'lo/estimation_costs_compare_report.html', {'params': params})
 
