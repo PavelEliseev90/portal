@@ -13684,6 +13684,133 @@ def price_recalc_history_report(request):
     return render(request, 'lo/price_recalc_history_report.html', {'params': params})
 
 
+def estimation_costs_compare_report(request):
+    """
+    Сравнение затрат подготовка/слесарка/кузов: снимок из истории vs пересчёт на текущих настройках.
+    Фильтр по VIN, периоду, ДЦ; выгрузка Excel.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+
+    if not request.user.profiles.eco and not request.user.profiles.eco_visible:
+        return render(request, 'errors/403.html', {
+            'params': {'type': 'estimation_costs_compare_report', 'nav_selected': 4, 'request': request},
+        })
+
+    from django.core.paginator import Paginator
+
+    from register.estimation_costs_compare import (
+        build_comparisons_queryset,
+        compare_estimation_costs,
+        export_comparisons_http_response,
+        flatten_comparison_rows,
+        iter_july_comparisons,
+    )
+
+    now = DT.datetime.now()
+    default_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+    default_start = DT.datetime(2026, 7, 1)
+
+    date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
+    date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
+    unit_id = _get_int(request.GET.get('unit_id'))
+    vin = (request.GET.get('vin') or '').strip().upper()
+    car_query = (request.GET.get('car') or '').strip()
+    calc_type = (request.GET.get('calc_type') or 'autohub').strip()
+    only_changed = (request.GET.get('only_changed') or '').lower() in ('1', 'true', 'on', 'yes')
+    do_run = (request.GET.get('run') or '').lower() in ('1', 'true', 'on', 'yes')
+    page_number = _get_int(request.GET.get('page')) or 1
+    per_page = min(max(_get_int(request.GET.get('per_page')) or 5, 1), 20)
+
+    units = RefUnit.objects.filter(buauto=True, active_eco=True).exclude(name='').order_by('name')
+    filters = {
+        'date_start': date_start.strftime('%Y-%m-%d'),
+        'date_end': date_end.strftime('%Y-%m-%d'),
+        'unit_id': unit_id or '',
+        'vin': vin,
+        'car': car_query,
+        'calc_type': calc_type,
+        'only_changed': '1' if only_changed else '0',
+        'run': '1' if do_run else '0',
+        'per_page': per_page,
+    }
+
+    base_qs = build_comparisons_queryset(
+        date_from=date_start,
+        date_to=date_end,
+        calc_type=calc_type,
+        unit_id=unit_id,
+        vin=vin,
+        car_query=car_query,
+    )
+    total_candidates = base_qs.count()
+
+    comparisons = []
+    table_rows = []
+    page_obj = None
+    paginator = None
+    errors = []
+
+    export_xlsx = do_run and (request.GET.get('export') or '').lower() in ('xlsx', 'excel', '1')
+
+    if do_run and total_candidates > 0:
+        if export_xlsx:
+            comparisons = list(iter_july_comparisons(
+                date_from=date_start,
+                date_to=date_end,
+                calc_type=calc_type,
+                unit_id=unit_id,
+                vin=vin,
+                car_query=car_query,
+                only_changed=only_changed,
+                limit=500,
+            ))
+            stamp = now.strftime('%Y%m%d')
+            suffix = f'_{vin}' if vin else ''
+            return export_comparisons_http_response(
+                comparisons,
+                filename=f'estimation_costs_{calc_type}_{stamp}{suffix}.xlsx',
+            )
+
+        paginator = Paginator(base_qs, per_page)
+        page_obj = paginator.get_page(page_number)
+        for interactiv_rlk in page_obj.object_list:
+            try:
+                result = compare_estimation_costs(
+                    interactiv_rlk,
+                    interactiv_rlk.estimation,
+                    calc_type=calc_type,
+                    only_changed=only_changed,
+                )
+                if result:
+                    comparisons.append(result)
+                    table_rows.extend(flatten_comparison_rows(result))
+            except Exception as exc:
+                errors.append(f'Оценка {interactiv_rlk.estimation_id}: {exc}')
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        query_params.pop('page')
+    base_query = query_params.urlencode()
+
+    params = {
+        'type': 'estimation_costs_compare_report',
+        'nav_selected': 4,
+        'request': request,
+        'filters': filters,
+        'units': units,
+        'total_candidates': total_candidates,
+        'comparisons': comparisons,
+        'table_rows': table_rows,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'base_query': base_query,
+        'errors': errors,
+        'do_run': do_run,
+    }
+    return render(request, 'lo/estimation_costs_compare_report.html', {'params': params})
+
+
 def _export_price_recalc_history_xlsx(rows, *, date_start=None, date_end=None):
     """Выгрузка сравнения Autohub было/стало в Excel."""
     from io import BytesIO

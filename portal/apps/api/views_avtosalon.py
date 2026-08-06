@@ -577,7 +577,7 @@ def refresh_cars(request):
     for car in list_load_photo:
         car_object = car['Car_object']
         photos = normalize_photos_payload(car.get('Photos'))
-        # Фото — в фоне (очередь stock), ответ 1С не ждёт скачивания
+        # Фото — в фоне (очередь refresh_cars_photos), ответ 1С не ждёт скачивания
         load_photos_async(car_object.pk, photos)
 
         qr_b64 = ''

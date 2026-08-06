@@ -26,6 +26,7 @@ urlpatterns = [
     path('pricing-report/',                     views.interactive_pricing_report, name='interactive_pricing_report'),
     path('price-calculator/',                   views.price_calculator, name='price_calculator'),
     path('price-recalc-history/',               views.price_recalc_history_report, name='price_recalc_history_report'),
+    path('estimation-costs-compare/',           views.estimation_costs_compare_report, name='estimation_costs_compare_report'),
     path('interactive-evaluations/',            views.interactive_evaluations_report, name='interactive_evaluations_report'),
 
     path('estimation-zg/',                      views.estimation_zg_analytics, name='estimation_zg_analytics'),
