@@ -2614,7 +2614,9 @@ def options_refresh_info(request):
                 group, created  = RefModificationsOptionGroup.objects.filter(name = group_str).get_or_create(name = group_str)
                 
                 for option_data in options_data['list_options']:
-                    option, created     = RefModificationsOption.objects.filter((Q(name = option_data) and Q(group = group)).get_or_create(name = option_data, group = group))
+                    option, created = RefModificationsOption.objects.get_or_create(
+                        name=option_data, group=group,
+                    )
                     
                     new_option_record   = AutoruModificationOptionsDetail()
                     new_option_record.modification      = mod
