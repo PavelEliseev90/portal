@@ -289,43 +289,6 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
                 'kind': 'work',
             })
 
-    # Итоги разделов
-    lines.append({
-        'section': SECTION_PODGOTOVKA,
-        'section_title': SECTION_TITLES[SECTION_PODGOTOVKA],
-        'indicator': INDICATOR_TOTAL_POD,
-        'amount': _as_float(price_result.get('amount_podgotovka')),
-        'kind': 'total',
-    })
-    lines.append({
-        'section': SECTION_SS,
-        'section_title': SECTION_TITLES[SECTION_SS],
-        'indicator': INDICATOR_TOTAL_SS,
-        'amount': _as_float(price_result.get('amount_ss')),
-        'kind': 'total',
-    })
-    lines.append({
-        'section': SECTION_MCU,
-        'section_title': SECTION_TITLES[SECTION_MCU],
-        'indicator': INDICATOR_TOTAL_MCU,
-        'amount': _as_float(price_result.get('amount_mcu')),
-        'kind': 'total',
-    })
-    recovery = price_result.get('amount_sum') or price_result.get('amount_recovery')
-    if recovery in (None, ''):
-        recovery = (
-            _as_float(price_result.get('amount_podgotovka'))
-            + _as_float(price_result.get('amount_ss'))
-            + _as_float(price_result.get('amount_mcu'))
-        )
-    lines.append({
-        'section': SECTION_OTHER,
-        'section_title': SECTION_TITLES[SECTION_OTHER],
-        'indicator': INDICATOR_TOTAL_RECOVERY,
-        'amount': _as_float(recovery),
-        'kind': 'total',
-    })
-
     # Повышенный износ / возврат слесарки
     lines.append({
         'section': SECTION_OTHER,
@@ -896,43 +859,19 @@ def iter_july_comparisons(
 
 
 def flatten_comparison_rows(comparison: dict) -> list[dict]:
-    """Длинный формат для Excel: одна строка = один показатель."""
-    base = {
-        'date': comparison.get('start_estimation'),
-        'rlk_number': comparison.get('rlk_number') or '',
-        'rlk_id': comparison.get('rlk_id'),
-        'vin': comparison.get('vin') or '',
-        'unit_name': comparison.get('unit_name') or '',
-        'estimation_id': comparison.get('estimation_id'),
-        'before_source': comparison.get('before_source') or '',
-        'before_date': comparison.get('before_date'),
-        'before_zna': comparison.get('before_zna') or 0,
-        'after_zna': comparison.get('after_zna') or 0,
-        'before_kf': comparison.get('before_kf') or '',
-        'after_kf': comparison.get('after_kf') or '',
-        'before_estimation_price': comparison.get('before_estimation_price') or 0,
-        'after_estimation_price': comparison.get('after_estimation_price') or 0,
-        'settings_before_id': comparison.get('settings_before_id') or BEFORE_SETTINGS_ID,
-        'settings_after_id': comparison.get('settings_after_id') or AFTER_SETTINGS_ID,
-        'price_group_code': comparison.get('price_group_code') or '',
-        'price_group_name': comparison.get('price_group_name') or '',
-        'history_missing': bool(comparison.get('history_missing')),
-    }
+    """Длинный формат: одна строка = один показатель (для экрана и Excel)."""
     out = []
     for row in comparison.get('rows') or []:
         out.append({
-            **base,
+            'date': comparison.get('start_estimation'),
+            'rlk_number': comparison.get('rlk_number') or comparison.get('rlk_id') or '',
+            'vin': comparison.get('vin') or '',
+            'unit_name': comparison.get('unit_name') or '',
             'section': row.get('section_title') or row.get('section') or '',
             'indicator': row.get('indicator') or '',
-            'kind': row.get('kind') or '',
             'amount_before': row.get('amount_before') or 0,
             'amount_after': row.get('amount_after') or 0,
             'delta': row.get('delta') or 0,
-            'settings_before_id': base['settings_before_id'],
-            'settings_after_id': base['settings_after_id'],
-            'price_group_code': base['price_group_code'],
-            'price_group_name': base['price_group_name'],
-            'history_missing': base['history_missing'],
         })
     return out
 
@@ -948,31 +887,15 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
     ws.title = 'Затраты до-после'
 
     headers = [
-        'Дата оценки',
-        'РЛ номер',
-        'РЛ id',
+        'Дата',
+        'РЛ',
         'VIN',
         'ДЦ',
-        'ID оценки',
-        'Источник ДО',
-        'Дата снимка ДО',
-        'ЦНА до',
-        'ЦНА после',
-        'КФ до',
-        'КФ после',
-        'Выкуп до',
-        'Выкуп после',
-        'settings BEFORE',
-        'settings AFTER',
-        'ЦГ код',
-        'ЦГ наименование',
-        'Нет истории коэффициентов',
         'Раздел',
         'Показатель',
-        'Тип строки',
-        'Сумма до',
-        'Сумма после',
-        'Δ',
+        'До',
+        'После',
+        'Дельта',
     ]
     ws.append(headers)
     for cell in ws[1]:
@@ -982,30 +905,13 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
     for comparison in comparisons:
         for row in flatten_comparison_rows(comparison):
             date_est = row['date']
-            date_before = row['before_date']
             ws.append([
-                date_est.strftime('%d.%m.%Y %H:%M') if date_est else '',
+                date_est.strftime('%d.%m.%Y') if date_est else '',
                 row['rlk_number'],
-                row['rlk_id'] or '',
                 row['vin'],
                 row['unit_name'],
-                row['estimation_id'],
-                row['before_source'],
-                date_before.strftime('%d.%m.%Y %H:%M') if date_before else '',
-                row['before_zna'],
-                row['after_zna'],
-                row['before_kf'],
-                row['after_kf'],
-                row['before_estimation_price'],
-                row['after_estimation_price'],
-                row['settings_before_id'],
-                row['settings_after_id'],
-                row['price_group_code'],
-                row['price_group_name'],
-                'Да' if row['history_missing'] else 'Нет',
                 row['section'],
                 row['indicator'],
-                row['kind'],
                 row['amount_before'],
                 row['amount_after'],
                 row['delta'],
@@ -1014,8 +920,8 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
 
     for idx, _ in enumerate(headers, start=1):
         ws.column_dimensions[get_column_letter(idx)].width = 16
-    ws.column_dimensions['U'].width = 40
-    ws.column_dimensions['D'].width = 20
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['F'].width = 45
 
     if filepath is not None:
         wb.save(filepath)
