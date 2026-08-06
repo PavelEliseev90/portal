@@ -32,9 +32,8 @@
   <div class="report-header">
     <h2>Сравнение затрат (подготовка / слесарка / кузов)</h2>
     <p>
-      <strong>ДО</strong> — снимок из истории autohub (с учётом поздних добавлений работ).
-      <strong>ПОСЛЕ</strong> — пересчёт на текущих коэффициентах без записи в согласование.
-      Отдельно видны возврат СС при повышенном износе и коррекция износа.
+      <strong>{{ params.compare_profile }}</strong>.
+      ДО/ПОСЛЕ считаются на одинаковых входных данных оценки, коэффициенты ЦГ/ДЦ берутся из истории на дату оценки.
     </p>
   </div>
 
@@ -81,6 +80,14 @@
         </div>
       </div>
       <div class="col-md-2">
+        <label class="form-label">Показатели</label>
+        <select class="form-select" name="view_mode">
+          <option value="all" {% if params.filters.view_mode == 'all' %}selected{% endif %}>Все</option>
+          <option value="diag" {% if params.filters.view_mode == 'diag' %}selected{% endif %}>Только диагностика</option>
+          <option value="changed" {% if params.filters.view_mode == 'changed' %}selected{% endif %}>Только изменившиеся</option>
+        </select>
+      </div>
+      <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Пересчитать</button>
       </div>
       {% if params.do_run and params.total_candidates %}
@@ -104,6 +111,7 @@
     Найдено оценок в выборке: <strong>{{ params.total_candidates }}</strong>
     {% if params.do_run and params.paginator %}
       · на странице: {{ params.comparisons|length }} оценок, {{ params.table_rows|length }} строк
+      · без истории коэффициентов: {{ params.no_history_count }}
     {% endif %}
   </div>
 
