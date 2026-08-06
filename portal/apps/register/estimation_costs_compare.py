@@ -91,6 +91,16 @@ def _work_name(item: dict) -> str:
     return (item.get('name') or item.get('title') or '').strip()
 
 
+def _strip_trailing_amount_from_label(text: str) -> str:
+    """Убираем хвостовые суммы/проценты из комментария шага ЦНА."""
+    import re
+
+    value = (text or '').strip()
+    value = re.sub(r'\s+\d[\d\s.,]*\s*₽\s*$', '', value)
+    value = re.sub(r'\s+\d[\d.,]*\s*%\s*$', '', value)
+    return ' '.join(value.split())
+
+
 def _price_step_indicator(item: dict, idx: int) -> str:
     name = (item.get('name') or '').strip().lower()
     comment = (item.get('comment') or '').strip().lower()
@@ -103,6 +113,8 @@ def _price_step_indicator(item: dict, idx: int) -> str:
         return 'Цена с учетом защиты от убытка'
     if 'защиты скидки торг' in text or 'скидка торг' in text:
         return 'Цена с учетом защиты скидки торг'
+    if 'слесарного ремонта на износ' in text or 'влиялия слесарного ремонта' in text:
+        return 'Цена скоректирована с учетом затрат влиялия слесарного ремонта на износ'
     if 'затрат на слесарный ремонт' in text:
         return 'Цена с учетом затрат на слесарный ремонт'
     if 'затрат на подготовку' in text:
@@ -112,7 +124,7 @@ def _price_step_indicator(item: dict, idx: int) -> str:
     if 'финансирование' in text:
         return 'Финансирование'
     if comment:
-        return comment.capitalize()
+        return _strip_trailing_amount_from_label(item.get('comment') or '').capitalize()
     if name:
         return name.capitalize()
     return 'Шаг расчета'
@@ -516,10 +528,13 @@ def merge_before_after_lines(before_lines: list[dict], after_lines: list[dict]) 
 
 
 def _resolve_calc_context(interactiv_rlk, estimation):
+    from refs.models import RefUnit
     from refs.price_groups import resolve_price_group_by_amount
 
     rlk = getattr(interactiv_rlk, 'rlk', None)
     unit = getattr(interactiv_rlk, 'unit', None) or getattr(rlk, 'unit_dc', None) or getattr(rlk, 'unit', None)
+    if unit is not None and getattr(unit, 'pk', None):
+        unit = RefUnit.objects.filter(pk=unit.pk).first() or unit
     price_group = resolve_price_group_by_amount(getattr(estimation, 'hub_avg', 0) or 0)
     return unit, price_group
 
@@ -580,9 +595,16 @@ def calculate_compare_before_after(
         }
 
     price_group_code = str(getattr(price_group, 'code', '') or '')
+    from refs.price_groups import get_latest_unit_price_group_settings
+
+    settings_current = get_latest_unit_price_group_settings(unit, price_group)
     before_unit = _build_compare_unit(unit, settings_history, price_group_code)
-    # AFTER: берем текущие коэффициенты ДЦ/ЦГ (без исторического снапшота)
-    after_unit = copy.copy(unit)
+    # AFTER: последняя запись UnitPriceGroupSettings по ДЦ+ЦГ (актуальные коэффициенты)
+    after_unit = (
+        _build_compare_unit(unit, settings_current, price_group_code)
+        if settings_current is not None
+        else copy.copy(unit)
+    )
     body_info = get_body_estimation_cached(estimation)
     salon_info = get_salon_estimation_cached(estimation)
 
@@ -611,6 +633,10 @@ def calculate_compare_before_after(
         'after_result': after_result,
         'history_row_id': settings_history.pk,
         'history_row_date': settings_history.created_at,
+        'after_history_row_id': getattr(settings_current, 'pk', None),
+        'after_history_row_date': getattr(settings_current, 'created_at', None),
+        'before_coefficients_source': 'history',
+        'after_coefficients_source': 'latest' if settings_current is not None else 'unit_flat',
         'price_group_code': price_group_code,
         'price_group_name': getattr(price_group, 'name', '') if price_group else '',
         'unit_id': getattr(unit, 'pk', None),
@@ -676,6 +702,10 @@ def compare_estimation_costs(
         'before_source': 'historical_coefficients',
         'before_history_id': compare_data.get('history_row_id'),
         'before_date': compare_data.get('history_row_date'),
+        'after_history_id': compare_data.get('after_history_row_id'),
+        'after_date': compare_data.get('after_history_row_date'),
+        'before_coefficients_source': compare_data.get('before_coefficients_source') or 'history',
+        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'latest',
         'before_zna': before_result.get('zna') or 0,
         'before_kf': before_result.get('kf') or '',
         'after_zna': after_result.get('zna') or 0,
