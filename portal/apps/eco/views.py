@@ -137,6 +137,8 @@ def add_log_history_open(estimation, user, page):
         page_title = 'История ремонтов'
     elif page == 9:
         page_title = 'Согласование'
+    elif page == 24:
+        page_title = 'Приём автомобиля'
     elif page == 17:
         page_title = 'Все фото осмотра'
     elif page == 18:
@@ -4057,6 +4059,12 @@ def doc(request, id):
     balance_unit            = None
     expenses                = list()
     calcs                   = None
+    reception               = None
+    reception_allowed       = False
+    reception_selects       = {}
+    kolesa2_needed          = False
+    kolesa_reception        = None
+    kolesa_reception_files  = []
     
     body            = get_body_estimation_cached(estimation)
     salon           = get_salon_estimation_cached(estimation)
@@ -4354,6 +4362,43 @@ def doc(request, id):
                     return HttpResponseRedirect(request.path_info + '?page=' + str(page))
             if estimation.avtoteka_data != '' and estimation.avtoteka_data != None:
                 json_autoteka = json.loads(estimation.avtoteka_data)['result']['report']['data']
+
+        reception = None
+        reception_allowed = False
+        reception_selects = {}
+        kolesa2_needed = False
+        kolesa_reception = None
+        kolesa_reception_files = []
+        if page == 24:
+            from eco.reception import (
+                estimation_has_kolesa2,
+                get_kolesa_reception_or_none,
+                get_reception_or_none,
+                reception_allowed as reception_is_allowed,
+                reception_select_options,
+                send_reception_1c,
+            )
+            from register.models import RegRegInteractivOcenkaFilesKolesaReception
+            reception_allowed = reception_is_allowed(interactiv_rlk)
+            reception = get_reception_or_none(interactiv_rlk)
+            kolesa2_needed = estimation_has_kolesa2(estimation)
+            kolesa_reception = get_kolesa_reception_or_none(estimation)
+            refresh = request.GET.get('refresh_data', '')
+            if refresh == 'reception1c' and reception is not None and reception_allowed:
+                try:
+                    send_reception_1c(interactiv_rlk, reception)
+                except Exception:
+                    pass
+                return HttpResponseRedirect(request.path_info + '?page=24')
+            if reception is not None:
+                reception_selects = reception_select_options()
+            if kolesa_reception is not None:
+                kolesa_reception_files = list(
+                    RegRegInteractivOcenkaFilesKolesaReception.objects
+                    .filter(kolesa_reception=kolesa_reception)
+                    .order_by('-date', '-id')[:24]
+                )
+
         if page == 9:
             
             if 'del_u' in request.GET:
@@ -4498,6 +4543,12 @@ def doc(request, id):
                 'express_lots'          : express_lots,
                 'estimation_settings_list': estimation_settings_list,
                 'current_estimation_settings': current_estimation_settings,
+                'reception': reception,
+                'reception_allowed': reception_allowed,
+                'reception_selects': reception_selects,
+                'kolesa2_needed': kolesa2_needed,
+                'kolesa_reception': kolesa_reception,
+                'kolesa_reception_files': kolesa_reception_files,
             }
     
     elif request.method == "POST":
@@ -5006,6 +5057,27 @@ def doc(request, id):
         if 'type_post' in request.POST:
             
             type_post = request.POST.get('type_post', '')
+            if type_post == 'create_reception':
+                from eco.reception import create_reception, reception_allowed as reception_is_allowed
+                if reception_is_allowed(interactiv_rlk):
+                    create_reception(interactiv_rlk, user=request.user)
+                return HttpResponseRedirect(request.path_info + '?page=24')
+            elif type_post == 'save_reception':
+                from eco.reception import (
+                    apply_post_to_reception,
+                    get_reception_or_none,
+                    reception_allowed as reception_is_allowed,
+                )
+                if reception_is_allowed(interactiv_rlk):
+                    reception_obj = get_reception_or_none(interactiv_rlk)
+                    if reception_obj is not None:
+                        apply_post_to_reception(reception_obj, request.POST, user=request.user)
+                return HttpResponseRedirect(request.path_info + '?page=24')
+            elif type_post == 'create_kolesa_reception':
+                from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2
+                if estimation_has_kolesa2(reg_interactiv_ocenka):
+                    ensure_kolesa_reception(reg_interactiv_ocenka, user=request.user)
+                return HttpResponseRedirect(request.path_info + '?page=24')
             if type_post == 'price_remote':
                 price_remote    = float(request.POST.get('price_remote', '0'))
                 page_remote     = reg_interactiv_ocenka.page_remote

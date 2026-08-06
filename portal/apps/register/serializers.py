@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from register.models import RegInteractivOcenka, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaRLK
+from register.models import (
+    RegInteractivOcenka,
+    RegInteractivOcenkaReception,
+    RegInteractivOcenkaSoglasovanie,
+    RegInteractivOcenkaRLK,
+)
 from datetime import datetime
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
 
@@ -59,5 +64,13 @@ class RegInteractivOcenkaSoglasovanieSerializer(serializers.ModelSerializer):
     class Meta:
         
         model = RegInteractivOcenkaSoglasovanie
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
+
+
+class RegInteractivOcenkaReceptionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RegInteractivOcenkaReception
         fields = [field.name for field in model._meta.fields]
         depth = 1

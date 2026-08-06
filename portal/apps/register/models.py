@@ -3889,7 +3889,7 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
     staff_eco_2_rlk         = models.ForeignKey(User, related_name="staff_eco_2_rlk", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Аналитик после кд")
     
     page_soglasovanie   = models.ForeignKey(RegInteractivOcenkaSoglasovanie, blank=True, null=True, on_delete=models.SET_NULL, verbose_name="Согласование")
-    
+
     status              = models.ForeignKey(RefStatusEstimation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Статус")
     
     access_user         = models.ManyToManyField(User, verbose_name='Пользователь', blank=True)
@@ -3985,6 +3985,102 @@ class RegInteractivOcenkaRLK(ChangeloggableMixin, models.Model):
         db_table = 'regInteractivOcenkaRLK'
         verbose_name = "Данные интерактивной оценки рабочего листа"
         verbose_name_plural = "данные интерактивных оценок рабочего листа"
+
+
+class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
+    """Страница приёма автомобиля по интерактивной оценке (привязка к RLK)."""
+    interactiv_rlk = models.OneToOneField(
+        RegInteractivOcenkaRLK,
+        on_delete=models.CASCADE,
+        related_name='page_reception',
+        verbose_name='Интерактивная оценка (РЛК)',
+    )
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='eco_receptions_created',
+        verbose_name='Кто создал',
+    )
+    updated_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='eco_receptions_updated',
+        verbose_name='Кто обновил',
+    )
+    sent_to_1c_at = models.DateTimeField('Отправлено в 1С', null=True, blank=True)
+    sent_to_1c_status = models.CharField('Статус отправки в 1С', max_length=250, blank=True, default='')
+
+    # Данные приёма
+    type_reception = models.ForeignKey(
+        RefTypeReceptionCarsOrganization,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Тип приёма автомобиля',
+    )
+    organization = models.ForeignKey(
+        RefOrganization, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Организация',
+    )
+    filial = models.ForeignKey(
+        RefFilial, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Филиал',
+    )
+    unit = models.ForeignKey(
+        RefUnit, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Подразделение',
+    )
+    store = models.ForeignKey(
+        RefStore, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Склад поступления',
+    )
+
+    # Клиент
+    customer_family = models.CharField('Фамилия', max_length=250, default='', blank=True)
+    customer_name = models.CharField('Имя', max_length=250, default='', blank=True)
+    customer_patronymic = models.CharField('Отчество', max_length=250, default='', blank=True)
+    customer_phone = models.CharField('Телефон', max_length=250, default='', blank=True)
+
+    # Автомобиль
+    vin = models.CharField('VIN', max_length=32, default='', blank=True)
+    vin2 = models.CharField('VIN 2', max_length=32, default='', blank=True)
+    mark = models.CharField('Марка', max_length=250, default='', blank=True)
+    model = models.CharField('Модель', max_length=250, default='', blank=True)
+    year = models.IntegerField('Год выпуска', default=0, null=True, blank=True)
+    mileage = models.IntegerField('Пробег', default=0, null=True, blank=True)
+    pts_mark_model = models.CharField('Марка, модель по ПТС', max_length=250, default='', blank=True)
+    plate_number = models.CharField('Госномер', max_length=32, default='', blank=True)
+    count_owners = models.IntegerField('Количество владельцев', default=0, null=True, blank=True)
+    count_keys = models.IntegerField('Количество ключей', default=0, null=True, blank=True)
+    chassis_number = models.CharField('Номер шасси / рамы', max_length=64, default='', blank=True)
+    pts_number = models.CharField('Номер ПТС', max_length=250, default='', blank=True)
+    pts_date = models.DateField('Дата выдачи ПТС', blank=True, null=True)
+    pts_org_address = models.CharField('Адрес организации ПТС', max_length=512, default='', blank=True)
+    sts_number = models.CharField('СТС номер', max_length=250, default='', blank=True)
+    sts_date = models.DateField('СТС дата', blank=True, null=True)
+    pts_original = models.BooleanField('ПТС оригинал', default=False)
+    pts_org_issuer = models.CharField('Организация, выдавшая ПТС', max_length=512, default='', blank=True)
+    salon_color = models.CharField('Цвет салона', max_length=150, default='', blank=True)
+    body_color = models.CharField('Цвет кузова', max_length=150, default='', blank=True)
+    engine_number = models.CharField('Номер двигателя', max_length=64, default='', blank=True)
+    mass = models.IntegerField('Масса', default=0, null=True, blank=True)
+    max_mass = models.IntegerField('Макс. масса', default=0, null=True, blank=True)
+    eco_class = models.CharField('Экокласс', max_length=64, default='', blank=True)
+
+    def __str__(self):
+        return 'Приём {} / {}'.format(self.pk, self.vin or self.interactiv_rlk_id)
+
+    class Meta:
+        db_table = 'regInteractivOcenkaReception'
+        verbose_name = 'Приём автомобиля (интерактивная оценка)'
+        verbose_name_plural = 'Приёмы автомобилей (интерактивная оценка)'
+        ordering = ['-created_at']
+
+post_save.connect(journal_save_handler, sender=RegInteractivOcenkaReception)
+post_delete.connect(journal_delete_handler, sender=RegInteractivOcenkaReception)
+
 
 #Страница приемка второго комплекта колес
 class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):

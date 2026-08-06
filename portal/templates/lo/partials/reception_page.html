@@ -1,0 +1,575 @@
+{% comment %}
+  Вкладка «Приём автомобиля» (page=24).
+  Ожидает params.reception_allowed, params.reception, params.reception_selects.
+{% endcomment %}
+
+<div class="tab-pane {% if params.tabindex == 24 %} active {% endif %}" id="page_reception" role="tabpanel" aria-labelledby="reception-tab">
+
+  {% if params.tabindex == 24 %}
+
+  <div class="hidemobile">
+    <h5>Приём автомобиля</h5>
+    <hr class="my-3">
+  </div>
+
+  {% if not params.reception_allowed %}
+    <div class="portal-panel">
+      <div class="alert alert-warning mb-0" role="alert">
+        <strong>Приём невозможен.</strong>
+        Нет согласования цены после КД.
+      </div>
+    </div>
+  {% elif not params.reception %}
+    <div class="portal-panel">
+      <p class="mb-3">
+        Цена после КД согласована
+        ({% if params.interactiv_rlk.page_soglasovanie %}{{ params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"0g" }} &#8381;{% endif %}).
+        Создайте карточку приёма — поля заполнятся из оценки и документов.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="type_post" value="create_reception">
+        <button type="submit" class="btn btn-outline-success">
+          <span class="icon-mbri-play"></span> Проверить и принять автомобиль
+        </button>
+      </form>
+    </div>
+  {% else %}
+    {% with r=params.reception s=params.reception_selects %}
+    <form method="post" class="reception-form">
+      {% csrf_token %}
+      <input type="hidden" name="type_post" value="save_reception">
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button type="submit" class="btn btn-outline-success" name="save" value="close">
+          <span class="icon-mbri-success"></span> Сохранить
+        </button>
+        <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
+          <span class="icon-mbri-update"></span> Обновить в 1С
+        </a>
+        {% if r.sent_to_1c_at %}
+          <span class="align-self-center text-muted small">
+            В 1С: {{ r.sent_to_1c_at|date:"d.m.Y H:i" }}
+            {% if r.sent_to_1c_status %} — {{ r.sent_to_1c_status }}{% endif %}
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="row g-2">
+        <div class="col-xl-4">
+          <div class="portal-panel h-100">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-home"></span> Данные приёма
+            </h6>
+
+            <div class="form-floating mb-2">
+              <select class="form-select form-select-sm" id="filial" name="filial">
+                <option value="">—</option>
+                {% for item in s.filials %}
+                  <option value="{{ item.id }}" {% if r.filial_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="filial">Филиал</label>
+            </div>
+
+            <div class="form-floating mb-2">
+              <select class="form-select form-select-sm" id="organization" name="organization">
+                <option value="">—</option>
+                {% for item in s.organizations %}
+                  <option value="{{ item.id }}" {% if r.organization_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="organization">Организация</label>
+            </div>
+
+            <div class="form-floating mb-2">
+              <select class="form-select form-select-sm" id="store" name="store">
+                <option value="">—</option>
+                {% for item in s.stores %}
+                  <option value="{{ item.id }}" {% if r.store_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="store">Склад поступления</label>
+            </div>
+
+            <div class="form-floating mb-2">
+              <select class="form-select form-select-sm" id="type_reception" name="type_reception">
+                <option value="">—</option>
+                {% for item in s.type_receptions %}
+                  <option value="{{ item.id }}" {% if r.type_reception_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="type_reception">Тип приёма</label>
+            </div>
+
+            <div class="form-floating">
+              <select class="form-select form-select-sm" id="unit" name="unit">
+                <option value="">—</option>
+                {% for item in s.units %}
+                  <option value="{{ item.id }}" {% if r.unit_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                {% endfor %}
+              </select>
+              <label for="unit">Подразделение</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-4">
+          <div class="portal-panel h-100">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-user"></span> Клиент
+            </h6>
+            <div class="form-floating mb-2">
+              <input class="form-control form-control-sm" type="text" id="customer_family" name="customer_family" value="{{ r.customer_family }}">
+              <label for="customer_family">Фамилия</label>
+            </div>
+            <div class="form-floating mb-2">
+              <input class="form-control form-control-sm" type="text" id="customer_name" name="customer_name" value="{{ r.customer_name }}">
+              <label for="customer_name">Имя</label>
+            </div>
+            <div class="form-floating mb-2">
+              <input class="form-control form-control-sm" type="text" id="customer_patronymic" name="customer_patronymic" value="{{ r.customer_patronymic }}">
+              <label for="customer_patronymic">Отчество</label>
+            </div>
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" id="customer_phone" name="customer_phone" value="{{ r.customer_phone }}">
+              <label for="customer_phone">Телефон</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-4">
+          <div class="portal-panel h-100">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-cars"></span> Автомобиль — основное
+            </h6>
+            <div class="row g-1">
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="vin" name="vin" value="{{ r.vin }}">
+                  <label for="vin">VIN</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="vin2" name="vin2" value="{{ r.vin2 }}">
+                  <label for="vin2">VIN 2</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="mark" name="mark" value="{{ r.mark }}">
+                  <label for="mark">Марка</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="model" name="model" value="{{ r.model }}">
+                  <label for="model">Модель</label>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="number" id="year" name="year" value="{{ r.year|default:'' }}">
+                  <label for="year">Год выпуска</label>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="number" id="mileage" name="mileage" value="{{ r.mileage|default:'' }}">
+                  <label for="mileage">Пробег</label>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="plate_number" name="plate_number" value="{{ r.plate_number }}">
+                  <label for="plate_number">Госномер</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="pts_mark_model" name="pts_mark_model" value="{{ r.pts_mark_model }}">
+                  <label for="pts_mark_model">Марка, модель по ПТС</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="number" id="count_owners" name="count_owners" value="{{ r.count_owners|default:'' }}">
+                  <label for="count_owners">Кол-во владельцев</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating">
+                  <input class="form-control form-control-sm" type="number" id="count_keys" name="count_keys" value="{{ r.count_keys|default:'' }}">
+                  <label for="count_keys">Кол-во ключей</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-2 mt-1">
+        <div class="col-xl-6">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-file"></span> ПТС / СТС
+            </h6>
+            <div class="row g-1">
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="pts_number" name="pts_number" value="{{ r.pts_number }}">
+                  <label for="pts_number">Номер ПТС</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="date" id="pts_date" name="pts_date" value="{% if r.pts_date %}{{ r.pts_date|date:'Y-m-d' }}{% endif %}">
+                  <label for="pts_date">Дата выдачи ПТС</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="pts_org_issuer" name="pts_org_issuer" value="{{ r.pts_org_issuer }}">
+                  <label for="pts_org_issuer">Организация, выдавшая ПТС</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="pts_org_address" name="pts_org_address" value="{{ r.pts_org_address }}">
+                  <label for="pts_org_address">Адрес организации ПТС</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="sts_number" name="sts_number" value="{{ r.sts_number }}">
+                  <label for="sts_number">СТС номер</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="date" id="sts_date" name="sts_date" value="{% if r.sts_date %}{{ r.sts_date|date:'Y-m-d' }}{% endif %}">
+                  <label for="sts_date">СТС дата</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="chassis_number" name="chassis_number" value="{{ r.chassis_number }}">
+                  <label for="chassis_number">Номер шасси / рамы</label>
+                </div>
+              </div>
+              <div class="col-sm-6 d-flex align-items-center">
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" id="pts_original" name="pts_original" value="1" {% if r.pts_original %}checked{% endif %}>
+                  <label class="form-check-label" for="pts_original">ПТС оригинал</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-6">
+          <div class="portal-panel">
+            <h6 class="d-flex align-items-center gap-2 mb-3">
+              <span class="icon-mbri-setting"></span> Характеристики
+            </h6>
+            <div class="row g-1">
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="salon_color" name="salon_color" value="{{ r.salon_color }}">
+                  <label for="salon_color">Цвет салона</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="body_color" name="body_color" value="{{ r.body_color }}">
+                  <label for="body_color">Цвет кузова</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="engine_number" name="engine_number" value="{{ r.engine_number }}">
+                  <label for="engine_number">Номер двигателя</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="text" id="eco_class" name="eco_class" value="{{ r.eco_class }}">
+                  <label for="eco_class">Экокласс</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="number" id="mass" name="mass" value="{{ r.mass|default:'' }}">
+                  <label for="mass">Масса</label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-floating">
+                  <input class="form-control form-control-sm" type="number" id="max_mass" name="max_mass" value="{{ r.max_mass|default:'' }}">
+                  <label for="max_mass">Макс. масса</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="submit" class="btn btn-outline-success" name="save" value="close">
+          <span class="icon-mbri-success"></span> Сохранить
+        </button>
+        <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
+          <span class="icon-mbri-update"></span> Обновить в 1С
+        </a>
+      </div>
+    </form>
+    {% endwith %}
+  {% endif %}
+
+  {% if params.kolesa2_needed or params.kolesa_reception %}
+    <div class="portal-panel mt-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h6 class="mb-0 d-flex align-items-center gap-2">
+          <span class="icon-mbri-setting"></span> Второй комплект колёс
+        </h6>
+        {% if params.kolesa_reception %}
+          <a class="btn btn-outline-primary btn-sm" href="/estimations/kolesa-reception/{{ params.kolesa_reception.id }}/" target="_blank">
+            Открыть карточку приёмки 2КК
+          </a>
+        {% endif %}
+      </div>
+
+      {% if not params.kolesa_reception %}
+        <p class="mb-3 text-muted">
+          В оценке указан второй комплект колёс. Создайте приёмку 2КК — данные подтянутся со страницы «Колёса».
+        </p>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="type_post" value="create_kolesa_reception">
+          <button type="submit" class="btn btn-outline-success">
+            <span class="icon-mbri-play"></span> Создать приём второго комплекта колёс
+          </button>
+        </form>
+
+        {% if params.estimation.page_kolesa %}
+          <hr class="my-3">
+          <div class="small text-muted mb-2">Данные из оценки (ещё не приняты):</div>
+          <div class="row g-2">
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.mark_tyre2.name|default:'' }}">
+                <label>Марка шин</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.model_tyre2|default:'' }}">
+                <label>Модель шин</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.width_tyre2.name|default:'' }}">
+                <label>Ширина</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.profil_tyre2.name|default:'' }}">
+                <label>Профиль</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.radius2.name|default:'' }}">
+                <label>Радиус</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.sezon2.name|default:'' }}">
+                <label>Сезон</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.disk_type2.name|default:'' }}">
+                <label>Тип диска</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.model_disk2|default:'' }}">
+                <label>Модель дисков</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.et_disk2.name|default:'' }}">
+                <label>ET</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.dia_disk2.name|default:'' }}">
+                <label>DIA</label>
+              </div>
+            </div>
+            <div class="col-sm-4 col-md-2">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.psd_disk2.name|default:'' }}">
+                <label>PSD</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.count_disk2|default:0 }}">
+                <label>Дисков</label>
+              </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" readonly
+                       value="{{ params.estimation.page_kolesa.count_tyre2|default:0 }}">
+                <label>Шин</label>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+
+      {% else %}
+        {% with kr=params.kolesa_reception %}
+        <div class="row g-2 mb-2">
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted">Дата приёмки</div>
+            <div class="fw-semibold">{% if kr.date %}{{ kr.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted">Автор</div>
+            <div class="fw-semibold">{% if kr.user %}{{ kr.user.get_full_name|default:kr.user.username }}{% else %}—{% endif %}</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted">В ИБ колёс</div>
+            <div class="fw-semibold">{% if kr.send_wheels_ib %}Отправлено{% else %}Не отправлено{% endif %}</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="small text-muted">Признак 2КК</div>
+            <div class="fw-semibold">
+              {% if kr.kolesa_estimation == 1 %}Оценка со вторым комплектом{% elif kr.kolesa_estimation == 0 %}Нет второго комплекта{% else %}{{ kr.kolesa_estimation }}{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.mark_tyre.name|default:'' }}">
+              <label>Марка шин</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.model_tyre|default:'' }}">
+              <label>Модель шин</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.width_tyre.name|default:'' }}">
+              <label>Ширина</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.profil_tyre.name|default:'' }}">
+              <label>Профиль</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.radius.name|default:'' }}">
+              <label>Радиус</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.sezon.name|default:'' }}">
+              <label>Сезон</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.disk_type.name|default:'' }}">
+              <label>Тип диска</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.model_disk|default:'' }}">
+              <label>Модель дисков</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.et_disk.name|default:'' }}">
+              <label>ET</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.dia_disk.name|default:'' }}">
+              <label>DIA</label>
+            </div>
+          </div>
+          <div class="col-sm-4 col-md-2">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.psd_disk.name|default:'' }}">
+              <label>PSD</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.count_disk|default:0 }}">
+              <label>Дисков</label>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" readonly value="{{ kr.count_tyre|default:0 }}">
+              <label>Шин</label>
+            </div>
+          </div>
+        </div>
+
+        {% if params.kolesa_reception_files %}
+          <hr class="my-3">
+          <div class="small text-muted mb-2">Фото приёмки 2КК ({{ params.kolesa_reception_files|length }})</div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for f in params.kolesa_reception_files %}
+              <a href="{{ f.get_absolute_url }}" target="_blank" class="border rounded overflow-hidden" style="width:96px;height:72px;">
+                <img src="{{ f.get_thumbnail_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% endwith %}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% endif %}
+
+</div>
