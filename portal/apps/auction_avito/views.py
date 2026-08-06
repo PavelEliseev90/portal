@@ -253,7 +253,10 @@ def _lot_queryset():
 
 def _lot_detail_queryset():
     """Карточка лота: без тяжёлых prefetch — данные вкладок по запросу."""
-    offer_qs = AvitoLotOffer.objects.select_related('account').prefetch_related(
+    offer_qs = AvitoLotOffer.objects.select_related(
+        'account',
+        'manual_max_bid_set_by',
+    ).prefetch_related(
         'badges',
     ).order_by('-updated_at')
     return AvitoLot.objects.select_related(
@@ -908,30 +911,61 @@ def monitor_set_manual_max(request):
     """Задать / сбросить ручной потолок автоставки по офферу."""
     from django.http import JsonResponse
 
+    from auction_avito.services.manual_max import apply_manual_max_bid
+
     lot_offer_id = request.POST.get('lotOfferId') or request.POST.get('lot_offer_id')
     raw = (request.POST.get('manualMaxBid') or request.POST.get('manual_max_bid') or '').strip()
     try:
-        offer = AvitoLotOffer.objects.select_related('lot').get(lot_offer_id=int(lot_offer_id))
+        offer = AvitoLotOffer.objects.select_related('lot', 'manual_max_bid_set_by').get(
+            lot_offer_id=int(lot_offer_id),
+        )
     except (AvitoLotOffer.DoesNotExist, TypeError, ValueError):
         return JsonResponse({'ok': False, 'error': 'offer not found'}, status=404)
 
-    if raw in ('', '0', 'null', 'None'):
-        offer.manual_max_bid = None
-    else:
-        try:
-            value = int(float(str(raw).replace(' ', '').replace(',', '.')))
-        except (TypeError, ValueError):
-            return JsonResponse({'ok': False, 'error': 'invalid amount'}, status=400)
-        if value < 1:
-            offer.manual_max_bid = None
-        else:
-            offer.manual_max_bid = value
-    offer.save(update_fields=['manual_max_bid'])
+    result = apply_manual_max_bid(offer, raw, user=request.user)
+    if not result.get('ok'):
+        status = 400 if result.get('error') == 'invalid amount' else 400
+        return JsonResponse(result, status=status)
+
+    set_at = result.get('manualMaxBidSetAt')
     return JsonResponse({
         'ok': True,
-        'lotOfferId': offer.lot_offer_id,
-        'manualMaxBid': offer.manual_max_bid,
+        'lotOfferId': result['lotOfferId'],
+        'manualMaxBid': result['manualMaxBid'],
+        'manualMaxBidSetAt': set_at.isoformat() if set_at else None,
+        'manualMaxBidSetBy': result.get('manualMaxBidSetBy') or '',
     })
+
+
+@login_required
+@require_POST
+def lot_set_manual_max(request, pk):
+    """Задать / сбросить ручной потолок автоставки с карточки лота."""
+    from auction_avito.services.manual_max import apply_manual_max_bid
+
+    lot = get_object_or_404(_lot_detail_queryset(), pk=pk)
+    offer = lot.offers.first()
+    if offer is None:
+        messages.error(request, 'У лота нет оффера — потолок задать нельзя.')
+        return redirect('auction_avito:lot_detail', pk=pk)
+
+    raw = (request.POST.get('manual_max_bid') or request.POST.get('manualMaxBid') or '').strip()
+    clear = (request.POST.get('clear') or '').strip().lower() in ('1', 'true', 'yes', 'on')
+    if clear:
+        raw = ''
+
+    result = apply_manual_max_bid(offer, raw, user=request.user)
+    if not result.get('ok'):
+        messages.error(request, f'Не удалось сохранить потолок: {result.get("error") or "ошибка"}')
+    elif result.get('manualMaxBid'):
+        who = result.get('manualMaxBidSetBy') or request.user.get_username()
+        messages.success(
+            request,
+            f'Потолок автоставки: {result["manualMaxBid"]:,} ₽ (задал {who})'.replace(',', ' '),
+        )
+    else:
+        messages.success(request, 'Ручной потолок автоставки сброшен.')
+    return redirect('auction_avito:lot_detail', pk=pk)
 
 
 @login_required
@@ -1083,7 +1117,20 @@ def auction_settings(request):
         except Exception as exc:
             messages.error(request, str(exc))
 
+    return render(
+        request,
+        'auction_avito/auction_settings.html',
+        _auction_settings_page_context(settings_obj),
+    )
+
+
+def _auction_settings_page_context(settings_obj=None, **extra):
+    """Общий контекст страницы настроек аукциона."""
+    from auction_avito.services.monitor import platform_email_rows
     from refs.models import RefUnit
+
+    if settings_obj is None:
+        settings_obj = AvitoAuctionSettings.get_solo()
 
     venue_unit_rows = list(
         AvitoVenue.objects.select_related('city', 'unit', 'unit__ib')
@@ -1103,13 +1150,15 @@ def auction_settings(request):
             .order_by('name')
         )
 
-    return render(request, 'auction_avito/auction_settings.html', {
+    ctx = {
         'auction_settings': settings_obj,
         'platform_email_rows': platform_email_rows(),
         'venue_unit_rows': venue_unit_rows,
         'units_for_venues': units_for_venues,
         'test_win_offers': _test_win_email_offer_choices(),
-    })
+    }
+    ctx.update(extra)
+    return ctx
 
 
 def _test_win_email_offer_choices(limit: int = 80):
@@ -1140,6 +1189,61 @@ def _test_win_email_offer_choices(limit: int = 80):
     return rows
 
 
+_TEST_OFFER_SELECT_RELATED = (
+    'lot',
+    'lot__venue',
+    'lot__venue__city',
+    'lot__venue__unit',
+    'lot__venue__unit__ib',
+    'lot__vehicle_avito',
+    'lot__vehicle_autohub',
+    'account',
+)
+
+
+def _resolve_test_offer_from_request(request):
+    """Оффер из offer_id / lot_offer_id / lot_id (как в тестовом письме и превью РЛ)."""
+    offer_pk = (request.POST.get('offer_id') or request.GET.get('offer_id') or '').strip()
+    lot_offer_id = (
+        request.POST.get('lot_offer_id') or request.GET.get('lot_offer_id') or ''
+    ).strip()
+    lot_id = (request.POST.get('lot_id') or request.GET.get('lot_id') or '').strip()
+
+    offer = None
+    if offer_pk:
+        try:
+            offer = (
+                AvitoLotOffer.objects
+                .select_related(*_TEST_OFFER_SELECT_RELATED)
+                .filter(pk=int(offer_pk))
+                .first()
+            )
+        except (TypeError, ValueError):
+            offer = None
+    if offer is None and lot_offer_id:
+        try:
+            offer = (
+                AvitoLotOffer.objects
+                .select_related(*_TEST_OFFER_SELECT_RELATED)
+                .filter(lot_offer_id=int(lot_offer_id))
+                .first()
+            )
+        except (TypeError, ValueError):
+            offer = None
+    if offer is None and lot_id:
+        try:
+            offer = (
+                AvitoLotOffer.objects
+                .select_related(*_TEST_OFFER_SELECT_RELATED)
+                .filter(lot__lot_id=int(lot_id), bid__gt=0)
+                .order_by('-updated_at')
+                .first()
+            )
+        except (TypeError, ValueError):
+            offer = None
+    return offer
+
+
 @login_required
 @require_POST
 def auction_settings_test_win_email(request):
@@ -1147,43 +1251,12 @@ def auction_settings_test_win_email(request):
     from auction_avito.services.outcome import send_win_email
 
     email = (request.POST.get('test_email') or '').strip()
-    offer_pk = (request.POST.get('offer_id') or '').strip()
-    lot_offer_id = (request.POST.get('lot_offer_id') or '').strip()
-    lot_id = (request.POST.get('lot_id') or '').strip()
 
     if not email or '@' not in email:
         messages.error(request, 'Укажите корректный email для тестовой отправки.')
         return redirect('auction_avito:auction_settings')
 
-    offer = None
-    if offer_pk:
-        try:
-            offer = AvitoLotOffer.objects.select_related(
-                'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
-            ).filter(pk=int(offer_pk)).first()
-        except (TypeError, ValueError):
-            offer = None
-    if offer is None and lot_offer_id:
-        try:
-            offer = AvitoLotOffer.objects.select_related(
-                'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
-            ).filter(lot_offer_id=int(lot_offer_id)).first()
-        except (TypeError, ValueError):
-            offer = None
-    if offer is None and lot_id:
-        try:
-            offer = (
-                AvitoLotOffer.objects
-                .select_related(
-                    'lot', 'lot__venue', 'lot__venue__city', 'account', 'lot__vehicle_avito',
-                )
-                .filter(lot__lot_id=int(lot_id), bid__gt=0)
-                .order_by('-updated_at')
-                .first()
-            )
-        except (TypeError, ValueError):
-            offer = None
-
+    offer = _resolve_test_offer_from_request(request)
     if offer is None:
         messages.error(
             request,
@@ -1209,6 +1282,61 @@ def auction_settings_test_win_email(request):
             ),
         )
     return redirect('auction_avito:auction_settings')
+
+
+@login_required
+@require_POST
+def auction_settings_preview_win_rlk(request):
+    """Превью JSON CreateAvitoWorksheet — без реальной отправки в 1С."""
+    import json
+
+    from auction_avito.services.win_rlk import (
+        CREATE_AVITO_WORKSHEET_TYPE,
+        build_create_avito_worksheet_payload,
+        hs_url_for_unit,
+        resolve_win_rlk_unit,
+    )
+
+    offer = _resolve_test_offer_from_request(request)
+    if offer is None:
+        messages.error(
+            request,
+            'Оффер не найден. Выберите лот из списка или укажите lotOfferId / lotId.',
+        )
+        return redirect('auction_avito:auction_settings')
+
+    unit = resolve_win_rlk_unit(offer)
+    url = hs_url_for_unit(unit) if unit is not None else None
+    payload = build_create_avito_worksheet_payload(offer, unit)
+    warnings = []
+    if unit is None:
+        warnings.append(
+            'У площадки лота не указано подразделение (AvitoVenue.unit) — '
+            'в реальной отправке РЛ не создастся.'
+        )
+    elif not url:
+        warnings.append(f'Не удалось определить URL 1С для подразделения {unit.name}.')
+
+    return render(
+        request,
+        'auction_avito/auction_settings.html',
+        _auction_settings_page_context(
+            win_rlk_preview={
+                'type': CREATE_AVITO_WORKSHEET_TYPE,
+                'method': 'POST',
+                'url': url or '— (не определён)',
+                'unit_name': (unit.name if unit else '') or '—',
+                'unit_uin': (unit.uin if unit else '') or '',
+                'lot_id': getattr(offer.lot, 'lot_id', None),
+                'lot_offer_id': offer.lot_offer_id,
+                'offer_pk': offer.pk,
+                'warnings': warnings,
+                'payload_json': json.dumps(
+                    payload, ensure_ascii=False, indent=2, default=str,
+                ),
+            },
+        ),
+    )
 
 
 @login_required

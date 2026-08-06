@@ -638,7 +638,7 @@ def monitor_lots_queryset(*, mode: str = 'active', dealer_ids: list[int] | None 
 
     offer_qs = (
         AvitoLotOffer.objects
-        .select_related('account')
+        .select_related('account', 'manual_max_bid_set_by')
         .prefetch_related(
             Prefetch(
                 'bid_history',
@@ -802,6 +802,13 @@ def serialize_monitor_lot(lot) -> dict:
     profit = getattr(lot, 'latest_profit', None)
     our_bid = primary.bid if primary else None
     manual_max = primary.manual_max_bid if primary else None
+    manual_max_set_at = (
+        _format_dt_local(primary.manual_max_bid_set_at) if primary else None
+    )
+    manual_max_set_by = ''
+    if primary is not None:
+        from auction_avito.services.manual_max import user_display_name
+        manual_max_set_by = user_display_name(getattr(primary, 'manual_max_bid_set_by', None))
     dealer_id = primary.account.dealer_id if primary and primary.account_id else None
     max_bid = lot.max_bid
 
@@ -943,6 +950,8 @@ def serialize_monitor_lot(lot) -> dict:
         'ourBid': our_bid,
         'ourBidsCount': our_bids_count,
         'manualMaxBid': manual_max,
+        'manualMaxBidSetAt': manual_max_set_at,
+        'manualMaxBidSetBy': manual_max_set_by,
         'buyout': int(buyout) if buyout not in (None, '') else None,
         'zna': int(zna) if zna not in (None, '') else None,
         'profit': int(profit) if profit not in (None, '') else None,

@@ -410,6 +410,19 @@ class AvitoLotOffer(models.Model):
             'даже если расчётный выкуп выше. Приоритет у ручного потолка.'
         ),
     )
+    manual_max_bid_set_at = models.DateTimeField(
+        'Потолок задан / сброшен',
+        null=True,
+        blank=True,
+    )
+    manual_max_bid_set_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='avito_manual_max_offers',
+        verbose_name='Потолок задал',
+    )
 
     sale_cost = models.PositiveIntegerField('saleCost', null=True, blank=True)
     presale_preparation_cost = models.PositiveIntegerField(

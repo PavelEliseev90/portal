@@ -88,7 +88,9 @@ def resolve_offer_by_ids(
     if lot_offer_id not in (None, ''):
         offer = (
             AvitoLotOffer.objects
-            .select_related('lot', 'account', 'lot__venue', 'lot__venue__city')
+            .select_related(
+                'lot', 'account', 'lot__venue', 'lot__venue__city', 'manual_max_bid_set_by',
+            )
             .filter(lot_offer_id=int(lot_offer_id))
             .first()
         )
@@ -98,7 +100,9 @@ def resolve_offer_by_ids(
     if lot_id not in (None, ''):
         return (
             AvitoLotOffer.objects
-            .select_related('lot', 'account', 'lot__venue', 'lot__venue__city')
+            .select_related(
+                'lot', 'account', 'lot__venue', 'lot__venue__city', 'manual_max_bid_set_by',
+            )
             .filter(lot__lot_id=int(lot_id))
             .order_by('-updated_at')
             .first()
@@ -159,6 +163,11 @@ def build_offer_state_response(offer: AvitoLotOffer, *, history_limit: int = 5) 
         'lotPk': lot.pk if lot else None,
         'bid': offer.bid,
         'manualMaxBid': offer.manual_max_bid,
+        'manualMaxBidSetAt': _format_dt(offer.manual_max_bid_set_at),
+        'manualMaxBidSetBy': (
+            (offer.manual_max_bid_set_by.get_full_name() or offer.manual_max_bid_set_by.username)
+            if offer.manual_max_bid_set_by_id else ''
+        ),
         'bidMadeAt': _format_dt(offer.bid_made_at),
         'bidComment': comment,
         'status': {
@@ -205,7 +214,9 @@ def build_offers_state_map(
     if offer_ids:
         for offer in (
             AvitoLotOffer.objects
-            .select_related('lot', 'account', 'lot__venue', 'lot__venue__city')
+            .select_related(
+                'lot', 'account', 'lot__venue', 'lot__venue__city', 'manual_max_bid_set_by',
+            )
             .filter(lot_offer_id__in=offer_ids)
         ):
             payload = build_offer_state_response(offer, history_limit=history_limit)

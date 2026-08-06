@@ -25,6 +25,19 @@ def round_up_to(value, step) -> int:
     return int(math.ceil(value / step) * step)
 
 
+def round_down_to(value, step) -> int:
+    """Округление ставки вниз до кратного step (например 930500 → 930000 при step=1000)."""
+    value = int(value)
+    step = max(1, int(step or 1))
+    if step == 1:
+        return value
+    return int(math.floor(value / step) * step)
+
+
+# При пустом maxBid: первая ставка = выкуп − N×шаг (вниз), если выше minAvailableBid.
+FIRST_BID_STEPS_BELOW_BUYOUT = 4
+
+
 def categorize_auto_bid_reason(reason: str, *, should_bid: bool = False, filters_ok: bool = True) -> str:
     """
     Стабильный код причины для аналитики.
@@ -218,7 +231,8 @@ def decide_auto_bid(
     1) фильтры настроек (пробег/год/такси/каршеринг/скрутка);
     2) выкуп > minAvailableBid;
     3) нет maxBid (ставок ещё нет):
-         next = round_up(minAvailableBid + minBidStep);
+         candidate = round_down(выкуп − 4×minBidStep);
+         next = candidate, если candidate > minAvailableBid, иначе minAvailableBid;
          ставим, если next < выкупа;
     4) есть maxBid:
          maxBid не наша и выкуп > maxBid;
@@ -287,17 +301,27 @@ def decide_auto_bid(
     round_to = _as_int(getattr(settings, 'bid_round_to', 1000), 1000) or 1000
 
     if no_max_bid:
-        # Ставок ещё нет — первая ставка от минимума + шаг.
-        result['mode'] = 'first_from_min'
+        # Ставок ещё нет — первая ставка от выкупа − 4×шаг (вниз), иначе минимум лота.
+        result['mode'] = 'first_from_buyout'
         if our is not None and our > 0 and our >= min_avail:
             result['reason'] = 'уже есть наша ставка при пустом maxBid — ждём обновления лота'
             result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
-        next_bid = round_up_to(min_avail + max(step, 0), round_to)
+        steps_back = max(step, 0) * FIRST_BID_STEPS_BELOW_BUYOUT
+        candidate = round_down_to(buyout - steps_back, round_to)
+        if candidate > min_avail:
+            next_bid = candidate
+            first_reason = (
+                f'ok (первая ставка: выкуп−{FIRST_BID_STEPS_BELOW_BUYOUT}×шаг↓{round_to})'
+            )
+        else:
+            next_bid = min_avail
+            first_reason = 'ok (первая ставка: minAvailableBid, выкуп−4×шаг ≤ минимума)'
         result['next_bid'] = next_bid
         if next_bid >= buyout:
             result['reason'] = (
-                f'первая ставка {next_bid} (minAvailableBid+шаг↑{round_to}) ≥ выкупа {buyout}'
+                f'первая ставка {next_bid} (выкуп−{FIRST_BID_STEPS_BELOW_BUYOUT}×шаг↓{round_to}'
+                f' / min) ≥ выкупа {buyout}'
             )
             result['reason_category'] = categorize_auto_bid_reason(result['reason'])
             return result
@@ -312,7 +336,7 @@ def decide_auto_bid(
             return result
         result['should_bid'] = True
         result['bid_amount'] = next_bid
-        result['reason'] = 'ok (первая ставка: min+шаг)'
+        result['reason'] = first_reason
         result['reason_category'] = 'ok'
         return result
 

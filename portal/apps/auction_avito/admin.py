@@ -71,18 +71,23 @@ class AvitoLotOfferAdmin(admin.ModelAdmin):
         'outcome_code',
         'bid',
         'manual_max_bid',
+        'manual_max_bid_set_by',
+        'manual_max_bid_set_at',
         'gm1_money',
         'win_rlk_number',
         'updated_at',
     )
     list_filter = ('status_code', 'outcome_code', 'account')
     search_fields = ('lot_offer_id', 'win_rlk_number', 'win_rlk_uin')
-    raw_id_fields = ('lot', 'account', 'car', 'bid_made_by_user', 'win_rlk')
+    raw_id_fields = (
+        'lot', 'account', 'car', 'bid_made_by_user', 'win_rlk', 'manual_max_bid_set_by',
+    )
     readonly_fields = (
         'outcome_synced_at',
         'win_email_sent_at',
         'win_rlk_created_at',
         'win_rlk_error',
+        'manual_max_bid_set_at',
     )
 
 @admin.register(AvitoAutotekaReport)
