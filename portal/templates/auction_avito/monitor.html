@@ -519,6 +519,7 @@
           <button type="button" class="btn btn-outline-secondary btn-sm" id="mManualClear">Сбросить</button>
           <span class="small text-muted" id="mManualHint"></span>
         </div>
+        <div class="small text-muted mt-2" id="mManualMeta"></div>
       </div>
     </div>
     <div class="d-flex flex-wrap gap-2 mt-3">
@@ -645,6 +646,24 @@
       : '';
     document.getElementById('mManualMax').value = row.manualMaxBid || '';
     document.getElementById('mManualHint').textContent = '';
+    (function refreshManualMeta(r){
+      const meta = document.getElementById('mManualMeta');
+      if (!meta) return;
+      if (r.manualMaxBid) {
+        let t = 'задан: ' + money(r.manualMaxBid);
+        if (r.manualMaxBidSetBy) t += ' · ' + r.manualMaxBidSetBy;
+        if (r.manualMaxBidSetAt) t += ' · ' + r.manualMaxBidSetAt;
+        meta.textContent = t;
+      } else if (r.manualMaxBidSetAt || r.manualMaxBidSetBy) {
+        let t = 'не задан (сброс';
+        if (r.manualMaxBidSetBy) t += ' ' + r.manualMaxBidSetBy;
+        if (r.manualMaxBidSetAt) t += ' · ' + r.manualMaxBidSetAt;
+        t += ')';
+        meta.textContent = t;
+      } else {
+        meta.textContent = 'не задан';
+      }
+    })(row);
     const handCard = document.getElementById('mHandCard');
     const handHint = document.getElementById('mHandHint');
     if (row.canHandToWork || mode === 'won_pending') {
@@ -839,12 +858,34 @@
       return;
     }
     current.manualMaxBid = data.manualMaxBid;
+    current.manualMaxBidSetAt = data.manualMaxBidSetAt || null;
+    current.manualMaxBidSetBy = data.manualMaxBidSetBy || '';
     document.getElementById('mManualHint').textContent = data.manualMaxBid
       ? ('сохранено: ' + money(data.manualMaxBid))
       : 'сброшено';
+    const meta = document.getElementById('mManualMeta');
+    if (meta) {
+      if (data.manualMaxBid) {
+        let t = 'задан: ' + money(data.manualMaxBid);
+        if (data.manualMaxBidSetBy) t += ' · ' + data.manualMaxBidSetBy;
+        if (data.manualMaxBidSetAt) t += ' · ' + data.manualMaxBidSetAt;
+        meta.textContent = t;
+      } else {
+        let t = 'не задан';
+        if (data.manualMaxBidSetBy || data.manualMaxBidSetAt) {
+          t += ' (сброс';
+          if (data.manualMaxBidSetBy) t += ' ' + data.manualMaxBidSetBy;
+          if (data.manualMaxBidSetAt) t += ' · ' + data.manualMaxBidSetAt;
+          t += ')';
+        }
+        meta.textContent = t;
+      }
+    }
     const idx = rows.findIndex(r => r.lotOfferId === current.lotOfferId);
     if (idx >= 0) {
       rows[idx].manualMaxBid = data.manualMaxBid;
+      rows[idx].manualMaxBidSetAt = data.manualMaxBidSetAt || null;
+      rows[idx].manualMaxBidSetBy = data.manualMaxBidSetBy || '';
       const tr = document.querySelector('tr.mon-row[data-idx="' + idx + '"]');
       if (tr) {
         const cell = tr.querySelector('.js-manual-max');

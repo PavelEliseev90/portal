@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 from django.test import SimpleTestCase
 
-from auction_avito.services.auto_bid import decide_auto_bid, round_up_to
+from auction_avito.services.auto_bid import decide_auto_bid, round_down_to, round_up_to
 
 
 def _settings(**kwargs):
@@ -25,6 +25,10 @@ class AutoBidDecideTests(SimpleTestCase):
     def test_round_up_to(self):
         self.assertEqual(round_up_to(820500, 1000), 821000)
         self.assertEqual(round_up_to(820000, 1000), 820000)
+
+    def test_round_down_to(self):
+        self.assertEqual(round_down_to(930500, 1000), 930000)
+        self.assertEqual(round_down_to(930000, 1000), 930000)
 
     def test_disabled(self):
         d = decide_auto_bid(
@@ -122,7 +126,7 @@ class AutoBidDecideTests(SimpleTestCase):
         self.assertFalse(d['should_bid'])
         self.assertIn('maxBid', d['reason'])
 
-    def test_no_max_bid_first_from_min(self):
+    def test_no_max_bid_first_from_buyout(self):
         d = decide_auto_bid(
             _settings(),
             buyout_price=950_000,
@@ -133,10 +137,10 @@ class AutoBidDecideTests(SimpleTestCase):
             year=2019,
             mileage=50_000,
         )
-        # next = ceil((800000+5000)/1000)*1000 = 805000
+        # next = floor((950000 − 4×5000) / 1000) * 1000 = 930000 > 800000
         self.assertTrue(d['should_bid'])
-        self.assertEqual(d['bid_amount'], 805_000)
-        self.assertEqual(d['mode'], 'first_from_min')
+        self.assertEqual(d['bid_amount'], 930_000)
+        self.assertEqual(d['mode'], 'first_from_buyout')
 
     def test_no_max_bid_zero_treated_as_empty(self):
         d = decide_auto_bid(
@@ -149,22 +153,51 @@ class AutoBidDecideTests(SimpleTestCase):
             mileage=50_000,
         )
         self.assertTrue(d['should_bid'])
-        self.assertEqual(d['bid_amount'], 805_000)
+        self.assertEqual(d['bid_amount'], 930_000)
 
-    def test_no_max_bid_next_ge_buyout_skips(self):
+    def test_no_max_bid_fallback_to_min_when_below(self):
         d = decide_auto_bid(
             _settings(),
-            buyout_price=804_000,
+            buyout_price=810_000,
             min_available_bid=800_000,
             max_bid=None,
             min_bid_step=5_000,
             year=2019,
             mileage=50_000,
         )
+        # candidate = floor((810000 − 20000)/1000)*1000 = 790000 ≤ 800000 → min
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 800_000)
+        self.assertIn('minAvailableBid', d['reason'])
+
+    def test_no_max_bid_next_ge_buyout_skips(self):
+        d = decide_auto_bid(
+            _settings(),
+            buyout_price=805_000,
+            min_available_bid=800_000,
+            max_bid=None,
+            min_bid_step=0,
+            year=2019,
+            mileage=50_000,
+        )
+        # step=0 → candidate = floor(805000/1000)*1000 = 805000 ≥ выкупа
         self.assertFalse(d['should_bid'])
         self.assertEqual(d['next_bid'], 805_000)
         self.assertIn('первая ставка', d['reason'])
 
+    def test_no_max_bid_rounds_down(self):
+        d = decide_auto_bid(
+            _settings(),
+            buyout_price=951_500,
+            min_available_bid=800_000,
+            max_bid=None,
+            min_bid_step=5_000,
+            year=2019,
+            mileage=50_000,
+        )
+        # 951500 − 20000 = 931500 → floor to 1000 = 931000
+        self.assertTrue(d['should_bid'])
+        self.assertEqual(d['bid_amount'], 931_000)
     def test_min_bid_amount_floor(self):
         d = decide_auto_bid(
             _settings(min_bid_amount=900_000),

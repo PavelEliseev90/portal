@@ -855,6 +855,50 @@
         </div>
         {% if params.primary_offer %}
           <hr class="my-2">
+          <div class="mb-3">
+            <div class="fw-semibold mb-1">Потолок автоставки (вручную)</div>
+            {% if params.primary_offer.manual_max_bid %}
+              <div class="mb-1">
+                <span class="badge text-bg-warning">задан</span>
+                <strong class="ms-1">{{ params.primary_offer.manual_max_bid|formatted_number }} ₽</strong>
+              </div>
+            {% else %}
+              <div class="mb-1">
+                <span class="badge text-bg-secondary">не задан</span>
+                <span class="text-muted small ms-1">автоставка ограничена только расчётом</span>
+              </div>
+            {% endif %}
+            {% if params.primary_offer.manual_max_bid_set_at or params.primary_offer.manual_max_bid_set_by %}
+              <p class="small text-muted mb-2">
+                {% if params.primary_offer.manual_max_bid %}Задал{% else %}Сбросил{% endif %}
+                {% if params.primary_offer.manual_max_bid_set_by %}
+                  {{ params.primary_offer.manual_max_bid_set_by.get_full_name|default:params.primary_offer.manual_max_bid_set_by.username }}
+                {% else %}
+                  —
+                {% endif %}
+                {% if params.primary_offer.manual_max_bid_set_at %}
+                  · {{ params.primary_offer.manual_max_bid_set_at|date:"d.m.Y H:i" }}
+                {% endif %}
+              </p>
+            {% endif %}
+            <form method="post" action="{% url 'auction_avito:lot_set_manual_max' params.lot.pk %}" class="d-flex flex-wrap gap-2 align-items-end">
+              {% csrf_token %}
+              <div>
+                <label class="form-label small mb-1" for="lotManualMax">Сумма, ₽</label>
+                <input type="number" class="form-control form-control-sm" style="max-width:180px"
+                       id="lotManualMax" name="manual_max_bid" min="0" step="1000"
+                       placeholder="сумма"
+                       value="{% if params.primary_offer.manual_max_bid %}{{ params.primary_offer.manual_max_bid }}{% endif %}">
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+              {% if params.primary_offer.manual_max_bid %}
+              <button type="submit" name="clear" value="1" class="btn btn-outline-secondary btn-sm">Сбросить</button>
+              {% endif %}
+            </form>
+            <p class="small text-muted mb-0 mt-2">
+              Жёсткий cap: автоставка не превысит эту сумму, даже если расчётный выкуп выше.
+            </p>
+          </div>
           <p class="small text-muted mb-1">
             {% if params.primary_offer.bid_made_at %}Ставка от {{ params.primary_offer.bid_made_at|date:"d.m.Y H:i" }}{% endif %}
           </p>
