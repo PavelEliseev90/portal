@@ -2191,6 +2191,13 @@ def access_user(request, slug):
 
 def send_web_socket_message(group, chat, user, text, estimation_id):
     from task_manager.views import send_message_socket
+    group_s = str(group or '')
+    if group_s.startswith('car_') or 'car' in group_s:
+        channel = 'cars'
+    elif group_s.startswith('aav_'):
+        channel = 'avito'
+    else:
+        channel = 'estimation'
     message_json = {
             'chat_id'       : str(chat.pk),
             'name'          : str(user),
@@ -2201,7 +2208,8 @@ def send_web_socket_message(group, chat, user, text, estimation_id):
             'first_name'    : user.first_name,
             'psevdo_name'   : user.profiles.eco_name,
             'eco'           : user.profiles.eco,
-            'estimation_id' : estimation_id
+            'estimation_id' : estimation_id,
+            'channel'       : channel,
         }    
     
     send_message_socket(message = message_json)

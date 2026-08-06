@@ -242,7 +242,7 @@ z-index: 1044;">
   }
 </style>
 
-<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
    <script type="text/javascript">
     
@@ -584,8 +584,12 @@ z-index: 1044;">
           }
 
           // Только чаты интерактивных оценок (slug rlk_{id}).
-          // Игнор: aav_feed / aav_lot_*, prep_*, прочие шины на том же WS.
+          // Игнор: aav_feed / aav_lot_*, prep_*, car_*, прочие шины на том же WS.
           var chatSlug = (data && data.chat) ? String(data.chat) : '';
+          var channel = (data && data.channel) ? String(data.channel) : '';
+          if (channel && channel !== 'estimation') {
+            return;
+          }
           if (!/^rlk_\d+$/.test(chatSlug)) {
             return;
           }

@@ -79,6 +79,7 @@
             <th class="text-end">Базовая</th>
             <th class="text-end">Желаемая</th>
             <th class="text-end">Дельта</th>
+            <th>Отработка</th>
             <th>Комментарий</th>
           </tr>
         </thead>
@@ -106,10 +107,19 @@
                 <span class="{% if row.delta > 0 %}delta-pos{% endif %}">{{ row.delta|floatformat:"0g" }}</span>
               {% else %}—{% endif %}
             </td>
+            <td>
+              {% if row.processed %}
+                <span class="badge text-bg-success">отработан</span>
+                {% if row.processed_by_name %}<div class="small text-muted">{{ row.processed_by_name }}</div>{% endif %}
+                {% if row.processed_at %}<div class="small text-muted">{{ row.processed_at|date:"d.m.Y H:i" }}</div>{% endif %}
+              {% else %}
+                <span class="badge text-bg-warning text-dark">не отработан</span>
+              {% endif %}
+            </td>
             <td class="comment-cell">{{ row.comment|default:"—" }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="11" class="text-muted">Нет запросов за выбранные фильтры.</td></tr>
+          <tr><td colspan="12" class="text-muted">Нет запросов за выбранные фильтры.</td></tr>
           {% endfor %}
         </tbody>
       </table>

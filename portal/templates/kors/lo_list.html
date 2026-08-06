@@ -102,7 +102,7 @@ z-index: 1044;">
 </div>
 </div>
 
-<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
 <script>
 
@@ -178,7 +178,7 @@ z-index: 1044;">
 	<img src="/media/loading.gif" alt="">
 </div>
 
-<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
    <script type="text/javascript">
     
@@ -431,21 +431,31 @@ z-index: 1044;">
         };
 
         chatSocket.onmessage = function(e){
-            
+          var data;
+          try {
+            data = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+
+          // Только чаты интерактивных оценок (slug rlk_{id}).
+          var chatSlug = (data && data.chat) ? String(data.chat) : '';
+          if (!/^rlk_\d+$/.test(chatSlug)) {
+            return;
+          }
+
+          if (!data.message) {
+            return;
+          }
+
           document.getElementById('notif').play();
           
-          const data = JSON.parse(e.data);
-
-          if (data.message){
-              
-            if (toats_visible){
-              var link = '/eco/' + data.chat.replace('rlk_','') + '/';
-              toast(data.chat, data.message , '22:10', link, ' ');
-            };
-            
-            refresh_info(data.chat);
-
+          if (toats_visible){
+            var link = '/eco/' + chatSlug.replace('rlk_','') + '/';
+            toast(chatSlug, data.message , '22:10', link, ' ');
           };
+            
+          refresh_info(chatSlug);
 
         };
 

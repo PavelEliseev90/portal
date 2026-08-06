@@ -79,7 +79,16 @@ def add_swap(rlk, estimation):
 
 
 def send_web_socket_message(group, chat, user, text, estimation_id, skip_save=False):
-    
+    group_s = str(group or '')
+    if group_s.startswith('aav_'):
+        channel = 'avito'
+    elif group_s.startswith('car_') or 'car' in group_s:
+        channel = 'cars'
+    elif group_s.startswith('prep_'):
+        channel = 'prep'
+    else:
+        channel = 'estimation'
+
     message_json = {
             'chat_id'       : str(chat.pk),
             'name'          : str(user),
@@ -92,6 +101,7 @@ def send_web_socket_message(group, chat, user, text, estimation_id, skip_save=Fa
             'eco'           : user.profiles.eco,
             'estimation_id' : estimation_id,
             'skip_save'     : skip_save,
+            'channel'       : channel,
         }    
     
     send_message_socket(message = message_json)
@@ -3830,6 +3840,66 @@ def price_increase_request(request, id):
     })
 
 
+@login_required
+def price_increase_mark_processed(request, id):
+    """Отметить последний (или указанный) запрос повышения как отработанный / снять отметку."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    profile = getattr(request.user, 'profiles', None)
+    if not profile or not getattr(profile, 'eco_price_increase', False):
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    try:
+        rlk = DocRLK.objects.get(pk=id)
+    except DocRLK.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'not_found'}, status=404)
+
+    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).select_related(
+        'page_soglasovanie',
+    ).first()
+    soglasovanie = getattr(interactiv_rlk, 'page_soglasovanie', None) if interactiv_rlk else None
+    if soglasovanie is None:
+        return JsonResponse({'ok': False, 'error': 'no_request'}, status=400)
+
+    req_id = (request.POST.get('request_id') or '').strip()
+    qs = RegInteractivOcenkaPriceIncreaseRequest.objects.filter(soglasovanie=soglasovanie)
+    if req_id:
+        try:
+            price_req = qs.filter(pk=int(req_id)).first()
+        except (TypeError, ValueError):
+            price_req = None
+    else:
+        price_req = qs.order_by('-created_at', '-id').first()
+
+    if price_req is None:
+        return JsonResponse({'ok': False, 'error': 'no_request'}, status=400)
+
+    raw = (request.POST.get('processed') or '').strip().lower()
+    mark = raw in ('1', 'true', 'yes', 'on', 'processed')
+
+    if mark:
+        price_req.processed_at = DT.datetime.now()
+        price_req.processed_by = request.user
+    else:
+        price_req.processed_at = None
+        price_req.processed_by = None
+    price_req.save(update_fields=['processed_at', 'processed_by'])
+
+    return JsonResponse({
+        'ok': True,
+        'request_id': price_req.pk,
+        'processed': price_req.is_processed,
+        'processed_at': price_req.processed_at.isoformat(sep=' ', timespec='minutes') if price_req.processed_at else '',
+        'processed_by': (
+            (getattr(getattr(price_req.processed_by, 'profiles', None), 'eco_name', None)
+             or f'{(price_req.processed_by.last_name or "")} {(price_req.processed_by.first_name or "")}'.strip()
+             or price_req.processed_by.username)
+            if price_req.processed_by_id else ''
+        ),
+    })
+
+
 EMAIL_NOTIFY_CHAT_COMMENT = (
     'Важные изменения по интерактивной оценке, обратите внимание на чат.'
 )
@@ -4381,6 +4451,17 @@ def doc(request, id):
                         getattr(interactiv_rlk, 'page_soglasovanie', None)
                         and interactiv_rlk.page_soglasovanie.price_increase_requests.exists()
                     )
+                ),
+                'can_process_price_increase': bool(
+                    getattr(getattr(user, 'profiles', None), 'eco_price_increase', False)
+                ),
+                'price_increase_latest': (
+                    interactiv_rlk.page_soglasovanie.price_increase_requests
+                    .select_related('processed_by', 'processed_by__profiles', 'user', 'user__profiles')
+                    .order_by('-created_at', '-id')
+                    .first()
+                    if getattr(interactiv_rlk, 'page_soglasovanie', None)
+                    else None
                 ),
                 'opens_infos'           : opens_infos,
                 'json_autoteka'         : json_autoteka,
@@ -14351,6 +14432,7 @@ def price_increase_analytics(request):
     from eco.price_increase_analytics import (
         build_price_increase_analytics,
         normalize_group_by,
+        normalize_processed_filter,
         parse_unit_ids,
         units_for_filter,
         GROUP_PLACE,
@@ -14374,6 +14456,7 @@ def price_increase_analytics(request):
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
     group_by = normalize_group_by(request.GET.get('group_by') or GROUP_PLACE)
+    processed = normalize_processed_filter(request.GET.get('processed'))
     unit_ids = parse_unit_ids(request.GET.getlist('unit_ids'))
     # совместимость со старым single-select
     legacy_unit = _get_int(request.GET.get('unit_id'))
@@ -14385,6 +14468,7 @@ def price_increase_analytics(request):
         date_end=date_end,
         unit_ids=unit_ids or None,
         group_by=group_by,
+        processed=processed,
     )
     units = units_for_filter()
 
@@ -14392,6 +14476,7 @@ def price_increase_analytics(request):
         'date_start': date_start.strftime('%Y-%m-%d'),
         'date_end': date_end.strftime('%Y-%m-%d'),
         'group_by': group_by,
+        'processed': processed,
     }
     detail_qs_base = urlencode(filter_qs)
 
@@ -14403,6 +14488,7 @@ def price_increase_analytics(request):
             'date_start': date_start.strftime('%Y-%m-%d'),
             'date_end': date_end.strftime('%Y-%m-%d'),
             'group_by': group_by,
+            'processed': processed,
             'unit_ids': [str(i) for i in unit_ids],
             'unit_ids_list': unit_ids,
         },
@@ -14420,7 +14506,8 @@ def price_increase_analytics(request):
         'hint': (
             'Источник: история запросов повышения цены из чата оценки. '
             'ЦГ — по ЦНА / цене до или после КД; дельта = желаемая − базовая. '
-            '% = оценки с запросом / все оценки ДЦ за период (по дате РЛ, статус ≥ 2).'
+            '% = оценки с запросом / все оценки ДЦ за период (по дате РЛ, статус ≥ 2). '
+            'Отработка — галка в интерактивной оценке у роли «Отработка запросов повышения цены».'
         ),
     }
     return render(request, 'lo/price_increase_analytics.html', {'params': params})
@@ -14432,6 +14519,7 @@ def price_increase_analytics_detail(request):
     from eco.price_increase_analytics import (
         build_price_increase_detail,
         normalize_group_by,
+        normalize_processed_filter,
         parse_unit_ids,
         GROUP_PLACE,
     )
@@ -14452,6 +14540,7 @@ def price_increase_analytics_detail(request):
     date_start = _parse_date(request.GET.get('date_start', ''), default_start, is_end=False)
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
     group_by = normalize_group_by(request.GET.get('group_by') or GROUP_PLACE)
+    processed = normalize_processed_filter(request.GET.get('processed'))
     unit_ids = parse_unit_ids(request.GET.getlist('unit_ids'))
     unit_id = _get_int(request.GET.get('unit_id'))
     zg = (request.GET.get('zg') or '').strip()
@@ -14461,6 +14550,7 @@ def price_increase_analytics_detail(request):
             'date_start': request.GET.get('date_start') or '',
             'date_end': request.GET.get('date_end') or '',
             'group_by': group_by,
+            'processed': processed if processed != 'all' else '',
         }.items() if v
     }
     back_url = '/eco/price-increase-analysis/'
@@ -14477,6 +14567,7 @@ def price_increase_analytics_detail(request):
         unit_ids=unit_ids or None,
         zg=zg or None,
         group_by=group_by,
+        processed=processed,
     )
 
     params = {
@@ -14491,6 +14582,7 @@ def price_increase_analytics_detail(request):
             'unit_ids': unit_ids,
             'zg': zg,
             'group_by': group_by,
+            'processed': processed,
         },
         'back_url': back_url,
         'unit_column_title': 'Источник ДЦ' if group_by == 'source' else 'Место оценки',

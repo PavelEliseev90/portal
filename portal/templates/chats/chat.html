@@ -156,7 +156,7 @@ z-index: 1030;">
 </div>
 {% endif %}
 
-<audio id="notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
 <script>
 

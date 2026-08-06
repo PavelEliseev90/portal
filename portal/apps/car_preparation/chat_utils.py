@@ -103,6 +103,7 @@ def broadcast_prep_message(chat, message_text, user=None, prep_pk=None):
         'skip_save': True,
         'estimation_id': 0,
         'prep_pk': prep_pk,
+        'channel': 'prep',
     }
     try:
         from task_manager.views import send_message_socket

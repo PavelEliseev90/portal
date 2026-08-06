@@ -231,7 +231,7 @@
 })();
 </script>
 {% else %}
-<audio id="rlk-op-page-notif" src="/media_dop/music/vin.mp3"></audio>
+<audio id="rlk-op-page-notif" src="{% include 'chats/notif_sound_src.html' with channel='rlk_op' %}" preload="auto"></audio>
 
 <script>
 (function () {
