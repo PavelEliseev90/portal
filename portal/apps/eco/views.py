@@ -13718,6 +13718,9 @@ def estimation_costs_compare_report(request):
     car_query = (request.GET.get('car') or '').strip()
     calc_type = (request.GET.get('calc_type') or 'autohub').strip()
     only_changed = (request.GET.get('only_changed') or '').lower() in ('1', 'true', 'on', 'yes')
+    view_mode = (request.GET.get('view_mode') or 'all').strip()
+    if view_mode not in ('all', 'diag', 'changed'):
+        view_mode = 'all'
     do_run = (request.GET.get('run') or '').lower() in ('1', 'true', 'on', 'yes')
     page_number = _get_int(request.GET.get('page')) or 1
     per_page = min(max(_get_int(request.GET.get('per_page')) or 5, 1), 20)
@@ -13731,6 +13734,7 @@ def estimation_costs_compare_report(request):
         'car': car_query,
         'calc_type': calc_type,
         'only_changed': '1' if only_changed else '0',
+        'view_mode': view_mode,
         'run': '1' if do_run else '0',
         'per_page': per_page,
     }
@@ -13750,6 +13754,7 @@ def estimation_costs_compare_report(request):
     page_obj = None
     paginator = None
     errors = []
+    no_history_count = 0
 
     export_xlsx = do_run and (request.GET.get('export') or '').lower() in ('xlsx', 'excel', '1')
 
@@ -13784,7 +13789,14 @@ def estimation_costs_compare_report(request):
                 )
                 if result:
                     comparisons.append(result)
-                    table_rows.extend(flatten_comparison_rows(result))
+                    if result.get('history_missing'):
+                        no_history_count += 1
+                    rows = flatten_comparison_rows(result)
+                    if view_mode == 'diag':
+                        rows = [r for r in rows if (r.get('kind') or '') == 'diag_setting']
+                    elif view_mode == 'changed':
+                        rows = [r for r in rows if abs(float(r.get('delta') or 0)) > 0.5]
+                    table_rows.extend(rows)
             except Exception as exc:
                 errors.append(f'Оценка {interactiv_rlk.estimation_id}: {exc}')
 
@@ -13807,6 +13819,8 @@ def estimation_costs_compare_report(request):
         'base_query': base_query,
         'errors': errors,
         'do_run': do_run,
+        'no_history_count': no_history_count,
+        'compare_profile': 'BEFORE=settings 12, AFTER=settings 13',
     }
     return render(request, 'lo/estimation_costs_compare_report.html', {'params': params})
 

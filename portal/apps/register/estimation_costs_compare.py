@@ -8,8 +8,10 @@
 """
 from __future__ import annotations
 
+import copy
 import logging
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any
 
 from django.db.models import Q
@@ -21,6 +23,7 @@ SECTION_SS = 'ss'
 SECTION_MCU = 'mcu'
 SECTION_OTHER = 'other'
 SECTION_PRICE_FLOW = 'price_flow'
+SECTION_DIAG_SETTINGS = 'diag_settings'
 
 SECTION_TITLES = {
     SECTION_PODGOTOVKA: 'Подготовка',
@@ -28,6 +31,7 @@ SECTION_TITLES = {
     SECTION_MCU: 'Кузовной участок',
     SECTION_OTHER: 'Прочее / показатели',
     SECTION_PRICE_FLOW: 'Цепочка ЦНА',
+    SECTION_DIAG_SETTINGS: 'Настройки диагностики',
 }
 
 INDICATOR_IZNOS_SS = 'Возврат за слесарный ремонт (повышенный износ)'
@@ -37,6 +41,19 @@ INDICATOR_TOTAL_MCU = 'Итого: кузовной'
 INDICATOR_TOTAL_RECOVERY = 'Итого: восстановительный ремонт'
 INDICATOR_IZNOS_PRICE = 'Коррекция повышенного износа'
 INDICATOR_CNA = 'ЦНА (base)'
+INDICATOR_KF_TXT = 'ИРЦ ТХТ'
+INDICATOR_TORG_PROTECT = 'Скидка торг (защита)'
+INDICATOR_LOSS_PROTECT = 'Защита от убытка СС'
+INDICATOR_FINANCE = 'Финансирование'
+
+BEFORE_SETTINGS_ID = 12
+AFTER_SETTINGS_ID = 13
+
+
+@dataclass
+class CompareProfile:
+    before_settings_id: int = BEFORE_SETTINGS_ID
+    after_settings_id: int = AFTER_SETTINGS_ID
 
 
 def _as_float(value, default=0.0) -> float:
@@ -86,6 +103,103 @@ def _price_step_indicator(item: dict, idx: int) -> str:
     return f'{idx:02d}. шаг расчёта'
 
 
+def _clean_indicator_name(name: str) -> str:
+    """Убираем суффиксы вида 'сумма 200/400/.../5001'."""
+    import re
+
+    value = (name or '').strip()
+    value = re.sub(r'\s+сумма\s+\d{3,4}\b', '', value, flags=re.IGNORECASE)
+    return ' '.join(value.split())
+
+
+def _suffix_by_zg(zg: str) -> str:
+    return (zg or '').replace(' ', '')
+
+
+def _safe_attr(obj: Any, name: str, default=0.0):
+    return _as_float(getattr(obj, name, default))
+
+
+def _diag_setting_lines(price_result: dict | None) -> list[dict]:
+    price_result = price_result or {}
+    settings = price_result.get('estimation_settings')
+    if settings is None:
+        return []
+    suffix = _suffix_by_zg(price_result.get('zg', ''))
+    if not suffix:
+        return []
+
+    mapping = [
+        ('engine_danger_amount_min', 'Двигатель ремонт'),
+        ('engine_dt_danger_amount_min', 'Двигатель DT ремонт'),
+        ('gear_at_danger_amount_min', 'АКПП ремонт'),
+        ('gear_amt_danger_amount_min', 'АМТ ремонт'),
+        ('gear_cvt_danger_amount_min', 'CVT ремонт'),
+        ('gear_mt_danger_amount_min', 'МКПП ремонт'),
+        ('suspension_danger_amount_min', 'Подвеска ремонт'),
+        ('system_og_danger_amount_min', 'Выхлопная система ремонт'),
+        ('conditioner_danger_amount_min', 'Кондиционер ремонт'),
+        ('turbo_danger_amount_min', 'Турбина ремонт'),
+        ('wheel_danger_amount_min', 'Рулевая рейка ремонт'),
+        ('brake_danger_amount_min', 'Тормозная система ремонт'),
+        ('subframe_danger_amount_min', 'Подрамник ремонт'),
+        ('drive_danger_amount_min', 'Привод ремонт'),
+        ('windshield', 'Лобовое стекло'),
+        ('windshield_heat', 'Лобовое с обогревом'),
+        ('light_pered', 'Передняя оптика'),
+        ('light_zad', 'Задняя оптика'),
+        ('battery', 'АКБ'),
+        ('to_1', 'ТО-1'),
+        ('to_2', 'ТО-2'),
+        ('to_3', 'ТО-3'),
+    ]
+    lines = []
+    for base_name, title in mapping:
+        field_name = f'{base_name}_{suffix}'
+        lines.append({
+            'section': SECTION_DIAG_SETTINGS,
+            'section_title': SECTION_TITLES[SECTION_DIAG_SETTINGS],
+            'indicator': title,
+            'amount': _safe_attr(settings, field_name),
+            'kind': 'diag_setting',
+        })
+    return lines
+
+
+def _context_indicator_lines(price_result: dict | None) -> list[dict]:
+    price_result = price_result or {}
+    return [
+        {
+            'section': SECTION_OTHER,
+            'section_title': SECTION_TITLES[SECTION_OTHER],
+            'indicator': INDICATOR_KF_TXT,
+            'amount': _as_float(price_result.get('kf')),
+            'kind': 'context',
+        },
+        {
+            'section': SECTION_OTHER,
+            'section_title': SECTION_TITLES[SECTION_OTHER],
+            'indicator': INDICATOR_TORG_PROTECT,
+            'amount': _as_float(price_result.get('discount_torg')),
+            'kind': 'context',
+        },
+        {
+            'section': SECTION_OTHER,
+            'section_title': SECTION_TITLES[SECTION_OTHER],
+            'indicator': INDICATOR_LOSS_PROTECT,
+            'amount': _as_float(price_result.get('zachita_ot_ubitka')),
+            'kind': 'context',
+        },
+        {
+            'section': SECTION_OTHER,
+            'section_title': SECTION_TITLES[SECTION_OTHER],
+            'indicator': INDICATOR_FINANCE,
+            'amount': _as_float(price_result.get('finance_price')),
+            'kind': 'context',
+        },
+    ]
+
+
 def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
     """Строки работ + служебные показатели из ответа estimations_price_calculation."""
     price_result = price_result or {}
@@ -98,7 +212,7 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
     )
     for section, items in mapping:
         for item in items:
-            name = _work_name(item)
+            name = _clean_indicator_name(_work_name(item))
             if not name:
                 continue
             lines.append({
@@ -180,6 +294,9 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
             'amount': _as_float(step.get('dif')),
             'kind': 'price_step',
         })
+
+    lines.extend(_context_indicator_lines(price_result))
+    lines.extend(_diag_setting_lines(price_result))
 
     return lines
 
@@ -355,6 +472,107 @@ def merge_before_after_lines(before_lines: list[dict], after_lines: list[dict]) 
     return rows
 
 
+def _resolve_calc_context(interactiv_rlk, estimation):
+    from refs.price_groups import resolve_price_group_by_amount
+
+    rlk = getattr(interactiv_rlk, 'rlk', None)
+    unit = getattr(interactiv_rlk, 'unit', None) or getattr(rlk, 'unit_dc', None) or getattr(rlk, 'unit', None)
+    price_group = resolve_price_group_by_amount(getattr(estimation, 'hub_avg', 0) or 0)
+    return unit, price_group
+
+
+def _get_history_unit_settings(unit, price_group, start_estimation):
+    from refs.unit_price_group_settings import UnitPriceGroupSettings
+
+    if not unit or not price_group:
+        return None
+    return (
+        UnitPriceGroupSettings.objects
+        .filter(
+            unit_id=unit.pk,
+            price_group_id=price_group.pk,
+            created_at__lte=start_estimation,
+        )
+        .order_by('-created_at', '-id')
+        .first()
+    )
+
+
+def _build_compare_unit(unit, settings_row, price_group_code):
+    from refs.unit_price_group_settings import sync_settings_row_to_unit
+
+    compare_unit = copy.copy(unit)
+    if settings_row is not None and price_group_code:
+        sync_settings_row_to_unit(compare_unit, settings_row, price_group_code)
+    return compare_unit
+
+
+def calculate_compare_before_after(
+    interactiv_rlk,
+    estimation,
+    *,
+    calc_type: str = 'autohub',
+    profile: CompareProfile | None = None,
+) -> dict[str, Any] | None:
+    from eco.views import (
+        estimations_price_calculation,
+        get_body_estimation_cached,
+        get_salon_estimation_cached,
+    )
+    from register.models import RegEstimationsSettings
+    profile = profile or CompareProfile()
+    unit, price_group = _resolve_calc_context(interactiv_rlk, estimation)
+    if unit is None:
+        return None
+
+    settings_history = _get_history_unit_settings(unit, price_group, estimation.start_estimation)
+    if settings_history is None:
+        return {
+            'status': 'no_history',
+            'history_row_id': None,
+            'history_row_date': None,
+            'price_group_code': getattr(price_group, 'code', '') if price_group else '',
+            'price_group_name': getattr(price_group, 'name', '') if price_group else '',
+            'unit_id': getattr(unit, 'pk', None),
+        }
+
+    price_group_code = str(getattr(price_group, 'code', '') or '')
+    compare_unit = _build_compare_unit(unit, settings_history, price_group_code)
+    body_info = get_body_estimation_cached(estimation)
+    salon_info = get_salon_estimation_cached(estimation)
+
+    def _calc_for_settings(settings_id: int):
+        settings = RegEstimationsSettings.objects.get(pk=settings_id)
+        interactiv_for_calc = copy.copy(interactiv_rlk)
+        interactiv_for_calc.unit = compare_unit
+        return estimations_price_calculation(
+            interactiv_for_calc,
+            estimation,
+            type_calculation=calc_type,
+            body_info=body_info,
+            salon_info=salon_info,
+            estimation_settings=settings,
+            persist=False,
+            save_history=False,
+        )
+
+    before_result = _calc_for_settings(profile.before_settings_id)
+    after_result = _calc_for_settings(profile.after_settings_id)
+    if not before_result or not after_result:
+        return None
+    return {
+        'status': 'ok',
+        'before_result': before_result,
+        'after_result': after_result,
+        'history_row_id': settings_history.pk,
+        'history_row_date': settings_history.created_at,
+        'price_group_code': price_group_code,
+        'price_group_name': getattr(price_group, 'name', '') if price_group else '',
+        'unit_id': getattr(unit, 'pk', None),
+        'profile': profile,
+    }
+
+
 def compare_estimation_costs(
     interactiv_rlk,
     estimation,
@@ -366,46 +584,34 @@ def compare_estimation_costs(
     Сравнение одной оценки.
     Возвращает dict с meta + rows или None, если пересчёт невозможен (нет ЦНА).
     """
-    from eco.views import (
-        estimations_price_calculation,
-        get_body_estimation_cached,
-        get_salon_estimation_cached,
-        get_estimation_settings,
-    )
-
-    before_record, before_source = pick_before_history_record(estimation, calc_type=calc_type)
-    if before_record is not None:
-        before_lines = extract_lines_from_history_record(before_record)
-        before_date = before_record.date
-        before_history_id = before_record.pk
-        before_zna = before_record.zna or 0
-        before_kf = before_record.kf or ''
-    else:
-        before_lines = extract_lines_from_saved_tables(estimation)
-        before_date = None
-        before_history_id = None
-        before_zna = estimation.hub_avg or 0
-        before_kf = ''
-        before_source = 'saved_tables'
-
     try:
-        after_result = estimations_price_calculation(
+        compare_data = calculate_compare_before_after(
             interactiv_rlk,
             estimation,
-            type_calculation=calc_type,
-            body_info=get_body_estimation_cached(estimation),
-            salon_info=get_salon_estimation_cached(estimation),
-            estimation_settings=get_estimation_settings(),
-            persist=False,
-            save_history=False,
+            calc_type=calc_type,
         )
     except Exception:
         logger.exception('compare_estimation_costs: recalc failed estimation=%s', estimation.pk)
         return None
 
-    if not after_result:
+    if not compare_data:
         return None
 
+    if compare_data.get('status') == 'no_history':
+        return {
+            'estimation_id': estimation.pk,
+            'vin': (estimation.vin or '').strip(),
+            'start_estimation': estimation.start_estimation,
+            'before_source': 'no_history',
+            'history_missing': True,
+            'rows': [],
+            'price_group_code': compare_data.get('price_group_code') or '',
+            'price_group_name': compare_data.get('price_group_name') or '',
+        }
+
+    before_result = compare_data['before_result']
+    after_result = compare_data['after_result']
+    before_lines = extract_lines_from_price_result(before_result)
     after_lines = extract_lines_from_price_result(after_result)
     merged = merge_before_after_lines(before_lines, after_lines)
     if only_changed:
@@ -422,17 +628,20 @@ def compare_estimation_costs(
         'start_estimation': estimation.start_estimation,
         'unit_name': getattr(unit, 'name', '') or '',
         'calc_type': calc_type,
-        'before_source': before_source,
-        'before_history_id': before_history_id,
-        'before_date': before_date,
-        'before_zna': before_zna,
-        'before_kf': before_kf,
+        'before_source': 'historical_coefficients',
+        'before_history_id': compare_data.get('history_row_id'),
+        'before_date': compare_data.get('history_row_date'),
+        'before_zna': before_result.get('zna') or 0,
+        'before_kf': before_result.get('kf') or '',
         'after_zna': after_result.get('zna') or 0,
         'after_kf': after_result.get('kf') or '',
         'after_estimation_price': after_result.get('estimation_price') or 0,
-        'before_estimation_price': (
-            (getattr(before_record, 'estimation_price', 0) or 0) if before_record else 0
-        ),
+        'before_estimation_price': before_result.get('estimation_price') or 0,
+        'settings_before_id': compare_data.get('profile').before_settings_id,
+        'settings_after_id': compare_data.get('profile').after_settings_id,
+        'price_group_code': compare_data.get('price_group_code') or '',
+        'price_group_name': compare_data.get('price_group_name') or '',
+        'history_missing': False,
         'rows': merged,
     }
 
@@ -510,6 +719,11 @@ def flatten_comparison_rows(comparison: dict) -> list[dict]:
         'after_kf': comparison.get('after_kf') or '',
         'before_estimation_price': comparison.get('before_estimation_price') or 0,
         'after_estimation_price': comparison.get('after_estimation_price') or 0,
+        'settings_before_id': comparison.get('settings_before_id') or BEFORE_SETTINGS_ID,
+        'settings_after_id': comparison.get('settings_after_id') or AFTER_SETTINGS_ID,
+        'price_group_code': comparison.get('price_group_code') or '',
+        'price_group_name': comparison.get('price_group_name') or '',
+        'history_missing': bool(comparison.get('history_missing')),
     }
     out = []
     for row in comparison.get('rows') or []:
@@ -521,6 +735,11 @@ def flatten_comparison_rows(comparison: dict) -> list[dict]:
             'amount_before': row.get('amount_before') or 0,
             'amount_after': row.get('amount_after') or 0,
             'delta': row.get('delta') or 0,
+            'settings_before_id': base['settings_before_id'],
+            'settings_after_id': base['settings_after_id'],
+            'price_group_code': base['price_group_code'],
+            'price_group_name': base['price_group_name'],
+            'history_missing': base['history_missing'],
         })
     return out
 
@@ -550,6 +769,11 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
         'КФ после',
         'Выкуп до',
         'Выкуп после',
+        'settings BEFORE',
+        'settings AFTER',
+        'ЦГ код',
+        'ЦГ наименование',
+        'Нет истории коэффициентов',
         'Раздел',
         'Показатель',
         'Тип строки',
@@ -581,6 +805,11 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
                 row['after_kf'],
                 row['before_estimation_price'],
                 row['after_estimation_price'],
+                row['settings_before_id'],
+                row['settings_after_id'],
+                row['price_group_code'],
+                row['price_group_name'],
+                'Да' if row['history_missing'] else 'Нет',
                 row['section'],
                 row['indicator'],
                 row['kind'],
@@ -592,7 +821,7 @@ def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tupl
 
     for idx, _ in enumerate(headers, start=1):
         ws.column_dimensions[get_column_letter(idx)].width = 16
-    ws.column_dimensions['P'].width = 40
+    ws.column_dimensions['U'].width = 40
     ws.column_dimensions['D'].width = 20
 
     if filepath is not None:
