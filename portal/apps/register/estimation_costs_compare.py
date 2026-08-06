@@ -20,12 +20,14 @@ SECTION_PODGOTOVKA = 'podgotovka'
 SECTION_SS = 'ss'
 SECTION_MCU = 'mcu'
 SECTION_OTHER = 'other'
+SECTION_PRICE_FLOW = 'price_flow'
 
 SECTION_TITLES = {
     SECTION_PODGOTOVKA: 'Подготовка',
     SECTION_SS: 'Слесарка',
     SECTION_MCU: 'Кузовной участок',
     SECTION_OTHER: 'Прочее / показатели',
+    SECTION_PRICE_FLOW: 'Цепочка ЦНА',
 }
 
 INDICATOR_IZNOS_SS = 'Возврат за слесарный ремонт (повышенный износ)'
@@ -34,6 +36,7 @@ INDICATOR_TOTAL_SS = 'Итого: слесарка'
 INDICATOR_TOTAL_MCU = 'Итого: кузовной'
 INDICATOR_TOTAL_RECOVERY = 'Итого: восстановительный ремонт'
 INDICATOR_IZNOS_PRICE = 'Коррекция повышенного износа'
+INDICATOR_CNA = 'ЦНА (base)'
 
 
 def _as_float(value, default=0.0) -> float:
@@ -69,6 +72,18 @@ def _work_name(item: dict) -> str:
     if not isinstance(item, dict):
         return ''
     return (item.get('name') or item.get('title') or '').strip()
+
+
+def _price_step_indicator(item: dict, idx: int) -> str:
+    name = (item.get('name') or '').strip()
+    comment = (item.get('comment') or '').strip()
+    if name and comment:
+        return f'{idx:02d}. {name} — {comment}'
+    if comment:
+        return f'{idx:02d}. {comment}'
+    if name:
+        return f'{idx:02d}. {name}'
+    return f'{idx:02d}. шаг расчёта'
 
 
 def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
@@ -147,6 +162,25 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
         'kind': 'indicator',
     })
 
+    # База и цепочка шагов цены (как в list_info_price на карточке)
+    lines.append({
+        'section': SECTION_PRICE_FLOW,
+        'section_title': SECTION_TITLES[SECTION_PRICE_FLOW],
+        'indicator': INDICATOR_CNA,
+        'amount': _as_float(price_result.get('zna')),
+        'kind': 'price_base',
+    })
+    for idx, step in enumerate(price_result.get('list_info_price') or [], start=1):
+        if not isinstance(step, dict):
+            continue
+        lines.append({
+            'section': SECTION_PRICE_FLOW,
+            'section_title': SECTION_TITLES[SECTION_PRICE_FLOW],
+            'indicator': _price_step_indicator(step, idx),
+            'amount': _as_float(step.get('dif')),
+            'kind': 'price_step',
+        })
+
     return lines
 
 
@@ -162,10 +196,10 @@ def extract_lines_from_history_record(record) -> list[dict]:
     if not isinstance(raw, dict):
         raw = {}
 
-    # Если в JSON нет списков работ — соберём хотя бы итоги из полей записи
+    # Если в JSON нет списков работ/шагов цены — соберём хотя бы итоги из полей записи
     has_works = any(
         raw.get(k)
-        for k in ('list_work_podgotovka', 'list_work_service', 'list_work_mcu')
+        for k in ('list_work_podgotovka', 'list_work_service', 'list_work_mcu', 'list_info_price')
     )
     if has_works:
         # Подмешиваем поля записи, если в JSON нет компенсации износа
@@ -185,6 +219,7 @@ def extract_lines_from_history_record(record) -> list[dict]:
 
     # Fallback: только агрегаты с записи
     return extract_lines_from_price_result({
+        'zna': getattr(record, 'zna', 0) or 0,
         'amount_podgotovka': getattr(record, 'amount_podgotovka', 0) or 0,
         'amount_ss': getattr(record, 'amount_ss', 0) or 0,
         'amount_mcu': getattr(record, 'amount_mcu', 0) or 0,
@@ -490,10 +525,8 @@ def flatten_comparison_rows(comparison: dict) -> list[dict]:
     return out
 
 
-def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> int:
-    """Пишет Excel в файл или file-like. Возвращает число строк данных."""
-    from io import BytesIO
-
+def export_comparisons_to_xlsx(comparisons, filepath: str | None = None) -> tuple[int, Any]:
+    """Пишет Excel в файл или file-like. Возвращает (число строк, workbook)."""
     from openpyxl import Workbook
     from openpyxl.styles import Font
     from openpyxl.utils import get_column_letter
