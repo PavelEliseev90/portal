@@ -1,0 +1,170 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - Сравнение затрат оценки {% endblock %}
+
+{% block content %}
+<style>
+  .report-page { padding: 1rem 1.5rem 2.5rem; }
+  .report-header h2 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin-bottom: 0.25rem; }
+  .report-header p { color: #6c7a92; margin-bottom: 1.25rem; }
+  .report-filter {
+    background: #fff; border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem; margin-bottom: 1.25rem;
+  }
+  .panel {
+    background: #fff; border-radius: 1.2rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 18px 38px rgba(0, 23, 61, 0.07);
+    padding: 1.25rem;
+  }
+  .table-sticky thead th {
+    position: sticky; top: 0; background: #f8f9fc; z-index: 1; white-space: nowrap;
+  }
+  .diff-positive { color: #0f9d58; font-weight: 600; }
+  .diff-negative { color: #d93025; font-weight: 600; }
+  .diff-zero { color: #6c7a92; }
+</style>
+
+<div class="report-page">
+  <div class="report-header">
+    <h2>Сравнение затрат (подготовка / слесарка / кузов)</h2>
+    <p>
+      <strong>ДО</strong> — снимок из истории autohub (с учётом поздних добавлений работ).
+      <strong>ПОСЛЕ</strong> — пересчёт на текущих коэффициентах без записи в согласование.
+      Отдельно видны возврат СС при повышенном износе и коррекция износа.
+    </p>
+  </div>
+
+  <div class="report-filter">
+    <form method="get" class="row g-3 align-items-end">
+      <input type="hidden" name="run" value="1">
+      <div class="col-md-2">
+        <label class="form-label">Дата с</label>
+        <input type="date" class="form-control" name="date_start" value="{{ params.filters.date_start }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Дата по</label>
+        <input type="date" class="form-control" name="date_end" value="{{ params.filters.date_end }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">VIN</label>
+        <input type="text" class="form-control text-uppercase" name="vin" value="{{ params.filters.vin }}" placeholder="XW8…">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Или поиск</label>
+        <input type="text" class="form-control" name="car" value="{{ params.filters.car }}" placeholder="модель, ID РЛ">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">ДЦ</label>
+        <select class="form-select" name="unit_id">
+          <option value="">Все</option>
+          {% for unit in params.units %}
+            <option value="{{ unit.id }}" {% if params.filters.unit_id|default_if_none:'' == unit.id|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Тип расчёта</label>
+        <select class="form-select" name="calc_type">
+          <option value="autohub" {% if params.filters.calc_type == 'autohub' %}selected{% endif %}>Autohub</option>
+          <option value="custom" {% if params.filters.calc_type == 'custom' %}selected{% endif %}>Ручной</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div class="form-check mt-4">
+          <input class="form-check-input" type="checkbox" name="only_changed" value="1" id="onlyChanged"
+                 {% if params.filters.only_changed == '1' %}checked{% endif %}>
+          <label class="form-check-label" for="onlyChanged">Только строки с изменением (|Δ| &gt; 0)</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Пересчитать</button>
+      </div>
+      {% if params.do_run and params.total_candidates %}
+      <div class="col-md-2">
+        <a class="btn btn-outline-success w-100"
+           href="?{{ params.base_query }}&export=xlsx">
+          Excel
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if params.errors %}
+    <div class="alert alert-warning">
+      {% for err in params.errors %}{{ err }}<br>{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="mb-3 text-muted">
+    Найдено оценок в выборке: <strong>{{ params.total_candidates }}</strong>
+    {% if params.do_run and params.paginator %}
+      · на странице: {{ params.comparisons|length }} оценок, {{ params.table_rows|length }} строк
+    {% endif %}
+  </div>
+
+  {% if not params.do_run %}
+    <div class="panel text-muted">
+      Укажите период и/или VIN и нажмите <strong>Пересчитать</strong>.
+      Для одного VIN можно сузить даты до июля 2026.
+    </div>
+  {% elif params.table_rows %}
+    <div class="panel">
+      <div class="table-responsive" style="max-height: 70vh;">
+        <table class="table table-sm table-hover table-sticky">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>РЛ</th>
+              <th>VIN</th>
+              <th>ДЦ</th>
+              <th>Раздел</th>
+              <th>Показатель</th>
+              <th class="text-end">До</th>
+              <th class="text-end">После</th>
+              <th class="text-end">Δ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in params.table_rows %}
+            <tr>
+              <td class="text-nowrap">{% if row.date %}{{ row.date|date:'d.m.Y' }}{% endif %}</td>
+              <td>{{ row.rlk_number|default:row.rlk_id }}</td>
+              <td class="text-nowrap"><small>{{ row.vin }}</small></td>
+              <td><small>{{ row.unit_name }}</small></td>
+              <td><small>{{ row.section }}</small></td>
+              <td>{{ row.indicator }}</td>
+              <td class="text-end">{{ row.amount_before|floatformat:0 }}</td>
+              <td class="text-end">{{ row.amount_after|floatformat:0 }}</td>
+              <td class="text-end {% if row.delta > 0.5 %}diff-negative{% elif row.delta < -0.5 %}diff-positive{% else %}diff-zero{% endif %}">
+                {{ row.delta|floatformat:0 }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if params.page_obj and params.paginator.num_pages > 1 %}
+    <nav class="mt-3">
+      <ul class="pagination">
+        {% if params.page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?{{ params.base_query }}&page={{ params.page_obj.previous_page_number }}">←</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }}</span></li>
+        {% if params.page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?{{ params.base_query }}&page={{ params.page_obj.next_page_number }}">→</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  {% elif params.do_run %}
+    <div class="panel text-muted">Нет данных для отображения (нет ЦНА autohub или пересчёт вернул пусто).</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 """
 Фоновые задачи по складам / refresh_cars.
 Фото качаются асинхронно, чтобы /api/v1/refresh_cars/ быстро отвечал 1С.
-Очередь: stock (тот же process_tasks, что и остальной склад).
+Очередь: refresh_cars_photos (отдельный process_tasks, не путать со stock / Power BI).
 """
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ def load_photos(car: RefCarsOrganization, photos: list) -> None:
         photo_object.save()
 
 
-@background(queue='stock')
+@background(queue='refresh_cars_photos')
 def load_photos_async(car_id: int, photos: list) -> None:
     """Фоновая загрузка фото после refresh_cars."""
     try:
