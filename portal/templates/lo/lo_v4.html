@@ -915,6 +915,27 @@
       font-size: 0.85rem;
       color: rgba(255, 255, 255, 0.75);
     }
+
+    .kors-metric-card__action {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      line-height: 1.15;
+      white-space: nowrap;
+      opacity: 0.9;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    .kors-metric-card__action:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      opacity: 1;
+    }
   
     .kors-metrics-grid {
       display: grid;
@@ -1811,11 +1832,15 @@
                   
                   {% if params.interactiv_rlk.page_soglasovanie.price_after_kd > 0  %} 
                   <div class="kors-metric-card bg-success bg-gradient bg-opacity-50">
-                    <span class="kors-metric-card__label">Выкуп</span>
-                      <span class="kors-metric-card__value">
-                        {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:'0g'}} &#8381; 
-                      </span>
-                      <span class="kors-metric-card__sub">согласовано</span>
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                      <span class="kors-metric-card__label">Выкуп</span>
+                      <a href="?{% url_replace page=24 %}" class="kors-metric-card__action" title="Приём автомобиля">Приём</a>
+                    </div>
+                    <span class="kors-metric-card__value">
+                      {{params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:'0g'}} &#8381;
+                    </span>
+                    <span class="kors-metric-card__sub">
+                      {% if params.interactiv_rlk.page_reception %}согласовано · карточка приёма{% else %}согласовано{% endif %}
                     </span>
                   </div>
                   {% elif params.interactiv_rlk.page_soglasovanie.price_before_kd > 0 %}
@@ -1824,8 +1849,7 @@
                         <span class="kors-metric-card__value">
                           {{params.interactiv_rlk.page_soglasovanie.price_before_kd|floatformat:'0g'}} &#8381; 
                         </span>
-                        <span class="kors-metric-card__sub">до диагностики</span>                          
-                      </span>
+                        <span class="kors-metric-card__sub">до диагностики</span>
                     </div>
                   {% elif params.estimation.page_remote.price_eco %}
                     <div class="kors-metric-card bg-secondary bg-gradient bg-opacity-75">
@@ -1833,8 +1857,7 @@
                         <span class="kors-metric-card__value">
                           {{params.estimation.page_remote.price_eco|floatformat:'0g'}} &#8381; 
                         </span>
-                        <span class="kors-metric-card__sub">до осмотра</span>                          
-                      </span>
+                        <span class="kors-metric-card__sub">до осмотра</span>
                     </div>
                   {% else %}
                     <div class="kors-metric-card bg-secondary bg-gradient bg-opacity-50">
@@ -1842,8 +1865,7 @@
                         <span class="kors-metric-card__value">
                           --- &#8381; 
                         </span>
-                        <span class="kors-metric-card__sub">согласование</span>                          
-                      </span>
+                        <span class="kors-metric-card__sub">согласование</span>
                     </div>
                   {% endif %}
 

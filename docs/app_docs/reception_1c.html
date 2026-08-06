@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Приём автомобиля + 2КК → 1С</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.4; color: #111; max-width: 1100px; }
+    h1 { margin-bottom: 6px; }
+    h2 { margin-top: 28px; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+    h3 { margin-top: 16px; font-size: 15px; }
+    .muted { color: #555; font-size: 13px; }
+    .box { border: 1px solid #e6e6e6; border-radius: 12px; padding: 14px; margin-top: 10px; }
+    code, pre { background: #f4f6f8; border-radius: 6px; }
+    code { padding: 1px 5px; }
+    pre { padding: 12px; overflow: auto; font-size: 12px; line-height: 1.35; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #e6e6e6; padding: 7px 8px; vertical-align: top; font-size: 13px; }
+    th { background: #fafafa; text-align: left; }
+    .tag { display: inline-block; background: #eef5ff; color: #0b57d0; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+    ul { padding-left: 18px; }
+    a { color: #0b57d0; }
+  </style>
+</head>
+<body>
+  <h1>Приём автомобиля и второй комплект колёс</h1>
+  <div class="muted">
+    Документ для портала и интеграции с 1С.
+    UI: вкладка интерактивной оценки <span class="tag">page=24</span>.
+    Отправка: HTTP POST на HS 1С с <code>Type: "reception"</code>.
+  </div>
+
+  <div class="box">
+    <h2>1. Где в портале</h2>
+    <ul>
+      <li>ECO / интерактивная оценка → вкладка <b>Приём автомобиля</b> (<code>?page=24</code>).</li>
+      <li>Шаблоны: <code>lo/lo_v5.html</code>, <code>lo/lo_v4.html</code> + include <code>lo/partials/reception_page.html</code>.</li>
+      <li>Логика: <code>portal/apps/eco/reception.py</code>, обработка в <code>eco/views.py</code> (doc).</li>
+      <li>Модель приёма АМ: <code>RegInteractivOcenkaReception</code> (OneToOne к <code>RegInteractivOcenkaRLK</code>, related_name <code>page_reception</code>).</li>
+      <li>Модель приёмки 2КК: <code>RegInteractivOcenkaKolesaReception</code> (FK на <code>estimation</code>).</li>
+      <li>Отдельный UI 2КК: <code>/estimations/kolesa-reception/</code>.</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h2>2. Сценарий страницы «Приём автомобиля»</h2>
+    <ol>
+      <li>Открытие <code>page=24</code>.</li>
+      <li>Если нет согласования цены после КД (<code>page_soglasovanie.price_after_kd &lt;= 0</code>) —
+        сообщение: <b>«Приём невозможен. Нет согласования цены после КД.»</b></li>
+      <li>Если цена после КД есть и карточки приёма ещё нет —
+        кнопка <b>«Проверить и принять автомобиль»</b> создаёт <code>RegInteractivOcenkaReception</code>
+        и максимально префиллит поля из оценки / документов / RLK / салона / внешнего осмотра.</li>
+      <li>Если оценка со вторым комплектом (<code>page_kolesa.kolesa2_estimation == 1</code> или <code>kolesa2</code>) —
+        при создании приёма АМ автоматически создаётся и приёмка 2КК (если её ещё нет).</li>
+      <li>Кнопки: <b>Сохранить</b>, <b>Обновить в 1С</b> (<code>refresh_data=reception1c</code>).</li>
+      <li>Внизу страницы — блок второго комплекта колёс (создать / показать данные / ссылка на карточку 2КК).</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h2>3. Поля приёма автомобиля (<code>Reception</code>)</h2>
+    <h3>Данные приёма</h3>
+    <table>
+      <thead><tr><th>Поле JSON</th><th>Тип</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>type_reception</code></td><td>FK / object</td><td>Тип приёма</td></tr>
+        <tr><td><code>organization</code></td><td>FK / object</td><td>Организация</td></tr>
+        <tr><td><code>filial</code></td><td>FK / object</td><td>Филиал</td></tr>
+        <tr><td><code>unit</code></td><td>FK / object</td><td>Подразделение</td></tr>
+        <tr><td><code>store</code></td><td>FK / object</td><td>Склад поступления</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Клиент</h3>
+    <table>
+      <thead><tr><th>Поле</th><th>Тип</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>customer_family</code></td><td>string</td><td>Фамилия</td></tr>
+        <tr><td><code>customer_name</code></td><td>string</td><td>Имя</td></tr>
+        <tr><td><code>customer_patronymic</code></td><td>string</td><td>Отчество</td></tr>
+        <tr><td><code>customer_phone</code></td><td>string</td><td>Телефон</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Автомобиль / ПТС / СТС</h3>
+    <table>
+      <thead><tr><th>Поле</th><th>Тип</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>vin</code></td><td>string</td><td>VIN</td></tr>
+        <tr><td><code>vin2</code></td><td>string</td><td>VIN 2 / номер кузова</td></tr>
+        <tr><td><code>mark</code></td><td>string</td><td>Марка</td></tr>
+        <tr><td><code>model</code></td><td>string</td><td>Модель</td></tr>
+        <tr><td><code>year</code></td><td>int</td><td>Год выпуска</td></tr>
+        <tr><td><code>mileage</code></td><td>int</td><td>Пробег</td></tr>
+        <tr><td><code>pts_mark_model</code></td><td>string</td><td>Марка, модель по ПТС</td></tr>
+        <tr><td><code>plate_number</code></td><td>string</td><td>Госномер</td></tr>
+        <tr><td><code>count_owners</code></td><td>int</td><td>Кол-во владельцев</td></tr>
+        <tr><td><code>count_keys</code></td><td>int</td><td>Кол-во ключей</td></tr>
+        <tr><td><code>chassis_number</code></td><td>string</td><td>Номер шасси / рамы</td></tr>
+        <tr><td><code>pts_number</code></td><td>string</td><td>Номер ПТС</td></tr>
+        <tr><td><code>pts_date</code></td><td>date</td><td>Дата выдачи ПТС</td></tr>
+        <tr><td><code>pts_org_address</code></td><td>string</td><td>Адрес организации ПТС</td></tr>
+        <tr><td><code>pts_org_issuer</code></td><td>string</td><td>Организация, выдавшая ПТС</td></tr>
+        <tr><td><code>pts_original</code></td><td>bool</td><td>ПТС оригинал</td></tr>
+        <tr><td><code>sts_number</code></td><td>string</td><td>СТС номер</td></tr>
+        <tr><td><code>sts_date</code></td><td>date</td><td>СТС дата</td></tr>
+        <tr><td><code>salon_color</code></td><td>string</td><td>Цвет салона</td></tr>
+        <tr><td><code>body_color</code></td><td>string</td><td>Цвет кузова</td></tr>
+        <tr><td><code>engine_number</code></td><td>string</td><td>Номер двигателя</td></tr>
+        <tr><td><code>mass</code></td><td>int</td><td>Масса</td></tr>
+        <tr><td><code>max_mass</code></td><td>int</td><td>Макс. масса</td></tr>
+        <tr><td><code>eco_class</code></td><td>string</td><td>Экокласс</td></tr>
+        <tr><td><code>sent_to_1c_at</code></td><td>datetime</td><td>Когда отправлено в 1С</td></tr>
+        <tr><td><code>sent_to_1c_status</code></td><td>string</td><td>Статус последней отправки</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">FK в serializer уходят с <code>depth=1</code> (объект справочника с полями, в т.ч. <code>id</code>, <code>name</code>).</p>
+  </div>
+
+  <div class="box">
+    <h2>4. Второй комплект колёс</h2>
+    <h3>Условие «оценка со 2КК»</h3>
+    <ul>
+      <li><code>estimation.page_kolesa.kolesa2_estimation == 1</code> <b>или</b></li>
+      <li><code>estimation.page_kolesa.kolesa2 == true</code></li>
+    </ul>
+
+    <h3>Блок на странице приёма</h3>
+    <ul>
+      <li>Если 2КК есть, а приёмки нет — кнопка создать + превью полей из оценки.</li>
+      <li>Если приёмка есть — все поля приёмки, дата, автор, флаг отправки в ИБ колёс, фото, ссылка на
+        <code>/estimations/kolesa-reception/&lt;id&gt;/</code>.</li>
+    </ul>
+
+    <h3>Поля <code>KolesaReception</code> (карточка приёмки)</h3>
+    <table>
+      <thead><tr><th>Поле</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>date</code></td><td>Дата приёмки</td></tr>
+        <tr><td><code>mark_tyre</code>, <code>model_tyre</code></td><td>Марка / модель шин</td></tr>
+        <tr><td><code>width_tyre</code>, <code>profil_tyre</code>, <code>radius</code>, <code>sezon</code></td><td>Размерности / сезон</td></tr>
+        <tr><td><code>disk_type</code>, <code>model_disk</code></td><td>Тип / модель дисков</td></tr>
+        <tr><td><code>et_disk</code>, <code>dia_disk</code>, <code>psd_disk</code></td><td>Параметры диска</td></tr>
+        <tr><td><code>count_disk</code>, <code>count_tyre</code></td><td>Кол-во дисков / шин</td></tr>
+        <tr><td><code>kolesa_estimation</code></td><td>1 = со 2КК, 0 = нет</td></tr>
+        <tr><td><code>send_wheels_ib</code></td><td>Отправлено в базу БУ колёс</td></tr>
+        <tr><td><code>user</code>, <code>rlk</code>, <code>estimation</code></td><td>Автор / РЛК / оценка</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Поля <code>Kolesa2</code> (снимок со страницы колёс оценки)</h3>
+    <p class="muted">Отправляется, если в оценке заявлен 2КК. Удобно для 1С как «исходные данные осмотра».</p>
+    <table>
+      <thead><tr><th>Поле</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>kolesa2</code>, <code>kolesa2_estimation</code></td><td>Флаги наличия 2КК</td></tr>
+        <tr><td><code>mark_tyre2</code> / <code>mark_tyre2_id</code></td><td>Марка шин (+ id)</td></tr>
+        <tr><td><code>model_tyre2</code></td><td>Модель шин</td></tr>
+        <tr><td><code>width_tyre2</code>, <code>profil_tyre2</code>, <code>radius2</code>, <code>sezon2</code> (+ <code>*_id</code>)</td><td>Размерности</td></tr>
+        <tr><td><code>disk_type2</code>, <code>model_disk2</code>, <code>et_disk2</code>, <code>dia_disk2</code>, <code>psd_disk2</code> (+ ids)</td><td>Диски</td></tr>
+        <tr><td><code>count_disk2</code>, <code>count_tyre2</code></td><td>Количества</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>5. Контракт отправки в 1С</h2>
+    <ul>
+      <li>Триггер: кнопка «Обновить в 1С» на <code>page=24</code>.</li>
+      <li>Код: <code>eco.reception.send_reception_1c</code> → <code>build_reception_1c_payload</code>.</li>
+      <li>Маршрутизация как у оценки: Kors HS / Alfa HS по <code>rlk.unit.ib.alfa</code>.</li>
+      <li>Корневой признак: <code>"Type": "reception"</code> (не путать с <code>"estimation"</code>).</li>
+    </ul>
+
+    <h3>Корневая структура JSON</h3>
+<pre>{
+  "Type": "reception",
+  "Rlk": { ... },                 // DocRLKSerializer
+  "Estimation": { ... },          // RegInteractivOcenkaSerializer
+  "Soglasovanie": { ... } | null, // цена после КД и пр.
+  "Info": { ... },                // RegInteractivOcenkaRLKSerializer
+  "Reception": { ... },           // страница приёма АМ — обязательно
+  "HasKolesa2": true | false,
+  "KolesaReception": { ... } | null,  // приёмка 2КК, если создана
+  "Kolesa2": { ... } | null           // снимок 2КК из оценки, если HasKolesa2
+}</pre>
+
+    <h3>Что 1С должна обработать в первую очередь</h3>
+    <ol>
+      <li><code>Reception</code> — создать/обновить документ приёма автомобиля.</li>
+      <li>Если <code>HasKolesa2 == true</code>:
+        <ul>
+          <li>предпочтительно брать фактическую приёмку из <code>KolesaReception</code>;</li>
+          <li>если <code>KolesaReception == null</code> — можно взять <code>Kolesa2</code> как данные осмотра.</li>
+        </ul>
+      </li>
+      <li><code>Soglasovanie.price_after_kd</code> — согласованная цена после КД (условие допуска приёма на портале).</li>
+      <li><code>Rlk</code> / <code>Estimation</code> / <code>Info</code> — контекст РЛК и оценки (uin, vin, подразделение и т.д.).</li>
+    </ol>
+
+    <p class="muted">
+      Ожидаемый ответ: HTTP 200. Статус пишется в <code>Reception.sent_to_1c_status</code> / <code>sent_to_1c_at</code>.
+    </p>
+  </div>
+
+  <div class="box">
+    <h2>6. Связанные файлы кода</h2>
+    <table>
+      <thead><tr><th>Файл</th><th>Назначение</th></tr></thead>
+      <tbody>
+        <tr><td><code>portal/apps/register/models.py</code></td><td><code>RegInteractivOcenkaReception</code>, <code>RegInteractivOcenkaKolesaReception</code></td></tr>
+        <tr><td><code>portal/apps/register/migrations/0236_reginteractivocenkareception.py</code></td><td>Миграция приёма АМ</td></tr>
+        <tr><td><code>portal/apps/eco/reception.py</code></td><td>Префилл, сохранение, payload/send 1С, 2КК helpers</td></tr>
+        <tr><td><code>portal/apps/eco/views.py</code></td><td><code>page=24</code>, POST create/save, refresh reception1c</td></tr>
+        <tr><td><code>portal/apps/estimations/views_kolesa_reception.py</code></td><td>Создание/карточка приёмки 2КК</td></tr>
+        <tr><td><code>portal/apps/register/serializers.py</code></td><td>Reception / KolesaReception serializers</td></tr>
+        <tr><td><code>portal/templates/lo/partials/reception_page.html</code></td><td>UI вкладки</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="margin-top:18px;">
+    ← <a href="./index.html">К оглавлению документации</a> ·
+    <a href="./estimations.html">estimations (2КК)</a> ·
+    <a href="./register.html">register</a>
+  </p>
+</body>
+</html>

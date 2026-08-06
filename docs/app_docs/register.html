@@ -49,6 +49,7 @@
     <li><code>RegInteractivOcenka</code> — главная сущность оценки.</li>
     <li>OneToOne-страницы: <code>RegInteractivOcenkaRemote</code>, <code>...Document</code>, <code>...Salon</code>, <code>...Vnesh</code>, <code>...Complectnost</code>, <code>...Kolesa</code>, <code>...TestDrive</code>, <code>...Proverki</code>, <code>...Soglasovanie</code>.</li>
     <li><code>RegInteractivOcenkaRLK</code> — агрегат/связка оценки с рабочим листом.</li>
+    <li><code>RegInteractivOcenkaReception</code> — страница приёма автомобиля (OneToOne к RLK, <code>page_reception</code>). См. <a href="./reception_1c.html">документацию приёма + 1С</a>.</li>
   </ul>
 
   <h3>2) Дополнительные модели внутри процесса оценки</h3>
@@ -65,6 +66,7 @@
     <li><code>RegInteractivOcenkaKolesa.kolesa2_estimation</code> — признак/значение наличия второго комплекта на этапе оценки.</li>
     <li><code>RegInteractivOcenkaKolesaReception</code> — факт приёмки 2КК (привязан к <code>RegInteractivOcenka</code> и <code>DocRLK</code>).</li>
     <li><code>RegRegInteractivOcenkaFilesKolesaReception</code> — файлы приёмки 2КК, FK на <code>kolesa_reception</code>.</li>
+    <li>На вкладке приёма АМ (<code>page=24</code>) блок 2КК + отправка в 1С: <a href="./reception_1c.html">reception_1c.html</a>.</li>
   </ul>
 
   <h3>4) Модели диагностического справочника</h3>
