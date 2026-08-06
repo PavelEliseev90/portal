@@ -39,7 +39,8 @@
   </h2>
   <p class="lead">
     {% if params.source == 'autohub' %}
-      Сегменты склада после дедупа за месяц.
+      Сегменты склада в выбранной ЦГ за месяц — после дедупа (один последний снимок на сегмент).
+      Помогает увидеть, где мы дороже рынка и какие сегменты «тяжёлые».
     {% else %}
       Список оценок воронки за месяц (ЦГ по ЦНА).
     {% endif %}
@@ -95,12 +96,13 @@
   </div>
   {% else %}
   <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Сегментов</div><div class="v">{{ params.detail.summary.segments }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Мед. total</div><div class="v">{{ params.detail.summary.med_total }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Мед. дней</div><div class="v">{{ params.detail.summary.med_days|unlocalize }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Выше рынка</div><div class="v">{{ params.detail.summary.above_share|unlocalize }}%</div></div></div>
+    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Сегментов</div><div class="v">{{ params.detail.summary.segments }}</div><div class="s">на складе в этой ЦГ</div></div></div>
+    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Объём рынка</div><div class="v">{{ params.detail.summary.med_total }}</div><div class="s">медиана по сегментам</div></div></div>
+    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Дней в продаже</div><div class="v">{{ params.detail.summary.med_days|unlocalize }}</div><div class="s">медиана</div></div></div>
+    <div class="col-6 col-md-3"><div class="zg-metric"><div class="t">Дороже рынка</div><div class="v">{{ params.detail.summary.above_share|unlocalize }}%</div><div class="s">наша цена &gt; средней</div></div></div>
   </div>
   <div class="zg-panel">
+    <p class="text-muted small mb-2">Список сегментов склада в выбранной ЦГ за месяц (после дедупа — один снимок на сегмент).</p>
     <div class="table-responsive">
       <table class="table table-sm table-hover table-zg mb-0">
         <thead>
@@ -109,10 +111,10 @@
             <th>Авто (пример)</th>
             <th>VIN</th>
             <th>ДЦ</th>
-            <th class="text-end">avg_price</th>
-            <th class="text-end">наша price</th>
-            <th class="text-end">total</th>
-            <th class="text-end">дней</th>
+            <th class="text-end">Ср. рынок</th>
+            <th class="text-end">Наша цена</th>
+            <th class="text-end">Объём рынка</th>
+            <th class="text-end">Дней</th>
             <th>Снимок</th>
           </tr>
         </thead>
@@ -124,7 +126,7 @@
             <td>{{ row.vin|default:"—" }}</td>
             <td>{{ row.unit|default:"—" }}</td>
             <td class="text-end">{{ row.avg_price }}</td>
-            <td class="text-end {% if row.above %}ok{% endif %}">{{ row.price }}</td>
+            <td class="text-end {% if row.above %}ok{% endif %}">{{ row.price }}{% if row.above %} ↑{% endif %}</td>
             <td class="text-end">{{ row.total }}</td>
             <td class="text-end">{{ row.avg_days }}</td>
             <td>{{ row.date|date:"d.m.Y H:i" }}</td>

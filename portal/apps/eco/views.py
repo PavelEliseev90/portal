@@ -14029,6 +14029,12 @@ def autohub_zg_analytics(request):
     date_end = _parse_date(request.GET.get('date_end', ''), default_end, is_end=True)
     unit_id = _get_int(request.GET.get('unit_id'))
 
+    period_capped = False
+    max_span = DT.timedelta(days=366)
+    if date_end - date_start > max_span:
+        date_start = (date_end - max_span).replace(hour=0, minute=0, second=0, microsecond=0)
+        period_capped = True
+
     hub = build_autohub_zg_analytics(
         date_start=date_start,
         date_end=date_end,
@@ -14046,6 +14052,7 @@ def autohub_zg_analytics(request):
             'date_end': date_end.strftime('%Y-%m-%d'),
             'unit_id': unit_id or '',
         },
+        'period_capped': period_capped,
         'hub_summary': hub['summary'],
         'month_labels': hub['month_labels'],
         'month_keys': hub['month_keys'],
@@ -14055,10 +14062,9 @@ def autohub_zg_analytics(request):
         'detail_base': '/eco/estimation-zg/detail/',
         'units': units,
         'hint': (
-            'Autohub: снимки regEstimationRefCarsOrganizations по складу. '
-            'ЦГ по avg_price сегмента (те же пороги, что ЦНА). '
-            'В месяце сегмент (поколение/марка+модель) учитывается один раз (последний снимок). '
-            'total / дни / avg — медианы по сегментам; «выше рынка» — наша price > avg_price.'
+            'Снимки Autohub по авто на нашем складе: сегмент рынка (поколение / марка+модель) '
+            'в месяце берётся один раз — последний снимок. ЦГ считается по средней цене рынка '
+            'в сегменте (те же пороги, что у ЦНА).'
         ),
     }
     return render(request, 'lo/autohub_zg_analytics.html', {'params': params})
