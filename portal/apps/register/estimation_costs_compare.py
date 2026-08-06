@@ -319,15 +319,14 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
         if not isinstance(step, dict):
             continue
         indicator = _price_step_indicator(step, idx)
-        amount = _as_float(step.get('dif'))
-        # возврат слесарки на износ увеличивает оценку → в отчёте с минусом
+        # дубль «Возврат за слесарный ремонт (повышенный износ)» — не выводим
         if 'слесарного ремонта на износ' in indicator.lower():
-            amount = -abs(amount)
+            continue
         lines.append({
             'section': SECTION_PRICE_FLOW,
             'section_title': SECTION_TITLES[SECTION_PRICE_FLOW],
             'indicator': indicator,
-            'amount': amount,
+            'amount': _as_float(step.get('dif')),
             'kind': 'price_step',
         })
 
