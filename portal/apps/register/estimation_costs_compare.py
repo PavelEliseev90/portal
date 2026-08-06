@@ -302,7 +302,8 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
         'section': SECTION_OTHER,
         'section_title': SECTION_TITLES[SECTION_OTHER],
         'indicator': INDICATOR_IZNOS_SS,
-        'amount': _as_float(price_result.get('iznos_ss_compensation')),
+        # возврат увеличивает оценку → в отчёте показываем с минусом
+        'amount': -abs(_as_float(price_result.get('iznos_ss_compensation'))),
         'kind': 'indicator',
     })
 
@@ -317,11 +318,16 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
     for idx, step in enumerate(price_result.get('list_info_price') or [], start=1):
         if not isinstance(step, dict):
             continue
+        indicator = _price_step_indicator(step, idx)
+        amount = _as_float(step.get('dif'))
+        # возврат слесарки на износ увеличивает оценку → в отчёте с минусом
+        if 'слесарного ремонта на износ' in indicator.lower():
+            amount = -abs(amount)
         lines.append({
             'section': SECTION_PRICE_FLOW,
             'section_title': SECTION_TITLES[SECTION_PRICE_FLOW],
-            'indicator': _price_step_indicator(step, idx),
-            'amount': _as_float(step.get('dif')),
+            'indicator': indicator,
+            'amount': amount,
             'kind': 'price_step',
         })
 
