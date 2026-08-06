@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Сравнение затрат оценки: снимок из истории (ДО) vs пересчёт на текущих настройках (ПОСЛЕ).
+Сравнение показателей расчёта оценки: ДО / ПОСЛЕ.
 
-Тип расчёта по умолчанию — autohub.
-«ДО» = первый успешный пересчёт; если позже добавлялись работы (затраты выросли /
-появились строки) — берём последний снимок с той же ЦНА.
+Алгоритм (одинаковые входные данные оценки, два прогона одной функции расчёта):
+
+  ДО:
+    - коэффициенты ДЦ+ЦГ из UnitPriceGroupSettings на дату оценки
+    - суммы диагностик / настройки из RegEstimationsSettings id=12
+    - estimations_price_calculation(..., persist=False)
+
+  ПОСЛЕ:
+    - коэффициенты ДЦ+ЦГ из UnitPriceGroupSettings на дату отчёта (сейчас)
+    - суммы диагностик / настройки из RegEstimationsSettings id=13
+    - та же estimations_price_calculation(..., persist=False)
+
+Результаты показателей → колонки «до» / «после».
 """
 from __future__ import annotations
 
@@ -12,6 +22,7 @@ import copy
 import logging
 from collections import OrderedDict
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from django.db.models import Q
@@ -31,7 +42,7 @@ SECTION_TITLES = {
     SECTION_MCU: 'Кузовной участок',
     SECTION_OTHER: 'Прочее / показатели',
     SECTION_PRICE_FLOW: 'Цепочка ЦНА',
-    SECTION_DIAG_SETTINGS: 'Настройки диагностики',
+    SECTION_DIAG_SETTINGS: 'Диагностика',
 }
 
 INDICATOR_IZNOS_SS = 'Возврат за слесарный ремонт (повышенный износ)'
@@ -528,7 +539,7 @@ def merge_before_after_lines(before_lines: list[dict], after_lines: list[dict]) 
 
 
 def _resolve_estimation_zna(estimation, calc_type: str = 'autohub') -> float:
-    """Базовая ЦНА так же, как в estimations_price_calculation."""
+    """Базовая ЦНА — как в estimations_price_calculation."""
     zna = 0.0
     if calc_type == 'kors':
         zna = getattr(estimation, 'kors_price', 0) or 0
@@ -548,6 +559,7 @@ def _resolve_estimation_zna(estimation, calc_type: str = 'autohub') -> float:
 
 
 def _resolve_calc_context(interactiv_rlk, estimation, calc_type: str = 'autohub'):
+    """ДЦ оценки + ЦГ по ЦНА + свежий RefUnit из БД."""
     from refs.models import RefUnit
     from refs.price_groups import resolve_price_group_by_amount
 
@@ -556,15 +568,13 @@ def _resolve_calc_context(interactiv_rlk, estimation, calc_type: str = 'autohub'
     if unit is not None and getattr(unit, 'pk', None):
         unit = RefUnit.objects.filter(pk=unit.pk).first() or unit
     zna = _resolve_estimation_zna(estimation, calc_type=calc_type)
-    price_group = resolve_price_group_by_amount(zna) if zna else resolve_price_group_by_amount(
-        getattr(estimation, 'hub_avg', 0) or 0
-    )
+    price_group = resolve_price_group_by_amount(zna)
     return unit, price_group, zna
 
 
 def _get_unit_settings_as_of(unit, price_group, as_of):
     """
-    Снимок коэффициентов ДЦ+ЦГ на указанную дату:
+    Коэффициенты ДЦ+ЦГ на дату as_of:
     последняя запись UnitPriceGroupSettings с created_at <= as_of.
     """
     from refs.unit_price_group_settings import UnitPriceGroupSettings
@@ -600,59 +610,53 @@ def _get_unit_settings_as_of(unit, price_group, as_of):
     )
 
 
-def _kf_from_settings_row(settings_row):
-    """ИРЦ ТХТ из снимка: correction_txt, иначе ratio_avtohub_txt."""
-    if settings_row is None:
-        return None
-    corr = getattr(settings_row, 'correction_txt', None)
-    if corr not in (None, 0):
-        return _as_float(corr)
-    ratio = getattr(settings_row, 'ratio_avtohub_txt', None)
-    if ratio not in (None, 0):
-        return _as_float(ratio)
-    return None
-
-
-def _build_unit_from_settings_as_of(unit, price_group, as_of):
+def _build_dc_for_calc(unit, price_group, settings_row):
     """
-    Копия ДЦ с коэффициентами из снимка UnitPriceGroupSettings на as_of.
-    КФ ТХТ выставляется явно в оба поля, которые читает расчёт цены.
+    Копия ДЦ с коэффициентами из снимка settings_row.
+    Расчёт цены читает поля вида correction_txt_{code} / ratio_avtohub_txt_{code}.
     """
     from refs.unit_price_group_settings import sync_settings_row_to_unit
 
-    compare_unit = copy.copy(unit)
-    settings_row = _get_unit_settings_as_of(unit, price_group, as_of)
+    dc = copy.copy(unit)
     if settings_row is None or price_group is None:
-        return compare_unit, None
+        return dc
 
     code = str(getattr(price_group, 'code', '') or '')
-    sync_settings_row_to_unit(compare_unit, settings_row, code)
+    if not code:
+        return dc
 
-    kf = _kf_from_settings_row(settings_row)
-    if kf is not None and code:
-        if hasattr(compare_unit, f'correction_txt_{code}'):
-            setattr(compare_unit, f'correction_txt_{code}', kf)
-        if hasattr(compare_unit, f'ratio_avtohub_txt_{code}'):
-            setattr(compare_unit, f'ratio_avtohub_txt_{code}', kf)
+    sync_settings_row_to_unit(dc, settings_row, code)
 
-        # markup / торг — тоже явно из снимка на as_of (как в расчёте)
-        markup = getattr(settings_row, 'markup_txt', None)
-        if markup in (None, 0):
-            markup = getattr(settings_row, 'percent_txt', None)
-        if markup not in (None,) and hasattr(compare_unit, f'markup_txt_{code}'):
-            setattr(compare_unit, f'markup_txt_{code}', markup)
-        if markup not in (None,) and hasattr(compare_unit, f'percent_txt_{code}'):
-            setattr(compare_unit, f'percent_txt_{code}', markup)
+    # Явно фиксируем ИРЦ ТХТ так же, как ветка расчёта:
+    # correction_txt, иначе ratio_avtohub_txt
+    corr = getattr(settings_row, 'correction_txt', None)
+    ratio = getattr(settings_row, 'ratio_avtohub_txt', None)
+    kf = corr if corr not in (None, 0) else ratio
+    if kf not in (None,):
+        if hasattr(dc, f'correction_txt_{code}'):
+            setattr(dc, f'correction_txt_{code}', kf)
+        if hasattr(dc, f'ratio_avtohub_txt_{code}'):
+            setattr(dc, f'ratio_avtohub_txt_{code}', kf)
 
-        torg = getattr(settings_row, 'max_discount_bargain_percent', None)
-        if torg in (None, 0):
-            torg = getattr(settings_row, 'percent_torg_txt', None)
-        if torg not in (None,) and hasattr(compare_unit, f'max_discount_bargain_percent_{code}'):
-            setattr(compare_unit, f'max_discount_bargain_percent_{code}', torg)
-        if torg not in (None,) and hasattr(compare_unit, f'percent_torg_txt_{code}'):
-            setattr(compare_unit, f'percent_torg_txt_{code}', torg)
+    markup = getattr(settings_row, 'markup_txt', None)
+    if markup in (None, 0):
+        markup = getattr(settings_row, 'percent_txt', None)
+    if markup not in (None,):
+        if hasattr(dc, f'markup_txt_{code}'):
+            setattr(dc, f'markup_txt_{code}', markup)
+        if hasattr(dc, f'percent_txt_{code}'):
+            setattr(dc, f'percent_txt_{code}', markup)
 
-    return compare_unit, settings_row
+    torg = getattr(settings_row, 'max_discount_bargain_percent', None)
+    if torg in (None, 0):
+        torg = getattr(settings_row, 'percent_torg_txt', None)
+    if torg not in (None,):
+        if hasattr(dc, f'max_discount_bargain_percent_{code}'):
+            setattr(dc, f'max_discount_bargain_percent_{code}', torg)
+        if hasattr(dc, f'percent_torg_txt_{code}'):
+            setattr(dc, f'percent_torg_txt_{code}', torg)
+
+    return dc
 
 
 def calculate_compare_before_after(
@@ -662,94 +666,97 @@ def calculate_compare_before_after(
     calc_type: str = 'autohub',
     profile: CompareProfile | None = None,
 ) -> dict[str, Any] | None:
-    from datetime import datetime
+    """
+    Два прогона estimations_price_calculation на одних входных данных оценки.
 
+    ДО   = коэф. ДЦ/ЦГ на дату оценки + RegEstimationsSettings(12)
+    ПОСЛЕ = коэф. ДЦ/ЦГ на дату отчёта (сейчас) + RegEstimationsSettings(13)
+    """
     from eco.views import (
         estimations_price_calculation,
         get_body_estimation_cached,
         get_salon_estimation_cached,
     )
     from register.models import RegEstimationsSettings
+
     profile = profile or CompareProfile()
     unit, price_group, zna = _resolve_calc_context(interactiv_rlk, estimation, calc_type=calc_type)
     if unit is None or price_group is None:
         return None
+    if not zna:
+        return None
 
-    # Дата формирования отчёта = сейчас (не дата оценки!)
     report_at = datetime.now()
     price_group_code = str(getattr(price_group, 'code', '') or '')
 
-    # BEFORE: снимок ДЦ+ЦГ на дату оценки
-    before_unit, settings_before = _build_unit_from_settings_as_of(
-        unit, price_group, estimation.start_estimation,
-    )
-    if settings_before is None:
+    # 1) Коэффициенты на дату оценки
+    row_before = _get_unit_settings_as_of(unit, price_group, estimation.start_estimation)
+    if row_before is None:
         return {
             'status': 'no_history',
             'history_row_id': None,
             'history_row_date': None,
             'price_group_code': price_group_code,
             'price_group_name': getattr(price_group, 'name', '') or '',
-            'unit_id': getattr(unit, 'pk', None),
+            'unit_id': unit.pk,
             'zna': zna,
         }
 
-    # AFTER: снимок ДЦ+ЦГ на дату формирования отчёта (текущая дата)
-    after_unit, settings_after = _build_unit_from_settings_as_of(
-        unit, price_group, report_at,
-    )
-    if settings_after is None:
-        # если на сегодня снимка нет — не подменяем «до», лучше явно пусто
-        return None
+    # 2) Коэффициенты на дату формирования отчёта (текущая дата)
+    row_after = _get_unit_settings_as_of(unit, price_group, report_at)
+    if row_after is None:
+        return {
+            'status': 'no_history',
+            'history_row_id': row_before.pk,
+            'history_row_date': row_before.created_at,
+            'price_group_code': price_group_code,
+            'price_group_name': getattr(price_group, 'name', '') or '',
+            'unit_id': unit.pk,
+            'zna': zna,
+        }
 
+    dc_before = _build_dc_for_calc(unit, price_group, row_before)
+    dc_after = _build_dc_for_calc(unit, price_group, row_after)
+
+    # Одинаковые входы оценки (кузов/салон/тест-драйв и т.д.)
     body_info = get_body_estimation_cached(estimation)
     salon_info = get_salon_estimation_cached(estimation)
+    settings_before = RegEstimationsSettings.objects.get(pk=profile.before_settings_id)
+    settings_after = RegEstimationsSettings.objects.get(pk=profile.after_settings_id)
 
-    def _calc_for_settings(settings_id: int, calc_unit):
-        settings = RegEstimationsSettings.objects.get(pk=settings_id)
+    def _run(settings_obj, dc_unit):
         interactiv_for_calc = copy.copy(interactiv_rlk)
-        interactiv_for_calc.unit = calc_unit
+        interactiv_for_calc.unit = dc_unit
         return estimations_price_calculation(
             interactiv_for_calc,
             estimation,
             type_calculation=calc_type,
             body_info=body_info,
             salon_info=salon_info,
-            estimation_settings=settings,
+            estimation_settings=settings_obj,
             persist=False,
             save_history=False,
         )
 
-    before_result = _calc_for_settings(profile.before_settings_id, before_unit)
-    after_result = _calc_for_settings(profile.after_settings_id, after_unit)
+    before_result = _run(settings_before, dc_before)
+    after_result = _run(settings_after, dc_after)
     if not before_result or not after_result:
         return None
-
-    # Гарантируем, что в ответе КФ после = КФ из снимка на дату отчёта
-    after_kf = _kf_from_settings_row(settings_after)
-    if after_kf is not None:
-        after_result = dict(after_result)
-        after_result['kf'] = after_kf
-
-    before_kf = _kf_from_settings_row(settings_before)
-    if before_kf is not None:
-        before_result = dict(before_result)
-        before_result['kf'] = before_kf
 
     return {
         'status': 'ok',
         'before_result': before_result,
         'after_result': after_result,
-        'history_row_id': settings_before.pk,
-        'history_row_date': settings_before.created_at,
-        'after_history_row_id': settings_after.pk,
-        'after_history_row_date': settings_after.created_at,
+        'history_row_id': row_before.pk,
+        'history_row_date': row_before.created_at,
+        'after_history_row_id': row_after.pk,
+        'after_history_row_date': row_after.created_at,
         'report_at': report_at,
-        'before_coefficients_source': 'dc_cg_as_of_estimation',
-        'after_coefficients_source': 'dc_cg_as_of_report_date',
+        'before_coefficients_source': 'dc_cg_on_estimation_date',
+        'after_coefficients_source': 'dc_cg_on_report_date',
         'price_group_code': price_group_code,
         'price_group_name': getattr(price_group, 'name', '') or '',
-        'unit_id': getattr(unit, 'pk', None),
+        'unit_id': unit.pk,
         'zna': zna,
         'profile': profile,
     }
@@ -810,13 +817,13 @@ def compare_estimation_costs(
         'start_estimation': estimation.start_estimation,
         'unit_name': getattr(unit, 'name', '') or '',
         'calc_type': calc_type,
-        'before_source': 'historical_coefficients',
+        'before_source': 'settings_12_coeffs_on_estimation_date',
         'before_history_id': compare_data.get('history_row_id'),
         'before_date': compare_data.get('history_row_date'),
         'after_history_id': compare_data.get('after_history_row_id'),
         'after_date': compare_data.get('after_history_row_date'),
-        'before_coefficients_source': compare_data.get('before_coefficients_source') or 'history',
-        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'dc_cg_as_of_report_date',
+        'before_coefficients_source': compare_data.get('before_coefficients_source') or 'dc_cg_on_estimation_date',
+        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'dc_cg_on_report_date',
         'before_zna': before_result.get('zna') or 0,
         'before_kf': before_result.get('kf') or '',
         'after_zna': after_result.get('zna') or 0,

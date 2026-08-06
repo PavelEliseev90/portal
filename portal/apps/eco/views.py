@@ -13834,8 +13834,9 @@ def estimation_costs_compare_report(request):
         'do_run': do_run,
         'no_history_count': no_history_count,
         'compare_profile': (
-            'BEFORE=settings 12 + коэф. ДЦ/ЦГ на дату оценки; '
-            'AFTER=settings 13 + коэф. ДЦ/ЦГ на дату отчёта (сегодня)'
+            'ДО: коэф. ДЦ/ЦГ на дату оценки + settings 12. '
+            'ПОСЛЕ: коэф. ДЦ/ЦГ на дату отчёта + settings 13. '
+            'Один и тот же расчёт estimations_price_calculation, без записи.'
         ),
     }
     return render(request, 'lo/estimation_costs_compare_report.html', {'params': params})
