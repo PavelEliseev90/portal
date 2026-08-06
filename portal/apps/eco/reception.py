@@ -283,6 +283,7 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
 def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception: RegInteractivOcenkaReception) -> dict:
     from documents.serializers import DocRLKSerializer
     from register.serializers import (
+        RegInteractivOcenkaKolesaReceptionSerializer,
         RegInteractivOcenkaReceptionSerializer,
         RegInteractivOcenkaRLKSerializer,
         RegInteractivOcenkaSerializer,
@@ -291,6 +292,42 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
 
     estimation = interactiv_rlk.estimation
     rlk = interactiv_rlk.rlk
+    kolesa_reception = get_kolesa_reception_or_none(estimation)
+    has_kolesa2 = estimation_has_kolesa2(estimation)
+
+    kolesa2_from_estimation = None
+    page_kolesa = getattr(estimation, 'page_kolesa', None) if estimation else None
+    if page_kolesa is not None and has_kolesa2:
+        def _ref_name(obj):
+            return getattr(obj, 'name', None) if obj is not None else None
+
+        kolesa2_from_estimation = {
+            'kolesa2': bool(page_kolesa.kolesa2),
+            'kolesa2_estimation': page_kolesa.kolesa2_estimation,
+            'mark_tyre2': _ref_name(page_kolesa.mark_tyre2),
+            'mark_tyre2_id': page_kolesa.mark_tyre2_id,
+            'model_tyre2': page_kolesa.model_tyre2 or '',
+            'width_tyre2': _ref_name(page_kolesa.width_tyre2),
+            'width_tyre2_id': page_kolesa.width_tyre2_id,
+            'profil_tyre2': _ref_name(page_kolesa.profil_tyre2),
+            'profil_tyre2_id': page_kolesa.profil_tyre2_id,
+            'radius2': _ref_name(page_kolesa.radius2),
+            'radius2_id': page_kolesa.radius2_id,
+            'sezon2': _ref_name(page_kolesa.sezon2),
+            'sezon2_id': page_kolesa.sezon2_id,
+            'disk_type2': _ref_name(page_kolesa.disk_type2),
+            'disk_type2_id': page_kolesa.disk_type2_id,
+            'model_disk2': page_kolesa.model_disk2 or '',
+            'et_disk2': _ref_name(page_kolesa.et_disk2),
+            'et_disk2_id': page_kolesa.et_disk2_id,
+            'dia_disk2': _ref_name(page_kolesa.dia_disk2),
+            'dia_disk2_id': page_kolesa.dia_disk2_id,
+            'psd_disk2': _ref_name(page_kolesa.psd_disk2),
+            'psd_disk2_id': page_kolesa.psd_disk2_id,
+            'count_disk2': page_kolesa.count_disk2 or 0,
+            'count_tyre2': page_kolesa.count_tyre2 or 0,
+        }
+
     return {
         'Type': 'reception',
         'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
@@ -302,6 +339,13 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
         ),
         'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
         'Reception': RegInteractivOcenkaReceptionSerializer(reception, many=False).data,
+        'HasKolesa2': has_kolesa2,
+        'KolesaReception': (
+            RegInteractivOcenkaKolesaReceptionSerializer(kolesa_reception, many=False).data
+            if kolesa_reception is not None
+            else None
+        ),
+        'Kolesa2': kolesa2_from_estimation,
     }
 
 

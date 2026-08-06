@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from register.models import (
     RegInteractivOcenka,
+    RegInteractivOcenkaKolesaReception,
     RegInteractivOcenkaReception,
     RegInteractivOcenkaSoglasovanie,
     RegInteractivOcenkaRLK,
@@ -72,5 +73,13 @@ class RegInteractivOcenkaReceptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegInteractivOcenkaReception
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
+
+
+class RegInteractivOcenkaKolesaReceptionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RegInteractivOcenkaKolesaReception
         fields = [field.name for field in model._meta.fields]
         depth = 1
