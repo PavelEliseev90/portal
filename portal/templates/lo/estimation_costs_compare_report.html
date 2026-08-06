@@ -140,7 +140,7 @@
             {% for row in params.table_rows %}
             <tr>
               <td class="text-nowrap">{% if row.date %}{{ row.date|date:'d.m.Y' }}{% endif %}</td>
-              <td>{{ row.rlk_number|default:row.rlk_id }}</td>
+              <td>{{ row.rlk_number }}</td>
               <td class="text-nowrap"><small>{{ row.vin }}</small></td>
               <td><small>{{ row.unit_name }}</small></td>
               <td><small>{{ row.section }}</small></td>
