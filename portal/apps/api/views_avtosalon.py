@@ -409,6 +409,7 @@ def info_cars_organization(request):
 
 @api_view(['POST'])
 def refresh_cars(request):
+    from refs.models import get_qrcode
 
     list_cars = list()
 
@@ -432,32 +433,67 @@ def refresh_cars(request):
     
     list_cars_id = list()
 
+    # Кэш справочников на запрос: get_model_object иначе делает ContentType+count+select на каждое авто
+    model_cache = {}
+    org_cache = {}
+    store_cache = {}
+    stage_cache = {}
+    group_cache = {}
+
+    def _cached_model(model_name, value):
+        key = (model_name, value)
+        if key not in model_cache:
+            model_cache[key] = get_model_object(model_name, value)
+        return model_cache[key]
+
+    def _cached_org(value):
+        key = str(value)
+        if key not in org_cache:
+            org_cache[key] = get_organization(value)
+        return org_cache[key]
+
+    def _cached_store(value):
+        key = str(value)
+        if key not in store_cache:
+            store_cache[key] = get_store(value)
+        return store_cache[key]
+
+    def _cached_stage(value):
+        key = str(value)
+        if key not in stage_cache:
+            stage_cache[key] = get_stage_price(value)
+        return stage_cache[key]
+
+    def _cached_group(value):
+        key = str(value)
+        if key not in group_cache:
+            group_cache[key] = get_group_price(value)
+        return group_cache[key]
+
     for car in cars_json:
 
         vin             = car.get('Vin', '').upper()
         lo_link_number  = car.get('Lo_link_number', '').upper()
         lo_uin          = car.get('Lo_uin', '').upper()
 
-        car_object, created = RefCarsOrganization.objects.filter(Q(vin = vin) 
-                                                                 and Q(lo_link_number = lo_link_number) 
-                                                                 and Q(lo_uin = lo_uin),).get_or_create(vin = vin,
-                lo_link_number = lo_link_number,
-                lo_uin = lo_uin
-            )
+        car_object, created = RefCarsOrganization.objects.filter(
+            vin=vin,
+            lo_link_number=lo_link_number,
+            lo_uin=lo_uin,
+        ).get_or_create(
+            vin=vin,
+            lo_link_number=lo_link_number,
+            lo_uin=lo_uin,
+        )
         
         if created:
             count_add = count_add + 1
-        else:
-            try:
-                list_del.remove(car_object.pk)
-            except:
-                s = 1
         list_cars_id.append(car_object.pk)
 
         car_object.date_refresh     = datetime.now()    
-        car_object.organization     = get_organization(car['Organization'])    
+        car_object.organization     = _cached_org(car['Organization'])    
         car_object.unit             = unit
-        car_object.store            = get_store(car['Store'])
+        car_object.store            = _cached_store(car['Store'])
         car_object.is_new           = car['Is_new']
         car_object.vin              = car.get('Vin', '').upper()
         car_object.vin2             = car['Vin2']
@@ -478,14 +514,14 @@ def refresh_cars(request):
         car_object.lo_link_date         = car['Lo_link_date']
         car_object.lo_link_number       = car.get('Lo_link_number', '').upper()
         car_object.lo_uin               = car.get('Lo_uin', '').upper()
-        car_object.type_drive           = get_model_object('RefTypeDrive', car['Type_drive'])
-        car_object.stage_price          = get_stage_price(car['Stage_price'])
-        car_object.group_price          = get_group_price(car['Group_price'])
-        car_object.type_sale            = get_model_object('RefTypeSaleCarsOrganization', car['Type_sale'])
-        car_object.status               = get_model_object('RefStatusCarsOrganization', car['Status'])
-        car_object.type_reception       = get_model_object('RefTypeReceptionCarsOrganization', car['Type_reception'])
-        car_object.evaluation           = get_model_object('RefTypeEvaluationCarsOrganization', car['Evaluation'])
-        car_object.rating               = get_model_object('RefRatingCarsOrganization', car['Rating'])
+        car_object.type_drive           = _cached_model('RefTypeDrive', car['Type_drive'])
+        car_object.stage_price          = _cached_stage(car['Stage_price'])
+        car_object.group_price          = _cached_group(car['Group_price'])
+        car_object.type_sale            = _cached_model('RefTypeSaleCarsOrganization', car['Type_sale'])
+        car_object.status               = _cached_model('RefStatusCarsOrganization', car['Status'])
+        car_object.type_reception       = _cached_model('RefTypeReceptionCarsOrganization', car['Type_reception'])
+        car_object.evaluation           = _cached_model('RefTypeEvaluationCarsOrganization', car['Evaluation'])
+        car_object.rating               = _cached_model('RefRatingCarsOrganization', car['Rating'])
         
         car_object.owners               = car['Owners']
         car_object.keys                 = car['Keys']
@@ -522,12 +558,11 @@ def refresh_cars(request):
         if 'Prices_list' in car:
             #RegRefCarsOrganizationsPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_list']:
-                if RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) and Q(date = car_price['Date'])).count() < 2:
-                    data_info, created = RegRefCarsOrganizationsPrice.objects.filter(Q(car = car_object) 
-                                                                    and Q(date = car_price['Date']) 
-                                                                                            ).get_or_create(car = car_object,
-                                                                                                                    date = car_price['Date']
-                                                                                                                )
+                if RegRefCarsOrganizationsPrice.objects.filter(car=car_object, date=car_price['Date']).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsPrice.objects.get_or_create(
+                        car=car_object,
+                        date=car_price['Date'],
+                    )
                     if created:
                         data_info.price = car_price['Price']
                         data_info.save()  
@@ -535,16 +570,17 @@ def refresh_cars(request):
         if 'Prices_calculation_list' in car:
             #RegRefCarsOrganizationsCalculationPrice.objects.filter(car= car_object).delete()
             for car_price in car['Prices_calculation_list']:
-                evaluation = get_model_object('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
-                if RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
-                                                                 and Q(date = car_price['Date']) 
-                                                                 and Q(evaluation = evaluation),).count() < 2:
-                    data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.filter(Q(car = car_object) 
-                                                                    and Q(date = car_price['Date']) 
-                                                                    and Q(evaluation = evaluation),).get_or_create(car = car_object,
-                                                                                                                    date = car_price['Date'],
-                                                                                                                    evaluation = evaluation
-                                                                                                                )
+                evaluation = _cached_model('RefTypeEvaluationCarsOrganization', car_price['Evaluation'])
+                if RegRefCarsOrganizationsCalculationPrice.objects.filter(
+                    car=car_object,
+                    date=car_price['Date'],
+                    evaluation=evaluation,
+                ).count() < 2:
+                    data_info, created = RegRefCarsOrganizationsCalculationPrice.objects.get_or_create(
+                        car=car_object,
+                        date=car_price['Date'],
+                        evaluation=evaluation,
+                    )
                     if created:
                         data_info.price         = car_price['Price']
                         data_info.rule          = car_price['Rule']
@@ -553,16 +589,21 @@ def refresh_cars(request):
         info_car = {
             'Car_object'        : car_object,
             'Lo_uin'            : car['Lo_uin'],
-            'Photos'            : car['Photos']
+            'Photos'            : car.get('Photos'),
         }
         list_load_photo.append(info_car)
     
     if one_car == False:
-        cars_update = RefCarsOrganization.objects.filter(unit = unit).exclude(quantity = 0).exclude(pk__in = list_cars_id)    
-        for car in cars_update:
-            car.quantity = 0
-            car.save()
-            list_del.append(car.pk)
+        # Один UPDATE вместо save() на каждое авто, снятое со склада
+        qs_zero = (
+            RefCarsOrganization.objects
+            .filter(unit=unit)
+            .exclude(quantity=0)
+            .exclude(pk__in=list_cars_id)
+        )
+        list_del = list(qs_zero.values_list('pk', flat=True))
+        if list_del:
+            qs_zero.update(quantity=0)
         
     count_del   = len(list_del)
     count_stock = len(cars_json)
@@ -577,18 +618,20 @@ def refresh_cars(request):
     for car in list_load_photo:
         car_object = car['Car_object']
         photos = normalize_photos_payload(car.get('Photos'))
-        # Фото — в фоне (очередь refresh_cars_photos), ответ 1С не ждёт скачивания
-        load_photos_async(car_object.pk, photos)
+        # Фото — в фоне; пустой список не ставим в очередь
+        if photos:
+            load_photos_async(car_object.pk, photos)
 
+        # QR без чтения файла с диска/сетевого storage (раньше сильно тормозило ответ 1С)
         qr_b64 = ''
-        try:
-            if car_object.qr:
-                with car_object.qr.open() as image:
-                    qr_b64 = base64.b64encode(image.read()).decode()
-        except Exception:
-            qr_b64 = ''
+        slug = car_object.slug or ''
+        if slug:
+            try:
+                qr_b64 = base64.b64encode(get_qrcode(slug)).decode()
+            except Exception:
+                qr_b64 = ''
 
-        car_link = 'https://ah.kors-group.com/cars/' + str(car_object.slug or '') + '/'
+        car_link = 'https://ah.kors-group.com/cars/' + str(slug) + '/'
         list_cars.append({
             'Lo_Uin': car['Lo_uin'],
             'QR_Base64': qr_b64,
