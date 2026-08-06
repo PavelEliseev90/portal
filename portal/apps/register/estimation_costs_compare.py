@@ -92,15 +92,30 @@ def _work_name(item: dict) -> str:
 
 
 def _price_step_indicator(item: dict, idx: int) -> str:
-    name = (item.get('name') or '').strip()
-    comment = (item.get('comment') or '').strip()
-    if name and comment:
-        return f'{idx:02d}. {name} — {comment}'
+    name = (item.get('name') or '').strip().lower()
+    comment = (item.get('comment') or '').strip().lower()
+    text = f'{name} {comment}'
+    if 'повышенного износа' in text or 'использования в такси' in text:
+        return 'Цена с учетом повышенного износа'
+    if 'токсичном стоке' in text or 'ирц тхт' in text:
+        return 'Цена в токсичной продаже'
+    if 'защиты от убытка' in text:
+        return 'Цена с учетом защиты от убытка'
+    if 'защиты скидки торг' in text or 'скидка торг' in text:
+        return 'Цена с учетом защиты скидки торг'
+    if 'затрат на слесарный ремонт' in text:
+        return 'Цена с учетом затрат на слесарный ремонт'
+    if 'затрат на подготовку' in text:
+        return 'Цена с учетом затрат на подготовку'
+    if 'затрат на кузовной ремонт' in text:
+        return 'Цена с учетом затрат на кузовной ремонт'
+    if 'финансирование' in text:
+        return 'Финансирование'
     if comment:
-        return f'{idx:02d}. {comment}'
+        return comment.capitalize()
     if name:
-        return f'{idx:02d}. {name}'
-    return f'{idx:02d}. шаг расчёта'
+        return name.capitalize()
+    return 'Шаг расчета'
 
 
 def _clean_indicator_name(name: str) -> str:
@@ -112,55 +127,83 @@ def _clean_indicator_name(name: str) -> str:
     return ' '.join(value.split())
 
 
-def _suffix_by_zg(zg: str) -> str:
-    return (zg or '').replace(' ', '')
+def _diag_indicator_from_work_name(name: str) -> str:
+    text = (name or '').strip().lower()
+    if not text:
+        return ''
+    if 'двигатель' in text and 'замеч' in text:
+        return 'Двигатель устранение замечаний'
+    if 'двигатель' in text:
+        return 'Двигатель ремонт'
+    if 'автомат' in text and 'замеч' in text:
+        return 'АКПП устранение замечаний'
+    if 'автомат' in text:
+        return 'АКПП ремонт'
+    if 'вариатор' in text and 'замеч' in text:
+        return 'CVT устранение замечаний'
+    if 'вариатор' in text:
+        return 'CVT ремонт'
+    if 'робот' in text and 'замеч' in text:
+        return 'АМТ устранение замечаний'
+    if 'робот' in text:
+        return 'АМТ ремонт'
+    if 'механика' in text and 'замеч' in text:
+        return 'МКПП устранение замечаний'
+    if 'механика' in text:
+        return 'МКПП ремонт'
+    if 'подвеска' in text and 'замеч' in text:
+        return 'Подвеска устранение замечаний'
+    if 'подвеска' in text:
+        return 'Подвеска ремонт'
+    if 'система выпуска ог' in text and 'замеч' in text:
+        return 'Система выпуска ОГ устранение замечаний'
+    if 'система выпуска ог' in text:
+        return 'Система выпуска ОГ ремонт'
+    if 'кондиционер' in text and 'замеч' in text:
+        return 'Кондиционер устранение замечаний'
+    if 'кондиционер' in text:
+        return 'Кондиционер ремонт'
+    if 'турбокомпрессор' in text and 'замеч' in text:
+        return 'Турбокомпрессор устранение замечаний'
+    if 'турбокомпрессор' in text:
+        return 'Турбокомпрессор ремонт'
+    if 'рулевое управление' in text and 'замеч' in text:
+        return 'Рулевое управление устранение замечаний'
+    if 'рулевое управление' in text:
+        return 'Рулевое управление ремонт'
+    if 'привод' in text and 'замеч' in text:
+        return 'Привод устранение замечаний'
+    if 'привод' in text:
+        return 'Привод ремонт'
+    if 'тормозная система' in text and 'замеч' in text:
+        return 'Тормозная система устранение замечаний'
+    if 'тормозная система' in text:
+        return 'Тормозная система ремонт'
+    if 'подрамник' in text and 'замеч' in text:
+        return 'Подрамник устранение замечаний'
+    if 'подрамник' in text:
+        return 'Подрамник ремонт'
+    if text.startswith('то ') or text.startswith('то-') or text.startswith('то'):
+        return 'ТО'
+    return ''
 
 
-def _safe_attr(obj: Any, name: str, default=0.0):
-    return _as_float(getattr(obj, name, default))
-
-
-def _diag_setting_lines(price_result: dict | None) -> list[dict]:
+def _diag_actual_lines(price_result: dict | None) -> list[dict]:
     price_result = price_result or {}
-    settings = price_result.get('estimation_settings')
-    if settings is None:
-        return []
-    suffix = _suffix_by_zg(price_result.get('zg', ''))
-    if not suffix:
-        return []
+    totals = OrderedDict()
+    for item in (price_result.get('list_work_service') or []):
+        label = _diag_indicator_from_work_name(_work_name(item))
+        if not label:
+            continue
+        totals[label] = totals.get(label, 0.0) + _work_amount(item)
 
-    mapping = [
-        ('engine_danger_amount_min', 'Двигатель ремонт'),
-        ('engine_dt_danger_amount_min', 'Двигатель DT ремонт'),
-        ('gear_at_danger_amount_min', 'АКПП ремонт'),
-        ('gear_amt_danger_amount_min', 'АМТ ремонт'),
-        ('gear_cvt_danger_amount_min', 'CVT ремонт'),
-        ('gear_mt_danger_amount_min', 'МКПП ремонт'),
-        ('suspension_danger_amount_min', 'Подвеска ремонт'),
-        ('system_og_danger_amount_min', 'Выхлопная система ремонт'),
-        ('conditioner_danger_amount_min', 'Кондиционер ремонт'),
-        ('turbo_danger_amount_min', 'Турбина ремонт'),
-        ('wheel_danger_amount_min', 'Рулевая рейка ремонт'),
-        ('brake_danger_amount_min', 'Тормозная система ремонт'),
-        ('subframe_danger_amount_min', 'Подрамник ремонт'),
-        ('drive_danger_amount_min', 'Привод ремонт'),
-        ('windshield', 'Лобовое стекло'),
-        ('windshield_heat', 'Лобовое с обогревом'),
-        ('light_pered', 'Передняя оптика'),
-        ('light_zad', 'Задняя оптика'),
-        ('battery', 'АКБ'),
-        ('to_1', 'ТО-1'),
-        ('to_2', 'ТО-2'),
-        ('to_3', 'ТО-3'),
-    ]
     lines = []
-    for base_name, title in mapping:
-        field_name = f'{base_name}_{suffix}'
+    for label, amount in totals.items():
         lines.append({
             'section': SECTION_DIAG_SETTINGS,
             'section_title': SECTION_TITLES[SECTION_DIAG_SETTINGS],
-            'indicator': title,
-            'amount': _safe_attr(settings, field_name),
+            'indicator': label,
+            'amount': amount,
             'kind': 'diag_setting',
         })
     return lines
@@ -296,7 +339,7 @@ def extract_lines_from_price_result(price_result: dict | None) -> list[dict]:
         })
 
     lines.extend(_context_indicator_lines(price_result))
-    lines.extend(_diag_setting_lines(price_result))
+    lines.extend(_diag_actual_lines(price_result))
 
     return lines
 
@@ -537,14 +580,16 @@ def calculate_compare_before_after(
         }
 
     price_group_code = str(getattr(price_group, 'code', '') or '')
-    compare_unit = _build_compare_unit(unit, settings_history, price_group_code)
+    before_unit = _build_compare_unit(unit, settings_history, price_group_code)
+    # AFTER: берем текущие коэффициенты ДЦ/ЦГ (без исторического снапшота)
+    after_unit = copy.copy(unit)
     body_info = get_body_estimation_cached(estimation)
     salon_info = get_salon_estimation_cached(estimation)
 
-    def _calc_for_settings(settings_id: int):
+    def _calc_for_settings(settings_id: int, calc_unit):
         settings = RegEstimationsSettings.objects.get(pk=settings_id)
         interactiv_for_calc = copy.copy(interactiv_rlk)
-        interactiv_for_calc.unit = compare_unit
+        interactiv_for_calc.unit = calc_unit
         return estimations_price_calculation(
             interactiv_for_calc,
             estimation,
@@ -556,8 +601,8 @@ def calculate_compare_before_after(
             save_history=False,
         )
 
-    before_result = _calc_for_settings(profile.before_settings_id)
-    after_result = _calc_for_settings(profile.after_settings_id)
+    before_result = _calc_for_settings(profile.before_settings_id, before_unit)
+    after_result = _calc_for_settings(profile.after_settings_id, after_unit)
     if not before_result or not after_result:
         return None
     return {
