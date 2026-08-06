@@ -79,7 +79,16 @@ def add_swap(rlk, estimation):
 
 
 def send_web_socket_message(group, chat, user, text, estimation_id, skip_save=False):
-    
+    group_s = str(group or '')
+    if group_s.startswith('aav_'):
+        channel = 'avito'
+    elif group_s.startswith('car_') or 'car' in group_s:
+        channel = 'cars'
+    elif group_s.startswith('prep_'):
+        channel = 'prep'
+    else:
+        channel = 'estimation'
+
     message_json = {
             'chat_id'       : str(chat.pk),
             'name'          : str(user),
@@ -92,6 +101,7 @@ def send_web_socket_message(group, chat, user, text, estimation_id, skip_save=Fa
             'eco'           : user.profiles.eco,
             'estimation_id' : estimation_id,
             'skip_save'     : skip_save,
+            'channel'       : channel,
         }    
     
     send_message_socket(message = message_json)

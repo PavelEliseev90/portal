@@ -23,7 +23,7 @@
 </div>
 
 <div id="container_toast_cars" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;"></div>
-<audio id="notif_cars" src="/media_dop/music/vin.mp3"></audio>
+<audio id="notif_cars" src="{% include 'chats/notif_sound_src.html' with channel='cars' %}" preload="auto"></audio>
 
 <script>
 (function() {
@@ -98,10 +98,25 @@
             refresh_data_cars();
         };
         chatSocketCars.onmessage = function(e) {
+            try {
+                var data = JSON.parse(e.data);
+            } catch (err) {
+                return;
+            }
+            // Только чаты автомобилей (car_*), без оценок/авито на общей шине.
+            var chatSlug = (data && data.chat) ? String(data.chat) : '';
+            var channel = (data && data.channel) ? String(data.channel) : '';
+            if (channel === 'cars') {
+                // ok
+            } else if (!/^car_/.test(chatSlug)) {
+                return;
+            }
+            if (!data.message) {
+                return;
+            }
             var notif = document.getElementById('notif_cars');
             if (notif) notif.play().catch(function() {});
             try {
-                var data = JSON.parse(e.data);
                 if (data.message) {
                     var link = '/cars/' + (data.chat ? data.chat.replace(/^car_/, '') : '') + '/';
                     //toast_cars(data.chat || 'Автомобиль', data.message, link);

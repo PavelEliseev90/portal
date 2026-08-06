@@ -185,6 +185,7 @@ def broadcast_aav_message(chat, message_text, user=None, lot_pk=None):
         'skip_save': True,
         'estimation_id': 0,
         'lot_pk': lot_pk,
+        'channel': 'avito',
     }
     try:
         from task_manager.views import send_message_socket

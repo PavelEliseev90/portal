@@ -80,7 +80,7 @@
     </div>
 </div>
 
-<audio id="{{ prefix }}-notif" src="{% static 'auction_avito/notif_avito.wav' %}" preload="auto"></audio>
+<audio id="{{ prefix }}-notif" src="{% include 'chats/notif_sound_src.html' with channel='avito' %}" preload="auto"></audio>
 
 <style>
   .aav-chat-msg-lot { cursor: pointer; }
@@ -243,6 +243,9 @@
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
             if (!data.message || String(data.chat_id) !== String(chat_id)) return;
+            // Только каналы Авито (aav_feed / aav_lot_*) — чужие комнаты на общей шине игнор.
+            const chatSlug = data.chat ? String(data.chat) : '';
+            if (chatSlug && chatSlug.indexOf('aav_') !== 0) return;
             const notif = document.getElementById(prefix + '-notif');
             if (notif) notif.play().catch(function () {});
             appendMessage(data, !!data.eco);

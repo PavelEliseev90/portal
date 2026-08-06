@@ -152,6 +152,7 @@ def broadcast_rlk_chat_ws_message(chat, user, message_text):
         'eco': eco,
         'skip_save': True,
         'estimation_id': 0,
+        'channel': 'estimation',
     }
     try:
         from task_manager.views import send_message_socket
