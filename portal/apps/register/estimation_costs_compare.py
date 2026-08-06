@@ -562,11 +562,14 @@ def _resolve_calc_context(interactiv_rlk, estimation, calc_type: str = 'autohub'
     return unit, price_group, zna
 
 
-def _get_history_unit_settings(unit, price_group, start_estimation):
-    """История коэффициентов: сначала по pk ЦГ, затем по code (дубли RefGroupPrice)."""
+def _get_unit_settings_as_of(unit, price_group, as_of):
+    """
+    Снимок коэффициентов ДЦ+ЦГ на указанную дату:
+    последняя запись UnitPriceGroupSettings с created_at <= as_of.
+    """
     from refs.unit_price_group_settings import UnitPriceGroupSettings
 
-    if not unit or not price_group:
+    if not unit or not price_group or as_of is None:
         return None
 
     row = (
@@ -574,7 +577,7 @@ def _get_history_unit_settings(unit, price_group, start_estimation):
         .filter(
             unit_id=unit.pk,
             price_group_id=price_group.pk,
-            created_at__lte=start_estimation,
+            created_at__lte=as_of,
         )
         .order_by('-created_at', '-id')
         .first()
@@ -590,77 +593,66 @@ def _get_history_unit_settings(unit, price_group, start_estimation):
         .filter(
             unit_id=unit.pk,
             price_group__code=code,
-            created_at__lte=start_estimation,
+            created_at__lte=as_of,
         )
         .order_by('-created_at', '-id')
         .first()
     )
 
 
-def _get_latest_unit_settings(unit, price_group):
-    from refs.unit_price_group_settings import UnitPriceGroupSettings
-
-    if not unit or not price_group:
+def _kf_from_settings_row(settings_row):
+    """ИРЦ ТХТ из снимка: correction_txt, иначе ratio_avtohub_txt."""
+    if settings_row is None:
         return None
-    row = (
-        UnitPriceGroupSettings.objects
-        .filter(unit_id=unit.pk, price_group_id=price_group.pk)
-        .order_by('-created_at', '-id')
-        .first()
-    )
-    if row is not None:
-        return row
-    code = str(getattr(price_group, 'code', '') or '').strip()
-    if not code:
-        return None
-    return (
-        UnitPriceGroupSettings.objects
-        .filter(unit_id=unit.pk, price_group__code=code)
-        .order_by('-created_at', '-id')
-        .first()
-    )
-
-
-def _apply_kf_to_unit(unit, price_group_code: str, settings_row) -> None:
-    """Подставить ИРЦ ТХТ в unit только если в снимке есть реальное значение."""
-    if settings_row is None or not price_group_code:
-        return
-    code = str(price_group_code)
     corr = getattr(settings_row, 'correction_txt', None)
+    if corr not in (None, 0):
+        return _as_float(corr)
     ratio = getattr(settings_row, 'ratio_avtohub_txt', None)
-    kf = corr if corr not in (None, 0) else ratio
-    if kf in (None, 0):
-        return
-    if hasattr(unit, f'correction_txt_{code}'):
-        setattr(unit, f'correction_txt_{code}', kf)
-    if hasattr(unit, f'ratio_avtohub_txt_{code}'):
-        setattr(unit, f'ratio_avtohub_txt_{code}', kf)
+    if ratio not in (None, 0):
+        return _as_float(ratio)
+    return None
 
 
-def _build_compare_unit_from_history(unit, settings_row, price_group_code):
-    """BEFORE: коэффициенты из исторического снимка на дату оценки."""
+def _build_unit_from_settings_as_of(unit, price_group, as_of):
+    """
+    Копия ДЦ с коэффициентами из снимка UnitPriceGroupSettings на as_of.
+    КФ ТХТ выставляется явно в оба поля, которые читает расчёт цены.
+    """
     from refs.unit_price_group_settings import sync_settings_row_to_unit
 
     compare_unit = copy.copy(unit)
-    if settings_row is not None and price_group_code:
-        sync_settings_row_to_unit(compare_unit, settings_row, price_group_code)
-        _apply_kf_to_unit(compare_unit, price_group_code, settings_row)
-    return compare_unit
+    settings_row = _get_unit_settings_as_of(unit, price_group, as_of)
+    if settings_row is None or price_group is None:
+        return compare_unit, None
 
-
-def _build_compare_unit_current(unit, price_group):
-    """
-    AFTER: текущие коэффициенты ДЦ из RefUnit (как в боевом расчёте сегодня).
-    Если в последнем снимке настроек есть явный КФ — подставляем только его,
-    не затирая остальные поля через None.
-    """
-    compare_unit = copy.copy(unit)
-    if unit is None or price_group is None:
-        return compare_unit
     code = str(getattr(price_group, 'code', '') or '')
-    latest = _get_latest_unit_settings(unit, price_group)
-    _apply_kf_to_unit(compare_unit, code, latest)
-    return compare_unit
+    sync_settings_row_to_unit(compare_unit, settings_row, code)
+
+    kf = _kf_from_settings_row(settings_row)
+    if kf is not None and code:
+        if hasattr(compare_unit, f'correction_txt_{code}'):
+            setattr(compare_unit, f'correction_txt_{code}', kf)
+        if hasattr(compare_unit, f'ratio_avtohub_txt_{code}'):
+            setattr(compare_unit, f'ratio_avtohub_txt_{code}', kf)
+
+        # markup / торг — тоже явно из снимка на as_of (как в расчёте)
+        markup = getattr(settings_row, 'markup_txt', None)
+        if markup in (None, 0):
+            markup = getattr(settings_row, 'percent_txt', None)
+        if markup not in (None,) and hasattr(compare_unit, f'markup_txt_{code}'):
+            setattr(compare_unit, f'markup_txt_{code}', markup)
+        if markup not in (None,) and hasattr(compare_unit, f'percent_txt_{code}'):
+            setattr(compare_unit, f'percent_txt_{code}', markup)
+
+        torg = getattr(settings_row, 'max_discount_bargain_percent', None)
+        if torg in (None, 0):
+            torg = getattr(settings_row, 'percent_torg_txt', None)
+        if torg not in (None,) and hasattr(compare_unit, f'max_discount_bargain_percent_{code}'):
+            setattr(compare_unit, f'max_discount_bargain_percent_{code}', torg)
+        if torg not in (None,) and hasattr(compare_unit, f'percent_torg_txt_{code}'):
+            setattr(compare_unit, f'percent_torg_txt_{code}', torg)
+
+    return compare_unit, settings_row
 
 
 def calculate_compare_before_after(
@@ -670,6 +662,8 @@ def calculate_compare_before_after(
     calc_type: str = 'autohub',
     profile: CompareProfile | None = None,
 ) -> dict[str, Any] | None:
+    from datetime import datetime
+
     from eco.views import (
         estimations_price_calculation,
         get_body_estimation_cached,
@@ -678,25 +672,36 @@ def calculate_compare_before_after(
     from register.models import RegEstimationsSettings
     profile = profile or CompareProfile()
     unit, price_group, zna = _resolve_calc_context(interactiv_rlk, estimation, calc_type=calc_type)
-    if unit is None:
+    if unit is None or price_group is None:
         return None
 
-    price_group_code = str(getattr(price_group, 'code', '') or '') if price_group else ''
-    settings_history = _get_history_unit_settings(unit, price_group, estimation.start_estimation)
-    if settings_history is None:
+    # Дата формирования отчёта = сейчас (не дата оценки!)
+    report_at = datetime.now()
+    price_group_code = str(getattr(price_group, 'code', '') or '')
+
+    # BEFORE: снимок ДЦ+ЦГ на дату оценки
+    before_unit, settings_before = _build_unit_from_settings_as_of(
+        unit, price_group, estimation.start_estimation,
+    )
+    if settings_before is None:
         return {
             'status': 'no_history',
             'history_row_id': None,
             'history_row_date': None,
             'price_group_code': price_group_code,
-            'price_group_name': getattr(price_group, 'name', '') if price_group else '',
+            'price_group_name': getattr(price_group, 'name', '') or '',
             'unit_id': getattr(unit, 'pk', None),
             'zna': zna,
         }
 
-    settings_current = _get_latest_unit_settings(unit, price_group)
-    before_unit = _build_compare_unit_from_history(unit, settings_history, price_group_code)
-    after_unit = _build_compare_unit_current(unit, price_group)
+    # AFTER: снимок ДЦ+ЦГ на дату формирования отчёта (текущая дата)
+    after_unit, settings_after = _build_unit_from_settings_as_of(
+        unit, price_group, report_at,
+    )
+    if settings_after is None:
+        # если на сегодня снимка нет — не подменяем «до», лучше явно пусто
+        return None
+
     body_info = get_body_estimation_cached(estimation)
     salon_info = get_salon_estimation_cached(estimation)
 
@@ -719,18 +724,31 @@ def calculate_compare_before_after(
     after_result = _calc_for_settings(profile.after_settings_id, after_unit)
     if not before_result or not after_result:
         return None
+
+    # Гарантируем, что в ответе КФ после = КФ из снимка на дату отчёта
+    after_kf = _kf_from_settings_row(settings_after)
+    if after_kf is not None:
+        after_result = dict(after_result)
+        after_result['kf'] = after_kf
+
+    before_kf = _kf_from_settings_row(settings_before)
+    if before_kf is not None:
+        before_result = dict(before_result)
+        before_result['kf'] = before_kf
+
     return {
         'status': 'ok',
         'before_result': before_result,
         'after_result': after_result,
-        'history_row_id': settings_history.pk,
-        'history_row_date': settings_history.created_at,
-        'after_history_row_id': getattr(settings_current, 'pk', None),
-        'after_history_row_date': getattr(settings_current, 'created_at', None),
-        'before_coefficients_source': 'history',
-        'after_coefficients_source': 'current_dc_unit',
+        'history_row_id': settings_before.pk,
+        'history_row_date': settings_before.created_at,
+        'after_history_row_id': settings_after.pk,
+        'after_history_row_date': settings_after.created_at,
+        'report_at': report_at,
+        'before_coefficients_source': 'dc_cg_as_of_estimation',
+        'after_coefficients_source': 'dc_cg_as_of_report_date',
         'price_group_code': price_group_code,
-        'price_group_name': getattr(price_group, 'name', '') if price_group else '',
+        'price_group_name': getattr(price_group, 'name', '') or '',
         'unit_id': getattr(unit, 'pk', None),
         'zna': zna,
         'profile': profile,
@@ -798,7 +816,7 @@ def compare_estimation_costs(
         'after_history_id': compare_data.get('after_history_row_id'),
         'after_date': compare_data.get('after_history_row_date'),
         'before_coefficients_source': compare_data.get('before_coefficients_source') or 'history',
-        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'current_dc_unit',
+        'after_coefficients_source': compare_data.get('after_coefficients_source') or 'dc_cg_as_of_report_date',
         'before_zna': before_result.get('zna') or 0,
         'before_kf': before_result.get('kf') or '',
         'after_zna': after_result.get('zna') or 0,

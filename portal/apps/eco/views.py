@@ -13760,6 +13760,7 @@ def estimation_costs_compare_report(request):
 
     if do_run and total_candidates > 0:
         if export_xlsx:
+            # Полная выгрузка по тем же фильтрам, без пагинации и без искусственного limit
             comparisons = list(iter_july_comparisons(
                 date_from=date_start,
                 date_to=date_end,
@@ -13768,8 +13769,20 @@ def estimation_costs_compare_report(request):
                 vin=vin,
                 car_query=car_query,
                 only_changed=only_changed,
-                limit=500,
+                limit=0,
             ))
+            if view_mode in ('diag', 'changed'):
+                filtered = []
+                for comparison in comparisons:
+                    rows = comparison.get('rows') or []
+                    if view_mode == 'diag':
+                        rows = [r for r in rows if (r.get('kind') or '') == 'diag_setting']
+                    else:
+                        rows = [r for r in rows if abs(float(r.get('delta') or 0)) > 0.5]
+                    item = dict(comparison)
+                    item['rows'] = rows
+                    filtered.append(item)
+                comparisons = filtered
             stamp = now.strftime('%Y%m%d')
             suffix = f'_{vin}' if vin else ''
             return export_comparisons_http_response(
@@ -13820,7 +13833,10 @@ def estimation_costs_compare_report(request):
         'errors': errors,
         'do_run': do_run,
         'no_history_count': no_history_count,
-        'compare_profile': 'BEFORE=settings 12 + коэф. ДЦ/ЦГ на дату оценки, AFTER=settings 13 + текущие коэф. ДЦ/ЦГ',
+        'compare_profile': (
+            'BEFORE=settings 12 + коэф. ДЦ/ЦГ на дату оценки; '
+            'AFTER=settings 13 + коэф. ДЦ/ЦГ на дату отчёта (сегодня)'
+        ),
     }
     return render(request, 'lo/estimation_costs_compare_report.html', {'params': params})
 
