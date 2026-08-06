@@ -7,6 +7,7 @@
   ДО:
     - коэффициенты ДЦ+ЦГ из UnitPriceGroupSettings на дату оценки
     - суммы диагностик / настройки из RegEstimationsSettings id=12
+      (если показатель в 12 = 0 — берём значение из id=13)
     - estimations_price_calculation(..., persist=False)
 
   ПОСЛЕ:
@@ -622,6 +623,34 @@ def _build_dc_for_calc(unit, price_group, settings_row):
     return dc
 
 
+def _merge_settings_zero_fallback(primary, fallback):
+    """
+    Настройки для расчёта «до»: берём primary (settings 12),
+    но если числовой показатель = 0/None — подставляем из fallback (settings 13).
+    """
+    if primary is None:
+        return fallback
+    if fallback is None:
+        return primary
+
+    merged = copy.copy(primary)
+    for field in primary._meta.fields:
+        name = field.name
+        if name in ('id', 'pk'):
+            continue
+        # только числовые показатели диагностик/сумм/коэффициентов
+        if field.get_internal_type() not in (
+            'FloatField', 'IntegerField', 'BigIntegerField', 'DecimalField', 'PositiveIntegerField',
+        ):
+            continue
+        value = getattr(primary, name, None)
+        if value in (None, 0):
+            fb = getattr(fallback, name, None)
+            if fb not in (None,):
+                setattr(merged, name, fb)
+    return merged
+
+
 def calculate_compare_before_after(
     interactiv_rlk,
     estimation,
@@ -633,6 +662,7 @@ def calculate_compare_before_after(
     Два прогона estimations_price_calculation на одних входных данных оценки.
 
     ДО   = коэф. ДЦ/ЦГ на дату оценки + RegEstimationsSettings(12)
+           (если показатель в 12 = 0 — берём из 13)
     ПОСЛЕ = коэф. ДЦ/ЦГ на дату отчёта (сейчас) + RegEstimationsSettings(13)
     """
     from eco.views import (
@@ -684,8 +714,11 @@ def calculate_compare_before_after(
     # Одинаковые входы оценки (кузов/салон/тест-драйв и т.д.)
     body_info = get_body_estimation_cached(estimation)
     salon_info = get_salon_estimation_cached(estimation)
-    settings_before = RegEstimationsSettings.objects.get(pk=profile.before_settings_id)
-    settings_after = RegEstimationsSettings.objects.get(pk=profile.after_settings_id)
+    settings_12 = RegEstimationsSettings.objects.get(pk=profile.before_settings_id)
+    settings_13 = RegEstimationsSettings.objects.get(pk=profile.after_settings_id)
+    # ДО: settings 12, нули подтягиваем из 13
+    settings_before = _merge_settings_zero_fallback(settings_12, settings_13)
+    settings_after = settings_13
 
     def _run(settings_obj, dc_unit):
         interactiv_for_calc = copy.copy(interactiv_rlk)
