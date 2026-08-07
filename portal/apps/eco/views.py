@@ -4007,7 +4007,9 @@ def doc(request, id):
     
     from eco.eco_1c_utils import is_eco_1c_session
 
-    if not is_eco_1c_session(request):
+    from_1c = is_eco_1c_session(request)
+
+    if not from_1c:
         if not request.user.profiles.user_sb and not request.user.profiles.eco and not request.user.profiles.eco_visible and not request.user.username == interactiv_rlk.staff_rlk.domain_login and not request.user in interactiv_rlk.access_user.all() and not request.user in estimation.access_user.all() and not request.user.username == estimation.staff.domain_login  and (estimation.page_documents.store != None and not interactiv_rlk.store in request.user.profiles.korsavto_stores.all()):
 
             add_log_history_open(estimation, request.user, 403)
@@ -4549,6 +4551,7 @@ def doc(request, id):
                 'kolesa2_needed': kolesa2_needed,
                 'kolesa_reception': kolesa_reception,
                 'kolesa_reception_files': kolesa_reception_files,
+                'from_1c': from_1c,
             }
     
     elif request.method == "POST":
