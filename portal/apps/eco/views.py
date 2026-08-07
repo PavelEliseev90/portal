@@ -2946,6 +2946,9 @@ def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk)
             comment_vnesh=v.comment_vnesh or '',
             check_vin_int=getattr(v, 'check_vin_int', 10) or 10,
             check_engine_int=getattr(v, 'check_engine_int', 10) or 10,
+            unreadable_vin_int=10 if getattr(v, 'unreadable_vin_int', None) is None else v.unreadable_vin_int,
+            unreadable_engine_num_int=10 if getattr(v, 'unreadable_engine_num_int', None) is None else v.unreadable_engine_num_int,
+            unreadable_rama_int=10 if getattr(v, 'unreadable_rama_int', None) is None else v.unreadable_rama_int,
             windshield_error_int=getattr(v, 'windshield_error_int', 10) or 10,
             light_error_int=getattr(v, 'light_error_int', 10) or 10,
             oil_error_int=getattr(v, 'oil_error_int', 10) or 10,
@@ -3202,6 +3205,9 @@ def control_diagnostic_edit(request, id, cd_id):
         cd_vnesh.windshield_heat_int = _int_post('windshield_heat_int', 10)
         cd_vnesh.check_vin_int = _int_post('check_vin_int', 10)
         cd_vnesh.check_engine_int = _int_post('check_engine_int', 10)
+        cd_vnesh.unreadable_vin_int = _int_post('unreadable_vin_int', 10)
+        cd_vnesh.unreadable_engine_num_int = _int_post('unreadable_engine_num_int', 10)
+        cd_vnesh.unreadable_rama_int = _int_post('unreadable_rama_int', 10)
         cd_vnesh.oil_error_int = _int_post('oil_error_int', 10)
         cd_vnesh.water_error_int = _int_post('water_error_int', 10)
         cd_vnesh.windshield_error_int = _int_post('windshield_error_int', 10)
@@ -7052,6 +7058,37 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 auction_success = True
 
         
+        # Нечитаемые VIN / № ДВС / № рамы: если отмечено несколько — берём минимальный %,
+        # в описании перечисляем все сработавшие пункты.
+        if estimation.page_vnesh is not None:
+            unreadable_active = []
+            for flag_attr, kf_attr, label in (
+                ('unreadable_vin_int', 'unreadable_vin_kf', 'Нечитаемый VIN номер'),
+                ('unreadable_engine_num_int', 'unreadable_engine_num_kf', 'Нечитаемый № ДВС'),
+                ('unreadable_rama_int', 'unreadable_rama_kf', 'Нечитаемый № рамы'),
+            ):
+                if getattr(estimation.page_vnesh, flag_attr, 10) == 0:
+                    try:
+                        kf_val = float(getattr(estimation_settings, kf_attr, 0) or 0)
+                    except (TypeError, ValueError):
+                        kf_val = 0.0
+                    unreadable_active.append((label, kf_val))
+            if unreadable_active:
+                labels = [item[0] for item in unreadable_active]
+                min_kf = min(item[1] for item in unreadable_active)
+                if min_kf > 0:
+                    diff = price * min_kf / 100.0
+                    price = price - diff
+                    inf_price = {
+                        'price': price,
+                        'dif': diff,
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                            ', '.join(labels), min_kf
+                        ),
+                        'name': ', '.join(labels),
+                    }
+                    list_info_price.append(inf_price)
+
         defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
         
         #Считаем авто в продаже 
@@ -10048,6 +10085,37 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 auction = True
                 auction_comment = auction_comment + "Использование в такси. Коэфицент " + str(kf_auction)
                 auction_success = True
+
+        # Нечитаемые VIN / № ДВС / № рамы: если отмечено несколько — берём минимальный %,
+        # в описании перечисляем все сработавшие пункты.
+        if cd.page_vnesh_copy is not None:
+            unreadable_active = []
+            for flag_attr, kf_attr, label in (
+                ('unreadable_vin_int', 'unreadable_vin_kf', 'Нечитаемый VIN номер'),
+                ('unreadable_engine_num_int', 'unreadable_engine_num_kf', 'Нечитаемый № ДВС'),
+                ('unreadable_rama_int', 'unreadable_rama_kf', 'Нечитаемый № рамы'),
+            ):
+                if getattr(cd.page_vnesh_copy, flag_attr, 10) == 0:
+                    try:
+                        kf_val = float(getattr(estimation_settings, kf_attr, 0) or 0)
+                    except (TypeError, ValueError):
+                        kf_val = 0.0
+                    unreadable_active.append((label, kf_val))
+            if unreadable_active:
+                labels = [item[0] for item in unreadable_active]
+                min_kf = min(item[1] for item in unreadable_active)
+                if min_kf > 0:
+                    diff = price * min_kf / 100.0
+                    price = price - diff
+                    inf_price = {
+                        'price': price,
+                        'dif': diff,
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                            ', '.join(labels), min_kf
+                        ),
+                        'name': ', '.join(labels),
+                    }
+                    list_info_price.append(inf_price)
 
         defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
 

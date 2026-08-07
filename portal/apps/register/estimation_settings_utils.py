@@ -58,3 +58,21 @@ def apply_mcu_kf_from_post(settings_obj, post):
     if not settings_obj.mcu_kf or settings_obj.mcu_kf <= 0:
         settings_obj.mcu_kf = 1.0
     return settings_obj
+
+
+def _float_post(post, key, default=0.0):
+    try:
+        value = post.get(key, default)
+        if value == '' or value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def apply_unreadable_kf_from_post(settings_obj, post):
+    """Коэффициенты % понижения за нечитаемые VIN / № ДВС / № рамы (по умолчанию 0)."""
+    settings_obj.unreadable_vin_kf = _float_post(post, 'unreadable_vin_kf', 0.0)
+    settings_obj.unreadable_engine_num_kf = _float_post(post, 'unreadable_engine_num_kf', 0.0)
+    settings_obj.unreadable_rama_kf = _float_post(post, 'unreadable_rama_kf', 0.0)
+    return settings_obj

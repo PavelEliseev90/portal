@@ -811,6 +811,9 @@ def estimation_rlk(request, rlk_id):
             reg_interactiv_ocenka.save(update_fields=['rama']) 
 
             reg_interactiv_ocenka_vnesh.check_vin_int               = int(request.POST.get('check_vin_int', '3'))
+            reg_interactiv_ocenka_vnesh.unreadable_vin_int          = int(request.POST.get('unreadable_vin_int', '10'))
+            reg_interactiv_ocenka_vnesh.unreadable_engine_num_int   = int(request.POST.get('unreadable_engine_num_int', '10'))
+            reg_interactiv_ocenka_vnesh.unreadable_rama_int         = int(request.POST.get('unreadable_rama_int', '10'))
             reg_interactiv_ocenka_vnesh.check_engine_int            = int(request.POST.get('check_engine_int', '3'))
             reg_interactiv_ocenka_vnesh.windshield_projection_int   = int(request.POST.get('windshield_projection_int', '3'))
             reg_interactiv_ocenka_vnesh.windshield_camera_int       = int(request.POST.get('windshield_camera_int', '10'))

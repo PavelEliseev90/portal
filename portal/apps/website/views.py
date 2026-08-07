@@ -9116,6 +9116,7 @@ def settings_vnesh(request):
     from django.contrib import messages
     from register.estimation_settings_utils import (
         apply_mcu_kf_from_post,
+        apply_unreadable_kf_from_post,
         clone_estimation_settings,
         get_latest_estimation_settings,
     )
@@ -9124,6 +9125,7 @@ def settings_vnesh(request):
         # Копия последних настроек + поля внешнего осмотра / коэффициент
         settings_estimation = clone_estimation_settings()
         apply_mcu_kf_from_post(settings_estimation, request.POST)
+        apply_unreadable_kf_from_post(settings_estimation, request.POST)
         
         # Обрабатываем все поля внешнего осмотра
         for key in request.POST.keys():
