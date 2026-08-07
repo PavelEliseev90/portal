@@ -4064,6 +4064,7 @@ def doc(request, id):
     reception               = None
     reception_allowed       = False
     reception_selects       = {}
+    reception_file_blocks   = []
     kolesa2_needed          = False
     kolesa_reception        = None
     kolesa_reception_files  = []
@@ -4368,6 +4369,7 @@ def doc(request, id):
         reception = None
         reception_allowed = False
         reception_selects = {}
+        reception_file_blocks = []
         kolesa2_needed = False
         kolesa_reception = None
         kolesa_reception_files = []
@@ -4375,6 +4377,7 @@ def doc(request, id):
             from eco.reception import (
                 estimation_has_kolesa2,
                 get_kolesa_reception_or_none,
+                get_reception_file_blocks,
                 get_reception_or_none,
                 reception_allowed as reception_is_allowed,
                 reception_select_options,
@@ -4394,6 +4397,7 @@ def doc(request, id):
                 return HttpResponseRedirect(request.path_info + '?page=24')
             if reception is not None:
                 reception_selects = reception_select_options()
+                reception_file_blocks = get_reception_file_blocks(estimation)
             if kolesa_reception is not None:
                 kolesa_reception_files = list(
                     RegRegInteractivOcenkaFilesKolesaReception.objects
@@ -4548,6 +4552,7 @@ def doc(request, id):
                 'reception': reception,
                 'reception_allowed': reception_allowed,
                 'reception_selects': reception_selects,
+                'reception_file_blocks': reception_file_blocks,
                 'kolesa2_needed': kolesa2_needed,
                 'kolesa_reception': kolesa_reception,
                 'kolesa_reception_files': kolesa_reception_files,
@@ -5070,11 +5075,22 @@ def doc(request, id):
                     apply_post_to_reception,
                     get_reception_or_none,
                     reception_allowed as reception_is_allowed,
+                    save_reception_files_from_request,
                 )
                 if reception_is_allowed(interactiv_rlk):
                     reception_obj = get_reception_or_none(interactiv_rlk)
                     if reception_obj is not None:
                         apply_post_to_reception(reception_obj, request.POST, user=request.user)
+                        save_reception_files_from_request(
+                            reg_interactiv_ocenka,
+                            request.FILES,
+                            user=request.user,
+                        )
+                return HttpResponseRedirect(request.path_info + '?page=24')
+            elif type_post == 'delete_reception_file':
+                from eco.reception import delete_reception_file, reception_allowed as reception_is_allowed
+                if reception_is_allowed(interactiv_rlk):
+                    delete_reception_file(reg_interactiv_ocenka, request.POST.get('file_id'))
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'create_kolesa_reception':
                 from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2

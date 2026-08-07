@@ -7,12 +7,162 @@ from datetime import date, datetime
 from django.db import transaction
 from django.utils import timezone
 
-from register.models import RegInteractivOcenkaReception, RegInteractivOcenkaRLK
+from register.models import (
+    RegInteractivOcenkaReception,
+    RegInteractivOcenkaRLK,
+    RegRegInteractivOcenkaFiles,
+)
+
+
+# Фото / сканы страницы приёма (RegRegInteractivOcenkaFiles.type_file)
+RECEPTION_FILE_SLOTS = (
+    {
+        'type_file': 'reception_passport_spread',
+        'input_name': 'file_reception_passport_spread',
+        'label': 'Скан паспорта — первый разворот',
+        'hint': 'Разворот с фото и основными данными',
+    },
+    {
+        'type_file': 'reception_passport_registration',
+        'input_name': 'file_reception_passport_registration',
+        'label': 'Скан паспорта — прописка',
+        'hint': 'Страница с регистрацией / пропиской',
+    },
+    {
+        'type_file': 'reception_snils',
+        'input_name': 'file_reception_snils',
+        'label': 'СНИЛС',
+        'hint': '',
+    },
+    {
+        'type_file': 'reception_pts',
+        'input_name': 'file_reception_pts',
+        'label': 'ПТС',
+        'hint': 'Скан / фото ПТС',
+    },
+    {
+        'type_file': 'reception_bankruptcy',
+        'input_name': 'file_reception_bankruptcy',
+        'label': 'Проверка банкротства',
+        'hint': 'Скрин / PDF результата проверки',
+    },
+    {
+        'type_file': 'reception_fines',
+        'input_name': 'file_reception_fines',
+        'label': 'Проверка штрафов',
+        'hint': '',
+    },
+    {
+        'type_file': 'reception_bailiffs',
+        'input_name': 'file_reception_bailiffs',
+        'label': 'Проверка приставов',
+        'hint': '',
+    },
+)
+
+RECEPTION_FILE_TYPES = tuple(slot['type_file'] for slot in RECEPTION_FILE_SLOTS)
 
 
 def reception_allowed(interactiv_rlk: RegInteractivOcenkaRLK) -> bool:
     """Страница приёма доступна всегда (карточка создаётся по кнопке)."""
     return interactiv_rlk is not None
+
+
+def serialize_reception_file(file_obj: RegRegInteractivOcenkaFiles) -> dict:
+    return {
+        'id': file_obj.pk,
+        'type_file': file_obj.type_file or '',
+        'name': file_obj.name or '',
+        'url': file_obj.get_absolute_url(),
+        'thumb_url': file_obj.get_thumbnail_url(),
+        'date': file_obj.date.strftime('%d.%m.%Y %H:%M') if file_obj.date else '',
+        'is_video': bool(file_obj.is_video()) if file_obj.file else False,
+    }
+
+
+def get_reception_files_queryset(estimation):
+    if estimation is None:
+        return RegRegInteractivOcenkaFiles.objects.none()
+    return (
+        RegRegInteractivOcenkaFiles.objects
+        .filter(estimation=estimation, type_file__in=RECEPTION_FILE_TYPES, blank=False)
+        .exclude(file='')
+        .order_by('type_file', '-date', '-id')
+    )
+
+
+def get_reception_files_by_type(estimation) -> dict:
+    """Словарь type_file → list[serialized file]."""
+    result = {slot['type_file']: [] for slot in RECEPTION_FILE_SLOTS}
+    for file_obj in get_reception_files_queryset(estimation):
+        key = file_obj.type_file or ''
+        if key in result:
+            result[key].append(serialize_reception_file(file_obj))
+    return result
+
+
+def get_reception_file_blocks(estimation) -> list:
+    """Блоки для шаблона: слот + загруженные файлы."""
+    by_type = get_reception_files_by_type(estimation)
+    blocks = []
+    for slot in RECEPTION_FILE_SLOTS:
+        blocks.append({
+            **slot,
+            'files': by_type.get(slot['type_file'], []),
+        })
+    return blocks
+
+
+def save_reception_files_from_request(estimation, files_dict, user=None) -> int:
+    """Сохраняет загруженные файлы приёма. Возвращает число новых файлов."""
+    if estimation is None or not files_dict:
+        return 0
+    created_count = 0
+    for slot in RECEPTION_FILE_SLOTS:
+        uploaded = files_dict.getlist(slot['input_name']) if hasattr(files_dict, 'getlist') else []
+        if not uploaded:
+            continue
+        for uploaded_file in uploaded:
+            if not uploaded_file:
+                continue
+            name = (uploaded_file.name or 'file').lower()
+            file_row = RegRegInteractivOcenkaFiles(
+                estimation=estimation,
+                type_file=slot['type_file'],
+                name=name,
+                text='',
+                type_point='',
+                cor_x=0,
+                cor_y=0,
+                file_number=0,
+                blank=False,
+                date=datetime.now(),
+                user=user if getattr(user, 'is_authenticated', False) else None,
+            )
+            file_row.file = uploaded_file
+            file_row.save()
+            try:
+                file_row._generate_thumbnail()
+            except Exception:
+                pass
+            created_count += 1
+    return created_count
+
+
+def delete_reception_file(estimation, file_id) -> bool:
+    if estimation is None or not file_id:
+        return False
+    try:
+        file_id = int(file_id)
+    except (TypeError, ValueError):
+        return False
+    qs = RegRegInteractivOcenkaFiles.objects.filter(
+        pk=file_id,
+        estimation=estimation,
+        type_file__in=RECEPTION_FILE_TYPES,
+    )
+    deleted, _ = qs.delete()
+    return deleted > 0
 
 
 def _as_date(value):
@@ -335,6 +485,10 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
         ),
         'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
         'Reception': RegInteractivOcenkaReceptionSerializer(reception, many=False).data,
+        'ReceptionFiles': [
+            serialize_reception_file(f)
+            for f in get_reception_files_queryset(estimation)
+        ],
         'HasKolesa2': has_kolesa2,
         'KolesaReception': (
             RegInteractivOcenkaKolesaReceptionSerializer(kolesa_reception, many=False).data

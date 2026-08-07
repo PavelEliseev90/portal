@@ -39,12 +39,14 @@
     </div>
   {% else %}
     {% with r=params.reception s=params.reception_selects %}
-    <form method="post" class="reception-form">
+    <form method="post" class="reception-form" enctype="multipart/form-data" id="reception-main-form">
       {% csrf_token %}
-      <input type="hidden" name="type_post" value="save_reception">
+      <input type="hidden" name="type_post" id="reception_type_post" value="save_reception">
+      <input type="hidden" name="file_id" id="reception_file_id" value="">
 
       <div class="d-flex flex-wrap gap-2 mb-3">
-        <button type="submit" class="btn btn-outline-success" name="save" value="close">
+        <button type="submit" class="btn btn-outline-success" name="save" value="close"
+                onclick="document.getElementById('reception_type_post').value='save_reception'; document.getElementById('reception_file_id').value='';">
           <span class="icon-mbri-success"></span> Сохранить
         </button>
         <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
@@ -324,8 +326,58 @@
         </div>
       </div>
 
+      <div class="portal-panel mt-3">
+        <h6 class="d-flex align-items-center gap-2 mb-1">
+          <span class="icon-mbri-image-gallery"></span> Документы и проверки
+        </h6>
+        <p class="text-muted small mb-3">
+          Загрузите сканы / фото. Несколько файлов в одном блоке допускаются. После выбора нажмите «Сохранить».
+        </p>
+        <div class="row g-2">
+          {% for block in params.reception_file_blocks %}
+            <div class="col-md-6 col-xl-4">
+              <div class="border rounded-3 p-3 h-100 bg-white bg-opacity-50">
+                <div class="fw-semibold mb-1">{{ block.label }}</div>
+                {% if block.hint %}
+                  <div class="text-muted small mb-2">{{ block.hint }}</div>
+                {% endif %}
+                <div class="form-floating mb-2">
+                  <input class="form-control form-control-sm" type="file" id="{{ block.input_name }}"
+                         name="{{ block.input_name }}" accept="image/*,.pdf" multiple>
+                  <label for="{{ block.input_name }}">Выберите файл(ы)</label>
+                </div>
+                {% if block.files %}
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for f in block.files %}
+                      <div class="position-relative border rounded overflow-hidden" style="width:96px;height:72px;">
+                        <a href="{{ f.url }}" target="_blank" title="{{ f.name }}">
+                          {% if f.is_video %}
+                            <div class="d-flex align-items-center justify-content-center bg-light text-muted small" style="width:100%;height:100%;">файл</div>
+                          {% else %}
+                            <img src="{{ f.thumb_url }}" alt="{{ f.name }}" style="width:100%;height:100%;object-fit:cover;">
+                          {% endif %}
+                        </a>
+                        <button type="submit" class="btn btn-sm btn-danger position-absolute top-0 end-0 p-0"
+                                style="width:22px;height:22px;line-height:1;opacity:.9;"
+                                title="Удалить"
+                                onclick="document.getElementById('reception_type_post').value='delete_reception_file'; document.getElementById('reception_file_id').value='{{ f.id }}';">&times;</button>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="text-muted small">Пока нет файлов</div>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12 text-muted small">Блоки файлов не загружены.</div>
+          {% endfor %}
+        </div>
+      </div>
+
       <div class="d-flex flex-wrap gap-2 mt-3">
-        <button type="submit" class="btn btn-outline-success" name="save" value="close">
+        <button type="submit" class="btn btn-outline-success" name="save" value="close"
+                onclick="document.getElementById('reception_type_post').value='save_reception'; document.getElementById('reception_file_id').value='';">
           <span class="icon-mbri-success"></span> Сохранить
         </button>
         <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
