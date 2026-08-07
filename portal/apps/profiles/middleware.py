@@ -23,6 +23,11 @@ class SingleDeviceSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        path = request.path_info or request.path or ''
+        # Статика/медиа не должны выбивать сессию (гонка с CSS после QR-страницы)
+        if path.startswith('/static/') or path.startswith('/media/'):
+            return self.get_response(request)
+
         # Чат и оценка из 1С — отдельные сессии, не влияют на вход в браузере
         if is_rlk_chat_1c_session(request):
             return self.get_response(request)
@@ -37,7 +42,7 @@ class SingleDeviceSessionMiddleware:
         if is_eco_request(request) and is_1c_eco_entry(request):
             return self.get_response(request)
         # Загрузка фото с телефона по QR — не выбивает основной сеанс на ПК
-        if is_mobile_gallery_session(request) or is_mobile_gallery_path(request.path_info or request.path):
+        if is_mobile_gallery_session(request) or is_mobile_gallery_path(path):
             return self.get_response(request)
 
         if not getattr(request, 'user', None) or not request.user.is_authenticated:

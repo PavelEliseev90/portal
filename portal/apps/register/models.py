@@ -1796,6 +1796,15 @@ class RegEstimationsSettings(models.Model):
         null=True,
     )
 
+    # Единый коэффициент на все работы кузовного участка (все ЦГ)
+    mcu_kf = models.FloatField(
+        'Коэффициент кузовного ремонта',
+        default=1.0,
+        null=True,
+        blank=True,
+        help_text='Применяется ко всем работам кузовного участка. По умолчанию 1.',
+    )
+
     def __str__(self):
         return "{}".format(self.name)
 

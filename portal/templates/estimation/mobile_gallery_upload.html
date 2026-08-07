@@ -109,6 +109,7 @@
   </div>
 
   {% if not error %}
+  {% csrf_token %}
   <script>
     (function () {
       const uploadUrl = '{{ upload_url|escapejs }}';
@@ -136,6 +137,12 @@
         const parts = value.split(`; ${name}=`);
         if (parts.length === 2) return parts.pop().split(';').shift();
         return '';
+      }
+
+      function getCsrfToken() {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (input && input.value) return input.value;
+        return getCookie('csrftoken');
       }
 
       function fmtMB(bytes) {
@@ -250,7 +257,8 @@
           formData.append('files', file);
           const xhr = new XMLHttpRequest();
           xhr.open('POST', uploadUrl, true);
-          xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+          xhr.withCredentials = true;
+          xhr.setRequestHeader('X-CSRFToken', getCsrfToken());
           xhr.upload.onprogress = function (e) {
             if (onProgress && e && e.lengthComputable) onProgress(e.loaded, e.total);
           };

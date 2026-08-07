@@ -5,6 +5,7 @@ import qrcode
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from documents.models import DocRLK
@@ -14,6 +15,7 @@ from .estimation_1c_utils import get_estimation_user
 from .mobile_gallery_utils import (
     build_mobile_upload_url,
     make_estimation_upload_token,
+    mark_mobile_gallery_session,
     verify_estimation_upload_token,
 )
 from .mobile_inbox_service import (
@@ -55,8 +57,21 @@ def _require_estimation_access(request, estimation):
 
 def _mobile_gallery_api_user(request):
     """Для upload API: JSON 401 вместо HTML-редиректа login_required."""
+    user = get_estimation_user(request)
+    if user is not None:
+        return user, None
     if request.user.is_authenticated:
         return request.user, None
+    # Запасной вариант: user_id, сохранённый при открытии QR-страницы
+    try:
+        user_id = request.session.get('mobile_gallery_user_id')
+        if user_id:
+            from django.contrib.auth import get_user_model
+            user = get_user_model().objects.filter(pk=user_id).first()
+            if user is not None:
+                return user, None
+    except Exception:
+        pass
     return None, _json_error(
         'Сессия истекла или вы не авторизованы. Обновите страницу и войдите снова.',
         status=401,
@@ -64,6 +79,7 @@ def _mobile_gallery_api_user(request):
 
 
 @login_required
+@ensure_csrf_cookie
 @require_GET
 def mobile_gallery_upload_page(request, token):
     estimation_id = verify_estimation_upload_token(token)
@@ -84,6 +100,15 @@ def mobile_gallery_upload_page(request, token):
             status=404,
         )
 
+    # Помечаем сессию телефона: SingleDevice не должен сбрасывать её
+    # на параллельных запросах (например /static/bootstrap.min.css).
+    mark_mobile_gallery_session(request)
+    try:
+        request.session['mobile_gallery_user_id'] = request.user.pk
+        request.session.modified = True
+    except Exception:
+        pass
+
     return render(request, 'estimation/mobile_gallery_upload.html', {
         'token': token,
         'estimation': estimation,
@@ -94,13 +119,16 @@ def mobile_gallery_upload_page(request, token):
 
 @require_POST
 def mobile_gallery_upload_api(request, token):
-    user, err = _mobile_gallery_api_user(request)
-    if err is not None:
-        return err
-
     estimation_id = verify_estimation_upload_token(token)
     if estimation_id is None:
         return _json_error('Ссылка недействительна или устарела', status=403)
+
+    # Снова помечаем на каждом upload — защита от гонки со static/media.
+    mark_mobile_gallery_session(request)
+
+    user, err = _mobile_gallery_api_user(request)
+    if err is not None:
+        return err
 
     estimation = get_estimation_or_none(estimation_id)
     if estimation is None:
