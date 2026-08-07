@@ -45,10 +45,8 @@
   <div class="box">
     <h2>2. Сценарий страницы «Приём автомобиля»</h2>
     <ol>
-      <li>Открытие <code>page=24</code>.</li>
-      <li>Если нет согласования цены после КД (<code>page_soglasovanie.price_after_kd &lt;= 0</code>) —
-        сообщение: <b>«Приём невозможен. Нет согласования цены после КД.»</b></li>
-      <li>Если цена после КД есть и карточки приёма ещё нет —
+      <li>Открытие <code>page=24</code> — страница приёма доступна всегда (не зависит от согласования цены после КД).</li>
+      <li>Если карточки приёма ещё нет —
         кнопка <b>«Проверить и принять автомобиль»</b> создаёт <code>RegInteractivOcenkaReception</code>
         и максимально префиллит поля из оценки / документов / RLK / салона / внешнего осмотра.</li>
       <li>Если оценка со вторым комплектом (<code>page_kolesa.kolesa2_estimation == 1</code> или <code>kolesa2</code>) —
@@ -196,7 +194,7 @@
           <li>если <code>KolesaReception == null</code> — можно взять <code>Kolesa2</code> как данные осмотра.</li>
         </ul>
       </li>
-      <li><code>Soglasovanie.price_after_kd</code> — согласованная цена после КД (условие допуска приёма на портале).</li>
+      <li><code>Soglasovanie.price_after_kd</code> — согласованная цена после КД (информативно, не блокирует приём на портале).</li>
       <li><code>Rlk</code> / <code>Estimation</code> / <code>Info</code> — контекст РЛК и оценки (uin, vin, подразделение и т.д.).</li>
     </ol>
 

@@ -16,16 +16,18 @@
   {% if not params.reception_allowed %}
     <div class="portal-panel">
       <div class="alert alert-warning mb-0" role="alert">
-        <strong>Приём невозможен.</strong>
-        Нет согласования цены после КД.
+        <strong>Приём недоступен.</strong>
+        Не удалось открыть карточку приёма для этой оценки.
       </div>
     </div>
   {% elif not params.reception %}
     <div class="portal-panel">
       <p class="mb-3">
-        Цена после КД согласована
-        ({% if params.interactiv_rlk.page_soglasovanie %}{{ params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"0g" }} &#8381;{% endif %}).
         Создайте карточку приёма — поля заполнятся из оценки и документов.
+        {% if params.interactiv_rlk.page_soglasovanie and params.interactiv_rlk.page_soglasovanie.price_after_kd > 0 %}
+          Цена после КД:
+          {{ params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"0g" }} &#8381;.
+        {% endif %}
       </p>
       <form method="post">
         {% csrf_token %}

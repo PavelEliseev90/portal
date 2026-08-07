@@ -11,13 +11,8 @@ from register.models import RegInteractivOcenkaReception, RegInteractivOcenkaRLK
 
 
 def reception_allowed(interactiv_rlk: RegInteractivOcenkaRLK) -> bool:
-    sog = getattr(interactiv_rlk, 'page_soglasovanie', None)
-    if sog is None:
-        return False
-    try:
-        return float(sog.price_after_kd or 0) > 0
-    except (TypeError, ValueError):
-        return False
+    """Страница приёма доступна всегда (карточка создаётся по кнопке)."""
+    return interactiv_rlk is not None
 
 
 def _as_date(value):
