@@ -1,0 +1,63 @@
+/* Режим ECO внутри HTML-поля 1С (старый WebView).
+   Подключается только при params.from_1c / class eco-1c-embed. */
+
+html.eco-1c-embed,
+body.eco-1c-embed {
+  zoom: 0.85;
+}
+
+/* Fallback, если zoom в движке 1С не сработает */
+@supports not (zoom: 1) {
+  body.eco-1c-embed {
+    transform: scale(0.85);
+    transform-origin: top left;
+    width: 117.65%; /* 100 / 0.85 */
+  }
+}
+
+body.eco-1c-embed .kors-hero {
+  padding: 0.85rem 1rem !important;
+  margin-top: 0.25rem !important;
+}
+
+body.eco-1c-embed .kors-metric-card {
+  padding: 0.7rem !important;
+  min-width: 120px !important;
+  border-radius: 0.75rem !important;
+}
+
+body.eco-1c-embed .kors-metric-card__value {
+  font-size: 1.15rem !important;
+}
+
+body.eco-1c-embed .kors-metric-card__label {
+  font-size: 0.68rem !important;
+}
+
+body.eco-1c-embed .kors-metrics-grid {
+  gap: 0.55rem !important;
+}
+
+body.eco-1c-embed .portal-panel {
+  padding: 0.75rem !important;
+}
+
+body.eco-1c-embed .kors-anchor-button {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+}
+
+body.eco-1c-embed .btn {
+  font-size: 0.85rem;
+}
+
+body.eco-1c-embed .form-floating > .form-control,
+body.eco-1c-embed .form-floating > .form-select {
+  min-height: calc(2.8rem + 2px);
+  padding-top: 1.1rem;
+}
+
+body.eco-1c-embed .navbar.sticky-top {
+  /* Чуть компактнее верхняя шапка портала в 1С */
+  min-height: 2.4rem;
+}

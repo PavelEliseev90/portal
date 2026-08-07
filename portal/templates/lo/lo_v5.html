@@ -6,6 +6,18 @@
 
 {% block title_navbar %} - интерактивная оценка {% if params.rlk.unit.name == '' %} (1.00.5) {{params.rlk.unit_dc.name}} {% else %} {{params.rlk.unit.name}} {% endif %} {{params.rlk.nomer}} от {{params.rlk.dataTime}} (1.00.5) {% endblock %}
 
+{% block body_attrs %}{% if params.from_1c %} class="eco-1c-embed"{% endif %}{% endblock %}
+
+{% block head %}
+{% if params.from_1c %}
+<link rel="stylesheet" href="/static/css/eco_1c_embed.css?v=20260807a">
+<script>
+  /* На всякий случай дублируем класс на html — zoom надёжнее на корне */
+  document.documentElement.classList.add('eco-1c-embed');
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 {% load custom_template_tags %}
