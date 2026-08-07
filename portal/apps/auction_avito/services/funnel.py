@@ -272,8 +272,8 @@ def build_funnel_context(request) -> dict:
             'lots_won': f'{lot_list_base}?outcome=won&activity=&{period_qs}',
         },
         'hint': (
-            'ЦГ берётся из последнего успешного расчёта выкупа лота '
-            '(AvitoLotCalculation.price_group / ZNA). '
-            '«Выбрали нас» — outcome_code=won.'
+            'ЦГ берётся из последнего успешного расчёта выкупа лота'
+            ''
+            ''
         ),
     }

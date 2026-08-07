@@ -17,7 +17,7 @@
     border-radius: 12px;
     border: 1px solid rgba(0, 42, 90, 0.08);
     background: #fff;
-    padding: 0.85rem 1rem;
+    padding: 0.2rem 0.2rem;
   }
   .aav-kpi .label {
     font-size: 0.72rem;
@@ -163,7 +163,7 @@
     <div class="aav-kpi won">
       <div class="label">Выбрали нас</div>
       <div class="value">{{ params.summary.won }}</div>
-      <div class="hint"><a href="{{ params.links.lots_won }}">outcome=won</a></div>
+      <div class="hint"><a href="{{ params.links.lots_won }}"></a></div>
     </div>
     <div class="aav-kpi not-taken">
       <div class="label">Не обработан</div>
@@ -193,7 +193,6 @@
       <canvas id="funnelZgChart"></canvas>
     </div>
     <p class="hint mb-0 mt-2">
-      По оси X — ценовые группы за выбранный период. В каждой группе три столбца: всего лотов, с нашими ставками, выбрали нас.
       {{ params.hint }}
     </p>
   </div>
@@ -211,8 +210,7 @@
             <th class="text-end">Выбрали нас</th>
             <th class="text-end">% от ставок</th>
             <th class="text-end">% от лотов</th>
-            <th style="min-width:120px">Доля</th>
-          </tr>
+            </tr>
         </thead>
         <tbody>
           {% for row in params.rows %}
@@ -224,18 +222,7 @@
             <td class="text-end" style="color:{{ params.funnel_colors.won }};font-weight:600">{{ row.won }}</td>
             <td class="text-end">{{ row.win_share_of_bids }}%</td>
             <td class="text-end">{{ row.win_share_of_total }}%</td>
-            <td>
-              {% if row.total %}
-              <div class="bar-mini" title="ставки / выигрыши от всего">
-                <span style="width:{{ row.bid_share }}%;background:{{ params.funnel_colors.with_bids }}"></span>
-              </div>
-              <div class="bar-mini mt-1">
-                <span style="width:{{ row.win_share_of_total }}%;background:{{ params.funnel_colors.won }}"></span>
-              </div>
-              {% else %}
-              <span class="text-muted">—</span>
-              {% endif %}
-            </td>
+            
           </tr>
           {% empty %}
           <tr><td colspan="8" class="text-muted">Нет лотов за период{% if params.filters.zg %} с выбранными ЦГ{% endif %}.</td></tr>
