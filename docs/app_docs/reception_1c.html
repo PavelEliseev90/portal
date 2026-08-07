@@ -45,10 +45,8 @@
   <div class="box">
     <h2>2. Сценарий страницы «Приём автомобиля»</h2>
     <ol>
-      <li>Открытие <code>page=24</code>.</li>
-      <li>Если нет согласования цены после КД (<code>page_soglasovanie.price_after_kd &lt;= 0</code>) —
-        сообщение: <b>«Приём невозможен. Нет согласования цены после КД.»</b></li>
-      <li>Если цена после КД есть и карточки приёма ещё нет —
+      <li>Открытие <code>page=24</code> — страница приёма доступна всегда (не зависит от согласования цены после КД).</li>
+      <li>Если карточки приёма ещё нет —
         кнопка <b>«Проверить и принять автомобиль»</b> создаёт <code>RegInteractivOcenkaReception</code>
         и максимально префиллит поля из оценки / документов / RLK / салона / внешнего осмотра.</li>
       <li>Если оценка со вторым комплектом (<code>page_kolesa.kolesa2_estimation == 1</code> или <code>kolesa2</code>) —
@@ -182,10 +180,25 @@
   "Soglasovanie": { ... } | null, // цена после КД и пр.
   "Info": { ... },                // RegInteractivOcenkaRLKSerializer
   "Reception": { ... },           // страница приёма АМ — обязательно
+  "ReceptionFiles": [ ... ],      // сканы/фото приёма (type_file: reception_*)
   "HasKolesa2": true | false,
   "KolesaReception": { ... } | null,  // приёмка 2КК, если создана
   "Kolesa2": { ... } | null           // снимок 2КК из оценки, если HasKolesa2
 }</pre>
+
+    <h3>ReceptionFiles — type_file</h3>
+    <table>
+      <thead><tr><th>type_file</th><th>Назначение</th></tr></thead>
+      <tbody>
+        <tr><td><code>reception_passport_spread</code></td><td>Паспорт — первый разворот</td></tr>
+        <tr><td><code>reception_passport_registration</code></td><td>Паспорт — прописка</td></tr>
+        <tr><td><code>reception_snils</code></td><td>СНИЛС</td></tr>
+        <tr><td><code>reception_pts</code></td><td>ПТС</td></tr>
+        <tr><td><code>reception_bankruptcy</code></td><td>Проверка банкротства</td></tr>
+        <tr><td><code>reception_fines</code></td><td>Проверка штрафов</td></tr>
+        <tr><td><code>reception_bailiffs</code></td><td>Проверка приставов</td></tr>
+      </tbody>
+    </table>
 
     <h3>Что 1С должна обработать в первую очередь</h3>
     <ol>
@@ -196,7 +209,7 @@
           <li>если <code>KolesaReception == null</code> — можно взять <code>Kolesa2</code> как данные осмотра.</li>
         </ul>
       </li>
-      <li><code>Soglasovanie.price_after_kd</code> — согласованная цена после КД (условие допуска приёма на портале).</li>
+      <li><code>Soglasovanie.price_after_kd</code> — согласованная цена после КД (информативно, не блокирует приём на портале).</li>
       <li><code>Rlk</code> / <code>Estimation</code> / <code>Info</code> — контекст РЛК и оценки (uin, vin, подразделение и т.д.).</li>
     </ol>
 
