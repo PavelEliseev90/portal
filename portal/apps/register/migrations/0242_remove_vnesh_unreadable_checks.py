@@ -11,15 +11,15 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name='reginteractivocenkvnesh',
+            model_name='reginteractivocenkavnesh',
             name='unreadable_vin_int',
         ),
         migrations.RemoveField(
-            model_name='reginteractivocenkvnesh',
+            model_name='reginteractivocenkavnesh',
             name='unreadable_engine_num_int',
         ),
         migrations.RemoveField(
-            model_name='reginteractivocenkvnesh',
+            model_name='reginteractivocenkavnesh',
             name='unreadable_rama_int',
         ),
         migrations.RemoveField(

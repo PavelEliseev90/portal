@@ -7122,7 +7122,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 labels = [item[0] for item in unreadable_active]
                 min_kf = min(item[1] for item in unreadable_active)
                 if min_kf > 0:
-                    diff = price * min_kf / 100.0
+                    diff = price * min_kf
                     price = price - diff
                     inf_price = {
                         'price': price,
@@ -10154,7 +10154,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                 labels = [item[0] for item in unreadable_active]
                 min_kf = min(item[1] for item in unreadable_active)
                 if min_kf > 0:
-                    diff = price * min_kf / 100.0
+                    diff = price * min_kf
                     price = price - diff
                     inf_price = {
                         'price': price,
