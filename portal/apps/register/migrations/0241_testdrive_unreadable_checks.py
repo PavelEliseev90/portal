@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='reginteractivocenktestdrive',
+            model_name='reginteractivocenkatestdrive',
             name='unreadable_vin_int',
             field=models.IntegerField(
                 blank=True,
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name='reginteractivocenktestdrive',
+            model_name='reginteractivocenkatestdrive',
             name='unreadable_engine_num_int',
             field=models.IntegerField(
                 blank=True,
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name='reginteractivocenktestdrive',
+            model_name='reginteractivocenkatestdrive',
             name='unreadable_rama_int',
             field=models.IntegerField(
                 blank=True,
