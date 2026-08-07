@@ -7509,17 +7509,14 @@ def korsavto_settings_dc(request):
         
         if 'save_settings_estimation' in request.POST:
             from django.contrib import messages
-            from django.utils import timezone
+            from register.estimation_settings_utils import (
+                apply_mcu_kf_from_post,
+                clone_estimation_settings,
+            )
 
-            estimation_settings = RegEstimationsSettings()
-            now = timezone.localtime()
-            estimation_settings.name = 'Настройки от {}'.format(now.strftime('%d.%m.%Y %H:%M'))
-            try:
-                estimation_settings.mcu_kf = float(request.POST.get('mcu_kf', 1) or 1)
-            except (TypeError, ValueError):
-                estimation_settings.mcu_kf = 1.0
-            if not estimation_settings.mcu_kf or estimation_settings.mcu_kf <= 0:
-                estimation_settings.mcu_kf = 1.0
+            # Копия последних настроек — диагностика и прочие поля не обнуляются
+            estimation_settings = clone_estimation_settings()
+            apply_mcu_kf_from_post(estimation_settings, request.POST)
             
             estimation_settings.all_percent_financity   = float(request.POST.get('all_percent_financity', 0))
             estimation_settings.all_days_stok_financity = float(request.POST.get('all_days_stok_financity', 0))
@@ -7778,12 +7775,19 @@ def korsavto_settings_dc(request):
                     except (ValueError, AttributeError):
                         pass  # Пропускаем поля, которых нет в модели          
 
-            estimation_settings.save()
-            messages.success(
-                request,
-                'Сохранена новая настройка интерактивной оценки: «{}». '
-                'Предыдущие версии не изменялись.'.format(estimation_settings.name),
-            )
+            try:
+                estimation_settings.save()
+                messages.success(
+                    request,
+                    'Сохранена новая настройка интерактивной оценки: «{}». '
+                    'Остальные поля скопированы из предыдущей версии.'.format(estimation_settings.name),
+                )
+            except Exception as exc:
+                messages.error(
+                    request,
+                    'Не удалось сохранить настройки: {}. '
+                    'Примените миграцию: python manage.py migrate register'.format(exc),
+                )
             return HttpResponseRedirect(request.build_absolute_uri())
         
     dc          = request.GET.get('dc', '')
@@ -8481,7 +8485,10 @@ def korsavto_settings_dc(request):
         
     settings_ = ''
     if page == 'settings':
-        settings_estimation = RegEstimationsSettings.objects.all().last()
+        from register.estimation_settings_utils import get_latest_estimation_settings
+        settings_estimation = get_latest_estimation_settings()
+        if settings_estimation is None:
+            settings_estimation = RegEstimationsSettings(mcu_kf=1.0)
         units = RefUnit.objects.filter(buauto = True).filter(name__icontains = 'КорсАвто').order_by('name')
         works = RegPodgotovkaWork.objects.all().order_by('name_group', 'name')
         settings_ = {
@@ -8712,22 +8719,37 @@ def settings_matrix_auction(request):
 
 @login_required
 def settings_diagnostic(request):
+    from django.contrib import messages
+    from register.estimation_settings_utils import (
+        clone_estimation_settings,
+        get_latest_estimation_settings,
+    )
     from website.diagnostic_settings import (
         apply_diagnostic_post_to_settings,
         build_diagnostic_price_groups,
     )
 
     if request.method == 'POST':
-        settings_estimation = RegEstimationsSettings.objects.all().last()
-        if not settings_estimation:
-            settings_estimation = RegEstimationsSettings()
-
+        # Копия последних настроек + только поля диагностики
+        settings_estimation = clone_estimation_settings()
         apply_diagnostic_post_to_settings(settings_estimation, request.POST)
         settings_estimation.iznos_with_ss = request.POST.get('iznos_with_ss') == 'on'
-        settings_estimation.save()
+        try:
+            settings_estimation.save()
+            messages.success(
+                request,
+                'Сохранена новая настройка: «{}». '
+                'Внешний осмотр и прочие поля скопированы из предыдущей версии.'.format(
+                    settings_estimation.name,
+                ),
+            )
+        except Exception as exc:
+            messages.error(request, 'Не удалось сохранить настройки: {}'.format(exc))
         return HttpResponseRedirect(request.build_absolute_uri())
 
-    settings_estimation = RegEstimationsSettings.objects.all().last()
+    settings_estimation = get_latest_estimation_settings()
+    if not settings_estimation:
+        settings_estimation = RegEstimationsSettings(mcu_kf=1.0)
 
     settings_data = {
         'settings_estimation': settings_estimation,
@@ -9091,18 +9113,17 @@ def settings_body_type_groups(request):
 
 @login_required
 def settings_vnesh(request):
-    
-    if request.method == 'POST':
-        settings_estimation = RegEstimationsSettings.objects.all().last()
-        if not settings_estimation:
-            settings_estimation = RegEstimationsSettings()
+    from django.contrib import messages
+    from register.estimation_settings_utils import (
+        apply_mcu_kf_from_post,
+        clone_estimation_settings,
+        get_latest_estimation_settings,
+    )
 
-        try:
-            settings_estimation.mcu_kf = float(request.POST.get('mcu_kf', 1) or 1)
-        except (TypeError, ValueError):
-            settings_estimation.mcu_kf = 1.0
-        if not settings_estimation.mcu_kf or settings_estimation.mcu_kf <= 0:
-            settings_estimation.mcu_kf = 1.0
+    if request.method == 'POST':
+        # Копия последних настроек + поля внешнего осмотра / коэффициент
+        settings_estimation = clone_estimation_settings()
+        apply_mcu_kf_from_post(settings_estimation, request.POST)
         
         # Обрабатываем все поля внешнего осмотра
         for key in request.POST.keys():
@@ -9114,13 +9135,12 @@ def settings_vnesh(request):
                     value = request.POST.get(key, 0)
                     if value == '':
                         value = 0
-                    # Для полей с formatted_float используем float, для остальных int
                     if key.startswith('battery_'):
                         setattr(settings_estimation, key, float(value))
                     else:
                         setattr(settings_estimation, key, int(value))
-                except (ValueError, AttributeError):
-                    pass  # Пропускаем поля, которых нет в модели
+                except (ValueError, AttributeError, TypeError):
+                    pass
         
         # Обрабатываем создание новой работы
         if 'new_work' in request.POST:
@@ -9159,12 +9179,29 @@ def settings_vnesh(request):
                     work.type_settings = int(type_settings_val) if type_settings_val else 2
                     work.save()
                 except (ValueError, AttributeError, RegPodgotovkaWork.DoesNotExist):
-                    pass  # Пропускаем работы, которых нет в модели
+                    pass
         
-        settings_estimation.save()
+        try:
+            settings_estimation.save()
+            messages.success(
+                request,
+                'Сохранена новая настройка: «{}» (коэф. кузовного: {}). '
+                'Диагностика и прочие поля скопированы из предыдущей версии.'.format(
+                    settings_estimation.name,
+                    getattr(settings_estimation, 'mcu_kf', 1),
+                ),
+            )
+        except Exception as exc:
+            messages.error(
+                request,
+                'Не удалось сохранить настройки: {}. '
+                'Примените миграцию: python manage.py migrate register'.format(exc),
+            )
         return HttpResponseRedirect(request.build_absolute_uri())
     
-    settings_estimation = RegEstimationsSettings.objects.all().last()
+    settings_estimation = get_latest_estimation_settings()
+    if not settings_estimation:
+        settings_estimation = RegEstimationsSettings(mcu_kf=1.0)
     
     # Получаем все работы (теперь можно менять type_settings)
     works = RegPodgotovkaWork.objects.all().order_by('type_settings', 'name_group', 'name')
@@ -9179,6 +9216,7 @@ def settings_vnesh(request):
     }
     
     return render(request, "kors/settings_vnesh.html", {'params': params})
+
 
 @login_required
 def settings_works(request):

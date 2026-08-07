@@ -123,6 +123,7 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
         'count_owners': _as_int(docs.count_owners if docs else 0),
         'count_keys': _as_int(docs.count_key if docs else 0),
         'chassis_number': '',
+        'body_number': (estimation.number_body if estimation else '') or '',
         'pts_number': (docs.pts_number if docs else '') or '',
         'pts_date': pts_date,
         'pts_org_address': '',
@@ -256,7 +257,7 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
     for field in (
         'customer_family', 'customer_name', 'customer_patronymic', 'customer_phone',
         'vin', 'vin2', 'mark', 'model', 'pts_mark_model', 'plate_number',
-        'chassis_number', 'pts_number', 'pts_org_address', 'sts_number',
+        'chassis_number', 'body_number', 'pts_number', 'pts_org_address', 'sts_number',
         'pts_org_issuer', 'salon_color', 'body_color', 'engine_number', 'eco_class',
     ):
         if field in post:

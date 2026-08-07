@@ -4064,6 +4064,7 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     count_owners = models.IntegerField('Количество владельцев', default=0, null=True, blank=True)
     count_keys = models.IntegerField('Количество ключей', default=0, null=True, blank=True)
     chassis_number = models.CharField('Номер шасси / рамы', max_length=64, default='', blank=True)
+    body_number = models.CharField('Номер кузова', max_length=64, default='', blank=True)
     pts_number = models.CharField('Номер ПТС', max_length=250, default='', blank=True)
     pts_date = models.DateField('Дата выдачи ПТС', blank=True, null=True)
     pts_org_address = models.CharField('Адрес организации ПТС', max_length=512, default='', blank=True)
