@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Копирование версий RegEstimationsSettings без затирания незатронутых полей."""
+from datetime import datetime
+
 from django.db import ProgrammingError, OperationalError
 from django.db.utils import DatabaseError
-from django.utils import timezone
 
 from register.models import RegEstimationsSettings
 
@@ -43,7 +44,8 @@ def clone_estimation_settings(source=None, name=None):
         clone._state.adding = True
 
     if name is None:
-        name = 'Настройки от {}'.format(timezone.localtime().strftime('%d.%m.%Y %H:%M'))
+        # USE_TZ=False — localtime() на naive datetime падает
+        name = 'Настройки от {}'.format(datetime.now().strftime('%d.%m.%Y %H:%M'))
     clone.name = name
     return clone
 
