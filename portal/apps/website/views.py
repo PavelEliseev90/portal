@@ -9096,6 +9096,13 @@ def settings_vnesh(request):
         settings_estimation = RegEstimationsSettings.objects.all().last()
         if not settings_estimation:
             settings_estimation = RegEstimationsSettings()
+
+        try:
+            settings_estimation.mcu_kf = float(request.POST.get('mcu_kf', 1) or 1)
+        except (TypeError, ValueError):
+            settings_estimation.mcu_kf = 1.0
+        if not settings_estimation.mcu_kf or settings_estimation.mcu_kf <= 0:
+            settings_estimation.mcu_kf = 1.0
         
         # Обрабатываем все поля внешнего осмотра
         for key in request.POST.keys():
