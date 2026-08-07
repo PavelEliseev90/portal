@@ -448,6 +448,10 @@ def loging(request):
     
     if request.user.is_authenticated:
         if len(next) > 0:
+            # Уже вошли — для QR-загрузки всё равно помечаем сессию,
+            # иначе SingleDevice может сбросить её на соседнем запросе (/static/).
+            if is_mobile_gallery_next(next):
+                mark_mobile_gallery_session(request)
             return HttpResponseRedirect(next) 
         return HttpResponseRedirect('/')
     
@@ -7504,7 +7508,18 @@ def korsavto_settings_dc(request):
     if request.method == 'POST':
         
         if 'save_settings_estimation' in request.POST:
+            from django.contrib import messages
+            from django.utils import timezone
+
             estimation_settings = RegEstimationsSettings()
+            now = timezone.localtime()
+            estimation_settings.name = 'Настройки от {}'.format(now.strftime('%d.%m.%Y %H:%M'))
+            try:
+                estimation_settings.mcu_kf = float(request.POST.get('mcu_kf', 1) or 1)
+            except (TypeError, ValueError):
+                estimation_settings.mcu_kf = 1.0
+            if not estimation_settings.mcu_kf or estimation_settings.mcu_kf <= 0:
+                estimation_settings.mcu_kf = 1.0
             
             estimation_settings.all_percent_financity   = float(request.POST.get('all_percent_financity', 0))
             estimation_settings.all_days_stok_financity = float(request.POST.get('all_days_stok_financity', 0))
@@ -7764,6 +7779,11 @@ def korsavto_settings_dc(request):
                         pass  # Пропускаем поля, которых нет в модели          
 
             estimation_settings.save()
+            messages.success(
+                request,
+                'Сохранена новая настройка интерактивной оценки: «{}». '
+                'Предыдущие версии не изменялись.'.format(estimation_settings.name),
+            )
             return HttpResponseRedirect(request.build_absolute_uri())
         
     dc          = request.GET.get('dc', '')

@@ -6157,8 +6157,8 @@ def resolve_estimation_settings(interactiv_rlk=None, estimation=None, estimation
     """
     Приоритет настроек выкупа:
     1) явно переданный estimation_settings
-    2) FK page_soglasovanie.settings
-    3) глобальный RegEstimationsSettings.last()
+    2) FK page_soglasovanie.settings (если заполнен)
+    3) иначе последняя запись RegEstimationsSettings (last())
     """
     if estimation_settings is not None:
         return estimation_settings
@@ -6175,6 +6175,31 @@ def resolve_estimation_settings(interactiv_rlk=None, estimation=None, estimation
             return settings_obj
 
     return get_estimation_settings()
+
+
+def get_mcu_repair_kf(estimation_settings):
+    """Коэффициент кузовного ремонта; по умолчанию 1."""
+    try:
+        kf = float(getattr(estimation_settings, 'mcu_kf', 1) or 1)
+    except (TypeError, ValueError):
+        kf = 1.0
+    if kf <= 0:
+        kf = 1.0
+    return kf
+
+
+def apply_mcu_repair_kf(amount_mcu, list_work_mcu, estimation_settings):
+    """Умножает сумму и позиции работ кузовного участка на коэффициент настроек."""
+    mcu_kf = get_mcu_repair_kf(estimation_settings)
+    if mcu_kf == 1.0 or not amount_mcu:
+        return amount_mcu, list_work_mcu, mcu_kf
+    amount_mcu = amount_mcu * mcu_kf
+    for item in list_work_mcu or []:
+        if item.get('amount') is not None:
+            item['amount'] = (item.get('amount') or 0) * mcu_kf
+        if item.get('amount_pod') is not None:
+            item['amount_pod'] = (item.get('amount_pod') or 0) * mcu_kf
+    return amount_mcu, list_work_mcu, mcu_kf
 
 
 def _get_body_salon_cache():
@@ -8890,13 +8915,19 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             }
             list_info_price.append(inf_price)   
 
+        amount_mcu, list_work_mcu, mcu_kf = apply_mcu_repair_kf(
+            amount_mcu, list_work_mcu, estimation_settings,
+        )
         if amount_mcu > 0:
             price           = price - amount_mcu
             diff            = amount_mcu
+            mcu_comment = "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽'
+            if mcu_kf != 1.0:
+                mcu_comment = mcu_comment + " (коэф. " + '{:0,.2f}'.format(mcu_kf).replace(',', ' ') + ")"
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                'comment'   : mcu_comment,
                 'name'      : "кузовной"
             }
             list_info_price.append(inf_price)
@@ -9207,7 +9238,10 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         
         estimation              = cd.estimation
         interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(estimation = estimation).first()
-        estimation_settings     = RegEstimationsSettings.objects.all().last()
+        estimation_settings     = resolve_estimation_settings(
+            interactiv_rlk=interactiv_rlk,
+            estimation=estimation,
+        )
         # if interactiv_rlk.page_soglasovanie != None:
         #     if interactiv_rlk.page_soglasovanie.settings != None:
         #         estimation_settings = interactiv_rlk.page_soglasovanie.settings
@@ -11673,13 +11707,19 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
             }
             list_info_price.append(inf_price)   
 
+        amount_mcu, list_work_mcu, mcu_kf = apply_mcu_repair_kf(
+            amount_mcu, list_work_mcu, estimation_settings,
+        )
         if amount_mcu > 0:
             price           = price - amount_mcu
             diff            = amount_mcu
+            mcu_comment = "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽'
+            if mcu_kf != 1.0:
+                mcu_comment = mcu_comment + " (коэф. " + '{:0,.2f}'.format(mcu_kf).replace(',', ' ') + ")"
             inf_price = {
                 'price'     : price,
                 'dif'       : diff,
-                'comment'   : "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽',  
+                'comment'   : mcu_comment,
                 'name'      : "кузовной"
             }
             list_info_price.append(inf_price)
