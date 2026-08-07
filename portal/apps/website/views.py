@@ -9144,19 +9144,26 @@ def settings_vnesh(request):
         
         # Обрабатываем создание новой работы
         if 'new_work' in request.POST:
-            try:
-                new_work = RegPodgotovkaWork()
-                new_work.name = request.POST.get('new_work_name', '')
-                new_work.name_group = request.POST.get('new_work_group', '')
-                new_work.type_settings = 2
-                new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
-                new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
-                new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
-                new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
-                new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
-                new_work.save()
-            except (ValueError, AttributeError):
-                pass
+            new_name = (request.POST.get('new_work_name') or '').strip()
+            new_group = (request.POST.get('new_work_group') or '').strip()
+            if not new_name or not new_group:
+                messages.error(request, 'Для добавления работы укажите наименование и группу.')
+            else:
+                try:
+                    new_work = RegPodgotovkaWork()
+                    new_work.name = new_name
+                    new_work.name_group = new_group
+                    new_work.type_settings = 2
+                    new_work.normo = float(request.POST.get('new_work_normo', '0') or 0)
+                    new_work.price_podrad = int(request.POST.get('new_work_price_podrad', '0') or 0)
+                    new_work.price_kors = int(request.POST.get('new_work_price_kors', '0') or 0)
+                    new_work.materials_kf = float(request.POST.get('new_work_materials_kf', '0') or 0)
+                    new_work.materials_amount = float(request.POST.get('new_work_materials_amount', '0') or 0)
+                    new_work.save()
+                    messages.success(request, 'Работа «{}» добавлена.'.format(new_name))
+                except (ValueError, AttributeError) as exc:
+                    messages.error(request, 'Не удалось добавить работу: {}'.format(exc))
+            return HttpResponseRedirect(request.build_absolute_uri())
         
         # Обрабатываем работы по подготовке с type_settings == 2
         for key in request.POST.keys():
