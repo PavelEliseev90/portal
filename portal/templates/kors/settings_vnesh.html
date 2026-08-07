@@ -25,9 +25,21 @@
   <form method="post">
     {% csrf_token %}
 
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} mb-3" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      <div class="alert alert-warning mb-3" role="alert">
+        При сохранении создаётся <strong>новая</strong> запись настроек (копия текущих + ваши изменения). Имя: «Настройки от …».
+      </div>
+
       <div class="settings-vnesh-panel mb-3">
         <h3>Кузовной участок</h3>
         <p class="text-muted small mb-3">Единый коэффициент для всех ценовых групп. Применяется ко всем работам кузовного ремонта при расчёте оценки. По умолчанию 1.</p>
+        {% if params.settings.settings_estimation.name %}
+        <p class="small mb-2">Текущая версия: <strong>{{ params.settings.settings_estimation.name }}</strong></p>
+        {% endif %}
         <div class="diagnostic-param-card" style="max-width: 28rem;">
           <div class="form-floating">
             <input type="number" class="form-control bg-warning bg-opacity-25" step="0.01" min="0.01" id="mcu_kf" name="mcu_kf" placeholder="" value="{% if params.settings.settings_estimation.mcu_kf %}{{ params.settings.settings_estimation.mcu_kf|formatted_float }}{% else %}1{% endif %}" autocomplete="off">

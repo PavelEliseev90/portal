@@ -6148,7 +6148,8 @@ _body_salon_cache = contextvars.ContextVar('body_salon_cache', default=None)
 def get_estimation_settings():
     cached = _estimation_settings_cache.get()
     if cached is None:
-        cached = RegEstimationsSettings.objects.all().last()
+        from register.estimation_settings_utils import get_latest_estimation_settings
+        cached = get_latest_estimation_settings()
         _estimation_settings_cache.set(cached)
     return cached
 

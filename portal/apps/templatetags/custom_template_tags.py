@@ -18,8 +18,13 @@ def formatted_number(value):
         return '0'
 
 def formatted_float(value):
-    value = floatformat(value, arg=2)
-    return str(value).replace(',','.')
+    if value is None or value == '':
+        return '0.00'
+    try:
+        value = floatformat(value, arg=2)
+        return str(value).replace(',', '.')
+    except (TypeError, ValueError):
+        return '0.00'
 
 def ammont_box_sum(value_list):
     amount = 0
