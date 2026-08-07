@@ -2946,9 +2946,6 @@ def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk)
             comment_vnesh=v.comment_vnesh or '',
             check_vin_int=getattr(v, 'check_vin_int', 10) or 10,
             check_engine_int=getattr(v, 'check_engine_int', 10) or 10,
-            unreadable_vin_int=10 if getattr(v, 'unreadable_vin_int', None) is None else v.unreadable_vin_int,
-            unreadable_engine_num_int=10 if getattr(v, 'unreadable_engine_num_int', None) is None else v.unreadable_engine_num_int,
-            unreadable_rama_int=10 if getattr(v, 'unreadable_rama_int', None) is None else v.unreadable_rama_int,
             windshield_error_int=getattr(v, 'windshield_error_int', 10) or 10,
             light_error_int=getattr(v, 'light_error_int', 10) or 10,
             oil_error_int=getattr(v, 'oil_error_int', 10) or 10,
@@ -3040,6 +3037,9 @@ def _create_control_diagnostic_from_estimation(estimation, user, interactiv_rlk)
             pp_pribor=getattr(t, 'pp_pribor', 10) or 10,
             no_test=t.no_test or False,
             comment=(t.comment or '')[:250],
+            unreadable_vin_int=getattr(t, 'unreadable_vin_int', 10) if getattr(t, 'unreadable_vin_int', None) is not None else 10,
+            unreadable_engine_num_int=getattr(t, 'unreadable_engine_num_int', 10) if getattr(t, 'unreadable_engine_num_int', None) is not None else 10,
+            unreadable_rama_int=getattr(t, 'unreadable_rama_int', 10) if getattr(t, 'unreadable_rama_int', None) is not None else 10,
         )
         cd_td.save()
         for sel in DiagnosticReferenceSelection.objects.filter(test_drive=t):
@@ -3205,9 +3205,6 @@ def control_diagnostic_edit(request, id, cd_id):
         cd_vnesh.windshield_heat_int = _int_post('windshield_heat_int', 10)
         cd_vnesh.check_vin_int = _int_post('check_vin_int', 10)
         cd_vnesh.check_engine_int = _int_post('check_engine_int', 10)
-        cd_vnesh.unreadable_vin_int = _int_post('unreadable_vin_int', 10)
-        cd_vnesh.unreadable_engine_num_int = _int_post('unreadable_engine_num_int', 10)
-        cd_vnesh.unreadable_rama_int = _int_post('unreadable_rama_int', 10)
         cd_vnesh.oil_error_int = _int_post('oil_error_int', 10)
         cd_vnesh.water_error_int = _int_post('water_error_int', 10)
         cd_vnesh.windshield_error_int = _int_post('windshield_error_int', 10)
@@ -3239,6 +3236,9 @@ def control_diagnostic_edit(request, id, cd_id):
         # Тест-драйв
         cd_td.engine = _int_post('radio_engine', 10)
         cd_td.comment_engine = (request.POST.get('comment_engine') or '')[:512]
+        cd_td.unreadable_vin_int = _int_post('unreadable_vin_int', 10)
+        cd_td.unreadable_engine_num_int = _int_post('unreadable_engine_num_int', 10)
+        cd_td.unreadable_rama_int = _int_post('unreadable_rama_int', 10)
         cd_td.system_og = _int_post('radio_system_og', 10)
         cd_td.comment_system_og = (request.POST.get('comment_system_og') or '')[:512]
         cd_td.gear = _int_post('radio_gear', 10)
@@ -4711,6 +4711,41 @@ def doc(request, id):
             reg_interactiv_ocenka_test_drive.engine         = int(request.POST.get('radio_engine', '3'))
             reg_interactiv_ocenka_test_drive.comment_engine = request.POST.get('comment_engine', '')
 
+            try:
+                reg_interactiv_ocenka_test_drive.unreadable_vin_int = int(request.POST.get('unreadable_vin_int', '10'))
+            except (TypeError, ValueError):
+                reg_interactiv_ocenka_test_drive.unreadable_vin_int = 10
+            try:
+                reg_interactiv_ocenka_test_drive.unreadable_engine_num_int = int(request.POST.get('unreadable_engine_num_int', '10'))
+            except (TypeError, ValueError):
+                reg_interactiv_ocenka_test_drive.unreadable_engine_num_int = 10
+            try:
+                reg_interactiv_ocenka_test_drive.unreadable_rama_int = int(request.POST.get('unreadable_rama_int', '10'))
+            except (TypeError, ValueError):
+                reg_interactiv_ocenka_test_drive.unreadable_rama_int = 10
+
+            if (
+                reg_interactiv_ocenka_test_drive.unreadable_vin_int == 0
+                or reg_interactiv_ocenka_test_drive.unreadable_engine_num_int == 0
+                or reg_interactiv_ocenka_test_drive.unreadable_rama_int == 0
+            ) and reg_interactiv_ocenka.auction_auto_no_user != True:
+                unreadable_labels = []
+                if reg_interactiv_ocenka_test_drive.unreadable_vin_int == 0:
+                    unreadable_labels.append('Нечитаемый VIN номер')
+                if reg_interactiv_ocenka_test_drive.unreadable_engine_num_int == 0:
+                    unreadable_labels.append('Нечитаемый № ДВС')
+                if reg_interactiv_ocenka_test_drive.unreadable_rama_int == 0:
+                    unreadable_labels.append('Нечитаемый № рамы')
+                unreadable_auction_text = ', '.join(unreadable_labels) + '.'
+                reg_interactiv_ocenka.auction = True
+                current_comment = (reg_interactiv_ocenka.auction_comment or '').strip()
+                if unreadable_auction_text not in current_comment:
+                    if current_comment:
+                        reg_interactiv_ocenka.auction_comment = current_comment + ' ' + unreadable_auction_text
+                    else:
+                        reg_interactiv_ocenka.auction_comment = unreadable_auction_text
+                reg_interactiv_ocenka.save(update_fields=['auction', 'auction_comment'])
+
             reg_interactiv_ocenka_test_drive.system_og          = int(request.POST.get('radio_system_og', '3'))
             reg_interactiv_ocenka_test_drive.comment_system_og  = request.POST.get('comment_system_og', '')
 
@@ -4845,6 +4880,15 @@ def doc(request, id):
             if comment_diagnostica != reg_interactiv_ocenka_soglasovanie.comment_diagnostica:
                 reg_interactiv_ocenka_soglasovanie.comment_diagnostica = comment_diagnostica
                 reg_interactiv_ocenka_soglasovanie.save()
+
+            if (
+                reg_interactiv_ocenka_test_drive.unreadable_vin_int == 0
+                or reg_interactiv_ocenka_test_drive.unreadable_engine_num_int == 0
+                or reg_interactiv_ocenka_test_drive.unreadable_rama_int == 0
+            ) and reg_interactiv_ocenka.auction_auto_no_user != True:
+                if not reg_interactiv_ocenka_soglasovanie.price_auto_auction:
+                    reg_interactiv_ocenka_soglasovanie.price_auto_auction = True
+                    reg_interactiv_ocenka_soglasovanie.save(update_fields=['price_auto_auction'])
             
             type_point  = ''
             text        = ''
@@ -4991,7 +5035,7 @@ def doc(request, id):
                 force=True,
             )
             return HttpResponseRedirect(request.build_absolute_uri())
-        
+
         if 'price_after_kd' in request.POST:
             close_task(reg_interactiv_ocenka, request.user)
             from register.interactive_price_history import ensure_page_soglasovanie, record_interactive_price_save_snapshot
@@ -7060,14 +7104,15 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
         
         # Нечитаемые VIN / № ДВС / № рамы: если отмечено несколько — берём минимальный %,
         # в описании перечисляем все сработавшие пункты.
-        if estimation.page_vnesh is not None:
+        test_drive_unreadable = getattr(estimation, 'page_test_drive', None) if estimation is not None else None
+        if test_drive_unreadable is not None:
             unreadable_active = []
             for flag_attr, kf_attr, label in (
                 ('unreadable_vin_int', 'unreadable_vin_kf', 'Нечитаемый VIN номер'),
                 ('unreadable_engine_num_int', 'unreadable_engine_num_kf', 'Нечитаемый № ДВС'),
                 ('unreadable_rama_int', 'unreadable_rama_kf', 'Нечитаемый № рамы'),
             ):
-                if getattr(estimation.page_vnesh, flag_attr, 10) == 0:
+                if getattr(test_drive_unreadable, flag_attr, 10) == 0:
                     try:
                         kf_val = float(getattr(estimation_settings, kf_attr, 0) or 0)
                     except (TypeError, ValueError):
@@ -7088,6 +7133,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         'name': ', '.join(labels),
                     }
                     list_info_price.append(inf_price)
+                if estimation.auction_auto_no_user != True:
+                    auction = True
+                    auction_comment = auction_comment + '{}. '.format(', '.join(labels))
 
         defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
         
@@ -10088,14 +10136,15 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
 
         # Нечитаемые VIN / № ДВС / № рамы: если отмечено несколько — берём минимальный %,
         # в описании перечисляем все сработавшие пункты.
-        if cd.page_vnesh_copy is not None:
+        test_drive_unreadable = getattr(cd, 'page_test_drive_copy', None) if cd is not None else None
+        if test_drive_unreadable is not None:
             unreadable_active = []
             for flag_attr, kf_attr, label in (
                 ('unreadable_vin_int', 'unreadable_vin_kf', 'Нечитаемый VIN номер'),
                 ('unreadable_engine_num_int', 'unreadable_engine_num_kf', 'Нечитаемый № ДВС'),
                 ('unreadable_rama_int', 'unreadable_rama_kf', 'Нечитаемый № рамы'),
             ):
-                if getattr(cd.page_vnesh_copy, flag_attr, 10) == 0:
+                if getattr(test_drive_unreadable, flag_attr, 10) == 0:
                     try:
                         kf_val = float(getattr(estimation_settings, kf_attr, 0) or 0)
                     except (TypeError, ValueError):
@@ -10116,6 +10165,9 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                         'name': ', '.join(labels),
                     }
                     list_info_price.append(inf_price)
+                if estimation.auction_auto_no_user != True:
+                    auction = True
+                    auction_comment = auction_comment + '{}. '.format(', '.join(labels))
 
         defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
 
@@ -10172,7 +10224,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
         }
         zachita_ot_ubitka = diff
         list_info_price.append(inf_price)
-        
+
         # cчитаем с защитой от скидкой торг
         price_old       = price
         price           = price - (price * percent_torg / 100) 

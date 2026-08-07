@@ -2165,10 +2165,6 @@ class RegInteractivOcenkaVnesh(ChangeloggableMixin, models.Model):
     
     check_vin_int       = models.IntegerField('Проверка VIN', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
     check_engine_int    = models.IntegerField('Проверка ДВС и КПП на месте', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
-    # 0 — не читается (проблема), 1 — в порядке, 10 — не задано
-    unreadable_vin_int          = models.IntegerField('Не читаемый VIN номер', default=10, null=True, blank=True)
-    unreadable_engine_num_int   = models.IntegerField('Не читаемый № ДВС', default=10, null=True, blank=True)
-    unreadable_rama_int         = models.IntegerField('Не читаемый № рамы', default=10, null=True, blank=True)
     
     windshield_error_int    = models.IntegerField('Лобовое стекло с повреждениями', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
     light_error_int         = models.IntegerField('Световые приборы есть проблемы', default=10, null=True, blank=True) #'// 0 - есть проблемы 1 - все ок 2 - "" 3 - нет действия'
@@ -2326,7 +2322,12 @@ class RegInteractivOcenkaTestDrive(ChangeloggableMixin, models.Model):
     pp_pribor               = models.IntegerField('Работа измерительных приборов и указателей (исправность, корректность показаний)', default=10, null=True, blank=True)  #'// 0 - ремонт 1 норма 2 диагностика'
 
     no_test                 = models.BooleanField("Тест драйв не производился", default = False, null=True, blank=True)
-    comment                 = models.CharField('Комментарий тест - драйва', max_length=250, default='', null=True, blank=True)  
+    comment                 = models.CharField('Комментарий тест - драйва', max_length=250, default='', null=True, blank=True)
+
+    # 0 — не читается, 1 — в порядке, 10 — не задано
+    unreadable_vin_int          = models.IntegerField('Не читаемый VIN номер', default=10, null=True, blank=True)
+    unreadable_engine_num_int   = models.IntegerField('Не читаемый № ДВС', default=10, null=True, blank=True)
+    unreadable_rama_int         = models.IntegerField('Не читаемый № рамы', default=10, null=True, blank=True)
 
     def __str__(self):
         return "{} / {}".format(self.start_estimation, self.end_estimation)
@@ -4464,9 +4465,6 @@ class RegControlDiagnosticVnesh(models.Model):
     comment_vnesh = models.CharField("Комментарий внешнего осмотра", max_length=1500, default='', null=True, blank=True)
     check_vin_int = models.IntegerField('Проверка VIN', default=10, null=True, blank=True)
     check_engine_int = models.IntegerField('Проверка ДВС и КПП на месте', default=10, null=True, blank=True)
-    unreadable_vin_int = models.IntegerField('Не читаемый VIN номер', default=10, null=True, blank=True)
-    unreadable_engine_num_int = models.IntegerField('Не читаемый № ДВС', default=10, null=True, blank=True)
-    unreadable_rama_int = models.IntegerField('Не читаемый № рамы', default=10, null=True, blank=True)
     windshield_error_int = models.IntegerField('Лобовое стекло с повреждениями', default=10, null=True, blank=True)
     light_error_int = models.IntegerField('Световые приборы есть проблемы', default=10, null=True, blank=True)
     oil_error_int = models.IntegerField('Следы подтекания масла', default=10, null=True, blank=True)
@@ -4582,6 +4580,11 @@ class RegControlDiagnosticTestDrive(models.Model):
 
     no_test = models.BooleanField("Тест драйв не производился", default=False, null=True, blank=True)
     comment = models.CharField('Комментарий тест - драйва', max_length=250, default='', null=True, blank=True)
+
+    # 0 — не читается, 1 — в порядке, 10 — не задано
+    unreadable_vin_int = models.IntegerField('Не читаемый VIN номер', default=10, null=True, blank=True)
+    unreadable_engine_num_int = models.IntegerField('Не читаемый № ДВС', default=10, null=True, blank=True)
+    unreadable_rama_int = models.IntegerField('Не читаемый № рамы', default=10, null=True, blank=True)
 
     class Meta:
         db_table = 'regControlDiagnosticTestDrive'
