@@ -433,56 +433,7 @@
     {% endwith %}
   </div>
 
-  <!-- Логи выгрузок Power BI / MSSQL (bi_logs) -->
-  {% if params.power_bi %}
-  <h3 class="section-title">Выгрузки BI</h3>
-  <div class="kors-panel mb-2">
-    <div class="kors-panel__body" style="overflow-x:auto;">
-      <table class="kors-table">
-        <thead>
-          <tr>
-            <th>Таблица</th>
-            <th>Последняя выгрузка</th>
-            <th>Добавлено</th>
-            <th>Удалено</th>
-            <th>Отбор</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for bi in params.power_bi %}
-          <tr {% if bi.error == 2 %}style="background: var(--bad-bg);"{% elif bi.error == 1 %}style="background: var(--warn-bg, #fff8e6);"{% endif %}>
-            <td><strong>{{ bi.title }}</strong></td>
-            <td>{{ bi.date|date:'d.m.Y H:i' }}</td>
-            <td>{{ bi.add }}</td>
-            <td>{{ bi.delite }}</td>
-            <td class="kors-muted" style="max-width:280px;word-break:break-word;">{{ bi.filtr|default:"—" }}</td>
-            <td>
-              {% if bi.title == 'TradeInFunnel' %}
-              <form method="post" action="{% url 'website:board_monitoring_sync_tradeinfunnel' %}" style="display:inline;"
-                    onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='…';">
-                {% csrf_token %}
-                <input type="hidden" name="days" value="60">
-                <button type="submit" class="kors-btn-toggle success" style="font-size:.7rem;padding:.2rem .45rem;"
-                        {% if not params.mssql_tradeinfunnel_configured %}disabled title="MSSQL не настроен"{% endif %}>
-                  Обновить
-                </button>
-              </form>
-              {% elif bi.error == 2 %}
-                <span class="kors-badge kors-badge-danger">устарело</span>
-              {% elif bi.error == 1 %}
-                <span class="kors-badge kors-badge-warning">− &gt; +</span>
-              {% else %}
-                <span class="kors-badge kors-badge-success">OK</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% endif %}
+  
 
   <!-- Детальная информация -->
   <div class="row g-2">
@@ -572,6 +523,47 @@
           </table>
         </div>
       </div>
+
+      <!-- Логи выгрузок Power BI / MSSQL (bi_logs) -->
+  {% if params.power_bi %}
+  <h3 class="section-title">Выгрузки BI</h3>
+  <div class="kors-panel mb-2">
+    <div class="kors-panel__body" style="overflow-x:auto;">
+      <table class="kors-table">
+        <thead>
+          <tr>
+            <th>Таблица</th>
+            <th>Последняя выгрузка</th>
+            <th>Добавлено</th>
+            <th>Удалено</th>
+            <th>Отбор</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bi in params.power_bi %}
+          <tr {% if bi.error == 2 %}style="background: var(--bad-bg);"{% elif bi.error == 1 %}style="background: var(--warn-bg, #fff8e6);"{% endif %}>
+            <td><strong>{{ bi.title }}</strong></td>
+            <td>{{ bi.date|date:'d.m.Y H:i' }}</td>
+            <td>{{ bi.add }}</td>
+            <td>{{ bi.delite }}</td>
+            <td class="kors-muted" style="max-width:280px;word-break:break-word;">{{ bi.filtr|default:"—" }}</td>
+            <td>
+              {% if bi.error == 2 %}
+                <span class="kors-badge kors-badge-danger">устарело</span>
+              {% elif bi.error == 1 %}
+                <span class="kors-badge kors-badge-warning">− &gt; +</span>
+              {% else %}
+                <span class="kors-badge kors-badge-success">OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
     </div>
 
     <div class="col-12 col-lg-4">

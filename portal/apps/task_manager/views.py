@@ -1281,12 +1281,12 @@ def get_info_max(interactiv_rlk, estimation_id):
             "yearTo"        : year_end
         }
         
-        # imvFilter = {
-        #     'brand'         : brand,
-        #     'model'         : model,
-        #     'generation'    : generation,
-        #     'modification'  : modification
-        # }
+        imvFilter = {
+            'brand'         : brand,
+            'model'         : model,
+            'generation'    : generation,
+            'modification'  : modification
+        }
         salesFromDate = estimation.start_estimation - relativedelta(months=2)
         salesFromDate = salesFromDate.replace(day=1, hour=1)
 
@@ -1319,6 +1319,7 @@ def get_info_max(interactiv_rlk, estimation_id):
             'dealerId'          : 2107,
             'marketFilter'      : marketFilter,
             'filter'            : filter,
+            'imv'               : imvFilter,
             'vehicle'           : vehicle 
         }
         
