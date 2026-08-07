@@ -4074,6 +4074,7 @@ def doc(request, id):
     kolesa2_needed          = False
     kolesa_reception        = None
     kolesa_reception_files  = []
+    mobile_gallery          = None
     
     body            = get_body_estimation_cached(estimation)
     salon           = get_salon_estimation_cached(estimation)
@@ -4379,6 +4380,7 @@ def doc(request, id):
         kolesa2_needed = False
         kolesa_reception = None
         kolesa_reception_files = []
+        mobile_gallery = None
         if page == 24:
             from eco.reception import (
                 estimation_has_kolesa2,
@@ -4390,10 +4392,18 @@ def doc(request, id):
                 send_reception_1c,
             )
             from register.models import RegRegInteractivOcenkaFilesKolesaReception
+            from estimations.mobile_gallery_utils import build_mobile_upload_url
             reception_allowed = reception_is_allowed(interactiv_rlk)
             reception = get_reception_or_none(interactiv_rlk)
             kolesa2_needed = estimation_has_kolesa2(estimation)
             kolesa_reception = get_kolesa_reception_or_none(estimation)
+            mobile_gallery = {
+                'rlk_id': id,
+                'estimation_id': estimation.pk,
+                'upload_url': build_mobile_upload_url(request, estimation.pk),
+                'osmotr_side': '',
+                'inbox_count': estimation.get_mobile_inbox_count(),
+            }
             refresh = request.GET.get('refresh_data', '')
             if refresh == 'reception1c' and reception is not None and reception_allowed:
                 try:
@@ -4563,6 +4573,7 @@ def doc(request, id):
                 'kolesa_reception': kolesa_reception,
                 'kolesa_reception_files': kolesa_reception_files,
                 'from_1c': from_1c,
+                'mobile_gallery': mobile_gallery,
             }
     
     elif request.method == "POST":

@@ -44,6 +44,26 @@ FILE_INPUT_TARGETS = {
     'file_market': {'type_file': 'market', 'label': 'Рынок'},
     'file_epts': {'type_file': 'epts', 'label': 'ЭПТС'},
     'images_remote': {'type_file': 'images_remote', 'label': 'Удалённая оценка'},
+    # Приём автомобиля (страница «Документы и проверки»)
+    'file_reception_passport_spread': {
+        'type_file': 'reception_passport_spread',
+        'label': 'Скан паспорта — первый разворот',
+    },
+    'file_reception_passport_registration': {
+        'type_file': 'reception_passport_registration',
+        'label': 'Скан паспорта — прописка',
+    },
+    'file_reception_snils': {'type_file': 'reception_snils', 'label': 'СНИЛС'},
+    'file_reception_pts': {'type_file': 'reception_pts', 'label': 'ПТС (приём)'},
+    'file_reception_bankruptcy': {
+        'type_file': 'reception_bankruptcy',
+        'label': 'Проверка банкротства',
+    },
+    'file_reception_fines': {'type_file': 'reception_fines', 'label': 'Проверка штрафов'},
+    'file_reception_bailiffs': {
+        'type_file': 'reception_bailiffs',
+        'label': 'Проверка приставов',
+    },
 }
 
 OSMOTR_SIDE_TARGETS = {
