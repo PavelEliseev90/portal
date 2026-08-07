@@ -2289,36 +2289,6 @@
                           <label class="fs-6" for="check_vin">Проверка VIN номера и номера ДВС</label>
                         </div>
 
-                        <div class="kors-btn-group-wrapper">
-                          <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый VIN номер">
-                            <input type="radio" class="btn-check" name="unreadable_vin_int" id="unreadable_vin_int-radio1" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_vin_int == 1 %} checked {% endif %} value="1" required>
-                            <label class="btn btn-outline-success" for="unreadable_vin_int-radio1">В порядке</label>
-                            <input type="radio" class="btn-check" name="unreadable_vin_int" id="unreadable_vin_int-radio2" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_vin_int == 0 %} checked {% endif %} value="0" required>
-                            <label class="btn btn-outline-danger" for="unreadable_vin_int-radio2">Не читается</label>
-                          </div>
-                          <label class="fs-6" for="unreadable_vin_int">Не читаемый VIN номер</label>
-                        </div>
-
-                        <div class="kors-btn-group-wrapper">
-                          <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый № ДВС">
-                            <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="unreadable_engine_num_int-radio1" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_engine_num_int == 1 %} checked {% endif %} value="1" required>
-                            <label class="btn btn-outline-success" for="unreadable_engine_num_int-radio1">В порядке</label>
-                            <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="unreadable_engine_num_int-radio2" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_engine_num_int == 0 %} checked {% endif %} value="0" required>
-                            <label class="btn btn-outline-danger" for="unreadable_engine_num_int-radio2">Не читается</label>
-                          </div>
-                          <label class="fs-6" for="unreadable_engine_num_int">Не читаемый № ДВС</label>
-                        </div>
-
-                        <div class="kors-btn-group-wrapper">
-                          <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый № рамы">
-                            <input type="radio" class="btn-check" name="unreadable_rama_int" id="unreadable_rama_int-radio1" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_rama_int == 1 %} checked {% endif %} value="1" required>
-                            <label class="btn btn-outline-success" for="unreadable_rama_int-radio1">В порядке</label>
-                            <input type="radio" class="btn-check" name="unreadable_rama_int" id="unreadable_rama_int-radio2" autocomplete="off" {% if params.estimation.page_vnesh.unreadable_rama_int == 0 %} checked {% endif %} value="0" required>
-                            <label class="btn btn-outline-danger" for="unreadable_rama_int-radio2">Не читается</label>
-                          </div>
-                          <label class="fs-6" for="unreadable_rama_int">Не читаемый № рамы</label>
-                        </div>
-
                         {% if params.estimation.fotos_vin|length %}
               
                               <div style="object-fit: cover; border-radius: 10px; height: 300px;" id="carouselExampleIndicators_fotos_vin" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">

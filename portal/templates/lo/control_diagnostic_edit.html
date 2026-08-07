@@ -196,39 +196,6 @@
           </div>
           <div class="col-md-6">
             <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Не читаемый VIN номер</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="unreadable_vin_int" id="uvi1" value="1" {% if params.cd_vnesh.unreadable_vin_int == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="uvi1">В порядке</label>
-                <input type="radio" class="btn-check" name="unreadable_vin_int" id="uvi0" value="0" {% if params.cd_vnesh.unreadable_vin_int == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="uvi0">Не читается</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Не читаемый № ДВС</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="uen1" value="1" {% if params.cd_vnesh.unreadable_engine_num_int == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="uen1">В порядке</label>
-                <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="uen0" value="0" {% if params.cd_vnesh.unreadable_engine_num_int == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="uen0">Не читается</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="kors-btn-group-wrapper">
-              <label class="fs-6">Не читаемый № рамы</label>
-              <div class="kors-btn-group-compact" role="group">
-                <input type="radio" class="btn-check" name="unreadable_rama_int" id="uri1" value="1" {% if params.cd_vnesh.unreadable_rama_int == 1 %}checked{% endif %}>
-                <label class="btn btn-outline-success" for="uri1">В порядке</label>
-                <input type="radio" class="btn-check" name="unreadable_rama_int" id="uri0" value="0" {% if params.cd_vnesh.unreadable_rama_int == 0 %}checked{% endif %}>
-                <label class="btn btn-outline-danger" for="uri0">Не читается</label>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="kors-btn-group-wrapper">
               <label class="fs-6">ДВС и КПП на месте</label>
               <div class="kors-btn-group-compact" role="group">
                 <input type="radio" class="btn-check" name="check_engine_int" id="cei1" value="1" {% if params.cd_vnesh.check_engine_int == 1 %}checked{% endif %}>
@@ -349,6 +316,48 @@
               <div class="form-floating mb-3">
                 <input type="text" class="form-control" name="comment_engine" id="comment_engine" value="{{ td.comment_engine|default:'' }}" placeholder="" maxlength="512">
                 <label for="comment_engine">Комментарий</label>
+              </div>
+            </div>
+          </div>
+          {# Читаемость идентификаторов #}
+          <div class="col-12">
+            <div class="portal-panel">
+              <h6><span class="icon-mbri-protect"></span> Читаемость идентификаторов</h6>
+              <p class="text-muted small mb-3">Влияет на расчёт цены (минимальный % из отмеченных «Не читается»).</p>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <div class="kors-btn-group-wrapper">
+                    <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый VIN номер">
+                      <input type="radio" class="btn-check" name="unreadable_vin_int" id="cd_unreadable_vin_int-1" autocomplete="off" {% if td.unreadable_vin_int == 1 %}checked{% endif %} value="1">
+                      <label class="btn btn-outline-success" for="cd_unreadable_vin_int-1">В порядке</label>
+                      <input type="radio" class="btn-check" name="unreadable_vin_int" id="cd_unreadable_vin_int-0" autocomplete="off" {% if td.unreadable_vin_int == 0 %}checked{% endif %} value="0">
+                      <label class="btn btn-outline-danger" for="cd_unreadable_vin_int-0">Не читается</label>
+                    </div>
+                    <label class="fs-6" for="cd_unreadable_vin_int-1">Не читаемый VIN номер</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="kors-btn-group-wrapper">
+                    <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый № ДВС">
+                      <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="cd_unreadable_engine_num_int-1" autocomplete="off" {% if td.unreadable_engine_num_int == 1 %}checked{% endif %} value="1">
+                      <label class="btn btn-outline-success" for="cd_unreadable_engine_num_int-1">В порядке</label>
+                      <input type="radio" class="btn-check" name="unreadable_engine_num_int" id="cd_unreadable_engine_num_int-0" autocomplete="off" {% if td.unreadable_engine_num_int == 0 %}checked{% endif %} value="0">
+                      <label class="btn btn-outline-danger" for="cd_unreadable_engine_num_int-0">Не читается</label>
+                    </div>
+                    <label class="fs-6" for="cd_unreadable_engine_num_int-1">Не читаемый № ДВС</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="kors-btn-group-wrapper">
+                    <div class="kors-btn-group-compact" role="group" aria-label="Не читаемый № рамы">
+                      <input type="radio" class="btn-check" name="unreadable_rama_int" id="cd_unreadable_rama_int-1" autocomplete="off" {% if td.unreadable_rama_int == 1 %}checked{% endif %} value="1">
+                      <label class="btn btn-outline-success" for="cd_unreadable_rama_int-1">В порядке</label>
+                      <input type="radio" class="btn-check" name="unreadable_rama_int" id="cd_unreadable_rama_int-0" autocomplete="off" {% if td.unreadable_rama_int == 0 %}checked{% endif %} value="0">
+                      <label class="btn btn-outline-danger" for="cd_unreadable_rama_int-0">Не читается</label>
+                    </div>
+                    <label class="fs-6" for="cd_unreadable_rama_int-1">Не читаемый № рамы</label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
