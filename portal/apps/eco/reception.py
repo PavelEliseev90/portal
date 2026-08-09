@@ -333,6 +333,100 @@ def get_kolesa_reception_or_none(estimation):
     )
 
 
+def build_kolesa2_1c_extras(estimation) -> dict:
+    """
+    Блок 2КК для выгрузки в 1С (и в Type=estimation, и в Type=reception).
+    Возвращает HasKolesa2 / KolesaReception / Kolesa2 / KolesaReceptionFiles.
+    """
+    from register.models import RegRegInteractivOcenkaFilesKolesaReception
+    from register.serializers import RegInteractivOcenkaKolesaReceptionSerializer
+
+    has_kolesa2 = estimation_has_kolesa2(estimation)
+    kolesa_reception = get_kolesa_reception_or_none(estimation)
+
+    kolesa2_from_estimation = None
+    page_kolesa = getattr(estimation, 'page_kolesa', None) if estimation else None
+    if page_kolesa is not None and has_kolesa2:
+        def _ref_name(obj):
+            return getattr(obj, 'name', None) if obj is not None else None
+
+        kolesa2_from_estimation = {
+            'kolesa2': bool(page_kolesa.kolesa2),
+            'kolesa2_estimation': page_kolesa.kolesa2_estimation,
+            'mark_tyre2': _ref_name(page_kolesa.mark_tyre2),
+            'mark_tyre2_id': page_kolesa.mark_tyre2_id,
+            'model_tyre2': page_kolesa.model_tyre2 or '',
+            'width_tyre2': _ref_name(page_kolesa.width_tyre2),
+            'width_tyre2_id': page_kolesa.width_tyre2_id,
+            'profil_tyre2': _ref_name(page_kolesa.profil_tyre2),
+            'profil_tyre2_id': page_kolesa.profil_tyre2_id,
+            'radius2': _ref_name(page_kolesa.radius2),
+            'radius2_id': page_kolesa.radius2_id,
+            'sezon2': _ref_name(page_kolesa.sezon2),
+            'sezon2_id': page_kolesa.sezon2_id,
+            'disk_type2': _ref_name(page_kolesa.disk_type2),
+            'disk_type2_id': page_kolesa.disk_type2_id,
+            'model_disk2': page_kolesa.model_disk2 or '',
+            'et_disk2': _ref_name(page_kolesa.et_disk2),
+            'et_disk2_id': page_kolesa.et_disk2_id,
+            'dia_disk2': _ref_name(page_kolesa.dia_disk2),
+            'dia_disk2_id': page_kolesa.dia_disk2_id,
+            'psd_disk2': _ref_name(page_kolesa.psd_disk2),
+            'psd_disk2_id': page_kolesa.psd_disk2_id,
+            'count_disk2': page_kolesa.count_disk2 or 0,
+            'count_tyre2': page_kolesa.count_tyre2 or 0,
+        }
+
+    kolesa_files = []
+    if kolesa_reception is not None:
+        for f in (
+            RegRegInteractivOcenkaFilesKolesaReception.objects
+            .filter(kolesa_reception=kolesa_reception, blank=False)
+            .exclude(file='')
+            .order_by('file_number', 'id')
+        ):
+            kolesa_files.append({
+                'id': f.pk,
+                'name': f.name or '',
+                'type_file': f.type_file or '',
+                'url': f.get_absolute_url() if hasattr(f, 'get_absolute_url') else '',
+                'thumb_url': f.get_thumbnail_url() if hasattr(f, 'get_thumbnail_url') else '',
+                'file_number': f.file_number or 0,
+            })
+
+    return {
+        'HasKolesa2': has_kolesa2,
+        'KolesaReception': (
+            RegInteractivOcenkaKolesaReceptionSerializer(kolesa_reception, many=False).data
+            if kolesa_reception is not None
+            else None
+        ),
+        'Kolesa2': kolesa2_from_estimation,
+        'KolesaReceptionFiles': kolesa_files,
+        'KolesaReceptionId': kolesa_reception.pk if kolesa_reception is not None else None,
+    }
+
+
+def queue_estimation_for_1c(estimation, comment=''):
+    """Поставить РЛК/оценку в очередь выгрузки в 1С (RegSwapKors, status_code=60)."""
+    from register.models import RegSwapKors
+
+    if estimation is None:
+        return False
+    rlk = getattr(estimation, 'rlk', None)
+    if rlk is None:
+        return False
+    if RegSwapKors.objects.filter(rlk=rlk, estimation=estimation, status_code=60).exists():
+        return False
+    swap = RegSwapKors()
+    swap.rlk = rlk
+    swap.estimation = estimation
+    if comment:
+        swap.comment = (comment or '')[:250]
+    swap.save()
+    return True
+
+
 def ensure_kolesa_reception(estimation, user=None):
     """Создать приёмку 2КК, если оценка со вторым комплектом."""
     if not estimation_has_kolesa2(estimation):
@@ -429,7 +523,6 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
 def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception: RegInteractivOcenkaReception) -> dict:
     from documents.serializers import DocRLKSerializer
     from register.serializers import (
-        RegInteractivOcenkaKolesaReceptionSerializer,
         RegInteractivOcenkaReceptionSerializer,
         RegInteractivOcenkaRLKSerializer,
         RegInteractivOcenkaSerializer,
@@ -438,43 +531,7 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
 
     estimation = interactiv_rlk.estimation
     rlk = interactiv_rlk.rlk
-    kolesa_reception = get_kolesa_reception_or_none(estimation)
-    has_kolesa2 = estimation_has_kolesa2(estimation)
-
-    kolesa2_from_estimation = None
-    page_kolesa = getattr(estimation, 'page_kolesa', None) if estimation else None
-    if page_kolesa is not None and has_kolesa2:
-        def _ref_name(obj):
-            return getattr(obj, 'name', None) if obj is not None else None
-
-        kolesa2_from_estimation = {
-            'kolesa2': bool(page_kolesa.kolesa2),
-            'kolesa2_estimation': page_kolesa.kolesa2_estimation,
-            'mark_tyre2': _ref_name(page_kolesa.mark_tyre2),
-            'mark_tyre2_id': page_kolesa.mark_tyre2_id,
-            'model_tyre2': page_kolesa.model_tyre2 or '',
-            'width_tyre2': _ref_name(page_kolesa.width_tyre2),
-            'width_tyre2_id': page_kolesa.width_tyre2_id,
-            'profil_tyre2': _ref_name(page_kolesa.profil_tyre2),
-            'profil_tyre2_id': page_kolesa.profil_tyre2_id,
-            'radius2': _ref_name(page_kolesa.radius2),
-            'radius2_id': page_kolesa.radius2_id,
-            'sezon2': _ref_name(page_kolesa.sezon2),
-            'sezon2_id': page_kolesa.sezon2_id,
-            'disk_type2': _ref_name(page_kolesa.disk_type2),
-            'disk_type2_id': page_kolesa.disk_type2_id,
-            'model_disk2': page_kolesa.model_disk2 or '',
-            'et_disk2': _ref_name(page_kolesa.et_disk2),
-            'et_disk2_id': page_kolesa.et_disk2_id,
-            'dia_disk2': _ref_name(page_kolesa.dia_disk2),
-            'dia_disk2_id': page_kolesa.dia_disk2_id,
-            'psd_disk2': _ref_name(page_kolesa.psd_disk2),
-            'psd_disk2_id': page_kolesa.psd_disk2_id,
-            'count_disk2': page_kolesa.count_disk2 or 0,
-            'count_tyre2': page_kolesa.count_tyre2 or 0,
-        }
-
-    return {
+    payload = {
         'Type': 'reception',
         'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
         'Estimation': RegInteractivOcenkaSerializer(estimation, many=False).data if estimation else None,
@@ -489,14 +546,9 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
             serialize_reception_file(f)
             for f in get_reception_files_queryset(estimation)
         ],
-        'HasKolesa2': has_kolesa2,
-        'KolesaReception': (
-            RegInteractivOcenkaKolesaReceptionSerializer(kolesa_reception, many=False).data
-            if kolesa_reception is not None
-            else None
-        ),
-        'Kolesa2': kolesa2_from_estimation,
     }
+    payload.update(build_kolesa2_1c_extras(estimation))
+    return payload
 
 
 def send_reception_1c(interactiv_rlk: RegInteractivOcenkaRLK, reception: RegInteractivOcenkaReception | None = None):

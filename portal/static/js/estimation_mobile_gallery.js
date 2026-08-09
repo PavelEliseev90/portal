@@ -37,6 +37,25 @@
     file_market: { type_file: 'market', label: 'Рынок' },
     file_epts: { type_file: 'epts', label: 'ЭПТС' },
     images_remote: { type_file: 'images_remote', label: 'Удалённая оценка' },
+    file_reception_passport_spread: {
+      type_file: 'reception_passport_spread',
+      label: 'Скан паспорта — первый разворот',
+    },
+    file_reception_passport_registration: {
+      type_file: 'reception_passport_registration',
+      label: 'Скан паспорта — прописка',
+    },
+    file_reception_snils: { type_file: 'reception_snils', label: 'СНИЛС' },
+    file_reception_pts: { type_file: 'reception_pts', label: 'ПТС (приём)' },
+    file_reception_bankruptcy: {
+      type_file: 'reception_bankruptcy',
+      label: 'Проверка банкротства',
+    },
+    file_reception_fines: { type_file: 'reception_fines', label: 'Проверка штрафов' },
+    file_reception_bailiffs: {
+      type_file: 'reception_bailiffs',
+      label: 'Проверка приставов',
+    },
   };
 
   function EstimationMobileGallery(config) {
@@ -435,6 +454,10 @@
         self._toast('Привязано фото: ' + done + ' из ' + total);
         self._updateBadge(self.inboxFiles.length - done);
         self.selectedOrder = [];
+        if (self._isReceptionTarget()) {
+          self._reloadReceptionPage();
+          return;
+        }
         self.refreshInbox(true).then(function () {
           const modalEl = document.getElementById('mobileGalleryModal');
           if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
@@ -461,6 +484,22 @@
     runNext(0);
   };
 
+  EstimationMobileGallery.prototype._isReceptionTarget = function () {
+    const target = this.assignContext && this.assignContext.target;
+    const typeFile = (target && target.type_file) || '';
+    return String(typeFile).indexOf('reception_') === 0;
+  };
+
+  EstimationMobileGallery.prototype._reloadReceptionPage = function () {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', '24');
+      window.location.href = url.href;
+    } catch (e) {
+      window.location.reload();
+    }
+  };
+
   EstimationMobileGallery.prototype._onAssignSuccess = function (data, closeModal) {
     this._toast((data && data.message) || 'Фото привязано');
     if (data && typeof data.inbox_count === 'number') this._updateBadge(data.inbox_count);
@@ -468,6 +507,10 @@
     if (closeModal) {
       const modalEl = document.getElementById('mobileGalleryModal');
       if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+    }
+    if (this._isReceptionTarget()) {
+      this._reloadReceptionPage();
+      return;
     }
     if (this.assignContext && this.assignContext.inputEl && data && data.file) {
       this._showAssignedPreview(this.assignContext.inputEl, data.file);

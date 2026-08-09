@@ -331,7 +331,8 @@
           <span class="icon-mbri-image-gallery"></span> Документы и проверки
         </h6>
         <p class="text-muted small mb-3">
-          Загрузите сканы / фото. Несколько файлов в одном блоке допускаются. После выбора нажмите «Сохранить».
+          Загрузите сканы / фото с компьютера или выберите из галереи оценки (QR с телефона).
+          Несколько файлов в одном блоке допускаются. После выбора с компьютера нажмите «Сохранить».
         </p>
         <div class="row g-2">
           {% for block in params.reception_file_blocks %}
@@ -341,10 +342,10 @@
                 {% if block.hint %}
                   <div class="text-muted small mb-2">{{ block.hint }}</div>
                 {% endif %}
-                <div class="form-floating mb-2">
+                <div class="mb-2">
+                  <label class="form-label small text-muted mb-1" for="{{ block.input_name }}">Выберите файл(ы)</label>
                   <input class="form-control form-control-sm" type="file" id="{{ block.input_name }}"
                          name="{{ block.input_name }}" accept="image/*,.pdf" multiple>
-                  <label for="{{ block.input_name }}">Выберите файл(ы)</label>
                 </div>
                 {% if block.files %}
                   <div class="d-flex flex-wrap gap-2">
@@ -385,6 +386,12 @@
         </a>
       </div>
     </form>
+    {% endwith %}
+  {% endif %}
+
+  {% if params.mobile_gallery %}
+    {% with mobile_gallery=params.mobile_gallery %}
+      {% include 'estimation/partials/mobile_gallery_assets.html' %}
     {% endwith %}
   {% endif %}
 

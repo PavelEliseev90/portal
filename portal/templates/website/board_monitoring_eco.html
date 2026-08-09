@@ -180,6 +180,13 @@
       </a>
     </div>
     <div class="col-6 col-md-3">
+      <a class="kors-metric-card" href="{% url 'website:board_exchange_testing' %}">
+        <h3>Тестирование обменов</h3>
+        <div class="metric-value">JSON</div>
+        <div class="metric-label">payload оценки / приёма / 2КК</div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
       <div class="kors-metric-card {% if params.estimation_1c > 5 %}status-danger{% elif params.estimation_1c > 0 %}status-warning{% else %}status-success{% endif %}">
         <h3>1С склад</h3>
         <div class="metric-value">{{ params.estimation_1c }}</div>
@@ -194,6 +201,9 @@
         <div class="metric-label">не отправлены</div>
       </a>
     </div>
+  </div>
+
+  <div class="row g-2 mb-2">
     <div class="col-6 col-md-3">
       <div class="kors-metric-card {% if params.task_price_count > 5 %}status-danger{% elif params.task_price_count > 0 %}status-warning{% else %}status-success{% endif %}">
         <h3>Прайс-листы</h3>

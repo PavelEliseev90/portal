@@ -1,0 +1,165 @@
+{% extends 'base_web.html' %}
+{% load static %}
+
+{% block title %} - тестирование обменов {% endblock %}
+{% block title_navbar %} - тестирование обменов {% endblock %}
+
+{% block content %}
+<style>
+  .ex-page { padding: 1rem 1.1rem 2rem; background: #eef2f6; min-height: 100vh; font-size: 0.86rem; }
+  .ex-card { background: #fff; border-radius: 0.6rem; border: 1px solid rgba(26,43,60,.08); padding: 0.85rem 1rem; margin-bottom: 0.85rem; }
+  .ex-card h3 { font-size: 0.95rem; margin: 0 0 0.55rem; font-weight: 650; }
+  .ex-meta { color: #6b7c8f; font-size: 0.8rem; }
+  .ex-badge { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 0.35rem; font-size: 0.72rem; font-weight: 600; margin-right: 0.35rem; }
+  .ex-badge-ok { background: #e7f6ed; color: #146c3b; }
+  .ex-badge-no { background: #fde8e8; color: #b42318; }
+  .ex-badge-info { background: #e8f0fe; color: #1a56db; }
+  pre.ex-json {
+    max-height: 520px; overflow: auto; background: #0f172a; color: #e2e8f0;
+    border-radius: 0.5rem; padding: 0.75rem; font-size: 0.72rem; line-height: 1.35;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .ex-actions .btn { margin-right: 0.35rem; margin-bottom: 0.35rem; }
+</style>
+
+<div class="ex-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h2 class="h5 mb-1">Тестирование обменов</h2>
+      <div class="ex-meta">Реальный JSON, который уходит в 1С (оценка / приём / 2КК)</div>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="/monitorings_eco/">← К мониторингу ECO</a>
+  </div>
+
+  <div class="ex-card">
+    <h3>Найти оценку</h3>
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small mb-1" for="estimation_id">ID интерактивной оценки</label>
+        <input class="form-control form-control-sm" type="number" name="estimation_id" id="estimation_id"
+               value="{{ params.estimation_id }}" placeholder="например 123456">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1" for="rlk_id">или ID РЛК</label>
+        <input class="form-control form-control-sm" type="number" name="rlk_id" id="rlk_id"
+               value="{{ params.rlk_id }}" placeholder="DocRLK.id">
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary btn-sm">Показать payload</button>
+      </div>
+    </form>
+    {% if params.error %}
+      <div class="alert alert-danger mt-3 mb-0 py-2">{{ params.error }}</div>
+    {% endif %}
+  </div>
+
+  {% if params.info %}
+    <div class="ex-card">
+      <h3>Контекст</h3>
+      <div class="mb-2">
+        <span class="ex-badge ex-badge-info">estimation #{{ params.info.estimation_id }}</span>
+        <span class="ex-badge ex-badge-info">rlk #{{ params.info.rlk_id }} {{ params.info.rlk_nomer }}</span>
+        {% if params.info.vin %}<span class="ex-badge ex-badge-info">VIN {{ params.info.vin }}</span>{% endif %}
+        {% if params.info.unit %}<span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>{% endif %}
+      </div>
+      <div class="ex-meta mb-2">
+        Endpoint: <code>{{ params.endpoint_url }}</code>
+        ({{ params.endpoint_kind }})
+      </div>
+      <div class="mb-2">
+        {% if params.has_kolesa2 %}
+          <span class="ex-badge ex-badge-ok">HasKolesa2 = true</span>
+        {% else %}
+          <span class="ex-badge ex-badge-no">HasKolesa2 = false</span>
+        {% endif %}
+        {% if params.has_kolesa_reception %}
+          <span class="ex-badge ex-badge-ok">KolesaReception есть</span>
+        {% else %}
+          <span class="ex-badge ex-badge-no">KolesaReception нет</span>
+        {% endif %}
+        {% if params.has_reception %}
+          <span class="ex-badge ex-badge-ok">Приём авто есть</span>
+        {% else %}
+          <span class="ex-badge ex-badge-no">Приём авто нет</span>
+        {% endif %}
+      </div>
+
+      <form method="post" class="ex-actions">
+        {% csrf_token %}
+        <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
+        <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
+        <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="queue">
+          Поставить в очередь (status_code=60)
+        </button>
+        <button class="btn btn-outline-danger btn-sm" type="submit" name="action" value="send"
+                onclick="return confirm('Отправить Type=estimation в 1С прямо сейчас?');">
+          Отправить в 1С сейчас
+        </button>
+      </form>
+      {% if params.queued %}
+        <div class="text-success small mt-2">Добавлено в очередь RegSwapKors.</div>
+      {% endif %}
+      {% if params.send_result %}
+        <div class="mt-2 small {% if params.send_result.ok %}text-success{% else %}text-danger{% endif %}">
+          Результат отправки:
+          ok={{ params.send_result.ok }},
+          HTTP {{ params.send_result.status_code }},
+          {{ params.send_result.error|default:"" }}
+          {% if params.send_result.text %}
+            <pre class="ex-json mt-2">{{ params.send_result.text }}</pre>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="ex-card">
+      <h3>Type = estimation (очередь / estimation_send_1c)</h3>
+      <div class="ex-meta mb-2">Включает HasKolesa2, KolesaReception, Kolesa2, KolesaReceptionFiles</div>
+      <pre class="ex-json">{{ params.payload_estimation_json }}</pre>
+    </div>
+
+    <div class="ex-card">
+      <h3>Type = reception (refresh_data=reception1c)</h3>
+      {% if params.payload_reception_json %}
+        <pre class="ex-json">{{ params.payload_reception_json }}</pre>
+      {% else %}
+        <div class="text-muted">Карточка приёма автомобиля не создана — payload reception не собирается.</div>
+      {% endif %}
+    </div>
+
+    <div class="ex-card">
+      <h3>Очередь RegSwapKors (последние 20)</h3>
+      {% if params.queue_rows %}
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead>
+              <tr>
+                <th>id</th>
+                <th>status_code</th>
+                <th>status</th>
+                <th>comment</th>
+                <th>date</th>
+                <th>status_date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in params.queue_rows %}
+                <tr>
+                  <td>{{ row.id }}</td>
+                  <td>{{ row.status_code }}</td>
+                  <td>{{ row.status }}</td>
+                  <td>{{ row.comment }}</td>
+                  <td>{{ row.date }}</td>
+                  <td>{{ row.status_date }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted">Записей очереди нет.</div>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
