@@ -5154,9 +5154,10 @@ def doc(request, id):
                     delete_reception_file(reg_interactiv_ocenka, request.POST.get('file_id'))
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'create_kolesa_reception':
-                from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2
+                from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2, queue_estimation_for_1c
                 if estimation_has_kolesa2(reg_interactiv_ocenka):
                     ensure_kolesa_reception(reg_interactiv_ocenka, user=request.user)
+                    queue_estimation_for_1c(reg_interactiv_ocenka, comment='kolesa_reception_create_eco')
                 return HttpResponseRedirect(request.path_info + '?page=24')
             if type_post == 'price_remote':
                 price_remote    = float(request.POST.get('price_remote', '0'))
@@ -7138,7 +7139,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     inf_price = {
                         'price': price,
                         'dif': diff,
-                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {})'.format(
                             ', '.join(labels), min_kf
                         ),
                         'name': ', '.join(labels),
@@ -10170,7 +10171,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                     inf_price = {
                         'price': price,
                         'dif': diff,
-                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {})'.format(
                             ', '.join(labels), min_kf
                         ),
                         'name': ', '.join(labels),
