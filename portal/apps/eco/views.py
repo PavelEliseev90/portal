@@ -4000,8 +4000,6 @@ def estimation_alarm_set(request, id):
     except PermissionError:
         return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
     except ValueError as exc:
-        if str(exc) == 'alarm_not_allowed':
-            return JsonResponse({'ok': False, 'error': 'alarm_not_allowed'}, status=400)
         return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
 
     interactiv_rlk = resolve_interactiv_rlk_by_rlk_id(int(id))

@@ -118,9 +118,7 @@
     if (!url) return;
     post(url, function (data) {
       if (!data || !data.ok) {
-        alert((data && data.error === 'alarm_not_allowed')
-          ? 'Будильник недоступен для этой оценки (принята/в архиве)'
-          : 'Не удалось поставить будильник');
+        alert('Не удалось поставить будильник');
         return;
       }
       syncUi(data.alarm);

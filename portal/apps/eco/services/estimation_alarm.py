@@ -3,9 +3,7 @@ from __future__ import annotations
 
 from django.contrib.auth.models import User
 from django.db.models import Exists, OuterRef, Q, Subquery
-from django.db.models.functions import Coalesce
 
-from documents.models import DocLO, DocRLK
 from eco.services.datetime_portal import (
     add_minutes,
     compat_dt,
@@ -16,7 +14,6 @@ from eco.services.datetime_portal import (
 from register.models import RegInteractivOcenkaAlarm, RegInteractivOcenkaRLK
 
 ALARM_SNOOZE_MINUTES = 15
-ACCEPTED_STATUS_ID = 8
 
 
 def user_can_manage_alarm(user) -> bool:
@@ -33,34 +30,15 @@ def resolve_interactiv_rlk_by_rlk_id(rlk_id: int) -> RegInteractivOcenkaRLK | No
     )
 
 
-def should_keep_alarm(interactiv_rlk: RegInteractivOcenkaRLK) -> bool:
-    if interactiv_rlk is None:
-        return False
-    if interactiv_rlk.status_id == ACCEPTED_STATUS_ID:
-        return False
-    rlk = interactiv_rlk.rlk
-    if rlk is None:
-        return True
-    if rlk.archive:
-        return False
-    if DocLO.objects.filter(rlk=rlk, active=True).exists():
-        return False
-    return True
-
-
 def get_active_alarm(interactiv_rlk: RegInteractivOcenkaRLK):
     if interactiv_rlk is None:
         return None
-    alarm = (
+    return (
         RegInteractivOcenkaAlarm.objects
         .filter(interactiv_rlk=interactiv_rlk, active=True)
         .select_related('set_by', 'set_by__profiles', 'dismissed_by', 'dismissed_by__profiles')
         .first()
     )
-    if alarm and not should_keep_alarm(interactiv_rlk):
-        dismiss_alarm(alarm, user=None, auto=True)
-        return None
-    return alarm
 
 
 def alarm_status_dict(alarm, *, now=None) -> dict:
@@ -112,8 +90,8 @@ def build_alarm_context(interactiv_rlk, *, user=None) -> dict:
 def set_alarm(interactiv_rlk: RegInteractivOcenkaRLK, user: User) -> RegInteractivOcenkaAlarm:
     if not user_can_manage_alarm(user):
         raise PermissionError('forbidden')
-    if not should_keep_alarm(interactiv_rlk):
-        raise ValueError('alarm_not_allowed')
+    if interactiv_rlk is None:
+        raise ValueError('not_found')
     now = portal_now()
     due = add_minutes(ALARM_SNOOZE_MINUTES, now)
     alarm, _created = RegInteractivOcenkaAlarm.objects.get_or_create(
