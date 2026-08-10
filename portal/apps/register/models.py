@@ -2665,7 +2665,7 @@ class RegInteractivOcenkaAlarm(models.Model):
         verbose_name = 'Будильник ЕЦО'
         verbose_name_plural = 'Будильники ЕЦО'
         indexes = [
-            models.Index(fields=['active', 'due_at']),
+            models.Index(fields=['active', 'due_at'], name='regInteractiv_active_due_idx'),
         ]
 
 
