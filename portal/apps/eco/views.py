@@ -2533,7 +2533,8 @@ def get_chats_list_online(request):
     elif filtr_alarm in ('0', 'without', 'no'):
         chats_base = chats_base.exclude(has_alarm=True)
 
-    chats_base = chats_base.order_by('-alarm_ringing', 'alarm_due_at', '-max_date')
+    # Вверху только сработавшие будильники (due_at <= now); остальные — как раньше по max_date
+    chats_base = chats_base.order_by('-alarm_ringing', '-max_date')
 
     start = 30 * page
     end = start + 30
