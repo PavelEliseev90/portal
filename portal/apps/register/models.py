@@ -5572,7 +5572,6 @@ class RegUnitMonthlyPlan(models.Model):
         return f"{self.unit} — {self.month:02d}.{self.year}"
 
 
-
 class RegInteractivOcenkaAlarm(models.Model):
     """Общий будильник ЕЦО на интерактивную оценку (один на RegInteractivOcenkaRLK)."""
     interactiv_rlk = models.OneToOneField(
@@ -5613,6 +5612,5 @@ class RegInteractivOcenkaAlarm(models.Model):
         verbose_name = 'Будильник ЕЦО'
         verbose_name_plural = 'Будильники ЕЦО'
         indexes = [
-            models.Index(fields=['active', 'due_at']),
+            models.Index(fields=['active', 'due_at'], name='regInteractiv_active_due_idx'),
         ]
-
