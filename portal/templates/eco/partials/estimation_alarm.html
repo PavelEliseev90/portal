@@ -1,0 +1,38 @@
+{% if params.can_manage_alarm %}
+<div class="alert {% if params.alarm_ringing %}alert-danger{% elif params.has_alarm %}alert-secondary{% else %}alert-light border{% endif %} py-2 px-3 mb-2"
+     id="estimation_alarm_block"
+     data-rlk-id="{{ params.rlk.id }}"
+     data-set-url="{% url 'eco:estimation_alarm_set' params.rlk.id %}"
+     data-dismiss-url="{% url 'eco:estimation_alarm_dismiss' params.rlk.id %}">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <strong><span class="bi bi-alarm"></span> Будильник ЕЦО</strong>
+      <span id="estimation_alarm_status_text" class="ms-1 small">
+        {% if params.alarm_ringing %}
+          — сработал{% if params.alarm_set_by_name %}, поставил {{ params.alarm_set_by_name }}{% endif %}
+        {% elif params.has_alarm %}
+          — {{ params.alarm_label }}{% if params.alarm_set_by_name %}, поставил {{ params.alarm_set_by_name }}{% endif %}
+          {% if params.alarm_due_at %} ({{ params.alarm_due_at }}){% endif %}
+        {% else %}
+          — напомнить через {{ params.alarm_snooze_minutes }} мин всей ЕЦО
+        {% endif %}
+      </span>
+    </div>
+    <div class="d-flex flex-wrap gap-1">
+      <button type="button" class="btn btn-sm {% if params.has_alarm %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}"
+              id="estimation_alarm_set_btn">
+        {% if params.has_alarm %}+{{ params.alarm_snooze_minutes }} мин{% else %}Будильник{% endif %}
+      </button>
+      {% if params.has_alarm %}
+      <button type="button" class="btn btn-sm btn-outline-danger" id="estimation_alarm_dismiss_btn">Снять</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% elif params.has_alarm %}
+<div class="alert alert-secondary py-2 px-3 mb-2">
+  <span class="bi bi-alarm"></span>
+  {% if params.alarm_ringing %}Будильник сработал{% else %}Будильник: {{ params.alarm_label }}{% endif %}
+  {% if params.alarm_set_by_name %} · поставил {{ params.alarm_set_by_name }}{% endif %}
+</div>
+{% endif %}

@@ -42,6 +42,18 @@
     </div>
   </div>
   
+  <div class="col-sm">
+    <div class="form-floating">
+      <select class="form-select form-select-sm" id="alarm" name="alarm">
+        <option value="">Все</option>
+        <option value="ringing">Звонят</option>
+        <option value="with">С будильником</option>
+        <option value="without">Без будильника</option>
+      </select>
+      <label for="alarm">Будильник</label>
+    </div>
+  </div>
+  
   <div class="col-auto align-self-center h-100">
     <button class="btn btn-outline-dark justify-content-center" id="btn_start_search"><span class="icon-mbri-play" > </span></button>
   </div>
@@ -245,8 +257,27 @@ z-index: 1044;">
 <audio id="notif" src="{% include 'chats/notif_sound_src.html' with channel='estimation' %}" preload="auto"></audio>
 
    <script type="text/javascript">
-    
+
     var page = 1;
+
+    function alarmBadgeHtml(obj) {
+      if (!obj.has_alarm) return '';
+      if (obj.alarm_ringing) {
+        return ' <span class="badge bg-danger"><span class="bi bi-alarm"></span> будильник</span>';
+      }
+      var hint = obj.alarm_label || '';
+      if (obj.alarm_set_by_name) {
+        hint += (hint ? ' · ' : '') + obj.alarm_set_by_name;
+      }
+      return ' <span class="badge bg-secondary"><span class="bi bi-alarm"></span> ' + hint + '</span>';
+    }
+
+    function applyAlarmCardStyle(obj, h_card_id, h_status_estimation_id) {
+      if (obj.has_alarm && obj.alarm_ringing) {
+        return [' bg-danger bg-opacity-25 ', ' border_red '];
+      }
+      return [h_card_id, h_status_estimation_id];
+    }
 
     var da = '';
     
@@ -290,13 +321,18 @@ z-index: 1044;">
       $('#btn_start_search').trigger('click');
     });
 
+    $('#alarm').change(function() {
+      $('#btn_start_search').trigger('click');
+    });
+
     function refresh_data_online(){
         
         var search  = $("#search").val();
         var vin     = $("#vin").val();
         var price_increase = $("#price_increase").val() || '';
+        var alarm = $("#alarm").val() || '';
         
-        var url     = 'js/get_chats_list_online/?search=' + encodeURIComponent(search) + '&vin='+encodeURIComponent(vin) + '&price_increase=' + encodeURIComponent(price_increase) + '&page='+page;
+        var url     = 'js/get_chats_list_online/?search=' + encodeURIComponent(search) + '&vin='+encodeURIComponent(vin) + '&price_increase=' + encodeURIComponent(price_increase) + '&alarm=' + encodeURIComponent(alarm) + '&page='+page;
 
         // На время запроса показываем плашку и включаем shimmer-анимацию
         var $target = $('#showmore-triger');
@@ -319,7 +355,8 @@ z-index: 1044;">
               var searchTrim = (search || '').trim();
               var vinTrim = (vin || '').trim();
               var priceIncreaseTrim = (price_increase || '').trim();
-              if (searchTrim.length > 0 || vinTrim.length > 0 || priceIncreaseTrim.length > 0) {
+              var alarmTrim = (alarm || '').trim();
+              if (searchTrim.length > 0 || vinTrim.length > 0 || priceIncreaseTrim.length > 0 || alarmTrim.length > 0) {
                 const noDataId = 'no-data-by-filter';
                 const existing = document.getElementById(noDataId);
                 if (existing) existing.remove();
@@ -459,6 +496,20 @@ z-index: 1044;">
                 if (obj.has_price_increase) {
                   price_increase_badge = '<span class="badge bg-danger">повышение</span> ';
                 }
+                var alarm_badge = '';
+                if (obj.has_alarm) {
+                  if (obj.alarm_ringing) {
+                    alarm_badge = '<span class="badge bg-danger"><span class="bi bi-alarm"></span> будильник</span> ';
+                    h_card_id = ' bg-danger bg-opacity-25 ';
+                    h_status_estimation_id = ' border_red ';
+                  } else {
+                    var alarmHint = obj.alarm_label || '';
+                    if (obj.alarm_set_by_name) {
+                      alarmHint += (alarmHint ? ' · ' : '') + obj.alarm_set_by_name;
+                    }
+                    alarm_badge = '<span class="badge bg-secondary"><span class="bi bi-alarm"></span> ' + alarmHint + '</span> ';
+                  }
+                }
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
                 html += '    <div class="card-body ' + h_status_estimation_id + '" style="padding:0;">';
@@ -489,6 +540,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=             alarm_badge;
                 html +=             price_increase_badge;
                 html +=             important_badge;
                 html +=             kolesa2_estimation;
@@ -533,7 +585,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
+                html_list += '                        <p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + alarmBadgeHtml(obj) + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                                                        '
                 html_list += '                    </div>'
                 html_list += '                </div>'
@@ -634,6 +686,7 @@ z-index: 1044;">
             var search = ($("#search").val() || '').trim().toLowerCase();
             var vin = ($("#vin").val() || '').trim().toLowerCase();
             var priceIncreaseFilter = ($("#price_increase").val() || '').trim();
+            var alarmFilter = ($("#alarm").val() || '').trim();
             
             function includesCI(value, query){
               return (value || '').toString().toLowerCase().includes(query);
@@ -691,6 +744,13 @@ z-index: 1044;">
                 } else if (priceIncreaseFilter === '0') {
                   includeInList = includeInList && !obj.has_price_increase;
                 }
+                if (alarmFilter === 'ringing') {
+                  includeInList = includeInList && !!obj.alarm_ringing;
+                } else if (alarmFilter === 'with') {
+                  includeInList = includeInList && !!obj.has_alarm;
+                } else if (alarmFilter === 'without') {
+                  includeInList = includeInList && !obj.has_alarm;
+                }
 
                 var h_status_estimation_id = ' border_blue ';
                 var h_card_id = ' bg-primary bg-opacity-25 ';
@@ -717,6 +777,9 @@ z-index: 1044;">
                   h_status_estimation_id = ' border_green';
                   h_card_id = " bg-success bg-opacity-75 ";
                 };
+                var alarmStyle = applyAlarmCardStyle(obj, h_card_id, h_status_estimation_id);
+                h_card_id = alarmStyle[0];
+                h_status_estimation_id = alarmStyle[1];
 
                 var status_estimation = 'Новый';
                 if (obj.status_estimation.length > 0){
@@ -774,6 +837,18 @@ z-index: 1044;">
                 if (obj.has_price_increase) {
                   price_increase_badge = '<span class="badge bg-danger">повышение</span> ';
                 }
+                var alarm_badge = '';
+                if (obj.has_alarm) {
+                  if (obj.alarm_ringing) {
+                    alarm_badge = '<span class="badge bg-danger"><span class="bi bi-alarm"></span> будильник</span> ';
+                  } else {
+                    var alarmHint = obj.alarm_label || '';
+                    if (obj.alarm_set_by_name) {
+                      alarmHint += (alarmHint ? ' · ' : '') + obj.alarm_set_by_name;
+                    }
+                    alarm_badge = '<span class="badge bg-secondary"><span class="bi bi-alarm"></span> ' + alarmHint + '</span> ';
+                  }
+                }
 
                 html += '';
                 html += '  <div id="list_data_' + id + '" class="card  ' + h_card_id  + '" style="margin: 0.2rem; padding:0;"> ';
@@ -804,6 +879,7 @@ z-index: 1044;">
                 html += '          ';
                 html += '        </div>        ';
                 html += '      <div class="col-sm-1 justify-content-end text-end" style="padding: 0.5rem;">';
+                html +=                  alarm_badge;
                 html +=                  price_increase_badge;
                 html +=                  important_badge;
                 html +=                  kolesa2_estimation;
@@ -851,7 +927,7 @@ z-index: 1044;">
                 html_list += '                         <label class="fs-6 item-subtitle">'
                 html_list += '                            ' + obj.content.replace(/\n/g, '<br>') + ''
                 html_list += '                         </label>  '
-                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
+                html_list += '<p class="text-muted item-time-chat" style="margin:0.1rem;">' + obj.user_name + ' / ' + formattedDate_list + alarmBadgeHtml(obj) + (obj.has_price_increase ? ' <span class="badge bg-danger">повышение</span>' : '') + (obj.last_msg_important ? ' <span class="badge bg-warning text-dark">Важно</span>' : '') + ' <span class="badge ' + visible_badge + ' bg-danger rounded-pill justify-content-end">!</span></p>'
                 html_list += '                    </div>'
                 html_list += '                </div>'
                 html_list += '            </div>'

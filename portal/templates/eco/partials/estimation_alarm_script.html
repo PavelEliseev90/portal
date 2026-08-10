@@ -1,0 +1,97 @@
+{% if params.can_manage_alarm %}
+<script>
+(function () {
+  var block = document.getElementById('estimation_alarm_block');
+  if (!block) return;
+
+  function csrfToken() {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+
+  function applyAlarmState(alarm) {
+    if (!alarm) return;
+    var status = document.getElementById('estimation_alarm_status_text');
+    var setBtn = document.getElementById('estimation_alarm_set_btn');
+    var dismissBtn = document.getElementById('estimation_alarm_dismiss_btn');
+    if (alarm.has_alarm) {
+      block.classList.remove('alert-light', 'border', 'alert-secondary');
+      block.classList.add(alarm.alarm_ringing ? 'alert-danger' : 'alert-secondary');
+      if (status) {
+        var who = alarm.alarm_set_by_name ? ', поставил ' + alarm.alarm_set_by_name : '';
+        status.textContent = alarm.alarm_ringing
+          ? '— сработал' + who
+          : '— ' + (alarm.alarm_label || '') + who + (alarm.alarm_due_at ? ' (' + alarm.alarm_due_at + ')' : '');
+      }
+      if (setBtn) {
+        setBtn.textContent = '+' + (alarm.alarm_snooze_minutes || 15) + ' мин';
+        setBtn.classList.remove('btn-outline-primary');
+        setBtn.classList.add('btn-outline-secondary');
+      }
+      if (!dismissBtn) {
+        var wrap = block.querySelector('.d-flex.gap-1');
+        if (wrap) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-sm btn-outline-danger';
+          btn.id = 'estimation_alarm_dismiss_btn';
+          btn.textContent = 'Снять';
+          btn.addEventListener('click', dismiss);
+          wrap.appendChild(btn);
+        }
+      }
+    } else {
+      block.classList.remove('alert-danger', 'alert-secondary');
+      block.classList.add('alert-light', 'border');
+      if (status) {
+        status.textContent = '— напомнить через ' + (alarm.alarm_snooze_minutes || 15) + ' мин всей ЕЦО';
+      }
+      if (setBtn) {
+        setBtn.textContent = 'Будильник';
+        setBtn.classList.add('btn-outline-primary');
+        setBtn.classList.remove('btn-outline-secondary');
+      }
+      if (dismissBtn) dismissBtn.remove();
+    }
+  }
+
+  function post(url, done) {
+    fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'X-CSRFToken': csrfToken(),
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    }).then(function (r) { return r.json(); }).then(done).catch(function () {
+      alert('Не удалось выполнить действие с будильником');
+    });
+  }
+
+  function setAlarm() {
+    post(block.getAttribute('data-set-url'), function (data) {
+      if (!data || !data.ok) {
+        alert('Не удалось поставить будильник');
+        return;
+      }
+      applyAlarmState(data.alarm);
+    });
+  }
+
+  function dismiss() {
+    post(block.getAttribute('data-dismiss-url'), function (data) {
+      if (!data || !data.ok) {
+        alert('Не удалось снять будильник');
+        return;
+      }
+      applyAlarmState(data.alarm);
+    });
+  }
+
+  var setBtn = document.getElementById('estimation_alarm_set_btn');
+  if (setBtn) setBtn.addEventListener('click', setAlarm);
+  var dismissBtn = document.getElementById('estimation_alarm_dismiss_btn');
+  if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+})();
+</script>
+{% endif %}

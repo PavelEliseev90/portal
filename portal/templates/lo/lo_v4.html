@@ -7101,6 +7101,7 @@
                           <br>
                           <label class="fw-bold fs-4"> {{params.interactiv_rlk.page_soglasovanie.price_bcp|floatformat:"2g"}} &#8381 </label>
                           <br>
+                          {% include 'eco/partials/estimation_alarm.html' %}
                           {% if params.interactiv_rlk.page_soglasovanie.price_increase_request_amount or params.price_increase_latest %}
                           <hr style="margin: 0.2rem;">
                           <div class="alert alert-warning py-2 px-3 mb-2" id="price_increase_block"
@@ -25193,5 +25194,6 @@
   </script>
 
 {% include 'lo/price_increase_processed_script.html' %}
+{% include 'eco/partials/estimation_alarm_script.html' %}
 
 {% endblock %}
