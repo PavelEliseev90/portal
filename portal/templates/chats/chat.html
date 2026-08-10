@@ -25,6 +25,24 @@ z-index: 1030;">
         Запрос повышения
     </button>
     {% endif %}
+    {% if params.can_manage_alarm and params.rlk %}
+    <div class="d-flex flex-wrap gap-1 me-2" id="estimation_alarm_chat_controls"
+         data-rlk-id="{{ params.rlk.id }}"
+         data-set-url="{% url 'eco:estimation_alarm_set' params.rlk.id %}"
+         data-dismiss-url="{% url 'eco:estimation_alarm_dismiss' params.rlk.id %}">
+      <button type="button" class="btn btn-sm {% if params.has_alarm %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}"
+              id="estimation_alarm_set_btn_chat"
+              title="{% if params.has_alarm %}Переставить +{{ params.alarm_snooze_minutes|default:15 }} мин{% else %}Поставить будильник на {{ params.alarm_snooze_minutes|default:15 }} мин{% endif %}">
+        <span class="bi bi-alarm"></span>
+        {% if params.has_alarm %}+{{ params.alarm_snooze_minutes|default:15 }}{% else %}Будильник{% endif %}
+      </button>
+      {% if params.has_alarm %}
+      <button type="button" class="btn btn-sm btn-outline-danger" id="estimation_alarm_dismiss_btn_chat" title="Снять будильник">
+        Снять
+      </button>
+      {% endif %}
+    </div>
+    {% endif %}
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
 </div>
 
