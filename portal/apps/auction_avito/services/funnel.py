@@ -713,7 +713,8 @@ def build_archive_reason_stats(lot_infos: list[dict], request) -> dict:
         'accepted',
     ]
     matrix_rows = []
-    for name in matrix_reasons:
+    for reason in reasons:
+        name = reason['name']
         src = by_reason[name]['by_drop']
         cells = [int(src.get(dk) or 0) for dk in drop_order]
         matrix_rows.append({'name': name, 'cells': cells})
