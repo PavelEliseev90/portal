@@ -400,6 +400,8 @@ def _classify_lot_offers(offers: list[dict]) -> dict[str, Any]:
     has_bid = any(int(o.get('bid') or 0) > 0 for o in offers)
     outcomes = {(o.get('outcome_code') or '').strip() for o in offers}
     is_won = OUTCOME_WON in outcomes
+    is_lost = 'lost' in outcomes and not is_won
+    is_waiting = 'waiting_seller' in outcomes and not is_won and not is_lost
     win_offer = None
     if is_won:
         won_offers = [o for o in offers if (o.get('outcome_code') or '').strip() == OUTCOME_WON]
@@ -419,8 +421,8 @@ def _classify_lot_offers(offers: list[dict]) -> dict[str, Any]:
         'has_bid': has_bid,
         'is_won': is_won,
         'is_not_taken': OUTCOME_NOT_TAKEN in outcomes and not is_won,
-        'is_lost': 'lost' in outcomes and not is_won,
-        'is_waiting': 'waiting_seller' in outcomes and not is_won and not is_lost,
+        'is_lost': is_lost,
+        'is_waiting': is_waiting,
         'outcomes': outcomes,
         'win_offer': win_offer,
         'best_bid': max((int(o.get('bid') or 0) for o in offers), default=0),
