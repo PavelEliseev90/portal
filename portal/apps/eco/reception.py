@@ -282,6 +282,8 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
         'mass': 0,
         'max_mass': 0,
         'eco_class': '',
+        'amount_vzaimozachet': 0,
+        'agreement_number_op': '',
     }
 
 
@@ -498,11 +500,12 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
         'vin', 'vin2', 'mark', 'model', 'pts_mark_model', 'plate_number',
         'chassis_number', 'body_number', 'pts_number', 'pts_org_address', 'sts_number',
         'pts_org_issuer', 'salon_color', 'body_color', 'engine_number', 'eco_class',
+        'agreement_number_op',
     ):
         if field in post:
             setattr(reception, field, (post.get(field) or '').strip())
 
-    for field in ('year', 'mileage', 'count_owners', 'count_keys', 'mass', 'max_mass'):
+    for field in ('year', 'mileage', 'count_owners', 'count_keys', 'mass', 'max_mass', 'amount_vzaimozachet'):
         if field in post:
             setattr(reception, field, _as_int(post.get(field), 0))
 

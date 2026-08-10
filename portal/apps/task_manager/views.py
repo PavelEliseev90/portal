@@ -3175,12 +3175,19 @@ def send_push_estimation():
 def build_estimation_1c_payload(interactiv_rlk):
     """
     Полный JSON Type=estimation для выгрузки в 1С
-    (включая блок 2КК: HasKolesa2 / KolesaReception / Kolesa2 / KolesaReceptionFiles).
+    (приёмка + блок 2КК: HasKolesa2 / KolesaReception / Kolesa2 / KolesaReceptionFiles).
     """
-    from eco.reception import build_kolesa2_1c_extras
+    from eco.reception import (
+        build_kolesa2_1c_extras,
+        get_reception_files_queryset,
+        get_reception_or_none,
+        serialize_reception_file,
+    )
+    from register.serializers import RegInteractivOcenkaReceptionSerializer
 
     estimation = interactiv_rlk.estimation
     rlk = interactiv_rlk.rlk
+    reception = get_reception_or_none(interactiv_rlk)
     payload = {
         'Type': 'estimation',
         'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
@@ -3191,6 +3198,16 @@ def build_estimation_1c_payload(interactiv_rlk):
             else None
         ),
         'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
+        'Reception': (
+            RegInteractivOcenkaReceptionSerializer(reception, many=False).data
+            if reception is not None
+            else None
+        ),
+        'ReceptionFiles': (
+            [serialize_reception_file(f) for f in get_reception_files_queryset(estimation)]
+            if estimation is not None
+            else []
+        ),
     }
     if estimation is not None:
         payload.update(build_kolesa2_1c_extras(estimation))

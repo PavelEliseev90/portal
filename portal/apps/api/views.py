@@ -1661,17 +1661,13 @@ def worksheet_upsert(request):
 @api_view(['GET', 'POST'])
 def estimation_by_worksheet(request, rlk_uin=None):
     """
-    Оценка по УИН рабочего листа — тот же состав, что уходит в 1С с Type=estimation.
+    Оценка по УИН рабочего листа — тот же состав, что уходит в 1С с Type=estimation
+    (включая Reception / ReceptionFiles и блок 2КК).
     GET: /api/estimation/by_worksheet/<rlk_uin>/ или ?rlk_uin= / ?Uin=
     POST: {"Uin": "..."} / {"RlkUin": "..."} / {"Worksheet": {"Uin": "..."}}
     """
-    from documents.serializers import DocRLKSerializer
     from register.models import RegInteractivOcenkaRLK
-    from register.serializers import (
-        RegInteractivOcenkaRLKSerializer,
-        RegInteractivOcenkaSerializer,
-        RegInteractivOcenkaSoglasovanieSerializer,
-    )
+    from task_manager.views import build_estimation_1c_payload
 
     uin = (rlk_uin or '').strip()
     if not uin:
@@ -1704,7 +1700,7 @@ def estimation_by_worksheet(request, rlk_uin=None):
     interactiv_rlk = (
         RegInteractivOcenkaRLK.objects
         .filter(rlk__uin=uin)
-        .select_related('rlk', 'estimation', 'page_soglasovanie')
+        .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
         .first()
     )
     if interactiv_rlk is None or interactiv_rlk.estimation_id is None:
@@ -1713,20 +1709,7 @@ def estimation_by_worksheet(request, rlk_uin=None):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    soglasovanie = None
-    if interactiv_rlk.page_soglasovanie_id:
-        soglasovanie = RegInteractivOcenkaSoglasovanieSerializer(
-            interactiv_rlk.page_soglasovanie, many=False,
-        ).data
-
-    to_json = {
-        'Type': 'estimation',
-        'Rlk': DocRLKSerializer(interactiv_rlk.rlk, many=False).data,
-        'Estimation': RegInteractivOcenkaSerializer(interactiv_rlk.estimation, many=False).data,
-        'Soglasovanie': soglasovanie,
-        'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
-    }
-    return JsonResponse(to_json, status=status.HTTP_200_OK)
+    return JsonResponse(build_estimation_1c_payload(interactiv_rlk), status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
