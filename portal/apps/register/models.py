@@ -4115,6 +4115,12 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     store = models.ForeignKey(
         RefStore, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Склад поступления',
     )
+    amount_vzaimozachet = models.IntegerField(
+        'Сумма взаимозачета', default=0, null=True, blank=True,
+    )
+    agreement_number_op = models.CharField(
+        'Номер соглашения ОП', max_length=250, default='', blank=True,
+    )
 
     # Клиент
     customer_family = models.CharField('Фамилия', max_length=250, default='', blank=True)

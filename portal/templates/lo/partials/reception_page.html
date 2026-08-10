@@ -107,7 +107,7 @@
               <label for="type_reception">Тип приёма</label>
             </div>
 
-            <div class="form-floating">
+            <div class="form-floating mb-2">
               <select class="form-select form-select-sm" id="unit" name="unit">
                 <option value="">—</option>
                 {% for item in s.units %}
@@ -115,6 +115,18 @@
                 {% endfor %}
               </select>
               <label for="unit">Подразделение</label>
+            </div>
+
+            <div class="form-floating mb-2">
+              <input class="form-control form-control-sm" type="number" id="amount_vzaimozachet" name="amount_vzaimozachet"
+                     value="{{ r.amount_vzaimozachet|default:'' }}" min="0" step="1">
+              <label for="amount_vzaimozachet">Сумма взаимозачета</label>
+            </div>
+
+            <div class="form-floating">
+              <input class="form-control form-control-sm" type="text" id="agreement_number_op" name="agreement_number_op"
+                     value="{{ r.agreement_number_op }}">
+              <label for="agreement_number_op">Номер соглашения ОП</label>
             </div>
           </div>
         </div>
