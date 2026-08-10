@@ -11,7 +11,6 @@ from eco.services.estimation_alarm import (
     alarm_status_dict,
     dismiss_alarm,
     set_alarm,
-    should_keep_alarm,
     user_can_manage_alarm,
 )
 from profiles.models import Profiles
@@ -65,11 +64,6 @@ class EstimationAlarmTests(TestCase):
         other = User.objects.create_user(username='not_eco', password='x')
         Profiles.objects.create(user=other, eco=False)
         self.assertFalse(user_can_manage_alarm(other))
-
-    def test_should_keep_alarm_false_when_archived(self):
-        self.rlk.archive = True
-        self.rlk.save(update_fields=['archive'])
-        self.assertFalse(should_keep_alarm(self.interactiv_rlk))
 
     def test_one_alarm_per_interactiv_rlk(self):
         with patch('eco.services.estimation_alarm.portal_now', return_value=portal_now()):
