@@ -907,7 +907,7 @@ def analytics(request):
 
 @login_required
 def funnel(request):
-    """Воронка: лоты → наши ставки → выбрали нас, разбивка по ЦГ расчёта выкупа."""
+    """Воронка: лоты → ставки → выигрыш → оценка → КД → приём (+ расшифровка ?stage=)."""
     from auction_avito.services.funnel import build_funnel_context
 
     ctx = build_funnel_context(request)
