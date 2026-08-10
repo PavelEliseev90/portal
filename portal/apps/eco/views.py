@@ -2277,6 +2277,15 @@ def text_to_dict(text_json):
 
 def get_chats_list_online_info(request, id):
 
+    from django.utils import timezone
+    from eco.services.estimation_alarm import (
+        alarm_due_at_subquery,
+        alarm_exists_subquery,
+        alarm_set_by_name_subquery,
+        enrich_chat_row_alarm_fields,
+    )
+
+    now = timezone.now()
     chats = Chat.objects.filter(slug=id)
 
     if not chats.exists():
@@ -2394,11 +2403,22 @@ def get_chats_list_online_info(request, id):
                 soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
             )
         ),
+        has_alarm=alarm_exists_subquery(),
+        alarm_ringing=alarm_exists_subquery(ringing_only=True, now=now),
+        alarm_due_at=alarm_due_at_subquery(),
+        alarm_set_by_name=Coalesce(
+            alarm_set_by_name_subquery(),
+            Value(''),
+            output_field=CharField(),
+        ),
     )
 
     chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))[:1]
 
-    return JsonResponse(list(chats.values()), safe=False, status=status.HTTP_200_OK)
+    rows = list(chats.values())
+    for row in rows:
+        enrich_chat_row_alarm_fields(row, now=now)
+    return JsonResponse(rows, safe=False, status=status.HTTP_200_OK)
 
 def get_users_list_online(request, id):
     search = request.GET.get('search', '')
@@ -2414,10 +2434,20 @@ def get_users_list_online(request, id):
 
 def get_chats_list_online(request):
 
+    from django.utils import timezone
+    from eco.services.estimation_alarm import (
+        alarm_due_at_subquery,
+        alarm_exists_subquery,
+        alarm_set_by_name_subquery,
+        enrich_chat_row_alarm_fields,
+    )
+
     filtr_search = request.GET.get('search', '').strip()
     filtr_vin = request.GET.get('vin', '').strip()
     filtr_price_increase = request.GET.get('price_increase', '').strip()
+    filtr_alarm = request.GET.get('alarm', '').strip()
     page = int(request.GET.get('page', '1')) - 1
+    now = timezone.now()
 
     # --- 1) Лёгкий этап: дата последнего сообщения + отбор чатов без тяжёлых аннотаций ---
     last_msg_date_sq = Subquery(
@@ -2485,7 +2515,25 @@ def get_chats_list_online(request):
             )
         )
 
-    chats_base = chats_base.order_by('-max_date')
+    chats_base = chats_base.annotate(
+        has_alarm=alarm_exists_subquery(),
+        alarm_ringing=alarm_exists_subquery(ringing_only=True, now=now),
+        alarm_due_at=alarm_due_at_subquery(),
+        alarm_set_by_name=Coalesce(
+            alarm_set_by_name_subquery(),
+            Value(''),
+            output_field=CharField(),
+        ),
+    )
+
+    if filtr_alarm in ('1', 'ring', 'ringing'):
+        chats_base = chats_base.filter(alarm_ringing=True)
+    elif filtr_alarm in ('with', 'yes'):
+        chats_base = chats_base.filter(has_alarm=True)
+    elif filtr_alarm in ('0', 'without', 'no'):
+        chats_base = chats_base.exclude(has_alarm=True)
+
+    chats_base = chats_base.order_by('-alarm_ringing', 'alarm_due_at', '-max_date')
 
     start = 30 * page
     end = start + 30
@@ -2604,6 +2652,14 @@ def get_chats_list_online(request):
                 soglasovanie__reginteractivocenkarlk__rlk_id=OuterRef('rlk_id')
             )
         ),
+        has_alarm=alarm_exists_subquery(),
+        alarm_ringing=alarm_exists_subquery(ringing_only=True, now=now),
+        alarm_due_at=alarm_due_at_subquery(),
+        alarm_set_by_name=Coalesce(
+            alarm_set_by_name_subquery(),
+            Value(''),
+            output_field=CharField(),
+        ),
     )
 
     chats = chats.annotate(rlk=Subquery(subqyery_message_rlk.values('pk')[:1]))
@@ -2611,6 +2667,7 @@ def get_chats_list_online(request):
     rows = list(chats.values())
     for row in rows:
         row.pop('_page_order', None)
+        enrich_chat_row_alarm_fields(row, now=now)
 
     return JsonResponse(rows, safe=False, status=status.HTTP_200_OK)
 
@@ -3920,6 +3977,70 @@ def price_increase_mark_processed(request, id):
     })
 
 
+@login_required
+def estimation_alarm_set(request, id):
+    """Поставить / переставить общий будильник ЕЦО (+15 мин)."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    from eco.services.estimation_alarm import (
+        build_alarm_context,
+        resolve_interactiv_rlk_by_rlk_id,
+        set_alarm_for_rlk,
+        user_can_manage_alarm,
+    )
+
+    if not user_can_manage_alarm(request.user):
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    try:
+        set_alarm_for_rlk(int(id), request.user)
+    except RegInteractivOcenkaRLK.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'not_found'}, status=404)
+    except PermissionError:
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+    except ValueError as exc:
+        if str(exc) == 'alarm_not_allowed':
+            return JsonResponse({'ok': False, 'error': 'alarm_not_allowed'}, status=400)
+        return JsonResponse({'ok': False, 'error': str(exc)}, status=400)
+
+    interactiv_rlk = resolve_interactiv_rlk_by_rlk_id(int(id))
+    return JsonResponse({
+        'ok': True,
+        'alarm': build_alarm_context(interactiv_rlk, user=request.user),
+    })
+
+
+@login_required
+def estimation_alarm_dismiss(request, id):
+    """Снять общий будильник ЕЦО."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    from eco.services.estimation_alarm import (
+        build_alarm_context,
+        dismiss_alarm_for_rlk,
+        resolve_interactiv_rlk_by_rlk_id,
+        user_can_manage_alarm,
+    )
+
+    if not user_can_manage_alarm(request.user):
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    try:
+        dismiss_alarm_for_rlk(int(id), request.user)
+    except RegInteractivOcenkaRLK.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'not_found'}, status=404)
+    except PermissionError:
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    interactiv_rlk = resolve_interactiv_rlk_by_rlk_id(int(id))
+    return JsonResponse({
+        'ok': True,
+        'alarm': build_alarm_context(interactiv_rlk, user=request.user),
+    })
+
+
 EMAIL_NOTIFY_CHAT_COMMENT = (
     'Важные изменения по интерактивной оценке, обратите внимание на чат.'
 )
@@ -4509,6 +4630,8 @@ def doc(request, id):
             express_auction_store = None
             express_lots = []
 
+        from eco.services.estimation_alarm import build_alarm_context
+
         params = {
                 'page'                  : page,
                 'type'                  : 'eco',
@@ -4542,6 +4665,7 @@ def doc(request, id):
                     if getattr(interactiv_rlk, 'page_soglasovanie', None)
                     else None
                 ),
+                **build_alarm_context(interactiv_rlk, user=user),
                 'opens_infos'           : opens_infos,
                 'json_autoteka'         : json_autoteka,
                 'tab_repairs_count'     : repair_history(estimation, count = True),
