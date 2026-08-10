@@ -856,23 +856,15 @@ def avito_auction_auto_bid_decide(request):
             if last_calc:
                 buyout = last_calc.estimation_price
 
-    # Ручной потолок автоставки: жёсткий cap (не выше manual, даже если расчёт больше).
+    # Ручной максимум автоставки: торгуемся до этой суммы независимо от расчёта
+    # (и когда ручной выше расчётного выкупа, и когда ниже).
+    from auction_avito.services.manual_max import resolve_effective_buyout
+
     calc_buyout = buyout
-    manual_ceiling = None
-    if offer is not None and getattr(offer, 'manual_max_bid', None):
-        try:
-            manual_ceiling = int(offer.manual_max_bid)
-        except (TypeError, ValueError):
-            manual_ceiling = None
-    if manual_ceiling and manual_ceiling > 0:
-        try:
-            calc_n = int(float(calc_buyout)) if calc_buyout not in (None, '') else 0
-        except (TypeError, ValueError):
-            calc_n = 0
-        if calc_n > 0:
-            buyout = min(calc_n, manual_ceiling)
-        else:
-            buyout = manual_ceiling
+    buyout, manual_ceiling = resolve_effective_buyout(
+        calc_buyout,
+        getattr(offer, 'manual_max_bid', None) if offer is not None else None,
+    )
 
     # Пустой / нулевой maxBid = ставок ещё нет → первая ставка от minAvailableBid.
     try:
@@ -911,7 +903,8 @@ def avito_auction_auto_bid_decide(request):
     decision['manual_max_bid'] = manual_ceiling
     if manual_ceiling:
         decision['buyout_ceiling_source'] = 'manual_max_bid'
-        # Доп. защита: ставка не выше ручного потолка.
+        decision['buyout_target_source'] = 'manual_max_bid'
+        # Ставка не выше ручного максимума (он же целевой потолок торгов).
         bid_amt = decision.get('bid_amount')
         try:
             bid_n = int(bid_amt) if bid_amt not in (None, '') else None
@@ -921,7 +914,7 @@ def avito_auction_auto_bid_decide(request):
             decision['should_bid'] = False
             decision['bid_amount'] = None
             decision['reason'] = (
-                f'ставка {bid_n} выше ручного потолка {manual_ceiling}'
+                f'ставка {bid_n} выше ручного максимума {manual_ceiling}'
             )
             decision['reason_category'] = 'above_manual_max'
 

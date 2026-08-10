@@ -22,7 +22,7 @@ from auction_avito.lot_tabs import (
 )
 
 LOT_DETAIL_TABS = (
-    'main', 'autoteka', 'calculations', 'stock', 'sales', 'estimations',
+    'main', 'rlk', 'autoteka', 'calculations', 'stock', 'sales', 'estimations',
 )
 from auction_avito.chat_utils import build_aav_feed_embed, build_aav_lot_embed
 from auction_avito.models import (
@@ -256,6 +256,10 @@ def _lot_detail_queryset():
     offer_qs = AvitoLotOffer.objects.select_related(
         'account',
         'manual_max_bid_set_by',
+        'win_rlk',
+        'win_rlk__unit',
+        'win_rlk__staff',
+        'win_rlk__status',
     ).prefetch_related(
         'badges',
     ).order_by('-updated_at')
@@ -270,6 +274,119 @@ def _lot_detail_queryset():
         'badges',
         Prefetch('offers', queryset=offer_qs),
     )
+
+
+def _resolve_lot_win_rlk_context(primary_offer, *, load_events: bool = True):
+    """
+    Рабочий лист выигрыша лота: DocRLK, события и интерактивная оценка по РЛ.
+
+    Связь: AvitoLotOffer.win_rlk → DocRLK; при пустом FK — поиск по UIN/номеру.
+    """
+    empty = {
+        'doc_rlk': None,
+        'events': [],
+        'events_count': 0,
+        'interactiv_rlk': None,
+        'estimation': None,
+        'soglasovanie': None,
+        'has_1c_meta': False,
+    }
+    if primary_offer is None:
+        return empty
+
+    uin = (primary_offer.win_rlk_uin or '').strip()
+    number = (primary_offer.win_rlk_number or '').strip()
+    empty['has_1c_meta'] = bool(uin or number)
+
+    rlk = getattr(primary_offer, 'win_rlk', None)
+    if rlk is None and empty['has_1c_meta']:
+        from auction_avito.services.win_rlk import _link_doc_rlk, resolve_win_rlk_unit
+
+        unit = resolve_win_rlk_unit(primary_offer)
+        rlk = _link_doc_rlk(uin, number, primary_offer.win_rlk_date, unit)
+        if rlk is not None and primary_offer.win_rlk_id != rlk.pk:
+            AvitoLotOffer.objects.filter(pk=primary_offer.pk).update(win_rlk_id=rlk.pk)
+            primary_offer.win_rlk = rlk
+            primary_offer.win_rlk_id = rlk.pk
+
+    if rlk is None:
+        return empty
+
+    from documents.models import DocRLK, DocRLKEvents
+    from register.models import RegInteractivOcenkaRLK
+
+    doc_rlk = (
+        DocRLK.objects.select_related(
+            'unit',
+            'unit__city',
+            'staff',
+            'status',
+            'type',
+            'contacType',
+            'customer',
+            'cars',
+            'staffECO1',
+            'staffECO2',
+            'type_archive',
+        )
+        .filter(pk=rlk.pk)
+        .first()
+    )
+    if doc_rlk is None:
+        return empty
+
+    events = []
+    events_count = DocRLKEvents.objects.filter(rlk_id=doc_rlk.pk).count()
+    if load_events and events_count:
+        events = list(
+            DocRLKEvents.objects.filter(rlk_id=doc_rlk.pk)
+            .select_related('contacType', 'staff', 'status')
+            .order_by('dataTime', 'pk')
+        )
+
+    interactiv_rlk = (
+        RegInteractivOcenkaRLK.objects.filter(rlk_id=doc_rlk.pk)
+        .select_related(
+            'status',
+            'estimation',
+            'estimation__modification',
+            'estimation__staff',
+            'page_soglasovanie',
+            'staff_rlk',
+            'staff_eco_1_rlk',
+            'staff_eco_2_rlk',
+            'organization',
+            'filial',
+            'unit',
+            'type_reception',
+        )
+        .first()
+    )
+    estimation = None
+    soglasovanie = None
+    if interactiv_rlk is not None:
+        estimation = interactiv_rlk.estimation
+        soglasovanie = interactiv_rlk.page_soglasovanie
+        if estimation is None:
+            from register.models import RegInteractivOcenka
+
+            estimation = (
+                RegInteractivOcenka.objects.filter(rlk_id=doc_rlk.pk)
+                .select_related('modification', 'staff', 'page_soglasovanie')
+                .first()
+            )
+        if soglasovanie is None and estimation is not None:
+            soglasovanie = getattr(estimation, 'page_soglasovanie', None)
+
+    return {
+        'doc_rlk': doc_rlk,
+        'events': events,
+        'events_count': events_count,
+        'interactiv_rlk': interactiv_rlk,
+        'estimation': estimation,
+        'soglasovanie': soglasovanie,
+        'has_1c_meta': empty['has_1c_meta'],
+    }
 
 
 @login_required
@@ -483,6 +600,11 @@ def lot_detail(request, pk):
         vehicle.model_name if vehicle else ''
     )
 
+    win_rlk_ctx = _resolve_lot_win_rlk_context(
+        primary_offer,
+        load_events=(tab == 'rlk'),
+    )
+
     tab_counts = {
         'autoteka': (
             AvitoAutotekaEvent.objects.filter(report=autoteka_report).count()
@@ -500,6 +622,9 @@ def lot_detail(request, pk):
             unit_id=est_unit_id,
         ),
         'calculations': AvitoLotCalculation.objects.filter(lot_id=lot.pk).count(),
+        'rlk': win_rlk_ctx['events_count'] or (
+            1 if win_rlk_ctx['doc_rlk'] or win_rlk_ctx['has_1c_meta'] else 0
+        ),
     }
 
     stock_rows, stock_total, stock_page_obj = [], 0, None
@@ -586,6 +711,12 @@ def lot_detail(request, pk):
             ),
             stock_page=None, sales_page=None, est_page=None,
         ),
+        'qs_rlk': _tab_query_string(
+            request, 'rlk', inject=_lot_qs_inject(
+                stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
+            ),
+            stock_page=None, sales_page=None, est_page=None,
+        ),
         'qs_autoteka': _tab_query_string(
             request, 'autoteka', inject=_lot_qs_inject(
                 stock_model_raw, est_unit_raw, sales_from, sales_to, est_from, est_to,
@@ -642,6 +773,7 @@ def lot_detail(request, pk):
         'seller_place': _seller_place_display(lot, primary_offer),
         'lot_chat': build_aav_lot_embed(request, lot),
         'bid_history': get_lot_bid_history(lot),
+        'win_rlk': win_rlk_ctx,
     }
     return render(request, 'auction_avito/lot_detail.html', {'params': params})
 

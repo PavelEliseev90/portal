@@ -3814,12 +3814,24 @@ def price_increase_request(request, id):
         'price_increase_request_date',
     ])
 
-    RegInteractivOcenkaPriceIncreaseRequest.objects.create(
-        soglasovanie=soglasovanie,
-        user=user,
-        desired_price=desired_price,
-        comment=comment,
+    # Новый запрос не сбрасывает отметку «Отработано»: переносим с предыдущего.
+    prev_req = (
+        RegInteractivOcenkaPriceIncreaseRequest.objects
+        .filter(soglasovanie=soglasovanie)
+        .order_by('-created_at', '-id')
+        .first()
     )
+    create_kwargs = {
+        'soglasovanie': soglasovanie,
+        'user': user,
+        'desired_price': desired_price,
+        'comment': comment,
+    }
+    if prev_req is not None and prev_req.processed_at is not None:
+        create_kwargs['processed_at'] = prev_req.processed_at
+        create_kwargs['processed_by'] = prev_req.processed_by
+
+    RegInteractivOcenkaPriceIncreaseRequest.objects.create(**create_kwargs)
 
     price_fmt = '{:0,.0f}'.format(desired_price).replace(',', ' ')
     text = 'Запрос повышения цены - ' + price_fmt + ' ₽'
@@ -4575,6 +4587,30 @@ def doc(request, id):
                 'from_1c': from_1c,
                 'mobile_gallery': mobile_gallery,
             }
+
+        avito_auction = None
+        price_avito_auction = None
+        try:
+            from auction_avito.services.estimation_context import (
+                build_avito_auction_estimation_context,
+            )
+            from auction_avito.services.estimation_price import (
+                estimations_price_calculation_avito_auction,
+            )
+            avito_auction = build_avito_auction_estimation_context(rlk)
+            if avito_auction is not None:
+                price_avito_auction = estimations_price_calculation_avito_auction(
+                    interactiv_rlk,
+                    estimation,
+                    avito_ctx=avito_auction,
+                    persist=False,
+                    user=user,
+                )
+        except Exception:
+            avito_auction = None
+            price_avito_auction = None
+        params['avito_auction'] = avito_auction
+        params['price_avito_auction'] = price_avito_auction
     
     elif request.method == "POST":
         

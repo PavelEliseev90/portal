@@ -1,4 +1,4 @@
-"""Ручной потолок автоставки (manual_max_bid) на оффере."""
+"""Ручной максимум автоставки (manual_max_bid) на оффере."""
 from __future__ import annotations
 
 from typing import Any
@@ -8,7 +8,7 @@ from django.utils import timezone
 
 def parse_manual_max_amount(raw) -> tuple[int | None, str | None]:
     """
-    Парсит сумму потолка.
+    Парсит сумму максимума.
     Возвращает (value_or_None_для_сброса, error_or_None).
     Пустая строка / 0 / null → сброс (None).
     """
@@ -24,6 +24,25 @@ def parse_manual_max_amount(raw) -> tuple[int | None, str | None]:
     return value, None
 
 
+def resolve_effective_buyout(calc_buyout, manual_max_bid):
+    """
+    Целевой потолок для decide_auto_bid.
+
+    Если задан ручной максимум — торгуемся до него независимо от расчёта
+    (и когда manual выше calc, и когда ниже). Иначе — расчётный выкуп.
+    Возвращает (effective_buyout, manual_max_or_None).
+    """
+    manual = None
+    if manual_max_bid not in (None, '', 0, '0'):
+        try:
+            manual = int(float(str(manual_max_bid).replace(' ', '').replace(',', '.')))
+        except (TypeError, ValueError):
+            manual = None
+    if manual is not None and manual > 0:
+        return manual, manual
+    return calc_buyout, None
+
+
 def user_display_name(user) -> str:
     if user is None:
         return ''
@@ -35,7 +54,7 @@ def user_display_name(user) -> str:
 
 def apply_manual_max_bid(offer, raw_amount, *, user=None) -> dict[str, Any]:
     """
-    Задаёт или сбрасывает ручной потолок на оффере.
+    Задаёт или сбрасывает ручной максимум на оффере.
     Пишет кто и когда. Возвращает dict ok/error/manualMaxBid/…
     """
     value, error = parse_manual_max_amount(raw_amount)

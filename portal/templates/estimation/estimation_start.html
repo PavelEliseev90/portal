@@ -559,6 +559,43 @@
     <h1>Начало оценки </h1>
     <p class="">{{params.rlk_unit.name}} {{params.rlk_nomer}} от {{params.rlk_date}}</p>
   </div>
+
+  {% if params.avito_auction %}
+    {% load custom_template_tags %}
+    <div class="alert alert-success mb-3">
+      <div class="fw-semibold mb-1">Лот с аукциона Avito — заполняйте оценку по данным лота</div>
+      <div class="small">
+        {{ params.avito_auction.vehicle_label }}
+        {% if params.avito_auction.bid %}
+          · победная ставка <strong>{{ params.avito_auction.bid|formatted_number }} ₽</strong>
+        {% endif %}
+        {% if params.avito_auction.vehicle_hints.year %}
+          · год {{ params.avito_auction.vehicle_hints.year }}
+        {% endif %}
+        {% if params.avito_auction.vehicle_hints.mileage %}
+          · пробег {{ params.avito_auction.vehicle_hints.mileage|formatted_number }} км
+        {% endif %}
+      </div>
+      <div class="mt-2 d-flex flex-wrap gap-2">
+        {% if params.avito_auction.lot_url %}
+          <a href="{{ params.avito_auction.lot_url }}" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener">Открыть лот</a>
+        {% endif %}
+        <a href="/estimations/{{ params.rlk_id }}/?page=25" class="btn btn-sm btn-success">Страница Аукцион Avito</a>
+      </div>
+      {% with h=params.avito_auction.vehicle_hints %}
+        <div class="small text-muted mt-2">
+          {% if h.brand %}{{ h.brand }} {{ h.model }}{% endif %}
+          {% if h.modification %} · {{ h.modification }}{% endif %}
+          {% if h.body %} · {{ h.body }}{% endif %}
+          {% if h.engine %} · {{ h.engine }}{% endif %}
+          {% if h.transmission %} · {{ h.transmission }}{% endif %}
+          {% if h.drive %} · {{ h.drive }}{% endif %}
+          {% if h.color %} · {{ h.color }}{% endif %}
+          {% if h.plate %} · {{ h.plate }}{% endif %}
+        </div>
+      {% endwith %}
+    </div>
+  {% endif %}
   
   {% if params.estimation.type_estimation == 0 %}
     <div class="portal-panel" id="estimationTypePanel">

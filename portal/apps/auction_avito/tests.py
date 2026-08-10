@@ -254,6 +254,30 @@ class AutoBidDecideTests(SimpleTestCase):
         self.assertTrue(d['should_bid'])
         self.assertEqual(d['bid_amount'], 825_000)
 
+
+class ManualMaxBuyoutTests(SimpleTestCase):
+    def test_manual_overrides_lower_calc(self):
+        from auction_avito.services.manual_max import resolve_effective_buyout
+
+        effective, manual = resolve_effective_buyout(800_000, 950_000)
+        self.assertEqual(effective, 950_000)
+        self.assertEqual(manual, 950_000)
+
+    def test_manual_overrides_higher_calc(self):
+        from auction_avito.services.manual_max import resolve_effective_buyout
+
+        effective, manual = resolve_effective_buyout(1_200_000, 950_000)
+        self.assertEqual(effective, 950_000)
+        self.assertEqual(manual, 950_000)
+
+    def test_without_manual_keeps_calc(self):
+        from auction_avito.services.manual_max import resolve_effective_buyout
+
+        effective, manual = resolve_effective_buyout(900_000, None)
+        self.assertEqual(effective, 900_000)
+        self.assertIsNone(manual)
+
+
 class OutcomeClassifyTests(SimpleTestCase):
     def test_waiting_seller(self):
         from auction_avito.services.outcome import classify_outcome_text
