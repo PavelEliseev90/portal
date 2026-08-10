@@ -2625,50 +2625,6 @@ class RegInteractivOcenkaPriceIncreaseRequest(models.Model):
         ordering = ['-created_at']
 
 
-class RegInteractivOcenkaAlarm(models.Model):
-    """Общий будильник ЕЦО на интерактивную оценку (один на RegInteractivOcenkaRLK)."""
-    interactiv_rlk = models.OneToOneField(
-        RegInteractivOcenkaRLK,
-        on_delete=models.CASCADE,
-        related_name='eco_alarm',
-        verbose_name='Интерактивная оценка',
-    )
-    active = models.BooleanField('Активен', default=True, db_index=True)
-    due_at = models.DateTimeField('Сработает', db_index=True)
-    set_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='eco_estimation_alarms_set',
-        verbose_name='Поставил',
-    )
-    set_at = models.DateTimeField('Поставлен')
-    dismissed_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='eco_estimation_alarms_dismissed',
-        verbose_name='Снял',
-    )
-    dismissed_at = models.DateTimeField('Снят', null=True, blank=True)
-
-    def __str__(self):
-        return 'Будильник RLK #{} → {}'.format(
-            self.interactiv_rlk_id,
-            self.due_at.strftime('%d.%m.%Y %H:%M') if self.due_at else '—',
-        )
-
-    class Meta:
-        db_table = 'regInteractivOcenkaAlarm'
-        verbose_name = 'Будильник ЕЦО'
-        verbose_name_plural = 'Будильники ЕЦО'
-        indexes = [
-            models.Index(fields=['active', 'due_at']),
-        ]
-
-
 class RegInteractivOcenka(ChangeloggableMixin, models.Model):
     rlk                 = models.OneToOneField(DocRLK, null=True, on_delete=models.SET_NULL, verbose_name="Рабочий лист")
     type_estimation     = models.IntegerField('Тип оценки', default=0, null=True, blank=True)
@@ -5614,3 +5570,49 @@ class RegUnitMonthlyPlan(models.Model):
 
     def __str__(self):
         return f"{self.unit} — {self.month:02d}.{self.year}"
+
+
+
+class RegInteractivOcenkaAlarm(models.Model):
+    """Общий будильник ЕЦО на интерактивную оценку (один на RegInteractivOcenkaRLK)."""
+    interactiv_rlk = models.OneToOneField(
+        RegInteractivOcenkaRLK,
+        on_delete=models.CASCADE,
+        related_name='eco_alarm',
+        verbose_name='Интерактивная оценка',
+    )
+    active = models.BooleanField('Активен', default=True, db_index=True)
+    due_at = models.DateTimeField('Сработает', db_index=True)
+    set_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='eco_estimation_alarms_set',
+        verbose_name='Поставил',
+    )
+    set_at = models.DateTimeField('Поставлен')
+    dismissed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='eco_estimation_alarms_dismissed',
+        verbose_name='Снял',
+    )
+    dismissed_at = models.DateTimeField('Снят', null=True, blank=True)
+
+    def __str__(self):
+        return 'Будильник RLK #{} → {}'.format(
+            self.interactiv_rlk_id,
+            self.due_at.strftime('%d.%m.%Y %H:%M') if self.due_at else '—',
+        )
+
+    class Meta:
+        db_table = 'regInteractivOcenkaAlarm'
+        verbose_name = 'Будильник ЕЦО'
+        verbose_name_plural = 'Будильники ЕЦО'
+        indexes = [
+            models.Index(fields=['active', 'due_at']),
+        ]
+
