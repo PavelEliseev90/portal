@@ -1718,6 +1718,28 @@ def estimation_rlk(request, rlk_id):
             'pribor_errors'         : pribor_errors
 
         }
+        avito_auction = None
+        price_avito_auction = None
+        try:
+            from auction_avito.services.estimation_context import (
+                build_avito_auction_estimation_context,
+            )
+            from auction_avito.services.estimation_price import (
+                estimations_price_calculation_avito_auction,
+            )
+            avito_auction = build_avito_auction_estimation_context(object)
+            if avito_auction is not None:
+                price_avito_auction = estimations_price_calculation_avito_auction(
+                    interactiv_rlk,
+                    reg_interactiv_ocenka,
+                    avito_ctx=avito_auction,
+                    persist=False,
+                    user=user,
+                )
+        except Exception:
+            avito_auction = None
+            price_avito_auction = None
+
         params = {
             'tabindex'                      : page,
             'interactiv_rlk'                : interactiv_rlk,
@@ -1728,7 +1750,9 @@ def estimation_rlk(request, rlk_id):
             'list_estimations_vin'          : list_estimations_vin,
             'users'                         : users,
             'list_checks'                   : list_checks,
-            'user'                          : user
+            'user'                          : user,
+            'avito_auction'                 : avito_auction,
+            'price_avito_auction'           : price_avito_auction,
         }
         
         mobile_gallery = _mobile_gallery_context(request, rlk_id, reg_interactiv_ocenka)
@@ -1962,6 +1986,15 @@ def estimation_start(request, rlk_id):
     if unit_name == None:
         unit_name = object.unit
 
+    avito_auction = None
+    try:
+        from auction_avito.services.estimation_context import (
+            build_avito_auction_estimation_context,
+        )
+        avito_auction = build_avito_auction_estimation_context(object)
+    except Exception:
+        avito_auction = None
+
     params = {
         'rlk_id': rlk_id,
         'rlk_nomer': object.nomer,
@@ -1975,10 +2008,11 @@ def estimation_start(request, rlk_id):
         'type_drives': type_drives,
         'type_kpp': type_kpp,
         'years' : years,
-        'mod'   : mod
+        'mod'   : mod,
+        'avito_auction': avito_auction,
     }
     
-    return render(request, 'estimation/estimation_start.html', {'params': params})	
+    return render(request, 'estimation/estimation_start.html', {'params': params})
 
 
 def years(request, rlk_id):

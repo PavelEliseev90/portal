@@ -313,6 +313,19 @@
                 
           {% if params.tabindex == 1 or params.tabindex == 0 %}
           
+          {% if params.avito_auction %}
+            <div class="alert alert-success py-2 mb-2">
+              <strong>Лот аукциона Avito</strong>
+              {% if params.avito_auction.bid %}
+                · победная ставка <strong>{{ params.avito_auction.bid|formatted_number }} ₽</strong>
+              {% endif %}
+              · <a href="?page=25">открыть страницу Аукцион Avito</a>
+              {% if params.avito_auction.lot_url %}
+                · <a href="{{ params.avito_auction.lot_url }}" target="_blank" rel="noopener">детальный лот</a>
+              {% endif %}
+            </div>
+          {% endif %}
+
           <div class="modal fade" id="edit_modification" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -367,6 +380,7 @@
                         <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                       </ul>
                     </div>
 
@@ -402,6 +416,7 @@
                     <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                     <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                     <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                   </ul>
 
               </div>
@@ -836,6 +851,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -872,6 +888,7 @@
                         <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                       </ul>
   
                   </div>
@@ -1573,6 +1590,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -1608,6 +1626,7 @@
                       <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                     </ul>
 
                 </div>
@@ -2660,6 +2679,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -2695,6 +2715,7 @@
                       <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                     </ul>
 
                 </div>
@@ -3009,6 +3030,7 @@
                             <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                             <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                             <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                           </ul>
                         </div>
 
@@ -3044,6 +3066,7 @@
                         <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                         <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                       </ul>
   
                   </div>
@@ -3639,6 +3662,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -3674,6 +3698,7 @@
                       <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                     </ul>
 
                 </div>
@@ -3947,6 +3972,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -3982,6 +4008,7 @@
                       <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                     </ul>
 
                 </div>
@@ -4570,6 +4597,7 @@
                           <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                           <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                         </ul>
                       </div>
 
@@ -4611,6 +4639,7 @@
                       <!--<button class="btn btn-dark btn_block text-start" type="submit" name="page" value="6" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Тест-драйв</button>-->
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="7" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Проверки</button>
                       <button class="btn btn-dark btn_block text-start" type="submit" name="page" value="8" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Согласование</button>
+                        {% if params.avito_auction %}<a class="btn btn-success btn_block text-start" href="?page=25" style="margin-top: 0.1rem;"> <span class="icon-mbri-right"></span> Аукцион Avito</a>{% endif %}
                     </ul>
 
                 </div>
@@ -5187,6 +5216,28 @@
             
           {% endif %}
 
+        </div>
+
+        <div class="tab-pane {% if params.tabindex == 25 %} active {% endif %}" id="page_avito_auction" role="tabpanel" aria-labelledby="avito-auction-tab">
+          {% if params.tabindex == 25 %}
+            <div class="fixed-top hidemobile my_pages_title">
+              <div class="row g-1">
+                <div class="col">
+                  <div class="row g-1 text-white" style="background: linear-gradient(140deg, #0a5c36, #000000); margin-top: -0.55rem; padding: 0; border-radius: 0 0 0.5rem 0.5rem;">
+                    <div class="col-sm" style="padding-bottom: 0.4rem;">
+                      <label class="fs-3"><span class="icon-mbri-cart"></span> Аукцион Avito</label>
+                    </div>
+                    <div class="col-sm-auto" style="padding-right: 0.5rem;">
+                      <a class="btn btn-dark" href="?page=1"><span class="icon-mbri-left"></span> К документам</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="padding-top: 3.5rem;">
+              {% include 'estimation/partials/avito_auction_page.html' %}
+            </div>
+          {% endif %}
         </div>
 
         <div class="tab-pane {% if params.tabindex == 11 %} active {% endif %}" id="page_remote" role="tabpanel" aria-labelledby="confim-tab">

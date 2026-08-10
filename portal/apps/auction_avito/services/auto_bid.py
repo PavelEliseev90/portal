@@ -104,7 +104,7 @@ REASON_CATEGORY_LABELS = {
     'already_ours': 'Уже наша ставка / мы лидируем',
     'next_ge_buyout': 'След. ставка ≥ выкупа',
     'below_min_bid': 'Ставка ниже минимальной в настройках',
-    'above_manual_max': 'Выше ручного потолка',
+    'above_manual_max': 'Выше ручного максимума',
     'above_seller_wish': 'Выше пожелания продавца',
     'other': 'Прочее',
 }
