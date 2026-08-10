@@ -41,6 +41,7 @@ urlpatterns = [
    # Мониторинг
    path('monitorings/',             views.board_monitoring),
    path('monitorings_eco/',         views.board_monitoring_eco),
+   path('monitorings/exchange-testing/', views.board_exchange_testing, name='board_exchange_testing'),
    path('monitorings/queue/<str:kind>/', views.board_monitoring_queue, name='board_monitoring_queue'),
    path('monitorings/queue/<str:kind>/dismiss/', views.board_monitoring_queue_dismiss, name='board_monitoring_queue_dismiss'),
    path('monitorings/queue/send_1c/send/', views.board_monitoring_queue_send_1c, name='board_monitoring_queue_send_1c'),

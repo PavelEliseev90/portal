@@ -1,0 +1,173 @@
+{# Контекст: params.avito_auction (dict из build_avito_auction_estimation_context) #}
+{# опционально: params.price_avito_auction — результат estimations_price_calculation_avito_auction #}
+{% load custom_template_tags %}
+{% with aa=params.avito_auction %}
+{% if aa %}
+<div class="alert alert-success border-success mb-3 py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <div class="fw-semibold">Лот с аукциона Avito</div>
+      <div class="small mt-1">
+        {{ aa.vehicle_label }}
+        {% if aa.bid %}
+          · победная ставка <strong>{{ aa.bid|formatted_number }} ₽</strong>
+        {% endif %}
+        {% if aa.estimation_price %}
+          · выкуп лота <strong>{{ aa.estimation_price|formatted_number }} ₽</strong>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      {% if aa.lot_url %}
+        <a href="{{ aa.lot_url }}" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener">Открыть лот</a>
+      {% endif %}
+      {% if aa.maxposter_url %}
+        <a href="{{ aa.maxposter_url }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Maxposter</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <h6 class="text-secondary">Ставка и итог</h6>
+    <table class="table table-sm table-borderless mb-0">
+      <tbody>
+        <tr>
+          <td>Победная ставка</td>
+          <td><strong class="fs-5">{% if aa.bid %}{{ aa.bid|formatted_number }} ₽{% else %}—{% endif %}</strong></td>
+        </tr>
+        <tr>
+          <td>Ручной макс. бид</td>
+          <td>{% if aa.manual_max_bid %}{{ aa.manual_max_bid|formatted_number }} ₽{% else %}—{% endif %}</td>
+        </tr>
+        <tr>
+          <td>Итог лота</td>
+          <td>{{ aa.outcome_title|default:aa.outcome_code|default:"—" }}</td>
+        </tr>
+        <tr>
+          <td>РЛ 1С</td>
+          <td>
+            {% if aa.win_rlk_number %}№ {{ aa.win_rlk_number }}{% else %}—{% endif %}
+            {% if aa.win_rlk_date %}<span class="text-muted small"> · {{ aa.win_rlk_date|date:"d.m.Y H:i" }}</span>{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>УИН РЛ</td>
+          <td class="small">{{ aa.win_rlk_uin|default:"—" }}</td>
+        </tr>
+        <tr>
+          <td>Площадка</td>
+          <td>{{ aa.venue_name|default:"—" }}</td>
+        </tr>
+        <tr>
+          <td>Место продавца</td>
+          <td>{{ aa.seller_place|default:"—" }}</td>
+        </tr>
+        <tr>
+          <td>Окончание лота</td>
+          <td>{% if aa.finish_at %}{{ aa.finish_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col-md-6">
+    <h6 class="text-secondary">Параметры авто (для заполнения оценки)</h6>
+    <table class="table table-sm table-borderless mb-0">
+      <tbody>
+        <tr><td>Марка / модель</td><td><strong>{{ aa.vehicle_hints.brand }} {{ aa.vehicle_hints.model }}</strong></td></tr>
+        <tr><td>Поколение</td><td>{{ aa.vehicle_hints.generation|default:"—" }}</td></tr>
+        <tr><td>Модификация</td><td>{{ aa.vehicle_hints.modification|default:"—" }}</td></tr>
+        <tr><td>Комплектация</td><td>{{ aa.vehicle_hints.configuration|default:"—" }}</td></tr>
+        <tr><td>Год</td><td>{{ aa.vehicle_hints.year|default:"—" }}</td></tr>
+        <tr><td>Пробег</td><td>{% if aa.vehicle_hints.mileage %}{{ aa.vehicle_hints.mileage|formatted_number }} км{% else %}—{% endif %}</td></tr>
+        <tr><td>Кузов / двигатель</td><td>{{ aa.vehicle_hints.body|default:"—" }} / {{ aa.vehicle_hints.engine|default:"—" }}</td></tr>
+        <tr><td>КПП / привод</td><td>{{ aa.vehicle_hints.transmission|default:"—" }} / {{ aa.vehicle_hints.drive|default:"—" }}</td></tr>
+        <tr><td>Цвет / владельцы</td><td>{{ aa.vehicle_hints.color|default:"—" }} / {{ aa.vehicle_hints.owners|default:"—" }}</td></tr>
+        <tr><td>Госномер</td><td>{{ aa.vehicle_hints.plate|default:"—" }}</td></tr>
+        {% if aa.vehicle_hints.engine_volume or aa.vehicle_hints.engine_power %}
+          <tr>
+            <td>Объём / мощность</td>
+            <td>
+              {% if aa.vehicle_hints.engine_volume %}{{ aa.vehicle_hints.engine_volume }}{% else %}—{% endif %}
+              /
+              {% if aa.vehicle_hints.engine_power %}{{ aa.vehicle_hints.engine_power }} л.с.{% else %}—{% endif %}
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if aa.description %}
+  <h6 class="text-secondary">Описание объявления</h6>
+  <p class="small mb-3" style="white-space: pre-wrap;">{{ aa.description }}</p>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <h6 class="text-secondary">Расчёт лота (сохранённый)</h6>
+    {% if aa.calc %}
+      <table class="table table-sm table-borderless mb-2">
+        <tbody>
+          <tr><td>Дата</td><td>{{ aa.calc.calculated_at|date:"d.m.Y H:i" }}</td></tr>
+          <tr><td>ЦНА</td><td>{% if aa.zna %}{{ aa.zna|formatted_number }} ₽{% else %}—{% endif %}</td></tr>
+          <tr><td>ЦГ / ТХТ</td><td>{{ aa.zg|default:"—" }} / {% if aa.kf %}{{ aa.kf }}%{% else %}—{% endif %}</td></tr>
+          <tr><td>Выкуп</td><td><strong>{% if aa.estimation_price %}{{ aa.estimation_price|formatted_number }} ₽{% else %}—{% endif %}</strong></td></tr>
+        </tbody>
+      </table>
+      {% if aa.price_steps %}
+        <div class="table-responsive">
+          <table class="table table-sm table-striped mb-0">
+            <thead><tr><th>Шаг</th><th>Δ</th><th>Цена</th></tr></thead>
+            <tbody>
+              {% for step in aa.price_steps %}
+                <tr>
+                  <td class="small">{{ step.name|default:step.comment|default:"—" }}</td>
+                  <td class="small">{% if step.dif %}{{ step.dif|floatformat:0 }}{% else %}—{% endif %}</td>
+                  <td class="small">{% if step.price %}{{ step.price|floatformat:0 }}{% else %}—{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% else %}
+      <p class="text-muted small mb-0">Сохранённого расчёта лота пока нет.</p>
+    {% endif %}
+  </div>
+  <div class="col-md-6">
+    <h6 class="text-secondary">Расчёт ИО (формула аукциона Avito)</h6>
+    {% if params.price_avito_auction %}
+      <table class="table table-sm table-borderless mb-2">
+        <tbody>
+          <tr><td>ЦНА</td><td>{% if params.price_avito_auction.zna %}{{ params.price_avito_auction.zna|formatted_number }} ₽{% else %}—{% endif %}</td></tr>
+          <tr><td>ЦГ / ТХТ</td><td>{{ params.price_avito_auction.zg }} / {{ params.price_avito_auction.kf }}% <span class="text-muted small">({{ params.price_avito_auction.kf_source }})</span></td></tr>
+          <tr><td>Выкуп</td><td><strong>{% if params.price_avito_auction.estimation_price %}{{ params.price_avito_auction.estimation_price|formatted_number }} ₽{% else %}—{% endif %}</strong></td></tr>
+          <tr><td>Победная ставка</td><td>{% if params.price_avito_auction.winning_bid %}{{ params.price_avito_auction.winning_bid|formatted_number }} ₽{% else %}—{% endif %}</td></tr>
+        </tbody>
+      </table>
+      {% if params.price_avito_auction.list_info_price %}
+        <div class="table-responsive">
+          <table class="table table-sm table-striped mb-0">
+            <thead><tr><th>Шаг</th><th>Δ</th><th>Цена</th></tr></thead>
+            <tbody>
+              {% for step in params.price_avito_auction.list_info_price %}
+                <tr>
+                  <td class="small">{{ step.name|default:step.comment }}</td>
+                  <td class="small">{{ step.dif|floatformat:0 }}</td>
+                  <td class="small">{{ step.price|floatformat:0 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% else %}
+      <p class="text-muted small mb-0">Нет ЦНА для пересчёта (нужен расчёт лота или цена в оценке).</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endwith %}

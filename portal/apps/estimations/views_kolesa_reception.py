@@ -79,6 +79,11 @@ def create_kolesa_reception(estimation, user):
     else:
         reception.kolesa_estimation = 1
     reception.save()
+    try:
+        from eco.reception import queue_estimation_for_1c
+        queue_estimation_for_1c(estimation, comment='kolesa_reception_create')
+    except Exception:
+        pass
     return reception
 
 
@@ -374,7 +379,12 @@ def kolesa_reception_detail(request, reception_id):
             reception.count_tyre = _int(request.POST.get('count_tyre'), 0)
             reception.kolesa_estimation = _int(request.POST.get('kolesa_estimation'), reception.kolesa_estimation)
             reception.save()
-            messages.success(request, 'Данные приёмки сохранены')
+            try:
+                from eco.reception import queue_estimation_for_1c
+                queue_estimation_for_1c(reception.estimation, comment='kolesa_reception_save')
+            except Exception:
+                pass
+            messages.success(request, 'Данные приёмки сохранены, оценка поставлена в очередь выгрузки в 1С')
             return HttpResponseRedirect(request.path)
 
         # Работа с файлами

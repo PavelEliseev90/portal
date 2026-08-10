@@ -3814,12 +3814,24 @@ def price_increase_request(request, id):
         'price_increase_request_date',
     ])
 
-    RegInteractivOcenkaPriceIncreaseRequest.objects.create(
-        soglasovanie=soglasovanie,
-        user=user,
-        desired_price=desired_price,
-        comment=comment,
+    # Новый запрос не сбрасывает отметку «Отработано»: переносим с предыдущего.
+    prev_req = (
+        RegInteractivOcenkaPriceIncreaseRequest.objects
+        .filter(soglasovanie=soglasovanie)
+        .order_by('-created_at', '-id')
+        .first()
     )
+    create_kwargs = {
+        'soglasovanie': soglasovanie,
+        'user': user,
+        'desired_price': desired_price,
+        'comment': comment,
+    }
+    if prev_req is not None and prev_req.processed_at is not None:
+        create_kwargs['processed_at'] = prev_req.processed_at
+        create_kwargs['processed_by'] = prev_req.processed_by
+
+    RegInteractivOcenkaPriceIncreaseRequest.objects.create(**create_kwargs)
 
     price_fmt = '{:0,.0f}'.format(desired_price).replace(',', ' ')
     text = 'Запрос повышения цены - ' + price_fmt + ' ₽'
@@ -4074,6 +4086,7 @@ def doc(request, id):
     kolesa2_needed          = False
     kolesa_reception        = None
     kolesa_reception_files  = []
+    mobile_gallery          = None
     
     body            = get_body_estimation_cached(estimation)
     salon           = get_salon_estimation_cached(estimation)
@@ -4379,6 +4392,7 @@ def doc(request, id):
         kolesa2_needed = False
         kolesa_reception = None
         kolesa_reception_files = []
+        mobile_gallery = None
         if page == 24:
             from eco.reception import (
                 estimation_has_kolesa2,
@@ -4390,10 +4404,18 @@ def doc(request, id):
                 send_reception_1c,
             )
             from register.models import RegRegInteractivOcenkaFilesKolesaReception
+            from estimations.mobile_gallery_utils import build_mobile_upload_url
             reception_allowed = reception_is_allowed(interactiv_rlk)
             reception = get_reception_or_none(interactiv_rlk)
             kolesa2_needed = estimation_has_kolesa2(estimation)
             kolesa_reception = get_kolesa_reception_or_none(estimation)
+            mobile_gallery = {
+                'rlk_id': id,
+                'estimation_id': estimation.pk,
+                'upload_url': build_mobile_upload_url(request, estimation.pk),
+                'osmotr_side': '',
+                'inbox_count': estimation.get_mobile_inbox_count(),
+            }
             refresh = request.GET.get('refresh_data', '')
             if refresh == 'reception1c' and reception is not None and reception_allowed:
                 try:
@@ -4563,7 +4585,32 @@ def doc(request, id):
                 'kolesa_reception': kolesa_reception,
                 'kolesa_reception_files': kolesa_reception_files,
                 'from_1c': from_1c,
+                'mobile_gallery': mobile_gallery,
             }
+
+        avito_auction = None
+        price_avito_auction = None
+        try:
+            from auction_avito.services.estimation_context import (
+                build_avito_auction_estimation_context,
+            )
+            from auction_avito.services.estimation_price import (
+                estimations_price_calculation_avito_auction,
+            )
+            avito_auction = build_avito_auction_estimation_context(rlk)
+            if avito_auction is not None:
+                price_avito_auction = estimations_price_calculation_avito_auction(
+                    interactiv_rlk,
+                    estimation,
+                    avito_ctx=avito_auction,
+                    persist=False,
+                    user=user,
+                )
+        except Exception:
+            avito_auction = None
+            price_avito_auction = None
+        params['avito_auction'] = avito_auction
+        params['price_avito_auction'] = price_avito_auction
     
     elif request.method == "POST":
         
@@ -5143,9 +5190,10 @@ def doc(request, id):
                     delete_reception_file(reg_interactiv_ocenka, request.POST.get('file_id'))
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'create_kolesa_reception':
-                from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2
+                from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2, queue_estimation_for_1c
                 if estimation_has_kolesa2(reg_interactiv_ocenka):
                     ensure_kolesa_reception(reg_interactiv_ocenka, user=request.user)
+                    queue_estimation_for_1c(reg_interactiv_ocenka, comment='kolesa_reception_create_eco')
                 return HttpResponseRedirect(request.path_info + '?page=24')
             if type_post == 'price_remote':
                 price_remote    = float(request.POST.get('price_remote', '0'))
@@ -7128,7 +7176,7 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                     inf_price = {
                         'price': price,
                         'dif': diff,
-                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {})'.format(
                             ', '.join(labels), min_kf
                         ),
                         'name': ', '.join(labels),
@@ -10160,7 +10208,7 @@ def estimations_price_calculation_cd(cd, type_calculation, user=None, trigger=''
                     inf_price = {
                         'price': price,
                         'dif': diff,
-                        'comment': 'Цена скорректирована: {} (мин. коэф. {} %)'.format(
+                        'comment': 'Цена скорректирована: {} (мин. коэф. {})'.format(
                             ', '.join(labels), min_kf
                         ),
                         'name': ', '.join(labels),

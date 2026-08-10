@@ -219,6 +219,24 @@
               {% if params.primary_offer.win_rlk_uin %}
                 <div class="small text-muted mt-1">УИН: {{ params.primary_offer.win_rlk_uin }}</div>
               {% endif %}
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                <a href="?{{ params.qs_rlk }}" class="btn btn-sm btn-outline-success">
+                  <span class="bi bi-file-earmark-text"></span> Открыть РЛ на лоте
+                </a>
+                {% if params.win_rlk.doc_rlk %}
+                  <a href="/docs_rlk/{{ params.win_rlk.doc_rlk.id }}/" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                    Карточка РЛ
+                  </a>
+                  {% if params.win_rlk.interactiv_rlk or params.win_rlk.estimation %}
+                    <a href="/eco/{{ params.win_rlk.doc_rlk.id }}/" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                      Интерактивная оценка
+                    </a>
+                    <a href="/estimations/{{ params.win_rlk.doc_rlk.id }}/" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                      Оценка (оценщик)
+                    </a>
+                  {% endif %}
+                {% endif %}
+              </div>
             </div>
           {% elif params.primary_offer.outcome_code == 'won' and params.primary_offer.win_rlk_error %}
             <div class="mt-2 pt-2 border-top border-danger border-opacity-25">
@@ -291,6 +309,12 @@
         <ul class="nav nav-tabs aav-tabs flex-nowrap overflow-auto" role="tablist">
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'main' %}active{% endif %}" href="?{{ params.qs_main }}">Основная</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if params.tab == 'rlk' %}active{% endif %}" href="?{{ params.qs_rlk }}">
+              Рабочий лист
+              {% if params.tab_counts.rlk %}<span class="aav-tab-badge">{{ params.tab_counts.rlk }}</span>{% endif %}
+            </a>
           </li>
           <li class="nav-item" role="presentation">
             <a class="nav-link {% if params.tab == 'autoteka' %}active{% endif %}" href="?{{ params.qs_autoteka }}">
@@ -374,6 +398,241 @@
             {% else %}
               <p class="text-muted small mb-0">Нет данных. Синхронизируйте оффер или пересчитайте лот с полным <code>lot.equipment[]</code>.</p>
             {% endif %}
+
+          {% elif params.tab == 'rlk' %}
+            {% with wr=params.win_rlk %}
+              {% if wr.doc_rlk %}
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                  <div>
+                    <div class="aav-panel-title mb-1">
+                      <span class="bi bi-file-earmark-text me-1"></span>
+                      РЛ № {{ wr.doc_rlk.nomer|default:"—" }}
+                      {% if wr.doc_rlk.dataTime %} от {{ wr.doc_rlk.dataTime|date:"d.m.Y H:i" }}{% endif %}
+                    </div>
+                    <div class="small text-muted">УИН: {{ wr.doc_rlk.uin|default:params.primary_offer.win_rlk_uin|default:"—" }}</div>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a href="/docs_rlk/{{ wr.doc_rlk.id }}/" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Карточка РЛ</a>
+                    <a href="/eco/{{ wr.doc_rlk.id }}/" class="btn btn-sm btn-primary" target="_blank" rel="noopener">Интерактивная оценка</a>
+                    <a href="/estimations/{{ wr.doc_rlk.id }}/" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">Оценщик</a>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <div class="table-responsive portal-radius">
+                      <table class="table table-sm table-borderless aav-spec-table mb-0">
+                        <tbody>
+                          <tr><td>Статус</td><td><strong>{% if wr.doc_rlk.status %}{{ wr.doc_rlk.status }}{% else %}—{% endif %}</strong></td></tr>
+                          <tr><td>Тип РЛ</td><td>{% if wr.doc_rlk.type %}{{ wr.doc_rlk.type }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Подразделение</td><td>{% if wr.doc_rlk.unit %}{{ wr.doc_rlk.unit.name }}{% if wr.doc_rlk.unit.city %} · {{ wr.doc_rlk.unit.city }}{% endif %}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Менеджер</td><td>{% if wr.doc_rlk.staff %}{{ wr.doc_rlk.staff }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Вид контакта</td><td>{% if wr.doc_rlk.contacType %}{{ wr.doc_rlk.contacType }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Клиент</td><td>{{ wr.doc_rlk.clientName|default:"—" }}{% if wr.doc_rlk.customer %}<br><span class="small text-muted">{{ wr.doc_rlk.customer }}</span>{% endif %}</td></tr>
+                          <tr><td>Телефон</td><td>{{ wr.doc_rlk.phone|default:"—" }}</td></tr>
+                          <tr><td>Окончание визита</td><td>{% if wr.doc_rlk.dataEnd %}{{ wr.doc_rlk.dataEnd|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Архив</td><td>{% if wr.doc_rlk.archive %}да{% if wr.doc_rlk.dateArchive %} · {{ wr.doc_rlk.dateArchive|date:"d.m.Y H:i" }}{% endif %}{% else %}нет{% endif %}</td></tr>
+                          {% if wr.doc_rlk.reasonArchive %}
+                            <tr><td>Причина архива</td><td>{{ wr.doc_rlk.reasonArchive }}</td></tr>
+                          {% endif %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="table-responsive portal-radius">
+                      <table class="table table-sm table-borderless aav-spec-table mb-0">
+                        <tbody>
+                          <tr><td>Автомобиль</td><td>{% if wr.doc_rlk.cars %}{{ wr.doc_rlk.cars }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Trade-in модель</td><td>{{ wr.doc_rlk.tradeInModel|default:"—" }}</td></tr>
+                          <tr><td>VIN trade-in</td><td><code>{{ wr.doc_rlk.vin_trade_in|default:"—" }}</code></td></tr>
+                          <tr><td>Оценка АМ</td><td>{% if wr.doc_rlk.eco %}да{% else %}нет{% endif %}</td></tr>
+                          <tr><td>Согласователь до КД</td><td>{% if wr.doc_rlk.staffECO1 %}{{ wr.doc_rlk.staffECO1 }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Согласователь после КД</td><td>{% if wr.doc_rlk.staffECO2 %}{{ wr.doc_rlk.staffECO2 }}{% else %}—{% endif %}</td></tr>
+                          <tr><td>Комментарий адм.</td><td class="small">{{ wr.doc_rlk.commentAdministrator|default:"—" }}</td></tr>
+                          <tr><td>Комментарий менеджера</td><td class="small">{{ wr.doc_rlk.commentManager|default:"—" }}</td></tr>
+                          {% if wr.doc_rlk.manager_trade_in %}
+                            <tr><td>Менеджер Trade-in</td><td>{{ wr.doc_rlk.manager_trade_in }}</td></tr>
+                          {% endif %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="aav-panel-title mb-2">
+                  <span class="bi bi-calculator me-1"></span> Интерактивная оценка
+                </div>
+                {% if wr.interactiv_rlk or wr.estimation %}
+                  <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                      <div class="table-responsive portal-radius">
+                        <table class="table table-sm table-borderless aav-spec-table mb-0">
+                          <tbody>
+                            <tr>
+                              <td>Статус</td>
+                              <td>
+                                <strong>
+                                  {% if wr.interactiv_rlk and wr.interactiv_rlk.status %}
+                                    {{ wr.interactiv_rlk.status }}
+                                  {% else %}—{% endif %}
+                                </strong>
+                              </td>
+                            </tr>
+                            {% if wr.estimation %}
+                              <tr>
+                                <td>Автомобиль</td>
+                                <td>
+                                  {{ wr.estimation.mark_name }} {{ wr.estimation.model_name }}
+                                  {% if wr.estimation.year %} · {{ wr.estimation.year }}{% endif %}
+                                  {% if wr.estimation.modification_name %}<br><span class="small text-muted">{{ wr.estimation.modification_name }}</span>{% endif %}
+                                </td>
+                              </tr>
+                              <tr><td>VIN</td><td><code>{{ wr.estimation.vin|default:"—" }}</code></td></tr>
+                              <tr>
+                                <td>Период оценки</td>
+                                <td class="small">
+                                  {% if wr.estimation.start_estimation %}{{ wr.estimation.start_estimation|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+                                  →
+                                  {% if wr.estimation.end_estimation %}{{ wr.estimation.end_estimation|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+                                </td>
+                              </tr>
+                              <tr><td>Оценщик</td><td>{% if wr.estimation.staff %}{{ wr.estimation.staff }}{% elif wr.interactiv_rlk and wr.interactiv_rlk.staff_rlk %}{{ wr.interactiv_rlk.staff_rlk }}{% else %}—{% endif %}</td></tr>
+                            {% endif %}
+                            {% if wr.interactiv_rlk %}
+                              <tr><td>Тип приёма</td><td>{% if wr.interactiv_rlk.type_reception %}{{ wr.interactiv_rlk.type_reception }}{% else %}—{% endif %}</td></tr>
+                              <tr><td>ДЦ / склад</td><td>{% if wr.interactiv_rlk.filial %}{{ wr.interactiv_rlk.filial }}{% else %}—{% endif %}{% if wr.interactiv_rlk.unit %} · {{ wr.interactiv_rlk.unit }}{% endif %}</td></tr>
+                            {% endif %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      {% if wr.soglasovanie %}
+                        <div class="table-responsive portal-radius">
+                          <table class="table table-sm table-borderless aav-spec-table mb-0">
+                            <tbody>
+                              <tr>
+                                <td>Цена до КД</td>
+                                <td><strong>{% if wr.soglasovanie.price_before_kd %}{{ wr.soglasovanie.price_before_kd|formatted_number }} ₽{% else %}—{% endif %}</strong></td>
+                              </tr>
+                              <tr>
+                                <td>Цена после КД</td>
+                                <td><strong>{% if wr.soglasovanie.price_after_kd %}{{ wr.soglasovanie.price_after_kd|formatted_number }} ₽{% else %}—{% endif %}</strong></td>
+                              </tr>
+                              <tr>
+                                <td>Цена приёма</td>
+                                <td>{% if wr.soglasovanie.price_reception %}{{ wr.soglasovanie.price_reception|formatted_number }} ₽{% else %}—{% endif %}</td>
+                              </tr>
+                              <tr>
+                                <td>Цена продажи</td>
+                                <td>{% if wr.soglasovanie.price_sale %}{{ wr.soglasovanie.price_sale|formatted_number }} ₽{% else %}—{% endif %}</td>
+                              </tr>
+                              <tr>
+                                <td>ЦНА / авто 2</td>
+                                <td>
+                                  {% if wr.soglasovanie.price_zna_2 %}{{ wr.soglasovanie.price_zna_2|formatted_number }} ₽{% else %}—{% endif %}
+                                  /
+                                  {% if wr.soglasovanie.price_auto_2 %}{{ wr.soglasovanie.price_auto_2|formatted_number }} ₽{% else %}—{% endif %}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Затраты (подг. / СС / МКУ)</td>
+                                <td class="small">
+                                  {{ wr.soglasovanie.amount_podgotovka|default:0|floatformat:0 }} /
+                                  {{ wr.soglasovanie.amount_ss|default:0|floatformat:0 }} /
+                                  {{ wr.soglasovanie.amount_mcu|default:0|floatformat:0 }} ₽
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Без диагностики</td>
+                                <td>{% if wr.soglasovanie.no_diagnostica %}да{% else %}нет{% endif %}</td>
+                              </tr>
+                              {% if wr.soglasovanie.comment %}
+                                <tr><td>Комментарий</td><td class="small">{{ wr.soglasovanie.comment }}</td></tr>
+                              {% endif %}
+                              {% if wr.soglasovanie.comment_diagnostica %}
+                                <tr><td>После диагностики</td><td class="small">{{ wr.soglasovanie.comment_diagnostica }}</td></tr>
+                              {% endif %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% else %}
+                        <p class="text-muted small mb-0">Страница согласования ещё не заполнена.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="mb-4">
+                    <a href="/eco/{{ wr.doc_rlk.id }}/" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
+                      Открыть полную интерактивную оценку
+                    </a>
+                  </div>
+                {% else %}
+                  <p class="text-muted small mb-4">
+                    Интерактивная оценка по этому РЛ ещё не создана.
+                    <a href="/estimations/{{ wr.doc_rlk.id }}/" target="_blank" rel="noopener">Начать оценку</a>
+                  </p>
+                {% endif %}
+
+                <div class="aav-panel-title mb-2">
+                  <span class="bi bi-clock-history me-1"></span> События
+                  {% if wr.events_count %}<span class="text-muted small">({{ wr.events_count }})</span>{% endif %}
+                </div>
+                {% if wr.events %}
+                  <div class="table-responsive portal-radius">
+                    <table class="table table-sm table-striped table-hover mb-0">
+                      <thead>
+                        <tr>
+                          <th>Дата</th>
+                          <th>Событие</th>
+                          <th>Контакт</th>
+                          <th>Менеджер</th>
+                          <th>Статус</th>
+                          <th>Комментарий</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for event in wr.events %}
+                          <tr>
+                            <td class="small">{% if event.dataTime %}{{ event.dataTime|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+                            <td class="small">{% if event.dataTimeEvent %}{{ event.dataTimeEvent|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+                            <td class="small">{% if event.contacType %}{{ event.contacType }}{% else %}—{% endif %}</td>
+                            <td class="small">{% if event.staff %}{{ event.staff }}{% else %}—{% endif %}</td>
+                            <td class="small">{% if event.status %}{{ event.status }}{% else %}—{% endif %}</td>
+                            <td class="small">{{ event.comment|default:"—" }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <p class="text-muted small mb-0">Событий по рабочему листу нет.</p>
+                {% endif %}
+
+              {% elif wr.has_1c_meta or params.primary_offer.win_rlk_number or params.primary_offer.win_rlk_uin %}
+                <div class="aav-panel-title mb-2"><span class="bi bi-file-earmark-text me-1"></span> Рабочий лист 1С</div>
+                <p class="small mb-2">
+                  В 1С создан РЛ
+                  {% if params.primary_offer.win_rlk_number %}№ <strong>{{ params.primary_offer.win_rlk_number }}</strong>{% endif %}
+                  {% if params.primary_offer.win_rlk_date %} от {{ params.primary_offer.win_rlk_date|date:"d.m.Y H:i" }}{% endif %},
+                  но в портал он ещё не пришёл из обмена.
+                </p>
+                {% if params.primary_offer.win_rlk_uin %}
+                  <p class="small text-muted mb-0">УИН: {{ params.primary_offer.win_rlk_uin }}</p>
+                {% endif %}
+              {% else %}
+                <p class="text-muted small mb-2">Рабочий лист по этому лоту ещё не создан.</p>
+                {% if params.primary_offer %}
+                  <form method="post" action="{% url 'auction_avito:lot_create_win_rlk' params.lot.pk %}"
+                        onsubmit="return confirm('Создать рабочий лист в 1С по подразделению площадки?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success">
+                      <span class="bi bi-file-earmark-plus"></span> Создать рабочий лист
+                    </button>
+                  </form>
+                {% endif %}
+              {% endif %}
+            {% endwith %}
 
           {% elif params.tab == 'autoteka' %}
             {% if params.autoteka %}
@@ -896,7 +1155,8 @@
               {% endif %}
             </form>
             <p class="small text-muted mb-0 mt-2">
-              Жёсткий cap: автоставка не превысит эту сумму, даже если расчётный выкуп выше.
+              Автоставка идёт до этой суммы независимо от расчётного выкупа
+              (даже если расчёт ниже или выше).
             </p>
           </div>
           <p class="small text-muted mb-1">
@@ -1072,7 +1332,8 @@
         {% if params.primary_offer.win_rlk_number or params.primary_offer.win_rlk_uin %}
       <div class="col-md-3">РЛ номер: <strong class="text-dark">{{ params.primary_offer.win_rlk_number|default:"—" }}</strong></div>
       <div class="col-md-3">РЛ дата: <strong class="text-dark">{% if params.primary_offer.win_rlk_date %}{{ params.primary_offer.win_rlk_date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</strong></div>
-      <div class="col-md-6">РЛ УИН: <strong class="text-dark">{{ params.primary_offer.win_rlk_uin|default:"—" }}</strong></div>
+      <div class="col-md-3">РЛ УИН: <strong class="text-dark">{{ params.primary_offer.win_rlk_uin|default:"—" }}</strong></div>
+      <div class="col-md-3"><a href="?{{ params.qs_rlk }}" class="small">Открыть вкладку РЛ</a></div>
         {% endif %}
       {% endif %}
     </div>
