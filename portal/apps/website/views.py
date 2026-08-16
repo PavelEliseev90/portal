@@ -119,20 +119,23 @@ def custom_error_view(request, exception=None):
     # Для API-запросов возвращаем JSON с причиной ошибки
     path = getattr(request, 'path', '') or ''
     accept = request.META.get('HTTP_ACCEPT', '')
-    if '/api/' in path or 'application/json' in accept:
-        err_msg = 'Внутренняя ошибка сервера'
-        try:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            if exc_value:
-                err_msg = str(exc_value)
-        except Exception:
-            pass
-        return JsonResponse({'error': err_msg}, status=500)
+    #
+    err_msg = 'Внутренняя ошибка сервера'
+    try:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        if exc_value:
+            err_msg = str(exc_value)
+    except Exception:
+        pass
     
+    if '/api/' in path or 'application/json' in accept:
+        return JsonResponse({'error': err_msg}, status=500)
+
     user    = None
     params  = {
 				'type'		    : 'home',
-				'user'		    : user                
+				'user'		    : user,
+                'err_msg'       : err_msg               
 			}
     
     return render(request, "errors/500.html", {'params': params})
@@ -10501,7 +10504,7 @@ def auction_doc(request, slug_auction):
     user    = request.user
     answer  = ''
     sends   = False
-    if DT.datetime.now().hour < 11 or DT.datetime.now().hour >= 14:
+    if DT.datetime.now().hour < 12 or DT.datetime.now().hour >= 14:
         sends = True
 
     if slug_auction == 'new_lots':

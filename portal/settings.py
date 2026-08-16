@@ -404,3 +404,37 @@ MSSQL_TRADEINFUNNEL = {
     'encrypt': os.getenv('MSSQL_TRADEINFUNNEL_ENCRYPT', 'yes'),
     'trust_server_certificate': os.getenv('MSSQL_TRADEINFUNNEL_TRUST_CERT', 'yes'),
 }
+
+
+
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'django_errors.log'),
+        },
+        'console': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        # можно добавить свой logger для своего кода
+        'myapp': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}

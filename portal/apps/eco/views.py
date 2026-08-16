@@ -7305,9 +7305,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                         'name': ', '.join(labels),
                     }
                     list_info_price.append(inf_price)
-                if estimation.auction_auto_no_user != True:
-                    auction = True
-                    auction_comment = auction_comment + '{}. '.format(', '.join(labels))
+                # if estimation.auction_auto_no_user != True:
+                #     auction = True
+                #     auction_comment = auction_comment + '{}. '.format(', '.join(labels))
 
         defer_iznos = bool(getattr(estimation_settings, 'iznos_with_ss', False))
         
@@ -9193,8 +9193,8 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
             amount_mcu, list_work_mcu, estimation_settings,
         )
         if amount_mcu > 0:
-            price           = price - amount_mcu
-            diff            = amount_mcu
+            price           = price - amount_mcu * mcu_kf
+            diff            = amount_mcu * mcu_kf
             mcu_comment = "Цена скоректирована с учетом затрат на кузовной ремонт " + '{:0,.2f}'.format(diff).replace(',', ' ') + ' ₽'
             if mcu_kf != 1.0:
                 mcu_comment = mcu_comment + " (коэф. " + '{:0,.2f}'.format(mcu_kf).replace(',', ' ') + ")"
@@ -9266,9 +9266,9 @@ def estimations_price_calculation(interactiv_rlk, estimation, type_calculation, 
                 }
                 '''
                 list_info_price.append(inf_price)
-        if estimation.auction_auto_no_user == True:
-            auction = False
-            auction_comment = ''
+        # if estimation.auction_auto_no_user == True:
+        #     auction = False
+        #     auction_comment = ''
 
         #ИТОГ
         if defer_iznos:
