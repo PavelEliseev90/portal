@@ -10483,18 +10483,45 @@ def auction_list(request):
     return render(request, "auction/auction_list.html", {'params': params})
 
 
+def _parse_auction_datetime(raw):
+    """datetime-local: YYYY-MM-DDTHH:MM или с секундами."""
+    text = (raw or '').strip()
+    if not text:
+        return None
+    for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M'):
+        try:
+            return DT.datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    raise ValueError('Неверный формат даты начала аукциона')
+
+
+def _get_auction_by_uid(slug_auction):
+    """Достаём лот по uid; slug_auction приходит строкой из URL."""
+    import uuid as uuid_lib
+    from django.core.exceptions import ValidationError
+
+    try:
+        uid = uuid_lib.UUID(str(slug_auction).strip())
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise ValidationError('Некорректный идентификатор лота') from exc
+    return Auction.objects.get(uid=uid)
+
+
 @login_required
 def auction_doc_refresh(request, slug_auction):
     try:
-        auction = Auction.objects.get(uid = slug_auction)
+        auction = _get_auction_by_uid(slug_auction)
         refresh_auction(auction)
-    except:
-        s = 1 
-    return HttpResponseRedirect('/auction/' + str(auction.uid) + '/')    
+        return HttpResponseRedirect('/auction/' + str(auction.uid) + '/')
+    except Exception:
+        return HttpResponseRedirect('/auction/')
+
 
 @login_required
 def auction_doc(request, slug_auction):
-    
+    from django.core.exceptions import ValidationError, ObjectDoesNotExist
+
     error   = ''
     auction = None
     new     = False
@@ -10511,7 +10538,10 @@ def auction_doc(request, slug_auction):
         return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
     else:
         new = False
-        auction = Auction.objects.get(uid = slug_auction)
+        try:
+            auction = _get_auction_by_uid(slug_auction)
+        except (ValidationError, ObjectDoesNotExist, Auction.DoesNotExist):
+            raise Http404('Лот аукциона не найден')
         user = auction.user
     
     if user == None:
@@ -10527,33 +10557,58 @@ def auction_doc(request, slug_auction):
     }
 
     if request.method == 'POST':
-        
-        if new:
-            auction = Auction()
+        try:
+            auction = _get_auction_by_uid(slug_auction)
+
+            if 'update' in request.POST:
+                refresh_auction(auction)
+                return HttpResponseRedirect('/auction/' + str(auction.uid) + '/')
+
+            store_id = (request.POST.get('store') or '').strip()
+            if not store_id:
+                raise ValueError('Укажите стоянку')
+            try:
+                store = RefStore.objects.get(id=store_id)
+            except (ValueError, TypeError, RefStore.DoesNotExist) as exc:
+                raise ValueError('Указана некорректная стоянка') from exc
+
+            date_start = _parse_auction_datetime(request.POST.get('dateStart', ''))
+            if date_start is None:
+                raise ValueError('Укажите дату начала аукциона')
+
+            try:
+                start_price = int(request.POST.get('price_start', '0') or '0')
+            except (TypeError, ValueError) as exc:
+                raise ValueError('Некорректная стартовая цена') from exc
+
             auction.user = user
-        else:
-            auction = Auction.objects.get(uid = slug_auction)
+            auction.store = store
+            auction.start_price = start_price
+            auction.dateStart = date_start
+            auction.description = request.POST.get('description', '')
+            auction.save()
 
-        if 'update' in request.POST:
-            refresh_auction(auction)
-            return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
+            cars = list()
+            slug_prefix = 'cars_list_data_slug_'
+            # Только скрытые поля вида name=cars_list_data_slug_<slug> value=<slug>
+            car_slugs = []
+            for key in request.POST.keys():
+                if not key.startswith(slug_prefix):
+                    continue
+                slug_from_key = key[len(slug_prefix):]
+                slug_from_val = (request.POST.get(key) or '').strip()
+                if not slug_from_val or slug_from_val != slug_from_key:
+                    continue
+                if slug_from_val not in car_slugs:
+                    car_slugs.append(slug_from_val)
 
-        auction.user                = user
-        
-        auction.store               = RefStore.objects.get(id = request.POST.get('store', ''))
-        auction.start_price         = int(request.POST.get('price_start', '0')) 
-        auction.dateStart           = DT.datetime.strptime(request.POST.get('dateStart', ''), "%Y-%m-%dT%H:%M")
-        auction.description         = request.POST.get('description', '')        
-        auction.save()
-        cars = list()
-        
-        for key in request.POST.keys():
-            if key.startswith('cars_list_data_slug_'):
-                val_key = request.POST.get(key)
-                pk      = key.replace('cars_list_data_slug_', '')
-                car     = RefCarsOrganization.objects.get(slug = pk)
+            for pk in car_slugs:
+                try:
+                    car = RefCarsOrganization.objects.get(slug=pk)
+                except RefCarsOrganization.DoesNotExist:
+                    continue
                 cars.append(car)
-                
+
                 diagnostic  = list()
                 kolesa      = list()
                 damage      = list()
@@ -10562,27 +10617,28 @@ def auction_doc(request, slug_auction):
                 vnesh       = list()
                 glav        = ''
 
-
-                structure, created = AuctionStructure.objects.filter(auction = auction).filter(car = car).get_or_create(auction = auction, car = car) 
+                structure, created = AuctionStructure.objects.get_or_create(
+                    auction=auction,
+                    car=car,
+                )
 
                 try:
-                    for key in request.POST.keys():
-                        if key.startswith(pk + '_photo_diagnostic_'):
-                            diagnostic.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_kolesa_'):
-                            kolesa.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_damage'):
-                            damage.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_shema'):
-                            shema.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_salon'):
-                            salon.append(request.POST.get(key, ''))
-                        elif key.startswith(pk + '_photo_vnesh_glav'):
-                            glav = request.POST.get(key, '')
-                        elif key.startswith(pk + '_photo_vnesh'):
-                            vnesh.append(request.POST.get(key, ''))
-                        
-                    
+                    for photo_key in request.POST.keys():
+                        if photo_key.startswith(pk + '_photo_diagnostic_'):
+                            diagnostic.append(request.POST.get(photo_key, ''))
+                        elif photo_key.startswith(pk + '_photo_kolesa_'):
+                            kolesa.append(request.POST.get(photo_key, ''))
+                        elif photo_key.startswith(pk + '_photo_damage'):
+                            damage.append(request.POST.get(photo_key, ''))
+                        elif photo_key.startswith(pk + '_photo_shema'):
+                            shema.append(request.POST.get(photo_key, ''))
+                        elif photo_key.startswith(pk + '_photo_salon'):
+                            salon.append(request.POST.get(photo_key, ''))
+                        elif photo_key.startswith(pk + '_photo_vnesh_glav'):
+                            glav = request.POST.get(photo_key, '')
+                        elif photo_key.startswith(pk + '_photo_vnesh'):
+                            vnesh.append(request.POST.get(photo_key, ''))
+
                     list_files_kolesa = request.FILES.getlist('images_wheels_' + pk)
                     list_kolesa = dowload_files_auction(structure, list_files_kolesa, 'kolesa')
                     for list_koles in list_kolesa:
@@ -10609,32 +10665,32 @@ def auction_doc(request, slug_auction):
                         vnesh.append(list_file_down)
 
                     if 'cars_list_data_work' + pk in request.POST:
-                        structure.works = request.POST.get('cars_list_data_work' + pk, '')  
+                        structure.works = request.POST.get('cars_list_data_work' + pk, '')
                     else:
-                        structure.works             = request.POST.get('cars_list_data_' + pk + '_works' , '')
+                        structure.works = request.POST.get('cars_list_data_' + pk + '_works', '')
 
                     if 'cars_list_data_diag' + pk in request.POST:
-                        structure.diagnostic        = request.POST.get('cars_list_data_diag' + pk, '')
+                        structure.diagnostic = request.POST.get('cars_list_data_diag' + pk, '')
                     else:
-                        structure.diagnostic        = request.POST.get('cars_list_data_' + pk + '_diagnostika' , '')
-                    
+                        structure.diagnostic = request.POST.get('cars_list_data_' + pk + '_diagnostika', '')
+
                     if 'cars_list_data_pod' + pk in request.POST:
-                        structure.podgotovka                = request.POST.get('cars_list_data_pod' + pk, '')
+                        structure.podgotovka = request.POST.get('cars_list_data_pod' + pk, '')
                     else:
-                        structure.podgotovka        = request.POST.get('cars_list_data_' + pk + '_podgotovka' , '')
+                        structure.podgotovka = request.POST.get('cars_list_data_' + pk + '_podgotovka', '')
 
                     if 'cars_list_data_op' + pk in request.POST:
-                        structure.op                = request.POST.get('cars_list_data_op' + pk, '')
+                        structure.op = request.POST.get('cars_list_data_op' + pk, '')
                     else:
-                        structure.op                = request.POST.get('cars_list_data_' + pk + '_op' , '')
-                    
+                        structure.op = request.POST.get('cars_list_data_' + pk + '_op', '')
+
                     if glav != '':
                         vnesh_new = list()
                         vnesh_new.append(glav)
                         for vn in vnesh:
                             if vn != glav:
-                               vnesh_new.append(vn)
-                        vnesh = vnesh_new     
+                                vnesh_new.append(vn)
+                        vnesh = vnesh_new
 
                     structure.files_diagnostic  = json.dumps(diagnostic)
                     structure.files_kolesa      = json.dumps(kolesa)
@@ -10644,31 +10700,36 @@ def auction_doc(request, slug_auction):
                     structure.files_car         = json.dumps(vnesh)
                     structure.files_glav        = glav
 
-                    if request.POST.get('cars_list_data_' + pk + '_autoteka_prev' , False)  == 'true':
-                        structure.autoteka_prev     = True
+                    if request.POST.get('cars_list_data_' + pk + '_autoteka_prev', False) == 'true':
+                        structure.autoteka_prev = True
                     else:
-                        structure.autoteka_prev     = False
-                    
-                    if request.POST.get('cars_list_data_' + pk + '_success' , False)  == 'true':
-                        structure.success     = True
+                        structure.autoteka_prev = False
+
+                    if request.POST.get('cars_list_data_' + pk + '_success', False) == 'true':
+                        structure.success = True
                     else:
-                        structure.success     = False
-                except:
-                    s=1
+                        structure.success = False
+                except Exception:
+                    pass
                 structure.save()
 
-        AuctionStructure.objects.filter(auction = auction).exclude(car__in = cars).delete()
+            AuctionStructure.objects.filter(auction=auction).exclude(car__in=cars).delete()
 
-        if 'send' in request.POST:
-            if sends == False:
-                error = 'Отправка не возможна в период с 10:00 до 14:00. Подготовьте лоты к отправке, проверьте автомобили. И отправьте лоты на аукцион в указаный промежуток доступности.'
-            else:
-                if AuctionStructure.objects.filter(auction = auction).filter(car = car).filter(success = False).count() > 0:
+            if 'send' in request.POST:
+                if sends == False:
+                    error = 'Отправка не возможна в период с 10:00 до 14:00. Подготовьте лоты к отправке, проверьте автомобили. И отправьте лоты на аукцион в указаный промежуток доступности.'
+                elif AuctionStructure.objects.filter(auction=auction, success=False).exists():
                     error = 'Не все автомобили проверены, отправка не возможна. Проверьте автомобили и информацию о них.'
                 else:
                     send_auction(auction)
-                    return HttpResponseRedirect(request.build_absolute_uri().replace('new_lots', str(auction.uid)))
-     
+                    return HttpResponseRedirect('/auction/' + str(auction.uid) + '/')
+        except ValidationError as exc:
+            error = '; '.join(exc.messages) if hasattr(exc, 'messages') else str(exc)
+        except (ValueError, ObjectDoesNotExist, Auction.DoesNotExist) as exc:
+            error = str(exc) or 'Не удалось сохранить лот'
+        except Exception as exc:
+            error = 'Ошибка сохранения лота: {}'.format(exc)
+
     params = {
         'type'          : 'auction',
         'sends'         : sends,

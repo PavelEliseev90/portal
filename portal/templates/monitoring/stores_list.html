@@ -1,0 +1,130 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Управление стоянками {% endblock %}
+{% block title_navbar %} — Управление стоянками {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+		<div>
+			<h2 class="mb-1" style="color: #002a5a;">Управление стоянками</h2>
+			<p class="text-muted small mb-0">
+				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+				· стоянок: <strong>{{ params.total_count }}</strong>
+			</p>
+		</div>
+	</div>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }} py-2 small mb-3">{{ message }}</div>
+	{% endfor %}
+	{% elif params.cleared_count %}
+	<div class="alert alert-success py-2 small mb-3">
+		Стоянка <strong>{{ params.cleared_store }}</strong>:
+		переведено в «отсутствуют»: <strong>{{ params.cleared_count }}</strong>
+	</div>
+	{% endif %}
+
+	<form method="get" class="portal-panel mb-3">
+		<div class="row g-2 align-items-end">
+			<div class="col-12 col-md-5 col-lg-4">
+				<label class="form-label small">Поиск</label>
+				<input type="text" name="q" class="form-control form-control-sm"
+					value="{{ params.q }}" placeholder="Название, адрес, город, UIN…">
+			</div>
+			<div class="col-12 col-md-4 col-lg-3">
+				<label class="form-label small">На странице</label>
+				<select name="per_page" class="form-select form-select-sm">
+					<option value="25" {% if params.per_page == 25 %}selected{% endif %}>25</option>
+					<option value="50" {% if params.per_page == 50 %}selected{% endif %}>50</option>
+					<option value="100" {% if params.per_page == 100 %}selected{% endif %}>100</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-3 col-lg-3">
+				<div class="form-check mt-4">
+					<input class="form-check-input" type="checkbox" name="only_with_cars" value="1"
+						id="only_with_cars" {% if params.only_with_cars %}checked{% endif %}>
+					<label class="form-check-label small" for="only_with_cars">Только с наличием</label>
+				</div>
+			</div>
+			<div class="col-12 col-lg-2">
+				<button type="submit" class="btn btn-primary btn-sm">Применить</button>
+				<a href="{% url 'monitoring:stores_list' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+			</div>
+		</div>
+	</form>
+
+	<div class="portal-panel">
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th>Стоянка</th>
+						<th>Город</th>
+						<th>Подразделение</th>
+						<th class="text-end">В наличии</th>
+						<th class="text-end">Действие</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for store in params.page_obj %}
+					<tr>
+						<td>
+							<div class="fw-semibold" style="color: #002a5a;">{{ store.name }}</div>
+							{% if store.name_dop %}<div class="text-muted small">{{ store.name_dop }}</div>{% endif %}
+							{% if store.adress %}<div class="text-muted small">{{ store.adress }}</div>{% endif %}
+						</td>
+						<td>{{ store.city|default:"—" }}</td>
+						<td>{{ store.unit|default:"—" }}</td>
+						<td class="text-end">
+							{% if store.cars_in_stock %}
+							<span class="fw-bold">{{ store.cars_in_stock }}</span>
+							{% else %}
+							<span class="text-muted">0</span>
+							{% endif %}
+						</td>
+						<td class="text-end">
+							<form method="post" action="{% url 'monitoring:stores_clear_stock' store.pk %}" class="d-inline"
+								onsubmit="return confirm('Убрать все автомобили со стоянки «{{ store.name|escapejs }}» из наличия (quantity = 0)?\nСейчас в наличии: {{ store.cars_in_stock }}.');">
+								{% csrf_token %}
+								{% if params.q %}<input type="hidden" name="q" value="{{ params.q }}">{% endif %}
+								{% if params.only_with_cars %}<input type="hidden" name="only_with_cars" value="1">{% endif %}
+								<button type="submit" class="btn btn-outline-danger btn-sm"
+									{% if not store.cars_in_stock %}disabled{% endif %}>
+									Убрать всё из наличия
+								</button>
+							</form>
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="5" class="text-center text-muted py-4">Стоянки не найдены</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		{% if params.page_obj.has_other_pages %}
+		<nav class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-2 py-2 border-top">
+			<div class="small text-muted">
+				Стр. {{ params.page_obj.number }} из {{ params.paginator.num_pages }}
+			</div>
+			<ul class="pagination pagination-sm mb-0">
+				{% if params.page_obj.has_previous %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+				</li>
+				{% endif %}
+				{% if params.page_obj.has_next %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+				</li>
+				{% endif %}
+			</ul>
+		</nav>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}
