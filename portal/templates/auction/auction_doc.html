@@ -902,14 +902,14 @@
 							<div class="col-12 col-lg-4">
 									<div class="mb-3">
 											<label for="dateStart" class="form-label">Дата начала аукциона</label>
-											<input type="datetime-local" class="form-control" id="dateStart" name="dateStart" min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i:s'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+											<input type="datetime-local" class="form-control" id="dateStart" name="dateStart" min="{{params.now|date:'Y-m-d'}}T{{params.now|time:'H:i'}}" {% if params.auction.dateStart %} value="{{params.auction.dateStart|date:'Y-m-d'}}T{{params.auction.dateStart|time:'H:i'}}" {% else %} value="" {% endif %} {% if params.auction.winner_price > 0 %} readonly {% endif %}>
 									</div>
 									<div class="mb-3">
 											<label for="store" class="form-label">Стоянка</label>
 											<select class="form-select" aria-label="" id="store" name="store" {% if params.auction.winner_price > 0 %} disabled {% endif %}>
-													<option selected text=""></option>
+													<option value="" text="" {% if not params.auction.store_id %} selected {% endif %}></option>
 													{% for store in params.select.stores %}
-															<option value='{{store.id}}' text="{{store.id}}" {% if store.id == params.auction.store.id %} selected {% endif %}>{{store.name}}</option>
+															<option value='{{store.id}}' text="{{store.id}}" {% if params.auction.store_id == store.id %} selected {% endif %}>{{store.name}}</option>
 													{% endfor %}
 											</select>
 									</div>
