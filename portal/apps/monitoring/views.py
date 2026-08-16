@@ -2,9 +2,11 @@
 import json
 from urllib.parse import urlencode
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -12,6 +14,7 @@ from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from api.models import Exchange1CErrorLog
+from refs.models import RefCarsOrganization, RefStore
 
 
 def _staff_required(user):
@@ -155,3 +158,89 @@ def exchange_errors_detail(request, pk):
         'data_pretty': data_pretty,
     }
     return render(request, 'monitoring/exchange_errors_detail.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def stores_list(request):
+    """Управление стоянками: список и количество авто в наличии."""
+    q = (request.GET.get('q') or '').strip()
+    only_with_cars = request.GET.get('only_with_cars') == '1'
+
+    cars_in_stock_sq = (
+        RefCarsOrganization.objects.filter(store=OuterRef('pk'), quantity__gt=0)
+        .order_by()
+        .values('store')
+        .annotate(cnt=Count('id'))
+        .values('cnt')[:1]
+    )
+    qs = RefStore.objects.select_related('city', 'unit').annotate(
+        cars_in_stock=Coalesce(Subquery(cars_in_stock_sq, output_field=IntegerField()), 0),
+    ).order_by('name', 'id')
+
+    if q:
+        qs = qs.filter(
+            Q(name__icontains=q)
+            | Q(name_dop__icontains=q)
+            | Q(name_site__icontains=q)
+            | Q(adress__icontains=q)
+            | Q(uin__icontains=q)
+            | Q(city__name__icontains=q)
+            | Q(unit__name__icontains=q)
+        )
+    if only_with_cars:
+        qs = qs.filter(cars_in_stock__gt=0)
+
+    per_page = min(int(request.GET.get('per_page', 50) or 50), 100)
+    paginator = Paginator(qs, per_page)
+    page_num = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_num)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    get_copy = request.GET.copy()
+    if 'page' in get_copy:
+        get_copy.pop('page')
+    query_without_page = get_copy.urlencode()
+
+    params = {
+        'type': 'monitoring_stores',
+        'q': q,
+        'only_with_cars': only_with_cars,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'per_page': per_page,
+        'query_without_page': query_without_page,
+        'total_count': paginator.count,
+        'cleared_count': request.GET.get('cleared'),
+        'cleared_store': request.GET.get('store'),
+    }
+    return render(request, 'monitoring/stores_list.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def stores_clear_stock(request, pk):
+    """Обнулить наличие (quantity=0) у всех автомобилей стоянки."""
+    store = get_object_or_404(RefStore, pk=pk)
+    updated = RefCarsOrganization.objects.filter(
+        store=store,
+        quantity__gt=0,
+    ).update(quantity=0)
+
+    messages.success(
+        request,
+        f'Стоянка «{store}»: в «отсутствуют» переведено автомобилей: {updated}.',
+    )
+    query = {
+        'cleared': updated,
+        'store': store.name or str(store.pk),
+    }
+    q = (request.POST.get('q') or '').strip()
+    if q:
+        query['q'] = q
+    if request.POST.get('only_with_cars') == '1':
+        query['only_with_cars'] = '1'
+    return redirect(f"{reverse('monitoring:stores_list')}?{urlencode(query)}")
