@@ -4453,6 +4453,12 @@ def exchange(request):
             list_calculation_cars, errs = load_calculation_cars(calculation_cars)
             exchange_errors.extend(_exchange_errors_response('CalculationCars', errs))
 
+    #Соглашения по автомобилям
+    agreements = data.get('Agreements') or []
+    if len(agreements) > 0:
+        list_agreements, errs = load_agreements(agreements)
+        exchange_errors.extend(_exchange_errors_response('Agreements', errs))
+
     #Филиалы
     filials = data.get('Filials') or []
     if len(filials) > 0:
@@ -4489,12 +4495,6 @@ def exchange(request):
     if len(worksheets_events) > 0:
         list_worksheets_events, errs = load_worksheets_events(worksheets_events)
         exchange_errors.extend(_exchange_errors_response('WorksheetEvents', errs))
-
-    #Соглашения по автомобилям
-    #agreements = data['Agreements']
-    #if len(agreements) > 0:
-    #    list_agreements, errs = load_agreements(agreements)
-    #    exchange_errors.extend(_exchange_errors_response('Agreements', errs))
 
     #Отгрузки автомобиля
     shipments = data.get('Shipments') or []
