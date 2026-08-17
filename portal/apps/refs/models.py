@@ -13,6 +13,7 @@ from django.urls import reverse
 import qrcode
 import base64
 import io
+from django.core import exceptions
 from django.core.files.base import ContentFile
 from transliterate import translit
 from itertools import chain
@@ -3123,8 +3124,47 @@ class RefCarsOrganizationAuctionStatus(models.Model):
         verbose_name_plural = "Автомобили для аукциона статус"
 
 
+def _coerce_uuid(value):
+    """Приводим значение к stdlib uuid.UUID: строки, драйвер Postgres, чужие UUID-классы."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, uuid.UUID):
+        return value
+    if isinstance(value, int):
+        return uuid.UUID(int=value)
+    return uuid.UUID(str(value).strip())
+
+
+class CompatUUIDField(models.UUIDField):
+    """
+    Django UUIDField.to_python() делает uuid.UUID(hex=value).
+    Если драйвер БД отдал не str и не stdlib UUID, hex= падает с
+    «не является верным UUID-ом» на вполне корректном идентификаторе.
+    """
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        path = 'django.db.models.UUIDField'
+        return name, path, args, kwargs
+
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
+
+    def to_python(self, value):
+        if value is None or value == '':
+            return None
+        try:
+            return _coerce_uuid(value)
+        except (ValueError, AttributeError, TypeError, OverflowError):
+            raise exceptions.ValidationError(
+                self.error_messages['invalid'],
+                code='invalid',
+                params={'value': value},
+            )
+
+
 class Auction(models.Model):
-    uid                 = models.UUIDField(max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    uid                 = CompatUUIDField(blank=True, unique=True, default=uuid.uuid4)
     status              = models.ForeignKey(RefCarsOrganizationAuctionStatus, on_delete=models.PROTECT, null=True, verbose_name="Статус")  
     number              = models.CharField('Номер', default='', null=True, max_length=25, blank=False)
     dataTime            = models.DateTimeField('Дата', default=datetime.now, blank=False)
@@ -3160,7 +3200,10 @@ class Auction(models.Model):
         return "{} ({} - {}) - {}".format(self.dataTime, self.store, self.user, self.start_price)
 
     def save(self, *args, **kwargs):
-
+        try:
+            self.uid = _coerce_uuid(self.uid) or uuid.uuid4()
+        except (ValueError, AttributeError, TypeError, OverflowError):
+            self.uid = uuid.uuid4()
         super().save(*args, **kwargs)
 
     class Meta:

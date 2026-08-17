@@ -25,9 +25,9 @@ urlpatterns = [
    path('stok_im/product/photo/<int:photo_id>/delete/', views.product_photo_delete, name='stok_im_product_photo_delete'),
 
    path('auction/',                          views.auction_list),
-   
-   path('auction/<slug:slug_auction>/auction_doc_refresh/',    views.auction_doc_refresh, name='slug'),
-   path('auction/<slug:slug_auction>/',                        views.auction_doc, name='slug'),
+   path('auction/new_lots/',                                   views.auction_doc_new),
+   path('auction/<uuid:slug_auction>/auction_doc_refresh/',    views.auction_doc_refresh, name='slug'),
+   path('auction/<uuid:slug_auction>/',                        views.auction_doc, name='slug'),
    path('auction/js/get_cars_lot_online/',                     views.auction_doc_get_cars),
    path('auction/js/get_cars_lot_online/<slug:slug>/',         views.auction_doc_get_cars_info, name='slug'),
 

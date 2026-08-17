@@ -72,6 +72,29 @@
 				</div>
 			</a>
 		</div>
+
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="{% url 'monitoring:cars_photos_list' %}" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #a855f7;">
+					<h5 class="mb-2" style="color: #002a5a;">Фото авто организации</h5>
+					<p class="text-muted small mb-2">Скачивание из 1С (<code>refresh_cars</code> → очередь <code>refresh_cars_photos</code>).</p>
+					<div class="d-flex gap-3 flex-wrap">
+						<div>
+							<div class="text-muted small">Без фото</div>
+							<div class="fs-4 fw-bold text-danger">{{ params.cars_no_photos }}</div>
+						</div>
+						<div>
+							<div class="text-muted small">Не скачано</div>
+							<div class="fs-4 fw-bold text-warning">{{ params.photos_pending_files }}</div>
+						</div>
+						<div>
+							<div class="text-muted small">В очереди</div>
+							<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.photos_queue_pending }}</div>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
 	</div>
 </div>
 {% endblock %}

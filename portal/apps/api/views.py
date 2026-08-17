@@ -4766,8 +4766,8 @@ def load_worksheets_events(worksheets_events):
         worksheet_events_object = get_worksheet_event(worksheets_event)
         if worksheet_events_object is None:
             raise ValueError(
-                'DocRLK not found for RLKUin={} and nested WorkSheet missing/invalid'.format(
-                    worksheets_event.get('RLKUin'),
+                'WorksheetEvent skipped: empty RLKUin and nested WorkSheet missing/invalid (Uin={})'.format(
+                    worksheets_event.get('Uin'),
                 )
             )
         return worksheet_events_object.uin
@@ -5140,34 +5140,62 @@ def get_organization(organization):
     return ref_organization
 
 def get_worksheet_event(worksheets_event):
-    
-    worksheet_uin   = worksheets_event['RLKUin']
-    worksheet       = DocRLK.objects.filter(uin=worksheet_uin).first()
+    """
+    Загрузка события РЛК.
+    Событие часто приходит раньше пакета Worksheets — поднимаем/создаём DocRLK по RLKUin
+    или из вложенного WorkSheet, чтобы не терять событие и не отдавать None.
+    """
+    worksheet_uin = worksheets_event.get('RLKUin') or ''
+    worksheet = DocRLK.objects.filter(uin=worksheet_uin).first() if worksheet_uin else None
+
     if not worksheet:
         # Событие может прийти раньше пакета Worksheets — создаём РЛК из вложенного WorkSheet.
-        nested = worksheets_event.get('WorkSheet') or worksheets_event.get('Worksheet')
-        if isinstance(nested, dict) and nested.get('Uin'):
-            worksheet = get_worksheet(nested)
-    if worksheet:
-        uin         = worksheets_event['Uin']
-        events = DocRLKEvents.objects.filter(uin = uin)
-        if len(events) == 0:
-            event_object = DocRLKEvents()
-        else:
-            event_object = events[0]
-        event_object.uin            = uin
-        event_object.rlk            = worksheet
-        event_object.dataTime       = worksheets_event['Date']
-        event_object.dataTimeEvent  = worksheets_event['DateEvent']
-        event_object.staff          = get_staff(worksheets_event['Staff'])
-        event_object.contacType     = get_contactType(worksheets_event['ContactType'])
-        event_object.comment        = worksheets_event['Comment'][:1024]
-        event_object.status         = get_status_event(worksheets_event['Status'])
-        event_object.save()
-        
-        return event_object
-    return None
-    
+        nested = (
+            worksheets_event.get('WorkSheet')
+            or worksheets_event.get('Worksheet')
+            or worksheets_event.get('RLK')
+        )
+        if isinstance(nested, dict):
+            if not nested.get('Uin') and worksheet_uin:
+                nested = dict(nested)
+                nested['Uin'] = worksheet_uin
+            if nested.get('Uin') and ('Number' in nested) and ('Unit' in nested):
+                worksheet = get_worksheet(nested)
+
+    if not worksheet and worksheet_uin:
+        # Минимальный РЛК-заглушка: полный пакет Worksheets позже дополнит поля.
+        worksheet = DocRLK(uin=worksheet_uin)
+        if worksheets_event.get('Date'):
+            worksheet.dataTime = worksheets_event['Date']
+        staff_payload = worksheets_event.get('Staff')
+        if isinstance(staff_payload, dict):
+            worksheet.staff = get_staff(staff_payload)
+        worksheet.save()
+
+    if not worksheet:
+        return None
+
+    uin = worksheets_event.get('Uin')
+    events = DocRLKEvents.objects.filter(uin=uin)
+    if len(events) == 0:
+        event_object = DocRLKEvents()
+    else:
+        event_object = events[0]
+    event_object.uin = uin
+    event_object.rlk = worksheet
+    event_object.dataTime = worksheets_event['Date']
+    event_object.dataTimeEvent = worksheets_event.get('DateEvent')
+    staff_payload = worksheets_event.get('Staff') or {}
+    event_object.staff = get_staff(staff_payload) if isinstance(staff_payload, dict) else None
+    contact_payload = worksheets_event.get('ContactType')
+    event_object.contacType = get_contactType(contact_payload) if contact_payload else None
+    event_object.comment = (worksheets_event.get('Comment') or '')[:1024]
+    status_payload = worksheets_event.get('Status')
+    event_object.status = get_status_event(status_payload) if status_payload else None
+    event_object.save()
+
+    return event_object
+
 def get_worksheet(worksheet):
     
     uin     = worksheet.get('Uin')
