@@ -26,7 +26,7 @@ _KSO_PAYLOAD = (
 
 @api_view(['GET'])
 def calculated_cumulative_data(request):
-    agreements = DocCarAgreement.objects.filter(bu_auto=True, active=True)
+    agreements = DocCarAgreement.objects.filter(unit__bu_auto=True, active=True)
 
     now = datetime.now()
     date_start = request.GET.get('date_start', '').strip()
