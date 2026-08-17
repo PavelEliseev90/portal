@@ -64,6 +64,8 @@
     <a class="btn-calculate-sm" href="/auction/"><span class="icon-doc"></span> Аукцион</a>
     <a class="btn-calculate-sm" href="{% url 'auction_avito:lot_list' %}"><span class="bi bi-hammer"></span> Аукцион Авито</a>
     <a class="btn-calculate-sm" href="{% url 'prices_car:calculations_list' %}"><span class="icon-mbri-bulleted-list"></span> Калькуляции (новые авто)</a>
+    <a class="btn-calculate-sm" href="{% url 'prices_car_bu:cumulative_list' %}"><span class="bi bi-send"></span> Расчётные КВП</a>
+    <a class="btn-calculate-sm" href="{% url 'monitoring:cumulative_send_list' %}"><span class="bi bi-arrow-repeat"></span> Очередь КВП в 1С</a>
     <a class="btn-calculate-sm" href="" title="Проверка правил по ДЦ"><span class="bi bi-shield-check"></span> Настройки и правила по ДЦ</a>
   </div>
   <p class="text-muted small mt-2 mb-0">Обмен расчётными данными соглашений (КВП) с 1С: <code class="small">POST/GET /api/calculated_cumulative_data/</code></p>

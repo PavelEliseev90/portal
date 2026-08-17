@@ -6,10 +6,67 @@
 
 {% block content %}
 <div class="portal-page">
-  <div class="portal-header">
-    <h2>Расчётные данные кумулятива</h2>
-    <p class="text-muted mb-0">Записей по фильтру: {{ filtered_count }}</p>
+  <div class="portal-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h2>Расчётные данные кумулятива</h2>
+      <p class="text-muted mb-0">
+        Записей по фильтру: {{ filtered_count }}
+        · не отправлено: <strong>{{ unsent_count }}</strong>
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'monitoring:cumulative_send_list' %}">Очередь мониторинга</a>
+      {% if unsent_count and filters.send_1c != '1' %}
+      <form method="post" action="{% url 'prices_car_bu:cumulative_send_1c_batch' %}{% if query_string %}?{{ query_string }}{% endif %}"
+            onsubmit="return confirm('Отправить в 1С неотправленные по текущему фильтру (не больше {{ send_limit }})?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-sm">Отправить неотправленные (до {{ send_limit }})</button>
+      </form>
+      {% endif %}
+    </div>
   </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} py-2 mb-3">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  {% if send_results %}
+  <div class="portal-panel mb-3">
+    <h6 class="mb-2">Результат отправки в 1С</h6>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Запись</th>
+            <th>База</th>
+            <th>Статус</th>
+            <th>HTTP</th>
+            <th>Ответ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in send_results %}
+          <tr class="{% if r.ok %}table-success{% else %}table-danger{% endif %}">
+            <td>
+              <a href="{% url 'prices_car_bu:cumulative_detail' r.id %}">{{ r.title }}</a>
+              <div class="small text-muted">id={{ r.id }}</div>
+            </td>
+            <td>{{ r.target_name|default:"—" }}</td>
+            <td>
+              {% if r.ok %}OK{% else %}Ошибка{% endif %}
+              {% if r.error %}<div class="small">{{ r.error }}</div>{% endif %}
+            </td>
+            <td>{{ r.status_code|default:"—" }}</td>
+            <td class="small" style="white-space: pre-wrap; max-width: 28rem;">{{ r.text|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="portal-panel mb-3">
     <form method="get" class="row g-3 align-items-end">
@@ -53,6 +110,14 @@
           <option value="0" {% if filters.send_1c == '0' %}selected{% endif %}>Не отправлено</option>
         </select>
       </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label small text-muted mb-1">База 1С</label>
+        <select class="form-select" name="target">
+          <option value="">Все</option>
+          <option value="alfa" {% if filters.target == 'alfa' %}selected{% endif %}>Альфа-Авто</option>
+          <option value="kors" {% if filters.target == 'kors' %}selected{% endif %}>КорсАвто</option>
+        </select>
+      </div>
       <div class="col-12 col-lg-1">
         <button type="submit" class="btn btn-primary w-100">
           <span class="icon-mbri-search"></span>
@@ -90,6 +155,7 @@
             <th class="text-white border-0">Показатель</th>
             <th class="text-white border-0 text-end">Сумма</th>
             <th class="text-white border-0">Автор</th>
+            <th class="text-white border-0">База 1С</th>
             <th class="text-white border-0">1С</th>
             <th class="text-white border-0 pe-3"></th>
           </tr>
@@ -116,19 +182,33 @@
             <td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
             <td class="small">{{ row.author|default:"—" }}</td>
             <td>
+              {% if row.target == 'alfa' %}
+              <span class="badge bg-primary">{{ row.target_name }}</span>
+              {% else %}
+              <span class="badge bg-warning text-dark">{{ row.target_name }}</span>
+              {% endif %}
+            </td>
+            <td>
               {% if row.send_1c %}
               <span class="badge bg-success">Да</span>
               {% else %}
               <span class="badge bg-secondary">Нет</span>
               {% endif %}
             </td>
-            <td class="pe-3" onclick="event.stopPropagation();">
+            <td class="pe-3 text-nowrap" onclick="event.stopPropagation();">
+              {% if not row.send_1c %}
+              <form method="post" action="{% url 'prices_car_bu:cumulative_send_1c' row.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'prices_car_bu:cumulative_list' %}{% if query_string %}?{{ query_string }}{% endif %}">
+                <button type="submit" class="btn btn-sm btn-success">Отправить</button>
+              </form>
+              {% endif %}
               <a href="{% url 'prices_car_bu:cumulative_detail' row.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="9" class="text-center text-muted py-4">Нет записей</td>
+            <td colspan="10" class="text-center text-muted py-4">Нет записей</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -21,6 +21,13 @@ from .cars_photos import (
     cleanup_photo_queue,
     enqueue_pending_photo_retries,
 )
+from prices_car_bu.views import (
+    CUMULATIVE_SEND_BATCH_LIMIT,
+    attach_cumulative_1c_target,
+    cumulative_hub_counts,
+    cumulative_unsent_qs,
+    send_cumulative_item,
+)
 
 
 def _staff_required(user):
@@ -70,6 +77,7 @@ def hub(request):
         'type': 'monitoring_hub',
         **_exchange_errors_counts(),
         **cars_photos_hub_counts(),
+        **cumulative_hub_counts(),
     }
     return render(request, 'monitoring/hub.html', {'params': params})
 
@@ -264,6 +272,8 @@ def cars_photos_list(request):
         qs = (
             RefCarsOrganizationFiles.objects.filter(
                 Q(file='') | Q(file__isnull=True),
+                сars_organization__quantity__gt=0,
+                сars_organization__is_new=False,
             )
             .exclude(url='')
             .select_related('сars_organization', 'сars_organization__unit', 'сars_organization__store')
@@ -279,7 +289,7 @@ def cars_photos_list(request):
     else:
         tab = 'no_photos'
         qs = (
-            RefCarsOrganization.objects.filter(quantity__gt=0)
+            RefCarsOrganization.objects.filter(quantity__gt=0, is_new=False)
             .annotate(
                 downloaded=Count(
                     'refcarsorganizationfiles',
@@ -387,3 +397,147 @@ def cars_photos_enqueue_retries(request):
     if q:
         query['q'] = q
     return redirect(f"{reverse('monitoring:cars_photos_list')}?{urlencode(query)}")
+
+
+def _cumulative_send_qs(target=''):
+    qs = cumulative_unsent_qs()
+    if target == 'alfa':
+        qs = qs.filter(agreement__unit__ib__alfa=True)
+    elif target == 'kors':
+        qs = qs.filter(
+            Q(agreement__unit__ib__alfa=False)
+            | Q(agreement__unit__ib__isnull=True)
+            | Q(agreement__unit__isnull=True)
+        )
+    return qs
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def cumulative_send_list(request):
+    """Очередь неотправленного расчётного КВП: Альфа-Авто / КорсАвто."""
+    target = (request.GET.get('target') or '').strip()
+    if target not in ('', 'alfa', 'kors'):
+        target = ''
+    qs = _cumulative_send_qs(target)
+
+    per_page = min(int(request.GET.get('per_page', 50) or 50), 100)
+    paginator = Paginator(qs, per_page)
+    page_num = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_num)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    for item in page_obj.object_list:
+        attach_cumulative_1c_target(item)
+
+    get_copy = request.GET.copy()
+    if 'page' in get_copy:
+        get_copy.pop('page')
+    query_without_page = get_copy.urlencode()
+
+    send_results = request.session.pop('monitoring_cumulative_send_results', None)
+    counts = cumulative_hub_counts()
+
+    params = {
+        'type': 'monitoring_cumulative_send',
+        'target': target,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'per_page': per_page,
+        'query_without_page': query_without_page,
+        'total_count': paginator.count,
+        'send_limit': CUMULATIVE_SEND_BATCH_LIMIT,
+        'send_results': send_results or [],
+        **counts,
+    }
+    return render(request, 'monitoring/cumulative_send.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def cumulative_send(request):
+    """Отправить одну или все (до 200) неотправленные записи расчётного КВП."""
+    target = (request.POST.get('target') or '').strip()
+    if target not in ('', 'alfa', 'kors'):
+        target = ''
+    item_id = (request.POST.get('id') or '').strip()
+    send_all = request.POST.get('send_all') == '1'
+    results = []
+
+    if send_all:
+        for item in list(_cumulative_send_qs(target)[:CUMULATIVE_SEND_BATCH_LIMIT]):
+            try:
+                item.refresh_from_db()
+            except Exception:
+                continue
+            if item.send_1c:
+                continue
+            try:
+                results.append(send_cumulative_item(item))
+            except Exception as exc:
+                results.append({
+                    'id': item.pk,
+                    'title': f'#{item.pk}',
+                    'ok': False,
+                    'status_code': None,
+                    'text': '',
+                    'error': str(exc),
+                    'target': None,
+                    'target_name': None,
+                })
+    elif item_id:
+        try:
+            pk = int(item_id)
+        except (TypeError, ValueError):
+            pk = None
+        if pk is not None:
+            from prices_car_bu.models import CalculatedCumulativeData
+            item = CalculatedCumulativeData.objects.select_related(
+                'agreement__unit__ib',
+                'agreement__cars',
+                'indicatorKVP',
+            ).filter(pk=pk).first()
+            if item is None:
+                results.append({
+                    'id': pk,
+                    'title': f'#{pk}',
+                    'ok': False,
+                    'status_code': None,
+                    'text': '',
+                    'error': 'Запись не найдена',
+                    'target': None,
+                    'target_name': None,
+                })
+            else:
+                try:
+                    results.append(send_cumulative_item(item))
+                except Exception as exc:
+                    results.append({
+                        'id': pk,
+                        'title': f'#{pk}',
+                        'ok': False,
+                        'status_code': None,
+                        'text': '',
+                        'error': str(exc),
+                        'target': None,
+                        'target_name': None,
+                    })
+
+    request.session['monitoring_cumulative_send_results'] = results
+    ok_n = sum(1 for r in results if r.get('ok'))
+    fail_n = len(results) - ok_n
+    if results:
+        messages.info(
+            request,
+            'Отправка расчётных КВП: успешно {}, ошибок {} (детали ниже).'.format(ok_n, fail_n),
+        )
+    query = {}
+    if target:
+        query['target'] = target
+    url = reverse('monitoring:cumulative_send_list')
+    if query:
+        return redirect(f'{url}?{urlencode(query)}')
+    return redirect(url)

@@ -10857,6 +10857,7 @@ def auction_doc_get_cars_info(request, slug):
                        modification_name = F('modification_autoru__name'),
                        model_name   = F('modification_autoru__model__name'),
                        mark_name    = F('modification_autoru__model__mark__name'),
+                       rlk_id       = F('lo__rlk_id'),
                        url          = F('prev_photo')))
     for car in data:
         car['url'] = get_url_images(car['slug'])
