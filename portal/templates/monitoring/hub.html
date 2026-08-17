@@ -88,8 +88,10 @@
 							<div class="fs-4 fw-bold text-warning">{{ params.photos_pending_files }}</div>
 						</div>
 						<div>
-							<div class="text-muted small">В очереди</div>
-							<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.photos_queue_pending }}</div>
+							<div class="text-muted small">Зависшие lock</div>
+							<div class="fs-4 fw-bold {% if params.photos_queue_locked_stale %}text-danger{% endif %}">
+								{{ params.photos_queue_locked_stale|default:0 }}
+							</div>
 						</div>
 					</div>
 				</div>

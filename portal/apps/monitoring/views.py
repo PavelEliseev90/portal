@@ -16,7 +16,11 @@ from datetime import timedelta
 from api.models import Exchange1CErrorLog
 from refs.models import RefCarsOrganization, RefCarsOrganizationFiles, RefStore
 
-from .cars_photos import cars_photos_hub_counts
+from .cars_photos import (
+    cars_photos_hub_counts,
+    cleanup_photo_queue,
+    enqueue_pending_photo_retries,
+)
 
 
 def _staff_required(user):
@@ -336,12 +340,49 @@ def cars_photos_retry(request, pk):
     ).exclude(url='').count()
 
     if pending:
-        retry_pending_photos_async(car.pk)
+        retry_pending_photos_async(car.pk, remove_existing_tasks=True)
         messages.info(request, f'Авто {car.vin or car.slug}: в очередь на повтор — {pending} фото.')
     else:
         messages.warning(request, f'Авто {car.vin or car.slug}: нет URL для повторной загрузки.')
 
     query = {'tab': request.POST.get('tab', 'no_photos')}
+    q = (request.POST.get('q') or '').strip()
+    if q:
+        query['q'] = q
+    return redirect(f"{reverse('monitoring:cars_photos_list')}?{urlencode(query)}")
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def cars_photos_cleanup(request):
+    """Сброс зависших lock, удаление failed и дубликатов в очереди фото."""
+    result = cleanup_photo_queue(dedupe=True, delete_failed=True)
+    messages.success(
+        request,
+        'Очередь фото: снято lock — {released}, удалено failed — {failed_deleted}, '
+        'дубликатов — {duplicates_deleted}.'.format(**result),
+    )
+    query = {'tab': request.POST.get('tab', 'no_photos')}
+    q = (request.POST.get('q') or '').strip()
+    if q:
+        query['q'] = q
+    return redirect(f"{reverse('monitoring:cars_photos_list')}?{urlencode(query)}")
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def cars_photos_enqueue_retries(request):
+    """Поставить в очередь повторную загрузку по URL из БД (до 500 авто)."""
+    limit = min(int(request.POST.get('limit', 500) or 500), 2000)
+    queued = enqueue_pending_photo_retries(limit=limit)
+    messages.info(
+        request,
+        f'В очередь refresh_cars_photos поставлено авто для повтора: {queued} '
+        f'(лимит {limit}). Убедитесь, что воркер process_tasks запущен.',
+    )
+    query = {'tab': request.POST.get('tab', 'pending_files')}
     q = (request.POST.get('q') or '').strip()
     if q:
         query['q'] = q

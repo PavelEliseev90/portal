@@ -205,7 +205,7 @@ def retry_pending_photos(car: RefCarsOrganization) -> int:
     return len(photos)
 
 
-@background(queue='refresh_cars_photos')
+@background(queue='refresh_cars_photos', remove_existing_tasks=True)
 def load_photos_async(car_id: int, photos: list) -> None:
     """Фоновая загрузка фото после refresh_cars."""
     try:
@@ -219,7 +219,7 @@ def load_photos_async(car_id: int, photos: list) -> None:
         logger.exception('load_photos_async failed car_id=%s', car_id)
 
 
-@background(queue='refresh_cars_photos')
+@background(queue='refresh_cars_photos', remove_existing_tasks=True)
 def retry_pending_photos_async(car_id: int) -> None:
     try:
         car = RefCarsOrganization.objects.get(pk=car_id)
