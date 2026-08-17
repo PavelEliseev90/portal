@@ -36,34 +36,80 @@
 		</div>
 		<div class="col-12 col-md-4 col-lg-2">
 			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #3b82f6;">
-				<div class="text-muted small">Очередь (ожидают)</div>
-				<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.photos_queue_pending }}</div>
+				<div class="text-muted small">Готовы к запуску</div>
+				<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.photos_queue_ready }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #22c55e;">
+				<div class="text-muted small">В работе (свежий lock)</div>
+				<div class="fs-3 fw-bold text-success">{{ params.photos_queue_locked_active }}</div>
 			</div>
 		</div>
 		<div class="col-12 col-md-4 col-lg-2">
 			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #64748b;">
-				<div class="text-muted small">Очередь (заняты)</div>
-				<div class="fs-3 fw-bold text-secondary">{{ params.photos_queue_locked }}</div>
+				<div class="text-muted small">Зависшие lock</div>
+				<div class="fs-3 fw-bold {% if params.photos_queue_locked_stale %}text-danger{% else %}text-secondary{% endif %}">
+					{{ params.photos_queue_locked_stale }}
+				</div>
 			</div>
 		</div>
 		<div class="col-12 col-md-4 col-lg-2">
 			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #dc2626;">
-				<div class="text-muted small">Очередь (ошибки)</div>
+				<div class="text-muted small">Ошибки очереди</div>
 				<div class="fs-3 fw-bold text-danger">{{ params.photos_queue_failed }}</div>
-			</div>
-		</div>
-		<div class="col-12 col-md-4 col-lg-2">
-			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #a855f7;">
-				<div class="text-muted small">Авто с «битым» URL</div>
-				<div class="fs-3 fw-bold" style="color: #7c3aed;">{{ params.cars_pending_photo_files }}</div>
 			</div>
 		</div>
 	</div>
 
-	<div class="portal-panel mb-3 small text-muted">
-		<strong>Как работает:</strong> 1С шлёт <code>Photos[]</code> в <code>refresh_cars</code> → задачи попадают в очередь
-		<code>refresh_cars_photos</code> (воркер <code>process_tasks --queue refresh_cars_photos</code>).
-		Если воркер не запущен или URL недоступен с сервера — фото не скачаются.
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0 small">
+				<div class="text-muted">Всего задач в очереди</div>
+				<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.photos_queue_total }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0 small">
+				<div class="text-muted">Отложены (run_at в будущем)</div>
+				<div class="fs-4 fw-bold text-secondary">{{ params.photos_queue_scheduled_future }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="portal-panel h-100 mb-0 small text-muted">
+				Lock считается <strong>зависшим</strong>, если старше {{ params.photos_queue_max_run_sec }} с
+				(настройка <code>MAX_RUN_TIME</code>). Такие задачи воркер не подхватывает.
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel mb-3">
+		<h6 class="mb-2">Обслуживание очереди</h6>
+		<p class="small text-muted mb-3">
+			Воркер: <code>python manage.py process_tasks --queue refresh_cars_photos</code>
+			(должен работать постоянно как служба).
+		</p>
+		<div class="d-flex flex-wrap gap-2">
+			<form method="post" action="{% url 'monitoring:cars_photos_cleanup' %}" class="d-inline"
+				onsubmit="return confirm('Сбросить зависшие lock, удалить failed и дубликаты по car_id?');">
+				{% csrf_token %}
+				<input type="hidden" name="tab" value="{{ params.tab }}">
+				{% if params.q %}<input type="hidden" name="q" value="{{ params.q }}">{% endif %}
+				<button type="submit" class="btn btn-outline-danger btn-sm">
+					Очистить очередь (lock + failed + дубликаты)
+				</button>
+			</form>
+			<form method="post" action="{% url 'monitoring:cars_photos_enqueue_retries' %}" class="d-inline"
+				onsubmit="return confirm('Поставить в очередь повторную загрузку для авто с URL без file (до 500)?');">
+				{% csrf_token %}
+				<input type="hidden" name="tab" value="{{ params.tab }}">
+				<input type="hidden" name="limit" value="500">
+				{% if params.q %}<input type="hidden" name="q" value="{{ params.q }}">{% endif %}
+				<button type="submit" class="btn btn-outline-primary btn-sm">
+					Повторить загрузку по URL (500 авто)
+				</button>
+			</form>
+		</div>
 	</div>
 
 	<ul class="nav nav-tabs mb-3">
