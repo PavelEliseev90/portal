@@ -124,10 +124,21 @@ def _indicator_kvp_code(indicator):
 
 
 def _agreement_cumulative_1c_url(agreement):
+    """Совместимость: только URL (Альфа или КорсАвто)."""
+    url, _code, _name = resolve_agreement_cumulative_1c_target(agreement)
+    return url
+
+
+def resolve_agreement_cumulative_1c_target(agreement):
+    """
+    Куда слать расчётные КВП: Альфа-Авто, если у подразделения ИБ alfa=True,
+    иначе КорсАвто. Совпадает с логикой estimation_send_1c.
+    """
     unit = agreement.unit if agreement else None
-    if unit and getattr(unit, 'ib_id', None) and unit.ib.alfa:
-        return url_hs_alfa_auto
-    return url_hs_kors_auto
+    ib = getattr(unit, 'ib', None) if unit is not None else None
+    if ib is not None and getattr(ib, 'alfa', False):
+        return url_hs_alfa_auto, 'alfa', 'Альфа-Авто'
+    return url_hs_kors_auto, 'kors', 'КорсАвто'
 
 
 def build_agreement_cumulative_1c_payload(row, delete=False):
@@ -147,7 +158,19 @@ def send_agreement_cumulative_to_1c(row):
     """Отправить расчётные данные соглашения в 1С. При успехе выставляет send_1c."""
     from prices_car_bu.models import CalculatedCumulativeData
 
-    result = {'ok': False, 'status_code': None, 'error': None}
+    url, target, target_name = resolve_agreement_cumulative_1c_target(
+        getattr(row, 'agreement', None),
+    )
+    result = {
+        'ok': False,
+        'status_code': None,
+        'error': None,
+        'text': '',
+        'target': target,
+        'target_name': target_name,
+        'url': url,
+        'id': getattr(row, 'pk', None),
+    }
     agreement = row.agreement
     if not agreement or not (agreement.uin or '').strip():
         result['error'] = 'Пустой uin соглашения'
@@ -157,12 +180,9 @@ def send_agreement_cumulative_to_1c(row):
         return result
     try:
         js_data = build_agreement_cumulative_1c_payload(row, delete=False)
-        response = requests.post(
-            _agreement_cumulative_1c_url(agreement),
-            json=js_data,
-            timeout=60,
-        )
+        response = requests.post(url, json=js_data, timeout=60)
         result['status_code'] = response.status_code
+        result['text'] = (response.text or '')[:4000]
         if 200 <= response.status_code < 300:
             result['ok'] = True
             CalculatedCumulativeData.objects.filter(pk=row.pk).update(send_1c=True)
@@ -188,7 +208,7 @@ def delete_agreement_cumulative_from_1c(row):
     try:
         js_data = build_agreement_cumulative_1c_payload(row, delete=True)
         response = requests.post(
-            _agreement_cumulative_1c_url(agreement),
+            resolve_agreement_cumulative_1c_target(agreement)[0],
             json=js_data,
             timeout=60,
         )

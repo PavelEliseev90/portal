@@ -20,7 +20,7 @@
       <form method="post" action="{% url 'prices_car_bu:cumulative_send_1c' item.id %}" class="d-inline">
         {% csrf_token %}
         <button type="submit" class="btn btn-success btn-sm">
-          {% if item.send_1c %}Повторить отправку в 1С{% else %}Отправить в 1С{% endif %}
+          {% if item.send_1c %}Повторить отправку в {{ item.target_name }}{% else %}Отправить в {{ item.target_name }}{% endif %}
         </button>
       </form>
       <form method="post" action="{% url 'prices_car_bu:cumulative_delete' item.id %}" class="d-inline"
@@ -56,6 +56,17 @@
                 {% else %}
                 <span class="badge bg-secondary">Нет</span>
                 {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th class="text-muted">База 1С</th>
+              <td>
+                {% if item.target == 'alfa' %}
+                <span class="badge bg-primary">{{ item.target_name }}</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">{{ item.target_name }}</span>
+                {% endif %}
+                <div class="small text-muted mt-1">По ИБ подразделения: alfa → Альфа-Авто, иначе КорсАвто</div>
               </td>
             </tr>
           </tbody>

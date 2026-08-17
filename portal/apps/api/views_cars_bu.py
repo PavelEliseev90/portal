@@ -26,7 +26,7 @@ _KSO_PAYLOAD = (
 
 @api_view(['GET'])
 def calculated_cumulative_data(request):
-    agreements = DocCarAgreement.objects.filter(unit__buauto=True, active=True)
+    agreements = DocCarAgreement.objects.filter(bu_auto=True, active=True)
 
     now = datetime.now()
     date_start = request.GET.get('date_start', '').strip()
@@ -276,17 +276,27 @@ def _upsert_cumulative(agreement, indicator_filter, amount, author, comment):
             'send_1c': False,
         },
     )
+    return obj, created
+
+
+def _send_cumulative_row(obj, created):
+    """Отправка в 1С после commit. Ошибка 1С не откатывает сохранение."""
     row = CalculatedCumulativeData.objects.select_related(
         'agreement__unit__ib',
         'indicatorKVP',
     ).get(pk=obj.pk)
     send_result = send_agreement_cumulative_to_1c(row)
+    indicator = row.indicatorKVP
     return {
-        'indicator': indicator.name or indicator_filter,
+        'indicator': (indicator.name if indicator else '') or '',
         'id': obj.pk,
         'created': created,
         'amount': obj.amount,
         'send_1c': send_result.get('ok', False),
+        'target': send_result.get('target'),
+        'target_name': send_result.get('target_name'),
+        'status_code': send_result.get('status_code'),
+        'error': send_result.get('error'),
     }
 
 
@@ -324,6 +334,7 @@ def calculated_cumulative_data_create_or_edit(request):
     is_opfu = _is_opfu(data.get('ОПФУ', data.get('opfu')))
 
     saved = []
+    pending = []
     errors = []
 
     try:
@@ -331,13 +342,14 @@ def calculated_cumulative_data_create_or_edit(request):
             if is_opfu:
                 for amount_key, comment_key, code, indicator_filter in _KSO_PAYLOAD:
                     try:
-                        saved.append(_upsert_cumulative(
+                        obj, created = _upsert_cumulative(
                             agreement,
                             indicator_filter,
                             _to_float(data.get(amount_key)),
                             author,
                             _to_str(data.get(comment_key)),
-                        ))
+                        )
+                        pending.append((obj, created))
                     except ValueError as exc:
                         errors.append({
                             'indicator': code,
@@ -346,13 +358,14 @@ def calculated_cumulative_data_create_or_edit(request):
                         })
             else:
                 try:
-                    saved.append(_upsert_cumulative(
+                    obj, created = _upsert_cumulative(
                         agreement,
                         {'bu_wheels': True},
                         _to_float(data.get('КВРасчетнаяБуРезина')),
                         author,
                         _to_str(data.get('КВРасчетнаяБуРезинаКомментарий', '')),
-                    ))
+                    )
+                    pending.append((obj, created))
                 except ValueError as exc:
                     errors.append({
                         'indicator': 'bu_wheels',
@@ -386,6 +399,9 @@ def calculated_cumulative_data_create_or_edit(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             safe=False,
         )
+
+    for obj, created in pending:
+        saved.append(_send_cumulative_row(obj, created))
 
     return JsonResponse(
         {

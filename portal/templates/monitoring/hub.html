@@ -77,7 +77,7 @@
 			<a href="{% url 'monitoring:cars_photos_list' %}" class="text-decoration-none">
 				<div class="portal-panel h-100" style="border-left: 4px solid #a855f7;">
 					<h5 class="mb-2" style="color: #002a5a;">Фото авто организации</h5>
-					<p class="text-muted small mb-2">Скачивание из 1С (<code>refresh_cars</code> → очередь <code>refresh_cars_photos</code>).</p>
+					<p class="text-muted small mb-2">Б/у авто с пробегом. Скачивание из 1С (<code>refresh_cars</code> → очередь <code>refresh_cars_photos</code>).</p>
 					<div class="d-flex gap-3 flex-wrap">
 						<div>
 							<div class="text-muted small">Без фото</div>
@@ -92,6 +92,29 @@
 							<div class="fs-4 fw-bold {% if params.photos_queue_locked_stale %}text-danger{% endif %}">
 								{{ params.photos_queue_locked_stale|default:0 }}
 							</div>
+						</div>
+					</div>
+				</div>
+			</a>
+		</div>
+
+		<div class="col-12 col-md-6 col-xl-3">
+			<a href="{% url 'monitoring:cumulative_send_list' %}" class="text-decoration-none">
+				<div class="portal-panel h-100" style="border-left: 4px solid #14b8a6;">
+					<h5 class="mb-2" style="color: #002a5a;">Расчётные КВП в 1С</h5>
+					<p class="text-muted small mb-2">Очередь неотправленного кумулятива. Альфа-Авто или КорсАвто по ИБ подразделения.</p>
+					<div class="d-flex gap-3 flex-wrap">
+						<div>
+							<div class="text-muted small">Не отправлено</div>
+							<div class="fs-4 fw-bold text-danger">{{ params.cumulative_unsent }}</div>
+						</div>
+						<div>
+							<div class="text-muted small">Альфа</div>
+							<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.cumulative_unsent_alfa }}</div>
+						</div>
+						<div>
+							<div class="text-muted small">КорсАвто</div>
+							<div class="fs-4 fw-bold" style="color: #002a5a;">{{ params.cumulative_unsent_kors }}</div>
 						</div>
 					</div>
 				</div>

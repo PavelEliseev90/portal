@@ -297,6 +297,27 @@
             box-shadow: 0 4px 12px rgba(245, 130, 32, 0.35);
         }
 
+        .doc-car-ext-link {
+            color: var(--auction-accent);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(245, 130, 32, 0.35);
+            background: #fff;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .doc-car-ext-link:hover {
+            color: #d66a14;
+            background: rgba(245, 130, 32, 0.08);
+            border-color: var(--auction-accent);
+        }
+
         .doc-edit-link:active {
             transform: translateY(0);
             box-shadow: 0 1px 4px rgba(245, 130, 32, 0.3);
@@ -1023,12 +1044,24 @@
 							</div>
 					</div>
 
-					<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
-							{% if structure.success %}
+					<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+							<div class="d-flex flex-wrap align-items-center gap-2">
+								{% if structure.success %}
 									<span class="doc-status-badge success"><span class="icon-mbri-success"></span>Данные проверены</span>
-							{% else %}
+								{% else %}
 									<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>
-							{% endif %}
+								{% endif %}
+								{% if structure.car.slug %}
+									<a class="doc-car-ext-link" href="/cars/{{ structure.car.slug }}/" target="_blank" rel="noopener">
+										<span class="icon-mbri-preview"></span> Карточка авто
+									</a>
+								{% endif %}
+								{% if structure.car.lo.rlk_id %}
+									<a class="doc-car-ext-link" href="/eco/{{ structure.car.lo.rlk_id }}/" target="_blank" rel="noopener">
+										<span class="icon-mbri-search"></span> Интерактивная оценка
+									</a>
+								{% endif %}
+							</div>
 
 							<div style="display: flex; gap: 0.75rem;">
 								<label class="doc-edit-link" id="edit_car_info_{{structure.car.slug}}"><span class="icon-mbri-edit"></span> Редактировать</label>
@@ -1438,6 +1471,18 @@
 							<div class="confirmation-text">
 								<span class="icon-mbri-success"></span>
 								Данные по автомобилю проверены, информация достоверна и готова к передаче на портал аукциона
+							</div>
+							<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+								{% if structure.car.slug %}
+									<a class="doc-car-ext-link" href="/cars/{{ structure.car.slug }}/" target="_blank" rel="noopener">
+										<span class="icon-mbri-preview"></span> Карточка авто
+									</a>
+								{% endif %}
+								{% if structure.car.lo.rlk_id %}
+									<a class="doc-car-ext-link" href="/eco/{{ structure.car.lo.rlk_id }}/" target="_blank" rel="noopener">
+										<span class="icon-mbri-search"></span> Интерактивная оценка
+									</a>
+								{% endif %}
 							</div>
 							<div class="modal-radio-group">
 								<input type="radio" class="btn-check" name="cars_list_data_{{structure.car.slug}}_success" id="cars_list_data_{{structure.car.slug}}_success_radio1" autocomplete="off"  {% if structure.success == False %} checked {% endif %} value="false">
@@ -2224,8 +2269,14 @@
 					html_list += '				</div>'
 					html_list += '			</div>'
 					html_list += '		</div>'
-					html_list += '		<div class="d-flex flex-wrap justify-content-between align-items-center mt-3">'
-					html_list += '			<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>'
+					html_list += '		<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">'
+					html_list += '			<div class="d-flex flex-wrap align-items-center gap-2">'
+					html_list += '				<span class="doc-status-badge danger"><span class="icon-mbri-close"></span>Проверьте данные</span>'
+					html_list += '				<a class="doc-car-ext-link" href="/cars/' + id + '/" target="_blank" rel="noopener"><span class="icon-mbri-preview"></span> Карточка авто</a>'
+					if (obj.rlk_id) {
+						html_list += '				<a class="doc-car-ext-link" href="/eco/' + obj.rlk_id + '/" target="_blank" rel="noopener"><span class="icon-mbri-search"></span> Интерактивная оценка</a>'
+					}
+					html_list += '			</div>'
 					html_list += '			<div style="display: flex; gap: 0.75rem;">'
 					html_list += '				<label class="doc-edit-link" id="edit_car_info_' + id + '"><span class="icon-mbri-edit"></span> Редактировать</label>'
 					html_list += '				<button type="button" class="btn btn-sm btn-outline-danger" style="border-radius: 0.5rem;" onclick="' + click_delete + '" title="Удалить"><span class="icon-mbri-trash"></span></button>'

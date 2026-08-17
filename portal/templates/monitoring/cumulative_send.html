@@ -1,0 +1,199 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Очередь КВП в 1С {% endblock %}
+{% block title_navbar %} — Очередь КВП {% endblock %}
+
+{% block content %}
+<style>
+  .kvp-send-ok { background: #e7f6ed; }
+  .kvp-send-fail { background: #fde8e8; }
+  .kvp-resp {
+    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.72rem; max-height: 8rem; overflow: auto; margin: 0.25rem 0 0;
+    padding: 0.35rem 0.45rem; border-radius: 0.35rem; background: #f6f8fa;
+  }
+</style>
+<div class="container-fluid py-3">
+	<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+		<div>
+			<h2 class="mb-1" style="color: #002a5a;">Очередь отправки расчётных КВП</h2>
+			<p class="text-muted small mb-0">
+				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+				· неотправленные записи (<code>send_1c=False</code>)
+				· Альфа-Авто, если у подразделения ИБ <code>alfa</code>, иначе КорсАвто
+				· за раз не больше {{ params.send_limit }}
+			</p>
+		</div>
+		<div class="d-flex flex-wrap gap-2">
+			<a class="btn btn-outline-secondary btn-sm" href="{% url 'prices_car_bu:cumulative_list' %}?send_1c=0">Список кумулятива</a>
+			{% if params.total_count %}
+			<form method="post" action="{% url 'monitoring:cumulative_send' %}"
+				onsubmit="return confirm('Отправить в 1С до {{ params.send_limit }} записей из очереди?');">
+				{% csrf_token %}
+				{% if params.target %}<input type="hidden" name="target" value="{{ params.target }}">{% endif %}
+				<input type="hidden" name="send_all" value="1">
+				<button type="submit" class="btn btn-success btn-sm">Отправить все (до {{ params.send_limit }})</button>
+			</form>
+			{% endif %}
+		</div>
+	</div>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }} py-2 small mb-3">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4">
+			<a href="{% url 'monitoring:cumulative_send_list' %}" class="text-decoration-none">
+				<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #ef4444;">
+					<div class="text-muted small">Не отправлено</div>
+					<div class="fs-3 fw-bold text-danger">{{ params.cumulative_unsent }}</div>
+				</div>
+			</a>
+		</div>
+		<div class="col-12 col-md-4">
+			<a href="{% url 'monitoring:cumulative_send_list' %}?target=alfa" class="text-decoration-none">
+				<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #00509d;">
+					<div class="text-muted small">В Альфа-Авто</div>
+					<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.cumulative_unsent_alfa }}</div>
+				</div>
+			</a>
+		</div>
+		<div class="col-12 col-md-4">
+			<a href="{% url 'monitoring:cumulative_send_list' %}?target=kors" class="text-decoration-none">
+				<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #f59e0b;">
+					<div class="text-muted small">В КорсАвто</div>
+					<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.cumulative_unsent_kors }}</div>
+				</div>
+			</a>
+		</div>
+	</div>
+
+	<ul class="nav nav-tabs mb-3">
+		<li class="nav-item">
+			<a class="nav-link {% if not params.target %}active{% endif %}" href="{% url 'monitoring:cumulative_send_list' %}">Все</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.target == 'alfa' %}active{% endif %}" href="{% url 'monitoring:cumulative_send_list' %}?target=alfa">Альфа-Авто</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.target == 'kors' %}active{% endif %}" href="{% url 'monitoring:cumulative_send_list' %}?target=kors">КорсАвто</a>
+		</li>
+	</ul>
+
+	{% if params.send_results %}
+	<div class="portal-panel mb-3">
+		<h6 class="mb-2">Результат отправки</h6>
+		<div class="table-responsive">
+			<table class="table table-sm align-middle mb-0">
+				<thead>
+					<tr>
+						<th>Запись</th>
+						<th>База</th>
+						<th>Статус</th>
+						<th>HTTP</th>
+						<th>Ответ</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for r in params.send_results %}
+					<tr class="{% if r.ok %}kvp-send-ok{% else %}kvp-send-fail{% endif %}">
+						<td>
+							<a href="{% url 'prices_car_bu:cumulative_detail' r.id %}">{{ r.title }}</a>
+							<div class="small text-muted">id={{ r.id }}</div>
+						</td>
+						<td>{{ r.target_name|default:"—" }}</td>
+						<td>
+							{% if r.ok %}OK{% else %}Ошибка{% endif %}
+							{% if r.error %}<div class="small">{{ r.error }}</div>{% endif %}
+						</td>
+						<td>{{ r.status_code|default:"—" }}</td>
+						<td>{% if r.text %}<pre class="kvp-resp mb-0">{{ r.text }}</pre>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="portal-panel no-padding">
+		{% if params.page_obj.object_list %}
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+					<tr>
+						<th class="text-white border-0 ps-3">Дата</th>
+						<th class="text-white border-0">Соглашение</th>
+						<th class="text-white border-0">VIN / авто</th>
+						<th class="text-white border-0">Показатель</th>
+						<th class="text-white border-0 text-end">Сумма</th>
+						<th class="text-white border-0">База 1С</th>
+						<th class="text-white border-0 pe-3"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.page_obj %}
+					<tr>
+						<td class="ps-3 text-nowrap">
+							{% if row.agreement %}{{ row.agreement.dataTime|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+						</td>
+						<td>
+							<a href="{% url 'prices_car_bu:cumulative_detail' row.pk %}">{{ row.agreement.nomer|default:"—" }}</a>
+							<div class="small text-muted">{{ row.agreement.unit.name|default:"" }}</div>
+						</td>
+						<td>
+							{% if row.agreement and row.agreement.cars %}
+							<code class="small">{{ row.agreement.cars.vin|default:"—" }}</code>
+							<div class="small text-muted">{{ row.agreement.cars.name }}</div>
+							{% else %}—{% endif %}
+						</td>
+						<td>{{ row.indicatorKVP.name|default:"—" }}</td>
+						<td class="text-end fw-semibold">{{ row.amount|floatformat:2 }}</td>
+						<td>
+							{% if row.target == 'alfa' %}
+							<span class="badge bg-primary">{{ row.target_name }}</span>
+							{% else %}
+							<span class="badge bg-warning text-dark">{{ row.target_name }}</span>
+							{% endif %}
+						</td>
+						<td class="pe-3 text-nowrap">
+							<form method="post" action="{% url 'monitoring:cumulative_send' %}" class="d-inline">
+								{% csrf_token %}
+								{% if params.target %}<input type="hidden" name="target" value="{{ params.target }}">{% endif %}
+								<input type="hidden" name="id" value="{{ row.pk }}">
+								<button type="submit" class="btn btn-sm btn-success">Отправить</button>
+							</form>
+							<a href="{% url 'prices_car_bu:cumulative_detail' row.pk %}" class="btn btn-sm btn-outline-primary">Открыть</a>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% else %}
+		<p class="text-muted p-3 mb-0">Очередь пуста.</p>
+		{% endif %}
+	</div>
+
+	{% if params.page_obj.has_other_pages %}
+	<nav class="mt-3">
+		<ul class="pagination justify-content-center flex-wrap">
+			{% if params.page_obj.has_previous %}
+			<li class="page-item">
+				<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&amp;{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+			</li>
+			{% endif %}
+			<li class="page-item disabled"><span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }} · {{ params.total_count }}</span></li>
+			{% if params.page_obj.has_next %}
+			<li class="page-item">
+				<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&amp;{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+			</li>
+			{% endif %}
+		</ul>
+	</nav>
+	{% endif %}
+</div>
+{% endblock %}

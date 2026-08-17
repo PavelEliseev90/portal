@@ -678,6 +678,7 @@ class RefUnit(models.Model):
         if self.direction != None:
             if self.direction.name == "Отдел продаж АСП":
                 self.active_eco = True
+                self.buauto = True
         super().save(*args, **kwargs)
 
     def __str__(self):

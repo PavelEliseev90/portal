@@ -14,4 +14,6 @@ urlpatterns = [
     path('cars-photos/cleanup/', views.cars_photos_cleanup, name='cars_photos_cleanup'),
     path('cars-photos/enqueue-retries/', views.cars_photos_enqueue_retries, name='cars_photos_enqueue_retries'),
     path('cars-photos/<int:pk>/retry/', views.cars_photos_retry, name='cars_photos_retry'),
+    path('cumulative-send/', views.cumulative_send_list, name='cumulative_send_list'),
+    path('cumulative-send/send/', views.cumulative_send, name='cumulative_send'),
 ]

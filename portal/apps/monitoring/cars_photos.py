@@ -31,7 +31,8 @@ def _photos_queue_qs():
 
 
 def _stock_qs():
-    return RefCarsOrganization.objects.filter(quantity__gt=0)
+    """Авто в наличии с пробегом (не новые)."""
+    return RefCarsOrganization.objects.filter(quantity__gt=0, is_new=False)
 
 
 def count_cars_without_photos() -> int:
@@ -52,6 +53,8 @@ def count_cars_without_photos() -> int:
 def count_pending_photo_files() -> int:
     return RefCarsOrganizationFiles.objects.filter(
         Q(file='') | Q(file__isnull=True),
+        сars_organization__quantity__gt=0,
+        сars_organization__is_new=False,
     ).exclude(url='').count()
 
 
@@ -201,7 +204,7 @@ def enqueue_pending_photo_retries(limit: int = 500) -> int:
             Q(file='') | Q(file__isnull=True),
         )
         .exclude(url='')
-        .filter(сars_organization__quantity__gt=0)
+        .filter(сars_organization__quantity__gt=0, сars_organization__is_new=False)
         .values_list('сars_organization_id', flat=True)
         .distinct()[:limit]
     )
