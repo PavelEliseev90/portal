@@ -1,0 +1,199 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Фото авто организации {% endblock %}
+{% block title_navbar %} — Фото авто организации {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+		<div>
+			<h2 class="mb-1" style="color: #002a5a;">Фото автомобилей организации</h2>
+			<p class="text-muted small mb-0">
+				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+				· загрузка из 1С через <code>/api/v1/refresh_cars/</code>
+			</p>
+		</div>
+	</div>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }} py-2 small mb-3">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #ef4444;">
+				<div class="text-muted small">В наличии без фото</div>
+				<div class="fs-3 fw-bold text-danger">{{ params.cars_no_photos }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #f59e0b;">
+				<div class="text-muted small">URL есть, file нет</div>
+				<div class="fs-3 fw-bold text-warning">{{ params.photos_pending_files }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #3b82f6;">
+				<div class="text-muted small">Очередь (ожидают)</div>
+				<div class="fs-3 fw-bold" style="color: #002a5a;">{{ params.photos_queue_pending }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #64748b;">
+				<div class="text-muted small">Очередь (заняты)</div>
+				<div class="fs-3 fw-bold text-secondary">{{ params.photos_queue_locked }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #dc2626;">
+				<div class="text-muted small">Очередь (ошибки)</div>
+				<div class="fs-3 fw-bold text-danger">{{ params.photos_queue_failed }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-4 col-lg-2">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #a855f7;">
+				<div class="text-muted small">Авто с «битым» URL</div>
+				<div class="fs-3 fw-bold" style="color: #7c3aed;">{{ params.cars_pending_photo_files }}</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="portal-panel mb-3 small text-muted">
+		<strong>Как работает:</strong> 1С шлёт <code>Photos[]</code> в <code>refresh_cars</code> → задачи попадают в очередь
+		<code>refresh_cars_photos</code> (воркер <code>process_tasks --queue refresh_cars_photos</code>).
+		Если воркер не запущен или URL недоступен с сервера — фото не скачаются.
+	</div>
+
+	<ul class="nav nav-tabs mb-3">
+		<li class="nav-item">
+			<a class="nav-link {% if params.tab == 'no_photos' %}active{% endif %}"
+				href="?tab=no_photos{% if params.q %}&q={{ params.q|urlencode }}{% endif %}">
+				Без фото ({{ params.cars_no_photos }})
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link {% if params.tab == 'pending_files' %}active{% endif %}"
+				href="?tab=pending_files{% if params.q %}&q={{ params.q|urlencode }}{% endif %}">
+				Не скачаны ({{ params.photos_pending_files }})
+			</a>
+		</li>
+	</ul>
+
+	<form method="get" class="portal-panel mb-3">
+		<input type="hidden" name="tab" value="{{ params.tab }}">
+		<div class="row g-2 align-items-end">
+			<div class="col-12 col-md-5">
+				<label class="form-label small">Поиск</label>
+				<input type="text" name="q" class="form-control form-control-sm" value="{{ params.q }}"
+					placeholder="VIN, название, URL…">
+			</div>
+			<div class="col-12 col-md-2">
+				<label class="form-label small">На странице</label>
+				<select name="per_page" class="form-select form-select-sm">
+					<option value="25" {% if params.per_page == 25 %}selected{% endif %}>25</option>
+					<option value="50" {% if params.per_page == 50 %}selected{% endif %}>50</option>
+					<option value="100" {% if params.per_page == 100 %}selected{% endif %}>100</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-3">
+				<button type="submit" class="btn btn-primary btn-sm">Применить</button>
+				<a href="?tab={{ params.tab }}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+			</div>
+		</div>
+	</form>
+
+	<div class="portal-panel">
+		{% if params.tab == 'pending_files' %}
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th>Авто</th>
+						<th>Имя файла</th>
+						<th>URL</th>
+						<th class="text-end">Действие</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.page_obj %}
+					<tr>
+						<td>
+							{% if row.сars_organization %}
+							<div class="fw-semibold">{{ row.сars_organization.vin|default:row.сars_organization.slug }}</div>
+							<div class="text-muted small">{{ row.сars_organization.name }}</div>
+							{% else %}—{% endif %}
+						</td>
+						<td>{{ row.name|default:"—" }}</td>
+						<td class="small text-break" style="max-width: 320px;">{{ row.url|truncatechars:80 }}</td>
+						<td class="text-end">
+							{% if row.сars_organization %}
+							<form method="post" action="{% url 'monitoring:cars_photos_retry' row.сars_organization.pk %}" class="d-inline">
+								{% csrf_token %}
+								<input type="hidden" name="tab" value="{{ params.tab }}">
+								{% if params.q %}<input type="hidden" name="q" value="{{ params.q }}">{% endif %}
+								<button type="submit" class="btn btn-outline-primary btn-sm">Повторить</button>
+							</form>
+							{% endif %}
+						</td>
+					</tr>
+					{% empty %}
+					<tr><td colspan="4" class="text-center text-muted py-4">Все фото скачаны</td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% else %}
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th>VIN / slug</th>
+						<th>Наименование</th>
+						<th>Подразделение</th>
+						<th>Стоянка</th>
+						<th>Обновление</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for car in params.page_obj %}
+					<tr>
+						<td>
+							<a href="/cars/{{ car.slug }}/" target="_blank" class="text-decoration-none">
+								{{ car.vin|default:car.slug }}
+							</a>
+						</td>
+						<td>{{ car.name|default:"—" }}</td>
+						<td>{{ car.unit|default:"—" }}</td>
+						<td>{{ car.store|default:"—" }}</td>
+						<td class="small text-muted">{{ car.date_refresh|date:"d.m.Y H:i"|default:"—" }}</td>
+					</tr>
+					{% empty %}
+					<tr><td colspan="5" class="text-center text-muted py-4">У всех авто в наличии есть фото</td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% endif %}
+
+		{% if params.page_obj.has_other_pages %}
+		<nav class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-2 py-2 border-top">
+			<div class="small text-muted">Стр. {{ params.page_obj.number }} из {{ params.paginator.num_pages }}</div>
+			<ul class="pagination pagination-sm mb-0">
+				{% if params.page_obj.has_previous %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+				</li>
+				{% endif %}
+				{% if params.page_obj.has_next %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+				</li>
+				{% endif %}
+			</ul>
+		</nav>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

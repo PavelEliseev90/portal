@@ -14,7 +14,9 @@ from django.views.decorators.http import require_POST
 from datetime import timedelta
 
 from api.models import Exchange1CErrorLog
-from refs.models import RefCarsOrganization, RefStore
+from refs.models import RefCarsOrganization, RefCarsOrganizationFiles, RefStore
+
+from .cars_photos import cars_photos_hub_counts
 
 
 def _staff_required(user):
@@ -63,6 +65,7 @@ def hub(request):
     params = {
         'type': 'monitoring_hub',
         **_exchange_errors_counts(),
+        **cars_photos_hub_counts(),
     }
     return render(request, 'monitoring/hub.html', {'params': params})
 
@@ -244,3 +247,102 @@ def stores_clear_stock(request, pk):
     if request.POST.get('only_with_cars') == '1':
         query['only_with_cars'] = '1'
     return redirect(f"{reverse('monitoring:stores_list')}?{urlencode(query)}")
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def cars_photos_list(request):
+    """Фото автомобилей организации: не загружены / очередь / повтор."""
+    tab = request.GET.get('tab', 'no_photos')
+    q = (request.GET.get('q') or '').strip()
+
+    if tab == 'pending_files':
+        qs = (
+            RefCarsOrganizationFiles.objects.filter(
+                Q(file='') | Q(file__isnull=True),
+            )
+            .exclude(url='')
+            .select_related('сars_organization', 'сars_organization__unit', 'сars_organization__store')
+            .order_by('-date', '-id')
+        )
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q)
+                | Q(url__icontains=q)
+                | Q(сars_organization__vin__icontains=q)
+                | Q(сars_organization__name__icontains=q)
+            )
+    else:
+        tab = 'no_photos'
+        qs = (
+            RefCarsOrganization.objects.filter(quantity__gt=0)
+            .annotate(
+                downloaded=Count(
+                    'refcarsorganizationfiles',
+                    filter=Q(refcarsorganizationfiles__file__gt=''),
+                    distinct=True,
+                ),
+            )
+            .filter(downloaded=0)
+            .select_related('unit', 'store')
+            .order_by('-date_refresh', '-id')
+        )
+        if q:
+            qs = qs.filter(
+                Q(vin__icontains=q)
+                | Q(name__icontains=q)
+                | Q(slug__icontains=q)
+                | Q(plate_number__icontains=q)
+            )
+
+    per_page = min(int(request.GET.get('per_page', 50) or 50), 100)
+    paginator = Paginator(qs, per_page)
+    page_num = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_num)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    get_copy = request.GET.copy()
+    if 'page' in get_copy:
+        get_copy.pop('page')
+    query_without_page = get_copy.urlencode()
+
+    params = {
+        'type': 'monitoring_cars_photos',
+        'tab': tab,
+        'q': q,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'per_page': per_page,
+        'query_without_page': query_without_page,
+        'total_count': paginator.count,
+        'retried': request.GET.get('retried'),
+        **cars_photos_hub_counts(),
+    }
+    return render(request, 'monitoring/cars_photos_list.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+@require_POST
+def cars_photos_retry(request, pk):
+    """Поставить в очередь повторную загрузку фото авто по сохранённым URL."""
+    from api.tasks_cars import retry_pending_photos_async
+
+    car = get_object_or_404(RefCarsOrganization, pk=pk)
+    pending = RefCarsOrganizationFiles.objects.filter(сars_organization=car).filter(
+        Q(file='') | Q(file__isnull=True),
+    ).exclude(url='').count()
+
+    if pending:
+        retry_pending_photos_async(car.pk)
+        messages.info(request, f'Авто {car.vin or car.slug}: в очередь на повтор — {pending} фото.')
+    else:
+        messages.warning(request, f'Авто {car.vin or car.slug}: нет URL для повторной загрузки.')
+
+    query = {'tab': request.POST.get('tab', 'no_photos')}
+    q = (request.POST.get('q') or '').strip()
+    if q:
+        query['q'] = q
+    return redirect(f"{reverse('monitoring:cars_photos_list')}?{urlencode(query)}")

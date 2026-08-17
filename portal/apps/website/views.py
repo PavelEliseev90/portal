@@ -10497,15 +10497,30 @@ def _parse_auction_datetime(raw):
 
 
 def _get_auction_by_uid(slug_auction):
-    """Достаём лот по uid; slug_auction приходит строкой из URL."""
+    """Достаём лот по uid; из URL может прийти str или uuid.UUID."""
     import uuid as uuid_lib
     from django.core.exceptions import ValidationError
+    from django.db.models import CharField as _CharField
+    from django.db.models.functions import Cast
 
     try:
         uid = uuid_lib.UUID(str(slug_auction).strip())
     except (ValueError, AttributeError, TypeError) as exc:
         raise ValidationError('Некорректный идентификатор лота') from exc
-    return Auction.objects.get(uid=uid)
+
+    auction = Auction.objects.filter(uid=uid).first()
+    if auction is None:
+        auction = Auction.objects.annotate(
+            uid_as_text=Cast('uid', _CharField()),
+        ).filter(uid_as_text__iexact=str(uid)).first()
+    if auction is None:
+        raise Auction.DoesNotExist('Лот аукциона не найден')
+    return auction
+
+
+@login_required
+def auction_doc_new(request):
+    return auction_doc(request, 'new_lots')
 
 
 @login_required

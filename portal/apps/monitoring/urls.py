@@ -10,4 +10,6 @@ urlpatterns = [
     path('exchange-errors/<int:pk>/', views.exchange_errors_detail, name='exchange_errors_detail'),
     path('stores/', views.stores_list, name='stores_list'),
     path('stores/<int:pk>/clear-stock/', views.stores_clear_stock, name='stores_clear_stock'),
+    path('cars-photos/', views.cars_photos_list, name='cars_photos_list'),
+    path('cars-photos/<int:pk>/retry/', views.cars_photos_retry, name='cars_photos_retry'),
 ]
