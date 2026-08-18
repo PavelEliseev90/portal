@@ -6727,10 +6727,9 @@ def docs_car_agreement(request):
         lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
         lo_slug                     = Subquery(subqyery.values('slug')[:1]))
         
-    subqyery_estimations    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk'))   
-    
+    from documents.rlk_estimation import subquery_estimation_id
     docs = docs.annotate(
-        estimation                     = Subquery(subqyery_estimations.values('pk')[:1]))
+        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
     
     name = request.GET.get('name', '')
     if name != '':
@@ -6795,10 +6794,9 @@ def doc_car_agreement(request, id):
         lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
         lo_slug                     = Subquery(subqyery.values('slug')[:1]))
         
-    subqyery_estimations    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk'))   
-    
+    from documents.rlk_estimation import subquery_estimation_id
     doc = doc.annotate(
-        estimation                     = Subquery(subqyery_estimations.values('pk')[:1]))
+        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
     
 
     doc = doc[0]   
@@ -6851,10 +6849,9 @@ def docs_car_shipment(request):
         lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
         lo_slug                     = Subquery(subqyery.values('slug')[:1]))
         
-    subqyery_estimations    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk'))   
-    
+    from documents.rlk_estimation import subquery_estimation_id
     docs = docs.annotate(
-        estimation                     = Subquery(subqyery_estimations.values('pk')[:1]))
+        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
     
     name = request.GET.get('name', '')
     if name != '':
@@ -6919,10 +6916,9 @@ def doc_car_shipment(request, id):
         lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
         lo_slug                     = Subquery(subqyery.values('slug')[:1]))
         
-    subqyery_estimations    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk'))   
-    
+    from documents.rlk_estimation import subquery_estimation_id
     doc = doc.annotate(
-        estimation                     = Subquery(subqyery_estimations.values('pk')[:1]))
+        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
     
 
     doc = doc[0]   
@@ -10839,12 +10835,12 @@ def auction_doc_get_cars(request):
 
 
 def auction_doc_get_cars_info(request, slug):
-    
+    from documents.rlk_estimation import subquery_estimation_id, subquery_estimation_rlk_pk
+
     cars        = RefCarsOrganization.objects.filter(slug = slug)
-    subquery    = RegInteractivOcenka.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
     cars    = cars.annotate(
-        int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
-        int_ocenka_diagnostika = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_id           = subquery_estimation_id('lo__rlk_id', 'lo__rlk__uin')).annotate(
+        int_ocenka_diagnostika = Value('', output_field=CharField())).annotate(
         int_ocenka_url_pered = Value('', output_field=CharField())).annotate(
         int_ocenka_url_zad = Value('', output_field=CharField())).annotate(
         int_ocenka_url_up = Value('', output_field=CharField())).annotate(
@@ -10885,7 +10881,10 @@ def auction_doc_get_cars_info(request, slug):
                        modification_name = F('modification_autoru__name'),
                        model_name   = F('modification_autoru__model__name'),
                        mark_name    = F('modification_autoru__model__mark__name'),
-                       rlk_id       = F('lo__rlk_id'),
+                       rlk_id       = Coalesce(
+                           subquery_estimation_rlk_pk('lo__rlk_id', 'lo__rlk__uin'),
+                           F('lo__rlk_id'),
+                       ),
                        url          = F('prev_photo')))
     for car in data:
         car['url'] = get_url_images(car['slug'])
@@ -10902,6 +10901,14 @@ def auction_doc_get_cars_info(request, slug):
             car['work_podgotovka']  = list_work(car['int_ocenka_id']) 
             for inf_work in car['work_podgotovka']:
                 car['work']  = car['work']  + inf_work['name'] + '/n'
+            try:
+                est = RegInteractivOcenka.objects.filter(pk=car['int_ocenka_id']).select_related(
+                    'page_soglasovanie',
+                ).first()
+                if est is not None and est.page_soglasovanie_id:
+                    car['int_ocenka_diagnostika'] = est.page_soglasovanie.comment_diagnostica or ''
+            except Exception:
+                pass
 
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 

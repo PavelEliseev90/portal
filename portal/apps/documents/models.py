@@ -564,10 +564,22 @@ class DocRLK(models.Model):
         return count
 
     def estimation(self):
-        
         if hasattr(self, 'reginteractivocenka'):
             return self.reginteractivocenka.id
-        return None
+        from documents.rlk_estimation import resolve_estimation_for_rlk
+        est = resolve_estimation_for_rlk(self)
+        return est.id if est is not None else None
+
+    def estimation_source_rlk(self):
+        """РЛ, по которому смотреть оценку: свой или twin с тем же UIN."""
+        from documents.rlk_estimation import sibling_rlk_with_estimation, resolve_estimation_for_rlk
+        est = resolve_estimation_for_rlk(self)
+        if est is not None and est.rlk_id:
+            if est.rlk_id == self.pk:
+                return self
+            return est.rlk
+        twin = sibling_rlk_with_estimation(self)
+        return twin or self
     
     def estimation_staff_uin(self):
         if hasattr(self, 'reginteractivocenkarlk'):

@@ -37,6 +37,7 @@ from refs.serializers import RefCarsOrganizationSerializer, RefStoreSerializer
 from datetime import datetime, date, time
 import base64
 from django.db.models import Min, Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Func, Value, CharField, IntegerField
+from django.db.models.functions import Coalesce
 from chats.models import ChatMessage, Chat, ChatSuccesDate
 
 import asyncio
@@ -1654,11 +1655,12 @@ def send_auction(auction):
             auction.save()
 
 def info_car_auction(slug):
+    from documents.rlk_estimation import subquery_interactiv_rlk_id
+
     cars        = RefCarsOrganization.objects.filter(slug = slug)
-    subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
     cars        = cars.annotate(
-        int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
-        int_ocenka_diagnostika  = Subquery(subquery.values('page_soglasovanie__comment_diagnostica')[:1])).annotate(
+        int_ocenka_id           = subquery_interactiv_rlk_id('lo__rlk_id', 'lo__rlk__uin')).annotate(
+        int_ocenka_diagnostika  = Value('', output_field=CharField())).annotate(
         int_ocenka_work         = Value('', output_field=CharField())).annotate(
         int_ocenka_url_vnesh    = Value('', output_field=CharField())).annotate(
         int_ocenka_url_salon_all    = Value('', output_field=CharField())).annotate(
