@@ -1729,7 +1729,7 @@ def price_edit(request, slug):
 
     if car.lo_id and car.lo.rlk_id:
         from documents.rlk_estimation import resolve_estimation_for_rlk
-        interactiv = resolve_estimation_for_rlk(car.lo.rlk)    
+        interactiv = resolve_estimation_for_rlk(car.lo.rlk, vin=car.vin)    
     
     agreement = None
     if DocCarAgreement.objects.filter(active = True).filter(lo = car.lo).count() > 0:

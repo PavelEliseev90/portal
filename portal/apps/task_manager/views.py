@@ -1776,7 +1776,7 @@ def info_car_auction(slug):
                 .first()
             )
             rlk = org.lo.rlk if org is not None and org.lo_id else None
-            estimationrlk = resolve_interactiv_rlk_for_rlk(rlk)
+            estimationrlk = resolve_interactiv_rlk_for_rlk(rlk, vin=car.get('vin'))
             if estimationrlk is not None:
                 car['int_ocenka_id'] = estimationrlk.id
 

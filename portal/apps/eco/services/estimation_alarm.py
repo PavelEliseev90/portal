@@ -23,15 +23,15 @@ def user_can_manage_alarm(user) -> bool:
 
 def resolve_interactiv_rlk_by_rlk_id(rlk_id: int) -> RegInteractivOcenkaRLK | None:
     from documents.models import DocRLK
-    from documents.rlk_estimation import resolve_interactiv_rlk_for_rlk
+    from documents.rlk_estimation import estimation_is_usable, resolve_interactiv_rlk_for_rlk
 
     own = (
         RegInteractivOcenkaRLK.objects
         .filter(rlk_id=rlk_id)
-        .select_related('rlk', 'status')
+        .select_related('rlk', 'status', 'estimation')
         .first()
     )
-    if own is not None and own.estimation_id:
+    if own is not None and estimation_is_usable(own.estimation):
         return own
     rlk = DocRLK.objects.filter(pk=rlk_id).first()
     twin_link = resolve_interactiv_rlk_for_rlk(rlk)
