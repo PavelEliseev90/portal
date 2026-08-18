@@ -126,11 +126,17 @@
                                     </a>
                                 </li>
                                 
-                                <div class="collapse {% if params.type == 'sb_lo' %} show {% endif %}" id="collapse_sb" style="transition: 0.5s; padding-left: 1.5rem;">
+                                <div class="collapse {% if params.type == 'sb_lo' or params.type == 'auction' %} show {% endif %}" id="collapse_sb" style="transition: 0.5s; padding-left: 1.5rem;">
                                     <li class="nav-item">
                                         <a class="nav-link text-{% if params.type == 'sb_lo' %}secondary active {% else %}white {% endif %}" href="/sb_lo/">
                                             <span class="sidebar-icon bi bi-journal-check"></span>
                                             Листы оценки
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-{% if params.type == 'auction' %}secondary active {% else %}white {% endif %}" href="/auction/">
+                                            <span class="sidebar-icon bi bi-hammer"></span>
+                                            Аукцион КорсАвто
                                         </a>
                                     </li>
                                     
@@ -372,7 +378,7 @@
                                         </a>
                                     </li>
                                     -->
-                                    {% if request.user.profiles.korsavto_auction %}
+                                    {% if request.user.profiles.korsavto_auction or request.user.profiles.user_sb %}
                                         <li class="nav-item">
                                             <a class="nav-link text-{% if params.type == 'auction' %} secondary active {% else %}white{% endif %}" href="/auction/">
                                                 <span class="sidebar-icon bi bi-hammer"></span>

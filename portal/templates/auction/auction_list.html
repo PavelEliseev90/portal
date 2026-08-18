@@ -1133,10 +1133,12 @@
 	
 <div class="auction-toolbar">
     <div class="toolbar-actions d-flex align-items-center gap-2 flex-wrap">
+            {% if params.can_edit %}
             <a href="new_lots/" class="btn btn-auction-primary">
                     <span class="icon-mbri-play"></span>
                     Новый лот аукциона
             </a>
+            {% endif %}
             
             <!-- Форма фильтров -->
             <form method="get" action="" class="d-flex align-items-center gap-2 flex-wrap" id="auctionFiltersForm">
