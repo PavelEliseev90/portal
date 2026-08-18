@@ -10850,7 +10850,7 @@ def auction_doc_get_cars_info(request, slug):
     data = []
     for car in cars:
         rlk = car.lo.rlk if car.lo_id else None
-        estimation = resolve_estimation_for_rlk(rlk)
+        estimation = resolve_estimation_for_rlk(rlk, vin=car.vin)
         if estimation is not None:
             try:
                 estimation = (
@@ -10907,7 +10907,7 @@ def auction_doc_get_cars_info(request, slug):
             'modification_name': modification,
             'model_name': model,
             'mark_name': mark,
-            'rlk_id': resolve_estimation_rlk_id(rlk),
+            'rlk_id': resolve_estimation_rlk_id(rlk, vin=car.vin),
             'url': get_url_images(car.slug) or ['/media/nophoto.png'],
         })
 

@@ -2929,7 +2929,7 @@ class RefCarsOrganization(models.Model):
             rlk = self.lo.rlk if self.lo_id else None
         except Exception:
             return None
-        return resolve_estimation_rlk_id(rlk)
+        return resolve_estimation_rlk_id(rlk, vin=self.vin)
 
     def get_photo_mini(self):
         photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(main = True).count()

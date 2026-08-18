@@ -4133,13 +4133,13 @@ def doc(request, id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
     rlk     = DocRLK.objects.get(pk=id)
-    from documents.rlk_estimation import sibling_rlk_with_estimation
+    from documents.rlk_estimation import sibling_rlk_with_estimation, estimation_is_usable
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).select_related(
         'estimation', 'status', 'staff_rlk',
     ).first()
     estimation = interactiv_rlk.estimation if interactiv_rlk is not None else None
-    if estimation is None:
+    if not estimation_is_usable(estimation):
         twin = sibling_rlk_with_estimation(rlk)
         if twin is not None and twin.pk != rlk.pk:
             qs = request.GET.urlencode()
