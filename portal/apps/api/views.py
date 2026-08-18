@@ -4444,6 +4444,7 @@ def exchange(request):
     list_resource_plannings = list()
     list_smss               = list()
     list_calculation_cars   = list()
+    list_los                = list()
     exchange_errors         = list()
 
     #Коммерческие предложения 
@@ -4528,6 +4529,12 @@ def exchange(request):
     if len(orders_service) > 0:
         list_order_service, errs = load_orders_service(orders_service)
         exchange_errors.extend(_exchange_errors_response('OrdersService', errs))
+
+    #Листы оценки
+    los = data.get('Los') or []
+    if len(los) > 0:
+        list_los, errs = load_los(los)
+        exchange_errors.extend(_exchange_errors_response('Los', errs))
     
     # Добавить в ответ нужные данные:
     recomendations              = list()
@@ -4566,6 +4573,7 @@ def exchange(request):
         'ResourcePlannings' : list_resource_plannings,
         'SMSS'              : list_smss,
         'CalculationCars'   : list_calculation_cars,
+        'Los'               : list_los,
         'Answer'            : answer,
         'ExchangeErrors'    : exchange_errors,
         'ExchangeErrorsCount': len(exchange_errors),
