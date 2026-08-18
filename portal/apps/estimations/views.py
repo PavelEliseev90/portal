@@ -496,13 +496,14 @@ def estimation_rlk(request, rlk_id):
     users   = list()
 
     object                          = DocRLK.objects.get(id=rlk_id)
-    from documents.rlk_estimation import sibling_rlk_with_estimation, estimation_is_usable
+    from documents.rlk_estimation import resolve_estimation_rlk_id, estimation_is_usable
+
+    target_rlk_id = resolve_estimation_rlk_id(object)
+    if target_rlk_id and target_rlk_id != object.pk:
+        return HttpResponseRedirect('/estimations/%s/' % target_rlk_id)
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
     if interactiv_rlk is None or not estimation_is_usable(interactiv_rlk.estimation):
-        twin = sibling_rlk_with_estimation(object)
-        if twin is not None and twin.pk != object.pk:
-            return HttpResponseRedirect('/estimations/%s/' % twin.pk)
         interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk=object)
         if interactiv_rlk.estimation is None:
             return HttpResponseRedirect(request.path_info + 'start/')
@@ -1795,13 +1796,10 @@ def estimation_start(request, rlk_id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
     object                          = DocRLK.objects.get(id=rlk_id)
-    from documents.rlk_estimation import sibling_rlk_with_estimation, estimation_is_usable
-    twin = sibling_rlk_with_estimation(object)
-    if twin is not None and twin.pk != object.pk:
-        existing = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
-        own_est = existing.estimation if existing is not None else None
-        if not estimation_is_usable(own_est):
-            return HttpResponseRedirect('/estimations/%s/start/' % twin.pk)
+    from documents.rlk_estimation import resolve_estimation_rlk_id
+    target_rlk_id = resolve_estimation_rlk_id(object)
+    if target_rlk_id and target_rlk_id != object.pk:
+        return HttpResponseRedirect('/estimations/%s/start/' % target_rlk_id)
     interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     estimation_active               = None
     mod = ''

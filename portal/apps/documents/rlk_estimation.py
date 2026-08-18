@@ -39,14 +39,59 @@ def _rlk_vin(rlk):
     return ''
 
 
-def estimation_is_usable(est):
-    """Черновик без осмотра не считаем оценкой (иначе fallback не сработает)."""
+OSMOTR_FILE_TYPES = (
+    'vnesh_car_osmotr_pered',
+    'vnesh_car_osmotr_zad',
+    'vnesh_car_osmotr_up',
+    'vnesh_car_osmotr_pass',
+    'vnesh_car_osmotr_vod',
+    'vnesh_car_osmotr_pol',
+    'vnesh_car_all',
+)
+
+
+def _osmotr_photo_count(est):
+    if est is None:
+        return 0
+    try:
+        from register.models import RegRegInteractivOcenkaFiles
+        return RegRegInteractivOcenkaFiles.objects.filter(
+            estimation=est,
+            type_file__in=OSMOTR_FILE_TYPES,
+        ).count()
+    except Exception:
+        return 0
+
+
+def estimation_has_inspection(est):
+    """Есть внешний осмотр: фото схемы/кузова или закрытая страница осмотра."""
     if est is None:
         return False
-    if est.end_estimation or est.start_estimation:
+    if _osmotr_photo_count(est) > 0:
         return True
-    if _norm_vin(getattr(est, 'vin', None)) or _norm_vin(getattr(est, 'number_body', None)):
+    try:
+        vnesh = getattr(est, 'page_vnesh', None)
+        if vnesh is not None and getattr(vnesh, 'end_estimation', None):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def estimation_is_usable(est):
+    """VIN или дата старта сами по себе — не оценка (иначе берётся пустой новый РЛ)."""
+    if est is None:
+        return False
+    if est.end_estimation:
         return True
+    if estimation_has_inspection(est):
+        return True
+    try:
+        from register.models import RegEstimationPodgotovka
+        if RegEstimationPodgotovka.objects.filter(estimation=est).exists():
+            return True
+    except Exception:
+        pass
     try:
         from register.models import RegRegInteractivOcenkaFiles
         return RegRegInteractivOcenkaFiles.objects.filter(estimation=est).exists()
@@ -55,20 +100,24 @@ def estimation_is_usable(est):
 
 
 def _score_estimation(est, vin=''):
+    """Фото осмотра важнее работ: иначе в лот попадает новый РЛ без схемы кузова."""
     score = 0
+    osmotr = _osmotr_photo_count(est)
+    score += min(osmotr, 20) * 15
+    if estimation_has_inspection(est):
+        score += 80
     if est.end_estimation:
         score += 100
     if est.start_estimation:
-        score += 40
+        score += 20
     est_vin = _norm_vin(getattr(est, 'vin', None))
     if vin and est_vin and est_vin == vin:
         score += 80
     elif est_vin:
         score += 10
     try:
-        from register.models import RegRegInteractivOcenkaFiles
-        files = RegRegInteractivOcenkaFiles.objects.filter(estimation=est).count()
-        score += min(files, 40)
+        from register.models import RegEstimationPodgotovka
+        score += min(RegEstimationPodgotovka.objects.filter(estimation=est).count(), 10)
     except Exception:
         pass
     rlk = getattr(est, 'rlk', None)
@@ -101,12 +150,25 @@ def pick_best_estimation(estimations, vin=''):
     if not usable:
         return None
     vin = _norm_vin(vin)
-    if vin:
-        matched = [est for est in usable if _norm_vin(est.vin) == vin]
-        if matched:
-            usable = matched
-    usable.sort(key=lambda est: _score_estimation(est, vin), reverse=True)
-    return usable[0]
+
+    def _sort(items):
+        items.sort(key=lambda est: _score_estimation(est, vin), reverse=True)
+        return items[0]
+
+    vin_matched = [est for est in usable if vin and _norm_vin(est.vin) == vin]
+    vin_unknown = [est for est in usable if not _norm_vin(est.vin)]
+    vin_osmotr = [est for est in vin_matched if estimation_has_inspection(est)]
+    if vin_osmotr:
+        return _sort(vin_osmotr)
+    unknown_osmotr = [est for est in vin_unknown if estimation_has_inspection(est)]
+    if unknown_osmotr:
+        return _sort(unknown_osmotr)
+    if vin_matched:
+        return _sort(vin_matched)
+    with_osmotr = [est for est in usable if estimation_has_inspection(est)]
+    if with_osmotr:
+        return _sort(with_osmotr)
+    return _sort(usable)
 
 
 def sibling_rlk_with_estimation(rlk, vin=None):

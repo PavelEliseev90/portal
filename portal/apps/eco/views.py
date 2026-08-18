@@ -4133,20 +4133,21 @@ def doc(request, id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
 
     rlk     = DocRLK.objects.get(pk=id)
-    from documents.rlk_estimation import sibling_rlk_with_estimation, estimation_is_usable
+    from documents.rlk_estimation import resolve_estimation_rlk_id, estimation_is_usable
+
+    target_rlk_id = resolve_estimation_rlk_id(rlk)
+    if target_rlk_id and target_rlk_id != rlk.pk:
+        qs = request.GET.urlencode()
+        url = '/eco/%s/' % target_rlk_id
+        if qs:
+            url += '?' + qs
+        return HttpResponseRedirect(url)
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).select_related(
         'estimation', 'status', 'staff_rlk',
     ).first()
     estimation = interactiv_rlk.estimation if interactiv_rlk is not None else None
     if not estimation_is_usable(estimation):
-        twin = sibling_rlk_with_estimation(rlk)
-        if twin is not None and twin.pk != rlk.pk:
-            qs = request.GET.urlencode()
-            url = '/eco/%s/' % twin.pk
-            if qs:
-                url += '?' + qs
-            return HttpResponseRedirect(url)
         interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk=rlk)
         estimation = interactiv_rlk.estimation
         if estimation is None:

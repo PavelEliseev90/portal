@@ -1761,29 +1761,26 @@ def info_car_auction(slug):
             car['price_medium']         = car['price'] - matrix.charge_km_stage_2_5000
             car['price_significant']    = car['price'] - matrix.charge_km_stage_3_5000
             
-        int_ocenka_id               = car['int_ocenka_id']
-        
         estimation = None
         diagnostika = ''
         estimationrlk = None
-        if car['int_ocenka_id'] != None and car['int_ocenka_id'] != '': 
-            estimationrlk  = RegInteractivOcenkaRLK.objects.get(id = car['int_ocenka_id'])
-        else:
-            org = (
-                RefCarsOrganization.objects
-                .filter(slug=car['slug'])
-                .select_related('lo__rlk')
-                .first()
-            )
-            rlk = org.lo.rlk if org is not None and org.lo_id else None
-            estimationrlk = resolve_interactiv_rlk_for_rlk(rlk, vin=car.get('vin'))
-            if estimationrlk is not None:
-                car['int_ocenka_id'] = estimationrlk.id
-
+        org = (
+            RefCarsOrganization.objects
+            .filter(slug=car['slug'])
+            .select_related('lo__rlk')
+            .first()
+        )
+        rlk = org.lo.rlk if org is not None and org.lo_id else None
+        estimationrlk = resolve_interactiv_rlk_for_rlk(rlk, vin=car.get('vin'))
         if estimationrlk is not None:
-            estimation = estimationrlk.estimation 
+            car['int_ocenka_id'] = estimationrlk.id
+
+        if estimationrlk is not None and estimationrlk.estimation_id:
+            estimation = estimationrlk.estimation
             if estimationrlk.page_soglasovanie != None:
-                diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
+                diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica or ''
+            elif estimation.page_soglasovanie_id:
+                diagnostika = estimation.page_soglasovanie.comment_diagnostica or ''
             else:
                 diagnostika = ''
             
