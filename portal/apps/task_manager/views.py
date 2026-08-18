@@ -1655,11 +1655,12 @@ def send_auction(auction):
             auction.save()
 
 def info_car_auction(slug):
-    from documents.rlk_estimation import subquery_interactiv_rlk_id
+    from documents.rlk_estimation import resolve_interactiv_rlk_for_rlk
 
     cars        = RefCarsOrganization.objects.filter(slug = slug)
+    subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='lo__rlk__id'))
     cars        = cars.annotate(
-        int_ocenka_id           = subquery_interactiv_rlk_id('lo__rlk_id', 'lo__rlk__uin')).annotate(
+        int_ocenka_id           = Subquery(subquery.values('id')[:1])).annotate(
         int_ocenka_diagnostika  = Value('', output_field=CharField())).annotate(
         int_ocenka_work         = Value('', output_field=CharField())).annotate(
         int_ocenka_url_vnesh    = Value('', output_field=CharField())).annotate(
@@ -1764,8 +1765,22 @@ def info_car_auction(slug):
         
         estimation = None
         diagnostika = ''
+        estimationrlk = None
         if car['int_ocenka_id'] != None and car['int_ocenka_id'] != '': 
             estimationrlk  = RegInteractivOcenkaRLK.objects.get(id = car['int_ocenka_id'])
+        else:
+            org = (
+                RefCarsOrganization.objects
+                .filter(slug=car['slug'])
+                .select_related('lo__rlk')
+                .first()
+            )
+            rlk = org.lo.rlk if org is not None and org.lo_id else None
+            estimationrlk = resolve_interactiv_rlk_for_rlk(rlk)
+            if estimationrlk is not None:
+                car['int_ocenka_id'] = estimationrlk.id
+
+        if estimationrlk is not None:
             estimation = estimationrlk.estimation 
             if estimationrlk.page_soglasovanie != None:
                 diagnostika = estimationrlk.page_soglasovanie.comment_diagnostica
