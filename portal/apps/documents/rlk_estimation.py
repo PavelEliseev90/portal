@@ -4,9 +4,9 @@
 Во время перехода между базами 1С у одного UIN бывает несколько DocRLK.
 Оценка живёт на старом листе, новый лист из другой базы — без оценки.
 
-Важно: по одному UIN может быть несколько листов (trade-in, ОП, дубли).
-Нельзя брать «первую попавшуюся» оценку — в PostgreSQL ORDER BY date DESC
-ставит NULL первыми, и выбирается чужой черновик.
+Выбираем оценку с согласованной ценой ЕЦО (после КД, иначе до КД).
+Нельзя брать «первую попавшуюся»: черновик нового РЛ с VIN/работами
+перебивал готовую оценку без фото.
 """
 from __future__ import annotations
 
@@ -78,10 +78,40 @@ def estimation_has_inspection(est):
     return False
 
 
+def _soglasovanie_prices(sog):
+    if sog is None:
+        return 0, 0
+    return int(sog.price_after_kd or 0), int(sog.price_before_kd or 0)
+
+
+def _agreed_eco_prices(est):
+    """Согласованные цены ЕЦО: (после КД, до КД). Смотрим и оценку, и обёртку РЛ."""
+    after, before = 0, 0
+    if est is None:
+        return after, before
+    a, b = _soglasovanie_prices(getattr(est, 'page_soglasovanie', None))
+    after, before = max(after, a), max(before, b)
+    try:
+        from register.models import RegInteractivOcenkaRLK
+        for link in RegInteractivOcenkaRLK.objects.filter(estimation=est).select_related('page_soglasovanie'):
+            a, b = _soglasovanie_prices(link.page_soglasovanie)
+            after, before = max(after, a), max(before, b)
+    except Exception:
+        pass
+    return after, before
+
+
+def estimation_has_agreed_eco_price(est):
+    after, before = _agreed_eco_prices(est)
+    return after > 0 or before > 0
+
+
 def estimation_is_usable(est):
-    """VIN или дата старта сами по себе — не оценка (иначе берётся пустой новый РЛ)."""
+    """Пустышка без согласования/осмотра не оценка — иначе берётся новый РЛ без цены ЕЦО."""
     if est is None:
         return False
+    if estimation_has_agreed_eco_price(est):
+        return True
     if est.end_estimation:
         return True
     if estimation_has_inspection(est):
@@ -100,8 +130,13 @@ def estimation_is_usable(est):
 
 
 def _score_estimation(est, vin=''):
-    """Фото осмотра важнее работ: иначе в лот попадает новый РЛ без схемы кузова."""
+    """Главный признак — согласованная цена ЕЦО, затем осмотр."""
     score = 0
+    after, before = _agreed_eco_prices(est)
+    if after > 0:
+        score += 1000
+    elif before > 0:
+        score += 400
     osmotr = _osmotr_photo_count(est)
     score += min(osmotr, 20) * 15
     if estimation_has_inspection(est):
@@ -115,11 +150,6 @@ def _score_estimation(est, vin=''):
         score += 80
     elif est_vin:
         score += 10
-    try:
-        from register.models import RegEstimationPodgotovka
-        score += min(RegEstimationPodgotovka.objects.filter(estimation=est).count(), 10)
-    except Exception:
-        pass
     rlk = getattr(est, 'rlk', None)
     if rlk is not None and getattr(rlk, 'eco', False):
         score += 15
@@ -133,7 +163,7 @@ def _estimations_by_uin(uin, exclude_rlk_id=None):
         RegInteractivOcenka.objects
         .filter(rlk__uin=uin)
         .exclude(rlk__uin='')
-        .select_related('rlk')
+        .select_related('rlk', 'page_soglasovanie')
         .order_by(
             F('end_estimation').desc(nulls_last=True),
             F('start_estimation').desc(nulls_last=True),
@@ -154,6 +184,17 @@ def pick_best_estimation(estimations, vin=''):
     def _sort(items):
         items.sort(key=lambda est: _score_estimation(est, vin), reverse=True)
         return items[0]
+
+    agreed = [est for est in usable if estimation_has_agreed_eco_price(est)]
+    if agreed:
+        if vin:
+            vin_agreed = [est for est in agreed if _norm_vin(est.vin) == vin]
+            if vin_agreed:
+                return _sort(vin_agreed)
+            unknown_agreed = [est for est in agreed if not _norm_vin(est.vin)]
+            if unknown_agreed:
+                return _sort(unknown_agreed)
+        return _sort(agreed)
 
     vin_matched = [est for est in usable if vin and _norm_vin(est.vin) == vin]
     vin_unknown = [est for est in usable if not _norm_vin(est.vin)]
@@ -233,7 +274,7 @@ def _collect_estimations_for_rlk(rlk, vin=None):
             RegInteractivOcenka.objects
             .filter(rlk__uin=uin)
             .exclude(rlk__uin='')
-            .select_related('rlk', 'page_vnesh')
+            .select_related('rlk', 'page_vnesh', 'page_soglasovanie')
         )
         candidates.extend(list(qs[:40]))
     seen = set()
@@ -247,7 +288,7 @@ def _collect_estimations_for_rlk(rlk, vin=None):
 
 
 def resolve_estimation_for_rlk(rlk, vin=None):
-    """Лучшая оценка: своя или twin с тем же UIN. Побеждает лист с осмотром, не с VIN."""
+    """Лучшая оценка: twin с согласованной ценой ЕЦО, иначе осмотр."""
     if rlk is None:
         return None
     vin = _norm_vin(vin) or _rlk_vin(rlk)
@@ -265,18 +306,32 @@ def resolve_interactiv_rlk_for_rlk(rlk, vin=None):
     if est is None:
         return None
 
-    by_est = (
+    by_est = list(
         RegInteractivOcenkaRLK.objects
         .filter(estimation=est)
         .select_related('rlk', 'estimation', 'page_soglasovanie', 'status')
         .order_by('-id')
     )
+    agreed_links = []
+    for link in by_est:
+        after, before = _soglasovanie_prices(link.page_soglasovanie)
+        if after > 0 or before > 0:
+            agreed_links.append(link)
+    if agreed_links:
+        agreed_links.sort(
+            key=lambda link: (
+                _soglasovanie_prices(link.page_soglasovanie)[0],
+                _soglasovanie_prices(link.page_soglasovanie)[1],
+                link.id,
+            ),
+            reverse=True,
+        )
+        return agreed_links[0]
     for link in by_est:
         if link.rlk_id == est.rlk_id:
             return link
-    link = by_est.first()
-    if link is not None:
-        return link
+    if by_est:
+        return by_est[0]
     return (
         RegInteractivOcenkaRLK.objects
         .filter(rlk_id=est.rlk_id)
