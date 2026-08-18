@@ -1028,7 +1028,9 @@ def get_car_object(car, unit):
     id_avtoru = car['ID_autoru']
     try:
         if int(id_avtoru) > 0:
-            car_object.modification_autoru = AutoruModification.objects.get(idSite = int(id_avtoru))
+            modification = get_modification(id_avtoru)
+            if modification != 0:
+                car_object.modification_autoru = modification
     except:
         s=1
 
@@ -4954,7 +4956,9 @@ def get_lo(lo):
 
     modificationAutoru = lo['ModificationAutoru']
     if modificationAutoru > 0:
-        object.modification_autoru = AutoruModification.objects.get(idSite = modificationAutoru)
+        modification = get_modification(modificationAutoru)
+        if modification != 0:
+            object.modification_autoru = modification
         
     object.save()
 
@@ -5509,7 +5513,9 @@ def get_agreement(agreement):
         id_avtoru = car['ID_autoru']
         try:
             if id_avtoru > 0:
-                car_object.modification_autoru = AutoruModification.objects.get(idSite = id_avtoru)
+                modification = get_modification(id_avtoru)
+                if modification != 0:
+                    car_object.modification_autoru = modification
         except:
             s=1
 
@@ -5992,10 +5998,19 @@ def get_ib(json_ib):
     return ref_ib
 
 def get_modification(id_modification):
-    modifications = AutoruModification.objects.filter(idSite = int(id_modification))
-    if len(modifications) != 0:
+    try:
+        id_avtoru = int(id_modification)
+    except (TypeError, ValueError):
+        return 0
+    if id_avtoru <= 0:
+        return 0
+    modifications = AutoruModification.objects.filter(idSite=id_avtoru)
+    if modifications.exists():
         return modifications[0]
-    return 0
+    try:
+        return AutoruModification.objects.get(idSiteTech=id_avtoru)
+    except Exception:
+        return 0
 
 def get_city(city_name):
     citys = RefCity.objects.filter(name = city_name)
