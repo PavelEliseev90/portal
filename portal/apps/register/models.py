@@ -4145,6 +4145,8 @@ class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):
     count_tyre          = models.IntegerField('Количество резины 2', default=0, null=True, blank=True)
     kolesa_estimation   = models.IntegerField('Количество дисков 2', default=10, null=False, blank=False)
     send_wheels_ib      = models.BooleanField("Отправлена информация в базу бу колес", default = False, null=True, blank=True)
+    send_wheels_ib_date = models.DateTimeField('Дата документа приёмки в базе БУ колёс', blank=True, null=True)
+    send_wheels_ib_number = models.CharField('Номер документа приёмки в базе БУ колёс', max_length=64, default='', blank=True)
     user                = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
 
     def __str__(self):

@@ -409,6 +409,47 @@ def build_kolesa2_1c_extras(estimation) -> dict:
     }
 
 
+def build_kolesa_reception_send_payload(reception) -> dict:
+    """JSON для выгрузки 2КК: РЛК, листы оценки (DocLO), приёмка."""
+    from documents.models import DocLO
+    from documents.serializers import DocLOSerializer, DocRLKSerializer
+    from register.serializers import RegInteractivOcenkaKolesaReceptionSerializer
+
+    if reception is None:
+        return {}
+
+    rlk = reception.rlk
+    estimation = reception.estimation
+
+    if rlk is not None:
+        los = (
+            DocLO.objects.filter(rlk=rlk)
+            .select_related(
+                'organization', 'filial', 'unit', 'store', 'type_reception',
+                'staff', 'customer', 'cars', 'modification_autoru',
+                'complectation_autoru', 'agreement_unit',
+            )
+            .order_by('-dataTime', '-id')
+        )
+    else:
+        los = DocLO.objects.none()
+
+    kolesa_extras = build_kolesa2_1c_extras(estimation) if estimation else {}
+
+    return {
+        'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
+        'Lo': DocLOSerializer(los, many=True).data,
+        'KolesaReception': RegInteractivOcenkaKolesaReceptionSerializer(
+            reception, many=False,
+        ).data,
+        'KolesaReceptionFiles': kolesa_extras.get('KolesaReceptionFiles') or [],
+        'Kolesa2': kolesa_extras.get('Kolesa2'),
+        'HasKolesa2': kolesa_extras.get('HasKolesa2'),
+        'EstimationId': estimation.pk if estimation else None,
+        'KolesaReceptionId': reception.pk,
+    }
+
+
 def queue_estimation_for_1c(estimation, comment=''):
     """Поставить РЛК/оценку в очередь выгрузки в 1С (RegSwapKors, status_code=60)."""
     from register.models import RegSwapKors
