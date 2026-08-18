@@ -564,8 +564,6 @@ class DocRLK(models.Model):
         return count
 
     def estimation(self):
-        if hasattr(self, 'reginteractivocenka'):
-            return self.reginteractivocenka.id
         from documents.rlk_estimation import resolve_estimation_for_rlk
         est = resolve_estimation_for_rlk(self)
         return est.id if est is not None else None
