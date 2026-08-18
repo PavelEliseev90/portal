@@ -419,6 +419,10 @@ def kolesa_reception_detail(request, reception_id):
     dia_disks = RefDiaDisk.objects.all().order_by('value')
     psd_disks = RefPsdDisk.objects.all().order_by('value')
 
+    from eco.reception import build_kolesa_reception_send_payload
+
+    send_payload = build_kolesa_reception_send_payload(reception, request=request)
+
     params = {
         'reception': reception,
         'estimation': estimation,
@@ -434,5 +438,6 @@ def kolesa_reception_detail(request, reception_id):
         'et_disks': et_disks,
         'dia_disks': dia_disks,
         'psd_disks': psd_disks,
+        'send_payload': send_payload,
     }
     return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -12,6 +13,26 @@ from register.models import (
     RegInteractivOcenkaRLK,
     RegRegInteractivOcenkaFiles,
 )
+
+
+def portal_absolute_url(relative_url, request=None):
+    """Относительный путь → полный URL портала (https://host/media_dop/...)."""
+    if not relative_url:
+        return ''
+    text = str(relative_url).strip()
+    if text.startswith(('http://', 'https://')):
+        return text
+    if request is not None:
+        return request.build_absolute_uri(text)
+    base = (
+        getattr(settings, 'MYKORS_PORTAL_PUBLIC_BASE_URL', None)
+        or getattr(settings, 'PORTAL_PUBLIC_BASE_URL', None)
+        or getattr(settings, 'SITE_URL', None)
+        or 'https://ah.kors-group.com'
+    ).rstrip('/')
+    if not text.startswith('/'):
+        text = '/' + text
+    return base + text
 
 
 # Фото / сканы страницы приёма (RegRegInteractivOcenkaFiles.type_file)
@@ -335,7 +356,7 @@ def get_kolesa_reception_or_none(estimation):
     )
 
 
-def build_kolesa2_1c_extras(estimation) -> dict:
+def build_kolesa2_1c_extras(estimation, request=None) -> dict:
     """
     Блок 2КК для выгрузки в 1С (и в Type=estimation, и в Type=reception).
     Возвращает HasKolesa2 / KolesaReception / Kolesa2 / KolesaReceptionFiles.
@@ -391,8 +412,14 @@ def build_kolesa2_1c_extras(estimation) -> dict:
                 'id': f.pk,
                 'name': f.name or '',
                 'type_file': f.type_file or '',
-                'url': f.get_absolute_url() if hasattr(f, 'get_absolute_url') else '',
-                'thumb_url': f.get_thumbnail_url() if hasattr(f, 'get_thumbnail_url') else '',
+                'url': portal_absolute_url(
+                    f.get_absolute_url() if hasattr(f, 'get_absolute_url') else '',
+                    request,
+                ),
+                'thumb_url': portal_absolute_url(
+                    f.get_thumbnail_url() if hasattr(f, 'get_thumbnail_url') else '',
+                    request,
+                ),
                 'file_number': f.file_number or 0,
             })
 
@@ -406,6 +433,47 @@ def build_kolesa2_1c_extras(estimation) -> dict:
         'Kolesa2': kolesa2_from_estimation,
         'KolesaReceptionFiles': kolesa_files,
         'KolesaReceptionId': kolesa_reception.pk if kolesa_reception is not None else None,
+    }
+
+
+def build_kolesa_reception_send_payload(reception, request=None) -> dict:
+    """JSON для выгрузки 2КК: РЛК, листы оценки (DocLO), приёмка."""
+    from documents.models import DocLO
+    from documents.serializers import DocLOSerializer, DocRLKSerializer
+    from register.serializers import RegInteractivOcenkaKolesaReceptionSerializer
+
+    if reception is None:
+        return {}
+
+    rlk = reception.rlk
+    estimation = reception.estimation
+
+    if rlk is not None:
+        los = (
+            DocLO.objects.filter(rlk=rlk)
+            .select_related(
+                'organization', 'filial', 'unit', 'store', 'type_reception',
+                'staff', 'customer', 'cars', 'modification_autoru',
+                'complectation_autoru', 'agreement_unit',
+            )
+            .order_by('-dataTime', '-id')
+        )
+    else:
+        los = DocLO.objects.none()
+
+    kolesa_extras = build_kolesa2_1c_extras(estimation, request=request) if estimation else {}
+
+    return {
+        'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
+        'Lo': DocLOSerializer(los, many=True).data,
+        'KolesaReception': RegInteractivOcenkaKolesaReceptionSerializer(
+            reception, many=False,
+        ).data,
+        'KolesaReceptionFiles': kolesa_extras.get('KolesaReceptionFiles') or [],
+        'Kolesa2': kolesa_extras.get('Kolesa2'),
+        'HasKolesa2': kolesa_extras.get('HasKolesa2'),
+        'EstimationId': estimation.pk if estimation else None,
+        'KolesaReceptionId': reception.pk,
     }
 
 

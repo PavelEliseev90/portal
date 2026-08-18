@@ -1,6 +1,14 @@
 from rest_framework import serializers
-from documents.models import DocRLK
+from documents.models import DocRLK, DocLO
 from datetime import datetime
+
+
+class DocLOSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DocLO
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
 
 
 class DocRLKSerializer(serializers.ModelSerializer):
