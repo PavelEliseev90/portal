@@ -146,73 +146,76 @@ def sibling_rlk_with_estimation(rlk, vin=None):
     return None
 
 
+def _collect_estimations_for_rlk(rlk, vin=None):
+    """Своя оценка + все по UIN. Не останавливаемся на черновике текущего листа."""
+    from register.models import RegInteractivOcenka
+
+    candidates = []
+    if rlk is None:
+        return candidates
+    try:
+        own = rlk.reginteractivocenka
+        if own is not None:
+            candidates.append(own)
+    except Exception:
+        pass
+    try:
+        link = rlk.reginteractivocenkarlk
+        if link is not None and link.estimation_id:
+            candidates.append(link.estimation)
+    except Exception:
+        pass
+    uin = (getattr(rlk, 'uin', None) or '').strip()
+    if uin:
+        qs = (
+            RegInteractivOcenka.objects
+            .filter(rlk__uin=uin)
+            .exclude(rlk__uin='')
+            .select_related('rlk', 'page_vnesh')
+        )
+        candidates.extend(list(qs[:40]))
+    seen = set()
+    unique = []
+    for est in candidates:
+        if est is None or est.pk in seen:
+            continue
+        seen.add(est.pk)
+        unique.append(est)
+    return unique
+
+
 def resolve_estimation_for_rlk(rlk, vin=None):
-    """Оценка текущего РЛ (если это не черновик) или twin с тем же UIN."""
+    """Лучшая оценка: своя или twin с тем же UIN. Побеждает лист с осмотром, не с VIN."""
     if rlk is None:
         return None
     vin = _norm_vin(vin) or _rlk_vin(rlk)
-
-    own = None
-    try:
-        own = rlk.reginteractivocenka
-    except Exception:
-        own = None
-    if estimation_is_usable(own):
-        return own
-
-    try:
-        link = rlk.reginteractivocenkarlk
-        if link is not None and estimation_is_usable(link.estimation):
-            return link.estimation
-    except Exception:
-        pass
-
-    twin = sibling_rlk_with_estimation(rlk, vin=vin)
-    if twin is None:
-        return None
-    try:
-        est = twin.reginteractivocenka
-        if estimation_is_usable(est):
-            return est
-    except Exception:
-        pass
-    try:
-        est = twin.reginteractivocenkarlk.estimation
-        if estimation_is_usable(est):
-            return est
-    except Exception:
-        pass
-    return None
+    return pick_best_estimation(_collect_estimations_for_rlk(rlk, vin=vin), vin)
 
 
 def resolve_interactiv_rlk_for_rlk(rlk, vin=None):
-    """RegInteractivOcenkaRLK текущего листа или twin с настоящей оценкой."""
+    """Связка РЛ↔оценка для той же оценки, что и предпросмотр/фото."""
     from register.models import RegInteractivOcenkaRLK
 
     if rlk is None:
         return None
     vin = _norm_vin(vin) or _rlk_vin(rlk)
-
-    own = (
-        RegInteractivOcenkaRLK.objects
-        .filter(rlk=rlk)
-        .exclude(estimation_id__isnull=True)
-        .select_related('rlk', 'estimation', 'page_soglasovanie', 'status')
-        .first()
-    )
-    if own is not None and estimation_is_usable(own.estimation):
-        return own
-
     est = resolve_estimation_for_rlk(rlk, vin=vin)
     if est is None:
         return None
-    return (
+
+    by_est = (
         RegInteractivOcenkaRLK.objects
         .filter(estimation=est)
         .select_related('rlk', 'estimation', 'page_soglasovanie', 'status')
         .order_by('-id')
-        .first()
-    ) or (
+    )
+    for link in by_est:
+        if link.rlk_id == est.rlk_id:
+            return link
+    link = by_est.first()
+    if link is not None:
+        return link
+    return (
         RegInteractivOcenkaRLK.objects
         .filter(rlk_id=est.rlk_id)
         .exclude(estimation_id__isnull=True)
