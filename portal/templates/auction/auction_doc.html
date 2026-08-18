@@ -961,6 +961,7 @@
 					</div>
 					
 					<div class="doc-actions {% if params.auction.winner_price > 0 %}d-none{% endif %} align-items-center align-self-center">
+						{% if params.can_edit %}
 						<button type="submit" class="btn btn-auction-primary" id="save" name="save"><span class="icon-mbri-save"></span> Сохранить</button>
 						
 						{% if params.sends %}
@@ -971,6 +972,9 @@
 						
 						{% if params.sends == False %}
 							<label class="fs-6 fw-bold">Внимание! Отправка лотов не доступна с 10:00 и до 14:00.</label>
+						{% endif %}
+						{% else %}
+							<label class="fs-6 fw-bold text-muted mb-0">Просмотр. Создание и отправка лотов недоступны.</label>
 						{% endif %}
 
 					</div>
@@ -1747,12 +1751,14 @@
 					
 					<br>
 					<div class="row">
+						{% if params.can_edit %}
 						<div class="col-auto">
 							<button type="submit" name="send" id="send" class="btn btn-outline-success"><span class="icon-mbri-play"></span> Отправить </button>
 						</div>
 						<div class="col-auto">
 							<button type="submit"  name="update" id="update" class="btn btn-outline-success"><span class="icon-mbri-update"></span> Обновить информацию </button>
 						</div>
+						{% endif %}
 					</div>
 					
 				</div>

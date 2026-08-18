@@ -10386,20 +10386,38 @@ def refresh_balance_unit_car_shipment(car_shipment_id):
             if count_estimations == 1:
                 refresh_estimation_balance_unit(rlk.id)
 
+
+def _auction_user_sb_readonly(user):
+    """СБ: просмотр всех аукционов, без создания и отправки лотов."""
+    if getattr(user, 'is_superuser', False):
+        return False
+    return bool(getattr(getattr(user, 'profiles', None), 'user_sb', False))
+
+
+def _auction_select_stores(user, *, for_doc=False):
+    if getattr(getattr(user, 'profiles', None), 'user_sb', False) and not user.is_superuser:
+        return RefStore.objects.all().order_by('name')
+    if user.is_superuser:
+        qs = RefStore.objects.all()
+        if for_doc:
+            qs = qs.filter(active_eco=True)
+        return qs.order_by('name')
+    return user.profiles.korsavto_stores.all()
+
+
 @login_required
 def auction_list(request):
     
     select_count = 10
     
     user = request.user
-
-    if user.is_superuser:
-        select_stores =  RefStore.objects.all()
-    else:
-        select_stores =  user.profiles.korsavto_stores.all()
+    can_edit = not _auction_user_sb_readonly(user)
+    select_stores = _auction_select_stores(user)
     
-    # Применяем фильтр по выбранным стоянкам из профиля пользователя
-    objects = Auction.objects.filter(store__in=select_stores).order_by('-dataTime')
+    if user.is_superuser or getattr(getattr(user, 'profiles', None), 'user_sb', False):
+        objects = Auction.objects.all().order_by('-dataTime')
+    else:
+        objects = Auction.objects.filter(store__in=select_stores).order_by('-dataTime')
     
     # Фильтр по статусу
     status_id = request.GET.get('status', '')
@@ -10480,7 +10498,10 @@ def auction_list(request):
         'count_cars'    : count_cars,
         'count'         : objects.count(),
         'select'        : select,
-        'filtr'         : filtr
+        'selected'      : select,
+        'filtr'         : filtr,
+        'can_edit'      : can_edit,
+        'user_sb'       : not can_edit,
     }
     
     return render(request, "auction/auction_list.html", {'params': params})
@@ -10523,11 +10544,15 @@ def _get_auction_by_uid(slug_auction):
 
 @login_required
 def auction_doc_new(request):
+    if _auction_user_sb_readonly(request.user):
+        return HttpResponseRedirect('/auction/')
     return auction_doc(request, 'new_lots')
 
 
 @login_required
 def auction_doc_refresh(request, slug_auction):
+    if _auction_user_sb_readonly(request.user):
+        return HttpResponseRedirect('/auction/' + str(slug_auction) + '/')
     try:
         auction = _get_auction_by_uid(slug_auction)
         refresh_auction(auction)
@@ -10543,6 +10568,8 @@ def auction_doc(request, slug_auction):
     error   = ''
     auction = None
     new     = False
+    viewer  = request.user
+    can_edit = not _auction_user_sb_readonly(viewer)
     user    = request.user
     answer  = ''
     sends   = False
@@ -10550,6 +10577,8 @@ def auction_doc(request, slug_auction):
         sends = True
 
     if slug_auction == 'new_lots':
+        if not can_edit:
+            return HttpResponseRedirect('/auction/')
         auction = Auction()
         auction.user = user
         auction.save()
@@ -10565,16 +10594,16 @@ def auction_doc(request, slug_auction):
     if user == None:
         user = request.user   
 
-    if user.is_superuser:
-        select_stores =  RefStore.objects.filter(active_eco = True)
-    else:
-        select_stores =  user.profiles.korsavto_stores.all()
+    select_stores = _auction_select_stores(viewer, for_doc=True)
     
     select = {
         'stores' : select_stores
     }
 
-    if request.method == 'POST':
+    if request.method == 'POST' and not can_edit:
+        error = 'Сотруднику службы безопасности доступен только просмотр. Создать лот или отправить на аукцион нельзя.'
+
+    if request.method == 'POST' and can_edit:
         try:
             auction = _get_auction_by_uid(slug_auction)
 
@@ -10756,7 +10785,9 @@ def auction_doc(request, slug_auction):
         'user'          : user,
         'select'        : select,
         'error'         : error,
-        'now'           : DT.datetime.now()
+        'now'           : DT.datetime.now(),
+        'can_edit'      : can_edit,
+        'user_sb'       : not can_edit,
     }
     
     return render(request, "auction/auction_doc.html", {'params': params})
@@ -11345,8 +11376,8 @@ def test(request):
     #RegSwapKors.objects.all().delete()
 
     #send_push_estimation()
-    # from task_manager.views import refresh_auctohub_guide
-    # refresh_auctohub_guide()
+    from task_manager.views import refresh_auctohub_guide
+    refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 
