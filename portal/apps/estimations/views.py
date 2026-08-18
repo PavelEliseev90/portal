@@ -496,12 +496,17 @@ def estimation_rlk(request, rlk_id):
     users   = list()
 
     object                          = DocRLK.objects.get(id=rlk_id)
-    
-    interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
-    if interactiv_rlk.estimation == None:
-        return HttpResponseRedirect(request.path_info + 'start/')
-    else:
-        reg_interactiv_ocenka = interactiv_rlk.estimation
+    from documents.rlk_estimation import sibling_rlk_with_estimation
+
+    interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
+    if interactiv_rlk is None or interactiv_rlk.estimation is None:
+        twin = sibling_rlk_with_estimation(object)
+        if twin is not None and twin.pk != object.pk:
+            return HttpResponseRedirect('/estimations/%s/' % twin.pk)
+        interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk=object)
+        if interactiv_rlk.estimation is None:
+            return HttpResponseRedirect(request.path_info + 'start/')
+    reg_interactiv_ocenka = interactiv_rlk.estimation
 
     # list_statuses = [1, 2, 7, 9]
     # if not interactiv_rlk.status.id in list_statuses:
@@ -1790,6 +1795,12 @@ def estimation_start(request, rlk_id):
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
     
     object                          = DocRLK.objects.get(id=rlk_id)
+    from documents.rlk_estimation import sibling_rlk_with_estimation
+    twin = sibling_rlk_with_estimation(object)
+    if twin is not None and twin.pk != object.pk:
+        existing = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
+        if existing is None or existing.estimation_id is None:
+            return HttpResponseRedirect('/estimations/%s/start/' % twin.pk)
     interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     estimation_active               = None
     mod = ''

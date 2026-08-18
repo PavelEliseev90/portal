@@ -2922,6 +2922,15 @@ class RefCarsOrganization(models.Model):
             list_files.append('/media/nophoto.png')
         return list_files
 
+    def eco_rlk_id(self):
+        """РЛ для ссылки на оценку: свой lo.rlk или twin с тем же UIN, где есть оценка."""
+        from documents.rlk_estimation import resolve_estimation_rlk_id
+        try:
+            rlk = self.lo.rlk if self.lo_id else None
+        except Exception:
+            return None
+        return resolve_estimation_rlk_id(rlk)
+
     def get_photo_mini(self):
         photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(main = True).count()
         try:

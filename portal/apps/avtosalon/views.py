@@ -1727,8 +1727,9 @@ def price_edit(request, slug):
 
     interactiv = None
 
-    if RegInteractivOcenka.objects.filter(rlk = car.lo.rlk).count() > 0:
-        interactiv = RegInteractivOcenka.objects.filter(rlk = car.lo.rlk)[0]    
+    if car.lo_id and car.lo.rlk_id:
+        from documents.rlk_estimation import resolve_estimation_for_rlk
+        interactiv = resolve_estimation_for_rlk(car.lo.rlk)    
     
     agreement = None
     if DocCarAgreement.objects.filter(active = True).filter(lo = car.lo).count() > 0:
