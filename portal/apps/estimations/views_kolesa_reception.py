@@ -421,7 +421,7 @@ def kolesa_reception_detail(request, reception_id):
 
     from eco.reception import build_kolesa_reception_send_payload
 
-    send_payload = build_kolesa_reception_send_payload(reception)
+    send_payload = build_kolesa_reception_send_payload(reception, request=request)
 
     params = {
         'reception': reception,

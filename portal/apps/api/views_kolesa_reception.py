@@ -121,7 +121,7 @@ def _car_label(estimation):
     return label or estimation.vin or estimation.number_body or ''
 
 
-def _serialize_list_row(reception, include_data=False):
+def _serialize_list_row(reception, include_data=False, request=None):
     estimation = reception.estimation
     rlk = reception.rlk
     row = {
@@ -142,7 +142,7 @@ def _serialize_list_row(reception, include_data=False):
         'count_tyre': reception.count_tyre or 0,
     }
     if include_data:
-        row['data'] = build_kolesa_reception_send_payload(reception)
+        row['data'] = build_kolesa_reception_send_payload(reception, request=request)
     return row
 
 
@@ -225,7 +225,10 @@ def kolesa_reception_list(request):
     paginator = Paginator(qs, page_size)
     page_obj = paginator.get_page(page_num)
 
-    items = [_serialize_list_row(row, include_data=include_data) for row in page_obj.object_list]
+    items = [
+        _serialize_list_row(row, include_data=include_data, request=request)
+        for row in page_obj.object_list
+    ]
 
     not_sent_count = qs.filter(Q(send_wheels_ib=False) | Q(send_wheels_ib__isnull=True)).count()
     sent_count = qs.filter(send_wheels_ib=True).count()
@@ -256,7 +259,7 @@ def kolesa_reception_detail(request, reception_id):
             status.HTTP_404_NOT_FOUND,
         )
 
-    payload = build_kolesa_reception_send_payload(reception)
+    payload = build_kolesa_reception_send_payload(reception, request=request)
     payload['ok'] = True
     payload['send_wheels_ib'] = bool(reception.send_wheels_ib)
     payload['send_wheels_ib_date'] = reception.send_wheels_ib_date
