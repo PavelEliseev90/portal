@@ -11373,8 +11373,8 @@ def test(request):
     #RegSwapKors.objects.all().delete()
 
     #send_push_estimation()
-    # from task_manager.views import refresh_auctohub_guide
-    # refresh_auctohub_guide()
+    from task_manager.views import refresh_auctohub_guide
+    refresh_auctohub_guide()
     # RegInteractivOcenka.objects.get(pk = 47119).save()
     #DocRLK.objects.get(pk = 2607921).save()
 

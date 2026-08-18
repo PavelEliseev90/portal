@@ -39,7 +39,7 @@ from django.core import files
 from register.models import RegRefCarsOrganizationsCalculationPrice, RegEstimationRefCarsOrganizations, RegViewsCarsOrganization, RegRefCarsOrganizationsPrice
 from datetime import datetime
 from django.db.models import Q
-from api.tasks_cars import load_photos_async, normalize_photos_payload
+from api.tasks_cars import load_photos, normalize_photos_payload
 
 
 def add_statistic_cars_organization(user, cars, store, type):
@@ -618,9 +618,8 @@ def refresh_cars(request):
     for car in list_load_photo:
         car_object = car['Car_object']
         photos = normalize_photos_payload(car.get('Photos'))
-        # Фото — в фоне; пустой список не ставим в очередь
         if photos:
-            load_photos_async(car_object.pk, photos)
+            load_photos(car_object, photos)
 
         # QR без чтения файла с диска/сетевого storage (раньше сильно тормозило ответ 1С)
         qr_b64 = ''
