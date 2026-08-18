@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 
-from django.db.models import OuterRef, Subquery
+from django.db.models import IntegerField, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 
 
@@ -132,8 +132,9 @@ def subquery_estimation_id(rlk_id_ref, rlk_uin_ref):
         .order_by('-end_estimation', '-start_estimation', '-id')
     )
     return Coalesce(
-        Subquery(direct.values('id')[:1]),
-        Subquery(by_uin.values('id')[:1]),
+        Subquery(direct.values('id')[:1], output_field=IntegerField()),
+        Subquery(by_uin.values('id')[:1], output_field=IntegerField()),
+        output_field=IntegerField(),
     )
 
 
@@ -155,8 +156,9 @@ def subquery_interactiv_rlk_id(rlk_id_ref, rlk_uin_ref):
         .order_by('-estimation__end_estimation', '-estimation__start_estimation', '-id')
     )
     return Coalesce(
-        Subquery(direct.values('id')[:1]),
-        Subquery(by_uin.values('id')[:1]),
+        Subquery(direct.values('id')[:1], output_field=IntegerField()),
+        Subquery(by_uin.values('id')[:1], output_field=IntegerField()),
+        output_field=IntegerField(),
     )
 
 
@@ -173,6 +175,7 @@ def subquery_estimation_rlk_pk(rlk_id_ref, rlk_uin_ref):
         .order_by('-end_estimation', '-start_estimation', '-id')
     )
     return Coalesce(
-        Subquery(direct.values('rlk_id')[:1]),
-        Subquery(by_uin.values('rlk_id')[:1]),
+        Subquery(direct.values('rlk_id')[:1], output_field=IntegerField()),
+        Subquery(by_uin.values('rlk_id')[:1], output_field=IntegerField()),
+        output_field=IntegerField(),
     )

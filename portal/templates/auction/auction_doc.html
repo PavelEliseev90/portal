@@ -2237,7 +2237,9 @@
 				
 				var url     = '/auction/js/get_cars_lot_online/' + slug + '/';
 				$.get(url, function( data, status ) { 
-					
+					if (!Array.isArray(data)) {
+						data = data ? [data] : [];
+					}
 					let i = data.length;
 
 					for (s = 0; s < i; s++) { 
@@ -2252,13 +2254,14 @@
 						var car_bcp 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.bcp,);
 						var car_cost_price  = new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.cost_price,);
 						var id  = obj.slug;
+						var photo0 = (obj.url && obj.url.length) ? obj.url[0] : '/media/nophoto.png';
 
 					var click_delete = "delete_car('" + id + "')";
 					var click 		 = "info_car('" + id + "')";
 
 					html_list = '	<div class="doc-car-card" id="cars_list_data_id_' + id + '" name="cars_list_data_id_' + id + '">'
 					html_list += '		<div class="doc-car-layout">'
-					html_list += '			<div class="doc-car-photo"><img src="' + obj.url[0] + '" alt="' + mark + ' ' + model + '"></div>'
+					html_list += '			<div class="doc-car-photo"><img src="' + photo0 + '" alt="' + mark + ' ' + model + '"></div>'
 					html_list += '			<div class="doc-car-info">'
 					html_list += '				<p><strong>Марка:</strong> ' + mark  + '</p>'
 					html_list += '				<p><strong>Модель:</strong> ' + model + '</p>'
@@ -2455,7 +2458,9 @@
 			$('#rlk').modal('show');
 			var url     = '/auction/js/get_cars_lot_online/' + slug + '/';
 			$.get(url, function( data, status ) { 
-				
+				if (!Array.isArray(data)) {
+					data = data ? [data] : [];
+				}
 				let i = data.length;
 				for (s = 0; s < i; s++) { 
 					
@@ -2500,7 +2505,7 @@
 					$('#info_car_type_reception').html('Тип приема автомобиля: ' + obj.type_reception_name);
 					$('#info_car_name').html('<label>' + mark + ' ' + model + ' ' + modification  + razdel + obj.year + razdel + obj.vin +  '</label>');
 					
-					let i_work_podgotovka = obj.work_podgotovka.length;					
+					let i_work_podgotovka = (obj.work_podgotovka && obj.work_podgotovka.length) ? obj.work_podgotovka.length : 0;					
 					html = ''
 					for (s_work = 0; s_work < i_work_podgotovka; s_work++) {
 						
@@ -2510,7 +2515,7 @@
 
 					$('#work_car').val(html);
 
-					let i_photo = obj.url.length;
+					let i_photo = (obj.url && obj.url.length) ? obj.url.length : 0;
 					
 					html = ''
 
@@ -2580,7 +2585,9 @@
 			var url     = '/auction/js/get_cars_lot_online/?store_id=' + store_id + '&search=' + search + '&page='+page;
 
 			$.get(url, function( data, status ) { 
-				
+				if (!Array.isArray(data)) {
+					data = [];
+				}
 				let i = data.length;
 
 				if (i == 0){

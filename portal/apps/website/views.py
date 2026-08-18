@@ -10835,80 +10835,81 @@ def auction_doc_get_cars(request):
 
 
 def auction_doc_get_cars_info(request, slug):
-    from documents.rlk_estimation import subquery_estimation_id, subquery_estimation_rlk_pk
+    from documents.rlk_estimation import resolve_estimation_for_rlk, resolve_estimation_rlk_id
 
-    cars        = RefCarsOrganization.objects.filter(slug = slug)
-    cars    = cars.annotate(
-        int_ocenka_id           = subquery_estimation_id('lo__rlk_id', 'lo__rlk__uin')).annotate(
-        int_ocenka_diagnostika = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_pered = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_zad = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_up = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_right    = Value('', output_field=CharField())).annotate(
-        int_ocenka_url_left     = Value('', output_field=CharField())).annotate(
-        work_podgotovka         = Value('', output_field=CharField())).annotate(
-        work_service            = Value('', output_field=CharField())).annotate(
-        work_mcu                = Value('', output_field=CharField())).annotate(
-        work                    = Value('', output_field=CharField()))
-    
-    
-    data = list(cars.values('vin', 
-                       'slug', 
-                       'year',
-                       'price',
-                       'run', 
-                       'days_in_stok',
-                       'outlay',
-                       'cost_price',
-                       'bcp',
-                       'description_op',
-                       'description_podgotovka',
-                       'int_ocenka_diagnostika',
-                       'int_ocenka_id',
-                       'int_ocenka_url_pered',
-                       'int_ocenka_url_zad',
-                       'int_ocenka_url_up',
-                       'int_ocenka_url_right',
-                       'int_ocenka_url_left',
-                       'work_podgotovka',
-                       'work_service',
-                       'work_mcu',
-                       'work',
-                       type_sale_name = F('type_sale__name'),
-                       type_reception_name = F('type_reception__name'),
-                       stage_price_name = F('stage_price__name'),
-                       status_name = F('status__name'),
-                       modification_name = F('modification_autoru__name'),
-                       model_name   = F('modification_autoru__model__name'),
-                       mark_name    = F('modification_autoru__model__mark__name'),
-                       rlk_id       = Coalesce(
-                           subquery_estimation_rlk_pk('lo__rlk_id', 'lo__rlk__uin'),
-                           F('lo__rlk_id'),
-                       ),
-                       url          = F('prev_photo')))
-    for car in data:
-        car['url'] = get_url_images(car['slug'])
-        car['int_ocenka_url_pered'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pered')
-        car['int_ocenka_url_zad']   = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_zad')
-        car['int_ocenka_url_up']    = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_up')
-        car['int_ocenka_url_right'] = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_pass')
-        car['int_ocenka_url_left']  = get_url_image_osmotr(car['int_ocenka_id'], 'vnesh_car_osmotr_vod')
-        car['work_podgotovka']      = list()
-        car['work_service']         = list()
-        car['work_mcu']             = list()
-        car['work']                 = ''
-        if car['int_ocenka_id'] != None:
-            car['work_podgotovka']  = list_work(car['int_ocenka_id']) 
-            for inf_work in car['work_podgotovka']:
-                car['work']  = car['work']  + inf_work['name'] + '/n'
+    cars = (
+        RefCarsOrganization.objects
+        .filter(slug=slug)
+        .select_related(
+            'lo__rlk',
+            'type_sale', 'type_reception', 'stage_price', 'status',
+            'modification_autoru__model__mark',
+        )
+    )
+
+    data = []
+    for car in cars:
+        rlk = car.lo.rlk if car.lo_id else None
+        estimation = resolve_estimation_for_rlk(rlk)
+        if estimation is not None:
             try:
-                est = RegInteractivOcenka.objects.filter(pk=car['int_ocenka_id']).select_related(
-                    'page_soglasovanie',
-                ).first()
-                if est is not None and est.page_soglasovanie_id:
-                    car['int_ocenka_diagnostika'] = est.page_soglasovanie.comment_diagnostica or ''
+                estimation = (
+                    RegInteractivOcenka.objects
+                    .select_related('page_soglasovanie')
+                    .get(pk=estimation.pk)
+                )
             except Exception:
                 pass
+        estimation_id = estimation.pk if estimation is not None else None
+        diagnostika = ''
+        if estimation is not None and estimation.page_soglasovanie_id:
+            diagnostika = estimation.page_soglasovanie.comment_diagnostica or ''
+        works = list_work(estimation_id) if estimation_id else []
+        work_text = ''
+        for inf_work in works:
+            work_text = work_text + inf_work['name'] + '/n'
+        mark = ''
+        model = ''
+        modification = ''
+        try:
+            modification = car.modification_autoru.name if car.modification_autoru_id else ''
+            model = car.modification_autoru.model.name if car.modification_autoru_id else ''
+            mark = car.modification_autoru.model.mark.name if car.modification_autoru_id else ''
+        except Exception:
+            pass
+        data.append({
+            'vin': car.vin,
+            'slug': car.slug,
+            'year': car.year,
+            'price': car.price,
+            'run': car.run,
+            'days_in_stok': car.days_in_stok,
+            'outlay': car.outlay,
+            'cost_price': car.cost_price,
+            'bcp': car.bcp,
+            'description_op': car.description_op or '',
+            'description_podgotovka': car.description_podgotovka or '',
+            'int_ocenka_diagnostika': diagnostika,
+            'int_ocenka_id': estimation_id,
+            'int_ocenka_url_pered': get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_pered'),
+            'int_ocenka_url_zad': get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_zad'),
+            'int_ocenka_url_up': get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_up'),
+            'int_ocenka_url_right': get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_pass'),
+            'int_ocenka_url_left': get_url_image_osmotr(estimation_id, 'vnesh_car_osmotr_vod'),
+            'work_podgotovka': works,
+            'work_service': [],
+            'work_mcu': [],
+            'work': work_text,
+            'type_sale_name': car.type_sale.name if car.type_sale_id else '',
+            'type_reception_name': car.type_reception.name if car.type_reception_id else '',
+            'stage_price_name': car.stage_price.name if car.stage_price_id else '',
+            'status_name': car.status.name if car.status_id else '',
+            'modification_name': modification,
+            'model_name': model,
+            'mark_name': mark,
+            'rlk_id': resolve_estimation_rlk_id(rlk),
+            'url': get_url_images(car.slug) or ['/media/nophoto.png'],
+        })
 
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
@@ -10936,6 +10937,8 @@ def list_work(int_ocenka):
     return work_podgotovka 
 
 def get_url_image_osmotr(estimation_id, type_file):
+    if not estimation_id:
+        return '/media/nophoto.png'
     photos_count = RegRegInteractivOcenkaFiles.objects.filter(estimation__id = estimation_id).filter(type_file = type_file).count()
     try:
         if photos_count > 0:
