@@ -10812,7 +10812,7 @@ def auction_doc_get_cars(request):
     store_id    = request.GET.get('store_id', '')
     page        = int(request.GET.get('page', '0'))
 
-    cars = RefCarsOrganization.objects.exclude(quantity = 0).filter(type_sale__name__icontains = 'Аукцион').filter(store__id = store_id)
+    cars = RefCarsOrganization.objects.exclude(quantity=0).filter(store__id=store_id)
 
     if len(search) > 0:
         cars = cars.filter(search_fields__icontains = search)
