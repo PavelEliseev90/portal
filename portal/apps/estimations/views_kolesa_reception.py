@@ -60,6 +60,45 @@ def _copy_kolesa_to_reception(reception, page_kolesa):
     reception.kolesa_estimation = page_kolesa.kolesa2_estimation
 
 
+def build_kolesa_reception_send_payload(reception):
+    """JSON для предпросмотра отправки: РЛК, листы оценки (DocLO), приёмка 2КК."""
+    from documents.models import DocLO
+    from documents.serializers import DocLOSerializer, DocRLKSerializer
+    from eco.reception import build_kolesa2_1c_extras
+    from register.serializers import RegInteractivOcenkaKolesaReceptionSerializer
+
+    rlk = reception.rlk
+    estimation = reception.estimation
+
+    if rlk is not None:
+        los = (
+            DocLO.objects.filter(rlk=rlk)
+            .select_related(
+                'organization', 'filial', 'unit', 'store', 'type_reception',
+                'staff', 'customer', 'cars', 'modification_autoru',
+                'complectation_autoru', 'agreement_unit',
+            )
+            .order_by('-dataTime', '-id')
+        )
+    else:
+        los = DocLO.objects.none()
+
+    kolesa_extras = build_kolesa2_1c_extras(estimation) if estimation else {}
+
+    return {
+        'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
+        'Lo': DocLOSerializer(los, many=True).data,
+        'KolesaReception': RegInteractivOcenkaKolesaReceptionSerializer(
+            reception, many=False,
+        ).data,
+        'KolesaReceptionFiles': kolesa_extras.get('KolesaReceptionFiles') or [],
+        'Kolesa2': kolesa_extras.get('Kolesa2'),
+        'HasKolesa2': kolesa_extras.get('HasKolesa2'),
+        'EstimationId': estimation.pk if estimation else None,
+        'KolesaReceptionId': reception.pk,
+    }
+
+
 def create_kolesa_reception(estimation, user):
     """Создать приёмку для оценки (идемпотентно по estimation)."""
     existing = RegInteractivOcenkaKolesaReception.objects.filter(
@@ -419,6 +458,8 @@ def kolesa_reception_detail(request, reception_id):
     dia_disks = RefDiaDisk.objects.all().order_by('value')
     psd_disks = RefPsdDisk.objects.all().order_by('value')
 
+    send_payload = build_kolesa_reception_send_payload(reception)
+
     params = {
         'reception': reception,
         'estimation': estimation,
@@ -434,5 +475,6 @@ def kolesa_reception_detail(request, reception_id):
         'et_disks': et_disks,
         'dia_disks': dia_disks,
         'psd_disks': psd_disks,
+        'send_payload': send_payload,
     }
     return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})
