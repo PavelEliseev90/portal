@@ -8,6 +8,7 @@ from register.models import (
 )
 from datetime import datetime
 from django.db.models import Count, Sum, Max, Avg, F, OuterRef, Subquery, Sum, Q, Min
+from documents.serializers import DocRLKKolesaExportSerializer
 
 class RegInteractivOcenkaSerializer(serializers.ModelSerializer):
     
@@ -78,6 +79,16 @@ class RegInteractivOcenkaReceptionSerializer(serializers.ModelSerializer):
 
 
 class RegInteractivOcenkaKolesaReceptionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RegInteractivOcenkaKolesaReception
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
+
+
+class RegInteractivOcenkaKolesaReceptionExportSerializer(serializers.ModelSerializer):
+    """Приёмка 2КК для выгрузки: вложенный РЛК без ценовых групп подразделения."""
+    rlk = DocRLKKolesaExportSerializer(read_only=True)
 
     class Meta:
         model = RegInteractivOcenkaKolesaReception

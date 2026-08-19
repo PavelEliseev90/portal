@@ -1,9 +1,21 @@
 from rest_framework import serializers
 from documents.models import DocRLK, DocLO
 from datetime import datetime
+from refs.serializers import RefUnitKolesaExportSerializer
 
 
 class DocLOSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DocLO
+        fields = [field.name for field in model._meta.fields]
+        depth = 1
+
+
+class DocLOKolesaExportSerializer(serializers.ModelSerializer):
+    """Лист оценки для 2КК: подразделение без ценовых групп 200/400/…"""
+    unit = RefUnitKolesaExportSerializer(read_only=True)
+    agreement_unit = RefUnitKolesaExportSerializer(read_only=True)
 
     class Meta:
         model = DocLO
@@ -60,3 +72,9 @@ class DocRLKSerializer(serializers.ModelSerializer):
         fields.append('estimation_staff_uin')
     
         depth = 1
+
+
+class DocRLKKolesaExportSerializer(DocRLKSerializer):
+    """РЛК для 2КК: unit / unit_dc без ценовых групп."""
+    unit = RefUnitKolesaExportSerializer(read_only=True)
+    unit_dc = RefUnitKolesaExportSerializer(read_only=True)

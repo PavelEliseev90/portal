@@ -1851,14 +1851,30 @@ def board_monitoring(request):
     # Логи загрузки автомобилей
     list_log_refresh_cars = list()
     info_refresh_cars = RefreshCarsLog.objects.values('unit').annotate(max_date = Max('date')).order_by('-unit')
+    unit_ids = [row['unit'] for row in info_refresh_cars if row.get('unit')]
+    stock_actual_by_unit = {}
+    if unit_ids:
+        for unit_id, cnt in (
+            RefCarsOrganization.objects
+            .filter(unit_id__in=unit_ids)
+            .exclude(quantity=0)
+            .values('unit_id')
+            .annotate(cnt=Count('id'))
+            .values_list('unit_id', 'cnt')
+        ):
+            stock_actual_by_unit[unit_id] = cnt
     for info_refresh_car in info_refresh_cars:
         info_refresh_data  = RefreshCarsLog.objects.filter(unit = info_refresh_car['unit']).filter(date = info_refresh_car['max_date'])[0]
+        unit_id = info_refresh_car['unit']
+        stock_actual = stock_actual_by_unit.get(unit_id, 0)
         info_refresh = {
             'date'  : info_refresh_data.date,
             'unit'  : info_refresh_data.unit,
             'add'   : info_refresh_data.count_add,
-            'del'   : info_refresh_data.count_del, 
-            'stock' : info_refresh_data.count_stock 
+            'del'   : info_refresh_data.count_del,
+            'stock' : info_refresh_data.count_stock,
+            'stock_actual': stock_actual,
+            'stock_mismatch': info_refresh_data.count_stock != stock_actual,
         }
         list_log_refresh_cars.append(info_refresh)
     

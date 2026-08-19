@@ -436,11 +436,35 @@ def build_kolesa2_1c_extras(estimation, request=None) -> dict:
     }
 
 
+def _strip_unit_price_groups(payload):
+    """Убрать поля ценовых групп из unit/unit_dc/agreement_unit во всём JSON."""
+    from refs.serializers import ref_unit_price_group_field_names
+
+    drop = set(ref_unit_price_group_field_names())
+    unit_keys = frozenset(('unit', 'unit_dc', 'agreement_unit'))
+
+    def _walk(obj):
+        if isinstance(obj, dict):
+            for key in unit_keys:
+                unit = obj.get(key)
+                if isinstance(unit, dict):
+                    for fname in drop:
+                        unit.pop(fname, None)
+            for value in obj.values():
+                _walk(value)
+        elif isinstance(obj, list):
+            for item in obj:
+                _walk(item)
+
+    _walk(payload)
+    return payload
+
+
 def build_kolesa_reception_send_payload(reception, request=None) -> dict:
     """JSON для выгрузки 2КК: РЛК, листы оценки (DocLO), приёмка."""
     from documents.models import DocLO
-    from documents.serializers import DocLOSerializer, DocRLKSerializer
-    from register.serializers import RegInteractivOcenkaKolesaReceptionSerializer
+    from documents.serializers import DocLOKolesaExportSerializer, DocRLKKolesaExportSerializer
+    from register.serializers import RegInteractivOcenkaKolesaReceptionExportSerializer
 
     if reception is None:
         return {}
@@ -463,10 +487,10 @@ def build_kolesa_reception_send_payload(reception, request=None) -> dict:
 
     kolesa_extras = build_kolesa2_1c_extras(estimation, request=request) if estimation else {}
 
-    return {
-        'Rlk': DocRLKSerializer(rlk, many=False).data if rlk else None,
-        'Lo': DocLOSerializer(los, many=True).data,
-        'KolesaReception': RegInteractivOcenkaKolesaReceptionSerializer(
+    payload = {
+        'Rlk': DocRLKKolesaExportSerializer(rlk, many=False).data if rlk else None,
+        'Lo': DocLOKolesaExportSerializer(los, many=True).data,
+        'KolesaReception': RegInteractivOcenkaKolesaReceptionExportSerializer(
             reception, many=False,
         ).data,
         'KolesaReceptionFiles': kolesa_extras.get('KolesaReceptionFiles') or [],
@@ -475,6 +499,7 @@ def build_kolesa_reception_send_payload(reception, request=None) -> dict:
         'EstimationId': estimation.pk if estimation else None,
         'KolesaReceptionId': reception.pk,
     }
+    return _strip_unit_price_groups(payload)
 
 
 def queue_estimation_for_1c(estimation, comment=''):

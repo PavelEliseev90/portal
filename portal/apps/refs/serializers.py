@@ -3,6 +3,21 @@ from refs.models import AutoruModel, AutoruComplectation, AutoruMark, AutoruModi
 from datetime import datetime
 
 
+PRICE_GROUP_SUFFIXES = ('_200', '_400', '_700', '_1200', '_2000', '_3000', '_5000', '_5001')
+
+
+def ref_unit_price_group_field_names():
+    """Поля RefUnit с настройками ценовых групп (200, 400, …) — не для выгрузки 2КК."""
+    names = []
+    for field in RefUnit._meta.get_fields():
+        name = getattr(field, 'name', None)
+        if not name:
+            continue
+        if any(name.endswith(suffix) for suffix in PRICE_GROUP_SUFFIXES):
+            names.append(name)
+    return names
+
+
 class RefTypeReceptionCarsOrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefTypeReceptionCarsOrganization
@@ -27,9 +42,12 @@ class RefFilialSerializer(serializers.ModelSerializer):
 class RefUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = RefUnit
-        #fields = '__all__'
-        exclude = ['ratio_1с_test_price_200', 'ratio_1с_test_price_400']
-        #depth = 1
+        exclude = ref_unit_price_group_field_names()
+
+
+class RefUnitKolesaExportSerializer(RefUnitSerializer):
+    """Подразделение для JSON 2КК / БУ колёс — без ценовых групп."""
+    pass
 
 
 class RefStoreSerializer(serializers.ModelSerializer):
