@@ -68,7 +68,13 @@
 			<a href="{% url 'monitoring:stores_list' %}" class="text-decoration-none">
 				<div class="portal-panel h-100" style="border-left: 4px solid #0ea5e9;">
 					<h5 class="mb-2" style="color: #002a5a;">Управление стоянками</h5>
-					<p class="text-muted small mb-0">Список стоянок и сброс наличия автомобилей (quantity → 0).</p>
+					<p class="text-muted small mb-2">Список стоянок и сброс наличия автомобилей (quantity → 0).</p>
+					<div>
+						<div class="text-muted small">Без modification_autoru</div>
+						<div class="fs-4 fw-bold {% if params.cars_no_modification_total %}text-warning{% else %}text-success{% endif %}">
+							{{ params.cars_no_modification_total|default:0 }}
+						</div>
+					</div>
 				</div>
 			</a>
 		</div>

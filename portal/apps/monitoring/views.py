@@ -34,6 +34,30 @@ def _staff_required(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 
+def _cars_no_modification_qs(store_id=None, unit_id=None):
+    """Авто в наличии без привязки modification_autoru."""
+    qs = (
+        RefCarsOrganization.objects.filter(quantity__gt=0, modification_autoru__isnull=True)
+        .select_related('store', 'unit', 'status', 'type_sale')
+        .order_by('-date_refresh', '-id')
+    )
+    if store_id:
+        qs = qs.filter(store_id=store_id)
+    if unit_id:
+        qs = qs.filter(unit_id=unit_id)
+    return qs
+
+
+def cars_no_modification_count(store_id=None, unit_id=None):
+    return _cars_no_modification_qs(store_id=store_id, unit_id=unit_id).count()
+
+
+def stores_hub_counts():
+    return {
+        'cars_no_modification_total': cars_no_modification_count(),
+    }
+
+
 def _parse_date_range(request, default_days=30):
     today = timezone.now().date()
     default_end = today
@@ -78,6 +102,7 @@ def hub(request):
         **_exchange_errors_counts(),
         **cars_photos_hub_counts(),
         **cumulative_hub_counts(),
+        **stores_hub_counts(),
     }
     return render(request, 'monitoring/hub.html', {'params': params})
 
@@ -181,6 +206,7 @@ def stores_list(request):
     """Управление стоянками: список и количество авто в наличии."""
     q = (request.GET.get('q') or '').strip()
     only_with_cars = request.GET.get('only_with_cars') == '1'
+    only_no_modification = request.GET.get('only_no_modification') == '1'
 
     cars_in_stock_sq = (
         RefCarsOrganization.objects.filter(store=OuterRef('pk'), quantity__gt=0)
@@ -189,8 +215,22 @@ def stores_list(request):
         .annotate(cnt=Count('id'))
         .values('cnt')[:1]
     )
+    cars_no_modification_sq = (
+        RefCarsOrganization.objects.filter(
+            store=OuterRef('pk'),
+            quantity__gt=0,
+            modification_autoru__isnull=True,
+        )
+        .order_by()
+        .values('store')
+        .annotate(cnt=Count('id'))
+        .values('cnt')[:1]
+    )
     qs = RefStore.objects.select_related('city', 'unit').annotate(
         cars_in_stock=Coalesce(Subquery(cars_in_stock_sq, output_field=IntegerField()), 0),
+        cars_no_modification=Coalesce(
+            Subquery(cars_no_modification_sq, output_field=IntegerField()), 0,
+        ),
     ).order_by('name', 'id')
 
     if q:
@@ -205,6 +245,8 @@ def stores_list(request):
         )
     if only_with_cars:
         qs = qs.filter(cars_in_stock__gt=0)
+    if only_no_modification:
+        qs = qs.filter(cars_no_modification__gt=0)
 
     per_page = min(int(request.GET.get('per_page', 50) or 50), 100)
     paginator = Paginator(qs, per_page)
@@ -223,6 +265,8 @@ def stores_list(request):
         'type': 'monitoring_stores',
         'q': q,
         'only_with_cars': only_with_cars,
+        'only_no_modification': only_no_modification,
+        'cars_no_modification_total': cars_no_modification_count(),
         'page_obj': page_obj,
         'paginator': paginator,
         'per_page': per_page,
@@ -259,6 +303,56 @@ def stores_clear_stock(request, pk):
     if request.POST.get('only_with_cars') == '1':
         query['only_with_cars'] = '1'
     return redirect(f"{reverse('monitoring:stores_list')}?{urlencode(query)}")
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def cars_no_modification_list(request, store_pk=None):
+    """Детальный список авто в наличии без modification_autoru."""
+    q = (request.GET.get('q') or '').strip()
+    store = None
+    if store_pk is not None:
+        store = get_object_or_404(RefStore.objects.select_related('city', 'unit'), pk=store_pk)
+
+    qs = _cars_no_modification_qs(store_id=store.pk if store else None)
+    if q:
+        qs = qs.filter(
+            Q(vin__icontains=q)
+            | Q(name__icontains=q)
+            | Q(slug__icontains=q)
+            | Q(plate_number__icontains=q)
+            | Q(mark__icontains=q)
+            | Q(model__icontains=q)
+            | Q(modification__icontains=q)
+            | Q(store__name__icontains=q)
+            | Q(unit__name__icontains=q)
+        )
+
+    per_page = min(int(request.GET.get('per_page', 50) or 50), 100)
+    paginator = Paginator(qs, per_page)
+    page_num = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page_num)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    get_copy = request.GET.copy()
+    if 'page' in get_copy:
+        get_copy.pop('page')
+    query_without_page = get_copy.urlencode()
+
+    params = {
+        'type': 'monitoring_cars_no_modification',
+        'q': q,
+        'store': store,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'per_page': per_page,
+        'query_without_page': query_without_page,
+        'total_count': paginator.count,
+        'cars_no_modification_total': cars_no_modification_count(),
+    }
+    return render(request, 'monitoring/cars_no_modification_list.html', {'params': params})
 
 
 @login_required

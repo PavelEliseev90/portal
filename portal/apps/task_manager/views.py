@@ -1518,7 +1518,7 @@ def _safe_auction_fk_dict(value, default_name=''):
     return {'id': None, 'name': default_name}
 
 
-def _sanitize_car_payload_for_auction(car_data):
+def _sanitize_car_payload_for_auction(car_data, car_instance=None):
     """Подготовка car_info для process_lot_cars на портале аукциона."""
     if not isinstance(car_data, dict):
         return car_data
@@ -1531,6 +1531,13 @@ def _sanitize_car_payload_for_auction(car_data):
             continue
         default_name = 'Аукцион' if field == 'type_sale' else ''
         car_data[field] = _safe_auction_fk_dict(car_data.get(field), default_name=default_name)
+    if car_instance is not None:
+        car_data['mark_name'] = car_instance.display_mark_name()
+        car_data['model_name'] = car_instance.display_model_name()
+        car_data['modification_name'] = car_instance.display_modification_name()
+        mod_fk = car_data.get('modification_autoru')
+        if isinstance(mod_fk, dict) and not mod_fk.get('name'):
+            mod_fk['name'] = car_data['modification_name']
     return car_data
 
 def _loads_auction_files_json(value):
@@ -1609,7 +1616,8 @@ def send_auction(auction):
                 )
         car_info = {
             'car'           : _sanitize_car_payload_for_auction(
-                RefCarsOrganizationSerializer(auction_car.car, many=False).data
+                RefCarsOrganizationSerializer(auction_car.car, many=False).data,
+                auction_car.car,
             ),
             'description'   : auction_car.description,
             'dop_info'      : dop_info,
@@ -1715,13 +1723,22 @@ def info_car_auction(slug):
                        type_reception_name = F('type_reception__name'),
                        stage_price_name = F('stage_price__name'),
                        status_name = F('status__name'),
-                       modification_name = F('modification_autoru__name'),
-                       model_name   = F('modification_autoru__model__name'),
-                       mark_name    = F('modification_autoru__model__mark__name'),
+                       modification_name=Coalesce(
+                           F('modification_autoru__name'), F('modification'), Value(''),
+                       ),
+                       model_name=Coalesce(
+                           F('modification_autoru__model__name'), F('model'), Value(''),
+                       ),
+                       mark_name=Coalesce(
+                           F('modification_autoru__model__mark__name'), F('mark'), Value(''),
+                       ),
                        url          = F('prev_photo')))
     if not data:
         return {}
     for car in data:
+        for key in ('mark_name', 'model_name', 'modification_name'):
+            if car.get(key) is None:
+                car[key] = ''
         car['url']                  = get_url_images(car['slug'])
         car['market_price']         = get_market_price(car)
         if car['market_price'] == None:
@@ -1802,6 +1819,25 @@ def info_car_auction(slug):
             car['int_ocenka_url_up']    = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_up')
             car['int_ocenka_url_right'] = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_pass')
             car['int_ocenka_url_left']  = get_url_image_osmotr(estimation.id, 'vnesh_car_osmotr_vod')
+
+            if not car.get('mark_name'):
+                car['mark_name'] = estimation.mark_name or ''
+                if not car['mark_name'] and estimation.modification_id and estimation.modification:
+                    try:
+                        car['mark_name'] = estimation.modification.model.mark.name
+                    except Exception:
+                        pass
+            if not car.get('model_name'):
+                car['model_name'] = estimation.model_name or ''
+                if not car['model_name'] and estimation.modification_id and estimation.modification:
+                    try:
+                        car['model_name'] = estimation.modification.model.name
+                    except Exception:
+                        pass
+            if not car.get('modification_name'):
+                car['modification_name'] = estimation.modification_name or ''
+                if not car['modification_name'] and estimation.modification_id and estimation.modification:
+                    car['modification_name'] = estimation.modification.name or ''
     
     return car
 

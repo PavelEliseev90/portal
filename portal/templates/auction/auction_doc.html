@@ -1029,12 +1029,12 @@
 			<div class="doc-car-card" id="cars_list_data_id_{{structure.car.slug}}" name="cars_list_data_id_{{structure.car.slug}}">
 					<div class="doc-car-layout">
 							<div class="doc-car-photo">
-									<img src="{{structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
+									<img src="{{structure.car.get_photo}}" alt="{{structure.car.display_mark_name}} {{structure.car.display_model_name}}">
 							</div>
 							<div class="doc-car-info">
-									<p><strong>Марка:</strong> {{structure.car.modification_autoru.model.mark}}</p>
-									<p><strong>Модель:</strong> {{structure.car.modification_autoru.model}}</p>
-									<p><strong>Модификация:</strong> {{structure.car.modification_autoru}}</p>
+									<p><strong>Марка:</strong> {{structure.car.display_mark_name}}</p>
+									<p><strong>Модель:</strong> {{structure.car.display_model_name}}</p>
+									<p><strong>Модификация:</strong> {{structure.car.display_modification_name}}</p>
 									<p><strong>Год выпуска:</strong> {{structure.car.year}} г.</p>
 									<p><strong>Пробег:</strong> {{structure.car.run|floatformat:"0g"}} км</p>
 							</div>
@@ -1089,7 +1089,7 @@
 						<div class="modal-header">
 							<h5 class="modal-title" id="rlkLabel">
 								<span class="icon-truck"></span>
-								{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}} &#8226; {{structure.car.year}} &#8226; {{structure.car.vin}}
+								{{structure.car.display_mark_name}} {{structure.car.display_model_name}} &#8226; {{structure.car.year}} &#8226; {{structure.car.vin}}
 							</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						</div>
@@ -1114,7 +1114,7 @@
 								</div>
 								<div class="info-content">
 									<div class="info-label">Модификация</div>
-									<div class="info-value" id="info_car_modification_value">{{structure.car.modification_autoru.name}}</div>
+									<div class="info-value" id="info_car_modification_value">{{structure.car.display_modification_name}}</div>
 								</div>
 							</div>
 
@@ -1813,7 +1813,7 @@
 									<div class="row row-cols-1 row-cols-md-2 row-cols-sm-2 row-cols-xl-4 g-4">
 										<div class="col"><img class="h-100" style="max-height:200px; border-radius:0.5rem;"  src="{{structure.car.get_photo}}"></div>
 										<div class="col fs-5"> 
-											{{structure.car.modification_autoru.model.mark}} <br> {{structure.car.modification_autoru.model}} <br> {{structure.car.modification_autoru}} <br>  {{structure.car.year}}  г.в. <br>{{structure.car.run|floatformat:"0g"}} км.<br>
+											{{structure.car.display_mark_name}} <br> {{structure.car.display_model_name}} <br> {{structure.car.display_modification_name}} <br>  {{structure.car.year}}  г.в. <br>{{structure.car.run|floatformat:"0g"}} км.<br>
 										</div>
 										<div class="col">
 											<label class="fs-5"><span class="badge text-white bg-dark bg-opacity-75" id="">Себестоимость: {{structure.car.cost_price|floatformat:"2g"}} ₽ </span></label>
@@ -2245,9 +2245,9 @@
 					for (s = 0; s < i; s++) { 
 						
 						let obj = data[s];
-						var mark            = obj.mark_name;
-						var model           = obj.model_name;
-						var modification    = obj.modification_name;
+						var mark            = obj.mark_name || '';
+						var model           = obj.model_name || '';
+						var modification    = obj.modification_name || '';
 						var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
 						var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
 						var car_outlay 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.outlay,);
@@ -2466,9 +2466,9 @@
 					
 					let obj = data[s];
 					var razdel = '<span class="icon-mbri-minus"></span>';
-					var mark            = obj.mark_name;
-					var model           = obj.model_name;
-					var modification    = obj.modification_name;
+					var mark            = obj.mark_name || '';
+					var model           = obj.model_name || '';
+					var modification    = obj.modification_name || '';
 					var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
 					var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
 					var car_outlay 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.outlay,);
@@ -2604,9 +2604,9 @@
 
 					var html = '';
 					
-					var mark            = obj.mark_name;
-					var model           = obj.model_name;
-					var modification    = obj.modification_name;
+					var mark            = obj.mark_name || '';
+					var model           = obj.model_name || '';
+					var modification    = obj.modification_name || '';
 					var car_run 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.run,);
 					var car_price 		= new Intl.NumberFormat('ru-ru', { maximumSignificantDigits: 21 }).format(obj.price,);
 					var html 				= '';
