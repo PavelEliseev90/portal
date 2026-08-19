@@ -1,7 +1,7 @@
 """Настройки автопереоценки КорсАвто: применение к подразделениям."""
-from django.db.models import Q
+from django.db.models import Count, Max, Q
 
-from refs.models import RefTypeEvaluationCarsOrganization, RefUnit
+from refs.models import RefCarsOrganization, RefIb, RefTypeEvaluationCarsOrganization, RefUnit
 from refs.price_groups import (
     get_active_price_group_codes,
     get_active_price_groups,
@@ -99,6 +99,78 @@ def get_autopricing_units_qs():
 
 def get_korsavto_units_qs():
     return get_autopricing_units_qs()
+
+
+def filter_autopricing_units_qs(qs, search=''):
+    """Поиск по названию, городу, ИБ, направлению."""
+    text = (search or '').strip()
+    if not text:
+        return qs
+    return qs.filter(
+        Q(name__icontains=text)
+        | Q(city__name__icontains=text)
+        | Q(ib__name__icontains=text)
+        | Q(direction__name__icontains=text)
+    )
+
+
+def build_autopricing_units_stock_stats(unit_ids):
+    """
+    Статистика по подразделениям: наличие, без modification_autoru, дата refresh_cars.
+    unit_ids — iterable pk RefUnit.
+    """
+    from avtosalon.models import RefreshCarsLog
+
+    unit_ids = [uid for uid in unit_ids if uid]
+    if not unit_ids:
+        return {}
+
+    stock_by_unit = {}
+    for row in (
+        RefCarsOrganization.objects
+        .filter(unit_id__in=unit_ids, quantity__gt=0)
+        .values('unit_id')
+        .annotate(
+            stock_count=Count('id'),
+            no_mod_count=Count('id', filter=Q(modification_autoru__isnull=True)),
+        )
+    ):
+        stock_by_unit[row['unit_id']] = row
+
+    refresh_by_unit = {}
+    for row in (
+        RefreshCarsLog.objects
+        .filter(unit_id__in=unit_ids)
+        .values('unit_id')
+        .annotate(last_refresh=Max('date'))
+    ):
+        refresh_by_unit[row['unit_id']] = row['last_refresh']
+
+    result = {}
+    for unit_id in unit_ids:
+        stock = stock_by_unit.get(unit_id, {})
+        result[unit_id] = {
+            'stock_count': stock.get('stock_count', 0),
+            'no_mod_count': stock.get('no_mod_count', 0),
+            'last_refresh': refresh_by_unit.get(unit_id),
+        }
+    return result
+
+
+def build_autopricing_units_rows(units_qs):
+    """Список подразделений с метриками для шаблона списка."""
+    units = list(units_qs)
+    stats_map = build_autopricing_units_stock_stats([u.pk for u in units])
+    rows = []
+    for unit in units:
+        stats = stats_map.get(unit.pk, {})
+        rows.append({
+            'unit': unit,
+            'stock_count': stats.get('stock_count', 0),
+            'no_mod_count': stats.get('no_mod_count', 0),
+            'last_refresh': stats.get('last_refresh'),
+        })
+    return rows
 
 
 def price_group_form_suffix(price_group):
@@ -580,6 +652,46 @@ def apply_autopricing_to_units(source_unit, target_units, send_settings_callback
                 failed_1c.append(send_result)
         count += 1
     return count, failed_1c
+
+
+def get_unique_ibs_from_units(units_qs):
+    """Уникальные активные ИБ среди подразделений автопереоценки."""
+    ib_ids = (
+        units_qs.filter(ib__isnull=False)
+        .values_list('ib_id', flat=True)
+        .distinct()
+    )
+    return RefIb.objects.filter(pk__in=ib_ids, active=True).order_by('name')
+
+
+def run_autopricing_export_to_1c(units_qs):
+    """Запуск автопереоценки и выгрузки: по одному запросу на каждую уникальную ИБ."""
+    from task_manager.views import send_autopricing_export_ib
+
+    ibs = list(get_unique_ibs_from_units(units_qs))
+    ok_count = 0
+    failed = []
+    for ib in ibs:
+        result = send_autopricing_export_ib(ib)
+        if result.get('ok'):
+            ok_count += 1
+        else:
+            failed.append(result)
+    return {
+        'ok_count': ok_count,
+        'failed': failed,
+        'total': len(ibs),
+    }
+
+
+def format_1c_failed_ibs(failed_results, limit=5):
+    if not failed_results:
+        return ''
+    names = [item.get('ib_name') or str(item.get('ib_id', '')) for item in failed_results[:limit]]
+    text = ', '.join(names)
+    if len(failed_results) > limit:
+        text += ' и ещё {}'.format(len(failed_results) - limit)
+    return text
 
 
 def push_units_settings_to_1c(units):
