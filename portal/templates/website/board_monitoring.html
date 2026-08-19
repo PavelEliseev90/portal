@@ -233,7 +233,7 @@
     font-size: 0.7rem; color: var(--muted);
   }
   .kors-refresh-card__stat {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem;
   }
   .kors-refresh-card__stat-item {
     display: flex; flex-direction: column; gap: 0.1rem;
@@ -242,6 +242,8 @@
   .kors-refresh-card__stat-item--success { background: var(--ok-bg); }
   .kors-refresh-card__stat-item--danger { background: var(--bad-bg); }
   .kors-refresh-card__stat-item--info { background: #e8f1fb; }
+  .kors-refresh-card__stat-item--portal { background: #edf7ed; }
+  .kors-refresh-card__stat-item--warn { background: #fff4e5; }
   .kors-refresh-card__stat-icon { display: none; }
   .kors-refresh-card__stat-label {
     font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
@@ -249,19 +251,23 @@
   .kors-refresh-card__stat-item--success .kors-refresh-card__stat-label { color: var(--ok-muted); }
   .kors-refresh-card__stat-item--danger .kors-refresh-card__stat-label { color: var(--bad-muted); }
   .kors-refresh-card__stat-item--info .kors-refresh-card__stat-label { color: #3b6ea5; }
+  .kors-refresh-card__stat-item--portal .kors-refresh-card__stat-label { color: #2e6b3e; }
+  .kors-refresh-card__stat-item--warn .kors-refresh-card__stat-label { color: #9a6700; }
   .kors-refresh-card__stat-value {
     font-size: 0.95rem; font-weight: 700; color: var(--ink); line-height: 1.15;
   }
   .kors-refresh-card__stat-item--success .kors-refresh-card__stat-value { color: var(--ok-fg); }
   .kors-refresh-card__stat-item--danger .kors-refresh-card__stat-value { color: var(--bad-fg); }
   .kors-refresh-card__stat-item--info .kors-refresh-card__stat-value { color: #1d4e89; }
+  .kors-refresh-card__stat-item--portal .kors-refresh-card__stat-value { color: #1b5e2e; }
+  .kors-refresh-card__stat-item--warn .kors-refresh-card__stat-value { color: #7a4f00; }
 
   .kors-chip-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
   .kors-muted { color: var(--muted); font-size: 0.7rem; }
 
   @media (max-width: 768px) {
     .kors-monitoring-page { padding: 0.5rem 0.6rem 1.25rem; }
-    .kors-refresh-card__stat { grid-template-columns: 1fr; }
+    .kors-refresh-card__stat { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 
@@ -743,8 +749,12 @@
                     <div class="kors-refresh-card__stat-value">{{log_cars.del}}</div>
                   </div>
                   <div class="kors-refresh-card__stat-item kors-refresh-card__stat-item--info">
-                    <div class="kors-refresh-card__stat-label">В наличии</div>
+                    <div class="kors-refresh-card__stat-label">В пакете 1С</div>
                     <div class="kors-refresh-card__stat-value">{{log_cars.stock}}</div>
+                  </div>
+                  <div class="kors-refresh-card__stat-item {% if log_cars.stock_mismatch %}kors-refresh-card__stat-item--warn{% else %}kors-refresh-card__stat-item--portal{% endif %}">
+                    <div class="kors-refresh-card__stat-label">На площадке</div>
+                    <div class="kors-refresh-card__stat-value">{{log_cars.stock_actual}}</div>
                   </div>
                 </div>
               </div>
