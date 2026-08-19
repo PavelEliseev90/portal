@@ -60,10 +60,14 @@ from website.autopricing_settings import (
     build_autopricing_ranges_for_unit,
     build_autopricing_table_cells,
     build_autopricing_table_columns,
+    build_autopricing_units_rows,
+    filter_autopricing_units_qs,
+    format_1c_failed_ibs,
     format_1c_failed_units,
     get_active_price_group_codes,
     get_korsavto_units_qs,
     push_units_settings_to_1c,
+    run_autopricing_export_to_1c,
     save_autopricing_unit_settings,
 )
 from refs.price_groups import get_unit_correction_kf_1c
@@ -9603,31 +9607,59 @@ def settings_autopricing_korsavto_units(request):
     """
     Список подразделений Б/У КорсАвто для настройки автопереоценки.
     """
-    if request.method == 'POST' and request.POST.get('action') == 'push_1c_all':
+    if request.method == 'POST':
         from django.contrib import messages
 
-        summary = push_units_settings_to_1c(get_korsavto_units_qs())
-        if summary['failed']:
-            messages.warning(
-                request,
-                'Отправлено в 1С: {} из {}. Ошибки: {}.'.format(
-                    summary['ok_count'],
-                    summary['total'],
-                    format_1c_failed_units(summary['failed']),
-                ),
-            )
-        else:
-            messages.success(
-                request,
-                'Настройки всех подразделений ({}) отправлены в 1С.'.format(summary['ok_count']),
-            )
-        return HttpResponseRedirect(request.path)
+        action = request.POST.get('action')
+        if action == 'push_1c_all':
+            summary = push_units_settings_to_1c(get_korsavto_units_qs())
+            if summary['failed']:
+                messages.warning(
+                    request,
+                    'Отправлено в 1С: {} из {}. Ошибки: {}.'.format(
+                        summary['ok_count'],
+                        summary['total'],
+                        format_1c_failed_units(summary['failed']),
+                    ),
+                )
+            else:
+                messages.success(
+                    request,
+                    'Настройки всех подразделений ({}) отправлены в 1С.'.format(summary['ok_count']),
+                )
+            return HttpResponseRedirect(request.path)
 
-    units = get_korsavto_units_qs()
+        if action == 'run_autopricing_export':
+            summary = run_autopricing_export_to_1c(get_korsavto_units_qs())
+            if summary['total'] == 0:
+                messages.warning(request, 'Нет информационных баз для запуска автопереоценки.')
+            elif summary['failed']:
+                messages.warning(
+                    request,
+                    'Запущено в {} из {} ИБ. Ошибки: {}.'.format(
+                        summary['ok_count'],
+                        summary['total'],
+                        format_1c_failed_ibs(summary['failed']),
+                    ),
+                )
+            else:
+                messages.success(
+                    request,
+                    'Автопереоценка и выгрузка приняты в {} информационных базах.'.format(
+                        summary['ok_count'],
+                    ),
+                )
+            return HttpResponseRedirect(request.path)
+
+    search = (request.GET.get('q') or '').strip()
+    units = filter_autopricing_units_qs(get_korsavto_units_qs(), search)
+    unit_rows = build_autopricing_units_rows(units)
 
     params = {
         'type': 'settings_autopricing_korsavto',
         'units': units,
+        'unit_rows': unit_rows,
+        'search': search,
     }
 
     return render(request, "kors/settings_autopricing_korsavto_units.html", {'params': params})

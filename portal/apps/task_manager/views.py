@@ -97,14 +97,71 @@ def send_settings_unit(unit):
             'Type': 'settings_dc',
             'Settings': data_unit,
         }
-        if unit.ib.alfa:
+        if unit.ib and unit.ib.alfa:
             response = requests.post(url_hs_alfa_auto, json=js_data, timeout=60)
         else:
             response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
-        response = requests.post(url_hs_kors_auto, json=js_data, timeout=60)
         result['status_code'] = response.status_code
         if 200 <= response.status_code < 300:
             result['ok'] = True
+        else:
+            result['error'] = 'HTTP {}'.format(response.status_code)
+    except requests.RequestException as exc:
+        result['error'] = str(exc)
+    except Exception as exc:
+        result['error'] = str(exc)
+    return result
+
+
+AUTOPRICING_EXPORT_1C_TYPE = 'auto_repricing_export'
+
+
+def resolve_ib_1c_hs_url(ib):
+    """URL HTTP-сервиса /hs/mb/ для информационной базы."""
+    if ib is None:
+        return None
+    if ib.server and ib.base:
+        return 'http://{}/{}/hs/mb/'.format(ib.server.lower(), ib.base.lower())
+    if getattr(ib, 'alfa', False):
+        return url_hs_alfa_auto
+    return url_hs_kors_auto
+
+
+def send_autopricing_export_ib(ib):
+    """
+    Запуск автопереоценки и выгрузки на сайт в 1С (одна информационная база).
+    1С должна принять запрос и выполнить работу асинхронно, ответив HTTP 200.
+    """
+    result = {
+        'ok': False,
+        'status_code': None,
+        'error': None,
+        'ib_id': ib.pk if ib else None,
+        'ib_name': ib.name if ib else '',
+    }
+    url = resolve_ib_1c_hs_url(ib)
+    if not url:
+        result['error'] = 'Не задан URL информационной базы'
+        return result
+    try:
+        response = requests.post(
+            url,
+            json={'Type': AUTOPRICING_EXPORT_1C_TYPE},
+            timeout=30,
+        )
+        result['status_code'] = response.status_code
+        if 200 <= response.status_code < 300:
+            result['ok'] = True
+            try:
+                body = response.json()
+                data = body.get('Data') if isinstance(body, dict) else None
+                if isinstance(data, dict) and data.get('Success') is False:
+                    result['ok'] = False
+                    result['error'] = (
+                        data.get('Answer') or data.get('Message') or '1С: Success=false'
+                    )
+            except (ValueError, TypeError):
+                pass
         else:
             result['error'] = 'HTTP {}'.format(response.status_code)
     except requests.RequestException as exc:
@@ -333,6 +390,7 @@ def add_task():
     #start_refresh_autohub(schedule = 60, repeat = 86400, verbose_name = "Обновление данных Автохаб")
     #cvc_background(schedule = 60, repeat = 86400, verbose_name = "Отправка записей в CVC")
     #start_send_push_estimation(schedule = 60, repeat = 60, verbose_name = "Оповещения по интерактивным оценкам")
+    #start_refresh_auction_status(schedule = 60, repeat = 300, verbose_name = "Обновление статусов лотов аукциона КорсАвто")
 
 ####
 ###
@@ -1409,21 +1467,81 @@ def get_name_re(name, ind):
 ##
 # Функции отправки/обновления данных портала аукциона
 def refresh_list_auction_status():
-    lots_list = list()
-    r   = requests.get(url_auction_kors_portal + '/api/swap/get/', auth=('Admin_auction', 'Audi80b4'))
-    if r.status_code == 200:
-        data = json.loads(r.text)
-        swap_list = data['swap_list']
-        for swap in swap_list:
-            lot_uin = swap['lot_uin']['search']
-            if not lot_uin in lots_list:
-                lots_list.append(lot_uin)
-    
+    """
+    Опрос портала аукциона: GET /api/swap/get/ -> refresh_auction() для каждого uid.
+    Возвращает счётчики для логов/мониторинга.
+    """
+    import uuid as uuid_lib
+
+    from refs.models import Auction
+
+    lots_list = []
+    try:
+        r = requests.get(
+            url_auction_kors_portal + '/api/swap/get/',
+            auth=('Admin_auction', 'Audi80b4'),
+            timeout=30,
+        )
+    except requests.RequestException:
+        return {'ok': False, 'error': 'request_failed', 'queued': 0, 'updated': 0, 'errors': 0}
+
+    if r.status_code != 200:
+        return {
+            'ok': False,
+            'error': 'http_%s' % r.status_code,
+            'queued': 0,
+            'updated': 0,
+            'errors': 0,
+        }
+
+    try:
+        data = r.json()
+    except (ValueError, json.JSONDecodeError):
+        return {'ok': False, 'error': 'invalid_json', 'queued': 0, 'updated': 0, 'errors': 0}
+
+    for swap in data.get('swap_list') or []:
+        if not isinstance(swap, dict):
+            continue
+        lot_uin_obj = swap.get('lot_uin')
+        if isinstance(lot_uin_obj, dict):
+            lot_uin = (lot_uin_obj.get('search') or '').strip()
+        else:
+            lot_uin = str(lot_uin_obj or '').strip()
+        if lot_uin and lot_uin not in lots_list:
+            lots_list.append(lot_uin)
+
+    updated = 0
+    errors = 0
     for lot in lots_list:
-        from refs.models import Auction
-        if lot != '':
-            auction = Auction.objects.get(uid = lot)
+        try:
+            uid = uuid_lib.UUID(str(lot))
+        except (ValueError, AttributeError, TypeError):
+            errors += 1
+            continue
+
+        auction = Auction.objects.filter(uid=uid).first()
+        if auction is None:
+            errors += 1
+            continue
+
+        try:
             refresh_auction(auction)
+            updated += 1
+        except Exception:
+            errors += 1
+
+    return {
+        'ok': True,
+        'queued': len(lots_list),
+        'updated': updated,
+        'errors': errors,
+    }
+
+
+@background(queue='refresh_auction_status')
+def start_refresh_auction_status():
+    """Фоновая задача: обновление статусов и результатов лотов с портала аукциона."""
+    refresh_list_auction_status()
 
 def datetime_handler(obj):
     """Fallback при json.dumps: даты лота без T (как date_start)."""
@@ -1550,12 +1668,15 @@ def _loads_auction_files_json(value):
     return data if isinstance(data, list) else []
 
 def refresh_auction(auction):
-    
-    r   = requests.get(url_auction_kors_portal + '/api/get_auction/' + str(auction.uid)  +'/', auth=('Admin_auction', 'Audi80b4'))
+    r = requests.get(
+        url_auction_kors_portal + '/api/get_auction/' + str(auction.uid) + '/',
+        auth=('Admin_auction', 'Audi80b4'),
+        timeout=30,
+    )
     if r.status_code == 200:
         data = json.loads(r.text)
-        lot_info = data['lot_info']
-        if lot_info != None:
+        lot_info = data.get('lot_info')
+        if lot_info is not None:
             auction.status              = get_status(lot_info['status'])
             auction.rejection_reason    = lot_info['rejection_reason']
             if 'pk_auction' in lot_info:
