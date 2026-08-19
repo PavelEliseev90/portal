@@ -1,0 +1,134 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Без модификации Auto.ru {% endblock %}
+{% block title_navbar %} — Без модификации Auto.ru {% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+		<div>
+			<h2 class="mb-1" style="color: #002a5a;">
+				{% if params.store %}
+					Без Auto.ru — {{ params.store.name }}
+				{% else %}
+					Авто без modification_autoru
+				{% endif %}
+			</h2>
+			<p class="text-muted small mb-0">
+				<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+				· <a href="{% url 'monitoring:stores_list' %}">Управление стоянками</a>
+				· в списке: <strong>{{ params.total_count }}</strong>
+				{% if not params.store %}
+				· всего на стоянках: <strong>{{ params.cars_no_modification_total }}</strong>
+				{% endif %}
+			</p>
+		</div>
+	</div>
+
+	<div class="row g-3 mb-3">
+		<div class="col-12 col-md-4 col-lg-3">
+			<div class="portal-panel h-100 mb-0" style="border-left: 4px solid #f59e0b;">
+				<div class="text-muted small">Без modification_autoru</div>
+				<div class="fs-3 fw-bold text-warning">{{ params.total_count }}</div>
+				<div class="text-muted small mt-1">quantity &gt; 0, FK Auto.ru не заполнен</div>
+			</div>
+		</div>
+	</div>
+
+	<form method="get" class="portal-panel mb-3">
+		<div class="row g-2 align-items-end">
+			<div class="col-12 col-md-6 col-lg-5">
+				<label class="form-label small">Поиск</label>
+				<input type="text" name="q" class="form-control form-control-sm"
+					value="{{ params.q }}" placeholder="VIN, марка, модель, стоянка…">
+			</div>
+			<div class="col-12 col-md-3 col-lg-2">
+				<label class="form-label small">На странице</label>
+				<select name="per_page" class="form-select form-select-sm">
+					<option value="25" {% if params.per_page == 25 %}selected{% endif %}>25</option>
+					<option value="50" {% if params.per_page == 50 %}selected{% endif %}>50</option>
+					<option value="100" {% if params.per_page == 100 %}selected{% endif %}>100</option>
+				</select>
+			</div>
+			<div class="col-12 col-lg-5">
+				<button type="submit" class="btn btn-primary btn-sm">Применить</button>
+				{% if params.store %}
+				<a href="{% url 'monitoring:store_cars_no_modification' params.store.pk %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+				<a href="{% url 'monitoring:cars_no_modification_list' %}" class="btn btn-outline-secondary btn-sm">Все стоянки</a>
+				{% else %}
+				<a href="{% url 'monitoring:cars_no_modification_list' %}" class="btn btn-outline-secondary btn-sm">Сбросить</a>
+				{% endif %}
+			</div>
+		</div>
+	</form>
+
+	<div class="portal-panel">
+		<div class="table-responsive">
+			<table class="table table-sm table-hover align-middle mb-0">
+				<thead>
+					<tr>
+						<th>VIN</th>
+						<th>Марка / модель / модификация</th>
+						<th>Год</th>
+						<th>Стоянка</th>
+						<th>Подразделение</th>
+						<th>Обновлено</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for car in params.page_obj %}
+					<tr>
+						<td class="font-monospace small">{{ car.vin|default:"—" }}</td>
+						<td>
+							<div>{{ car.mark|default:"—" }} {{ car.model|default:"" }}</div>
+							<div class="text-muted small">{{ car.modification|default:"—" }}</div>
+							{% if car.name %}<div class="text-muted small">{{ car.name }}</div>{% endif %}
+						</td>
+						<td>{{ car.year|default:"—" }}</td>
+						<td>
+							{% if car.store_id %}
+								<a href="{% url 'monitoring:store_cars_no_modification' car.store_id %}">{{ car.store.name }}</a>
+							{% else %}
+								—
+							{% endif %}
+						</td>
+						<td>{{ car.unit|default:"—" }}</td>
+						<td class="small text-muted">{{ car.date_refresh|date:"d.m.Y H:i" }}</td>
+						<td class="text-end">
+							{% if car.slug %}
+							<a href="/cars/{{ car.slug }}/" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">Карточка</a>
+							{% endif %}
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="7" class="text-center text-muted py-4">Автомобили не найдены</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		{% if params.page_obj.has_other_pages %}
+		<nav class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-2 py-2 border-top">
+			<div class="small text-muted">
+				Стр. {{ params.page_obj.number }} из {{ params.paginator.num_pages }}
+			</div>
+			<ul class="pagination pagination-sm mb-0">
+				{% if params.page_obj.has_previous %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+				</li>
+				{% endif %}
+				{% if params.page_obj.has_next %}
+				<li class="page-item">
+					<a class="page-link" href="?{% if params.query_without_page %}{{ params.query_without_page }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+				</li>
+				{% endif %}
+			</ul>
+		</nav>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

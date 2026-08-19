@@ -2954,6 +2954,36 @@ class RefCarsOrganization(models.Model):
                 return RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(main = True)[0].file.url
         return '/media/nophoto.png'
 
+    def display_mark_name(self):
+        try:
+            if self.modification_autoru_id and self.modification_autoru.model_id:
+                mark = self.modification_autoru.model.mark
+                if mark is not None and mark.name:
+                    return mark.name
+        except Exception:
+            pass
+        return self.mark or ''
+
+    def display_model_name(self):
+        try:
+            if self.modification_autoru_id and self.modification_autoru.model_id:
+                name = self.modification_autoru.model.name
+                if name:
+                    return name
+        except Exception:
+            pass
+        return self.model or ''
+
+    def display_modification_name(self):
+        try:
+            if self.modification_autoru_id:
+                name = self.modification_autoru.name
+                if name:
+                    return name
+        except Exception:
+            pass
+        return self.modification or ''
+
     def logo(self):
         try:
             if self.modification_autoru != None: 

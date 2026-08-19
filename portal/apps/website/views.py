@@ -10838,17 +10838,26 @@ def auction_doc_get_cars(request):
         end_cars    = start_cars + 10
         cars = cars[start_cars:end_cars]
 
-    data = list(cars.values('vin', 
-                       'slug', 
+    data = list(cars.values('vin',
+                       'slug',
                        'year',
                        'price',
-                       'run', 
-                       modification_name = F('modification_autoru__name'),
-                       model_name   = F('modification_autoru__model__name'),
-                       mark_name    = F('modification_autoru__model__mark__name'),
-                       url          = F('prev_photo')))
+                       'run',
+                       modification_name=Coalesce(
+                           F('modification_autoru__name'), F('modification'), Value(''),
+                       ),
+                       model_name=Coalesce(
+                           F('modification_autoru__model__name'), F('model'), Value(''),
+                       ),
+                       mark_name=Coalesce(
+                           F('modification_autoru__model__mark__name'), F('mark'), Value(''),
+                       ),
+                       url=F('prev_photo')))
     for car in data:
         car['url'] = get_url_image(car['slug'])
+        for key in ('mark_name', 'model_name', 'modification_name'):
+            if car.get(key) is None:
+                car[key] = ''
     
     return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
@@ -10887,15 +10896,9 @@ def auction_doc_get_cars_info(request, slug):
         work_text = ''
         for inf_work in works:
             work_text = work_text + inf_work['name'] + '/n'
-        mark = ''
-        model = ''
-        modification = ''
-        try:
-            modification = car.modification_autoru.name if car.modification_autoru_id else ''
-            model = car.modification_autoru.model.name if car.modification_autoru_id else ''
-            mark = car.modification_autoru.model.mark.name if car.modification_autoru_id else ''
-        except Exception:
-            pass
+        mark = car.display_mark_name()
+        model = car.display_model_name()
+        modification = car.display_modification_name()
         data.append({
             'vin': car.vin,
             'slug': car.slug,
