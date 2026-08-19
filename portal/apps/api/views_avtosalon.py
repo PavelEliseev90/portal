@@ -544,8 +544,12 @@ def refresh_cars(request):
         try:
             if id_avtoru > 0:
                 car_object.modification_autoru = AutoruModification.objects.get(idSite = id_avtoru)
+                
         except:
-            s=1
+            try:
+                car_object.modification_autoru = AutoruModification.objects.get(idSiteTech = id_avtoru)
+            except:
+                s=1
 
         car_object.engine_power         = car['Engine_power']
         car_object.engine_volume        = car['Engine_volume']
