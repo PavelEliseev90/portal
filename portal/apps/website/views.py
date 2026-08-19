@@ -10585,7 +10585,7 @@ def auction_doc(request, slug_auction):
     user    = request.user
     answer  = ''
     sends   = False
-    if DT.datetime.now().hour < 12 or DT.datetime.now().hour >= 14:
+    if DT.datetime.now().hour < 13 or DT.datetime.now().hour >= 14:
         sends = True
 
     if slug_auction == 'new_lots':

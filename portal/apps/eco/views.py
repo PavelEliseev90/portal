@@ -4135,13 +4135,13 @@ def doc(request, id):
     rlk     = DocRLK.objects.get(pk=id)
     from documents.rlk_estimation import resolve_estimation_rlk_id, estimation_is_usable
 
-    target_rlk_id = resolve_estimation_rlk_id(rlk)
-    if target_rlk_id and target_rlk_id != rlk.pk:
-        qs = request.GET.urlencode()
-        url = '/eco/%s/' % target_rlk_id
-        if qs:
-            url += '?' + qs
-        return HttpResponseRedirect(url)
+    # target_rlk_id = resolve_estimation_rlk_id(rlk)
+    # if target_rlk_id and target_rlk_id != rlk.pk:
+    #     qs = request.GET.urlencode()
+    #     url = '/eco/%s/' % target_rlk_id
+    #     if qs:
+    #         url += '?' + qs
+    #     return HttpResponseRedirect(url)
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=rlk).select_related(
         'estimation', 'status', 'staff_rlk',

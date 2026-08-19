@@ -498,9 +498,9 @@ def estimation_rlk(request, rlk_id):
     object                          = DocRLK.objects.get(id=rlk_id)
     from documents.rlk_estimation import resolve_estimation_rlk_id, estimation_is_usable
 
-    target_rlk_id = resolve_estimation_rlk_id(object)
-    if target_rlk_id and target_rlk_id != object.pk:
-        return HttpResponseRedirect('/estimations/%s/' % target_rlk_id)
+    # target_rlk_id = resolve_estimation_rlk_id(object)
+    # if target_rlk_id and target_rlk_id != object.pk:
+    #     return HttpResponseRedirect('/estimations/%s/' % target_rlk_id)
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
     if interactiv_rlk is None or not estimation_is_usable(interactiv_rlk.estimation):
