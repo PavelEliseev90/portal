@@ -324,6 +324,7 @@ def kolesa_reception_detail(request, reception_id):
             'estimation__rlk__unit',
             'rlk',
             'rlk__unit',
+            'user',
             'mark_tyre',
             'width_tyre',
             'radius',
@@ -334,6 +335,26 @@ def kolesa_reception_detail(request, reception_id):
     )
 
     if request.method == 'POST':
+        # Отправка в базу БУ колёс (1С)
+        if request.POST.get('action') == 'send_to_1c':
+            from task_manager.views import send_kolesa_reception_to_1c
+
+            send_result = send_kolesa_reception_to_1c(reception, request=request)
+            if send_result.get('ok'):
+                messages.success(
+                    request,
+                    'Данные приёмки отправлены в базу БУ колёс (HTTP {}).'.format(
+                        send_result.get('status_code') or 200,
+                    ),
+                )
+            else:
+                err = send_result.get('error') or 'неизвестная ошибка'
+                messages.error(
+                    request,
+                    'Не удалось отправить в 1С: {}.'.format(err),
+                )
+            return HttpResponseRedirect(request.path)
+
         # Сохранение полей приёмки
         if request.POST.get('action') == 'save_reception':
             from refs.models import (
@@ -423,10 +444,25 @@ def kolesa_reception_detail(request, reception_id):
 
     send_payload = build_kolesa_reception_send_payload(reception, request=request)
 
+    # Подразделение из рабочего листа (DocRLK → unit)
+    unit_name = '—'
+    if reception.rlk_id and reception.rlk and reception.rlk.unit_id:
+        unit_name = reception.rlk.unit.name
+    elif estimation and estimation.rlk_id and estimation.rlk and estimation.rlk.unit_id:
+        unit_name = estimation.rlk.unit.name
+
+    author_name = '—'
+    if reception.user_id and reception.user:
+        full = (reception.user.get_full_name() or '').strip()
+        author_name = full or reception.user.username or '—'
+
     params = {
         'reception': reception,
         'estimation': estimation,
         'car_label': _estimation_car_label(estimation) if estimation else '—',
+        'unit_name': unit_name,
+        'author_name': author_name,
+        'sent_to_wheels': bool(reception.send_wheels_ib),
         'files': files,
         'files_count': files.count(),
         'marks': marks,

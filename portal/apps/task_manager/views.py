@@ -52,6 +52,7 @@ url_hs_kors_auto        = 'http://a01srv1cka/zbusiness/hs/mb'
 #url_hs_kors_auto       = 'http://a01srv1cka/zbusiness030724/hs/mb'
 url_hs_alfa_auto        = 'http://k01srv1c10/ralfa01/hs/mb'
 #url_hs_alfa_auto        = 'http://k01srv1c05/ralfa01eliseev/hs/mb'
+url_hs_wheels_bu        = 'http://k01srv1c08/rwheels2024/hs/mb'
 
 url_my_kors_portal          = 'http://my.kors-group.com'
 url_auction_kors_portal     = 'https://auction.kors-group.ru'
@@ -3477,6 +3478,50 @@ def estimation_send_1c(rlk_id, id):
     response = requests.post(url, json=js_data)
 
     return response.status_code
+
+
+def send_kolesa_reception_to_1c(reception, request=None):
+    """
+    Отправка приёмки 2КК в базу БУ колёс (HTTP-сервис rwheels2024).
+    Возвращает dict: {ok, status_code, error, text}.
+    """
+    from eco.reception import build_kolesa_reception_send_payload
+
+    result = {
+        'ok': False,
+        'status_code': None,
+        'error': None,
+        'text': '',
+    }
+    if reception is None:
+        result['error'] = 'Приёмка не найдена'
+        return result
+
+    try:
+        js_data = build_kolesa_reception_send_payload(reception, request=request)
+        js_data['Type'] = 'kolesa_reception'
+        response = requests.post(url_hs_wheels_bu, json=js_data, timeout=60)
+        result['status_code'] = response.status_code
+        result['text'] = (response.text or '')[:2000]
+        if 200 <= response.status_code < 300:
+            result['ok'] = True
+            try:
+                body = response.json()
+                data = body.get('Data') if isinstance(body, dict) else None
+                if isinstance(data, dict) and data.get('Success') is False:
+                    result['ok'] = False
+                    result['error'] = (
+                        data.get('Answer') or data.get('Message') or '1С: Success=false'
+                    )
+            except (ValueError, TypeError):
+                pass
+        else:
+            result['error'] = 'HTTP {}'.format(response.status_code)
+    except requests.RequestException as exc:
+        result['error'] = str(exc)
+    except Exception as exc:
+        result['error'] = str(exc)
+    return result
 
 
 def swap_estimation():

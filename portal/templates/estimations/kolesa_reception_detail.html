@@ -5,7 +5,96 @@
 {% block title_navbar %} — Приёмка 2КК {% endblock %}
 
 {% block content %}
+<style>
+.kolesa-reception-form .search-select-wrapper {
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+.kolesa-reception-form .search-select-wrapper label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 0.375rem 0.75rem;
+  pointer-events: none;
+  border: 1px solid transparent;
+  transform-origin: 0 0;
+  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  color: #8ea1ba;
+  font-size: 0.85rem;
+  z-index: 1;
+}
+.kolesa-reception-form .search-select {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  padding: 1.625rem 0.75rem 0.625rem;
+  height: calc(3.5rem + 2px);
+  min-height: calc(3.5rem + 2px);
+}
+.kolesa-reception-form .search-select:focus {
+  border-color: #002a5a;
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+  outline: 0;
+}
+.kolesa-reception-form .select2-container--default .select2-selection--single {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  box-shadow: none;
+  height: calc(3.5rem + 2px);
+  padding: 1.25rem 0.75rem 0.35rem;
+}
+.kolesa-reception-form .select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 1.4;
+  padding-left: 0;
+  color: #212529;
+}
+.kolesa-reception-form .select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 100%;
+  top: 0;
+}
+.kolesa-reception-form .search-select-wrapper.select2-wrapper label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: #002a5a;
+  height: auto;
+}
+.kolesa-reception-form .form-floating > .form-control,
+.kolesa-reception-form .form-floating > .form-select {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(0, 42, 90, 0.15);
+  height: calc(3.5rem + 2px);
+  min-height: calc(3.5rem + 2px);
+  padding-top: 1.625rem;
+  padding-bottom: 0.625rem;
+}
+.kolesa-reception-form .form-floating > label {
+  color: #8ea1ba;
+  padding: 1rem 0.75rem;
+}
+.kolesa-reception-form .form-floating > .form-control:focus,
+.kolesa-reception-form .form-floating > .form-select:focus {
+  border-color: #002a5a;
+  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
+}
+.kolesa-reception-form .form-floating > .form-control:focus ~ label,
+.kolesa-reception-form .form-floating > .form-control:not(:placeholder-shown) ~ label,
+.kolesa-reception-form .form-floating > .form-select ~ label {
+  color: #002a5a;
+  opacity: 0.65;
+}
+</style>
+
 <div class="portal-page">
+	{% if messages %}
+	<div class="mb-3">
+		{% for message in messages %}
+		<div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">{{ message }}</div>
+		{% endfor %}
+	</div>
+	{% endif %}
+
 	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
 		<div>
 			<h2 class="mb-1">Приёмка второго комплекта колёс</h2>
@@ -22,28 +111,57 @@
 			{% if params.estimation and params.estimation.rlk_id %}
 				<a href="/estimations/{{ params.estimation.rlk_id }}/" class="btn btn-outline-primary btn-sm">Оценка</a>
 			{% endif %}
-			<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#kolesaSendJsonModal">
-				Отправить
+			<button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#kolesaSendJsonModal">
+				JSON
 			</button>
+			<form method="post" class="d-inline" onsubmit="return confirm('Отправить приёмку 2КК в базу БУ колёс?');">
+				{% csrf_token %}
+				<input type="hidden" name="action" value="send_to_1c">
+				<button type="submit" class="btn btn-primary btn-sm">
+					<span class="icon-mbri-upload me-1"></span>Отправить
+				</button>
+			</form>
 		</div>
 	</div>
 
 	<div class="row g-3 mb-3">
-		<div class="col-12 col-md-4">
+		<div class="col-12 col-md-6 col-lg">
 			<div class="portal-panel h-100 mb-0">
 				<h6 class="small text-uppercase text-muted mb-2">Дата приёмки</h6>
 				<div class="fw-bold">{% if params.reception.date %}{{ params.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
 			</div>
 		</div>
-		<div class="col-12 col-md-4">
+		<div class="col-12 col-md-6 col-lg">
 			<div class="portal-panel h-100 mb-0">
-				<h6 class="small text-uppercase text-muted mb-2">Подразделение</h6>
-				<div class="fw-bold">
-					{% if params.reception.rlk and params.reception.rlk.unit %}{{ params.reception.rlk.unit.name }}{% else %}—{% endif %}
+				<h6 class="small text-uppercase text-muted mb-2">Подразделение (РЛ)</h6>
+				<div class="fw-bold">{{ params.unit_name }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Автор приёмки</h6>
+				<div class="fw-bold">{{ params.author_name }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">В базу БУ колёс</h6>
+				<div>
+					{% if params.sent_to_wheels %}
+						<span class="badge bg-success">Отправлен</span>
+						{% if params.reception.send_wheels_ib_date %}
+							<div class="small text-muted mt-1">{{ params.reception.send_wheels_ib_date|date:"d.m.Y H:i" }}</div>
+						{% endif %}
+						{% if params.reception.send_wheels_ib_number %}
+							<div class="small text-muted">№ {{ params.reception.send_wheels_ib_number }}</div>
+						{% endif %}
+					{% else %}
+						<span class="badge bg-secondary">Не отправлен</span>
+					{% endif %}
 				</div>
 			</div>
 		</div>
-		<div class="col-12 col-md-4">
+		<div class="col-12 col-md-6 col-lg">
 			<div class="portal-panel h-100 mb-0">
 				<h6 class="small text-uppercase text-muted mb-2">Статус оценки</h6>
 				<div class="fw-bold">{{ params.estimation.status.name|default:"—" }}</div>
@@ -51,12 +169,12 @@
 		</div>
 	</div>
 
-	<form method="post" class="portal-panel mb-3">
+	<form method="post" class="portal-panel mb-3 kolesa-reception-form">
 		{% csrf_token %}
 		<input type="hidden" name="action" value="save_reception">
 		<h6 class="mb-3 padding-portal">Данные 2-го комплекта (приёмка)</h6>
 
-		<div class="row g-2 small">
+		<div class="row g-2">
 			<div class="col-12 col-md-3">
 				<div class="search-select-wrapper select2-wrapper">
 					<select class="search-select kors-form-control form-control-sm" id="mark_tyre" name="mark_tyre">
@@ -70,8 +188,11 @@
 			</div>
 
 			<div class="col-12 col-md-3">
-				<label class="text-muted small mb-1 d-block">Модель шин</label>
-				<input type="text" class="form-control form-control-sm" name="model_tyre" value="{{ params.reception.model_tyre|default:'' }}">
+				<div class="form-floating mb-3">
+					<input type="text" class="form-control form-control-sm kors-form-control" id="model_tyre" name="model_tyre"
+						value="{{ params.reception.model_tyre|default:'' }}" placeholder="Модель шин" autocomplete="off">
+					<label for="model_tyre">Модель шин</label>
+				</div>
 			</div>
 
 			<div class="col-12 col-md-3">
@@ -135,8 +256,11 @@
 			</div>
 
 			<div class="col-12 col-md-3">
-				<label class="text-muted small mb-1 d-block">Модель дисков</label>
-				<input type="text" class="form-control form-control-sm" name="model_disk" value="{{ params.reception.model_disk|default:'' }}">
+				<div class="form-floating mb-3">
+					<input type="text" class="form-control form-control-sm kors-form-control" id="model_disk" name="model_disk"
+						value="{{ params.reception.model_disk|default:'' }}" placeholder="Модель дисков" autocomplete="off">
+					<label for="model_disk">Модель дисков</label>
+				</div>
 			</div>
 
 			<div class="col-12 col-md-3">
@@ -176,28 +300,36 @@
 			</div>
 
 			<div class="col-12 col-md-3">
-				<label class="text-muted small mb-1 d-block">2-й комплект колес</label>
-				<select class="form-select form-select-sm" id="kolesa_estimation" name="kolesa_estimation">
-					<option value="0" {% if params.reception.kolesa_estimation == 0 %}selected{% endif %}>Нет второго комплекта колес</option>
-					<option value="1" {% if params.reception.kolesa_estimation == 1 %}selected{% endif %}>Оценка со вторым комплектом колес</option>
-					{% if params.reception.kolesa_estimation != 0 and params.reception.kolesa_estimation != 1 %}
-						<option value="{{ params.reception.kolesa_estimation }}" selected>Значение: {{ params.reception.kolesa_estimation }}</option>
-					{% endif %}
-				</select>
+				<div class="form-floating mb-3">
+					<select class="form-select form-select-sm kors-form-control" id="kolesa_estimation" name="kolesa_estimation">
+						<option value="0" {% if params.reception.kolesa_estimation == 0 %}selected{% endif %}>Нет второго комплекта колес</option>
+						<option value="1" {% if params.reception.kolesa_estimation == 1 %}selected{% endif %}>Оценка со вторым комплектом колес</option>
+						{% if params.reception.kolesa_estimation != 0 and params.reception.kolesa_estimation != 1 %}
+							<option value="{{ params.reception.kolesa_estimation }}" selected>Значение: {{ params.reception.kolesa_estimation }}</option>
+						{% endif %}
+					</select>
+					<label for="kolesa_estimation">2-й комплект колес</label>
+				</div>
 			</div>
 
 			<div class="col-12 col-md-6">
-				<label class="text-muted small mb-1 d-block">Дисков (2-й комплект)</label>
-				<input type="number" class="form-control form-control-sm" name="count_disk" value="{{ params.reception.count_disk|default:0 }}">
+				<div class="form-floating mb-3">
+					<input type="number" class="form-control form-control-sm kors-form-control" id="count_disk" name="count_disk"
+						value="{{ params.reception.count_disk|default:0 }}" placeholder="0">
+					<label for="count_disk">Дисков (2-й комплект)</label>
+				</div>
 			</div>
 
 			<div class="col-12 col-md-6">
-				<label class="text-muted small mb-1 d-block">Шин (2-й комплект)</label>
-				<input type="number" class="form-control form-control-sm" name="count_tyre" value="{{ params.reception.count_tyre|default:0 }}">
+				<div class="form-floating mb-3">
+					<input type="number" class="form-control form-control-sm kors-form-control" id="count_tyre" name="count_tyre"
+						value="{{ params.reception.count_tyre|default:0 }}" placeholder="0">
+					<label for="count_tyre">Шин (2-й комплект)</label>
+				</div>
 			</div>
 		</div>
 
-		<div class="mt-3">
+		<div class="mt-2">
 			<button type="submit" class="btn btn-success btn-sm">
 				<span class="icon-mbri-success me-1"></span>Сохранить данные приёмки
 			</button>
@@ -206,7 +338,7 @@
 
 	<script>
 		$(document).ready(function() {
-			$('.search-select').select2({
+			$('.kolesa-reception-form .search-select').select2({
 				language: 'ru',
 				allowClear: false,
 				width: '100%',
@@ -226,13 +358,18 @@
 				</div>
 				<div class="modal-body">
 					<p class="text-muted small mb-2">
-						Рабочий лист (<code>Rlk</code>), листы оценки (<code>Lo</code>),
-						приёмка 2КК (<code>KolesaReception</code>, <code>KolesaReceptionFiles</code>, <code>Kolesa2</code>).
+						URL: <code>http://k01srv1c08/rwheels2024/hs/mb</code>,
+						<code>Type=kolesa_reception</code>
 					</p>
 					<pre id="kolesaSendJsonPre" class="small mb-0 p-3 bg-light border rounded" style="max-height: 70vh; overflow: auto; white-space: pre-wrap; word-break: break-word;"></pre>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="kolesaSendJsonCopy">Копировать JSON</button>
+					<form method="post" class="d-inline" onsubmit="return confirm('Отправить приёмку 2КК в базу БУ колёс?');">
+						{% csrf_token %}
+						<input type="hidden" name="action" value="send_to_1c">
+						<button type="submit" class="btn btn-primary btn-sm">Отправить в 1С</button>
+					</form>
 					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
 				</div>
 			</div>
@@ -249,7 +386,9 @@
 		if (!dataEl || !pre) return;
 		var jsonText = '';
 		try {
-			jsonText = JSON.stringify(JSON.parse(dataEl.textContent), null, 2);
+			var payload = JSON.parse(dataEl.textContent);
+			payload.Type = 'kolesa_reception';
+			jsonText = JSON.stringify(payload, null, 2);
 		} catch (e) {
 			jsonText = dataEl.textContent;
 		}
