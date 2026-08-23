@@ -109,11 +109,25 @@
 		<div class="d-flex gap-2 flex-wrap">
 			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">К списку</a>
 			{% if params.estimation and params.estimation.rlk_id %}
-				<a href="/estimations/{{ params.estimation.rlk_id }}/" class="btn btn-outline-primary btn-sm">Оценка</a>
+				<a href="/eco/{{ params.estimation.rlk_id }}/" class="btn btn-outline-primary btn-sm">Оценка</a>
 			{% endif %}
 			<button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#kolesaSendJsonModal">
 				JSON
 			</button>
+			{% if params.sent_to_wheels %}
+				<button type="button" class="btn btn-secondary btn-sm" disabled title="Уже отправлено в базу БУ колёс">
+					<span class="icon-mbri-upload me-1"></span>Отправить
+				</button>
+				{% if request.user.is_superuser %}
+				<form method="post" class="d-inline" onsubmit="return confirm('Сбросить признак отправки? После сброса можно будет отправить снова.');">
+					{% csrf_token %}
+					<input type="hidden" name="action" value="reset_send_wheels_ib">
+					<button type="submit" class="btn btn-outline-warning btn-sm">
+						Сбросить отправку
+					</button>
+				</form>
+				{% endif %}
+			{% else %}
 			<form method="post" class="d-inline" onsubmit="return confirm('Отправить приёмку 2КК в базу БУ колёс?');">
 				{% csrf_token %}
 				<input type="hidden" name="action" value="send_to_1c">
@@ -121,6 +135,7 @@
 					<span class="icon-mbri-upload me-1"></span>Отправить
 				</button>
 			</form>
+			{% endif %}
 		</div>
 	</div>
 
@@ -149,14 +164,32 @@
 				<div>
 					{% if params.sent_to_wheels %}
 						<span class="badge bg-success">Отправлен</span>
-						{% if params.reception.send_wheels_ib_date %}
-							<div class="small text-muted mt-1">{{ params.reception.send_wheels_ib_date|date:"d.m.Y H:i" }}</div>
-						{% endif %}
-						{% if params.reception.send_wheels_ib_number %}
-							<div class="small text-muted">№ {{ params.reception.send_wheels_ib_number }}</div>
-						{% endif %}
 					{% else %}
 						<span class="badge bg-secondary">Не отправлен</span>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Дата док. БУ шин</h6>
+				<div class="fw-bold">
+					{% if params.reception.send_wheels_ib_date %}
+						{{ params.reception.send_wheels_ib_date|date:"d.m.Y H:i" }}
+					{% else %}
+						—
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Номер док. БУ шин</h6>
+				<div class="fw-bold">
+					{% if params.reception.send_wheels_ib_number %}
+						{{ params.reception.send_wheels_ib_number }}
+					{% else %}
+						—
 					{% endif %}
 				</div>
 			</div>
@@ -365,11 +398,15 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="kolesaSendJsonCopy">Копировать JSON</button>
+					{% if not params.sent_to_wheels %}
 					<form method="post" class="d-inline" onsubmit="return confirm('Отправить приёмку 2КК в базу БУ колёс?');">
 						{% csrf_token %}
 						<input type="hidden" name="action" value="send_to_1c">
 						<button type="submit" class="btn btn-primary btn-sm">Отправить в 1С</button>
 					</form>
+					{% else %}
+					<button type="button" class="btn btn-secondary btn-sm" disabled>Уже отправлено</button>
+					{% endif %}
 					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
 				</div>
 			</div>

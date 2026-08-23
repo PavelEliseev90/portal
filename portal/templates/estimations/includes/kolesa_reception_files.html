@@ -1,6 +1,6 @@
 {% comment %}
   Файлы приёмки 2-го комплекта колёс.
-  Ожидает: params.reception, params.files
+  Ожидает: params.reception, params.files, params.sent_to_wheels
 {% endcomment %}
 
 <div class="portal-panel">
@@ -8,6 +8,12 @@
 		<span class="icon-mbri-photo me-2"></span>Фото приёмки
 		<span class="text-muted fw-normal ms-1">— {{ params.files|length }}</span>
 	</h6>
+
+	{% if params.sent_to_wheels %}
+	<div class="alert alert-light border mb-3 py-2 small text-muted">
+		Приёмка отправлена в базу БУ колёс — удаление фото недоступно.
+	</div>
+	{% endif %}
 
 	<div class="portal-panel mb-4" style="background: #f8f9fa; border: 2px dashed #dee2e6;">
 		<form method="post" enctype="multipart/form-data" id="kolesaUploadForm">
@@ -42,6 +48,7 @@
 						<a href="{{ photo.get_absolute_url }}" target="_blank" rel="noopener">
 							<img src="{{ photo.get_thumbnail_url }}" alt="{{ photo.name|default:'Фото' }}" class="kolesa-photo-card-image" loading="lazy">
 						</a>
+						{% if not params.sent_to_wheels %}
 						<div class="kolesa-photo-card-overlay">
 							<form method="post" class="d-inline" onsubmit="return confirm('Удалить файл?');">
 								{% csrf_token %}
@@ -52,6 +59,7 @@
 								</button>
 							</form>
 						</div>
+						{% endif %}
 					</div>
 					<div class="p-2">
 						<small class="text-muted d-block">{{ photo.name|truncatewords:6|default:"Фото" }}</small>

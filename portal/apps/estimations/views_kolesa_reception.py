@@ -133,7 +133,12 @@ def handle_kolesa_reception_files_post(request, reception):
     if action not in ('delete', 'upload'):
         return False
 
+    sent = bool(reception.send_wheels_ib)
+
     if action == 'delete':
+        if sent:
+            messages.error(request, 'Нельзя удалить фото: приёмка уже отправлена в базу БУ колёс')
+            return True
         photo_id = request.POST.get('photo_id', '')
         try:
             photo = RegRegInteractivOcenkaFilesKolesaReception.objects.get(
@@ -335,12 +340,37 @@ def kolesa_reception_detail(request, reception_id):
     )
 
     if request.method == 'POST':
+        action = request.POST.get('action')
+        sent = bool(reception.send_wheels_ib)
+
+        # Сброс признака отправки (только суперпользователь)
+        if action == 'reset_send_wheels_ib':
+            if not request.user.is_superuser:
+                messages.error(request, 'Сброс признака отправки доступен только суперпользователю')
+            else:
+                reception.send_wheels_ib = False
+                reception.send_wheels_ib_date = None
+                reception.send_wheels_ib_number = ''
+                reception.save(update_fields=[
+                    'send_wheels_ib',
+                    'send_wheels_ib_date',
+                    'send_wheels_ib_number',
+                ])
+                messages.success(request, 'Признак отправки в базу БУ колёс сброшен')
+            return HttpResponseRedirect(request.path)
+
         # Отправка в базу БУ колёс (1С)
-        if request.POST.get('action') == 'send_to_1c':
+        if action == 'send_to_1c':
+            if sent:
+                messages.warning(request, 'Приёмка уже отправлена в базу БУ колёс. Повторная отправка запрещена.')
+                return HttpResponseRedirect(request.path)
+
             from task_manager.views import send_kolesa_reception_to_1c
 
             send_result = send_kolesa_reception_to_1c(reception, request=request)
             if send_result.get('ok'):
+                reception.send_wheels_ib = True
+                reception.save(update_fields=['send_wheels_ib'])
                 messages.success(
                     request,
                     'Данные приёмки отправлены в базу БУ колёс (HTTP {}).'.format(
@@ -356,7 +386,7 @@ def kolesa_reception_detail(request, reception_id):
             return HttpResponseRedirect(request.path)
 
         # Сохранение полей приёмки
-        if request.POST.get('action') == 'save_reception':
+        if action == 'save_reception':
             from refs.models import (
                 RefMarkTyres,
                 RefWidthTyres,
