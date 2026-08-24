@@ -6,6 +6,7 @@
   RegInteractivOcenkaRLK (O2O rlk → estimation)
   RegInteractivOcenkaKolesaReception (O2O rlk → estimation)
   DocLO / RegSwapKors / EmailPush по старому rlk
+  Chat / ChatMessage (slug rlk_{id})
   DocRLK.estimation_id
 """
 from __future__ import annotations
@@ -14,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 
 from documents.models import DocLO, DocRLK
 from documents.rlk_estimation import estimation_is_usable
@@ -100,6 +101,99 @@ def _get_kolesa(rlk: DocRLK) -> Optional[RegInteractivOcenkaKolesaReception]:
         return None
 
 
+def _rlk_chat_slug(rlk_id: int) -> str:
+    return 'rlk_{}'.format(rlk_id)
+
+
+def _chats_for_rlk(rlk: DocRLK):
+    """Чаты оценки/ЕЦО: slug rlk_{pk} или rlk_id."""
+    from chats.models import Chat
+
+    slug = _rlk_chat_slug(rlk.pk)
+    return list(
+        Chat.objects.filter(Q(slug=slug) | Q(rlk_id=rlk.pk)).order_by('id')
+    )
+
+
+def _count_chat_messages_for_rlk(rlk: DocRLK) -> int:
+    from chats.models import ChatMessage
+
+    slug = _rlk_chat_slug(rlk.pk)
+    return ChatMessage.objects.filter(
+        Q(chat__slug=slug) | Q(chat__rlk_id=rlk.pk)
+    ).count()
+
+
+def transfer_rlk_chats(source: DocRLK, target: DocRLK) -> int:
+    """Перенести сообщения чата с Корс-РЛ на Альфа-РЛ.
+
+    Вьюхи открывают чат по slug ``rlk_{DocRLK.id}``, поэтому история должна
+    оказаться в чате с slug целевого РЛ.
+    """
+    from chats.models import Chat, ChatMessage
+
+    source_slug = _rlk_chat_slug(source.pk)
+    target_slug = _rlk_chat_slug(target.pk)
+    if source.pk == target.pk:
+        return 0
+
+    source_chats = [
+        c for c in _chats_for_rlk(source)
+        if c.slug != target_slug and c.rlk_id != target.pk
+    ]
+    if not source_chats:
+        return 0
+
+    msg_qs = ChatMessage.objects.filter(chat_id__in=[c.pk for c in source_chats])
+    source_msg_count = msg_qs.count()
+    if source_msg_count == 0:
+        # Пустые чаты просто отвязываем от старого РЛ
+        for chat in source_chats:
+            Chat.objects.filter(pk=chat.pk).update(
+                rlk_id=0,
+                slug='{}_detached_{}'.format(chat.slug or source_slug, chat.pk),
+            )
+        return 0
+
+    target_chat = Chat.objects.filter(slug=target_slug).first()
+    if target_chat is None:
+        target_chat = Chat.objects.filter(rlk_id=target.pk).exclude(
+            pk__in=[c.pk for c in source_chats]
+        ).first()
+
+    if target_chat is None:
+        # Переиспользуем чат с наибольшим числом сообщений
+        keep = max(
+            source_chats,
+            key=lambda c: ChatMessage.objects.filter(chat_id=c.pk).count(),
+        )
+        Chat.objects.filter(pk=keep.pk).update(
+            slug=target_slug,
+            name=str(target.pk),
+            rlk_id=target.pk,
+        )
+        target_chat = keep
+        others = [c for c in source_chats if c.pk != keep.pk]
+    else:
+        Chat.objects.filter(pk=target_chat.pk).update(
+            slug=target_slug,
+            name=str(target.pk),
+            rlk_id=target.pk,
+        )
+        others = source_chats
+
+    for chat in others:
+        if chat.pk == target_chat.pk:
+            continue
+        ChatMessage.objects.filter(chat_id=chat.pk).update(chat_id=target_chat.pk)
+        Chat.objects.filter(pk=chat.pk).update(
+            rlk_id=0,
+            slug='{}_moved_{}'.format(chat.slug or source_slug, chat.pk),
+        )
+
+    return source_msg_count
+
+
 def find_pair_by_uin(uin: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list[str]]:
     """Найти пару Корс / Альфа по UIN. Возвращает (source_kors, target_alfa, warnings)."""
     uin = (uin or '').strip()
@@ -112,6 +206,47 @@ def find_pair_by_uin(uin: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list
         .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
         .order_by('-dataTime', '-id')
     )
+    return _pair_from_qs(qs, warnings, lookup='UIN «{}»'.format(uin))
+
+
+def find_pair_by_nomer(nomer: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list[str]]:
+    """Найти пару Корс / Альфа по номеру РЛК (nomer)."""
+    nomer = (nomer or '').strip()
+    warnings: list[str] = []
+    if not nomer:
+        raise TransferError('Укажите номер рабочего листа.')
+
+    qs = (
+        DocRLK.objects.filter(nomer=nomer)
+        .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
+        .order_by('-dataTime', '-id')
+    )
+    if not qs.exists():
+        # Часто ищут без ведущих нулей / с пробелами
+        qs = (
+            DocRLK.objects.filter(nomer__iexact=nomer)
+            .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
+            .order_by('-dataTime', '-id')
+        )
+    kors = [r for r in qs if is_kors_rlk(r)]
+    alfa = [r for r in qs if is_alfa_rlk(r)]
+
+    # Если по номеру нашли только одну сторону — добираем пару по UIN
+    if kors and not alfa:
+        uin = (kors[0].uin or '').strip()
+        if uin:
+            warnings.append('По номеру найден только Корс-РЛ — ищем Альфа-пару по UIN.')
+            return find_pair_by_uin(uin)
+    if alfa and not kors:
+        uin = (alfa[0].uin or '').strip()
+        if uin:
+            warnings.append('По номеру найден только Альфа-РЛ — ищем Корс-пару по UIN.')
+            return find_pair_by_uin(uin)
+
+    return _pair_from_qs(qs, warnings, lookup='номеру «{}»'.format(nomer))
+
+
+def _pair_from_qs(qs, warnings: list[str], lookup: str):
     kors = [r for r in qs if is_kors_rlk(r)]
     alfa = [r for r in qs if is_alfa_rlk(r)]
     other = [r for r in qs if _unit_ib_alfa(r) is None]
@@ -123,9 +258,9 @@ def find_pair_by_uin(uin: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list
             )
         )
     if not kors:
-        raise TransferError('Не найден РЛ КорсАвто с UIN «{}».'.format(uin))
+        raise TransferError('Не найден РЛ КорсАвто по {}.'.format(lookup))
     if not alfa:
-        raise TransferError('Не найден РЛ Альфа с UIN «{}».'.format(uin))
+        raise TransferError('Не найден РЛ Альфа по {}.'.format(lookup))
 
     source = None
     for r in kors:
@@ -139,14 +274,14 @@ def find_pair_by_uin(uin: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list
 
     if len(kors) > 1:
         warnings.append(
-            'Несколько Корс-РЛ с этим UIN: {} — выбран {}.'.format(
+            'Несколько Корс-РЛ: {} — выбран {}.'.format(
                 ', '.join(str(r.pk) for r in kors),
                 source.pk,
             )
         )
     if len(alfa) > 1:
         warnings.append(
-            'Несколько Альфа-РЛ с этим UIN: {} — выбран {}.'.format(
+            'Несколько Альфа-РЛ: {} — выбран {}.'.format(
                 ', '.join(str(r.pk) for r in alfa),
                 alfa[0].pk,
             )
@@ -158,6 +293,7 @@ def find_pair_by_uin(uin: str) -> tuple[Optional[DocRLK], Optional[DocRLK], list
 def resolve_rlks(
     *,
     uin: str = '',
+    nomer: str = '',
     source_id: str = '',
     target_id: str = '',
 ) -> tuple[DocRLK, DocRLK, list[str]]:
@@ -165,6 +301,7 @@ def resolve_rlks(
     source_id = (source_id or '').strip()
     target_id = (target_id or '').strip()
     uin = (uin or '').strip()
+    nomer = (nomer or '').strip()
 
     if source_id and target_id:
         try:
@@ -188,10 +325,13 @@ def resolve_rlks(
                 )
         return source, target, warnings
 
+    if nomer:
+        return find_pair_by_nomer(nomer)
+
     if uin:
         return find_pair_by_uin(uin)
 
-    raise TransferError('Укажите UIN или пару id исходного и целевого РЛ.')
+    raise TransferError('Укажите номер РЛК, UIN или пару id исходного и целевого РЛ.')
 
 
 @dataclass
@@ -204,6 +344,7 @@ class TransferPlan:
     doc_lo_count: int = 0
     swap_count: int = 0
     email_push_count: int = 0
+    chat_message_count: int = 0
     target_stub_estimation: Optional[RegInteractivOcenka] = None
     target_stub_link: Optional[RegInteractivOcenkaRLK] = None
     target_stub_kolesa: Optional[RegInteractivOcenkaKolesaReception] = None
@@ -226,6 +367,7 @@ class TransferPlan:
             'doc_lo_count': self.doc_lo_count,
             'swap_count': self.swap_count,
             'email_push_count': self.email_push_count,
+            'chat_message_count': self.chat_message_count,
             'target_stub_estimation_id': (
                 self.target_stub_estimation.pk if self.target_stub_estimation else None
             ),
@@ -350,6 +492,7 @@ def build_plan(source: DocRLK, target: DocRLK, warnings: Optional[list[str]] = N
         plan.email_push_count = RegInteractivOcenkaEmailPush.objects.filter(
             Q(rlk=source) | Q(estimation=estimation, rlk=source)
         ).count()
+        plan.chat_message_count = _count_chat_messages_for_rlk(source)
         if plan.doc_lo_count:
             plan.actions.append('Перепривязать DocLO: {} шт.'.format(plan.doc_lo_count))
         if plan.swap_count:
@@ -358,6 +501,14 @@ def build_plan(source: DocRLK, target: DocRLK, warnings: Optional[list[str]] = N
             plan.actions.append(
                 'Перепривязать EmailPush: {} шт.'.format(plan.email_push_count)
             )
+        if plan.chat_message_count:
+            plan.actions.append(
+                'Перенести сообщения чата (rlk_{} → rlk_{}): {} шт.'.format(
+                    source.pk, target.pk, plan.chat_message_count,
+                )
+            )
+        else:
+            plan.warnings.append('Сообщений чата на исходном РЛ нет.')
         plan.actions.append(
             'Обновить DocRLK.estimation_id: source→0, target→{}'.format(estimation.pk)
         )
@@ -448,6 +599,12 @@ def execute_transfer(plan: TransferPlan, *, user=None) -> TransferPlan:
     RegSwapKors.objects.filter(rlk=source, estimation=estimation).update(rlk=target)
     RegInteractivOcenkaEmailPush.objects.filter(rlk=source).update(rlk=target)
 
+    chat_moved = transfer_rlk_chats(source, target)
+    if chat_moved:
+        plan.actions.append(
+            'Чат: перенесено сообщений {} → slug rlk_{}.'.format(chat_moved, target.pk)
+        )
+
     DocRLK.objects.filter(pk=source.pk).update(estimation_id=0)
     DocRLK.objects.filter(pk=target.pk).update(estimation_id=estimation.pk)
 
@@ -471,18 +628,16 @@ _CLOSED_STATUS_IDS = (8, 10)
 def list_pending_after_alfa_transition(*, unit_id: Optional[int] = None, limit: int = 200) -> list[dict[str, Any]]:
     """Активные оценки на Корс-РЛ по подразделениям с датой перехода на Альфа-Авто.
 
-    Берём обёртки RegInteractivOcenkaRLK, где:
-    - подразделение (link.unit / rlk.unit / rlk.unit_dc) имеет alfa_auto_transition_date;
-    - РЛ КорсАвто (ib.alfa=False);
-    - есть оценка;
-    - статус не «принят» (8/10) ИЛИ оценка начата/идёт после даты перехода;
-    - оценка ещё на корс-РЛ (не перенесена).
+    Не делаем select_related(estimation): у RegInteractivOcenka слишком много колонок
+    (PostgreSQL: target lists can have at most 1664 entries).
     """
     from django.utils import timezone
 
     from refs.models import RefUnit
 
-    units_qs = RefUnit.objects.filter(alfa_auto_transition_date__isnull=False).select_related('ib')
+    units_qs = RefUnit.objects.filter(alfa_auto_transition_date__isnull=False).only(
+        'id', 'name', 'alfa_auto_transition_date', 'ib_id'
+    )
     if unit_id:
         units_qs = units_qs.filter(pk=unit_id)
     units = list(units_qs.order_by('name'))
@@ -492,7 +647,7 @@ def list_pending_after_alfa_transition(*, unit_id: Optional[int] = None, limit: 
     unit_by_id = {u.pk: u for u in units}
     unit_ids = list(unit_by_id.keys())
 
-    links = (
+    links = list(
         RegInteractivOcenkaRLK.objects
         .filter(estimation_id__isnull=False)
         .filter(
@@ -505,40 +660,47 @@ def list_pending_after_alfa_transition(*, unit_id: Optional[int] = None, limit: 
             | Q(rlk__unit__isnull=True, rlk__unit_dc__ib__alfa=False)
         )
         .select_related(
-            'estimation',
-            'estimation__rlk',
-            'estimation__rlk__unit',
-            'estimation__rlk__unit__ib',
             'status',
             'unit',
-            'unit__ib',
             'rlk',
             'rlk__unit',
             'rlk__unit__ib',
             'rlk__unit_dc',
             'rlk__unit_dc__ib',
         )
-        .order_by('-estimation__start_estimation', '-id')[: max(limit * 3, 300)]
+        .order_by(F('estimation__start_estimation').desc(nulls_last=True), '-id')[: max(limit * 3, 300)]
     )
+
+    est_ids = [link.estimation_id for link in links if link.estimation_id]
+    est_by_id = {
+        e.pk: e
+        for e in RegInteractivOcenka.objects.filter(pk__in=est_ids).only(
+            'id', 'vin', 'start_estimation', 'end_estimation', 'rlk_id', 'returned'
+        )
+    }
+
+    est_rlk_ids = [e.rlk_id for e in est_by_id.values() if e.rlk_id]
+    alfa_est_rlk_ids = set()
+    if est_rlk_ids:
+        alfa_est_rlk_ids = set(
+            DocRLK.objects.filter(pk__in=est_rlk_ids)
+            .filter(Q(unit__ib__alfa=True) | Q(unit_dc__ib__alfa=True))
+            .values_list('pk', flat=True)
+        )
 
     rows: list[dict[str, Any]] = []
     seen_est = set()
     candidate_links = []
 
     for link in links:
-        est = link.estimation
+        est = est_by_id.get(link.estimation_id)
         rlk = link.rlk
         if est is None or rlk is None:
             continue
         if not is_kors_rlk(rlk):
             continue
-        # Уже на альфе — пропускаем
-        if est.rlk_id and est.rlk_id != rlk.pk:
-            try:
-                if is_alfa_rlk(est.rlk):
-                    continue
-            except Exception:
-                pass
+        if est.rlk_id and est.rlk_id != rlk.pk and est.rlk_id in alfa_est_rlk_ids:
+            continue
 
         transition_unit = None
         for uid in (link.unit_id, rlk.unit_id, getattr(rlk, 'unit_dc_id', None)):
@@ -558,7 +720,8 @@ def list_pending_after_alfa_transition(*, unit_id: Optional[int] = None, limit: 
             start_date = timezone.localtime(start).date() if timezone.is_aware(start) else start.date()
 
         after_transition = bool(start_date and transition_date and start_date >= transition_date)
-        active_open = (not closed) and (estimation_is_usable(est) or bool(start))
+        alive = bool(start) or bool(est.end_estimation) or bool((est.vin or '').strip())
+        active_open = (not closed) and alive
 
         if not (after_transition or active_open):
             continue
@@ -569,11 +732,13 @@ def list_pending_after_alfa_transition(*, unit_id: Optional[int] = None, limit: 
         if len(candidate_links) >= limit:
             break
 
-    kolesa_rlk_ids = set(
-        RegInteractivOcenkaKolesaReception.objects.filter(
-            rlk_id__in=[r.pk for _l, _e, r, *_rest in candidate_links]
-        ).values_list('rlk_id', flat=True)
-    )
+    kolesa_rlk_ids = set()
+    if candidate_links:
+        kolesa_rlk_ids = set(
+            RegInteractivOcenkaKolesaReception.objects.filter(
+                rlk_id__in=[r.pk for _l, _e, r, *_rest in candidate_links]
+            ).values_list('rlk_id', flat=True)
+        )
 
     uins = {(r.uin or '').strip() for _l, _e, r, *_rest in candidate_links if (r.uin or '').strip()}
     alfa_by_uin = {}

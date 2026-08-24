@@ -5,7 +5,7 @@
 	<h1 class="h4 mb-3">Перенос интерактивной оценки: КорсАвто → Альфа</h1>
 	<p class="text-muted small mb-4">
 		Исходный РЛ всегда из базы КорсАвто (<code>ib.alfa=False</code>), целевой — из Альфа (<code>ib.alfa=True</code>).
-		Обычно у них один UIN. Переносятся оценка, обёртка РЛ, приёмка 2КК, DocLO / Swap / EmailPush.
+		Обычно у них один UIN. Переносятся оценка, обёртка РЛ, приёмка 2КК, чат ЕЦО, DocLO / Swap / EmailPush.
 		Доступ только суперпользователям.
 	</p>
 
@@ -19,8 +19,12 @@
 		{% csrf_token %}
 		{% if params.unit_id %}<input type="hidden" name="unit_id" value="{{ params.unit_id }}">{% endif %}
 		<div class="row g-3">
-			<div class="col-12">
-				<label class="form-label">UIN (найдёт пару Корс / Альфа)</label>
+			<div class="col-md-6">
+				<label class="form-label">Номер РЛК</label>
+				<input type="text" name="nomer" class="form-control" value="{{ params.nomer }}" placeholder="Напр. 12345" autofocus>
+			</div>
+			<div class="col-md-6">
+				<label class="form-label">или UIN</label>
 				<input type="text" name="uin" class="form-control" value="{{ params.uin }}" placeholder="UIN рабочего листа">
 			</div>
 			<div class="col-md-6">
@@ -70,8 +74,11 @@
 				<dd class="col-sm-9">{% if params.plan.link_id %}#{{ params.plan.link_id }}{% else %}—{% endif %}</dd>
 				<dt class="col-sm-3">Приёмка 2КК</dt>
 				<dd class="col-sm-9">{% if params.plan.kolesa_id %}#{{ params.plan.kolesa_id }}{% else %}нет{% endif %}</dd>
-				<dt class="col-sm-3">DocLO / Swap / Push</dt>
-				<dd class="col-sm-9">{{ params.plan.doc_lo_count }} / {{ params.plan.swap_count }} / {{ params.plan.email_push_count }}</dd>
+				<dt class="col-sm-3">DocLO / Swap / Push / Чат</dt>
+				<dd class="col-sm-9">
+					{{ params.plan.doc_lo_count }} / {{ params.plan.swap_count }} / {{ params.plan.email_push_count }}
+					/ {{ params.plan.chat_message_count }} сообщ.
+				</dd>
 			</dl>
 
 			{% if params.plan.errors %}
@@ -103,6 +110,7 @@
 			<form method="post" class="mt-3 border-top pt-3">
 				{% csrf_token %}
 				<input type="hidden" name="uin" value="{{ params.uin }}">
+				<input type="hidden" name="nomer" value="{{ params.nomer }}">
 				<input type="hidden" name="source_id" value="{{ params.source_id }}">
 				<input type="hidden" name="target_id" value="{{ params.target_id }}">
 				{% if params.unit_id %}<input type="hidden" name="unit_id" value="{{ params.unit_id }}">{% endif %}
@@ -191,13 +199,13 @@
 							<td class="text-nowrap">
 								{% if row.has_alfa_twin %}
 								<a class="btn btn-sm btn-outline-primary"
-								   href="?uin={{ row.uin|urlencode }}&source_id={{ row.source_rlk_id }}&target_id={{ row.target_rlk_id }}{% if params.unit_id %}&unit_id={{ params.unit_id }}{% endif %}">
+								   href="?nomer={{ row.source_nomer|urlencode }}&uin={{ row.uin|urlencode }}&source_id={{ row.source_rlk_id }}&target_id={{ row.target_rlk_id }}{% if params.unit_id %}&unit_id={{ params.unit_id }}{% endif %}">
 									В план
 								</a>
-								{% elif row.uin %}
+								{% elif row.uin or row.source_nomer %}
 								<a class="btn btn-sm btn-outline-secondary"
-								   href="?uin={{ row.uin|urlencode }}{% if params.unit_id %}&unit_id={{ params.unit_id }}{% endif %}">
-									По UIN
+								   href="?{% if row.source_nomer %}nomer={{ row.source_nomer|urlencode }}{% else %}uin={{ row.uin|urlencode }}{% endif %}{% if params.unit_id %}&unit_id={{ params.unit_id }}{% endif %}">
+									Найти
 								</a>
 								{% else %}
 								<span class="text-muted small">нет UIN</span>
