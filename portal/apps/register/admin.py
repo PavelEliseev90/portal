@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace, BodyTypeGroup, RegInteractivOcenkaPrice
+from .models import RegInfoRefreshEstimationCarsExpress, RegRefCarsOrganizationsCalculationPrice, RegEstimationBalanceStaffEco, RegRefCarsOrganizationsPrice, RegEstimationRefCarsOrganizations, RegEstimationBalanceUnit, RegPodgotovkaWork, RegInfoBody, RegEstimationsSettings, RegPrices, RegSwapKors, RegInteractivOcenkaHistoryOpens, RegInteractivOcenkaEmailPush, RegInteractivOcenkaProverki, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive ,RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenkaSalon, RegRegInteractivOcenkaFiles, RegInteractivOcenka, RegViewsCarsOrganization, SettingsRegPrices, TaskRegPrices, RegInfoRefreshCatalog, RegInteractivOcenkaDocument, RegUnitMonthlyPlan, RegInteractivOcenkaRLK, RegInteractivOcenkaKolesaReception, DiagnosticReferenceCategory, DiagnosticReferenceItem, DiagnosticReferenceSelection, BodyRefReplace, BodyTypeGroup, RegInteractivOcenkaPrice
 
 
 @admin.register(RegInfoRefreshEstimationCarsExpress)
@@ -184,6 +184,63 @@ class RegInteractivOcenkaRLKAdmin(admin.ModelAdmin):
     list_filter = ('status', 'date_diagnostic', 'unit', 'organization')
     search_fields   = ('rlk__nomer',)
     filter_horizontal = ('access_user',)
+
+
+@admin.register(RegInteractivOcenkaKolesaReception)
+class RegInteractivOcenkaKolesaReceptionAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'date',
+        'rlk',
+        'estimation',
+        'unit_display',
+        'kolesa_estimation',
+        'send_wheels_ib',
+        'send_wheels_ib_date',
+        'send_wheels_ib_number',
+        'user',
+    )
+    list_filter = (
+        'send_wheels_ib',
+        'date',
+        'rlk__unit',
+        'kolesa_estimation',
+    )
+    search_fields = (
+        'rlk__nomer',
+        'rlk__uin',
+        'estimation__vin',
+        'estimation__number_body',
+        'send_wheels_ib_number',
+    )
+    raw_id_fields = (
+        'rlk',
+        'estimation',
+        'user',
+        'mark_tyre',
+        'width_tyre',
+        'profil_tyre',
+        'radius',
+        'sezon',
+        'disk_type',
+        'et_disk',
+        'dia_disk',
+        'psd_disk',
+    )
+    list_select_related = (
+        'rlk',
+        'rlk__unit',
+        'estimation',
+        'user',
+    )
+    date_hierarchy = 'date'
+    ordering = ('-date', '-id')
+
+    @admin.display(description='Подразделение', ordering='rlk__unit__name')
+    def unit_display(self, obj):
+        if obj.rlk_id and obj.rlk and obj.rlk.unit_id:
+            return obj.rlk.unit.name
+        return '—'
 
 
 @admin.register(DiagnosticReferenceCategory)
