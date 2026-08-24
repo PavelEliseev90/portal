@@ -385,9 +385,15 @@
 				
 					{% if params.object.vin == '' and params.object.number_body == ''  or params.object.vin == None and params.object.number_body == None %}
 
+						{% if params.blocks_portal_estimation %}
+						<div class="alert alert-warning mb-0">
+							Подразделение переведено на Альфа-Авто — оценку на портале начинать нельзя.
+						</div>
+						{% else %}
 						<a class="btn-calculate-sm" href="/estimations/{{params.object.id}}/">
 							<span class="icon-mbri-play"> Начать оценку</span>
 						</a>
+						{% endif %}
 
 					{% else %}
 
@@ -471,9 +477,15 @@
 						</a>
 					{% elif params.object.end_estimation == None %}
 
+						{% if params.blocks_portal_estimation %}
+						<div class="alert alert-warning mb-0">
+							Подразделение переведено на Альфа-Авто — оценку на портале продолжать нельзя.
+						</div>
+						{% else %}
 						<a href="/estimations/{{params.object.id}}/" class="btn-calculate-sm">
 							<span class="icon-mbri-play"> Продолжить</span>
 						</a>
+						{% endif %}
 
 					{% elif params.object.status_estimation|default_if_none:'Новый' == 'Новый' %}
 					

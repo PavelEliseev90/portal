@@ -196,6 +196,12 @@ class RefUnit(models.Model):
     ib              = models.ForeignKey(RefIb, null=True, on_delete=models.SET_NULL, verbose_name='Информационная база')
     mcc             = models.BooleanField("Расширения МКЦ", default=False)
     active_eco      = models.BooleanField("Доступен для оценки", default=False)
+    alfa_auto_transition_date = models.DateField(
+        "Дата перехода на Альфа-Авто",
+        null=True,
+        blank=True,
+        help_text='Если заполнена — подразделение нельзя выбирать в оценке портала и нельзя начинать оценку с рабочего листа.',
+    )
     direction       = models.ForeignKey(RefDirection, null=True, on_delete=models.SET_NULL, verbose_name='Направление')
 
     eco_staff               = models.ManyToManyField('RefStaff', verbose_name='Сотрудники для оповещения', blank=True)
@@ -673,6 +679,10 @@ class RefUnit(models.Model):
         }
         return info
 
+    def blocks_portal_estimation(self):
+        """Подразделение переведено на Альфа-Авто — оценка на портале недоступна."""
+        return self.alfa_auto_transition_date is not None
+
     def save(self, *args, **kwargs):
         self.name_search = self.name.upper()
         if self.direction != None:
@@ -694,6 +704,28 @@ class RefUnit(models.Model):
         db_table = 'refUnit'
         verbose_name = "Подразделение"
         verbose_name_plural = "Подразделения"
+
+
+def unit_blocks_portal_estimation(unit):
+    """True, если подразделение нельзя использовать для оценки на портале."""
+    if unit is None:
+        return False
+    return bool(getattr(unit, 'alfa_auto_transition_date', None))
+
+
+def rlk_blocks_portal_estimation(rlk):
+    """True, если по РЛ нельзя начинать оценку на портале (unit или unit_dc на Альфа-Авто)."""
+    if rlk is None:
+        return False
+    for attr in ('unit', 'unit_dc'):
+        if unit_blocks_portal_estimation(getattr(rlk, attr, None)):
+            return True
+    return False
+
+
+def filter_units_available_for_portal_estimation(qs):
+    """Исключить подразделения с заполненной датой перехода на Альфа-Авто."""
+    return qs.filter(alfa_auto_transition_date__isnull=True)
 
 
 #Организации (Фирмы)

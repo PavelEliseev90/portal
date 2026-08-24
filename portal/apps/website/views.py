@@ -25,7 +25,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 import xml.etree.ElementTree as ETree
-from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType, RefRulesCars, RefAllowableDiscountKm
+from refs.models import Auction, AuctionStructure, AuctionStructureFiles, RefCarsOrganizationFiles, RefStore, RefTypeEvaluationCarsOrganization, RefStagePrice, RefGroupPrice, RefRatingCarsOrganization, RefCarsOrganization, RefFilial, RefStatusEstimation, RefTypeReceptionCarsOrganization, AutoruModificationSpecifications, RefManufacturer, RefAvito, RefAvitoComplectation, RefTypeKPPAvito, RefTypeEngineAvito, RefTypeDriveAvito, RefTypeBodyAvito,  RefExchangeCars, RefTypeCanceledSMS, RefTypeExchange, RefIb, AutoruMark, AutoruModel, AutoruModification, AutoruComplectation, RefTypeKpp, RefTypeBody, RefTypeEngine, RefUnit, RefCity, RefStaff, RefBoardsPage, RefUnitGroup, RefTypeRepair, RefBoards, RefTypeResourcePlanning, RefTypeCategoryNegative, RefCustomerFiltr, RefCarsOrganizationAuctionStatus, AVTOHUB_DATA_USAGE_CHOICES, RefContactType, RefRulesCars, RefAllowableDiscountKm, rlk_blocks_portal_estimation
 from profiles.models import Profiles, Profiles_save_search
 from updatesportal.models import Updatesportal
 import random
@@ -6701,7 +6701,8 @@ def rlk_trade_in(request, id):
         'selected'      : selected,
         'chat'          : chat,
         'doc_out_ib'    : doc_out_ib,
-        'alfa'          : alfa
+        'alfa'          : alfa,
+        'blocks_portal_estimation': rlk_blocks_portal_estimation(page_obj) if page_obj else False,
 
     }
     return render(request, 'website/doc_rlk_tradein.html', {'params':params}) 

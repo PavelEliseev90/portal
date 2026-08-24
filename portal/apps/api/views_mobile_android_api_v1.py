@@ -32,7 +32,7 @@ import urllib.parse
 import io
 from django.views.decorators.csrf import csrf_exempt
 from django.core.serializers import serialize
-from refs.models import RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefTypeReceptionCarsOrganization, AutoruModification, RefOrganization, RefStaff, RefUnit, RefFilial, RefManufacturer, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefCarsOrganizationFiles
+from refs.models import RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefTypeReceptionCarsOrganization, AutoruModification, RefOrganization, RefStaff, RefUnit, RefFilial, RefManufacturer, RefCarsOrganization, RefStore, RefTypeEvaluationCarsOrganization, RefCarsOrganizationFiles, filter_units_available_for_portal_estimation, rlk_blocks_portal_estimation
 from register.models import RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 
 from documents.models import DocRLK, DocLO, DocZN
@@ -1244,6 +1244,14 @@ def start_estimation(request, slug_rlk):
     
     try:
         object              = DocRLK.objects.get(id=slug_rlk)
+        if rlk_blocks_portal_estimation(object):
+            answer = {
+                'type': 'start_estimation',
+                'user': user_info['answer'],
+                'error': 'Подразделение переведено на Альфа-Авто. Оценку на портале начинать нельзя.',
+                'objects': list(),
+            }
+            return JsonResponse(answer, safe=False, status=status.HTTP_400_BAD_REQUEST)
         type_estimation     = int(request.GET.get('type', '0'))
         if type_estimation == 1:
             vin                 = request.GET.get('vin', '')
@@ -1267,7 +1275,9 @@ def start_estimation(request, slug_rlk):
             list_stores = RefStore.objects.filter(active_eco = True).values(
                 slug            = F('id')           
                 ).values('slug', 'name')
-            list_units = RefUnit.objects.filter(active_eco = True).values(
+            list_units = filter_units_available_for_portal_estimation(
+                RefUnit.objects.filter(active_eco=True)
+            ).values(
                 slug            = F('id')           
                 ).values('slug', 'name')
             
@@ -1308,6 +1318,14 @@ def start_estimation_modification(request, slug_rlk):
     
     try:
         object              = DocRLK.objects.get(id=slug_rlk)
+        if rlk_blocks_portal_estimation(object):
+            answer = {
+                'type': 'start_estimation_modification',
+                'user': user_info['answer'],
+                'error': 'Подразделение переведено на Альфа-Авто. Оценку на портале начинать нельзя.',
+                'objects': list(),
+            }
+            return JsonResponse(answer, safe=False, status=status.HTTP_400_BAD_REQUEST)
         modification        = request.GET.get('modification_id', '0')
         year                = int(request.GET.get('year', '0'))
         drive               = request.GET.get('drive', '0')
@@ -1329,7 +1347,9 @@ def start_estimation_modification(request, slug_rlk):
         list_stores = RefStore.objects.filter(active_eco = True).values(
             slug            = F('id')           
             ).values('slug', 'name')
-        list_units = RefUnit.objects.filter(active_eco = True).values(
+        list_units = filter_units_available_for_portal_estimation(
+            RefUnit.objects.filter(active_eco=True)
+        ).values(
             slug            = F('id')           
             ).values('slug', 'name')
             
