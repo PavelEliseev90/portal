@@ -1665,9 +1665,18 @@ def estimation_by_worksheet(request, rlk_uin=None):
     """
     Оценка по УИН рабочего листа — тот же состав, что уходит в 1С с Type=estimation
     (включая Reception / ReceptionFiles и блок 2КК).
+
+    Логика поиска (после перехода Корс↔Альфа у одного UIN бывает несколько DocRLK):
+    1) все РЛ с этим UIN;
+    2) лучшая оценка через resolve_interactiv_rlk_for_rlk
+       (согласованная цена ЕЦО → осмотр → usable, не «первая попавшаяся»);
+    3) fallback — любая обёртка RegInteractivOcenkaRLK с оценкой по UIN.
+
     GET: /api/estimation/by_worksheet/<rlk_uin>/ или ?rlk_uin= / ?Uin=
     POST: {"Uin": "..."} / {"RlkUin": "..."} / {"Worksheet": {"Uin": "..."}}
     """
+    from documents.models import DocRLK
+    from documents.rlk_estimation import resolve_interactiv_rlk_for_rlk
     from register.models import RegInteractivOcenkaRLK
     from task_manager.views import build_estimation_1c_payload
 
@@ -1699,17 +1708,48 @@ def estimation_by_worksheet(request, rlk_uin=None):
     if not uin:
         return JsonResponse({'error': 'rlk_uin required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    interactiv_rlk = (
-        RegInteractivOcenkaRLK.objects
-        .filter(rlk__uin=uin)
-        .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
-        .first()
+    worksheets = list(
+        DocRLK.objects.filter(uin=uin)
+        .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
+        .order_by('-dataTime', '-id')
     )
+    if not worksheets:
+        return JsonResponse(
+            {'error': 'Worksheet not found', 'Uin': uin},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    interactiv_rlk = None
+    for rlk in worksheets:
+        link = resolve_interactiv_rlk_for_rlk(rlk)
+        if link is not None and link.estimation_id:
+            interactiv_rlk = link
+            break
+
+    if interactiv_rlk is None:
+        # Запасной путь: обёртка с оценкой по UIN (без ранжирования «лучшей»)
+        interactiv_rlk = (
+            RegInteractivOcenkaRLK.objects
+            .filter(rlk__uin=uin)
+            .exclude(estimation_id__isnull=True)
+            .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
+            .order_by('-id')
+            .first()
+        )
+
     if interactiv_rlk is None or interactiv_rlk.estimation_id is None:
         return JsonResponse(
             {'error': 'Estimation not found for worksheet', 'Uin': uin},
             status=status.HTTP_404_NOT_FOUND,
         )
+
+    # Подтянуть связи для payload (resolve может вернуть объект без page_reception)
+    interactiv_rlk = (
+        RegInteractivOcenkaRLK.objects
+        .filter(pk=interactiv_rlk.pk)
+        .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
+        .first()
+    ) or interactiv_rlk
 
     return JsonResponse(build_estimation_1c_payload(interactiv_rlk), status=status.HTTP_200_OK)
 
