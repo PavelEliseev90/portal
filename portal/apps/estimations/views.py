@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from tkinter.tix import Tree
 from django.shortcuts import redirect, render
+from django.contrib import messages
 from register.models import RegInteractivOcenkaRLK, RegInteractivOcenkaRemote, RegInteractivOcenkaEmailPush, RegInteractivOcenkaSoglasovanie, RegInteractivOcenkaProverki, RegInteractivOcenkaKolesa, RegInteractivOcenkaTestDrive, RegInteractivOcenkaComplectnost, RegInteractivOcenkaVnesh, RegDashboardError, RegInteractivOcenka, RegInteractivOcenkaDocument, RegRegInteractivOcenkaFiles, RegInteractivOcenkaSalon
 from django.core.paginator import Paginator
-from refs.models import RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization
+from refs.models import RefCustomerFiltr, RefStatusEstimation, RefTypeDisk, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefEtDisk, RefDiaDisk, RefPsdDisk, RefStatusOcenka, RefUnit, RefStaff, RefTypeReceptionCarsOrganization, filter_units_available_for_portal_estimation, rlk_blocks_portal_estimation, unit_blocks_portal_estimation
 from profiles.models import Profiles
 from documents.models import DocRLK, DocZN, DocLO
 from task_manager.views import send_message_socket
@@ -504,6 +505,13 @@ def estimation_rlk(request, rlk_id):
 
     interactiv_rlk = RegInteractivOcenkaRLK.objects.filter(rlk=object).first()
     if interactiv_rlk is None or not estimation_is_usable(interactiv_rlk.estimation):
+        if rlk_blocks_portal_estimation(object):
+            messages.error(
+                request,
+                'Подразделение переведено на Альфа-Авто (указана дата перехода). '
+                'Оценку на портале начинать нельзя.',
+            )
+            return HttpResponseRedirect('/rlks_trade_in/%s/' % rlk_id)
         interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk=object)
         if interactiv_rlk.estimation is None:
             return HttpResponseRedirect(request.path_info + 'start/')
@@ -578,7 +586,16 @@ def estimation_rlk(request, rlk_id):
 
             unit_id = request.POST.get('unit_id', '')
             if unit_id != '':
-                interactiv_rlk.unit = RefUnit.objects.get(pk = unit_id)
+                unit_obj = RefUnit.objects.filter(pk=unit_id).first()
+                if unit_obj is not None and unit_blocks_portal_estimation(unit_obj):
+                    messages.error(
+                        request,
+                        'Подразделение «{}» переведено на Альфа-Авто — выбрать в оценке нельзя.'.format(
+                            unit_obj.name,
+                        ),
+                    )
+                else:
+                    interactiv_rlk.unit = unit_obj
 
             store_id = request.POST.get('store_id', '')
             if store_id != '':
@@ -1455,7 +1472,16 @@ def estimation_rlk(request, rlk_id):
 
             unit_id = request.POST.get('unit_id', '')
             if unit_id != '':
-                interactiv_rlk.unit = RefUnit.objects.get(pk = unit_id)
+                unit_obj = RefUnit.objects.filter(pk=unit_id).first()
+                if unit_obj is not None and unit_blocks_portal_estimation(unit_obj):
+                    messages.error(
+                        request,
+                        'Подразделение «{}» переведено на Альфа-Авто — выбрать в оценке нельзя.'.format(
+                            unit_obj.name,
+                        ),
+                    )
+                else:
+                    interactiv_rlk.unit = unit_obj
 
             store_id = request.POST.get('store_id', '')
             if store_id != '':
@@ -1666,7 +1692,9 @@ def estimation_rlk(request, rlk_id):
                         slug_store            = F('store__id'), 
                         slug_name            = F('store__name')           
                         ).values('slug_store', 'slug_name')
-                list_units = RefUnit.objects.filter(active_eco = True).filter(ib__alfa = True).order_by('name').values(
+                list_units = filter_units_available_for_portal_estimation(
+                    RefUnit.objects.filter(active_eco=True).filter(ib__alfa=True)
+                ).order_by('name').values(
                         slug            = F('id'),            
                         ).values('slug', 'name')
             else:
@@ -1677,7 +1705,9 @@ def estimation_rlk(request, rlk_id):
                         slug_store            = F('id'),
                         slug_name            = F('name'),           
                         ).values('slug_store', 'slug_name')
-                list_units = RefUnit.objects.filter(active_eco = True).order_by('name').values(
+                list_units = filter_units_available_for_portal_estimation(
+                    RefUnit.objects.filter(active_eco=True)
+                ).order_by('name').values(
                         slug            = F('id'),            
                         ).values('slug', 'name')
             
@@ -1800,6 +1830,15 @@ def estimation_start(request, rlk_id):
     target_rlk_id = resolve_estimation_rlk_id(object)
     if target_rlk_id and target_rlk_id != object.pk:
         return HttpResponseRedirect('/estimations/%s/start/' % target_rlk_id)
+
+    if rlk_blocks_portal_estimation(object):
+        messages.error(
+            request,
+            'Подразделение переведено на Альфа-Авто (указана дата перехода). '
+            'Оценку на портале начинать нельзя.',
+        )
+        return HttpResponseRedirect('/rlks_trade_in/%s/' % rlk_id)
+
     interactiv_rlk, created = RegInteractivOcenkaRLK.objects.get_or_create(rlk = object)
     estimation_active               = None
     mod = ''
