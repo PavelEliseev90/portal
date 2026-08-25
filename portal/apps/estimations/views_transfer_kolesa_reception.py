@@ -4,8 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
-from django.urls import reverse
-
 from estimations.transfer_kolesa_reception import (
     KolesaRebindError,
     _find_rlk,
@@ -88,8 +86,8 @@ def transfer_kolesa_reception(request):
                         ),
                     )
                     return HttpResponseRedirect(
-                        '{}?reception_id={}&target_rlk_id={}&done=1'.format(
-                            reverse('eco:transfer_kolesa_reception'),
+                        '/estimations/transfer-kolesa-reception/'
+                        '?reception_id={}&target_rlk_id={}&done=1'.format(
                             result.reception.pk,
                             result.target_rlk.pk,
                         )
