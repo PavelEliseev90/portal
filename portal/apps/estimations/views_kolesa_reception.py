@@ -351,10 +351,12 @@ def kolesa_reception_detail(request, reception_id):
                 reception.send_wheels_ib = False
                 reception.send_wheels_ib_date = None
                 reception.send_wheels_ib_number = ''
+                reception.send_wheels_ib_uin = ''
                 reception.save(update_fields=[
                     'send_wheels_ib',
                     'send_wheels_ib_date',
                     'send_wheels_ib_number',
+                    'send_wheels_ib_uin',
                 ])
                 messages.success(request, 'Признак отправки в базу БУ колёс сброшен')
             return HttpResponseRedirect(request.path)
@@ -369,14 +371,19 @@ def kolesa_reception_detail(request, reception_id):
 
             send_result = send_kolesa_reception_to_1c(reception, request=request)
             if send_result.get('ok'):
-                reception.send_wheels_ib = True
-                reception.save(update_fields=['send_wheels_ib'])
-                messages.success(
-                    request,
+                doc = send_result.get('document') or {}
+                parts = [
                     'Данные приёмки отправлены в базу БУ колёс (HTTP {}).'.format(
                         send_result.get('status_code') or 200,
-                    ),
-                )
+                    )
+                ]
+                if doc.get('number'):
+                    parts.append('№ {}'.format(doc['number']))
+                if doc.get('date'):
+                    parts.append(doc['date'].strftime('%d.%m.%Y %H:%M'))
+                if doc.get('uin'):
+                    parts.append('УИН {}'.format(doc['uin']))
+                messages.success(request, ' · '.join(parts))
             else:
                 err = send_result.get('error') or 'неизвестная ошибка'
                 messages.error(

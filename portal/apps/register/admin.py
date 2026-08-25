@@ -198,6 +198,7 @@ class RegInteractivOcenkaKolesaReceptionAdmin(admin.ModelAdmin):
         'send_wheels_ib',
         'send_wheels_ib_date',
         'send_wheels_ib_number',
+        'send_wheels_ib_uin',
         'user',
     )
     list_filter = (
@@ -212,6 +213,7 @@ class RegInteractivOcenkaKolesaReceptionAdmin(admin.ModelAdmin):
         'estimation__vin',
         'estimation__number_body',
         'send_wheels_ib_number',
+        'send_wheels_ib_uin',
     )
     raw_id_fields = (
         'rlk',

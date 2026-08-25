@@ -130,6 +130,8 @@ def _serialize_list_row(reception, include_data=False, request=None):
         'send_wheels_ib': bool(reception.send_wheels_ib),
         'send_wheels_ib_date': reception.send_wheels_ib_date,
         'send_wheels_ib_number': reception.send_wheels_ib_number or '',
+        'send_wheels_ib_uin': getattr(reception, 'send_wheels_ib_uin', '') or '',
+        'send_wheels_ib_uin': reception.send_wheels_ib_uin or '',
         'date': reception.date,
         'estimation_id': estimation.pk if estimation else None,
         'EstimationId': estimation.pk if estimation else None,
@@ -264,6 +266,7 @@ def kolesa_reception_detail(request, reception_id):
     payload['send_wheels_ib'] = bool(reception.send_wheels_ib)
     payload['send_wheels_ib_date'] = reception.send_wheels_ib_date
     payload['send_wheels_ib_number'] = reception.send_wheels_ib_number or ''
+    payload['send_wheels_ib_uin'] = getattr(reception, 'send_wheels_ib_uin', '') or ''
     return _json_response(payload)
 
 
@@ -309,17 +312,23 @@ def _normalize_accept_item(data):
         data,
         'number', 'Номер', 'nomer', 'document_number', 'send_wheels_ib_number',
     )
+    raw_uin = _field_from_payload(
+        data,
+        'document_uin', 'Уин', 'Uin', 'send_wheels_ib_uin',
+    )
 
     accept_date = None
     if raw_date is not None:
         accept_date = _parse_accept_datetime(raw_date)
 
     accept_number = _parse_document_number(raw_number)
+    accept_uin = str(raw_uin).strip() if raw_uin not in (None, '') else ''
 
     return {
         'id': reception_id,
         'send_wheels_ib_date': accept_date,
         'send_wheels_ib_number': accept_number,
+        'send_wheels_ib_uin': accept_uin,
     }
 
 
@@ -358,7 +367,7 @@ def _extract_accept_items(data):
     return [_normalize_accept_item(data)]
 
 
-def _apply_accept(reception, accept_date, accept_number):
+def _apply_accept(reception, accept_date, accept_number, accept_uin=''):
     already_sent = bool(reception.send_wheels_ib)
     update_fields = []
 
@@ -373,6 +382,10 @@ def _apply_accept(reception, accept_date, accept_number):
     if accept_number is not None:
         reception.send_wheels_ib_number = accept_number
         update_fields.append('send_wheels_ib_number')
+
+    if accept_uin:
+        reception.send_wheels_ib_uin = str(accept_uin)[:100]
+        update_fields.append('send_wheels_ib_uin')
 
     if update_fields:
         reception.save(update_fields=update_fields)
@@ -418,6 +431,7 @@ def kolesa_reception_accept(request):
             reception,
             item.get('send_wheels_ib_date'),
             item.get('send_wheels_ib_number'),
+            item.get('send_wheels_ib_uin') or '',
         )
 
         accepted.append({
@@ -426,6 +440,7 @@ def kolesa_reception_accept(request):
             'send_wheels_ib': True,
             'send_wheels_ib_date': reception.send_wheels_ib_date,
             'send_wheels_ib_number': reception.send_wheels_ib_number or '',
+            'send_wheels_ib_uin': getattr(reception, 'send_wheels_ib_uin', '') or '',
             'already_sent': already_sent,
             'message': 'Принято' if not already_sent else 'Уже было принято ранее',
         })
