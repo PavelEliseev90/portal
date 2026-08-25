@@ -3483,13 +3483,25 @@ def estimation_send_1c(rlk_id, id):
 def send_kolesa_reception_to_1c(reception, request=None):
     """
     Отправка приёмки 2КК в базу БУ колёс (HTTP-сервис rwheels2024).
-    При успехе пишет в приёмку номер/дату/УИН документа из ответа Data.
+
+    При HTTP 2xx разбирает ответ вида::
+
+        {"Data": {"Уин": "...", "Номер": "000020264", "Дата": "2026-08-20T11:52:55"}}
+
+    и сохраняет в приёмку:
+      - send_wheels_ib = True
+      - send_wheels_ib_uin
+      - send_wheels_ib_number
+      - send_wheels_ib_date
+
     Возвращает dict: {ok, status_code, error, text, document}.
     """
+    import json
     from datetime import datetime
 
     from django.utils.dateparse import parse_date, parse_datetime
     from eco.reception import build_kolesa_reception_send_payload
+    from register.models import RegInteractivOcenkaKolesaReception
 
     result = {
         'ok': False,
@@ -3505,6 +3517,8 @@ def send_kolesa_reception_to_1c(reception, request=None):
     if reception is None:
         result['error'] = 'Приёмка не найдена'
         return result
+
+    reception_id = reception.pk
 
     def _parse_doc_dt(value):
         if value is None or value == '':
@@ -3531,32 +3545,59 @@ def send_kolesa_reception_to_1c(reception, request=None):
                 continue
         return None
 
+    def _pick(data, *keys):
+        if not isinstance(data, dict):
+            return None
+        for key in keys:
+            if key in data and data[key] not in (None, ''):
+                return data[key]
+        # case-insensitive fallback
+        lower_map = {str(k).lower(): v for k, v in data.items()}
+        for key in keys:
+            val = lower_map.get(str(key).lower())
+            if val not in (None, ''):
+                return val
+        return None
+
     def _extract_document(body):
-        data = body
-        if isinstance(body, dict) and isinstance(body.get('Data'), dict):
-            data = body['Data']
+        """Достаёт Уин / Номер / Дата из корня или из Data."""
+        if not isinstance(body, dict):
+            return '', '', None
+        data = body.get('Data') if isinstance(body.get('Data'), dict) else body
         if not isinstance(data, dict):
             return '', '', None
-        uin = (
-            data.get('Уин')
-            or data.get('Uin')
-            or data.get('uin')
-            or data.get('UID')
-            or ''
+        uin = _pick(data, 'Уин', 'Uin', 'uin', 'UID', 'Uid')
+        number = _pick(data, 'Номер', 'Number', 'number', 'nomer', 'Nomer')
+        raw_date = _pick(data, 'Дата', 'Date', 'date')
+        return (
+            str(uin).strip() if uin is not None else '',
+            str(number).strip() if number is not None else '',
+            _parse_doc_dt(raw_date),
         )
-        number = (
-            data.get('Номер')
-            or data.get('Number')
-            or data.get('number')
-            or data.get('nomer')
-            or ''
+
+    def _save_document_fields(doc_uin, doc_number, doc_date):
+        """Явно пишет реквизиты документа БУ шин в приёмку."""
+        update_kwargs = {
+            'send_wheels_ib': True,
+        }
+        if doc_uin:
+            update_kwargs['send_wheels_ib_uin'] = doc_uin[:100]
+        if doc_number:
+            update_kwargs['send_wheels_ib_number'] = doc_number[:64]
+        if doc_date is not None:
+            update_kwargs['send_wheels_ib_date'] = doc_date
+        updated = RegInteractivOcenkaKolesaReception.objects.filter(pk=reception_id).update(
+            **update_kwargs
         )
-        raw_date = (
-            data.get('Дата')
-            or data.get('Date')
-            or data.get('date')
-        )
-        return str(uin).strip(), str(number).strip(), _parse_doc_dt(raw_date)
+        # синхронизируем переданный объект
+        reception.send_wheels_ib = True
+        if doc_uin:
+            reception.send_wheels_ib_uin = doc_uin[:100]
+        if doc_number:
+            reception.send_wheels_ib_number = doc_number[:64]
+        if doc_date is not None:
+            reception.send_wheels_ib_date = doc_date
+        return updated
 
     try:
         js_data = build_kolesa_reception_send_payload(reception, request=request)
@@ -3564,46 +3605,50 @@ def send_kolesa_reception_to_1c(reception, request=None):
         response = requests.post(url_hs_wheels_bu, json=js_data, timeout=60)
         result['status_code'] = response.status_code
         result['text'] = (response.text or '')[:2000]
-        if 200 <= response.status_code < 300:
-            result['ok'] = True
-            body = None
+
+        if not (200 <= response.status_code < 300):
+            result['error'] = 'HTTP {}'.format(response.status_code)
+            return result
+
+        body = None
+        try:
+            body = response.json()
+        except (ValueError, TypeError):
             try:
-                body = response.json()
+                body = json.loads(response.text or '')
             except (ValueError, TypeError):
                 body = None
 
-            if isinstance(body, dict):
-                data = body.get('Data') if isinstance(body.get('Data'), dict) else body
-                if isinstance(data, dict) and data.get('Success') is False:
-                    result['ok'] = False
-                    result['error'] = (
-                        data.get('Answer') or data.get('Message') or '1С: Success=false'
-                    )
+        if isinstance(body, dict):
+            data_node = body.get('Data') if isinstance(body.get('Data'), dict) else body
+            if isinstance(data_node, dict) and data_node.get('Success') is False:
+                result['error'] = (
+                    data_node.get('Answer')
+                    or data_node.get('Message')
+                    or '1С: Success=false'
+                )
+                return result
 
-            if result['ok'] and body is not None:
-                doc_uin, doc_number, doc_date = _extract_document(body)
-                result['document'] = {
-                    'uin': doc_uin,
-                    'number': doc_number,
-                    'date': doc_date,
-                }
-                update_fields = ['send_wheels_ib']
-                reception.send_wheels_ib = True
-                if doc_uin:
-                    reception.send_wheels_ib_uin = doc_uin[:100]
-                    update_fields.append('send_wheels_ib_uin')
-                if doc_number:
-                    reception.send_wheels_ib_number = doc_number[:64]
-                    update_fields.append('send_wheels_ib_number')
-                if doc_date is not None:
-                    reception.send_wheels_ib_date = doc_date
-                    update_fields.append('send_wheels_ib_date')
-                reception.save(update_fields=update_fields)
-        else:
-            result['error'] = 'HTTP {}'.format(response.status_code)
+        doc_uin, doc_number, doc_date = _extract_document(body) if body is not None else ('', '', None)
+        result['document'] = {
+            'uin': doc_uin,
+            'number': doc_number,
+            'date': doc_date,
+        }
+
+        # Всегда ставим признак отправки; реквизиты — если 1С их вернула
+        _save_document_fields(doc_uin, doc_number, doc_date)
+        result['ok'] = True
+        if not doc_uin and not doc_number and doc_date is None:
+            result['error'] = (
+                'Отправлено, но в ответе 1С нет Уин/Номер/Дата — '
+                'проверьте формат Data'
+            )
     except requests.RequestException as exc:
+        result['ok'] = False
         result['error'] = str(exc)
     except Exception as exc:
+        result['ok'] = False
         result['error'] = str(exc)
     return result
 
