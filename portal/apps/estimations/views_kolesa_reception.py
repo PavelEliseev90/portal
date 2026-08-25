@@ -260,6 +260,12 @@ def _kolesa_reception_list_queryset(request):
 
 
 @login_required
+def kolesa_reception_help(request):
+    """Инструкция: приёмка и отправка второго комплекта колёс."""
+    return render(request, 'estimations/kolesa_reception_help.html', {'params': {}})
+
+
+@login_required
 def kolesa_reception_list(request):
     qs = _kolesa_reception_list_queryset(request)
     paginator = Paginator(qs, 30)
