@@ -196,6 +196,18 @@
 		</div>
 		<div class="col-12 col-md-6 col-lg">
 			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">УИН док. БУ шин</h6>
+				<div class="fw-bold text-break small">
+					{% if params.reception.send_wheels_ib_uin %}
+						{{ params.reception.send_wheels_ib_uin }}
+					{% else %}
+						—
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
 				<h6 class="small text-uppercase text-muted mb-2">Статус оценки</h6>
 				<div class="fw-bold">{{ params.estimation.status.name|default:"—" }}</div>
 			</div>
