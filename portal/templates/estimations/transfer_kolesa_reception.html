@@ -7,9 +7,9 @@
 		Меняется только привязка <code>RegInteractivOcenkaKolesaReception.rlk</code> (и опционально оценка).
 		Фото и реквизиты отправки в БУ колёс остаются на той же записи.
 		На целевом РЛ не должно быть другой приёмки. Доступ только суперпользователям.
-		<a href="{% url 'eco:transfer_estimation_rlk' %}">Перенос оценки Корс→Альфа</a>
+		<a href="/estimations/transfer-rlk/">Перенос оценки Корс→Альфа</a>
 		·
-		<a href="{% url 'eco:kolesa_reception_help' %}">Инструкция 2КК</a>
+		<a href="/estimations/kolesa-reception/help/">Инструкция 2КК</a>
 	</p>
 
 	{% if messages %}
@@ -71,7 +71,7 @@
 	{% if params.result %}
 	<div class="alert alert-success">
 		Приёмка
-		<a href="{% url 'eco:kolesa_reception_detail' params.result.reception_id %}" class="alert-link">#{{ params.result.reception_id }}</a>
+		<a href="/estimations/kolesa-reception/{{ params.result.reception_id }}/" class="alert-link">#{{ params.result.reception_id }}</a>
 		сейчас на {{ params.result.rlk_label }}.
 		Оценка {% if params.result.estimation_id %}#{{ params.result.estimation_id }}{% else %}—{% endif %}.
 		{% if params.result.rlk_id %}
@@ -87,7 +87,7 @@
 			<dl class="row mb-0">
 				<dt class="col-sm-3">Приёмка</dt>
 				<dd class="col-sm-9">
-					<a href="{% url 'eco:kolesa_reception_detail' params.plan.reception_id %}" target="_blank">#{{ params.plan.reception_id }}</a>
+					<a href="/estimations/kolesa-reception/{{ params.plan.reception_id }}/" target="_blank">#{{ params.plan.reception_id }}</a>
 					{% if params.plan.sent %}
 					<span class="badge bg-info text-dark">отправлена в БУ</span>
 					{% if params.plan.send_number %}№{{ params.plan.send_number }}{% endif %}
@@ -154,7 +154,7 @@
 					</label>
 				</div>
 				<button type="submit" name="action" value="execute" class="btn btn-danger">Выполнить перепривязку</button>
-				<a class="btn btn-link" href="{% url 'eco:kolesa_reception_detail' params.plan.reception_id %}" target="_blank">Открыть приёмку</a>
+				<a class="btn btn-link" href="/estimations/kolesa-reception/{{ params.plan.reception_id }}/" target="_blank">Открыть приёмку</a>
 				{% if params.plan.target_rlk_id %}
 				<a class="btn btn-link" href="/estimations/{{ params.plan.target_rlk_id }}/" target="_blank">Целевой РЛ</a>
 				{% endif %}
@@ -188,7 +188,7 @@
 						{% for row in params.recent %}
 						<tr>
 							<td class="small">
-								<a href="{% url 'eco:kolesa_reception_detail' row.reception_id %}" target="_blank">#{{ row.reception_id }}</a>
+								<a href="/estimations/kolesa-reception/{{ row.reception_id }}/" target="_blank">#{{ row.reception_id }}</a>
 							</td>
 							<td class="small">{% if row.rlk_id %}#{{ row.rlk_id }}{% else %}—{% endif %}</td>
 							<td class="small">{{ row.rlk_nomer|default:"—" }}</td>
