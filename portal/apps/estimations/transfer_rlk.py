@@ -352,6 +352,10 @@ class TransferPlan:
     actions: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
+    @property
+    def ok(self) -> bool:
+        return not self.errors
+
     def as_dict(self) -> dict[str, Any]:
         return {
             'source_label': _rlk_label(self.source),
