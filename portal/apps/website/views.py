@@ -6634,7 +6634,7 @@ def rlk_trade_in(request, id):
             return HttpResponseRedirect(request.build_absolute_uri())   
 
     alfa        = False 
-    docs        = DocRLK.objects.filter(pk = id).filter(eco = True).order_by('-dataTime')
+    docs        = DocRLK.objects.filter(pk = id).order_by('-dataTime')
     
     subquery    = RegInteractivOcenkaRLK.objects.filter(rlk__id = OuterRef(name='id'))
     docs        = docs.annotate(
