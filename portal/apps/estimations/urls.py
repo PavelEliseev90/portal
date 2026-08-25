@@ -30,6 +30,7 @@ urlpatterns = [
     path('transfer-rlk/',                                                       views_transfer_rlk.transfer_estimation_rlk, name='transfer_estimation_rlk'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
+    path('kolesa-reception/help/',                                              views_kolesa_reception.kolesa_reception_help, name='kolesa_reception_help'),
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),
     path('kolesa-reception/<int:reception_id>/',                                views_kolesa_reception.kolesa_reception_detail, name='kolesa_reception_detail'),
 
