@@ -7,6 +7,8 @@
 		Исходный РЛ всегда из базы КорсАвто (<code>ib.alfa=False</code>), целевой — из Альфа (<code>ib.alfa=True</code>).
 		Обычно у них один UIN. Переносятся оценка, обёртка РЛ, приёмка 2КК, чат ЕЦО, DocLO / Swap / EmailPush.
 		Доступ только суперпользователям.
+		·
+		<a href="{% url 'eco:transfer_kolesa_reception' %}">Перепривязка только приёмки 2КК</a>
 	</p>
 
 	{% if messages %}

@@ -5,6 +5,7 @@ from . import views_mobile_gallery
 from . import views_osmotr_test
 from . import views_photos_download
 from . import views_transfer_rlk
+from . import views_transfer_kolesa_reception
 
 app_name = 'eco'
 
@@ -28,6 +29,7 @@ urlpatterns = [
     path('<slug:rlk_id>/photos/download/',                                      views_photos_download.estimation_photos_download_by_rlk, name='estimation_photos_download_rlk'),
 
     path('transfer-rlk/',                                                       views_transfer_rlk.transfer_estimation_rlk, name='transfer_estimation_rlk'),
+    path('transfer-kolesa-reception/',                                          views_transfer_kolesa_reception.transfer_kolesa_reception, name='transfer_kolesa_reception'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
     path('kolesa-reception/help/',                                              views_kolesa_reception.kolesa_reception_help, name='kolesa_reception_help'),

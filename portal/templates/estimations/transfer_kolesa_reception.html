@@ -1,0 +1,214 @@
+{% extends 'base_web.html' %}
+{% block title %}Перепривязка приёмки 2КК{% endblock %}
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 1200px;">
+	<h1 class="h4 mb-3">Перепривязка приёмки 2КК к другому рабочему листу</h1>
+	<p class="text-muted small mb-4">
+		Меняется только привязка <code>RegInteractivOcenkaKolesaReception.rlk</code> (и опционально оценка).
+		Фото и реквизиты отправки в БУ колёс остаются на той же записи.
+		На целевом РЛ не должно быть другой приёмки. Доступ только суперпользователям.
+		<a href="{% url 'eco:transfer_estimation_rlk' %}">Перенос оценки Корс→Альфа</a>
+		·
+		<a href="{% url 'eco:kolesa_reception_help' %}">Инструкция 2КК</a>
+	</p>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<form method="post" class="card card-body mb-4">
+		{% csrf_token %}
+		<div class="row g-3">
+			<div class="col-12"><h2 class="h6 text-muted mb-0">Приёмка / исходный РЛ</h2></div>
+			<div class="col-md-3">
+				<label class="form-label">id приёмки</label>
+				<input type="text" name="reception_id" class="form-control" value="{{ params.reception_id }}" placeholder="KolesaReception.id" autofocus>
+			</div>
+			<div class="col-md-3">
+				<label class="form-label">или id РЛ</label>
+				<input type="text" name="source_rlk_id" class="form-control" value="{{ params.source_rlk_id }}" placeholder="DocRLK.id">
+			</div>
+			<div class="col-md-3">
+				<label class="form-label">или номер РЛ</label>
+				<input type="text" name="source_nomer" class="form-control" value="{{ params.source_nomer }}">
+			</div>
+			<div class="col-md-3">
+				<label class="form-label">или UIN РЛ</label>
+				<input type="text" name="source_uin" class="form-control" value="{{ params.source_uin }}">
+			</div>
+
+			<div class="col-12"><h2 class="h6 text-muted mb-0 mt-2">Целевой РЛ</h2></div>
+			<div class="col-md-4">
+				<label class="form-label">id РЛ</label>
+				<input type="text" name="target_rlk_id" class="form-control" value="{{ params.target_rlk_id }}" placeholder="DocRLK.id">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или номер</label>
+				<input type="text" name="target_nomer" class="form-control" value="{{ params.target_nomer }}">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или UIN</label>
+				<input type="text" name="target_uin" class="form-control" value="{{ params.target_uin }}">
+			</div>
+
+			<div class="col-12">
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" name="relink_estimation" value="1" id="relinkEst"
+						{% if params.relink_estimation %}checked{% endif %}>
+					<label class="form-check-label" for="relinkEst">
+						Перепривязать оценку приёмки к оценке целевого РЛ (если есть)
+					</label>
+				</div>
+			</div>
+		</div>
+		<div class="mt-3 d-flex gap-2 flex-wrap">
+			<button type="submit" name="action" value="preview" class="btn btn-outline-primary">Показать план</button>
+		</div>
+	</form>
+
+	{% if params.result %}
+	<div class="alert alert-success">
+		Приёмка
+		<a href="{% url 'eco:kolesa_reception_detail' params.result.reception_id %}" class="alert-link">#{{ params.result.reception_id }}</a>
+		сейчас на {{ params.result.rlk_label }}.
+		Оценка {% if params.result.estimation_id %}#{{ params.result.estimation_id }}{% else %}—{% endif %}.
+		{% if params.result.rlk_id %}
+		<a href="/estimations/{{ params.result.rlk_id }}/" class="alert-link">Открыть оценку РЛ</a>
+		{% endif %}
+	</div>
+	{% endif %}
+
+	{% if params.plan %}
+	<div class="card mb-4">
+		<div class="card-header">План перепривязки</div>
+		<div class="card-body">
+			<dl class="row mb-0">
+				<dt class="col-sm-3">Приёмка</dt>
+				<dd class="col-sm-9">
+					<a href="{% url 'eco:kolesa_reception_detail' params.plan.reception_id %}" target="_blank">#{{ params.plan.reception_id }}</a>
+					{% if params.plan.sent %}
+					<span class="badge bg-info text-dark">отправлена в БУ</span>
+					{% if params.plan.send_number %}№{{ params.plan.send_number }}{% endif %}
+					{% if params.plan.send_uin %}<code class="ms-1">{{ params.plan.send_uin }}</code>{% endif %}
+					{% endif %}
+				</dd>
+				<dt class="col-sm-3">Откуда</dt>
+				<dd class="col-sm-9">{{ params.plan.source_label }}</dd>
+				<dt class="col-sm-3">Куда</dt>
+				<dd class="col-sm-9">{{ params.plan.target_label }}</dd>
+				<dt class="col-sm-3">Оценка сейчас</dt>
+				<dd class="col-sm-9">
+					{% if params.plan.estimation_id %}#{{ params.plan.estimation_id }} VIN {{ params.plan.estimation_vin|default:"—" }}{% else %}—{% endif %}
+				</dd>
+				<dt class="col-sm-3">Оценка целевого</dt>
+				<dd class="col-sm-9">
+					{% if params.plan.target_estimation_id %}#{{ params.plan.target_estimation_id }}{% else %}нет{% endif %}
+					{% if params.plan.relink_estimation %}<span class="badge bg-secondary">перепривязка вкл.</span>{% else %}<span class="badge bg-light text-dark">только РЛ</span>{% endif %}
+				</dd>
+				<dt class="col-sm-3">Фото</dt>
+				<dd class="col-sm-9">{{ params.plan.files_count }} шт. (останутся на приёмке)</dd>
+			</dl>
+
+			{% if params.plan.errors %}
+			<div class="alert alert-danger mt-3 mb-0">
+				<strong>Ошибки:</strong>
+				<ul class="mb-0">
+					{% for e in params.plan.errors %}<li>{{ e }}</li>{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
+
+			{% if params.plan.warnings %}
+			<div class="alert alert-warning mt-3">
+				<strong>Предупреждения:</strong>
+				<ul class="mb-0">
+					{% for w in params.plan.warnings %}<li>{{ w }}</li>{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
+
+			{% if params.plan.actions %}
+			<p class="mt-3 mb-1"><strong>Действия:</strong></p>
+			<ol class="small">
+				{% for a in params.plan.actions %}<li>{{ a }}</li>{% endfor %}
+			</ol>
+			{% endif %}
+
+			{% if params.plan.ok %}
+			<form method="post" class="mt-3 border-top pt-3">
+				{% csrf_token %}
+				<input type="hidden" name="reception_id" value="{{ params.reception_id }}">
+				<input type="hidden" name="source_rlk_id" value="{{ params.source_rlk_id }}">
+				<input type="hidden" name="source_nomer" value="{{ params.source_nomer }}">
+				<input type="hidden" name="source_uin" value="{{ params.source_uin }}">
+				<input type="hidden" name="target_rlk_id" value="{{ params.target_rlk_id }}">
+				<input type="hidden" name="target_nomer" value="{{ params.target_nomer }}">
+				<input type="hidden" name="target_uin" value="{{ params.target_uin }}">
+				{% if params.relink_estimation %}<input type="hidden" name="relink_estimation" value="1">{% endif %}
+				<div class="form-check mb-3">
+					<input class="form-check-input" type="checkbox" name="confirm" value="yes" id="confirmRebind" required>
+					<label class="form-check-label" for="confirmRebind">
+						Подтверждаю перепривязку приёмки #{{ params.plan.reception_id }} на РЛ #{{ params.plan.target_rlk_id }}
+					</label>
+				</div>
+				<button type="submit" name="action" value="execute" class="btn btn-danger">Выполнить перепривязку</button>
+				<a class="btn btn-link" href="{% url 'eco:kolesa_reception_detail' params.plan.reception_id %}" target="_blank">Открыть приёмку</a>
+				{% if params.plan.target_rlk_id %}
+				<a class="btn btn-link" href="/estimations/{{ params.plan.target_rlk_id }}/" target="_blank">Целевой РЛ</a>
+				{% endif %}
+			</form>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="card mb-4">
+		<div class="card-header">Последние приёмки 2КК</div>
+		<div class="card-body p-0">
+			{% if not params.recent %}
+			<p class="p-3 mb-0 text-muted">Нет записей.</p>
+			{% else %}
+			<div class="table-responsive">
+				<table class="table table-sm table-hover mb-0 align-middle">
+					<thead class="table-light">
+						<tr>
+							<th>Приёмка</th>
+							<th>РЛ</th>
+							<th>Номер</th>
+							<th>UIN</th>
+							<th>VIN</th>
+							<th>Отпр.</th>
+							<th>Дата</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for row in params.recent %}
+						<tr>
+							<td class="small">
+								<a href="{% url 'eco:kolesa_reception_detail' row.reception_id %}" target="_blank">#{{ row.reception_id }}</a>
+							</td>
+							<td class="small">{% if row.rlk_id %}#{{ row.rlk_id }}{% else %}—{% endif %}</td>
+							<td class="small">{{ row.rlk_nomer|default:"—" }}</td>
+							<td class="small"><code>{{ row.uin|default:"—" }}</code></td>
+							<td class="small"><code>{{ row.vin|default:"—" }}</code></td>
+							<td class="small">{% if row.sent %}да{% else %}—{% endif %}</td>
+							<td class="small text-nowrap">{{ row.date|date:"d.m.Y H:i"|default:"—" }}</td>
+							<td class="text-nowrap">
+								<a class="btn btn-sm btn-outline-primary"
+								   href="?reception_id={{ row.reception_id }}{% if row.rlk_id %}&source_rlk_id={{ row.rlk_id }}{% endif %}">
+									Выбрать
+								</a>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}
