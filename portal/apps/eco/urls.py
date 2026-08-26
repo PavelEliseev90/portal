@@ -64,6 +64,7 @@ urlpatterns = [
     path('<id>/chat_email_notify/',             views.chat_email_notify_participants, name='chat_email_notify'),
     path('<id>/photos/download/',               views.estimation_photos_download_eco, name='estimation_photos_download'),
     path('<id>/route-sheet/print/',             views.estimation_route_sheet_print, name='estimation_route_sheet_print'),
+    path('<id>/inspection-sheet/print/',        views.estimation_inspection_sheet_print, name='estimation_inspection_sheet_print'),
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

@@ -1815,7 +1815,10 @@
               </div>
       
               <div class="kors-metric-card">
-                <span class="kors-metric-card__label">Лист оценки</span>
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <span class="kors-metric-card__label">Лист оценки</span>
+                  <a href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" class="kors-metric-card__action" target="_blank" title="Печать листа осмотра">Лист осмотра</a>
+                </div>
                 <span class="kors-metric-card__value">{% if params.lo %}{{params.lo.nomer}}{% else %}---{% endif %}</span>
                 <span class="kors-metric-card__sub">Обновлено {{params.lo.dataTime|date:"d.m.Y"}}</span>
               </div>
@@ -2369,6 +2372,9 @@
                   </a>
                   <a href="?{% url_replace page=24 %}" class="kors-anchor-button" data-tab-target="24">
                     <span>Приём автомобиля</span>
+                  </a>
+                  <a href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" class="kors-anchor-button" target="_blank" rel="noopener">
+                    <span>Лист осмотра</span>
                   </a>
                   {% if params.avito_auction %}
                     <a href="?{% url_replace page=25 %}" class="kors-anchor-button" data-tab-target="25">

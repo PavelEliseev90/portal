@@ -581,7 +581,7 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
         lo = (
             DocLO.objects
             .filter(rlk=rlk)
-            .select_related('organization', 'staff')
+            .select_related('organization', 'staff', 'store')
             .order_by('-active', '-dataTime', '-id')
             .first()
         )
@@ -620,6 +620,23 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
     elif rlk is not None and rlk.unit_id and rlk.unit:
         org_name = rlk.unit.name or ''
 
+    store_name = ''
+    if page_reception and page_reception.store_id and page_reception.store:
+        store_name = page_reception.store.name or ''
+    elif lo and lo.store_id and lo.store:
+        store_name = lo.store.name or ''
+    else:
+        try:
+            link = getattr(rlk, 'reginteractivocenkarlk', None) if rlk else None
+            if link is not None and link.store_id and link.store:
+                store_name = link.store.name or ''
+        except Exception:
+            pass
+        if not store_name and estimation and estimation.page_documents_id and estimation.page_documents:
+            docs = estimation.page_documents
+            if docs.store_id and docs.store:
+                store_name = docs.store.name or ''
+
     appraiser = ''
     if estimation and estimation.staff_id and estimation.staff:
         appraiser = estimation.staff.name or str(estimation.staff)
@@ -637,6 +654,20 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
     elif page_reception and page_reception.year:
         year = str(page_reception.year)
 
+    mileage = ''
+    mileage_val = None
+    if page_reception and page_reception.mileage:
+        mileage_val = page_reception.mileage
+    elif page_salon and page_salon.run:
+        mileage_val = page_salon.run
+    elif lo and lo.run:
+        mileage_val = lo.run
+    if mileage_val:
+        try:
+            mileage = '{:,}'.format(int(mileage_val)).replace(',', ' ')
+        except (TypeError, ValueError):
+            mileage = str(mileage_val)
+
     date_priem = None
     if kolesa_reception and kolesa_reception.date:
         date_priem = kolesa_reception.date
@@ -653,6 +684,20 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
     if not vin and page_reception:
         vin = (page_reception.vin or '').strip()
 
+    plate_number = ''
+    if page_reception and (page_reception.plate_number or '').strip():
+        plate_number = page_reception.plate_number.strip()
+    elif estimation and estimation.page_documents_id and estimation.page_documents:
+        plate_number = (estimation.page_documents.plate_number or '').strip()
+    elif lo and (lo.carsGRZ or '').strip():
+        plate_number = lo.carsGRZ.strip()
+
+    engine_number = ''
+    if page_reception and (page_reception.engine_number or '').strip():
+        engine_number = page_reception.engine_number.strip()
+    elif estimation and estimation.page_documents_id and estimation.page_documents:
+        engine_number = (estimation.page_documents.engine_number or '').strip()
+
     car_label = _estimation_car_label(estimation) if estimation else '—'
     if page_reception and (page_reception.mark or page_reception.model):
         car_label = '{} {}'.format(
@@ -662,10 +707,20 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
 
     diagnostica_yes = False
     diagnostica_no = False
+    diagnostica_text = ''
     if page_sogl is not None:
         if page_sogl.no_diagnostica:
             diagnostica_no = True
-        elif (page_sogl.comment_diagnostica or '').strip() or page_sogl.price_after_kd:
+            diagnostica_text = (page_sogl.no_diagnostica_comment or '').strip()
+            if not diagnostica_text:
+                diagnostica_text = 'Без диагностики'
+        else:
+            diagnostica_text = (page_sogl.comment_diagnostica or '').strip()
+            if diagnostica_text or page_sogl.price_after_kd:
+                diagnostica_yes = True
+    if not diagnostica_text and lo and (lo.recomendation or '').strip():
+        diagnostica_text = lo.recomendation.strip()
+        if not diagnostica_no:
             diagnostica_yes = True
 
     test_drive = ''
@@ -683,62 +738,67 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
     elif page_sogl and (page_sogl.comment or '').strip():
         comment_podgotovka = page_sogl.comment.strip()
 
-    salon_color = ''
-    if page_reception and (page_reception.salon_color or '').strip():
+    # Вариант салона и химчистка — со страницы «Салон» (как выбирает оценщик)
+    # type_salon_int: 0 — ткань, 1 — кожа (см. UI lo_v5)
+    salon_variant = ''
+    if page_salon is not None:
+        salon_type_map = {
+            0: 'ткань',
+            1: 'кожа',
+        }
+        salon_variant = salon_type_map.get(page_salon.type_salon_int, '')
+    # fallback: цвет салона из приёма, если тип не указан
+    salon_color = salon_variant
+    if not salon_color and page_reception and (page_reception.salon_color or '').strip():
         salon_color = page_reception.salon_color.strip()
-    elif page_salon and getattr(page_salon, 'type_salon_int', None) is not None:
-        salon_map = {0: '', 1: 'ткань', 2: 'кожа', 3: 'комбинированный'}
-        salon_color = salon_map.get(page_salon.type_salon_int, '')
 
+    # cleaning_int: 0 — не требуется, 3 — лёгкая, 2 — средняя, 1 — сложная
     himchistka = ''
     if page_salon is not None:
-        if page_salon.cleaning_int == 1 or page_salon.cleaning:
+        cleaning_map = {
+            0: 'не требуется',
+            3: 'лёгкая',
+            2: 'средняя',
+            1: 'сложная',
+        }
+        himchistka = cleaning_map.get(page_salon.cleaning_int, '')
+        if not himchistka and page_salon.cleaning:
             himchistka = 'требуется'
-        elif page_salon.cleaning_int == 0:
-            himchistka = 'не требуется'
 
     plan_rashodov = ''
     if page_sogl is not None:
         plan_rashodov = _money(page_sogl.amount_recovery or page_sogl.price_recovery)
 
-    if page_comp is not None:
-        complect_items = [
-            ('Домкрат', _complect_label(page_comp.domkrat_int, page_comp.domkrat)),
-            ('Балонник, буксировочная петля', _complect_label(
-                page_comp.ball_key_int if page_comp.ball_key_int in (0, 1) else page_comp.tros_int,
-                page_comp.ball_key or page_comp.tros,
-            )),
-            ('Запасное колесо', _complect_label(page_comp.zapas_int, page_comp.zapas)),
-            ('Секретка', ''),
-            ('Сервисная книжка', ''),
-            ('Инструкция по эксплуатации', ''),
-        ]
-    else:
-        complect_items = [
-            ('Домкрат', ''),
-            ('Балонник, буксировочная петля', ''),
-            ('Запасное колесо', ''),
-            ('Секретка', ''),
-            ('Сервисная книжка', ''),
-            ('Инструкция по эксплуатации', ''),
-        ]
+    # Комплектность — все пункты со страницы оценки «Комплектность»
+    complect_defs = [
+        ('Прикуриватель', 'prikur_int', 'prikur'),
+        ('Огнетушитель', 'ognet_int', 'ognet'),
+        ('Коврики', 'kovrik_int', 'kovrik'),
+        ('Буксировочный трос', 'tros_int', 'tros'),
+        ('Домкрат', 'domkrat_int', 'domkrat'),
+        ('Знак аварийной остановки', 'znak_av_int', 'znak_av'),
+        ('Баллонный ключ', 'ball_key_int', 'ball_key'),
+        ('Запасное колесо / докатка', 'zapas_int', 'zapas'),
+        ('Аптечка', 'aptechka_int', 'aptechka'),
+    ]
+    complect_items = []
+    for label, int_attr, bool_attr in complect_defs:
+        if page_comp is not None:
+            complect_items.append((
+                label,
+                _complect_label(getattr(page_comp, int_attr, None), getattr(page_comp, bool_attr, None)),
+            ))
+        else:
+            complect_items.append((label, ''))
 
+    # Ключи — из карточки приёма / ЛО (на странице комплектности нет, но нужны в маршрутном листе)
     keys_count = ''
     if page_reception and page_reception.count_keys:
         keys_count = str(page_reception.count_keys)
     elif lo and lo.keys:
         keys_count = str(lo.keys)
-
-    complect_items.extend([
-        ('Ключи зажигания, кол-во', keys_count),
-        ('Брелоки сигнализации, кол-во', ''),
-        ('Набор автомобилиста', _complect_label(
-            page_comp.aptechka_int if page_comp else None,
-            page_comp.aptechka if page_comp else None,
-        ) if page_comp else ''),
-        ('Автомагнитола', ''),
-        ('Код магнитолы', ''),
-    ])
+    if keys_count:
+        complect_items.append(('Ключи зажигания, кол-во', keys_count))
 
     complect_pairs = []
     half = (len(complect_items) + 1) // 2
@@ -816,14 +876,19 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
         'back_url': back_url,
         'sklad_nomer': sklad_nomer,
         'year': year,
+        'mileage': mileage,
         'date_priem': date_priem,
         'org_name': org_name,
+        'store_name': store_name,
         'appraiser': appraiser,
         'test_drive': test_drive,
         'vin': vin,
+        'plate_number': plate_number,
+        'engine_number': engine_number,
         'car_label': car_label,
         'diagnostica_yes': diagnostica_yes,
         'diagnostica_no': diagnostica_no,
+        'diagnostica_text': diagnostica_text,
         'comment_podgotovka': comment_podgotovka,
         'salon_color': salon_color,
         'himchistka': himchistka,
@@ -856,6 +921,7 @@ _ROUTE_SHEET_EST_RELATED = (
     'page_kolesa__disk_type2',
     'page_complectnost',
     'page_salon',
+    'page_documents',
     'page_soglasovanie',
     'page_test_drive',
     'staff',
@@ -909,6 +975,7 @@ def estimation_route_sheet_print(request, rlk_id):
             *['estimation__' + p for p in _ROUTE_SHEET_EST_RELATED],
             'page_reception',
             'page_reception__organization',
+            'page_reception__store',
         ).get(rlk=rlk)
         estimation = link.estimation
         page_reception = getattr(link, 'page_reception', None)

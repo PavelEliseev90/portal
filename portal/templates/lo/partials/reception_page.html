@@ -40,6 +40,9 @@
       <a class="btn btn-outline-secondary ms-2" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
         <span class="icon-mbri-print"></span> Печать маршрутного листа
       </a>
+      <a class="btn btn-outline-secondary ms-2" href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" target="_blank">
+        <span class="icon-mbri-print"></span> Лист осмотра
+      </a>
       {% endif %}
     </div>
   {% else %}
@@ -59,6 +62,9 @@
         </a>
         <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
           <span class="icon-mbri-print"></span> Печать маршрутного листа
+        </a>
+        <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" target="_blank">
+          <span class="icon-mbri-print"></span> Лист осмотра
         </a>
         {% if r.sent_to_1c_at %}
           <span class="align-self-center text-muted small">
@@ -406,6 +412,9 @@
         </a>
         <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
           <span class="icon-mbri-print"></span> Печать маршрутного листа
+        </a>
+        <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" target="_blank">
+          <span class="icon-mbri-print"></span> Лист осмотра
         </a>
       </div>
     </form>
