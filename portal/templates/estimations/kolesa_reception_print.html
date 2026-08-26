@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Маршрутный лист А/М{% if params.vin %} — {{ params.vin }}{% endif %}</title>
+	<style>
+		@page {
+			size: A4 portrait;
+			margin: 8mm 10mm;
+		}
+		* { box-sizing: border-box; }
+		html, body {
+			margin: 0;
+			padding: 0;
+			font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+			font-size: 11px;
+			line-height: 1.25;
+			color: #111;
+			background: #e8e8e8;
+		}
+		.toolbar {
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			align-items: center;
+			padding: 10px 16px;
+			background: #1e293b;
+			color: #fff;
+		}
+		.toolbar a, .toolbar button {
+			appearance: none;
+			border: 0;
+			border-radius: 6px;
+			padding: 7px 12px;
+			font-size: 13px;
+			cursor: pointer;
+			text-decoration: none;
+			color: #fff;
+			background: #334155;
+		}
+		.toolbar button.primary { background: #2563eb; }
+		.toolbar .hint { margin-left: auto; font-size: 12px; opacity: .85; }
+
+		.sheet-wrap {
+			padding: 16px;
+			display: flex;
+			justify-content: center;
+		}
+		.sheet {
+			width: 210mm;
+			min-height: 297mm;
+			max-height: 297mm;
+			background: #fff;
+			padding: 7mm 8mm;
+			box-shadow: 0 2px 12px rgba(0,0,0,.18);
+			overflow: hidden;
+		}
+
+		h1 {
+			margin: 0 0 6px;
+			text-align: center;
+			font-size: 16px;
+			font-weight: 700;
+			letter-spacing: .02em;
+		}
+
+		table.grid {
+			width: 100%;
+			border-collapse: collapse;
+			table-layout: fixed;
+			margin-bottom: 5px;
+		}
+		table.grid th,
+		table.grid td {
+			border: 1px solid #222;
+			padding: 3px 5px;
+			vertical-align: middle;
+			word-wrap: break-word;
+		}
+		table.grid th {
+			font-weight: 600;
+			background: #f3f3f3;
+			text-align: left;
+			white-space: nowrap;
+		}
+		.val { font-weight: 600; }
+		.muted { color: #444; font-weight: 400; }
+		.center { text-align: center; }
+		.section-title {
+			font-weight: 700;
+			background: #ececec !important;
+			text-align: center;
+		}
+		.diag-box {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+		}
+		.chk {
+			display: inline-block;
+			min-width: 14px;
+			height: 14px;
+			border: 1.5px solid #222;
+			text-align: center;
+			line-height: 12px;
+			font-size: 11px;
+			margin-right: 3px;
+			vertical-align: middle;
+		}
+		.chk.on { background: #111; color: #fff; }
+		.wheels-label { width: 18%; font-weight: 600; background: #f7f7f7; }
+		.sig {
+			margin-top: 8px;
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.sig td {
+			border: none;
+			padding: 6px 4px 2px;
+			vertical-align: bottom;
+		}
+		.sig .line {
+			border-bottom: 1px solid #222;
+			height: 18px;
+		}
+		.sig .caption {
+			font-size: 10px;
+			color: #333;
+			padding-top: 2px;
+		}
+		.comment-cell {
+			min-height: 28px;
+			height: 28px;
+		}
+		.complect-val {
+			width: 18%;
+			text-align: center;
+			font-weight: 700;
+		}
+
+		@media print {
+			html, body { background: #fff; }
+			.toolbar { display: none !important; }
+			.sheet-wrap { padding: 0; }
+			.sheet {
+				width: auto;
+				min-height: auto;
+				max-height: none;
+				box-shadow: none;
+				padding: 0;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="toolbar">
+		<button type="button" class="primary" onclick="window.print()">Печать</button>
+		<a href="/estimations/kolesa-reception/{{ params.reception.id }}/">К приёмке 2КК</a>
+		{% if params.estimation and params.estimation.rlk_id %}
+		<a href="/eco/{{ params.estimation.rlk_id }}/" target="_blank">Оценка</a>
+		{% endif %}
+		<span class="hint">Формат A4 · одна страница</span>
+	</div>
+
+	<div class="sheet-wrap">
+		<div class="sheet">
+			<h1>Маршрутный лист А/М</h1>
+
+			<table class="grid">
+				<tr>
+					<th style="width:16%">Складской №</th>
+					<td class="val" style="width:12%">{{ params.sklad_nomer|default:"—" }}</td>
+					<th style="width:14%">год выпуска</th>
+					<td class="val" style="width:10%">{{ params.year|default:"—" }}</td>
+					<th style="width:14%">Дата приема</th>
+					<td class="val" style="width:14%">
+						{% if params.date_priem %}{{ params.date_priem|date:"d.m.Y" }}{% else %}—{% endif %}
+					</td>
+					<th style="width:12%">Организация</th>
+					<td class="val" style="width:18%">{{ params.org_name|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Оценщик</th>
+					<td class="val" colspan="3">{{ params.appraiser|default:"—" }}</td>
+					<th>Тест-драйв</th>
+					<td class="val" colspan="3">{{ params.test_drive|default:"" }}</td>
+				</tr>
+				<tr>
+					<th>VIN</th>
+					<td class="val" colspan="3"><code style="font-size:12px">{{ params.vin|default:"—" }}</code></td>
+					<th>Марка/модель</th>
+					<td class="val" colspan="3">{{ params.car_label|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>ДИАГНОСТИКА</th>
+					<td colspan="7">
+						<div class="diag-box">
+							<span><span class="chk {% if params.diagnostica_yes %}on{% endif %}">{% if params.diagnostica_yes %}✓{% endif %}</span> ДА</span>
+							<span><span class="chk {% if params.diagnostica_no %}on{% endif %}">{% if params.diagnostica_no %}✓{% endif %}</span> нет</span>
+						</div>
+					</td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th style="width:28%">Комментарий для отдела подготовки</th>
+					<td class="comment-cell">{{ params.comment_podgotovka }}</td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" style="width:28%">МОЙКА+ХИМЧИСТКА</th>
+					<th style="width:10%">Салон</th>
+					<td class="val" style="width:18%">{{ params.salon_color }}</td>
+					<th style="width:12%">Химчистка</th>
+					<td class="val" style="width:14%">{{ params.himchistka }}</td>
+					<th style="width:10%">План доп расходов</th>
+					<td class="val" style="width:8%">{{ params.plan_rashodov }}</td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="4">Комплектность</th>
+				</tr>
+				{% for left, right in params.complect_pairs %}
+				<tr>
+					<td style="width:32%">{{ left.0 }}</td>
+					<td class="complect-val">{{ left.1 }}</td>
+					<td style="width:32%">{{ right.0 }}</td>
+					<td class="complect-val">{{ right.1 }}</td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="8">Комплект колес на а/м</th>
+				</tr>
+				<tr>
+					<td class="wheels-label">Резина</td>
+					<td style="width:10%"><span class="muted">Тип</span><br><span class="val">{{ params.wheels_on_car.sezon }}</span></td>
+					<td style="width:18%"><span class="muted">Размер</span><br><span class="val">{{ params.wheels_on_car.size }}</span></td>
+					<td style="width:10%"><span class="muted">Кол-во</span><br><span class="val">{% if params.wheels_on_car.count_tyre %}{{ params.wheels_on_car.count_tyre }} шт{% endif %}</span></td>
+					<td style="width:22%"><span class="muted">Марка</span><br><span class="val">{{ params.wheels_on_car.mark }}</span></td>
+					<td class="wheels-label" style="width:10%">Диски</td>
+					<td style="width:14%"><span class="muted">Тип</span><br><span class="val">{{ params.wheels_on_car.disk_type }}</span></td>
+					<td style="width:8%"><span class="muted">Кол-во</span><br><span class="val">{% if params.wheels_on_car.count_disk %}{{ params.wheels_on_car.count_disk }} шт{% endif %}</span></td>
+				</tr>
+				<tr>
+					<td class="wheels-label">Дополнения</td>
+					<td colspan="7">{{ params.wheels_on_car.extra }}</td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="8">2 комплект колес</th>
+				</tr>
+				<tr>
+					<td class="wheels-label">Резина</td>
+					<td style="width:10%"><span class="muted">Тип</span><br><span class="val">{{ params.wheels_2.sezon }}</span></td>
+					<td style="width:18%"><span class="muted">Размер</span><br><span class="val">{{ params.wheels_2.size }}</span></td>
+					<td style="width:10%"><span class="muted">Кол-во</span><br><span class="val">{% if params.wheels_2.count_tyre %}{{ params.wheels_2.count_tyre }} шт{% endif %}</span></td>
+					<td style="width:22%"><span class="muted">Марка</span><br><span class="val">{{ params.wheels_2.mark }}</span></td>
+					<td class="wheels-label" style="width:10%">Диски</td>
+					<td style="width:14%"><span class="muted">Тип</span><br><span class="val">{{ params.wheels_2.disk_type }}</span></td>
+					<td style="width:8%"><span class="muted">Кол-во</span><br><span class="val">{% if params.wheels_2.count_disk %}{{ params.wheels_2.count_disk }} шт{% endif %}</span></td>
+				</tr>
+				<tr>
+					<td class="wheels-label">Дополнения</td>
+					<td colspan="7">{{ params.wheels_2.extra }}</td>
+				</tr>
+			</table>
+
+			<table class="sig">
+				<tr>
+					<td style="width:12%"><strong>Оценщик</strong></td>
+					<td style="width:38%"><div class="line"></div><div class="caption">{{ params.appraiser }}</div></td>
+					<td style="width:8%" class="center">/</td>
+					<td style="width:42%"><div class="line"></div><div class="caption">дата</div></td>
+				</tr>
+				<tr>
+					<td><strong>Перегонщик</strong></td>
+					<td><div class="line"></div><div class="caption">подпись</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">дата</div></td>
+				</tr>
+				<tr>
+					<td><strong>Кладовщик шин Бу</strong></td>
+					<td><div class="line"></div><div class="caption">подпись</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">дата</div></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

@@ -108,6 +108,7 @@
 		</div>
 		<div class="d-flex gap-2 flex-wrap">
 			<a href="/estimations/kolesa-reception/help/" class="btn btn-outline-secondary btn-sm">Инструкция</a>
+			<a href="/estimations/kolesa-reception/{{ params.reception.id }}/print/" class="btn btn-outline-secondary btn-sm" target="_blank">Печать маршрутного листа</a>
 			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">К списку</a>
 			{% if request.user.is_superuser %}
 			<a href="/estimations/transfer-kolesa-reception/?reception_id={{ params.reception.id }}" class="btn btn-outline-warning btn-sm">Перепривязка к РЛ</a>
