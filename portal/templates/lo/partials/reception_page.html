@@ -29,13 +29,18 @@
           {{ params.interactiv_rlk.page_soglasovanie.price_after_kd|floatformat:"0g" }} &#8381;.
         {% endif %}
       </p>
-      <form method="post">
+      <form method="post" class="d-inline">
         {% csrf_token %}
         <input type="hidden" name="type_post" value="create_reception">
         <button type="submit" class="btn btn-outline-success">
           <span class="icon-mbri-play"></span> Проверить и принять автомобиль
         </button>
       </form>
+      {% if params.rlk %}
+      <a class="btn btn-outline-secondary ms-2" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
+        <span class="icon-mbri-print"></span> Печать маршрутного листа
+      </a>
+      {% endif %}
     </div>
   {% else %}
     {% with r=params.reception s=params.reception_selects %}
@@ -51,6 +56,9 @@
         </button>
         <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
           <span class="icon-mbri-update"></span> Обновить в 1С
+        </a>
+        <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
+          <span class="icon-mbri-print"></span> Печать маршрутного листа
         </a>
         {% if r.sent_to_1c_at %}
           <span class="align-self-center text-muted small">
@@ -395,6 +403,9 @@
         </button>
         <a class="btn btn-outline-secondary" href="?{% url_replace page=24 %}&refresh_data=reception1c">
           <span class="icon-mbri-update"></span> Обновить в 1С
+        </a>
+        <a class="btn btn-outline-secondary" href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">
+          <span class="icon-mbri-print"></span> Печать маршрутного листа
         </a>
       </div>
     </form>
