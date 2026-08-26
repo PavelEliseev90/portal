@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_kolesa_reception
+from . import views_kolesa_reception_sb
 from . import views_mobile_gallery
 from . import views_osmotr_test
 from . import views_photos_download
@@ -34,6 +35,7 @@ urlpatterns = [
     path('help/',                                                               views_help.estimation_appraiser_help, name='estimation_appraiser_help'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
+    path('kolesa-reception/sb/',                                                views_kolesa_reception_sb.kolesa_reception_sb_list, name='kolesa_reception_sb_list'),
     path('kolesa-reception/help/',                                              views_kolesa_reception.kolesa_reception_help, name='kolesa_reception_help'),
     path('kolesa-reception/create/<int:estimation_id>/',                        views_kolesa_reception.kolesa_reception_create, name='kolesa_reception_create'),
     path('kolesa-reception/<int:reception_id>/',                                views_kolesa_reception.kolesa_reception_detail, name='kolesa_reception_detail'),

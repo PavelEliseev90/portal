@@ -15,8 +15,10 @@ from register.models import (
     RegInteractivOcenka,
     RegInteractivOcenkaRLK,
     RegInteractivOcenkaKolesaReception,
+    RegInteractivOcenkaKolesaReceptionEvent,
     RegRegInteractivOcenkaFilesKolesaReception,
 )
+from estimations.kolesa_reception_events import log_kolesa_reception_event, user_display
 
 
 def _parse_date(value):
@@ -79,6 +81,12 @@ def create_kolesa_reception(estimation, user):
     else:
         reception.kolesa_estimation = 1
     reception.save()
+    log_kolesa_reception_event(
+        reception,
+        RegInteractivOcenkaKolesaReceptionEvent.EVENT_CREATED,
+        user=user,
+        message='Создана приёмка второго комплекта колёс',
+    )
     try:
         from eco.reception import queue_estimation_for_1c
         queue_estimation_for_1c(estimation, comment='kolesa_reception_create')
@@ -145,7 +153,15 @@ def handle_kolesa_reception_files_post(request, reception):
                 id=photo_id,
                 kolesa_reception=reception,
             )
+            photo_name = photo.name or str(photo.pk)
             photo.delete()
+            log_kolesa_reception_event(
+                reception,
+                RegInteractivOcenkaKolesaReceptionEvent.EVENT_PHOTO_DELETE,
+                user=request.user,
+                message='Удалено фото: {}'.format(photo_name),
+                extra={'photo_name': photo_name},
+            )
             messages.success(request, 'Файл удалён')
         except RegRegInteractivOcenkaFilesKolesaReception.DoesNotExist:
             messages.error(request, 'Файл не найден')
@@ -172,11 +188,162 @@ def handle_kolesa_reception_files_post(request, reception):
             uploaded_count += 1
 
         if uploaded_count:
+            log_kolesa_reception_event(
+                reception,
+                RegInteractivOcenkaKolesaReceptionEvent.EVENT_PHOTO_ADD,
+                user=request.user,
+                message='Добавлено фото: {}'.format(uploaded_count),
+                extra={'count': uploaded_count},
+            )
             messages.success(request, f'Загружено файлов: {uploaded_count}')
         else:
             messages.warning(request, 'Не удалось загрузить изображения')
 
     return True
+
+
+_TRACKED_RECEPTION_FIELDS = (
+    'mark_tyre_id', 'model_tyre', 'width_tyre_id', 'profil_tyre_id', 'radius_id',
+    'sezon_id', 'disk_type_id', 'model_disk', 'et_disk_id', 'dia_disk_id',
+    'psd_disk_id', 'count_disk', 'count_tyre', 'kolesa_estimation',
+)
+
+_TRACKED_FIELD_LABELS = {
+    'mark_tyre_id': 'Марка шин',
+    'model_tyre': 'Модель шин',
+    'width_tyre_id': 'Ширина',
+    'profil_tyre_id': 'Профиль',
+    'radius_id': 'Радиус',
+    'sezon_id': 'Сезон',
+    'disk_type_id': 'Тип диска',
+    'model_disk': 'Модель дисков',
+    'et_disk_id': 'ET',
+    'dia_disk_id': 'DIA',
+    'psd_disk_id': 'PSD',
+    'count_disk': 'Дисков',
+    'count_tyre': 'Шин',
+    'kolesa_estimation': 'Признак 2КК',
+}
+
+
+def _snapshot_reception_fields(reception):
+    return {f: getattr(reception, f) for f in _TRACKED_RECEPTION_FIELDS}
+
+
+def _diff_reception_fields(before, after):
+    changes = []
+    for field in _TRACKED_RECEPTION_FIELDS:
+        old = before.get(field)
+        new = after.get(field)
+        if old != new:
+            changes.append({
+                'field': field,
+                'label': _TRACKED_FIELD_LABELS.get(field, field),
+                'old': '' if old is None else str(old),
+                'new': '' if new is None else str(new),
+            })
+    return changes
+
+
+def handle_kolesa_reception_route_sheet_post(request, reception):
+    """Загрузка / удаление подписанного маршрутного листа."""
+    action = request.POST.get('action', '')
+    if action not in ('upload_route_sheet', 'delete_route_sheet'):
+        return False
+
+    if action == 'delete_route_sheet':
+        if reception.route_sheet_file:
+            reception.route_sheet_file.delete(save=False)
+        reception.route_sheet_file = None
+        reception.route_sheet_attached = False
+        reception.route_sheet_attached_at = None
+        reception.route_sheet_attached_by = None
+        reception.save(update_fields=[
+            'route_sheet_file',
+            'route_sheet_attached',
+            'route_sheet_attached_at',
+            'route_sheet_attached_by',
+        ])
+        log_kolesa_reception_event(
+            reception,
+            RegInteractivOcenkaKolesaReceptionEvent.EVENT_ROUTE_SHEET_DELETE,
+            user=request.user,
+            message='Удалён подписанный маршрутный лист',
+        )
+        messages.success(request, 'Подписанный маршрутный лист удалён')
+        return True
+
+    uploaded = request.FILES.get('route_sheet')
+    if not uploaded:
+        messages.warning(request, 'Не выбран файл маршрутного листа')
+        return True
+
+    content_type = (uploaded.content_type or '').lower()
+    name_lower = (uploaded.name or '').lower()
+    allowed = (
+        content_type.startswith('image/')
+        or content_type == 'application/pdf'
+        or name_lower.endswith(('.pdf', '.jpg', '.jpeg', '.png', '.webp', '.heic'))
+    )
+    if not allowed:
+        messages.error(request, 'Допустимы PDF или изображение')
+        return True
+
+    if reception.route_sheet_file:
+        reception.route_sheet_file.delete(save=False)
+
+    reception.route_sheet_file = uploaded
+    reception.route_sheet_attached = True
+    reception.route_sheet_attached_at = timezone.now()
+    reception.route_sheet_attached_by = request.user
+    reception.save(update_fields=[
+        'route_sheet_file',
+        'route_sheet_attached',
+        'route_sheet_attached_at',
+        'route_sheet_attached_by',
+    ])
+    log_kolesa_reception_event(
+        reception,
+        RegInteractivOcenkaKolesaReceptionEvent.EVENT_ROUTE_SHEET_ADD,
+        user=request.user,
+        message='Прикреплён подписанный маршрутный лист: {}'.format(uploaded.name),
+        extra={'filename': uploaded.name},
+    )
+    messages.success(request, 'Подписанный маршрутный лист сохранён')
+    return True
+
+
+def get_kolesa_reception_history(reception):
+    """События + ChangeLog реквизитов для таймлайна."""
+    events = list(
+        RegInteractivOcenkaKolesaReceptionEvent.objects
+        .filter(reception=reception)
+        .select_related('user')
+        .order_by('-created_at', '-id')[:200]
+    )
+    changelog_rows = []
+    try:
+        from changelog.models import ChangeLog
+        logs = (
+            ChangeLog.objects
+            .filter(model='RegInteractivOcenkaKolesaReception', record_id=reception.pk)
+            .select_related('user')
+            .order_by('-changed')[:100]
+        )
+        for log in logs:
+            try:
+                human = log.get_change_human()
+            except Exception:
+                human = []
+            changelog_rows.append({
+                'when': log.changed,
+                'user': user_display(log.user),
+                'action': log.get_action_on_model_display() if hasattr(log, 'get_action_on_model_display') else log.action_on_model,
+                'changes': human,
+            })
+    except Exception:
+        pass
+    return events, changelog_rows
 
 
 def _kolesa_reception_list_queryset(request):
@@ -336,6 +503,7 @@ def kolesa_reception_detail(request, reception_id):
             'rlk',
             'rlk__unit',
             'user',
+            'route_sheet_attached_by',
             'mark_tyre',
             'width_tyre',
             'radius',
@@ -364,6 +532,12 @@ def kolesa_reception_detail(request, reception_id):
                     'send_wheels_ib_number',
                     'send_wheels_ib_uin',
                 ])
+                log_kolesa_reception_event(
+                    reception,
+                    RegInteractivOcenkaKolesaReceptionEvent.EVENT_RESET_SEND,
+                    user=request.user,
+                    message='Сброшен признак отправки в базу БУ колёс',
+                )
                 messages.success(request, 'Признак отправки в базу БУ колёс сброшен')
             return HttpResponseRedirect(request.path)
 
@@ -374,6 +548,14 @@ def kolesa_reception_detail(request, reception_id):
                 return HttpResponseRedirect(request.path)
 
             from task_manager.views import send_kolesa_reception_to_1c
+
+            had_prior_send = RegInteractivOcenkaKolesaReceptionEvent.objects.filter(
+                reception=reception,
+                event_type__in=(
+                    RegInteractivOcenkaKolesaReceptionEvent.EVENT_SEND,
+                    RegInteractivOcenkaKolesaReceptionEvent.EVENT_RESEND,
+                ),
+            ).exists()
 
             send_result = send_kolesa_reception_to_1c(reception, request=request)
             if send_result.get('ok'):
@@ -389,6 +571,22 @@ def kolesa_reception_detail(request, reception_id):
                     parts.append(doc['date'].strftime('%d.%m.%Y %H:%M'))
                 if doc.get('uin'):
                     parts.append('УИН {}'.format(doc['uin']))
+                event_type = (
+                    RegInteractivOcenkaKolesaReceptionEvent.EVENT_RESEND
+                    if had_prior_send
+                    else RegInteractivOcenkaKolesaReceptionEvent.EVENT_SEND
+                )
+                log_kolesa_reception_event(
+                    reception,
+                    event_type,
+                    user=request.user,
+                    message=' · '.join(parts),
+                    extra={
+                        'number': doc.get('number') or '',
+                        'uin': doc.get('uin') or '',
+                        'resend': had_prior_send,
+                    },
+                )
                 messages.success(request, ' · '.join(parts))
             else:
                 err = send_result.get('error') or 'неизвестная ошибка'
@@ -418,6 +616,8 @@ def kolesa_reception_detail(request, reception_id):
                 except (TypeError, ValueError):
                     return default
 
+            before = _snapshot_reception_fields(reception)
+
             mark_id = request.POST.get('mark_tyre') or None
             width_id = request.POST.get('width_tyre') or None
             profil_id = request.POST.get('profil_tyre') or None
@@ -443,12 +643,30 @@ def kolesa_reception_detail(request, reception_id):
             reception.count_tyre = _int(request.POST.get('count_tyre'), 0)
             reception.kolesa_estimation = _int(request.POST.get('kolesa_estimation'), reception.kolesa_estimation)
             reception.save()
+
+            changes = _diff_reception_fields(before, _snapshot_reception_fields(reception))
+            if changes:
+                summary = '; '.join(
+                    '{}: {} → {}'.format(c['label'], c['old'] or '—', c['new'] or '—')
+                    for c in changes[:12]
+                )
+                log_kolesa_reception_event(
+                    reception,
+                    RegInteractivOcenkaKolesaReceptionEvent.EVENT_SAVE,
+                    user=request.user,
+                    message=summary,
+                    extra={'changes': changes},
+                )
+
             try:
                 from eco.reception import queue_estimation_for_1c
                 queue_estimation_for_1c(reception.estimation, comment='kolesa_reception_save')
             except Exception:
                 pass
             messages.success(request, 'Данные приёмки сохранены, оценка поставлена в очередь выгрузки в 1С')
+            return HttpResponseRedirect(request.path)
+
+        if handle_kolesa_reception_route_sheet_post(request, reception):
             return HttpResponseRedirect(request.path)
 
         # Работа с файлами
@@ -499,6 +717,8 @@ def kolesa_reception_detail(request, reception_id):
         full = (reception.user.get_full_name() or '').strip()
         author_name = full or reception.user.username or '—'
 
+    events, changelog_rows = get_kolesa_reception_history(reception)
+
     params = {
         'reception': reception,
         'estimation': estimation,
@@ -518,6 +738,9 @@ def kolesa_reception_detail(request, reception_id):
         'dia_disks': dia_disks,
         'psd_disks': psd_disks,
         'send_payload': send_payload,
+        'events': events,
+        'changelog_rows': changelog_rows,
+        'route_sheet_attached': bool(reception.route_sheet_attached and reception.route_sheet_file),
     }
     return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})
 

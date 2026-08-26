@@ -110,6 +110,7 @@
 			<a href="/estimations/kolesa-reception/help/" class="btn btn-outline-secondary btn-sm">Инструкция</a>
 			<a href="/estimations/kolesa-reception/{{ params.reception.id }}/print/" class="btn btn-outline-secondary btn-sm" target="_blank">Печать маршрутного листа</a>
 			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">К списку</a>
+			<a href="/estimations/kolesa-reception/sb/" class="btn btn-outline-secondary btn-sm">Список СБ</a>
 			{% if request.user.is_superuser %}
 			<a href="/estimations/transfer-kolesa-reception/?reception_id={{ params.reception.id }}" class="btn btn-outline-warning btn-sm">Перепривязка к РЛ</a>
 			{% endif %}
@@ -213,11 +214,25 @@
 		</div>
 		<div class="col-12 col-md-6 col-lg">
 			<div class="portal-panel h-100 mb-0">
+				<h6 class="small text-uppercase text-muted mb-2">Маршрутный лист</h6>
+				<div>
+					{% if params.route_sheet_attached %}
+						<span class="badge bg-success">Прикреплён</span>
+					{% else %}
+						<span class="badge bg-warning text-dark">Не прикреплён</span>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-md-6 col-lg">
+			<div class="portal-panel h-100 mb-0">
 				<h6 class="small text-uppercase text-muted mb-2">Статус оценки</h6>
 				<div class="fw-bold">{{ params.estimation.status.name|default:"—" }}</div>
 			</div>
 		</div>
 	</div>
+
+	{% include 'estimations/includes/kolesa_reception_route_sheet.html' %}
 
 	<form method="post" class="portal-panel mb-3 kolesa-reception-form">
 		{% csrf_token %}
@@ -398,6 +413,8 @@
 	</script>
 
 	{% include 'estimations/includes/kolesa_reception_files.html' %}
+
+	{% include 'estimations/includes/kolesa_reception_history.html' %}
 
 	<div class="modal fade" id="kolesaSendJsonModal" tabindex="-1" aria-labelledby="kolesaSendJsonModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-xl modal-dialog-scrollable">

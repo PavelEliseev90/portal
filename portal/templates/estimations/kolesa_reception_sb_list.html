@@ -1,0 +1,192 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — 2КК: служба безопасности {% endblock %}
+{% block title_navbar %} — 2КК СБ {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+		<div>
+			<h2>Второй комплект колёс — служба безопасности</h2>
+			<p class="text-muted mb-0">
+				Существующие приёмки 2КК: фото, маршрутный лист, отправка в БУ шин.
+				<span class="ms-1">Всего: {{ params.total_count }}</span>
+			</p>
+		</div>
+		<div class="d-flex gap-2 flex-wrap">
+			<a href="?{% url_replace export='xlsx' %}" class="btn btn-outline-success btn-sm">
+				<span class="bi bi-file-earmark-excel"></span> Excel
+			</a>
+			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">Склад (приёмка)</a>
+			<a href="/estimations/kolesa-reception/help/" class="btn btn-outline-secondary btn-sm">Инструкция</a>
+		</div>
+	</div>
+
+	<div class="portal-panel mb-3">
+		<form method="get" class="row g-3 align-items-end">
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">VIN / кузов / № ЛО</label>
+				<input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}"
+					placeholder="VIN, кузов или № листа оценки" autocomplete="off">
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">№ док. БУ шин</label>
+				<input type="text" class="form-control" name="wheels_number" value="{{ params.filters.wheels_number }}"
+					placeholder="Номер из базы БУ" autocomplete="off">
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Дата с</label>
+				<input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Дата по</label>
+				<input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+			</div>
+			<div class="col-12 col-md-6 col-lg-3">
+				<label class="form-label small text-muted mb-1">Подразделение</label>
+				<select class="form-select" id="unit_ids_sb" name="unit" multiple>
+					{% for unit in params.units %}
+						<option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filters.unit %}selected{% endif %}>{{ unit.name }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Фото</label>
+				<select class="form-select" name="photos">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.photos == '1' %}selected{% endif %}>С фото</option>
+					<option value="0" {% if params.filters.photos == '0' %}selected{% endif %}>Без фото</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Маршрутный лист</label>
+				<select class="form-select" name="route_sheet">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.route_sheet == '1' %}selected{% endif %}>Прикреплён</option>
+					<option value="0" {% if params.filters.route_sheet == '0' %}selected{% endif %}>Не прикреплён</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Отправка в БУ</label>
+				<select class="form-select" name="sent">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.sent == '1' %}selected{% endif %}>Отправлен</option>
+					<option value="0" {% if params.filters.sent == '0' %}selected{% endif %}>Не отправлен</option>
+				</select>
+			</div>
+			<div class="col-12 col-lg-1">
+				<button type="submit" class="btn btn-primary w-100">
+					<span class="icon-mbri-search"></span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	<script>
+		$(document).ready(function() {
+			var $u = $('#unit_ids_sb');
+			if ($u.length && !$u.hasClass('select2-hidden-accessible')) {
+				$u.select2({
+					language: 'ru',
+					placeholder: 'Выберите подразделения',
+					allowClear: true,
+					width: '100%',
+					dropdownAutoWidth: true
+				});
+			}
+		});
+	</script>
+
+	<div class="portal-panel no-padding">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
+					<tr>
+						<th class="text-white border-0 ps-3">Дата</th>
+						<th class="text-white border-0">Авто / VIN</th>
+						<th class="text-white border-0">№ ЛО</th>
+						<th class="text-white border-0">Подразделение</th>
+						<th class="text-white border-0 text-center">Фото</th>
+						<th class="text-white border-0 text-center">МЛ</th>
+						<th class="text-white border-0">№ БУ шин</th>
+						<th class="text-white border-0 text-center">БУ</th>
+						<th class="text-white border-0 pe-3">Действие</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.rows %}
+						<tr>
+							<td class="ps-3">
+								{% if row.reception.date %}{{ row.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+								<br><small class="text-muted">{{ row.author }}</small>
+							</td>
+							<td>
+								<div class="fw-semibold">{{ row.car_label }}</div>
+								<small class="text-muted">{{ row.vin }}</small>
+							</td>
+							<td>{{ row.lo_number }}</td>
+							<td>{{ row.unit_name }}</td>
+							<td class="text-center">
+								{% if row.photos_count %}
+									<span class="badge bg-primary">{{ row.photos_count }}</span>
+								{% else %}
+									<span class="badge bg-secondary">0</span>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								{% if row.route_sheet_attached %}
+									<span class="badge bg-success">да</span>
+								{% else %}
+									<span class="badge bg-warning text-dark">нет</span>
+								{% endif %}
+							</td>
+							<td>
+								{% if row.wheels_number != '—' %}
+									{{ row.wheels_number }}
+								{% else %}
+									<span class="text-muted">—</span>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								{% if row.sent %}
+									<span class="badge bg-success">да</span>
+								{% else %}
+									<span class="badge bg-light text-dark">нет</span>
+								{% endif %}
+							</td>
+							<td class="pe-3">
+								<a href="/estimations/kolesa-reception/{{ row.reception.id }}/" class="btn btn-sm btn-outline-primary">Открыть</a>
+							</td>
+						</tr>
+					{% empty %}
+						<tr>
+							<td colspan="9" class="text-center text-muted py-5">Нет приёмок по выбранным фильтрам</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	{% if params.page_obj.has_other_pages %}
+		<nav class="mt-3">
+			<ul class="pagination justify-content-center">
+				{% if params.page_obj.has_previous %}
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.page_obj.previous_page_number %}">Назад</a>
+					</li>
+				{% endif %}
+				<li class="page-item disabled">
+					<span class="page-link">{{ params.page_obj.number }} / {{ params.page_obj.paginator.num_pages }}</span>
+				</li>
+				{% if params.page_obj.has_next %}
+					<li class="page-item">
+						<a class="page-link" href="?{% url_replace page=params.page_obj.next_page_number %}">Вперёд</a>
+					</li>
+				{% endif %}
+			</ul>
+		</nav>
+	{% endif %}
+</div>
+{% endblock %}

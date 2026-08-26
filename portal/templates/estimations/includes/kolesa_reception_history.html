@@ -1,0 +1,79 @@
+{% comment %}
+  История действий и изменений реквизитов приёмки 2КК.
+  Ожидает: params.events, params.changelog_rows
+{% endcomment %}
+
+<div class="portal-panel mb-3">
+	<h6 class="mb-3 padding-portal">
+		<span class="icon-mbri-clock me-2"></span>История действий
+	</h6>
+
+	{% if params.events %}
+	<div class="table-responsive mb-4">
+		<table class="table table-sm align-middle mb-0">
+			<thead>
+				<tr class="text-muted small">
+					<th>Когда</th>
+					<th>Событие</th>
+					<th>Кто</th>
+					<th>Описание</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for ev in params.events %}
+				<tr>
+					<td class="text-nowrap small">{{ ev.created_at|date:"d.m.Y H:i" }}</td>
+					<td>
+						<span class="badge bg-light text-dark border">{{ ev.get_event_type_display }}</span>
+					</td>
+					<td class="small">
+						{% if ev.user %}{{ ev.user.get_full_name|default:ev.user.username }}{% else %}—{% endif %}
+					</td>
+					<td class="small">{{ ev.message|default:"—" }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% else %}
+	<p class="text-muted small mb-4">Событий пока нет (создания до внедрения журнала не отображаются).</p>
+	{% endif %}
+
+	<h6 class="mb-3 padding-portal">Изменения реквизитов (журнал)</h6>
+	{% if params.changelog_rows %}
+	<div class="table-responsive">
+		<table class="table table-sm align-middle mb-0">
+			<thead>
+				<tr class="text-muted small">
+					<th>Когда</th>
+					<th>Кто</th>
+					<th>Действие</th>
+					<th>Что изменилось</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in params.changelog_rows %}
+				<tr>
+					<td class="text-nowrap small">{% if row.when %}{{ row.when|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+					<td class="small">{{ row.user }}</td>
+					<td class="small">{{ row.action }}</td>
+					<td class="small">
+						{% if row.changes %}
+							<ul class="mb-0 ps-3">
+								{% for ch in row.changes %}
+									<li>{{ ch.name }}: {{ ch.value }}</li>
+								{% endfor %}
+							</ul>
+						{% else %}
+							—
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% else %}
+	<p class="text-muted small mb-0">Записей журнала изменений нет.</p>
+	{% endif %}
+</div>

@@ -1,0 +1,55 @@
+{% comment %}
+  Подписанный маршрутный лист А/М.
+  Ожидает: params.reception, params.route_sheet_attached
+{% endcomment %}
+
+<div class="portal-panel mb-3">
+	<h6 class="mb-3 padding-portal">
+		<span class="icon-mbri-file me-2"></span>Подписанный маршрутный лист
+		{% if params.route_sheet_attached %}
+			<span class="badge bg-success ms-2">прикреплён</span>
+		{% else %}
+			<span class="badge bg-warning text-dark ms-2">не прикреплён</span>
+		{% endif %}
+	</h6>
+
+	{% if params.route_sheet_attached %}
+	<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+		<div>
+			<a href="{{ params.reception.get_route_sheet_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+				Открыть файл
+			</a>
+			{% if params.reception.route_sheet_attached_at %}
+				<small class="text-muted ms-2">
+					{{ params.reception.route_sheet_attached_at|date:"d.m.Y H:i" }}
+					{% if params.reception.route_sheet_attached_by %}
+						· {{ params.reception.route_sheet_attached_by.get_full_name|default:params.reception.route_sheet_attached_by.username }}
+					{% endif %}
+				</small>
+			{% endif %}
+		</div>
+		<form method="post" class="d-inline" onsubmit="return confirm('Удалить подписанный маршрутный лист?');">
+			{% csrf_token %}
+			<input type="hidden" name="action" value="delete_route_sheet">
+			<button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
+		</form>
+	</div>
+	{% endif %}
+
+	<form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+		{% csrf_token %}
+		<input type="hidden" name="action" value="upload_route_sheet">
+		<div class="col-12 col-md-8">
+			<label class="form-label small text-muted mb-1">
+				{% if params.route_sheet_attached %}Заменить файл{% else %}Прикрепить подписанный МЛ{% endif %}
+				(PDF или изображение)
+			</label>
+			<input type="file" class="form-control" name="route_sheet" accept=".pdf,image/*,.heic" required>
+		</div>
+		<div class="col-12 col-md-4">
+			<button type="submit" class="btn btn-success w-100">
+				<span class="icon-mbri-upload me-1"></span>Сохранить МЛ
+			</button>
+		</div>
+	</form>
+</div>
