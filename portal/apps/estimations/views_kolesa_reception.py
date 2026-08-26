@@ -225,6 +225,62 @@ _TRACKED_FIELD_LABELS = {
     'kolesa_estimation': 'Признак 2КК',
 }
 
+_KOLESA_ESTIMATION_LABELS = {
+    0: 'Нет второго комплекта колес',
+    1: 'Оценка со вторым комплектом колес',
+}
+
+
+def _ref_display_name(obj):
+    if obj is None:
+        return '—'
+    for attr in ('name', 'value'):
+        val = getattr(obj, attr, None)
+        if val not in (None, ''):
+            return str(val)
+    return str(obj)
+
+
+def _format_reception_field_value(field_name, value, cache=None):
+    """ID справочников → наименование; пустые → —."""
+    if value in (None, ''):
+        return '—'
+
+    field_name = field_name or ''
+    name = field_name[:-3] if field_name.endswith('_id') else field_name
+
+    if name == 'kolesa_estimation':
+        try:
+            return _KOLESA_ESTIMATION_LABELS.get(int(value), str(value))
+        except (TypeError, ValueError):
+            return str(value)
+
+    try:
+        field = RegInteractivOcenkaKolesaReception._meta.get_field(name)
+    except Exception:
+        return str(value)
+
+    if getattr(field, 'is_relation', False) and not getattr(field, 'many_to_many', False):
+        related_model = field.related_model
+        cache_key = (related_model._meta.label, value)
+        if cache is not None and cache_key in cache:
+            return cache[cache_key]
+        try:
+            obj = related_model.objects.filter(pk=value).first()
+            if obj is None:
+                label = str(value)
+            elif hasattr(obj, 'get_full_name'):
+                label = (obj.get_full_name() or '').strip() or getattr(obj, 'username', None) or str(obj)
+            else:
+                label = _ref_display_name(obj)
+        except Exception:
+            label = str(value)
+        if cache is not None:
+            cache[cache_key] = label
+        return label
+
+    return str(value)
+
 
 def _snapshot_reception_fields(reception):
     return {f: getattr(reception, f) for f in _TRACKED_RECEPTION_FIELDS}
@@ -232,6 +288,7 @@ def _snapshot_reception_fields(reception):
 
 def _diff_reception_fields(before, after):
     changes = []
+    cache = {}
     for field in _TRACKED_RECEPTION_FIELDS:
         old = before.get(field)
         new = after.get(field)
@@ -239,9 +296,34 @@ def _diff_reception_fields(before, after):
             changes.append({
                 'field': field,
                 'label': _TRACKED_FIELD_LABELS.get(field, field),
-                'old': '' if old is None else str(old),
-                'new': '' if new is None else str(new),
+                'old': _format_reception_field_value(field, old, cache),
+                'new': _format_reception_field_value(field, new, cache),
             })
+    return changes
+
+
+def _changelog_changes_with_names(log):
+    """ChangeLog.data с ID справочников → список {name, value} с наименованиями."""
+    cache = {}
+    changes = []
+    data = log.data or {}
+    if not isinstance(data, dict):
+        return changes
+    try:
+        model = RegInteractivOcenkaKolesaReception
+    except Exception:
+        return []
+    for field_name, raw_value in data.items():
+        try:
+            label = model._meta.get_field(field_name).verbose_name
+        except Exception:
+            label = field_name
+        # не показываем служебные/файловые поля как «сырой» путь без нужды
+        if field_name in ('route_sheet_file',):
+            display = 'файл прикреплён' if raw_value else '—'
+        else:
+            display = _format_reception_field_value(field_name, raw_value, cache)
+        changes.append({'name': label, 'value': display})
     return changes
 
 
@@ -332,9 +414,12 @@ def get_kolesa_reception_history(reception):
         )
         for log in logs:
             try:
-                human = log.get_change_human()
+                human = _changelog_changes_with_names(log)
             except Exception:
-                human = []
+                try:
+                    human = log.get_change_human()
+                except Exception:
+                    human = []
             changelog_rows.append({
                 'when': log.changed,
                 'user': user_display(log.user),
