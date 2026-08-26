@@ -520,3 +520,334 @@ def kolesa_reception_detail(request, reception_id):
         'send_payload': send_payload,
     }
     return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})
+
+
+def _ref_name(obj):
+    if obj is None:
+        return ''
+    return (getattr(obj, 'name', None) or getattr(obj, 'value', None) or str(obj) or '').strip()
+
+
+def _complect_label(int_val, bool_val=None):
+    """0 — НЕТ, 1 — есть, иначе пусто."""
+    if int_val == 1:
+        return 'есть'
+    if int_val == 0:
+        return 'НЕТ'
+    if bool_val is True:
+        return 'есть'
+    if bool_val is False:
+        return 'НЕТ'
+    return ''
+
+
+def _tyre_size(width, profil, radius):
+    w = _ref_name(width)
+    p = _ref_name(profil)
+    r = _ref_name(radius)
+    if not (w or p or r):
+        return ''
+    return '{} / {} - {}'.format(w or '—', p or '—', r or '—')
+
+
+def _money(value):
+    try:
+        n = int(float(value or 0))
+    except (TypeError, ValueError):
+        return ''
+    if n <= 0:
+        return ''
+    return '{:,}'.format(n).replace(',', ' ')
+
+
+def build_kolesa_route_sheet(reception):
+    """Данные для печати маршрутного листа А/М со страницы приёмки 2КК."""
+    estimation = reception.estimation
+    rlk = reception.rlk
+    if rlk is None and estimation is not None:
+        rlk = estimation.rlk
+
+    page_kolesa = estimation.page_kolesa if estimation and estimation.page_kolesa_id else None
+    page_comp = estimation.page_complectnost if estimation and estimation.page_complectnost_id else None
+    page_salon = estimation.page_salon if estimation and estimation.page_salon_id else None
+    page_sogl = estimation.page_soglasovanie if estimation and estimation.page_soglasovanie_id else None
+    page_test = estimation.page_test_drive if estimation and estimation.page_test_drive_id else None
+
+    lo = None
+    if rlk is not None:
+        from documents.models import DocLO
+        lo = (
+            DocLO.objects
+            .filter(rlk=rlk)
+            .select_related('organization', 'staff')
+            .order_by('-active', '-dataTime', '-id')
+            .first()
+        )
+
+    page_reception = None
+    if rlk is not None:
+        try:
+            link = getattr(rlk, 'reginteractivocenkarlk', None)
+            if link is not None:
+                page_reception = getattr(link, 'page_reception', None)
+        except Exception:
+            page_reception = None
+
+    # Шапка
+    sklad_nomer = ''
+    if lo and lo.nomer:
+        sklad_nomer = lo.nomer
+    elif rlk and rlk.nomer:
+        sklad_nomer = rlk.nomer
+
+    org_name = ''
+    if lo and lo.organization_id and lo.organization:
+        org_name = lo.organization.name or ''
+    elif rlk is not None and rlk.unit_id and rlk.unit:
+        org_name = rlk.unit.name or ''
+
+    appraiser = ''
+    if estimation and estimation.staff_id and estimation.staff:
+        appraiser = estimation.staff.name or str(estimation.staff)
+    elif lo and lo.staff_id and lo.staff:
+        appraiser = lo.staff.name or str(lo.staff)
+    elif reception.user_id and reception.user:
+        appraiser = (reception.user.get_full_name() or '').strip() or reception.user.username
+
+    year = ''
+    if estimation and estimation.year:
+        year = str(estimation.year)
+    elif page_reception and page_reception.year:
+        year = str(page_reception.year)
+
+    date_priem = None
+    if reception.date:
+        date_priem = reception.date
+    elif lo and lo.dataTime:
+        date_priem = lo.dataTime
+    elif estimation and estimation.end_estimation:
+        date_priem = estimation.end_estimation
+
+    vin = ''
+    if estimation:
+        vin = (estimation.vin or estimation.number_body or '').strip()
+    if not vin and page_reception:
+        vin = (page_reception.vin or '').strip()
+
+    car_label = _estimation_car_label(estimation) if estimation else '—'
+    if page_reception and (page_reception.mark or page_reception.model):
+        car_label = '{} {}'.format(
+            page_reception.mark or '',
+            page_reception.model or '',
+        ).strip() or car_label
+
+    # Диагностика
+    diagnostica_yes = False
+    diagnostica_no = False
+    if page_sogl is not None:
+        if page_sogl.no_diagnostica:
+            diagnostica_no = True
+        elif (page_sogl.comment_diagnostica or '').strip() or page_sogl.price_after_kd:
+            diagnostica_yes = True
+
+    # Тест-драйв
+    test_drive = ''
+    if page_test is not None:
+        if page_test.no_test:
+            test_drive = 'не производился'
+        elif (page_test.comment or '').strip():
+            test_drive = page_test.comment.strip()
+        else:
+            test_drive = 'проведён'
+
+    comment_podgotovka = ''
+    if lo and (lo.description_podgotovka or '').strip():
+        comment_podgotovka = lo.description_podgotovka.strip()
+    elif page_sogl and (page_sogl.comment or '').strip():
+        comment_podgotovka = page_sogl.comment.strip()
+
+    salon_color = ''
+    if page_reception and (page_reception.salon_color or '').strip():
+        salon_color = page_reception.salon_color.strip()
+    elif page_salon and getattr(page_salon, 'type_salon_int', None) is not None:
+        salon_map = {0: '', 1: 'ткань', 2: 'кожа', 3: 'комбинированный'}
+        salon_color = salon_map.get(page_salon.type_salon_int, '')
+
+    himchistka = ''
+    if page_salon is not None:
+        if page_salon.cleaning_int == 1 or page_salon.cleaning:
+            himchistka = 'требуется'
+        elif page_salon.cleaning_int == 0:
+            himchistka = 'не требуется'
+
+    plan_rashodov = ''
+    if page_sogl is not None:
+        plan_rashodov = _money(page_sogl.amount_recovery or page_sogl.price_recovery)
+
+    # Комплектность
+    complect_items = []
+    if page_comp is not None:
+        complect_items = [
+            ('Домкрат', _complect_label(page_comp.domkrat_int, page_comp.domkrat)),
+            ('Балонник, буксировочная петля', _complect_label(
+                page_comp.ball_key_int if page_comp.ball_key_int in (0, 1) else page_comp.tros_int,
+                page_comp.ball_key or page_comp.tros,
+            )),
+            ('Запасное колесо', _complect_label(page_comp.zapas_int, page_comp.zapas)),
+            ('Секретка', ''),
+            ('Сервисная книжка', ''),
+            ('Инструкция по эксплуатации', ''),
+        ]
+    else:
+        complect_items = [
+            ('Домкрат', ''),
+            ('Балонник, буксировочная петля', ''),
+            ('Запасное колесо', ''),
+            ('Секретка', ''),
+            ('Сервисная книжка', ''),
+            ('Инструкция по эксплуатации', ''),
+        ]
+
+    keys_count = ''
+    if page_reception and page_reception.count_keys:
+        keys_count = str(page_reception.count_keys)
+    elif lo and lo.keys:
+        keys_count = str(lo.keys)
+
+    complect_items.extend([
+        ('Ключи зажигания, кол-во', keys_count),
+        ('Брелоки сигнализации, кол-во', ''),
+        ('Набор автомобилиста', _complect_label(
+            page_comp.aptechka_int if page_comp else None,
+            page_comp.aptechka if page_comp else None,
+        ) if page_comp else ''),
+        ('Автомагнитола', ''),
+        ('Код магнитолы', ''),
+    ])
+
+    # Пары для двухколоночной таблицы комплектности
+    complect_pairs = []
+    half = (len(complect_items) + 1) // 2
+    left_col = complect_items[:half]
+    right_col = complect_items[half:]
+    while len(right_col) < len(left_col):
+        right_col.append(('', ''))
+    for left, right in zip(left_col, right_col):
+        complect_pairs.append((left, right))
+
+    # Колёса на а/м (из оценки)
+    wheels_on_car = {
+        'sezon': _ref_name(page_kolesa.sezon) if page_kolesa else '',
+        'size': _tyre_size(
+            page_kolesa.width_tyre if page_kolesa else None,
+            page_kolesa.profil_tyre if page_kolesa else None,
+            page_kolesa.radius if page_kolesa else None,
+        ) if page_kolesa else '',
+        'count_tyre': '',
+        'mark': '',
+        'disk_type': _ref_name(page_kolesa.disk_type) if page_kolesa else '',
+        'count_disk': '',
+        'extra': '',
+    }
+    if page_kolesa:
+        mark_parts = [_ref_name(page_kolesa.mark_tyre), (page_kolesa.model_tyre or '').strip()]
+        wheels_on_car['mark'] = ' '.join(p for p in mark_parts if p)
+        # на первом комплекте count часто не ведётся — по умолчанию 4, если есть данные
+        if wheels_on_car['size'] or wheels_on_car['mark']:
+            wheels_on_car['count_tyre'] = '4'
+        if wheels_on_car['disk_type']:
+            wheels_on_car['count_disk'] = '4'
+
+    # 2-й комплект — из приёмки
+    wheels_2 = {
+        'sezon': _ref_name(reception.sezon),
+        'size': _tyre_size(reception.width_tyre, reception.profil_tyre, reception.radius),
+        'count_tyre': str(reception.count_tyre) if reception.count_tyre else '',
+        'mark': ' '.join(
+            p for p in [_ref_name(reception.mark_tyre), (reception.model_tyre or '').strip()] if p
+        ),
+        'disk_type': _ref_name(reception.disk_type),
+        'count_disk': str(reception.count_disk) if reception.count_disk else '',
+        'extra': (reception.model_disk or '').strip(),
+    }
+    # fallback из оценки, если приёмка пустая
+    if page_kolesa and not (wheels_2['size'] or wheels_2['mark']):
+        wheels_2 = {
+            'sezon': _ref_name(page_kolesa.sezon2),
+            'size': _tyre_size(page_kolesa.width_tyre2, page_kolesa.profil_tyre2, page_kolesa.radius2),
+            'count_tyre': str(page_kolesa.count_tyre2) if page_kolesa.count_tyre2 else '',
+            'mark': ' '.join(
+                p for p in [_ref_name(page_kolesa.mark_tyre2), (page_kolesa.model_tyre2 or '').strip()] if p
+            ),
+            'disk_type': _ref_name(page_kolesa.disk_type2),
+            'count_disk': str(page_kolesa.count_disk2) if page_kolesa.count_disk2 else '',
+            'extra': (page_kolesa.model_disk2 or '').strip(),
+        }
+
+    return {
+        'reception': reception,
+        'estimation': estimation,
+        'sklad_nomer': sklad_nomer,
+        'year': year,
+        'date_priem': date_priem,
+        'org_name': org_name,
+        'appraiser': appraiser,
+        'test_drive': test_drive,
+        'vin': vin,
+        'car_label': car_label,
+        'diagnostica_yes': diagnostica_yes,
+        'diagnostica_no': diagnostica_no,
+        'comment_podgotovka': comment_podgotovka,
+        'salon_color': salon_color,
+        'himchistka': himchistka,
+        'plan_rashodov': plan_rashodov,
+        'complect_items': complect_items,
+        'complect_pairs': complect_pairs,
+        'wheels_on_car': wheels_on_car,
+        'wheels_2': wheels_2,
+    }
+
+
+@login_required
+def kolesa_reception_print(request, reception_id):
+    reception = get_object_or_404(
+        RegInteractivOcenkaKolesaReception.objects.select_related(
+            'estimation',
+            'estimation__page_kolesa',
+            'estimation__page_kolesa__mark_tyre',
+            'estimation__page_kolesa__width_tyre',
+            'estimation__page_kolesa__profil_tyre',
+            'estimation__page_kolesa__radius',
+            'estimation__page_kolesa__sezon',
+            'estimation__page_kolesa__disk_type',
+            'estimation__page_kolesa__mark_tyre2',
+            'estimation__page_kolesa__width_tyre2',
+            'estimation__page_kolesa__profil_tyre2',
+            'estimation__page_kolesa__radius2',
+            'estimation__page_kolesa__sezon2',
+            'estimation__page_kolesa__disk_type2',
+            'estimation__page_complectnost',
+            'estimation__page_salon',
+            'estimation__page_soglasovanie',
+            'estimation__page_test_drive',
+            'estimation__staff',
+            'estimation__rlk',
+            'estimation__rlk__unit',
+            'rlk',
+            'rlk__unit',
+            'user',
+            'mark_tyre',
+            'width_tyre',
+            'profil_tyre',
+            'radius',
+            'sezon',
+            'disk_type',
+        ),
+        pk=reception_id,
+    )
+    sheet = build_kolesa_route_sheet(reception)
+    return render(
+        request,
+        'estimations/kolesa_reception_print.html',
+        {'params': sheet},
+    )
