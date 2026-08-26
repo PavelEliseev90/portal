@@ -4155,8 +4155,43 @@ class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):
     )
     user                = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Автор")
 
+    # Подписанный маршрутный лист А/М
+    route_sheet_file = models.FileField(
+        storage=save_directory,
+        upload_to='estimation_wheels/route_sheet/%Y/%m/%d/',
+        verbose_name='Подписанный маршрутный лист',
+        blank=True,
+        null=True,
+    )
+    route_sheet_attached = models.BooleanField(
+        'Маршрутный лист прикреплён',
+        default=False,
+        db_index=True,
+    )
+    route_sheet_attached_at = models.DateTimeField(
+        'Дата прикрепления маршрутного листа',
+        blank=True,
+        null=True,
+    )
+    route_sheet_attached_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='kolesa_reception_route_sheets',
+        verbose_name='Кто прикрепил маршрутный лист',
+    )
+
     def __str__(self):
         return "{} / {}".format(self.date, self.rlk)
+
+    def get_route_sheet_url(self):
+        try:
+            if self.route_sheet_file and self.route_sheet_file.name:
+                return self.route_sheet_file.url.replace('/media/', '/media_dop/')
+        except Exception:
+            pass
+        return ''
 
     class Meta:
         db_table = 'regInteractivOcenkaKolesaRegInteractivOcenkaKolesa'
@@ -4164,6 +4199,59 @@ class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):
         verbose_name_plural = "Приемка второго комплекта колес"
 post_save.connect(journal_save_handler, sender=RegInteractivOcenkaKolesaReception)
 post_delete.connect(journal_delete_handler, sender=RegInteractivOcenkaKolesaReception)
+
+
+class RegInteractivOcenkaKolesaReceptionEvent(models.Model):
+    """История действий по приёмке 2КК (для СБ и аудита)."""
+    EVENT_CREATED = 'created'
+    EVENT_PHOTO_ADD = 'photo_add'
+    EVENT_PHOTO_DELETE = 'photo_delete'
+    EVENT_ROUTE_SHEET_ADD = 'route_sheet_add'
+    EVENT_ROUTE_SHEET_DELETE = 'route_sheet_delete'
+    EVENT_SEND = 'send'
+    EVENT_RESEND = 'resend'
+    EVENT_RESET_SEND = 'reset_send'
+    EVENT_SAVE = 'save'
+
+    EVENT_CHOICES = (
+        (EVENT_CREATED, 'Создание приёмки'),
+        (EVENT_PHOTO_ADD, 'Добавление фото'),
+        (EVENT_PHOTO_DELETE, 'Удаление фото'),
+        (EVENT_ROUTE_SHEET_ADD, 'Прикрепление маршрутного листа'),
+        (EVENT_ROUTE_SHEET_DELETE, 'Удаление маршрутного листа'),
+        (EVENT_SEND, 'Отправка в БУ колёс'),
+        (EVENT_RESEND, 'Повторная отправка в БУ колёс'),
+        (EVENT_RESET_SEND, 'Сброс признака отправки'),
+        (EVENT_SAVE, 'Изменение реквизитов'),
+    )
+
+    reception = models.ForeignKey(
+        RegInteractivOcenkaKolesaReception,
+        on_delete=models.CASCADE,
+        related_name='events',
+        verbose_name='Приёмка',
+    )
+    event_type = models.CharField('Тип события', max_length=32, choices=EVENT_CHOICES, db_index=True)
+    message = models.CharField('Описание', max_length=1024, default='', blank=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Пользователь',
+    )
+    created_at = models.DateTimeField('Когда', auto_now_add=True, db_index=True)
+    extra = models.JSONField('Доп. данные', default=dict, blank=True)
+
+    class Meta:
+        db_table = 'regInteractivOcenkaKolesaReceptionEvent'
+        ordering = ('-created_at', '-id')
+        verbose_name = 'Событие приёмки 2КК'
+        verbose_name_plural = 'События приёмки 2КК'
+
+    def __str__(self):
+        return '{} / {}'.format(self.event_type, self.created_at)
+
 
 class RegRegInteractivOcenkaFilesKolesaReception(models.Model):
     kolesa_reception  = models.ForeignKey(RegInteractivOcenkaKolesaReception, on_delete=models.PROTECT, null=True, verbose_name="Приемка колес")
