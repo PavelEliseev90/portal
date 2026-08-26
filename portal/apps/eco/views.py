@@ -4053,6 +4053,13 @@ def estimation_photos_download_eco(request, id):
 
 
 @login_required
+def estimation_route_sheet_print(request, id):
+    """Печать маршрутного листа А/М со страницы приёма автомобиля."""
+    from estimations.views_kolesa_reception import estimation_route_sheet_print as _print
+    return _print(request, id)
+
+
+@login_required
 def chat_email_notify_participants(request, id):
     """Оповещение на почту всем участникам интерактивной оценки (как при согласовании)."""
     if request.method != 'POST':

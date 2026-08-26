@@ -170,9 +170,13 @@
 <body>
 	<div class="toolbar">
 		<button type="button" class="primary" onclick="window.print()">Печать</button>
+		{% if params.back_url %}
+		<a href="{{ params.back_url }}">Назад</a>
+		{% elif params.reception %}
 		<a href="/estimations/kolesa-reception/{{ params.reception.id }}/">К приёмке 2КК</a>
+		{% endif %}
 		{% if params.estimation and params.estimation.rlk_id %}
-		<a href="/eco/{{ params.estimation.rlk_id }}/" target="_blank">Оценка</a>
+		<a href="/eco/{{ params.estimation.rlk_id }}/?page=24" target="_blank">Приём автомобиля</a>
 		{% endif %}
 		<span class="hint">Формат A4 · одна страница</span>
 	</div>

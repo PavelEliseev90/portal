@@ -560,10 +560,12 @@ def _money(value):
     return '{:,}'.format(n).replace(',', ' ')
 
 
-def build_kolesa_route_sheet(reception):
-    """Данные для печати маршрутного листа А/М со страницы приёмки 2КК."""
-    estimation = reception.estimation
-    rlk = reception.rlk
+def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_reception=None, back_url=''):
+    """Данные для печати маршрутного листа А/М (оценка / приём / 2КК)."""
+    if estimation is None and kolesa_reception is not None:
+        estimation = kolesa_reception.estimation
+    if rlk is None and kolesa_reception is not None:
+        rlk = kolesa_reception.rlk
     if rlk is None and estimation is not None:
         rlk = estimation.rlk
 
@@ -584,8 +586,7 @@ def build_kolesa_route_sheet(reception):
             .first()
         )
 
-    page_reception = None
-    if rlk is not None:
+    if page_reception is None and rlk is not None:
         try:
             link = getattr(rlk, 'reginteractivocenkarlk', None)
             if link is not None:
@@ -593,7 +594,18 @@ def build_kolesa_route_sheet(reception):
         except Exception:
             page_reception = None
 
-    # Шапка
+    # Если 2КК-приёмка не передана — взять с РЛ, если есть
+    if kolesa_reception is None and rlk is not None:
+        kolesa_reception = (
+            RegInteractivOcenkaKolesaReception.objects
+            .filter(rlk=rlk)
+            .select_related(
+                'mark_tyre', 'width_tyre', 'profil_tyre', 'radius', 'sezon', 'disk_type',
+            )
+            .order_by('-id')
+            .first()
+        )
+
     sklad_nomer = ''
     if lo and lo.nomer:
         sklad_nomer = lo.nomer
@@ -603,6 +615,8 @@ def build_kolesa_route_sheet(reception):
     org_name = ''
     if lo and lo.organization_id and lo.organization:
         org_name = lo.organization.name or ''
+    elif page_reception and page_reception.organization_id and page_reception.organization:
+        org_name = page_reception.organization.name or ''
     elif rlk is not None and rlk.unit_id and rlk.unit:
         org_name = rlk.unit.name or ''
 
@@ -611,8 +625,11 @@ def build_kolesa_route_sheet(reception):
         appraiser = estimation.staff.name or str(estimation.staff)
     elif lo and lo.staff_id and lo.staff:
         appraiser = lo.staff.name or str(lo.staff)
-    elif reception.user_id and reception.user:
-        appraiser = (reception.user.get_full_name() or '').strip() or reception.user.username
+    elif kolesa_reception and kolesa_reception.user_id and kolesa_reception.user:
+        appraiser = (
+            (kolesa_reception.user.get_full_name() or '').strip()
+            or kolesa_reception.user.username
+        )
 
     year = ''
     if estimation and estimation.year:
@@ -621,8 +638,10 @@ def build_kolesa_route_sheet(reception):
         year = str(page_reception.year)
 
     date_priem = None
-    if reception.date:
-        date_priem = reception.date
+    if kolesa_reception and kolesa_reception.date:
+        date_priem = kolesa_reception.date
+    elif page_reception and getattr(page_reception, 'created_at', None):
+        date_priem = page_reception.created_at
     elif lo and lo.dataTime:
         date_priem = lo.dataTime
     elif estimation and estimation.end_estimation:
@@ -641,7 +660,6 @@ def build_kolesa_route_sheet(reception):
             page_reception.model or '',
         ).strip() or car_label
 
-    # Диагностика
     diagnostica_yes = False
     diagnostica_no = False
     if page_sogl is not None:
@@ -650,7 +668,6 @@ def build_kolesa_route_sheet(reception):
         elif (page_sogl.comment_diagnostica or '').strip() or page_sogl.price_after_kd:
             diagnostica_yes = True
 
-    # Тест-драйв
     test_drive = ''
     if page_test is not None:
         if page_test.no_test:
@@ -684,8 +701,6 @@ def build_kolesa_route_sheet(reception):
     if page_sogl is not None:
         plan_rashodov = _money(page_sogl.amount_recovery or page_sogl.price_recovery)
 
-    # Комплектность
-    complect_items = []
     if page_comp is not None:
         complect_items = [
             ('Домкрат', _complect_label(page_comp.domkrat_int, page_comp.domkrat)),
@@ -725,7 +740,6 @@ def build_kolesa_route_sheet(reception):
         ('Код магнитолы', ''),
     ])
 
-    # Пары для двухколоночной таблицы комплектности
     complect_pairs = []
     half = (len(complect_items) + 1) // 2
     left_col = complect_items[:half]
@@ -735,7 +749,6 @@ def build_kolesa_route_sheet(reception):
     for left, right in zip(left_col, right_col):
         complect_pairs.append((left, right))
 
-    # Колёса на а/м (из оценки)
     wheels_on_car = {
         'sezon': _ref_name(page_kolesa.sezon) if page_kolesa else '',
         'size': _tyre_size(
@@ -752,25 +765,31 @@ def build_kolesa_route_sheet(reception):
     if page_kolesa:
         mark_parts = [_ref_name(page_kolesa.mark_tyre), (page_kolesa.model_tyre or '').strip()]
         wheels_on_car['mark'] = ' '.join(p for p in mark_parts if p)
-        # на первом комплекте count часто не ведётся — по умолчанию 4, если есть данные
         if wheels_on_car['size'] or wheels_on_car['mark']:
             wheels_on_car['count_tyre'] = '4'
         if wheels_on_car['disk_type']:
             wheels_on_car['count_disk'] = '4'
 
-    # 2-й комплект — из приёмки
-    wheels_2 = {
-        'sezon': _ref_name(reception.sezon),
-        'size': _tyre_size(reception.width_tyre, reception.profil_tyre, reception.radius),
-        'count_tyre': str(reception.count_tyre) if reception.count_tyre else '',
-        'mark': ' '.join(
-            p for p in [_ref_name(reception.mark_tyre), (reception.model_tyre or '').strip()] if p
-        ),
-        'disk_type': _ref_name(reception.disk_type),
-        'count_disk': str(reception.count_disk) if reception.count_disk else '',
-        'extra': (reception.model_disk or '').strip(),
-    }
-    # fallback из оценки, если приёмка пустая
+    wheels_2 = {'sezon': '', 'size': '', 'count_tyre': '', 'mark': '', 'disk_type': '', 'count_disk': '', 'extra': ''}
+    if kolesa_reception is not None:
+        wheels_2 = {
+            'sezon': _ref_name(kolesa_reception.sezon),
+            'size': _tyre_size(
+                kolesa_reception.width_tyre,
+                kolesa_reception.profil_tyre,
+                kolesa_reception.radius,
+            ),
+            'count_tyre': str(kolesa_reception.count_tyre) if kolesa_reception.count_tyre else '',
+            'mark': ' '.join(
+                p for p in [
+                    _ref_name(kolesa_reception.mark_tyre),
+                    (kolesa_reception.model_tyre or '').strip(),
+                ] if p
+            ),
+            'disk_type': _ref_name(kolesa_reception.disk_type),
+            'count_disk': str(kolesa_reception.count_disk) if kolesa_reception.count_disk else '',
+            'extra': (kolesa_reception.model_disk or '').strip(),
+        }
     if page_kolesa and not (wheels_2['size'] or wheels_2['mark']):
         wheels_2 = {
             'sezon': _ref_name(page_kolesa.sezon2),
@@ -784,9 +803,17 @@ def build_kolesa_route_sheet(reception):
             'extra': (page_kolesa.model_disk2 or '').strip(),
         }
 
+    if not back_url:
+        if kolesa_reception is not None:
+            back_url = '/estimations/kolesa-reception/{}/'.format(kolesa_reception.pk)
+        elif rlk is not None:
+            back_url = '/eco/{}/?page=24'.format(rlk.pk)
+
     return {
-        'reception': reception,
+        'reception': kolesa_reception,
         'estimation': estimation,
+        'rlk': rlk,
+        'back_url': back_url,
         'sklad_nomer': sklad_nomer,
         'year': year,
         'date_priem': date_priem,
@@ -808,31 +835,41 @@ def build_kolesa_route_sheet(reception):
     }
 
 
+def build_kolesa_route_sheet(reception):
+    """Обёртка: печать со страницы приёмки 2КК."""
+    return build_route_sheet(kolesa_reception=reception)
+
+
+_ROUTE_SHEET_EST_RELATED = (
+    'page_kolesa',
+    'page_kolesa__mark_tyre',
+    'page_kolesa__width_tyre',
+    'page_kolesa__profil_tyre',
+    'page_kolesa__radius',
+    'page_kolesa__sezon',
+    'page_kolesa__disk_type',
+    'page_kolesa__mark_tyre2',
+    'page_kolesa__width_tyre2',
+    'page_kolesa__profil_tyre2',
+    'page_kolesa__radius2',
+    'page_kolesa__sezon2',
+    'page_kolesa__disk_type2',
+    'page_complectnost',
+    'page_salon',
+    'page_soglasovanie',
+    'page_test_drive',
+    'staff',
+    'rlk',
+    'rlk__unit',
+)
+
+
 @login_required
 def kolesa_reception_print(request, reception_id):
     reception = get_object_or_404(
         RegInteractivOcenkaKolesaReception.objects.select_related(
             'estimation',
-            'estimation__page_kolesa',
-            'estimation__page_kolesa__mark_tyre',
-            'estimation__page_kolesa__width_tyre',
-            'estimation__page_kolesa__profil_tyre',
-            'estimation__page_kolesa__radius',
-            'estimation__page_kolesa__sezon',
-            'estimation__page_kolesa__disk_type',
-            'estimation__page_kolesa__mark_tyre2',
-            'estimation__page_kolesa__width_tyre2',
-            'estimation__page_kolesa__profil_tyre2',
-            'estimation__page_kolesa__radius2',
-            'estimation__page_kolesa__sezon2',
-            'estimation__page_kolesa__disk_type2',
-            'estimation__page_complectnost',
-            'estimation__page_salon',
-            'estimation__page_soglasovanie',
-            'estimation__page_test_drive',
-            'estimation__staff',
-            'estimation__rlk',
-            'estimation__rlk__unit',
+            *['estimation__' + p for p in _ROUTE_SHEET_EST_RELATED],
             'rlk',
             'rlk__unit',
             'user',
@@ -845,7 +882,52 @@ def kolesa_reception_print(request, reception_id):
         ),
         pk=reception_id,
     )
-    sheet = build_kolesa_route_sheet(reception)
+    sheet = build_route_sheet(kolesa_reception=reception)
+    return render(
+        request,
+        'estimations/kolesa_reception_print.html',
+        {'params': sheet},
+    )
+
+
+@login_required
+def estimation_route_sheet_print(request, rlk_id):
+    """Печать маршрутного листа А/М со страницы приёма автомобиля (ЕЦО)."""
+    from documents.models import DocRLK
+    from register.models import RegInteractivOcenkaRLK
+
+    rlk = get_object_or_404(
+        DocRLK.objects.select_related('unit'),
+        pk=rlk_id,
+    )
+
+    estimation = None
+    page_reception = None
+    try:
+        link = RegInteractivOcenkaRLK.objects.select_related(
+            'estimation',
+            *['estimation__' + p for p in _ROUTE_SHEET_EST_RELATED],
+            'page_reception',
+            'page_reception__organization',
+        ).get(rlk=rlk)
+        estimation = link.estimation
+        page_reception = getattr(link, 'page_reception', None)
+    except RegInteractivOcenkaRLK.DoesNotExist:
+        try:
+            estimation = (
+                RegInteractivOcenka.objects
+                .select_related(*_ROUTE_SHEET_EST_RELATED)
+                .get(rlk=rlk)
+            )
+        except RegInteractivOcenka.DoesNotExist:
+            raise Http404('Интерактивная оценка для рабочего листа не найдена')
+
+    sheet = build_route_sheet(
+        estimation=estimation,
+        rlk=rlk,
+        page_reception=page_reception,
+        back_url='/eco/{}/?page=24'.format(rlk.pk),
+    )
     return render(
         request,
         'estimations/kolesa_reception_print.html',
