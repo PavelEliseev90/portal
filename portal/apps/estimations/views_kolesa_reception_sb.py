@@ -22,6 +22,26 @@ from estimations.views_kolesa_reception import (
 from estimations.kolesa_reception_events import user_display
 
 
+def _sb_unit_ids(request):
+    """ID подразделений из GET (unit / unit_ids / unit[])."""
+    raw = []
+    raw.extend(request.GET.getlist('unit'))
+    raw.extend(request.GET.getlist('unit_ids'))
+    raw.extend(request.GET.getlist('unit[]'))
+    ids = []
+    seen = set()
+    for v in raw:
+        s = str(v).strip()
+        if not s.isdigit():
+            continue
+        n = int(s)
+        if n in seen:
+            continue
+        seen.add(n)
+        ids.append(n)
+    return ids
+
+
 def _sb_list_queryset(request):
     """Список существующих приёмок 2КК с аннотацией числа фото."""
     photos_sq = (
@@ -58,7 +78,7 @@ def _sb_list_queryset(request):
 
     date_from = _parse_date(request.GET.get('date_from', ''))
     date_to = _parse_date(request.GET.get('date_to', ''))
-    unit_ids = [v for v in request.GET.getlist('unit') if str(v).strip().isdigit()]
+    unit_ids = _sb_unit_ids(request)
     vin = request.GET.get('vin', '').strip()
     wheels_number = request.GET.get('wheels_number', '').strip()
     photos = request.GET.get('photos', '').strip()
@@ -72,13 +92,13 @@ def _sb_list_queryset(request):
 
     if unit_ids:
         qs = qs.filter(
-            Q(rlk__unit_id__in=[int(v) for v in unit_ids])
-            | Q(estimation__rlk__unit_id__in=[int(v) for v in unit_ids])
+            Q(rlk__unit_id__in=unit_ids)
+            | Q(estimation__rlk__unit_id__in=unit_ids)
         )
 
     if vin:
         lo_rlk_ids = DocLO.objects.filter(nomer__icontains=vin).values_list('rlk_id', flat=True)
-        qs = qs.filter(
+        vin_q = (
             Q(estimation__vin__icontains=vin)
             | Q(estimation__number_body__icontains=vin)
             | Q(rlk__nomer__icontains=vin)
@@ -86,6 +106,9 @@ def _sb_list_queryset(request):
             | Q(rlk_id__in=lo_rlk_ids)
             | Q(estimation__rlk_id__in=lo_rlk_ids)
         )
+        if vin.isdigit():
+            vin_q = vin_q | Q(pk=int(vin))
+        qs = qs.filter(vin_q)
 
     if wheels_number:
         qs = qs.filter(send_wheels_ib_number__icontains=wheels_number)
@@ -163,6 +186,7 @@ def kolesa_reception_sb_list(request):
     paginator = Paginator(qs, 40)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     rows = _build_sb_rows(list(page_obj.object_list))
+    unit_ids_list = _sb_unit_ids(request)
 
     params = {
         'page_obj': page_obj,
@@ -171,7 +195,8 @@ def kolesa_reception_sb_list(request):
         'filters': {
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
-            'unit': request.GET.getlist('unit'),
+            'unit': [str(v) for v in unit_ids_list],
+            'unit_ids_list': unit_ids_list,
             'vin': request.GET.get('vin', ''),
             'wheels_number': request.GET.get('wheels_number', ''),
             'photos': request.GET.get('photos', ''),

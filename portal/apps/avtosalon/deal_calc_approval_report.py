@@ -115,6 +115,7 @@ def build_approval_report_queryset(request):
         request.GET.getlist('unit[]')
         + request.GET.getlist('unit_ids')
         + request.GET.getlist('unit_id')
+        + request.GET.getlist('unit')
     )
     only_shipped = (request.GET.get('only_shipped') or '').strip() in ('1', 'true', 'yes', 'on')
     soglasovanie = (request.GET.get('soglasovanie') or '').strip()

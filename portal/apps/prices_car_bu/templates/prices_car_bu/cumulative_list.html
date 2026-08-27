@@ -105,20 +105,10 @@
         <input type="text" class="form-control" name="vin" value="{{ filters.vin }}" placeholder="VIN" autocomplete="off">
       </div>
       <div class="col-12 col-md-6 col-lg-3">
-        <label class="form-label small text-muted mb-1">Показатель КВП</label>
-        <select class="form-select" id="indicator_ids" name="indicator" multiple>
-          {% for ind in indicators %}
-          <option value="{{ ind.id }}" {% if ind.id|stringformat:"s" in filters.indicator %}selected{% endif %}>{{ ind.name }}</option>
-          {% endfor %}
-        </select>
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix='cumInd' field_name='indicator' label='Показатель КВП' placeholder='Поиск показателя…' items=indicators selected_ids=filters.indicator_ids_list empty_text='Нет показателей' %}
       </div>
       <div class="col-12 col-md-6 col-lg-3">
-        <label class="form-label small text-muted mb-1">Подразделение</label>
-        <select class="form-select" id="unit_ids" name="unit" multiple>
-          {% for unit in units %}
-          <option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in filters.unit %}selected{% endif %}>{{ unit.name }}</option>
-          {% endfor %}
-        </select>
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix='cumUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=units selected_ids=filters.unit_ids_list empty_text='Нет подразделений' %}
       </div>
       <div class="col-12 col-md-6 col-lg-2">
         <label class="form-label small text-muted mb-1">Отправка в 1С</label>
@@ -143,23 +133,6 @@
       </div>
     </form>
   </div>
-
-  <script>
-  $(document).ready(function() {
-    ['#unit_ids', '#indicator_ids'].forEach(function(sel) {
-      var $el = $(sel);
-      if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-        $el.select2({
-          language: 'ru',
-          placeholder: 'Выберите…',
-          allowClear: true,
-          width: '100%',
-          dropdownAutoWidth: true
-        });
-      }
-    });
-  });
-  </script>
 
   <div class="portal-panel no-padding">
     <div class="table-responsive">

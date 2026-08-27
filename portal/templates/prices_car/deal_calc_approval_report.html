@@ -65,22 +65,7 @@
         <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
       </div>
       <div class="col-sm-12 col-md-4">
-        <label class="form-label small text-muted mb-1">Подразделения</label>
-        <div class="position-relative">
-          <input type="text" class="form-control" id="kpUnitSearch" placeholder="Поиск по подразделениям..." autocomplete="off">
-          <div class="list-group position-absolute w-100 mt-1" id="kpUnitDropdown" style="max-height: 220px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem;">
-            {% for unit in params.units %}
-            <label class="list-group-item" style="margin-bottom: 0; cursor: pointer;" data-unit-name="{{ unit.name|lower }}{% if unit.city %} {{ unit.city.name|lower }}{% endif %}">
-              <input class="form-check-input me-2" type="checkbox" name="unit_ids" value="{{ unit.pk }}"
-                {% if unit.pk in params.filtr.filter_unit %}checked{% endif %}>
-              {{ unit.name }}{% if unit.city %} ({{ unit.city.name }}){% endif %}
-            </label>
-            {% empty %}
-            <span class="list-group-item text-muted small">Нет подразделений с флагом автопереоценки новых</span>
-            {% endfor %}
-          </div>
-        </div>
-        <div id="kpSelectedUnits" class="mt-2"></div>
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix='kpUnit' field_name='unit_ids' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filtr.filter_unit show_city=True empty_text='Нет подразделений с флагом автопереоценки новых' %}
       </div>
       <div class="col-sm-6 col-md-2">
         <label class="form-label small text-muted mb-1">Согласование</label>
@@ -191,64 +176,4 @@
   </nav>
   {% endif %}
 </div>
-
-<script>
-(function() {
-  var search = document.getElementById('kpUnitSearch');
-  var dropdown = document.getElementById('kpUnitDropdown');
-  var selectedDiv = document.getElementById('kpSelectedUnits');
-  if (!search || !dropdown) return;
-
-  function updateBadges() {
-    if (!selectedDiv) return;
-    selectedDiv.innerHTML = '';
-    dropdown.querySelectorAll('input[name="unit_ids"]:checked').forEach(function(cb) {
-      var label = cb.closest('label');
-      var text = label ? label.textContent.trim() : cb.value;
-      var badge = document.createElement('span');
-      badge.className = 'kp-filter-badge';
-      badge.textContent = text + ' ';
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'kp-filter-remove';
-      btn.setAttribute('data-unit-id', cb.value);
-      btn.textContent = '×';
-      badge.appendChild(btn);
-      selectedDiv.appendChild(badge);
-    });
-  }
-
-  function filterUnits() {
-    var q = (search.value || '').trim().toLowerCase();
-    dropdown.querySelectorAll('label.list-group-item').forEach(function(label) {
-      var name = label.getAttribute('data-unit-name') || '';
-      label.style.display = (!q || name.indexOf(q) !== -1) ? '' : 'none';
-    });
-  }
-
-  search.addEventListener('focus', function() { dropdown.style.display = 'block'; });
-  search.addEventListener('input', filterUnits);
-  document.addEventListener('click', function(e) {
-    if (!dropdown.contains(e.target) && e.target !== search) {
-      dropdown.style.display = 'none';
-    }
-  });
-  dropdown.querySelectorAll('input[name="unit_ids"]').forEach(function(cb) {
-    cb.addEventListener('change', updateBadges);
-  });
-  if (selectedDiv) {
-    selectedDiv.addEventListener('click', function(e) {
-      var btn = e.target.closest('.kp-filter-remove');
-      if (!btn) return;
-      var id = btn.getAttribute('data-unit-id');
-      var cb = dropdown.querySelector('input[name="unit_ids"][value="' + id + '"]');
-      if (cb) {
-        cb.checked = false;
-        updateBadges();
-      }
-    });
-  }
-  updateBadges();
-})();
-</script>
 {% endblock %}
