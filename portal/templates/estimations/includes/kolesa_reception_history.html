@@ -1,15 +1,16 @@
 {% comment %}
   История действий и изменений реквизитов приёмки 2КК.
-  Ожидает: params.events, params.changelog_rows
+  Ожидает: params.events, params.changelog_rows, params.events_count, params.changelog_count
 {% endcomment %}
 
 <div class="portal-panel mb-3">
-	<h6 class="mb-3 padding-portal">
+	<h6 class="mb-3 padding-portal" id="kolesa-events">
 		<span class="icon-mbri-clock me-2"></span>История действий
+		<span class="text-muted fw-normal ms-1">— {{ params.events_count }}</span>
 	</h6>
 
 	{% if params.events %}
-	<div class="table-responsive mb-4">
+	<div class="table-responsive mb-4 kolesa-history-desktop">
 		<table class="table table-sm align-middle mb-0">
 			<thead>
 				<tr class="text-muted small">
@@ -35,13 +36,31 @@
 			</tbody>
 		</table>
 	</div>
+	<div class="kolesa-history-mobile mb-4">
+		{% for ev in params.events %}
+		<div class="kolesa-history-card">
+			<div class="meta">
+				{{ ev.created_at|date:"d.m.Y H:i" }}
+				· {% if ev.user %}{{ ev.user.get_full_name|default:ev.user.username }}{% else %}—{% endif %}
+			</div>
+			<div class="mb-1"><span class="badge bg-light text-dark border">{{ ev.get_event_type_display }}</span></div>
+			<div class="small">{{ ev.message|default:"—" }}</div>
+		</div>
+		{% endfor %}
+	</div>
 	{% else %}
 	<p class="text-muted small mb-4">Событий пока нет (создания до внедрения журнала не отображаются).</p>
 	{% endif %}
 
-	<h6 class="mb-3 padding-portal">Изменения реквизитов (журнал)</h6>
+	<h6 class="mb-3 padding-portal" id="kolesa-changelog">
+		Изменения реквизитов (журнал)
+		<span class="text-muted fw-normal ms-1">— {{ params.changelog_count }}</span>
+	</h6>
 	{% if params.changelog_rows %}
-	<div class="table-responsive">
+	<p class="text-muted small mb-2 d-none d-md-block">
+		В журнале фиксируется новое значение поля. Блок «История действий» надёжнее для аудита.
+	</p>
+	<div class="table-responsive kolesa-history-desktop">
 		<table class="table table-sm align-middle mb-0">
 			<thead>
 				<tr class="text-muted small">
@@ -72,6 +91,25 @@
 				{% endfor %}
 			</tbody>
 		</table>
+	</div>
+	<div class="kolesa-history-mobile">
+		{% for row in params.changelog_rows %}
+		<div class="kolesa-history-card">
+			<div class="meta">
+				{% if row.when %}{{ row.when|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+				· {{ row.user }} · {{ row.action }}
+			</div>
+			{% if row.changes %}
+			<ul class="mb-0 ps-3 small">
+				{% for ch in row.changes %}
+					<li>{{ ch.name }}: {{ ch.value }}</li>
+				{% endfor %}
+			</ul>
+			{% else %}
+			<div class="small text-muted">—</div>
+			{% endif %}
+		</div>
+		{% endfor %}
 	</div>
 	{% else %}
 	<p class="text-muted small mb-0">Записей журнала изменений нет.</p>

@@ -4143,7 +4143,7 @@ class RegInteractivOcenkaKolesaReception(ChangeloggableMixin, models.Model):
     psd_disk            = models.ForeignKey(RefPsdDisk, on_delete=models.PROTECT, null=True, blank=True, verbose_name="PSD дисков 2")
     count_disk          = models.IntegerField('Количество дисков 2', default=0, null=True, blank=True)
     count_tyre          = models.IntegerField('Количество резины 2', default=0, null=True, blank=True)
-    kolesa_estimation   = models.IntegerField('Количество дисков 2', default=10, null=False, blank=False)
+    kolesa_estimation   = models.IntegerField('Признак второго комплекта колёс', default=10, null=False, blank=False)
     send_wheels_ib      = models.BooleanField("Отправлена информация в базу бу колес", default = False, null=True, blank=True)
     send_wheels_ib_date = models.DateTimeField('Дата документа приёмки в базе БУ колёс', blank=True, null=True)
     send_wheels_ib_number = models.CharField('Номер документа приёмки в базе БУ колёс', max_length=64, default='', blank=True)

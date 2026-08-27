@@ -3,7 +3,7 @@
   Ожидает: params.reception, params.route_sheet_attached
 {% endcomment %}
 
-<div class="portal-panel mb-3">
+<div class="portal-panel mb-3" id="kolesa-route-sheet">
 	<h6 class="mb-3 padding-portal">
 		<span class="icon-mbri-file me-2"></span>Подписанный маршрутный лист
 		{% if params.route_sheet_attached %}
@@ -14,42 +14,98 @@
 	</h6>
 
 	{% if params.route_sheet_attached %}
-	<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-		<div>
-			<a href="{{ params.reception.get_route_sheet_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
-				Открыть файл
-			</a>
-			{% if params.reception.route_sheet_attached_at %}
-				<small class="text-muted ms-2">
-					{{ params.reception.route_sheet_attached_at|date:"d.m.Y H:i" }}
-					{% if params.reception.route_sheet_attached_by %}
-						· {{ params.reception.route_sheet_attached_by.get_full_name|default:params.reception.route_sheet_attached_by.username }}
-					{% endif %}
-				</small>
-			{% endif %}
-		</div>
+	<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+		<a href="{{ params.reception.get_route_sheet_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+			Открыть файл
+		</a>
+		{% if request.user.is_superuser %}
 		<form method="post" class="d-inline" onsubmit="return confirm('Удалить подписанный маршрутный лист?');">
 			{% csrf_token %}
 			<input type="hidden" name="action" value="delete_route_sheet">
 			<button type="submit" class="btn btn-outline-danger btn-sm">Удалить</button>
 		</form>
+		{% endif %}
+		{% if params.reception.route_sheet_attached_at %}
+		<small class="text-muted w-100">
+			{{ params.reception.route_sheet_attached_at|date:"d.m.Y H:i" }}
+			{% if params.reception.route_sheet_attached_by %}
+				· {{ params.reception.route_sheet_attached_by.get_full_name|default:params.reception.route_sheet_attached_by.username }}
+			{% endif %}
+		</small>
+		{% endif %}
 	</div>
 	{% endif %}
 
-	<form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+	<form method="post" enctype="multipart/form-data" id="kolesaRouteSheetForm" class="row g-2 align-items-end">
 		{% csrf_token %}
 		<input type="hidden" name="action" value="upload_route_sheet">
-		<div class="col-12 col-md-8">
-			<label class="form-label small text-muted mb-1">
+		<div class="col-12">
+			<label class="form-label small text-muted mb-2">
 				{% if params.route_sheet_attached %}Заменить файл{% else %}Прикрепить подписанный МЛ{% endif %}
-				(PDF или изображение)
+				(PDF или фото)
 			</label>
-			<input type="file" class="form-control" name="route_sheet" accept=".pdf,image/*,.heic" required>
+			<input type="file" id="kolesaRouteCamera" accept="image/*" capture="environment" style="display: none;">
+			<input type="file" id="kolesaRouteFile" name="route_sheet" accept=".pdf,image/*,.heic" style="display: none;">
+			<div class="d-flex flex-wrap gap-2 mb-2">
+				<label for="kolesaRouteCamera" class="btn btn-outline-primary btn-sm flex-grow-1 flex-md-grow-0">
+					<span class="icon-mbri-mobile me-1"></span>Сфотографировать
+				</label>
+				<label for="kolesaRouteFile" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+					<span class="icon-mbri-file me-1"></span>Файл / галерея
+				</label>
+			</div>
+			<div id="kolesaRouteHint" class="small text-muted mb-2"></div>
 		</div>
 		<div class="col-12 col-md-4">
-			<button type="submit" class="btn btn-success w-100">
+			<button type="submit" class="btn btn-success w-100" id="kolesaRouteSubmit" disabled>
 				<span class="icon-mbri-upload me-1"></span>Сохранить МЛ
 			</button>
 		</div>
 	</form>
 </div>
+<script>
+(function () {
+	var camera = document.getElementById('kolesaRouteCamera');
+	var file = document.getElementById('kolesaRouteFile');
+	var hint = document.getElementById('kolesaRouteHint');
+	var submit = document.getElementById('kolesaRouteSubmit');
+	var form = document.getElementById('kolesaRouteSheetForm');
+	if (!camera || !file || !form) return;
+
+	function setFileFromInput(src) {
+		if (!src.files || !src.files.length) return;
+		try {
+			var dt = new DataTransfer();
+			dt.items.add(src.files[0]);
+			file.files = dt.files;
+			file.setAttribute('name', 'route_sheet');
+			camera.removeAttribute('name');
+		} catch (e) {
+			file.removeAttribute('name');
+			src.setAttribute('name', 'route_sheet');
+		}
+		hint.textContent = 'Выбрано: ' + (src.files[0].name || 'фото');
+		submit.disabled = false;
+	}
+
+	camera.addEventListener('change', function () { setFileFromInput(camera); });
+	file.addEventListener('change', function () {
+		if (file.files && file.files.length) {
+			hint.textContent = 'Выбрано: ' + file.files[0].name;
+			submit.disabled = false;
+			file.setAttribute('name', 'route_sheet');
+			camera.removeAttribute('name');
+		}
+	});
+
+	form.addEventListener('submit', function (e) {
+		var hasFile = (file.files && file.files.length) || (camera.files && camera.files.length && camera.getAttribute('name') === 'route_sheet');
+		if (!hasFile) {
+			e.preventDefault();
+			hint.textContent = 'Выберите файл или сфотографируйте МЛ';
+			hint.classList.add('text-danger');
+		}
+	});
+})();
+</script>
+

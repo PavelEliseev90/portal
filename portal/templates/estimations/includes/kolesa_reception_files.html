@@ -3,7 +3,7 @@
   Ожидает: params.reception, params.files, params.sent_to_wheels
 {% endcomment %}
 
-<div class="portal-panel">
+<div class="portal-panel mb-3" id="kolesa-photos">
 	<h6 class="mb-3 padding-portal">
 		<span class="icon-mbri-photo me-2"></span>Фото приёмки
 		<span class="text-muted fw-normal ms-1">— {{ params.files|length }}</span>
@@ -15,24 +15,26 @@
 	</div>
 	{% endif %}
 
-	<div class="portal-panel mb-4" style="background: #f8f9fa; border: 2px dashed #dee2e6;">
+	<div class="portal-panel mb-3" style="background: #f8f9fa; border: 2px dashed #dee2e6;">
 		<form method="post" enctype="multipart/form-data" id="kolesaUploadForm">
 			{% csrf_token %}
 			<input type="hidden" name="action" value="upload">
-			<div class="text-center py-4">
-				<div class="mb-3">
-					<span class="icon-mbri-upload" style="font-size: 3rem; color: #8ea1ba;"></span>
-				</div>
-				<h5 class="mb-3">Загрузить фото</h5>
-				<div class="mb-3">
-					<input type="file" class="form-control" id="kolesaPhotosInput" name="photos" multiple accept="image/*" style="display: none;">
-					<label for="kolesaPhotosInput" class="btn btn-primary btn-lg">
-						<span class="icon-mbri-photo me-2"></span>Выбрать файлы
+			<div class="text-center py-3 px-2">
+				<h5 class="mb-2">Загрузить фото</h5>
+				<p class="text-muted small mb-3">Камера или несколько снимков из галереи</p>
+				<input type="file" class="form-control" id="kolesaPhotosCamera" name="photos" accept="image/*" capture="environment" style="display: none;">
+				<input type="file" class="form-control" id="kolesaPhotosGallery" name="photos" multiple accept="image/*" style="display: none;">
+				<div class="d-flex flex-wrap justify-content-center gap-2">
+					<label for="kolesaPhotosCamera" class="btn btn-primary">
+						<span class="icon-mbri-mobile me-1"></span>Камера
+					</label>
+					<label for="kolesaPhotosGallery" class="btn btn-outline-primary">
+						<span class="icon-mbri-photo me-1"></span>Галерея
 					</label>
 				</div>
-				<div id="kolesaSelectedFiles" class="text-muted small"></div>
+				<div id="kolesaSelectedFiles" class="text-muted small mt-2"></div>
 				<div class="mt-3">
-					<button type="submit" class="btn btn-success" id="kolesaUploadBtn" style="display: none;">
+					<button type="submit" class="btn btn-success w-100 w-md-auto" id="kolesaUploadBtn" style="display: none; max-width: 20rem; margin: 0 auto;">
 						<span class="icon-mbri-upload me-2"></span>Загрузить
 					</button>
 				</div>
@@ -40,7 +42,7 @@
 		</form>
 	</div>
 
-	<div class="row g-3">
+	<div class="row g-2 g-md-3">
 		{% for photo in params.files %}
 			<div class="col-6 col-md-4 col-lg-3">
 				<div class="kolesa-photo-card">
@@ -62,14 +64,13 @@
 						{% endif %}
 					</div>
 					<div class="p-2">
-						<small class="text-muted d-block">{{ photo.name|truncatewords:6|default:"Фото" }}</small>
+						<small class="text-muted d-block text-truncate">{{ photo.name|default:"Фото" }}</small>
 						<small class="text-muted">{% if photo.date %}{{ photo.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
 					</div>
 				</div>
 			</div>
 		{% empty %}
-			<div class="col-12 text-center py-5 text-muted">
-				<span class="icon-mbri-photo" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem;"></span>
+			<div class="col-12 text-center py-4 text-muted">
 				<p class="mb-0">Нет прикреплённых файлов</p>
 			</div>
 		{% endfor %}
@@ -96,30 +97,46 @@
 }
 .kolesa-photo-card-overlay {
 	position: absolute;
-	top: 0.5rem;
-	right: 0.5rem;
-	opacity: 0;
-	transition: opacity 0.2s;
-}
-.kolesa-photo-card:hover .kolesa-photo-card-overlay {
+	top: 0.4rem;
+	right: 0.4rem;
 	opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+	.kolesa-photo-card-overlay { opacity: 0; transition: opacity 0.2s; }
+	.kolesa-photo-card:hover .kolesa-photo-card-overlay { opacity: 1; }
 }
 </style>
 
 <script>
 (function() {
-	var input = document.getElementById('kolesaPhotosInput');
+	var camera = document.getElementById('kolesaPhotosCamera');
+	var gallery = document.getElementById('kolesaPhotosGallery');
 	var hint = document.getElementById('kolesaSelectedFiles');
 	var btn = document.getElementById('kolesaUploadBtn');
-	if (!input) return;
-	input.addEventListener('change', function() {
-		if (input.files.length > 0) {
-			hint.textContent = 'Выбрано файлов: ' + input.files.length;
+	var form = document.getElementById('kolesaUploadForm');
+	if (!camera || !gallery || !form) return;
+
+	function sync(active, other) {
+		other.value = '';
+		if (active.files && active.files.length > 0) {
+			hint.textContent = 'Выбрано файлов: ' + active.files.length;
 			btn.style.display = 'inline-block';
+			other.removeAttribute('name');
+			active.setAttribute('name', 'photos');
 		} else {
 			hint.textContent = '';
 			btn.style.display = 'none';
+			camera.setAttribute('name', 'photos');
+			gallery.setAttribute('name', 'photos');
 		}
+	}
+
+	camera.addEventListener('change', function() { sync(camera, gallery); });
+	gallery.addEventListener('change', function() { sync(gallery, camera); });
+
+	form.addEventListener('submit', function() {
+		if (camera.files && camera.files.length) gallery.removeAttribute('name');
+		else if (gallery.files && gallery.files.length) camera.removeAttribute('name');
 	});
 })();
 </script>

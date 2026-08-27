@@ -1,41 +1,63 @@
-class Singleton(object):
-  """Синглтон"""
-  def __new__(cls):
-    if not hasattr(cls, 'instance'):
-      cls.instance = super(Singleton, cls).__new__(cls)
-    return cls.instance
+import threading
 
-class LoggedInUser(Singleton):
-  """Синглтон для хранения пользователя,
-  от имени которого выполняется запрос"""
-  __metaclass__ = Singleton
-  request = None
-  user = None
-  address = None
+
+_thread_local = threading.local()
+
+
+class LoggedInUser(object):
+  """
+  Пользователь текущего HTTP-запроса.
+
+  Данные хранятся в threading.local (не в процессном синглтоне),
+  иначе при параллельных запросах в одном воркере в ChangeLog
+  попадала чужая учётка.
+  """
+
   def set_data(self, request):
-    self.request = id(request)
-    if request.user.is_authenticated:
-      self.user = request.user
-      self.address = request.META.get('REMOTE_ADDR')
+    _thread_local.request = id(request)
+    if getattr(request, 'user', None) is not None and request.user.is_authenticated:
+      _thread_local.user = request.user
+      _thread_local.address = request.META.get('REMOTE_ADDR')
+    else:
+      _thread_local.user = None
+      _thread_local.address = None
+
+  def clear(self):
+    _thread_local.request = None
+    _thread_local.user = None
+    _thread_local.address = None
+
+  @property
+  def request(self):
+    return getattr(_thread_local, 'request', None)
+
   @property
   def current_user(self):
-    return self.user
+    return getattr(_thread_local, 'user', None)
+
+  @property
+  def address(self):
+    return getattr(_thread_local, 'address', None)
+
   @property
   def have_user(self):
-    return not self.user is None
+    return self.current_user is not None
+
 
 class LoggedInUserMiddleware(object):
   def __init__(self, get_response):
     self.get_response = get_response
+
   def __call__(self, request):
     """
-    Инициализирует синглтон LoggedInUser
+    Инициализирует LoggedInUser для текущего потока и очищает после ответа.
     """
     logged_in_user = LoggedInUser()
     logged_in_user.set_data(request)
-    response = self.get_response(request)
-    
-    return response
+    try:
+      return self.get_response(request)
+    finally:
+      logged_in_user.clear()
 
 
 def _should_log_pageview(request):
