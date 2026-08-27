@@ -16,6 +16,7 @@ from refs.models import RefUnit
 from .models import CalculatedCumulativeData, IndicatorKVP
 
 CUMULATIVE_SEND_BATCH_LIMIT = 200
+CUMULATIVE_FLAG_BATCH_LIMIT = 5000
 
 
 _AGREEMENT_DETAIL_FIELDS = (
@@ -281,6 +282,7 @@ def cumulative_list(request):
         'filtered_count': paginator.count,
         'unsent_count': unsent_count,
         'send_limit': CUMULATIVE_SEND_BATCH_LIMIT,
+        'flag_limit': CUMULATIVE_FLAG_BATCH_LIMIT,
         'send_results': send_results or [],
         'query_string': request.GET.urlencode(),
     }
@@ -393,6 +395,49 @@ def cumulative_send_1c_batch(request):
         )
     else:
         messages.warning(request, 'Нет неотправленных записей по текущему фильтру.')
+    return _cumulative_list_redirect(request)
+
+
+@login_required
+@require_POST
+def cumulative_set_send_1c_flag(request):
+    """
+    Массово проставить признак send_1c по текущему фильтру списка
+    (без реальной отправки/удаления в 1С).
+    """
+    action = (request.POST.get('action') or '').strip()
+    if action not in ('mark_sent', 'mark_unsent'):
+        messages.error(request, 'Неизвестное действие.')
+        return _cumulative_list_redirect(request)
+
+    filters = _list_filter_values(request)
+    qs = _filtered_cumulative_qs(filters)
+    total = qs.count()
+    if total == 0:
+        messages.warning(request, 'Нет записей по текущему фильтру.')
+        return _cumulative_list_redirect(request)
+    if total > CUMULATIVE_FLAG_BATCH_LIMIT:
+        messages.error(
+            request,
+            'Слишком много записей ({}). Сузьте фильтр (лимит {}).'.format(
+                total,
+                CUMULATIVE_FLAG_BATCH_LIMIT,
+            ),
+        )
+        return _cumulative_list_redirect(request)
+
+    new_value = action == 'mark_sent'
+    updated = qs.update(send_1c=new_value)
+    if new_value:
+        messages.success(
+            request,
+            'По текущему фильтру помечено как отправленные: {}.'.format(updated),
+        )
+    else:
+        messages.success(
+            request,
+            'По текущему фильтру помечено как не отправленные: {}.'.format(updated),
+        )
     return _cumulative_list_redirect(request)
 
 
