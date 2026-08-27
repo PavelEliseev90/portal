@@ -123,14 +123,35 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  width: 100%;
+  align-items: center;
+  width: auto;
+  flex: 0 0 auto;
 }
 .kolesa-actions-primary .btn,
 .kolesa-actions-primary form {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  width: auto;
 }
 .kolesa-actions-primary form .btn {
-  width: 100%;
+  width: auto;
+}
+.kolesa-reception-form {
+  max-width: 72rem;
+}
+.kolesa-reception-form .search-select,
+.kolesa-reception-form .form-floating > .form-control,
+.kolesa-reception-form .form-floating > .form-select,
+.kolesa-reception-form .select2-container {
+  max-width: 100%;
+}
+#kolesa-route-sheet .kolesa-route-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+#kolesa-route-sheet .kolesa-route-actions .btn {
+  width: auto;
 }
 .kolesa-to-top {
   position: fixed;
@@ -162,9 +183,22 @@
   .kolesa-actions-more .dropdown-menu {
     width: min(100vw - 2rem, 18rem);
   }
+  .kolesa-actions-primary {
+    width: 100%;
+  }
+  .kolesa-actions-primary .btn,
+  .kolesa-actions-primary form {
+    flex: 1 1 auto;
+  }
+  .kolesa-actions-primary form .btn {
+    width: 100%;
+  }
   .kolesa-metric-grid > [class*="col-"] {
     flex: 0 0 50%;
     max-width: 50%;
+  }
+  .kolesa-reception-form {
+    max-width: none;
   }
   .kolesa-reception-form .col-12.col-md-3,
   .kolesa-reception-form .col-12.col-md-6 {
@@ -188,10 +222,26 @@
     padding-left: 0.85rem;
     padding-right: 0.85rem;
   }
+  #kolesa-route-sheet .kolesa-route-actions .btn {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 @media (min-width: 768px) {
   .kolesa-history-mobile { display: none !important; }
   .kolesa-sticky-send { display: none !important; }
+  .portal-header.kolesa-detail-header {
+    align-items: flex-start;
+  }
+  .kolesa-metric-grid > [class*="col-"] > .portal-panel {
+    min-height: 4.75rem;
+  }
+}
+@media (min-width: 1200px) {
+  .kolesa-reception-form .col-12.col-md-3 {
+    flex: 0 0 20%;
+    max-width: 20%;
+  }
 }
 .kolesa-history-mobile { display: none; }
 .kolesa-history-card {
@@ -232,7 +282,7 @@
 	</div>
 	{% endif %}
 
-	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+	<div class="portal-header kolesa-detail-header d-flex flex-wrap justify-content-between align-items-start gap-2">
 		<div class="flex-grow-1" style="min-width: 0;">
 			<h2 class="mb-1 kolesa-detail-title">Приёмка 2КК · ID {{ params.reception.id }}</h2>
 			<p class="text-muted mb-0">{{ params.car_label }}</p>
@@ -244,7 +294,7 @@
 			{% endif %}
 		</div>
 		<div class="kolesa-actions-primary">
-			<form method="post" class="d-none d-md-inline" onsubmit="return confirm('{% if params.sent_to_wheels %}Повторно отправить приёмку 2КК в базу БУ колёс?{% else %}Отправить приёмку 2КК в базу БУ колёс?{% endif %}');">
+			<form method="post" class="d-none d-md-inline-block mb-0" onsubmit="return confirm('{% if params.sent_to_wheels %}Повторно отправить приёмку 2КК в базу БУ колёс?{% else %}Отправить приёмку 2КК в базу БУ колёс?{% endif %}');">
 				{% csrf_token %}
 				<input type="hidden" name="action" value="send_to_1c">
 				<button type="submit" class="btn {% if params.sent_to_wheels %}btn-warning{% else %}btn-primary{% endif %} btn-sm">
@@ -529,7 +579,7 @@
 				</div>
 			</div>
 
-			<div class="col-12 col-md-6">
+			<div class="col-12 col-md-3">
 				<div class="form-floating mb-3">
 					<input type="number" class="form-control form-control-sm kors-form-control" id="count_disk" name="count_disk"
 						value="{{ params.reception.count_disk|default:0 }}" placeholder="0">
@@ -537,7 +587,7 @@
 				</div>
 			</div>
 
-			<div class="col-12 col-md-6">
+			<div class="col-12 col-md-3">
 				<div class="form-floating mb-3">
 					<input type="number" class="form-control form-control-sm kors-form-control" id="count_tyre" name="count_tyre"
 						value="{{ params.reception.count_tyre|default:0 }}" placeholder="0">

@@ -36,31 +36,27 @@
 	</div>
 	{% endif %}
 
-	<form method="post" enctype="multipart/form-data" id="kolesaRouteSheetForm" class="row g-2 align-items-end">
+	<form method="post" enctype="multipart/form-data" id="kolesaRouteSheetForm">
 		{% csrf_token %}
 		<input type="hidden" name="action" value="upload_route_sheet">
-		<div class="col-12">
-			<label class="form-label small text-muted mb-2">
-				{% if params.route_sheet_attached %}Заменить файл{% else %}Прикрепить подписанный МЛ{% endif %}
-				(PDF или фото)
+		<label class="form-label small text-muted mb-2">
+			{% if params.route_sheet_attached %}Заменить файл{% else %}Прикрепить подписанный МЛ{% endif %}
+			(PDF или фото)
+		</label>
+		<input type="file" id="kolesaRouteCamera" accept="image/*" capture="environment" style="display: none;">
+		<input type="file" id="kolesaRouteFile" name="route_sheet" accept=".pdf,image/*,.heic" style="display: none;">
+		<div class="kolesa-route-actions mb-2">
+			<label for="kolesaRouteCamera" class="btn btn-outline-primary btn-sm">
+				<span class="icon-mbri-mobile me-1"></span>Сфотографировать
 			</label>
-			<input type="file" id="kolesaRouteCamera" accept="image/*" capture="environment" style="display: none;">
-			<input type="file" id="kolesaRouteFile" name="route_sheet" accept=".pdf,image/*,.heic" style="display: none;">
-			<div class="d-flex flex-wrap gap-2 mb-2">
-				<label for="kolesaRouteCamera" class="btn btn-outline-primary btn-sm flex-grow-1 flex-md-grow-0">
-					<span class="icon-mbri-mobile me-1"></span>Сфотографировать
-				</label>
-				<label for="kolesaRouteFile" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
-					<span class="icon-mbri-file me-1"></span>Файл / галерея
-				</label>
-			</div>
-			<div id="kolesaRouteHint" class="small text-muted mb-2"></div>
-		</div>
-		<div class="col-12 col-md-4">
-			<button type="submit" class="btn btn-success w-100" id="kolesaRouteSubmit" disabled>
+			<label for="kolesaRouteFile" class="btn btn-outline-secondary btn-sm">
+				<span class="icon-mbri-file me-1"></span>Файл / галерея
+			</label>
+			<button type="submit" class="btn btn-success btn-sm" id="kolesaRouteSubmit" disabled>
 				<span class="icon-mbri-upload me-1"></span>Сохранить МЛ
 			</button>
 		</div>
+		<div id="kolesaRouteHint" class="small text-muted"></div>
 	</form>
 </div>
 <script>
