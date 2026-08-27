@@ -275,7 +275,13 @@ def cumulative_list(request):
             'agreement_nomer': filters['agreement_nomer'],
             'vin': filters['vin'],
             'unit': filters['unit_ids'],
+            'unit_ids_list': [
+                int(v) for v in filters['unit_ids'] if str(v).strip().isdigit()
+            ],
             'indicator': filters['indicator_ids'],
+            'indicator_ids_list': [
+                int(v) for v in filters['indicator_ids'] if str(v).strip().isdigit()
+            ],
             'send_1c': filters['send_1c'],
             'target': filters['target'],
         },

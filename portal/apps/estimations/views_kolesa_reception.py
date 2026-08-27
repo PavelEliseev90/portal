@@ -548,6 +548,9 @@ def kolesa_reception_list(request):
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
             'unit': request.GET.getlist('unit'),
+            'unit_ids_list': [
+                int(v) for v in request.GET.getlist('unit') if str(v).strip().isdigit()
+            ],
             'status': (
                 request.GET.get('status', '')
                 if 'status' in request.GET

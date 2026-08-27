@@ -1,0 +1,42 @@
+{% comment %}
+  Универсальный мультивыбор с поиском (как на calculations_list).
+
+  Параметры:
+    prefix        — уникальный префикс id (обязательно), напр. "sbUnit"
+    field_name    — name чекбоксов, напр. "unit" / "unit_ids"
+    label         — подпись поля
+    placeholder   — плейсхолдер поиска (по умолчанию «Поиск…»)
+    items         — queryset/список объектов с .id/.pk и .name
+    selected_ids  — список int выбранных id
+    show_city     — если True, дописывает (город)
+    empty_text    — текст если список пуст
+    hint          — подсказка под полем
+    col_class     — классы колонки (по умолчанию без обёртки col; передайте если нужно)
+{% endcomment %}
+{% if col_class %}<div class="{{ col_class }}">{% endif %}
+<div data-portal-mcf="{{ prefix }}">
+	{% if label %}
+	<label class="form-label small text-muted mb-1">{{ label }}</label>
+	{% endif %}
+	<div class="position-relative">
+		<input type="text" class="form-control" id="{{ prefix }}Search"
+			placeholder="{{ placeholder|default:'Поиск…' }}" autocomplete="off">
+		<div class="list-group position-absolute w-100 mt-1" id="{{ prefix }}Dropdown"
+			style="max-height: 220px; overflow-y: auto; z-index: 1050; display: none; background: #fff; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,.08);">
+			{% for item in items %}
+			{% with pk=item.pk|default:item.id %}
+			<label class="list-group-item" style="margin-bottom: 0; cursor: pointer;">
+				<input class="form-check-input me-2" type="checkbox" name="{{ field_name }}" value="{{ pk }}"
+					{% if pk in selected_ids %}checked{% endif %}>
+				{{ item.name }}{% if show_city and item.city %} ({{ item.city.name }}){% endif %}
+			</label>
+			{% endwith %}
+			{% empty %}
+			<span class="list-group-item text-muted small">{{ empty_text|default:'Нет вариантов' }}</span>
+			{% endfor %}
+		</div>
+	</div>
+	<div id="{{ prefix }}Selected" class="mt-2"></div>
+	{% if hint %}<small class="text-muted">{{ hint }}</small>{% endif %}
+</div>
+{% if col_class %}</div>{% endif %}

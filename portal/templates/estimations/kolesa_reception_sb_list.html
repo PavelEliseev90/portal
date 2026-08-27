@@ -24,11 +24,11 @@
 	</div>
 
 	<div class="portal-panel mb-3">
-		<form method="get" class="row g-3 align-items-end">
+		<form method="get" class="row g-3 align-items-end" id="sbKolesaFilters">
 			<div class="col-12 col-md-6 col-lg-2">
-				<label class="form-label small text-muted mb-1">VIN / кузов / № ЛО</label>
+				<label class="form-label small text-muted mb-1">VIN / № ЛО / ID</label>
 				<input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}"
-					placeholder="VIN, кузов или № листа оценки" autocomplete="off">
+					placeholder="VIN, № ЛО или ID приёмки" autocomplete="off">
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">№ док. БУ шин</label>
@@ -44,12 +44,7 @@
 				<input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
 			</div>
 			<div class="col-12 col-md-6 col-lg-3">
-				<label class="form-label small text-muted mb-1">Подразделение</label>
-				<select class="form-select" id="unit_ids_sb" name="unit" multiple>
-					{% for unit in params.units %}
-						<option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filters.unit %}selected{% endif %}>{{ unit.name }}</option>
-					{% endfor %}
-				</select>
+				{% include 'includes/portal_multi_checkbox_filter.html' with prefix='sbUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filters.unit_ids_list empty_text='Нет подразделений' %}
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">Фото</label>
@@ -83,27 +78,13 @@
 		</form>
 	</div>
 
-	<script>
-		$(document).ready(function() {
-			var $u = $('#unit_ids_sb');
-			if ($u.length && !$u.hasClass('select2-hidden-accessible')) {
-				$u.select2({
-					language: 'ru',
-					placeholder: 'Выберите подразделения',
-					allowClear: true,
-					width: '100%',
-					dropdownAutoWidth: true
-				});
-			}
-		});
-	</script>
-
 	<div class="portal-panel no-padding">
 		<div class="table-responsive">
 			<table class="table table-hover align-middle mb-0">
 				<thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
 					<tr>
-						<th class="text-white border-0 ps-3">Дата</th>
+						<th class="text-white border-0 ps-3">ID</th>
+						<th class="text-white border-0">Дата</th>
 						<th class="text-white border-0">Авто / VIN</th>
 						<th class="text-white border-0">№ ЛО</th>
 						<th class="text-white border-0">Подразделение</th>
@@ -117,7 +98,8 @@
 				<tbody>
 					{% for row in params.rows %}
 						<tr>
-							<td class="ps-3">
+							<td class="ps-3 text-muted">{{ row.reception.id }}</td>
+							<td>
 								{% if row.reception.date %}{{ row.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
 								<br><small class="text-muted">{{ row.author }}</small>
 							</td>
@@ -161,7 +143,7 @@
 						</tr>
 					{% empty %}
 						<tr>
-							<td colspan="9" class="text-center text-muted py-5">Нет приёмок по выбранным фильтрам</td>
+							<td colspan="10" class="text-center text-muted py-5">Нет приёмок по выбранным фильтрам</td>
 						</tr>
 					{% endfor %}
 				</tbody>

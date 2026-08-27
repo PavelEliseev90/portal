@@ -1,0 +1,30 @@
+---
+description: Мультивыбор фильтров (подразделения и списки) — единый UX
+globs: templates/**/*.html
+alwaysApply: false
+---
+
+# Мультивыбор в фильтрах списков
+
+Для множественного выбора (подразделения, показатели, марки и т.п.) **не использовать** `<select multiple>` + Select2.
+
+Использовать общий компонент:
+
+```django
+{% include 'includes/portal_multi_checkbox_filter.html' with
+  prefix='uniqPrefix'
+  field_name='unit'
+  label='Подразделения'
+  placeholder='Поиск по подразделениям...'
+  items=units
+  selected_ids=unit_ids_list
+  empty_text='Нет подразделений'
+%}
+```
+
+- `prefix` — уникальный на странице (ids: `{prefix}Search`, `{prefix}Dropdown`, `{prefix}Selected`)
+- `selected_ids` — список **int**, не строк
+- JS уже в `base_web.html`: `/static/js/portal_multi_checkbox_filter.js`
+- Опционально: `show_city=True`, `hint='...'`
+
+Паттерн: поиск + чекбоксы + бейджи выбранных (как на calculations_list / отчёте КП).

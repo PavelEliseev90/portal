@@ -45,13 +45,7 @@
 				<input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
 			</div>
 			<div class="col-12 col-md-6 col-lg-3">
-				<label class="form-label small text-muted mb-1">Подразделение</label>
-				<select class="form-select" id="unit_ids" name="unit" multiple>
-					{% for unit in params.units %}
-						<option value="{{ unit.id }}" {% if unit.id|stringformat:"s" in params.filters.unit %}selected{% endif %}>{{ unit.name }}</option>
-					{% endfor %}
-				</select>
-				<small class="text-muted">Подразделения ограничены «КорсАвто»</small>
+				{% include 'includes/portal_multi_checkbox_filter.html' with prefix='krUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filters.unit_ids_list hint='Подразделения ограничены «КорсАвто»' empty_text='Нет подразделений' %}
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">Статус оценки</label>
@@ -77,21 +71,6 @@
 			</div>
 		</form>
 	</div>
-
-	<script>
-		$(document).ready(function() {
-			var $u = $('#unit_ids');
-			if ($u.length && !$u.hasClass('select2-hidden-accessible')) {
-				$u.select2({
-					language: 'ru',
-					placeholder: 'Выберите подразделения',
-					allowClear: true,
-					width: '100%',
-					dropdownAutoWidth: true
-				});
-			}
-		});
-	</script>
 
 	<div class="portal-panel no-padding">
 		<div class="table-responsive">
