@@ -33,6 +33,50 @@ def _parse_date(value):
     return None
 
 
+def _resolve_reception_unit_name(reception, estimation=None):
+    """Подразделение: РЛ приёмки → РЛ оценки → РЛК-обёртка → лист оценки (DocLO)."""
+    estimation = estimation or getattr(reception, 'estimation', None)
+
+    if reception.rlk_id and reception.rlk and reception.rlk.unit_id and reception.rlk.unit:
+        return reception.rlk.unit.name
+
+    if estimation and estimation.rlk_id and estimation.rlk and estimation.rlk.unit_id and estimation.rlk.unit:
+        return estimation.rlk.unit.name
+
+    try:
+        from register.models import RegInteractivOcenkaRLK
+        rlk_id = reception.rlk_id or (estimation.rlk_id if estimation else None)
+        qs = RegInteractivOcenkaRLK.objects.select_related('unit')
+        if estimation and estimation.pk:
+            row = qs.filter(estimation_id=estimation.pk).first()
+            if row and row.unit_id and row.unit:
+                return row.unit.name
+        if rlk_id:
+            row = qs.filter(rlk_id=rlk_id).first()
+            if row and row.unit_id and row.unit:
+                return row.unit.name
+    except Exception:
+        pass
+
+    try:
+        from documents.models import DocLO
+        rlk_id = reception.rlk_id or (estimation.rlk_id if estimation else None)
+        if rlk_id:
+            lo = (
+                DocLO.objects
+                .filter(rlk_id=rlk_id)
+                .select_related('unit')
+                .order_by('-dataTime')
+                .first()
+            )
+            if lo and lo.unit_id and lo.unit:
+                return lo.unit.name
+    except Exception:
+        pass
+
+    return '—'
+
+
 def _estimation_car_label(estimation):
     if estimation.modification_id and estimation.modification:
         mod = estimation.modification
@@ -241,6 +285,36 @@ def _ref_display_name(obj):
     return str(obj)
 
 
+_CHANGELOG_FIELD_LABELS = {
+    'kolesa_estimation': 'Признак второго комплекта колёс',
+    'count_disk': 'Количество дисков 2',
+    'count_tyre': 'Количество резины 2',
+    'mark_tyre': 'Марка резины 2',
+    'model_tyre': 'Модель резины 2',
+    'width_tyre': 'Ширина резины 2',
+    'profil_tyre': 'Профиль резины 2',
+    'radius': 'Радиус колес 2',
+    'sezon': 'Сезон колес 2',
+    'disk_type': 'Тип диска 2',
+    'model_disk': 'Модель дисков 2',
+    'et_disk': 'ET дисков 2',
+    'dia_disk': 'DIA дисков 2',
+    'psd_disk': 'PSD дисков 2',
+    'send_wheels_ib': 'Отправлена информация в базу БУ колёс',
+    'send_wheels_ib_date': 'Дата документа приёмки в базе БУ колёс',
+    'send_wheels_ib_number': 'Номер документа приёмки в базе БУ колёс',
+    'send_wheels_ib_uin': 'УИН документа приёмки в базе БУ колёс',
+    'route_sheet_attached': 'Маршрутный лист прикреплён',
+    'route_sheet_attached_at': 'Дата прикрепления маршрутного листа',
+    'route_sheet_attached_by': 'Кто прикрепил маршрутный лист',
+    'route_sheet_file': 'Подписанный маршрутный лист',
+    'user': 'Автор приёмки',
+    'date': 'Дата приёмки',
+    'rlk': 'Рабочий лист',
+    'estimation': 'Оценка',
+}
+
+
 def _format_reception_field_value(field_name, value, cache=None):
     """ID справочников → наименование; пустые → —."""
     if value in (None, ''):
@@ -255,10 +329,18 @@ def _format_reception_field_value(field_name, value, cache=None):
         except (TypeError, ValueError):
             return str(value)
 
+    if isinstance(value, bool):
+        return 'Да' if value else 'Нет'
+
     try:
         field = RegInteractivOcenkaKolesaReception._meta.get_field(name)
     except Exception:
         return str(value)
+
+    # BooleanField может прийти как 0/1
+    from django.db.models import BooleanField
+    if isinstance(field, BooleanField):
+        return 'Да' if value in (True, 1, '1', 'true', 'True') else 'Нет'
 
     if getattr(field, 'is_relation', False) and not getattr(field, 'many_to_many', False):
         related_model = field.related_model
@@ -309,16 +391,13 @@ def _changelog_changes_with_names(log):
     data = log.data or {}
     if not isinstance(data, dict):
         return changes
-    try:
-        model = RegInteractivOcenkaKolesaReception
-    except Exception:
-        return []
     for field_name, raw_value in data.items():
-        try:
-            label = model._meta.get_field(field_name).verbose_name
-        except Exception:
-            label = field_name
-        # не показываем служебные/файловые поля как «сырой» путь без нужды
+        label = _CHANGELOG_FIELD_LABELS.get(field_name)
+        if not label:
+            try:
+                label = RegInteractivOcenkaKolesaReception._meta.get_field(field_name).verbose_name
+            except Exception:
+                label = field_name
         if field_name in ('route_sheet_file',):
             display = 'файл прикреплён' if raw_value else '—'
         else:
@@ -334,6 +413,9 @@ def handle_kolesa_reception_route_sheet_post(request, reception):
         return False
 
     if action == 'delete_route_sheet':
+        if not request.user.is_superuser:
+            messages.error(request, 'Удаление маршрутного листа доступно только суперпользователю')
+            return True
         if reception.route_sheet_file:
             reception.route_sheet_file.delete(save=False)
         reception.route_sheet_file = None
@@ -629,15 +711,11 @@ def kolesa_reception_detail(request, reception_id):
                 messages.success(request, 'Признак отправки в базу БУ колёс сброшен')
             return HttpResponseRedirect(request.path)
 
-        # Отправка в базу БУ колёс (1С)
+        # Отправка / переотправка в базу БУ колёс (1С)
         if action == 'send_to_1c':
-            if sent:
-                messages.warning(request, 'Приёмка уже отправлена в базу БУ колёс. Повторная отправка запрещена.')
-                return HttpResponseRedirect(request.path)
-
             from task_manager.views import send_kolesa_reception_to_1c
 
-            had_prior_send = RegInteractivOcenkaKolesaReceptionEvent.objects.filter(
+            is_resend = bool(sent) or RegInteractivOcenkaKolesaReceptionEvent.objects.filter(
                 reception=reception,
                 event_type__in=(
                     RegInteractivOcenkaKolesaReceptionEvent.EVENT_SEND,
@@ -649,9 +727,11 @@ def kolesa_reception_detail(request, reception_id):
             if send_result.get('ok'):
                 doc = send_result.get('document') or {}
                 parts = [
-                    'Данные приёмки отправлены в базу БУ колёс (HTTP {}).'.format(
-                        send_result.get('status_code') or 200,
-                    )
+                    (
+                        'Данные приёмки повторно отправлены в базу БУ колёс (HTTP {}).'
+                        if is_resend
+                        else 'Данные приёмки отправлены в базу БУ колёс (HTTP {}).'
+                    ).format(send_result.get('status_code') or 200)
                 ]
                 if doc.get('number'):
                     parts.append('№ {}'.format(doc['number']))
@@ -661,7 +741,7 @@ def kolesa_reception_detail(request, reception_id):
                     parts.append('УИН {}'.format(doc['uin']))
                 event_type = (
                     RegInteractivOcenkaKolesaReceptionEvent.EVENT_RESEND
-                    if had_prior_send
+                    if is_resend
                     else RegInteractivOcenkaKolesaReceptionEvent.EVENT_SEND
                 )
                 log_kolesa_reception_event(
@@ -672,7 +752,7 @@ def kolesa_reception_detail(request, reception_id):
                     extra={
                         'number': doc.get('number') or '',
                         'uin': doc.get('uin') or '',
-                        'resend': had_prior_send,
+                        'resend': is_resend,
                     },
                 )
                 messages.success(request, ' · '.join(parts))
@@ -793,12 +873,8 @@ def kolesa_reception_detail(request, reception_id):
 
     send_payload = build_kolesa_reception_send_payload(reception, request=request)
 
-    # Подразделение из рабочего листа (DocRLK → unit)
-    unit_name = '—'
-    if reception.rlk_id and reception.rlk and reception.rlk.unit_id:
-        unit_name = reception.rlk.unit.name
-    elif estimation and estimation.rlk_id and estimation.rlk and estimation.rlk.unit_id:
-        unit_name = estimation.rlk.unit.name
+    # Подразделение: РЛ → оценка → DocLO
+    unit_name = _resolve_reception_unit_name(reception, estimation)
 
     author_name = '—'
     if reception.user_id and reception.user:
@@ -806,6 +882,8 @@ def kolesa_reception_detail(request, reception_id):
         author_name = full or reception.user.username or '—'
 
     events, changelog_rows = get_kolesa_reception_history(reception)
+    profile = getattr(request.user, 'profiles', None)
+    is_user_sb = bool(getattr(profile, 'user_sb', False))
 
     params = {
         'reception': reception,
@@ -827,8 +905,12 @@ def kolesa_reception_detail(request, reception_id):
         'psd_disks': psd_disks,
         'send_payload': send_payload,
         'events': events,
+        'events_count': len(events),
         'changelog_rows': changelog_rows,
+        'changelog_count': len(changelog_rows),
         'route_sheet_attached': bool(reception.route_sheet_attached and reception.route_sheet_file),
+        'is_user_sb': is_user_sb,
+        'can_see_sb_list': bool(request.user.is_superuser or is_user_sb),
     }
     return render(request, 'estimations/kolesa_reception_detail.html', {'params': params})
 

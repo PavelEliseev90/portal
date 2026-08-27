@@ -5,21 +5,29 @@
 {% block title_navbar %} — 2КК СБ {% endblock %}
 
 {% block content %}
+<style>
+@media (max-width: 767.98px) {
+  .portal-page { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .kolesa-sb-title { font-size: 1.2rem; line-height: 1.3; }
+  #sbKolesaFilters .btn { min-height: 2.75rem; }
+  .kolesa-sb-open { min-height: 2.35rem; min-width: 4.5rem; }
+}
+</style>
 <div class="portal-page">
 	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
 		<div>
-			<h2>Второй комплект колёс — служба безопасности</h2>
+			<h2 class="kolesa-sb-title">Второй комплект колёс — служба безопасности</h2>
 			<p class="text-muted mb-0">
 				Существующие приёмки 2КК: фото, маршрутный лист, отправка в БУ шин.
 				<span class="ms-1">Всего: {{ params.total_count }}</span>
 			</p>
 		</div>
-		<div class="d-flex gap-2 flex-wrap">
-			<a href="?{% url_replace export='xlsx' %}" class="btn btn-outline-success btn-sm">
+		<div class="d-flex gap-2 flex-wrap w-100 w-md-auto">
+			<a href="?{% url_replace export='xlsx' %}" class="btn btn-outline-success btn-sm flex-grow-1 flex-md-grow-0">
 				<span class="bi bi-file-earmark-excel"></span> Excel
 			</a>
-			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm">Склад (приёмка)</a>
-			<a href="/estimations/kolesa-reception/help/" class="btn btn-outline-secondary btn-sm">Инструкция</a>
+			<a href="/estimations/kolesa-reception/" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">Склад</a>
+			<a href="/estimations/kolesa-reception/help/" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">Инструкция</a>
 		</div>
 	</div>
 
@@ -84,13 +92,13 @@
 				<thead style="background: linear-gradient(135deg, #002a5a 0%, #00509d 100%); color: #fff;">
 					<tr>
 						<th class="text-white border-0 ps-3">ID</th>
-						<th class="text-white border-0">Дата</th>
+						<th class="text-white border-0 d-none d-md-table-cell">Дата</th>
 						<th class="text-white border-0">Авто / VIN</th>
-						<th class="text-white border-0">№ ЛО</th>
-						<th class="text-white border-0">Подразделение</th>
+						<th class="text-white border-0 d-none d-lg-table-cell">№ ЛО</th>
+						<th class="text-white border-0 d-none d-lg-table-cell">Подразделение</th>
 						<th class="text-white border-0 text-center">Фото</th>
 						<th class="text-white border-0 text-center">МЛ</th>
-						<th class="text-white border-0">№ БУ шин</th>
+						<th class="text-white border-0 d-none d-md-table-cell">№ БУ шин</th>
 						<th class="text-white border-0 text-center">БУ</th>
 						<th class="text-white border-0 pe-3">Действие</th>
 					</tr>
@@ -99,7 +107,7 @@
 					{% for row in params.rows %}
 						<tr>
 							<td class="ps-3 text-muted">{{ row.reception.id }}</td>
-							<td>
+							<td class="d-none d-md-table-cell">
 								{% if row.reception.date %}{{ row.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
 								<br><small class="text-muted">{{ row.author }}</small>
 							</td>
@@ -107,8 +115,8 @@
 								<div class="fw-semibold">{{ row.car_label }}</div>
 								<small class="text-muted">{{ row.vin }}</small>
 							</td>
-							<td>{{ row.lo_number }}</td>
-							<td>{{ row.unit_name }}</td>
+							<td class="d-none d-lg-table-cell">{{ row.lo_number }}</td>
+							<td class="d-none d-lg-table-cell">{{ row.unit_name }}</td>
 							<td class="text-center">
 								{% if row.photos_count %}
 									<span class="badge bg-primary">{{ row.photos_count }}</span>
@@ -123,7 +131,7 @@
 									<span class="badge bg-warning text-dark">нет</span>
 								{% endif %}
 							</td>
-							<td>
+							<td class="d-none d-md-table-cell">
 								{% if row.wheels_number != '—' %}
 									{{ row.wheels_number }}
 								{% else %}
@@ -138,7 +146,7 @@
 								{% endif %}
 							</td>
 							<td class="pe-3">
-								<a href="/estimations/kolesa-reception/{{ row.reception.id }}/" class="btn btn-sm btn-outline-primary">Открыть</a>
+								<a href="/estimations/kolesa-reception/{{ row.reception.id }}/" class="btn btn-sm btn-outline-primary kolesa-sb-open">Открыть</a>
 							</td>
 						</tr>
 					{% empty %}
