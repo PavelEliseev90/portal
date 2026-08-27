@@ -23,6 +23,24 @@
         <button type="submit" class="btn btn-success btn-sm">Отправить неотправленные (до {{ send_limit }})</button>
       </form>
       {% endif %}
+      {% if filtered_count %}
+      <form method="post" action="{% url 'prices_car_bu:cumulative_set_send_1c_flag' %}{% if query_string %}?{{ query_string }}{% endif %}"
+            onsubmit="return confirm('Пометить как ОТПРАВЛЕННЫЕ все {{ filtered_count }} записей по текущему фильтру?\n\nВнимание: это только признак в портале, без отправки в 1С.');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_sent">
+        <button type="submit" class="btn btn-outline-success btn-sm" title="Только признак send_1c, без вызова 1С">
+          Пометить отправленными
+        </button>
+      </form>
+      <form method="post" action="{% url 'prices_car_bu:cumulative_set_send_1c_flag' %}{% if query_string %}?{{ query_string }}{% endif %}"
+            onsubmit="return confirm('Пометить как НЕ ОТПРАВЛЕННЫЕ все {{ filtered_count }} записей по текущему фильтру?\n\nВнимание: это только признак в портале, без удаления в 1С.');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_unsent">
+        <button type="submit" class="btn btn-outline-warning btn-sm" title="Только признак send_1c, без вызова 1С">
+          Пометить не отправленными
+        </button>
+      </form>
+      {% endif %}
     </div>
   </div>
 
