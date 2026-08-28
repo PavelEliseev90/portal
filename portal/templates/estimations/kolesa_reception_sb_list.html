@@ -18,7 +18,7 @@
 		<div>
 			<h2 class="kolesa-sb-title">Второй комплект колёс — служба безопасности</h2>
 			<p class="text-muted mb-0">
-				Существующие приёмки 2КК: фото, маршрутный лист, отправка в БУ шин.
+				Оценки со 2-м комплектом колёс и документы приёмки: фото, маршрутный лист, отправка в БУ шин.
 				<span class="ms-1">Всего: {{ params.total_count }}</span>
 			</p>
 		</div>
@@ -36,7 +36,7 @@
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">VIN / № ЛО / ID</label>
 				<input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}"
-					placeholder="VIN, № ЛО или ID приёмки" autocomplete="off">
+					placeholder="VIN, № ЛО, ID оценки или приёмки" autocomplete="off">
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">№ док. БУ шин</label>
@@ -53,6 +53,14 @@
 			</div>
 			<div class="col-12 col-md-6 col-lg-3">
 				{% include 'includes/portal_multi_checkbox_filter.html' with prefix='sbUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filters.unit_ids_list empty_text='Нет подразделений' %}
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Приёмка</label>
+				<select class="form-select" name="has_reception">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.has_reception == '1' %}selected{% endif %}>С документом</option>
+					<option value="0" {% if params.filters.has_reception == '0' %}selected{% endif %}>Без документа</option>
+				</select>
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
 				<label class="form-label small text-muted mb-1">Фото</label>
@@ -96,6 +104,7 @@
 						<th class="text-white border-0">Авто / VIN</th>
 						<th class="text-white border-0 d-none d-lg-table-cell">№ ЛО</th>
 						<th class="text-white border-0 d-none d-lg-table-cell">Подразделение</th>
+						<th class="text-white border-0 text-center d-none d-xl-table-cell">Приёмка</th>
 						<th class="text-white border-0 text-center">Фото</th>
 						<th class="text-white border-0 text-center">МЛ</th>
 						<th class="text-white border-0 d-none d-md-table-cell">№ БУ шин</th>
@@ -105,10 +114,13 @@
 				</thead>
 				<tbody>
 					{% for row in params.rows %}
-						<tr>
-							<td class="ps-3 text-muted">{{ row.reception.id }}</td>
+						<tr{% if not row.has_reception %} style="background-color: rgba(255, 193, 7, 0.08);"{% endif %}>
+							<td class="ps-3">
+								<div class="fw-semibold">{{ row.display_id }}</div>
+								<small class="text-muted">{{ row.display_id_label }}</small>
+							</td>
 							<td class="d-none d-md-table-cell">
-								{% if row.reception.date %}{{ row.reception.date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+								{% if row.sort_date %}{{ row.sort_date|date:"d.m.Y H:i" }}{% else %}—{% endif %}
 								<br><small class="text-muted">{{ row.author }}</small>
 							</td>
 							<td>
@@ -117,6 +129,13 @@
 							</td>
 							<td class="d-none d-lg-table-cell">{{ row.lo_number }}</td>
 							<td class="d-none d-lg-table-cell">{{ row.unit_name }}</td>
+							<td class="text-center d-none d-xl-table-cell">
+								{% if row.has_reception %}
+									<span class="badge bg-success">есть</span>
+								{% else %}
+									<span class="badge bg-warning text-dark">нет</span>
+								{% endif %}
+							</td>
 							<td class="text-center">
 								{% if row.photos_count %}
 									<span class="badge bg-primary">{{ row.photos_count }}</span>
@@ -146,12 +165,19 @@
 								{% endif %}
 							</td>
 							<td class="pe-3">
-								<a href="/estimations/kolesa-reception/{{ row.reception.id }}/" class="btn btn-sm btn-outline-primary kolesa-sb-open">Открыть</a>
+								<div class="d-flex flex-wrap gap-1">
+									{% if row.reception_url %}
+										<a href="{{ row.reception_url }}" class="btn btn-sm btn-outline-primary kolesa-sb-open">Приёмка</a>
+									{% endif %}
+									{% if row.estimation_url %}
+										<a href="{{ row.estimation_url }}" class="btn btn-sm btn-outline-secondary kolesa-sb-open">Оценка</a>
+									{% endif %}
+								</div>
 							</td>
 						</tr>
 					{% empty %}
 						<tr>
-							<td colspan="10" class="text-center text-muted py-5">Нет приёмок по выбранным фильтрам</td>
+							<td colspan="11" class="text-center text-muted py-5">Нет записей по выбранным фильтрам</td>
 						</tr>
 					{% endfor %}
 				</tbody>
