@@ -18,7 +18,7 @@
 		<div>
 			<h2 class="kolesa-sb-title">Второй комплект колёс — служба безопасности</h2>
 			<p class="text-muted mb-0">
-				Оценки со 2-м комплектом колёс и документы приёмки: фото, маршрутный лист, отправка в БУ шин.
+				Оценки с блоком колёс и документы приёмки 2КК: фото, маршрутный лист, отправка в БУ шин.
 				<span class="ms-1">Всего: {{ params.total_count }}</span>
 			</p>
 		</div>
@@ -55,11 +55,19 @@
 				{% include 'includes/portal_multi_checkbox_filter.html' with prefix='sbUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filters.unit_ids_list empty_text='Нет подразделений' %}
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
-				<label class="form-label small text-muted mb-1">Приёмка</label>
+				<label class="form-label small text-muted mb-1">2-й комплект в оценке</label>
+				<select class="form-select" name="kolesa2">
+					<option value="">Все</option>
+					<option value="1" {% if params.filters.kolesa2 == '1' %}selected{% endif %}>Со 2-м комплектом</option>
+					<option value="0" {% if params.filters.kolesa2 == '0' %}selected{% endif %}>Без 2-го комплекта</option>
+				</select>
+			</div>
+			<div class="col-12 col-md-6 col-lg-2">
+				<label class="form-label small text-muted mb-1">Документ приёмки 2КК</label>
 				<select class="form-select" name="has_reception">
 					<option value="">Все</option>
-					<option value="1" {% if params.filters.has_reception == '1' %}selected{% endif %}>С документом</option>
-					<option value="0" {% if params.filters.has_reception == '0' %}selected{% endif %}>Без документа</option>
+					<option value="1" {% if params.filters.has_reception == '1' %}selected{% endif %}>Создан</option>
+					<option value="0" {% if params.filters.has_reception == '0' %}selected{% endif %}>Не создан</option>
 				</select>
 			</div>
 			<div class="col-12 col-md-6 col-lg-2">
@@ -104,6 +112,7 @@
 						<th class="text-white border-0">Авто / VIN</th>
 						<th class="text-white border-0 d-none d-lg-table-cell">№ ЛО</th>
 						<th class="text-white border-0 d-none d-lg-table-cell">Подразделение</th>
+						<th class="text-white border-0 text-center d-none d-xl-table-cell">2КК</th>
 						<th class="text-white border-0 text-center d-none d-xl-table-cell">Приёмка</th>
 						<th class="text-white border-0 text-center">Фото</th>
 						<th class="text-white border-0 text-center">МЛ</th>
@@ -129,6 +138,13 @@
 							</td>
 							<td class="d-none d-lg-table-cell">{{ row.lo_number }}</td>
 							<td class="d-none d-lg-table-cell">{{ row.unit_name }}</td>
+							<td class="text-center d-none d-xl-table-cell">
+								{% if row.has_kolesa2 %}
+									<span class="badge bg-success">да</span>
+								{% else %}
+									<span class="badge bg-secondary">нет</span>
+								{% endif %}
+							</td>
 							<td class="text-center d-none d-xl-table-cell">
 								{% if row.has_reception %}
 									<span class="badge bg-success">есть</span>
@@ -177,7 +193,7 @@
 						</tr>
 					{% empty %}
 						<tr>
-							<td colspan="11" class="text-center text-muted py-5">Нет записей по выбранным фильтрам</td>
+							<td colspan="12" class="text-center text-muted py-5">Нет записей по выбранным фильтрам</td>
 						</tr>
 					{% endfor %}
 				</tbody>

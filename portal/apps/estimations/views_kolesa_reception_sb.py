@@ -20,6 +20,7 @@ from estimations.views_kolesa_reception import (
     _estimation_car_label,
     _parse_date,
 )
+from eco.reception import estimation_has_kolesa2
 from estimations.kolesa_reception_events import user_display
 
 
@@ -74,7 +75,6 @@ def _sb_list_queryset(request):
     qs = (
         RegInteractivOcenka.objects
         .filter(page_kolesa__isnull=False)
-        .filter(_kolesa2_estimation_q())
         .select_related(
             'page_kolesa',
             'status',
@@ -104,6 +104,7 @@ def _sb_list_queryset(request):
     route_sheet = request.GET.get('route_sheet', '').strip()
     sent = request.GET.get('sent', '').strip()
     has_reception = request.GET.get('has_reception', '').strip()
+    kolesa2 = request.GET.get('kolesa2', '').strip()
 
     if date_from:
         qs = qs.filter(sort_date__date__gte=date_from)
@@ -156,6 +157,11 @@ def _sb_list_queryset(request):
         qs = qs.filter(reception_id__isnull=False)
     elif has_reception == '0':
         qs = qs.filter(reception_id__isnull=True)
+
+    if kolesa2 == '1':
+        qs = qs.filter(_kolesa2_estimation_q())
+    elif kolesa2 == '0':
+        qs = qs.filter(~_kolesa2_estimation_q())
 
     return qs
 
@@ -210,6 +216,7 @@ def _build_sb_rows(estimations):
         rows.append({
             'estimation': est,
             'reception': reception,
+            'has_kolesa2': estimation_has_kolesa2(est),
             'has_reception': reception is not None,
             'display_id': reception.pk if reception else est.pk,
             'display_id_label': 'приёмка' if reception else 'оценка',
@@ -256,6 +263,7 @@ def kolesa_reception_sb_list(request):
             'route_sheet': request.GET.get('route_sheet', ''),
             'sent': request.GET.get('sent', ''),
             'has_reception': request.GET.get('has_reception', ''),
+            'kolesa2': request.GET.get('kolesa2', ''),
         },
         'total_count': paginator.count,
     }
@@ -283,6 +291,7 @@ def kolesa_reception_sb_export(request):
         '№ листа оценки',
         'Подразделение',
         'Автор приёмки',
+        '2-й комплект в оценке',
         'Есть приёмка',
         'Фото',
         'Маршрутный лист',
@@ -311,19 +320,20 @@ def kolesa_reception_sb_export(request):
         ws.cell(idx, 4, row['lo_number'] if row['lo_number'] != '—' else '')
         ws.cell(idx, 5, row['unit_name'])
         ws.cell(idx, 6, row['author'] if row['author'] != '—' else '')
-        ws.cell(idx, 7, 'Да' if row['has_reception'] else 'Нет')
-        ws.cell(idx, 8, row['photos_count'])
-        ws.cell(idx, 9, 'Да' if row['route_sheet_attached'] else 'Нет')
-        ws.cell(idx, 10, 'Да' if row['sent'] else 'Нет')
-        ws.cell(idx, 11, reception.send_wheels_ib_number if reception else '')
+        ws.cell(idx, 7, 'Да' if row['has_kolesa2'] else 'Нет')
+        ws.cell(idx, 8, 'Да' if row['has_reception'] else 'Нет')
+        ws.cell(idx, 9, row['photos_count'])
+        ws.cell(idx, 10, 'Да' if row['route_sheet_attached'] else 'Нет')
+        ws.cell(idx, 11, 'Да' if row['sent'] else 'Нет')
+        ws.cell(idx, 12, reception.send_wheels_ib_number if reception else '')
         ws.cell(
-            idx, 12,
+            idx, 13,
             reception.send_wheels_ib_date.strftime('%d.%m.%Y %H:%M')
             if reception and reception.send_wheels_ib_date else '',
         )
-        ws.cell(idx, 13, reception.send_wheels_ib_uin if reception else '')
-        ws.cell(idx, 14, est.pk)
-        ws.cell(idx, 15, reception.pk if reception else '')
+        ws.cell(idx, 14, reception.send_wheels_ib_uin if reception else '')
+        ws.cell(idx, 15, est.pk)
+        ws.cell(idx, 16, reception.pk if reception else '')
 
     for col in range(1, len(headers) + 1):
         ws.column_dimensions[get_column_letter(col)].width = 18
