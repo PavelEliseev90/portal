@@ -3614,6 +3614,8 @@ def send_kolesa_reception_to_1c(reception, request=None):
 
         if not (200 <= response.status_code < 300):
             result['error'] = 'HTTP {}'.format(response.status_code)
+            if result['text']:
+                result['error'] = '{} — {}'.format(result['error'], result['text'][:800])
             return result
 
         body = None
