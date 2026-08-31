@@ -213,13 +213,15 @@ def build_agreement_cumulative_1c_payload(row, delete=False):
     }
 
 
-def send_agreement_cumulative_to_1c(row):
+def send_agreement_cumulative_to_1c(row, url=None, mark_sent=True):
     """Отправить расчётные данные соглашения в 1С. При успехе выставляет send_1c."""
     from prices_car_bu.models import CalculatedCumulativeData
 
-    url, target, target_name = resolve_agreement_cumulative_1c_target(
+    target_url, target, target_name = resolve_agreement_cumulative_1c_target(
         getattr(row, 'agreement', None),
     )
+    if url:
+        target_url = url
     result = {
         'ok': False,
         'status_code': None,
@@ -227,7 +229,7 @@ def send_agreement_cumulative_to_1c(row):
         'text': '',
         'target': target,
         'target_name': target_name,
-        'url': url,
+        'url': target_url,
         'id': getattr(row, 'pk', None),
     }
     agreement = row.agreement
@@ -237,14 +239,18 @@ def send_agreement_cumulative_to_1c(row):
     if not row.indicatorKVP_id:
         result['error'] = 'Не указан показатель'
         return result
+    if not target_url:
+        result['error'] = 'Не задан URL информационной базы'
+        return result
     try:
         js_data = build_agreement_cumulative_1c_payload(row, delete=False)
-        response = requests.post(url, json=js_data, timeout=60)
+        response = requests.post(target_url, json=js_data, timeout=60)
         result['status_code'] = response.status_code
         result['text'] = (response.text or '')[:4000]
         if 200 <= response.status_code < 300:
             result['ok'] = True
-            CalculatedCumulativeData.objects.filter(pk=row.pk).update(send_1c=True)
+            if mark_sent:
+                CalculatedCumulativeData.objects.filter(pk=row.pk).update(send_1c=True)
         else:
             result['error'] = 'HTTP {}'.format(response.status_code)
     except requests.RequestException as exc:

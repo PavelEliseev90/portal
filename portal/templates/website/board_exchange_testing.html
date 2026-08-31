@@ -10,44 +10,181 @@
   .ex-card { background: #fff; border-radius: 0.6rem; border: 1px solid rgba(26,43,60,.08); padding: 0.85rem 1rem; margin-bottom: 0.85rem; }
   .ex-card h3 { font-size: 0.95rem; margin: 0 0 0.55rem; font-weight: 650; }
   .ex-meta { color: #6b7c8f; font-size: 0.8rem; }
-  .ex-badge { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 0.35rem; font-size: 0.72rem; font-weight: 600; margin-right: 0.35rem; }
+  .ex-badge { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 0.35rem; font-size: 0.72rem; font-weight: 600; margin-right: 0.35rem; margin-bottom: 0.25rem; }
   .ex-badge-ok { background: #e7f6ed; color: #146c3b; }
   .ex-badge-no { background: #fde8e8; color: #b42318; }
   .ex-badge-info { background: #e8f0fe; color: #1a56db; }
+  .ex-badge-warn { background: #fff4e5; color: #b54708; }
   pre.ex-json {
-    max-height: 520px; overflow: auto; background: #0f172a; color: #e2e8f0;
+    max-height: 420px; overflow: auto; background: #0f172a; color: #e2e8f0;
     border-radius: 0.5rem; padding: 0.75rem; font-size: 0.72rem; line-height: 1.35;
     white-space: pre-wrap; word-break: break-word;
   }
   .ex-actions .btn { margin-right: 0.35rem; margin-bottom: 0.35rem; }
+  .ex-tabs { flex-wrap: wrap; }
+  .ex-tabs .nav-item { margin-bottom: 0.15rem; }
+  .ex-tabs .nav-link { font-size: 0.82rem; padding: 0.45rem 0.75rem; color: #4a5568; }
+  .ex-tabs .nav-link.active { font-weight: 650; color: #002a5a; }
+  .ex-scenario { border: 1px solid rgba(26,43,60,.1); border-radius: 0.55rem; padding: 0.75rem; margin-bottom: 0.75rem; background: #fafbfc; }
+  .ex-scenario:last-child { margin-bottom: 0; }
+  .ex-scenario-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.5rem; }
+  .ex-endpoint { font-size: 0.75rem; word-break: break-all; }
+  .ex-endpoint code { color: #334155; }
 </style>
 
 <div class="ex-page">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
     <div>
-      <h2 class="h5 mb-1">Тестирование обменов</h2>
-      <div class="ex-meta">Реальный JSON, который уходит в 1С (оценка / приём / 2КК)</div>
+      <h2 class="h5 mb-1">Тестирование обменов с 1С</h2>
+      <div class="ex-meta">
+        Просмотр JSON, выбор информационной базы, отправка и постановка в очередь.
+        Типы: estimation, reception, kolesa_reception, agreement_cumulative, settings_dc, matrix, ChangeKP, KMCar, CreateAvitoWorksheet, auto_repricing_export.
+      </div>
     </div>
     <a class="btn btn-outline-secondary btn-sm" href="/monitorings_eco/">← К мониторингу ECO</a>
   </div>
 
   <div class="ex-card">
-    <h3>Найти оценку</h3>
+    <ul class="nav nav-tabs ex-tabs mb-3" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'estimation' %}active{% endif %}"
+           href="?mode=estimation&ib_target={{ params.ib_target }}&estimation_id={{ params.estimation_id }}&rlk_id={{ params.rlk_id }}">
+          Оценка / РЛК
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'kolesa' %}active{% endif %}"
+           href="?mode=kolesa&ib_target={{ params.ib_target }}&reception_id={{ params.reception_id }}&estimation_id={{ params.estimation_id }}">
+          Приёмка 2КК
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'cumulative' %}active{% endif %}"
+           href="?mode=cumulative&ib_target={{ params.ib_target }}&cumulative_id={{ params.cumulative_id }}">
+          Кумулятив
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'autopricing' %}active{% endif %}"
+           href="?mode=autopricing&ib_target={{ params.ib_target }}">
+          Автопереоценка
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'settings_dc' %}active{% endif %}"
+           href="?mode=settings_dc&ib_target={{ params.ib_target }}&unit_id={{ params.unit_id }}">
+          settings_dc
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'matrix' %}active{% endif %}"
+           href="?mode=matrix&ib_target={{ params.ib_target }}">
+          matrix
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'change_kp' %}active{% endif %}"
+           href="?mode=change_kp&ib_target={{ params.ib_target }}&calc_id={{ params.calc_id }}">
+          ChangeKP
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'km_car' %}active{% endif %}"
+           href="?mode=km_car&ib_target={{ params.ib_target }}&km_id={{ params.km_id }}">
+          KMCar
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'avito' %}active{% endif %}"
+           href="?mode=avito&ib_target={{ params.ib_target }}&offer_id={{ params.offer_id }}">
+          Авито РЛ
+        </a>
+      </li>
+    </ul>
+
     <form method="get" class="row g-2 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label small mb-1" for="estimation_id">ID интерактивной оценки</label>
-        <input class="form-control form-control-sm" type="number" name="estimation_id" id="estimation_id"
-               value="{{ params.estimation_id }}" placeholder="например 123456">
+      <input type="hidden" name="mode" value="{{ params.mode }}">
+
+      <div class="col-12 col-lg-4">
+        <label class="form-label small text-muted mb-1" for="ib_target">Информационная база (куда отправлять)</label>
+        <select class="form-select form-select-sm" name="ib_target" id="ib_target">
+          {% for opt in params.ib_options %}
+            <option value="{{ opt.value }}" {% if params.ib_target == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+        <div class="ex-meta mt-1">«Авто» — по подразделению записи (Корс / Альфа). Для 2КК по умолчанию — БУ шин.</div>
       </div>
-      <div class="col-md-3">
-        <label class="form-label small mb-1" for="rlk_id">или ID РЛК</label>
-        <input class="form-control form-control-sm" type="number" name="rlk_id" id="rlk_id"
-               value="{{ params.rlk_id }}" placeholder="DocRLK.id">
-      </div>
-      <div class="col-md-3">
-        <button type="submit" class="btn btn-primary btn-sm">Показать payload</button>
+
+      {% if params.mode == 'estimation' %}
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="estimation_id">ID оценки</label>
+          <input type="number" class="form-control form-control-sm" name="estimation_id" id="estimation_id"
+                 value="{{ params.estimation_id }}" placeholder="RegInteractivOcenka.id">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="rlk_id">или ID РЛК</label>
+          <input type="number" class="form-control form-control-sm" name="rlk_id" id="rlk_id"
+                 value="{{ params.rlk_id }}" placeholder="DocRLK.id">
+        </div>
+      {% elif params.mode == 'kolesa' %}
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="reception_id">ID приёмки 2КК</label>
+          <input type="number" class="form-control form-control-sm" name="reception_id" id="reception_id"
+                 value="{{ params.reception_id }}" placeholder="KolesaReception.id">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="estimation_id_k">или ID оценки</label>
+          <input type="number" class="form-control form-control-sm" name="estimation_id" id="estimation_id_k"
+                 value="{{ params.estimation_id }}" placeholder="RegInteractivOcenka.id">
+        </div>
+      {% elif params.mode == 'cumulative' %}
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="cumulative_id">ID расчётной записи</label>
+          <input type="number" class="form-control form-control-sm" name="cumulative_id" id="cumulative_id"
+                 value="{{ params.cumulative_id }}" placeholder="CalculatedCumulativeData.id">
+        </div>
+      {% elif params.mode == 'settings_dc' %}
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="unit_id">ID подразделения</label>
+          <input type="number" class="form-control form-control-sm" name="unit_id" id="unit_id"
+                 value="{{ params.unit_id }}" placeholder="RefUnit.id">
+        </div>
+      {% elif params.mode == 'change_kp' %}
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="calc_id">ID калькуляции КП</label>
+          <input type="number" class="form-control form-control-sm" name="calc_id" id="calc_id"
+                 value="{{ params.calc_id }}" placeholder="CarCalculations.id">
+        </div>
+      {% elif params.mode == 'km_car' %}
+        <div class="col-md-3">
+          <label class="form-label small text-muted mb-1" for="km_id">ID записи KMCar</label>
+          <input type="number" class="form-control form-control-sm" name="km_id" id="km_id"
+                 value="{{ params.km_id }}" placeholder="KMCar.id">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="km_batch" id="km_batch" value="1"
+                   {% if params.km_batch %}checked{% endif %}>
+            <label class="form-check-label small" for="km_batch">Пакет (превью {{ params.info.preview_limit|default:20 }})</label>
+          </div>
+        </div>
+      {% elif params.mode == 'avito' %}
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="offer_id">ID оффера Авито</label>
+          <input type="number" class="form-control form-control-sm" name="offer_id" id="offer_id"
+                 value="{{ params.offer_id }}" placeholder="AvitoLotOffer.id">
+        </div>
+      {% elif params.mode == 'matrix' or params.mode == 'autopricing' %}
+        <div class="col-md-4">
+          <div class="ex-meta py-2">Дополнительный ID не нужен — нажмите «Загрузить».</div>
+        </div>
+      {% endif %}
+
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Загрузить</button>
       </div>
     </form>
+
     {% if params.error %}
       <div class="alert alert-danger mt-3 mb-0 py-2">{{ params.error }}</div>
     {% endif %}
@@ -56,110 +193,252 @@
   {% if params.info %}
     <div class="ex-card">
       <h3>Контекст</h3>
-      <div class="mb-2">
-        <span class="ex-badge ex-badge-info">estimation #{{ params.info.estimation_id }}</span>
-        <span class="ex-badge ex-badge-info">rlk #{{ params.info.rlk_id }} {{ params.info.rlk_nomer }}</span>
-        {% if params.info.vin %}<span class="ex-badge ex-badge-info">VIN {{ params.info.vin }}</span>{% endif %}
-        {% if params.info.unit %}<span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>{% endif %}
-      </div>
-      <div class="ex-meta mb-2">
-        Endpoint: <code>{{ params.endpoint_url }}</code>
-        ({{ params.endpoint_kind }})
-      </div>
-      <div class="mb-2">
-        {% if params.has_kolesa2 %}
-          <span class="ex-badge ex-badge-ok">HasKolesa2 = true</span>
+      {% if params.info.mode == 'estimation' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">estimation #{{ params.info.estimation_id }}</span>
+          <span class="ex-badge ex-badge-info">rlk #{{ params.info.rlk_id }} {{ params.info.rlk_nomer }}</span>
+          {% if params.info.vin %}<span class="ex-badge ex-badge-info">VIN {{ params.info.vin }}</span>{% endif %}
+          {% if params.info.unit %}<span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>{% endif %}
+        </div>
+        <div class="mb-2">
+          {% if params.info.has_kolesa2 %}
+            <span class="ex-badge ex-badge-ok">HasKolesa2</span>
+          {% else %}
+            <span class="ex-badge ex-badge-no">HasKolesa2 = false</span>
+          {% endif %}
+          {% if params.info.has_kolesa_reception %}
+            <span class="ex-badge ex-badge-ok">KolesaReception</span>
+          {% else %}
+            <span class="ex-badge ex-badge-no">KolesaReception нет</span>
+          {% endif %}
+          {% if params.info.has_reception %}
+            <span class="ex-badge ex-badge-ok">Приём авто</span>
+          {% else %}
+            <span class="ex-badge ex-badge-no">Приём авто нет</span>
+          {% endif %}
+        </div>
+        <form method="post" class="ex-actions">
+          {% csrf_token %}
+          <input type="hidden" name="mode" value="{{ params.mode }}">
+          <input type="hidden" name="ib_target" value="{{ params.ib_target }}">
+          <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
+          <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
+          <input type="hidden" name="reception_id" value="{{ params.reception_id }}">
+          <input type="hidden" name="cumulative_id" value="{{ params.cumulative_id }}">
+          <input type="hidden" name="unit_id" value="{{ params.unit_id }}">
+          <input type="hidden" name="calc_id" value="{{ params.calc_id }}">
+          <input type="hidden" name="km_id" value="{{ params.km_id }}">
+          <input type="hidden" name="offer_id" value="{{ params.offer_id }}">
+          {% if params.km_batch %}<input type="hidden" name="km_batch" value="1">{% endif %}
+          <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="queue_estimation">
+            Поставить оценку в очередь (status_code=60)
+          </button>
+        </form>
+      {% elif params.info.mode == 'kolesa' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">приёмка #{{ params.info.reception_id }}</span>
+          {% if params.info.estimation_id %}<span class="ex-badge ex-badge-info">оценка #{{ params.info.estimation_id }}</span>{% endif %}
+          {% if params.info.vin %}<span class="ex-badge ex-badge-info">VIN {{ params.info.vin }}</span>{% endif %}
+          {% if params.info.unit %}<span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>{% endif %}
+          {% if params.info.sent %}
+            <span class="ex-badge ex-badge-ok">уже отправлено в БУ</span>
+          {% else %}
+            <span class="ex-badge ex-badge-warn">не отправлено в БУ</span>
+          {% endif %}
+        </div>
+      {% elif params.info.mode == 'cumulative' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">#{{ params.info.cumulative_id }}</span>
+          {% if params.info.agreement_nomer %}<span class="ex-badge ex-badge-info">соглашение {{ params.info.agreement_nomer }}</span>{% endif %}
+          {% if params.info.agreement_uin %}<span class="ex-badge ex-badge-info">UIN {{ params.info.agreement_uin }}</span>{% endif %}
+          <span class="ex-badge ex-badge-info">{{ params.info.indicator }} — {{ params.info.amount }}</span>
+          {% if params.info.send_1c %}
+            <span class="ex-badge ex-badge-ok">send_1c</span>
+          {% else %}
+            <span class="ex-badge ex-badge-warn">не отправлено</span>
+          {% endif %}
+          {% if params.info.unit %}<span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>{% endif %}
+        </div>
+      {% elif params.info.mode == 'autopricing' %}
+        <div class="ex-meta">Выберите информационную базу и нажмите «Загрузить», затем отправьте триггер.</div>
+      {% elif params.info.mode == 'settings_dc' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">unit #{{ params.info.unit_id }} {{ params.info.unit_name }}</span>
+          <span class="ex-badge ex-badge-info">ИБ {{ params.info.ib_name }}</span>
+        </div>
+      {% elif params.info.mode == 'matrix' %}
+        <div class="ex-meta">{{ params.info.note }}</div>
+      {% elif params.info.mode == 'change_kp' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">calc #{{ params.info.calc_id }}</span>
+          <span class="ex-badge ex-badge-info">№ {{ params.info.number }}</span>
+          <span class="ex-badge ex-badge-info">UIN {{ params.info.uin }}</span>
+          <span class="ex-badge ex-badge-info">{{ params.info.unit }}</span>
+          <span class="ex-badge ex-badge-info">сумма {{ params.info.amount }}</span>
+        </div>
+      {% elif params.info.mode == 'km_car' %}
+        {% if params.info.batch %}
+          <div class="ex-meta">Пакетный превью-режим (последние записи KMCar)</div>
         {% else %}
-          <span class="ex-badge ex-badge-no">HasKolesa2 = false</span>
+          <div class="mb-2">
+            <span class="ex-badge ex-badge-info">#{{ params.info.km_id }}</span>
+            <span class="ex-badge ex-badge-info">VIN {{ params.info.vin }}</span>
+            <span class="ex-badge ex-badge-info">KM {{ params.info.km }}</span>
+          </div>
         {% endif %}
-        {% if params.has_kolesa_reception %}
-          <span class="ex-badge ex-badge-ok">KolesaReception есть</span>
-        {% else %}
-          <span class="ex-badge ex-badge-no">KolesaReception нет</span>
-        {% endif %}
-        {% if params.has_reception %}
-          <span class="ex-badge ex-badge-ok">Приём авто есть</span>
-        {% else %}
-          <span class="ex-badge ex-badge-no">Приём авто нет</span>
-        {% endif %}
-      </div>
+      {% elif params.info.mode == 'avito' %}
+        <div class="mb-2">
+          <span class="ex-badge ex-badge-info">offer #{{ params.info.offer_id }}</span>
+          <span class="ex-badge ex-badge-info">lotOfferId {{ params.info.lot_offer_id }}</span>
+          <span class="ex-badge ex-badge-info">lot {{ params.info.lot_id }}</span>
+          <span class="ex-badge ex-badge-info">ставка {{ params.info.bid }}</span>
+          {% if params.info.venue %}<span class="ex-badge ex-badge-info">{{ params.info.venue }}</span>{% endif %}
+        </div>
+      {% endif %}
 
-      <form method="post" class="ex-actions">
-        {% csrf_token %}
-        <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
-        <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
-        <button class="btn btn-outline-primary btn-sm" type="submit" name="action" value="queue">
-          Поставить в очередь (status_code=60)
-        </button>
-        <button class="btn btn-outline-danger btn-sm" type="submit" name="action" value="send"
-                onclick="return confirm('Отправить Type=estimation в 1С прямо сейчас?');">
-          Отправить в 1С сейчас
-        </button>
-      </form>
-      {% if params.queued %}
-        <div class="text-success small mt-2">Добавлено в очередь RegSwapKors.</div>
+      {% if params.action_message %}
+        <div class="text-success small mt-2">{{ params.action_message }}</div>
       {% endif %}
       {% if params.send_result %}
         <div class="mt-2 small {% if params.send_result.ok %}text-success{% else %}text-danger{% endif %}">
-          Результат отправки:
-          ok={{ params.send_result.ok }},
-          HTTP {{ params.send_result.status_code }},
-          {{ params.send_result.error|default:"" }}
+          Результат:
+          {% if params.send_result.ok %}успех{% else %}ошибка{% endif %}
+          {% if params.send_result.status_code %}, HTTP {{ params.send_result.status_code }}{% endif %}
+          {% if params.send_result.error %} — {{ params.send_result.error }}{% endif %}
           {% if params.send_result.text %}
             <pre class="ex-json mt-2">{{ params.send_result.text }}</pre>
           {% endif %}
         </div>
       {% endif %}
     </div>
+  {% endif %}
 
+  {% if params.scenarios %}
     <div class="ex-card">
-      <h3>Type = estimation (очередь / estimation_send_1c)</h3>
-      <div class="ex-meta mb-2">Включает HasKolesa2, KolesaReception, Kolesa2, KolesaReceptionFiles</div>
-      <pre class="ex-json">{{ params.payload_estimation_json }}</pre>
-    </div>
+      <h3>Сценарии обмена ({{ params.scenarios|length }})</h3>
+      <div class="ex-meta mb-3">ИБ для отправки: <strong>{{ params.ib_target }}</strong>. JSON — реальный payload.</div>
 
-    <div class="ex-card">
-      <h3>Type = reception (refresh_data=reception1c)</h3>
-      {% if params.payload_reception_json %}
-        <pre class="ex-json">{{ params.payload_reception_json }}</pre>
-      {% else %}
-        <div class="text-muted">Карточка приёма автомобиля не создана — payload reception не собирается.</div>
-      {% endif %}
-    </div>
+      {% for sc in params.scenarios %}
+        <div class="ex-scenario" id="scenario-{{ sc.key }}">
+          <div class="ex-scenario-head">
+            <div>
+              <div class="fw-semibold">{{ sc.title }}</div>
+              <div class="ex-meta">{{ sc.description }}</div>
+            </div>
+            <div class="text-end">
+              {% if sc.endpoint_kind %}
+                <span class="ex-badge ex-badge-info">{{ sc.endpoint_kind }}</span>
+              {% endif %}
+            </div>
+          </div>
 
+          {% if sc.error %}
+            <div class="alert alert-danger py-2 mb-2">{{ sc.error }}</div>
+          {% else %}
+            <div class="ex-endpoint mb-2">
+              Endpoint:
+              <code>{{ sc.endpoint_url|default:sc.endpoint_auto_url }}</code>
+              {% if sc.endpoint_auto_url and sc.endpoint_url != sc.endpoint_auto_url %}
+                <br><span class="ex-meta">Авто: <code>{{ sc.endpoint_auto_url }}</code></span>
+              {% endif %}
+            </div>
+
+            <div class="d-flex flex-wrap ex-actions mb-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm ex-copy-json"
+                      data-target="json-{{ sc.key }}">Копировать JSON</button>
+
+              {% if sc.can_send %}
+                <form method="post" class="d-inline" onsubmit="return confirm('Отправить «{{ sc.title }}» в выбранную ИБ?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="mode" value="{{ params.mode }}">
+                  <input type="hidden" name="ib_target" value="{{ params.ib_target }}">
+                  <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
+                  <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
+                  <input type="hidden" name="reception_id" value="{{ params.reception_id }}">
+                  <input type="hidden" name="cumulative_id" value="{{ params.cumulative_id }}">
+                  <input type="hidden" name="unit_id" value="{{ params.unit_id }}">
+                  <input type="hidden" name="calc_id" value="{{ params.calc_id }}">
+                  <input type="hidden" name="km_id" value="{{ params.km_id }}">
+                  <input type="hidden" name="offer_id" value="{{ params.offer_id }}">
+                  {% if params.km_batch %}<input type="hidden" name="km_batch" value="1">{% endif %}
+                  <input type="hidden" name="action" value="send">
+                  <input type="hidden" name="scenario_key" value="{{ sc.key }}">
+                  {% if sc.key == 'cumulative' %}
+                    <label class="form-check form-check-inline small ms-1 me-1">
+                      <input class="form-check-input" type="checkbox" name="mark_cumulative_sent" value="1">
+                      пометить send_1c
+                    </label>
+                  {% endif %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm">
+                    {% if sc.key == 'cumulative_delete' %}Удалить в 1С{% else %}Отправить{% endif %}
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+
+            <pre class="ex-json" id="json-{{ sc.key }}">{{ sc.payload_json }}</pre>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if params.queue_rows %}
     <div class="ex-card">
       <h3>Очередь RegSwapKors (последние 20)</h3>
-      {% if params.queue_rows %}
-        <div class="table-responsive">
-          <table class="table table-sm table-bordered mb-0">
-            <thead>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0">
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>status_code</th>
+              <th>status</th>
+              <th>comment</th>
+              <th>date</th>
+              <th>status_date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in params.queue_rows %}
               <tr>
-                <th>id</th>
-                <th>status_code</th>
-                <th>status</th>
-                <th>comment</th>
-                <th>date</th>
-                <th>status_date</th>
+                <td>{{ row.id }}</td>
+                <td>{{ row.status_code }}</td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.comment }}</td>
+                <td>{{ row.date }}</td>
+                <td>{{ row.status_date }}</td>
               </tr>
-            </thead>
-            <tbody>
-              {% for row in params.queue_rows %}
-                <tr>
-                  <td>{{ row.id }}</td>
-                  <td>{{ row.status_code }}</td>
-                  <td>{{ row.status }}</td>
-                  <td>{{ row.comment }}</td>
-                  <td>{{ row.date }}</td>
-                  <td>{{ row.status_date }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div class="text-muted">Записей очереди нет.</div>
-      {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   {% endif %}
 </div>
+
+<script>
+(function () {
+  document.querySelectorAll('.ex-copy-json').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      if (!el) return;
+      var text = el.textContent || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          var old = btn.textContent;
+          btn.textContent = 'Скопировано';
+          setTimeout(function () { btn.textContent = old; }, 1500);
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}
