@@ -758,6 +758,9 @@ def kolesa_reception_detail(request, reception_id):
                 messages.success(request, ' · '.join(parts))
             else:
                 err = send_result.get('error') or 'неизвестная ошибка'
+                text = (send_result.get('text') or '').strip()
+                if text and text not in err:
+                    err = '{} — {}'.format(err, text[:500])
                 messages.error(
                     request,
                     'Не удалось отправить в 1С: {}.'.format(err),

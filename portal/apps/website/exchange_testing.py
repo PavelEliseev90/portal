@@ -9,6 +9,7 @@ import requests
 from django.core.serializers.json import DjangoJSONEncoder
 
 from eco.reception import (
+    build_kolesa_reception_send_payload,
     build_reception_1c_payload,
     estimation_has_kolesa2,
     get_kolesa_reception_or_none,
@@ -27,7 +28,6 @@ from task_manager.views import (
     AUTOPRICING_EXPORT_1C_TYPE,
     build_agreement_cumulative_1c_payload,
     build_estimation_1c_payload,
-    build_kolesa_reception_send_payload,
     resolve_agreement_cumulative_1c_target,
     resolve_estimation_1c_url,
     resolve_ib_1c_hs_url,
