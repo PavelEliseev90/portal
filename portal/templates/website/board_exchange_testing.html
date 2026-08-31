@@ -48,55 +48,55 @@
     <ul class="nav nav-tabs ex-tabs mb-3" role="tablist">
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'estimation' %}active{% endif %}"
-           href="?mode=estimation&ib_target={{ params.ib_target }}&estimation_id={{ params.estimation_id }}&rlk_id={{ params.rlk_id }}">
+           href="?mode=estimation&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&estimation_id={{ params.estimation_id }}&rlk_id={{ params.rlk_id }}">
           Оценка / РЛК
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'kolesa' %}active{% endif %}"
-           href="?mode=kolesa&ib_target={{ params.ib_target }}&reception_id={{ params.reception_id }}&estimation_id={{ params.estimation_id }}">
+           href="?mode=kolesa&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&reception_id={{ params.reception_id }}&estimation_id={{ params.estimation_id }}">
           Приёмка 2КК
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'cumulative' %}active{% endif %}"
-           href="?mode=cumulative&ib_target={{ params.ib_target }}&cumulative_id={{ params.cumulative_id }}">
+           href="?mode=cumulative&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&cumulative_id={{ params.cumulative_id }}">
           Кумулятив
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'autopricing' %}active{% endif %}"
-           href="?mode=autopricing&ib_target={{ params.ib_target }}">
+           href="?mode=autopricing&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}">
           Автопереоценка
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'settings_dc' %}active{% endif %}"
-           href="?mode=settings_dc&ib_target={{ params.ib_target }}&unit_id={{ params.unit_id }}">
+           href="?mode=settings_dc&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&unit_id={{ params.unit_id }}">
           settings_dc
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'matrix' %}active{% endif %}"
-           href="?mode=matrix&ib_target={{ params.ib_target }}">
+           href="?mode=matrix&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}">
           matrix
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'change_kp' %}active{% endif %}"
-           href="?mode=change_kp&ib_target={{ params.ib_target }}&calc_id={{ params.calc_id }}">
+           href="?mode=change_kp&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&calc_id={{ params.calc_id }}">
           ChangeKP
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'km_car' %}active{% endif %}"
-           href="?mode=km_car&ib_target={{ params.ib_target }}&km_id={{ params.km_id }}">
+           href="?mode=km_car&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&km_id={{ params.km_id }}">
           KMCar
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link {% if params.mode == 'avito' %}active{% endif %}"
-           href="?mode=avito&ib_target={{ params.ib_target }}&offer_id={{ params.offer_id }}">
+           href="?mode=avito&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&offer_id={{ params.offer_id }}">
           Авито РЛ
         </a>
       </li>
@@ -105,14 +105,22 @@
     <form method="get" class="row g-2 align-items-end">
       <input type="hidden" name="mode" value="{{ params.mode }}">
 
-      <div class="col-12 col-lg-4">
+      <div class="col-12 col-lg-3">
         <label class="form-label small text-muted mb-1" for="ib_target">Информационная база (куда отправлять)</label>
         <select class="form-select form-select-sm" name="ib_target" id="ib_target">
           {% for opt in params.ib_options %}
             <option value="{{ opt.value }}" {% if params.ib_target == opt.value %}selected{% endif %}>{{ opt.label }}</option>
           {% endfor %}
         </select>
-        <div class="ex-meta mt-1">«Авто» — по подразделению записи (Корс / Альфа). Для 2КК по умолчанию — БУ шин.</div>
+        <div class="ex-meta mt-1">«Авто» — по подразделению. Для 2КК — БУ шин.</div>
+      </div>
+
+      <div class="col-12 col-lg-5" id="custom_url_wrap"{% if params.ib_target != 'custom' %} style="display:none"{% endif %}>
+        <label class="form-label small text-muted mb-1" for="custom_url">URL HTTP-сервиса 1С</label>
+        <input type="text" class="form-control form-control-sm" name="custom_url" id="custom_url"
+               value="{{ params.custom_url }}" placeholder="http://server/base/hs/mb"
+               {% if params.ib_target == 'custom' %}required{% endif %}>
+        <div class="ex-meta mt-1">Полный адрес публикации HTTP-сервиса (можно без http://).</div>
       </div>
 
       {% if params.mode == 'estimation' %}
@@ -221,6 +229,7 @@
           {% csrf_token %}
           <input type="hidden" name="mode" value="{{ params.mode }}">
           <input type="hidden" name="ib_target" value="{{ params.ib_target }}">
+          <input type="hidden" name="custom_url" value="{{ params.custom_url }}">
           <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
           <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
           <input type="hidden" name="reception_id" value="{{ params.reception_id }}">
@@ -316,7 +325,13 @@
   {% if params.scenarios %}
     <div class="ex-card">
       <h3>Сценарии обмена ({{ params.scenarios|length }})</h3>
-      <div class="ex-meta mb-3">ИБ для отправки: <strong>{{ params.ib_target }}</strong>. JSON — реальный payload.</div>
+      <div class="ex-meta mb-3">
+        ИБ для отправки: <strong>{{ params.ib_target }}</strong>
+        {% if params.ib_target == 'custom' and params.custom_url %}
+          — <code>{{ params.custom_url }}</code>
+        {% endif %}
+        . JSON — реальный payload.
+      </div>
 
       {% for sc in params.scenarios %}
         <div class="ex-scenario" id="scenario-{{ sc.key }}">
@@ -352,6 +367,7 @@
                   {% csrf_token %}
                   <input type="hidden" name="mode" value="{{ params.mode }}">
                   <input type="hidden" name="ib_target" value="{{ params.ib_target }}">
+                  <input type="hidden" name="custom_url" value="{{ params.custom_url }}">
                   <input type="hidden" name="estimation_id" value="{{ params.estimation_id }}">
                   <input type="hidden" name="rlk_id" value="{{ params.rlk_id }}">
                   <input type="hidden" name="reception_id" value="{{ params.reception_id }}">
@@ -418,6 +434,21 @@
 
 <script>
 (function () {
+  var ibSelect = document.getElementById('ib_target');
+  var customWrap = document.getElementById('custom_url_wrap');
+  var customInput = document.getElementById('custom_url');
+
+  function toggleCustomUrl() {
+    if (!ibSelect || !customWrap) return;
+    var show = ibSelect.value === 'custom';
+    customWrap.style.display = show ? '' : 'none';
+    if (customInput) customInput.required = show;
+  }
+  if (ibSelect) {
+    ibSelect.addEventListener('change', toggleCustomUrl);
+    toggleCustomUrl();
+  }
+
   document.querySelectorAll('.ex-copy-json').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var el = document.getElementById(btn.getAttribute('data-target'));

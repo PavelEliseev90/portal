@@ -44,6 +44,7 @@ IB_PRESETS = (
     ('alfa', 'Альфа-Авто — ralfa01'),
     ('wheels', 'БУ шин — rwheels2024'),
     ('km_car', 'KMCar — ralfa01/?type=KMCar (basic auth)'),
+    ('custom', 'Свой URL (вручную)'),
 )
 
 URL_KM_CAR = 'http://k01srv1c10/ralfa01/hs/mb/?type=KMCar'
@@ -116,12 +117,31 @@ def list_ib_options():
     return options
 
 
-def resolve_ib_target(ib_target: str, auto_url: str = '', auto_kind: str = '') -> tuple[str, str]:
+def _normalize_custom_url(url: str) -> str:
+    """Подготовка произвольного URL HTTP-сервиса 1С."""
+    text = (url or '').strip()
+    if not text:
+        return ''
+    if not text.startswith(('http://', 'https://')):
+        text = 'http://' + text
+    return text
+
+
+def resolve_ib_target(
+    ib_target: str,
+    auto_url: str = '',
+    auto_kind: str = '',
+    custom_url: str = '',
+) -> tuple[str, str]:
     """
-  Возвращает (url, kind_label).
-  ib_target: auto | kors | alfa | wheels | ib:<id>
+    Возвращает (url, kind_label).
+    ib_target: auto | kors | alfa | wheels | km_car | custom | ib:<id>
     """
     ib_target = (ib_target or 'auto').strip()
+    if ib_target == 'custom':
+        url = _normalize_custom_url(custom_url)
+        label = url[:80] + '…' if len(url) > 80 else url
+        return url, label or 'custom'
     if ib_target == 'auto':
         return auto_url or '', auto_kind or 'auto'
     if ib_target == 'kors':
@@ -233,7 +253,7 @@ def build_matrix_auction_payload() -> dict:
     return {'Type': 'matrix', 'Settings': rows}
 
 
-def build_matrix_scenarios(ib_target: str) -> list[ExchangeScenario]:
+def build_matrix_scenarios(ib_target: str, custom_url: str = '') -> list[ExchangeScenario]:
     try:
         payload = build_matrix_auction_payload()
     except Exception as exc:
@@ -254,7 +274,9 @@ def build_matrix_scenarios(ib_target: str) -> list[ExchangeScenario]:
             ('matrix_alfa', url_hs_alfa_auto, 'alfa', 'Альфа-Авто'),
         ]
     else:
-        url, kind = resolve_ib_target(ib_target, url_hs_kors_auto, 'kors')
+        url, kind = resolve_ib_target(
+            ib_target, url_hs_kors_auto, 'kors', custom_url=custom_url,
+        )
         targets = [('matrix', url, kind, kind)]
 
     for key, url, kind, label in targets:
@@ -272,13 +294,15 @@ def build_matrix_scenarios(ib_target: str) -> list[ExchangeScenario]:
     return scenarios
 
 
-def build_settings_dc_scenarios(unit, ib_target: str) -> list[ExchangeScenario]:
+def build_settings_dc_scenarios(unit, ib_target: str, custom_url: str = '') -> list[ExchangeScenario]:
     if unit is None:
         return []
     from refs.unit_settings_1c import build_unit_settings_dc_payload
 
     auto_url, auto_kind = _auto_url_for_unit(unit)
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url, auto_kind)
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url, auto_kind, custom_url=custom_url,
+    )
     try:
         payload = {
             'Type': 'settings_dc',
@@ -305,7 +329,7 @@ def build_settings_dc_scenarios(unit, ib_target: str) -> list[ExchangeScenario]:
         )]
 
 
-def build_change_kp_scenarios(calc, ib_target: str) -> list[ExchangeScenario]:
+def build_change_kp_scenarios(calc, ib_target: str, custom_url: str = '') -> list[ExchangeScenario]:
     if calc is None:
         return []
     from avtosalon.deal_calc_approval import (
@@ -314,7 +338,9 @@ def build_change_kp_scenarios(calc, ib_target: str) -> list[ExchangeScenario]:
     )
 
     auto_url = URL_HS_ALFA_AUTO
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url, 'alfa')
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url, 'alfa', custom_url=custom_url,
+    )
     try:
         payload = build_calculation_soglasovanie_1c_payload(calc)
         return [ExchangeScenario(
@@ -347,13 +373,20 @@ def _km_car_item_dict(km) -> dict:
     }
 
 
-def build_km_car_scenarios(km_row, ib_target: str, batch: bool = False) -> list[ExchangeScenario]:
+def build_km_car_scenarios(
+    km_row,
+    ib_target: str,
+    batch: bool = False,
+    custom_url: str = '',
+) -> list[ExchangeScenario]:
     from prices_car.models import KMCar
 
     if ib_target == 'auto':
         endpoint_url, endpoint_kind = URL_KM_CAR, 'km_car'
     else:
-        endpoint_url, endpoint_kind = resolve_ib_target(ib_target, URL_KM_CAR, 'km_car')
+        endpoint_url, endpoint_kind = resolve_ib_target(
+            ib_target, URL_KM_CAR, 'km_car', custom_url=custom_url,
+        )
 
     auth_meta = {'http_auth': KM_CAR_HTTP_AUTH, 'timeout': 180}
 
@@ -391,7 +424,7 @@ def build_km_car_scenarios(km_row, ib_target: str, batch: bool = False) -> list[
     )]
 
 
-def build_avito_worksheet_scenarios(offer, ib_target: str) -> list[ExchangeScenario]:
+def build_avito_worksheet_scenarios(offer, ib_target: str, custom_url: str = '') -> list[ExchangeScenario]:
     if offer is None:
         return []
     from auction_avito.services.win_rlk import (
@@ -404,7 +437,9 @@ def build_avito_worksheet_scenarios(offer, ib_target: str) -> list[ExchangeScena
     unit = resolve_win_rlk_unit(offer)
     auto_url = hs_url_for_unit(unit) if unit is not None else url_hs_kors_auto
     auto_kind = 'alfa' if unit and getattr(getattr(unit, 'ib', None), 'alfa', False) else 'kors'
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url or url_hs_kors_auto, auto_kind)
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url or url_hs_kors_auto, auto_kind, custom_url=custom_url,
+    )
     try:
         payload = build_create_avito_worksheet_payload(offer, unit)
         lot_id = getattr(offer.lot, 'lot_id', None) if offer.lot_id else None
@@ -490,14 +525,19 @@ def _find_cumulative(cumulative_id: str):
     )
 
 
-def _wheels_endpoint(ib_target: str) -> tuple[str, str]:
+def _wheels_endpoint(ib_target: str, custom_url: str = '') -> tuple[str, str]:
     auto_url = url_hs_wheels_bu
     if ib_target == 'auto':
         return auto_url, 'wheels'
-    return resolve_ib_target(ib_target, auto_url, 'wheels')
+    return resolve_ib_target(ib_target, auto_url, 'wheels', custom_url=custom_url)
 
 
-def build_estimation_scenarios(interactiv_rlk, ib_target: str = 'auto', request=None) -> list[ExchangeScenario]:
+def build_estimation_scenarios(
+    interactiv_rlk,
+    ib_target: str = 'auto',
+    request=None,
+    custom_url: str = '',
+) -> list[ExchangeScenario]:
     scenarios: list[ExchangeScenario] = []
     if interactiv_rlk is None:
         return scenarios
@@ -505,7 +545,9 @@ def build_estimation_scenarios(interactiv_rlk, ib_target: str = 'auto', request=
     estimation = interactiv_rlk.estimation
     rlk = interactiv_rlk.rlk
     auto_url, auto_kind = _auto_url_for_rlk(rlk)
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url, auto_kind)
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url, auto_kind, custom_url=custom_url,
+    )
 
     # Type=estimation
     try:
@@ -557,7 +599,7 @@ def build_estimation_scenarios(interactiv_rlk, ib_target: str = 'auto', request=
     # Type=kolesa_reception
     kolesa_reception = get_kolesa_reception_or_none(estimation)
     if kolesa_reception is not None:
-        wheels_url, wheels_kind = _wheels_endpoint(ib_target)
+        wheels_url, wheels_kind = _wheels_endpoint(ib_target, custom_url=custom_url)
         try:
             k_payload = build_kolesa_reception_send_payload(kolesa_reception, request=request)
             k_payload['Type'] = 'kolesa_reception'
@@ -584,10 +626,15 @@ def build_estimation_scenarios(interactiv_rlk, ib_target: str = 'auto', request=
     return scenarios
 
 
-def build_kolesa_only_scenarios(reception, ib_target: str = 'auto', request=None) -> list[ExchangeScenario]:
+def build_kolesa_only_scenarios(
+    reception,
+    ib_target: str = 'auto',
+    request=None,
+    custom_url: str = '',
+) -> list[ExchangeScenario]:
     if reception is None:
         return []
-    endpoint_url, endpoint_kind = _wheels_endpoint(ib_target)
+    endpoint_url, endpoint_kind = _wheels_endpoint(ib_target, custom_url=custom_url)
     try:
         payload = build_kolesa_reception_send_payload(reception, request=request)
         payload['Type'] = 'kolesa_reception'
@@ -612,12 +659,19 @@ def build_kolesa_only_scenarios(reception, ib_target: str = 'auto', request=None
         )]
 
 
-def build_cumulative_scenarios(row, ib_target: str = 'auto', delete: bool = False) -> list[ExchangeScenario]:
+def build_cumulative_scenarios(
+    row,
+    ib_target: str = 'auto',
+    delete: bool = False,
+    custom_url: str = '',
+) -> list[ExchangeScenario]:
     if row is None:
         return []
     agreement = row.agreement
     auto_url, auto_kind = _auto_url_for_agreement(agreement)
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url, auto_kind)
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url, auto_kind, custom_url=custom_url,
+    )
     try:
         payload = build_agreement_cumulative_1c_payload(row, delete=delete)
         title = 'Type = agreement_cumulative (удаление)' if delete else 'Type = agreement_cumulative'
@@ -652,7 +706,7 @@ def build_cumulative_scenarios(row, ib_target: str = 'auto', delete: bool = Fals
         )]
 
 
-def build_autopricing_scenario(ib_target: str) -> list[ExchangeScenario]:
+def build_autopricing_scenario(ib_target: str, custom_url: str = '') -> list[ExchangeScenario]:
     """Триггер автопереоценки — только Type, без тела данных."""
     ib = None
     auto_url = ''
@@ -672,7 +726,9 @@ def build_autopricing_scenario(ib_target: str) -> list[ExchangeScenario]:
     elif ib_target == 'wheels':
         auto_url, auto_kind = url_hs_wheels_bu, 'wheels'
 
-    endpoint_url, endpoint_kind = resolve_ib_target(ib_target, auto_url, auto_kind)
+    endpoint_url, endpoint_kind = resolve_ib_target(
+        ib_target, auto_url, auto_kind, custom_url=custom_url,
+    )
     payload = {'Type': AUTOPRICING_EXPORT_1C_TYPE}
     return [ExchangeScenario(
         key='auto_repricing_export',
@@ -821,6 +877,7 @@ def handle_send_action(
     action: str,
     *,
     ib_target: str,
+    custom_url: str = '',
     interactiv_rlk=None,
     reception=None,
     cumulative=None,
@@ -842,31 +899,35 @@ def handle_send_action(
         return {'ok': True, 'message': 'Добавлено в очередь RegSwapKors (status_code=60)'}
 
     if scenario_key in ('matrix', 'matrix_kors', 'matrix_alfa'):
-        for sc in build_matrix_scenarios(ib_target):
+        for sc in build_matrix_scenarios(ib_target, custom_url=custom_url):
             if sc.key == scenario_key:
                 return _send_scenario(sc)
         return {'ok': False, 'error': f'Сценарий {scenario_key} недоступен'}
 
     if scenario_key == 'settings_dc' and unit is not None:
-        scenarios = build_settings_dc_scenarios(unit, ib_target)
+        scenarios = build_settings_dc_scenarios(unit, ib_target, custom_url=custom_url)
         return _send_scenario(scenarios[0]) if scenarios else {'ok': False, 'error': 'Сценарий не найден'}
 
     if scenario_key == 'change_kp' and calc is not None:
-        scenarios = build_change_kp_scenarios(calc, ib_target)
+        scenarios = build_change_kp_scenarios(calc, ib_target, custom_url=custom_url)
         return _send_scenario(scenarios[0]) if scenarios else {'ok': False, 'error': 'Сценарий не найден'}
 
     if scenario_key in ('km_car', 'km_car_batch'):
-        scenarios = build_km_car_scenarios(km_row, ib_target, batch=km_batch or scenario_key == 'km_car_batch')
+        scenarios = build_km_car_scenarios(
+            km_row, ib_target, batch=km_batch or scenario_key == 'km_car_batch', custom_url=custom_url,
+        )
         sc_map = {s.key: s for s in scenarios}
         sc = sc_map.get(scenario_key)
         return _send_scenario(sc) if sc else {'ok': False, 'error': 'Сценарий KMCar не найден'}
 
     if scenario_key == 'create_avito_worksheet' and offer is not None:
-        scenarios = build_avito_worksheet_scenarios(offer, ib_target)
+        scenarios = build_avito_worksheet_scenarios(offer, ib_target, custom_url=custom_url)
         return _send_scenario(scenarios[0]) if scenarios else {'ok': False, 'error': 'Сценарий не найден'}
 
     if scenario_key == 'kolesa_reception' and reception is not None:
-        scenarios = build_kolesa_only_scenarios(reception, ib_target, request=request)
+        scenarios = build_kolesa_only_scenarios(
+            reception, ib_target, request=request, custom_url=custom_url,
+        )
         if not scenarios or scenarios[0].error:
             return {'ok': False, 'error': scenarios[0].error if scenarios else 'Сценарий не найден'}
         sc = scenarios[0]
@@ -877,7 +938,9 @@ def handle_send_action(
 
     if scenario_key in ('cumulative', 'cumulative_delete') and cumulative is not None:
         delete = scenario_key == 'cumulative_delete'
-        scenarios = build_cumulative_scenarios(cumulative, ib_target, delete=delete)
+        scenarios = build_cumulative_scenarios(
+            cumulative, ib_target, delete=delete, custom_url=custom_url,
+        )
         if not scenarios or scenarios[0].error:
             return {'ok': False, 'error': scenarios[0].error if scenarios else 'Сценарий не найден'}
         sc = scenarios[0]
@@ -896,7 +959,9 @@ def handle_send_action(
         )
 
     if interactiv_rlk is not None:
-        scenarios = build_estimation_scenarios(interactiv_rlk, ib_target, request=request)
+        scenarios = build_estimation_scenarios(
+            interactiv_rlk, ib_target, request=request, custom_url=custom_url,
+        )
         sc_map = {s.key: s for s in scenarios}
         sc = sc_map.get(scenario_key)
         if sc is None or sc.error:
@@ -904,7 +969,7 @@ def handle_send_action(
         return _send_scenario(sc)
 
     if scenario_key == 'auto_repricing_export':
-        scenarios = build_autopricing_scenario(ib_target)
+        scenarios = build_autopricing_scenario(ib_target, custom_url=custom_url)
         if not scenarios:
             return {'ok': False, 'error': 'Сценарий не найден'}
         return _send_scenario(scenarios[0])
@@ -916,6 +981,8 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
     """Основная точка входа для view board_exchange_testing."""
     mode = (request.GET.get('mode') or request.POST.get('mode') or 'estimation').strip()
     ib_target = (request.GET.get('ib_target') or request.POST.get('ib_target') or 'auto').strip()
+    custom_url_raw = (request.GET.get('custom_url') or request.POST.get('custom_url') or '').strip()
+    custom_url = _normalize_custom_url(custom_url_raw)
     estimation_id = (request.GET.get('estimation_id') or request.POST.get('estimation_id') or '').strip()
     rlk_id = (request.GET.get('rlk_id') or request.POST.get('rlk_id') or '').strip()
     reception_id = (request.GET.get('reception_id') or request.POST.get('reception_id') or '').strip()
@@ -932,6 +999,7 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
     params: dict[str, Any] = {
         'mode': mode,
         'ib_target': ib_target,
+        'custom_url': custom_url_raw,
         'estimation_id': estimation_id,
         'rlk_id': rlk_id,
         'reception_id': reception_id,
@@ -959,16 +1027,25 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
     offer = None
 
     try:
+        custom_url_error = (
+            'Укажите URL HTTP-сервиса 1С (вариант «Свой URL»)'
+            if ib_target == 'custom' and not custom_url else ''
+        )
+
         if mode == 'estimation':
             if estimation_id or rlk_id:
                 interactiv_rlk = _find_interactiv_rlk(estimation_id, rlk_id)
                 if interactiv_rlk is None:
                     params['error'] = 'Оценка / РЛК не найдены'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['estimation_id'] = str(interactiv_rlk.estimation_id or estimation_id)
                     params['rlk_id'] = str(interactiv_rlk.rlk_id or rlk_id)
                     params['info'] = build_context_info('estimation', interactiv_rlk=interactiv_rlk)
-                    params['scenarios'] = build_estimation_scenarios(interactiv_rlk, ib_target, request=request)
+                    params['scenarios'] = build_estimation_scenarios(
+                        interactiv_rlk, ib_target, request=request, custom_url=custom_url,
+                    )
                     params['queue_rows'] = fetch_queue_rows(interactiv_rlk.estimation_id)
 
         elif mode == 'kolesa':
@@ -976,71 +1053,100 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
                 reception = _find_kolesa_reception(reception_id, estimation_id)
                 if reception is None:
                     params['error'] = 'Приёмка 2КК не найдена'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['reception_id'] = str(reception.pk)
                     if reception.estimation_id:
                         params['estimation_id'] = str(reception.estimation_id)
                     params['info'] = build_context_info('kolesa', reception=reception)
-                    params['scenarios'] = build_kolesa_only_scenarios(reception, ib_target, request=request)
+                    params['scenarios'] = build_kolesa_only_scenarios(
+                        reception, ib_target, request=request, custom_url=custom_url,
+                    )
 
         elif mode == 'cumulative':
             if cumulative_id:
                 cumulative = _find_cumulative(cumulative_id)
                 if cumulative is None:
                     params['error'] = 'Запись кумулятива не найдена'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['info'] = build_context_info('cumulative', cumulative=cumulative)
                     params['scenarios'] = (
-                        build_cumulative_scenarios(cumulative, ib_target, delete=False)
-                        + build_cumulative_scenarios(cumulative, ib_target, delete=True)
+                        build_cumulative_scenarios(cumulative, ib_target, delete=False, custom_url=custom_url)
+                        + build_cumulative_scenarios(cumulative, ib_target, delete=True, custom_url=custom_url)
                     )
 
         elif mode == 'matrix':
-            params['info'] = build_context_info('matrix')
-            params['scenarios'] = build_matrix_scenarios(ib_target)
+            if custom_url_error:
+                params['error'] = custom_url_error
+            else:
+                params['info'] = build_context_info('matrix')
+                params['scenarios'] = build_matrix_scenarios(ib_target, custom_url=custom_url)
 
         elif mode == 'autopricing':
-            params['info'] = build_context_info('autopricing', ib_target=ib_target)
-            params['scenarios'] = build_autopricing_scenario(ib_target)
+            if custom_url_error:
+                params['error'] = custom_url_error
+            else:
+                params['info'] = build_context_info('autopricing', ib_target=ib_target)
+                params['scenarios'] = build_autopricing_scenario(ib_target, custom_url=custom_url)
 
         elif mode == 'settings_dc':
             if unit_id:
                 unit = _find_unit(unit_id)
                 if unit is None:
                     params['error'] = 'Подразделение не найдено'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['info'] = build_context_info('settings_dc', unit=unit)
-                    params['scenarios'] = build_settings_dc_scenarios(unit, ib_target)
+                    params['scenarios'] = build_settings_dc_scenarios(unit, ib_target, custom_url=custom_url)
 
         elif mode == 'change_kp':
             if calc_id:
                 calc = _find_calc(calc_id)
                 if calc is None:
                     params['error'] = 'Калькуляция КП не найдена'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['info'] = build_context_info('change_kp', calc=calc)
-                    params['scenarios'] = build_change_kp_scenarios(calc, ib_target)
+                    params['scenarios'] = build_change_kp_scenarios(calc, ib_target, custom_url=custom_url)
 
         elif mode == 'km_car':
             if km_batch:
-                params['info'] = build_context_info('km_car', batch=True)
-                params['scenarios'] = build_km_car_scenarios(None, ib_target, batch=True)
+                if custom_url_error:
+                    params['error'] = custom_url_error
+                else:
+                    params['info'] = build_context_info('km_car', batch=True)
+                    params['scenarios'] = build_km_car_scenarios(
+                        None, ib_target, batch=True, custom_url=custom_url,
+                    )
             elif km_id:
                 km_row = _find_km_car(km_id)
                 if km_row is None:
                     params['error'] = 'Запись KMCar не найдена'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['info'] = build_context_info('km_car', km_row=km_row)
-                    params['scenarios'] = build_km_car_scenarios(km_row, ib_target, batch=False)
+                    params['scenarios'] = build_km_car_scenarios(
+                        km_row, ib_target, batch=False, custom_url=custom_url,
+                    )
 
         elif mode == 'avito':
             if offer_id:
                 offer = _find_avito_offer(offer_id)
                 if offer is None:
                     params['error'] = 'Оффер Авито не найден'
+                elif custom_url_error:
+                    params['error'] = custom_url_error
                 else:
                     params['info'] = build_context_info('avito', offer=offer)
-                    params['scenarios'] = build_avito_worksheet_scenarios(offer, ib_target)
+                    params['scenarios'] = build_avito_worksheet_scenarios(
+                        offer, ib_target, custom_url=custom_url,
+                    )
 
         else:
             params['error'] = f'Неизвестный режим: {mode}'
@@ -1060,6 +1166,7 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
             result = handle_send_action(
                 'send',
                 ib_target=ib_target,
+                custom_url=custom_url,
                 interactiv_rlk=interactiv_rlk,
                 reception=reception or (get_kolesa_reception_or_none(interactiv_rlk.estimation) if interactiv_rlk else None),
                 cumulative=cumulative,
