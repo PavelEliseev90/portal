@@ -503,8 +503,8 @@
 								<div class="modern-gallery-wrapper">
 									<div class="modern-gallery-container" id="modernGalleryContainer">
 										{% for files in photos %}
-											<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" data-alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}">
-												<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-image" loading="lazy">
+											<div class="modern-gallery-slide {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{ files.get_image_url }}" data-alt="{{ files.get_display_name }}">
+												<img src="{{ files.get_thumbnail_url }}" alt="{{ files.get_display_name }}" class="modern-gallery-image" loading="lazy">
 											</div>
 										{% endfor %}
 										
@@ -555,8 +555,8 @@
 								{% if total > 1 %}
 									<div class="modern-gallery-thumbnails" id="modernGalleryThumbnails">
 										{% for files in photos %}
-											<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}">
-												<img src="{% if files.file_mini %}{{ files.file.url }}{% else %}{{ files }}{% endif %}" alt="{% if files.name %}{{ files.name }}{% else %}Фото {{ forloop.counter }}{% endif %}" class="modern-gallery-thumbnail-img" loading="lazy">
+											<div class="modern-gallery-thumbnail {% if forloop.first %}active{% endif %}" data-index="{{forloop.counter0}}" data-src="{{ files.get_image_url }}">
+												<img src="{{ files.get_thumbnail_url }}" alt="{{ files.get_display_name }}" class="modern-gallery-thumbnail-img" loading="lazy">
 											</div>
 										{% endfor %}
 									</div>
