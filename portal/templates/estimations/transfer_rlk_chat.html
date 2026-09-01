@@ -1,0 +1,132 @@
+{% extends 'base_web.html' %}
+{% block title %}Перенос чата ЕЦО{% endblock %}
+{% block content %}
+<div class="container-fluid py-4" style="max-width: 1200px;">
+	<h1 class="h4 mb-3">Перенос сообщений чата между рабочими листами</h1>
+	<p class="text-muted small mb-4">
+		Переносятся все сообщения чата оценки/ЕЦО (<code>Chat</code> / <code>ChatMessage</code>, slug <code>rlk_{DocRLK.id}</code>).
+		Оценка и прочие данные не меняются. Доступ только суперпользователям.
+		<a href="/estimations/transfer-rlk/">Полный перенос оценки Корс→Альфа</a>
+		·
+		<a href="/estimations/transfer-kolesa-reception/">Перепривязка 2КК</a>
+	</p>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<form method="post" class="card card-body mb-4">
+		{% csrf_token %}
+		<div class="row g-3">
+			<div class="col-12"><h2 class="h6 text-muted mb-0">Исходный РЛ (откуда забрать чат)</h2></div>
+			<div class="col-md-4">
+				<label class="form-label">id РЛ</label>
+				<input type="text" name="source_id" class="form-control" value="{{ params.source_id }}" placeholder="DocRLK.id" autofocus>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или номер</label>
+				<input type="text" name="source_nomer" class="form-control" value="{{ params.source_nomer }}">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или UIN</label>
+				<input type="text" name="source_uin" class="form-control" value="{{ params.source_uin }}">
+			</div>
+
+			<div class="col-12"><h2 class="h6 text-muted mb-0 mt-2">Целевой РЛ (куда перенести)</h2></div>
+			<div class="col-md-4">
+				<label class="form-label">id РЛ</label>
+				<input type="text" name="target_id" class="form-control" value="{{ params.target_id }}" placeholder="DocRLK.id">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или номер</label>
+				<input type="text" name="target_nomer" class="form-control" value="{{ params.target_nomer }}">
+			</div>
+			<div class="col-md-4">
+				<label class="form-label">или UIN</label>
+				<input type="text" name="target_uin" class="form-control" value="{{ params.target_uin }}">
+			</div>
+		</div>
+		<div class="mt-3 d-flex gap-2 flex-wrap">
+			<button type="submit" name="action" value="preview" class="btn btn-outline-primary">Показать план</button>
+		</div>
+	</form>
+
+	{% if params.result %}
+	<div class="alert alert-success">
+		Чат на {{ params.result.target_label }}.
+		Сейчас сообщений: {{ params.result.message_count }}.
+		<a href="/estimations/{{ params.result.target_id }}/" class="alert-link">Открыть оценку</a>
+		·
+		<a href="/eco/{{ params.result.target_id }}/" class="alert-link">Открыть ECO</a>
+	</div>
+	{% endif %}
+
+	{% if params.plan %}
+	<div class="card mb-4">
+		<div class="card-header">План переноса чата</div>
+		<div class="card-body">
+			<dl class="row mb-0">
+				<dt class="col-sm-3">Откуда</dt>
+				<dd class="col-sm-9">{{ params.plan.source_label }}</dd>
+				<dt class="col-sm-3">Куда</dt>
+				<dd class="col-sm-9">{{ params.plan.target_label }}</dd>
+				<dt class="col-sm-3">Сообщений</dt>
+				<dd class="col-sm-9">
+					перенести: <strong>{{ params.plan.source_message_count }}</strong>,
+					уже на целевом: {{ params.plan.target_message_count }}
+					{% if params.plan.source_chat_count > 1 %}
+					<span class="badge bg-secondary">чатов на источнике: {{ params.plan.source_chat_count }}</span>
+					{% endif %}
+				</dd>
+			</dl>
+
+			{% if params.plan.errors %}
+			<div class="alert alert-danger mt-3 mb-0">
+				<strong>Ошибки:</strong>
+				<ul class="mb-0">
+					{% for e in params.plan.errors %}<li>{{ e }}</li>{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
+
+			{% if params.plan.warnings %}
+			<div class="alert alert-warning mt-3">
+				<strong>Предупреждения:</strong>
+				<ul class="mb-0">
+					{% for w in params.plan.warnings %}<li>{{ w }}</li>{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
+
+			{% if params.plan.actions %}
+			<p class="mt-3 mb-1"><strong>Действия:</strong></p>
+			<ol class="small">
+				{% for a in params.plan.actions %}<li>{{ a }}</li>{% endfor %}
+			</ol>
+			{% endif %}
+
+			{% if params.plan.ok %}
+			<form method="post" class="mt-3 border-top pt-3">
+				{% csrf_token %}
+				<input type="hidden" name="source_id" value="{{ params.source_id }}">
+				<input type="hidden" name="source_nomer" value="{{ params.source_nomer }}">
+				<input type="hidden" name="source_uin" value="{{ params.source_uin }}">
+				<input type="hidden" name="target_id" value="{{ params.target_id }}">
+				<input type="hidden" name="target_nomer" value="{{ params.target_nomer }}">
+				<input type="hidden" name="target_uin" value="{{ params.target_uin }}">
+				<div class="form-check mb-3">
+					<input class="form-check-input" type="checkbox" name="confirm" value="yes" id="confirmChat" required>
+					<label class="form-check-label" for="confirmChat">
+						Подтверждаю перенос всех сообщений чата на целевой РЛ
+					</label>
+				</div>
+				<button type="submit" name="action" value="execute" class="btn btn-danger">Выполнить перенос</button>
+			</form>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+</div>
+{% endblock %}
