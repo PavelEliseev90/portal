@@ -1823,6 +1823,9 @@
                 <span class="kors-metric-card__value">{% if params.lo %}{{params.lo.nomer}}{% else %}---{% endif %}</span>
                 <span class="kors-metric-card__sub">Обновлено {{params.lo.dataTime|date:"d.m.Y"}}</span>
               </div>
+
+              {% include 'estimation/partials/warehouse_car_metric.html' %}
+      
               <!--
                 <div class="kors-metric-card">
                   <span class="kors-metric-card__label">История оценок</span>

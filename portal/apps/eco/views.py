@@ -4658,6 +4658,10 @@ def doc(request, id):
 
         from eco.services.estimation_alarm import build_alarm_context
 
+        if car is None:
+            from estimations.warehouse_car import get_warehouse_car
+            car = get_warehouse_car(interactiv_rlk, estimation)
+
         params = {
                 'page'                  : page,
                 'type'                  : 'eco',
