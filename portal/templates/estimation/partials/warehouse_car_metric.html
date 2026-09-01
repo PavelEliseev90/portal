@@ -1,0 +1,23 @@
+{% if params.car or params.warehouse_car %}
+{% with wh=params.car|default:params.warehouse_car %}
+<div class="kors-metric-card{% if params.type != 'eco' %} kors-metric-card--estimation{% endif %}">
+  <div class="d-flex justify-content-between align-items-start gap-2">
+    <span class="kors-metric-card__label">Склад</span>
+    <a href="/cars/{{ wh.slug }}/" class="kors-metric-card__action" target="_blank" rel="noopener" title="Карточка автомобиля на складе">Автомобиль</a>
+  </div>
+  <span class="kors-metric-card__value">
+    {% if wh.mark or wh.model %}
+      {{ wh.mark }} {{ wh.model }}
+    {% elif wh.name %}
+      {{ wh.name|truncatechars:22 }}
+    {% else %}
+      —
+    {% endif %}
+  </span>
+  <span class="kors-metric-card__sub">
+    {% if wh.vin %}VIN {{ wh.vin }}{% endif %}
+    {% if wh.quantity == 0 %}{% if wh.vin %} · {% endif %}нет на остатке{% endif %}
+  </span>
+</div>
+{% endwith %}
+{% endif %}

@@ -104,29 +104,6 @@ def get_car(reg_interactiv_ocenka):
     return 0
 
 
-def get_warehouse_car(interactiv_rlk, estimation):
-    """Автомобиль организации на складе, связанный с оценкой через DocLO или VIN."""
-    car = None
-    rlk = getattr(interactiv_rlk, 'rlk', None)
-    if rlk is not None:
-        lo = DocLO.objects.filter(rlk=rlk).order_by('-id').first()
-        if lo is not None:
-            car = (
-                RefCarsOrganization.objects.filter(lo=lo)
-                .order_by('-date_refresh')
-                .first()
-            )
-    if car is None and estimation is not None:
-        vin = (estimation.vin or '').strip()
-        if vin:
-            car = (
-                RefCarsOrganization.objects.filter(vin=vin)
-                .order_by('-quantity', '-date_refresh')
-                .first()
-            )
-    return car
-
-
 def check_estimations(interactiv_rlk):
     
     date_null = DT.datetime(1,1,1)
@@ -1807,7 +1784,6 @@ def estimation_rlk(request, rlk_id):
             'estimation'                    : reg_interactiv_ocenka,
             'list_repair_hisory_vin'        : list_repair_hisory_vin,
             'list_estimations_vin'          : list_estimations_vin,
-            'warehouse_car'                 : get_warehouse_car(interactiv_rlk, reg_interactiv_ocenka),
             'users'                         : users,
             'list_checks'                   : list_checks,
             'user'                          : user,
