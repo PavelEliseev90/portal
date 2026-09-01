@@ -81,6 +81,16 @@
               <span class="icon-mbri-home"></span> Данные приёма
             </h6>
 
+            <div class="search-select-wrapper select2-wrapper mb-2{% if r.staff_id %} has-value{% endif %}">
+              <select class="form-select form-select-sm search-select reception-staff-select" id="staff" name="staff">
+                <option value=""></option>
+                {% if r.staff_id %}
+                  <option value="{{ r.staff_id }}" selected>{{ r.staff.name }}</option>
+                {% endif %}
+              </select>
+              <label for="staff">Оценщик</label>
+            </div>
+
             <div class="form-floating mb-2">
               <select class="form-select form-select-sm" id="filial" name="filial">
                 <option value="">—</option>
@@ -162,9 +172,17 @@
               <input class="form-control form-control-sm" type="text" id="customer_patronymic" name="customer_patronymic" value="{{ r.customer_patronymic }}">
               <label for="customer_patronymic">Отчество</label>
             </div>
-            <div class="form-floating">
+            <div class="form-floating mb-2">
               <input class="form-control form-control-sm" type="text" id="customer_phone" name="customer_phone" value="{{ r.customer_phone }}">
               <label for="customer_phone">Телефон</label>
+            </div>
+            <div class="form-floating">
+              <select class="form-select form-select-sm" id="registration_owner_fl" name="registration_owner_fl">
+                <option value="" {% if r.registration_owner_fl is None %}selected{% endif %}>—</option>
+                <option value="1" {% if r.registration_owner_fl is True %}selected{% endif %}>Да</option>
+                <option value="0" {% if r.registration_owner_fl is False %}selected{% endif %}>Нет</option>
+              </select>
+              <label for="registration_owner_fl">Регистрация собственником ФЛ</label>
             </div>
           </div>
         </div>
@@ -246,13 +264,54 @@
             <h6 class="d-flex align-items-center gap-2 mb-3">
               <span class="icon-mbri-file"></span> ПТС / СТС
             </h6>
-            <div class="row g-1">
-              <div class="col-sm-6">
-                <div class="form-floating mb-2">
-                  <input class="form-control form-control-sm" type="text" id="pts_number" name="pts_number" value="{{ r.pts_number }}">
-                  <label for="pts_number">Номер ПТС</label>
+
+            <div class="mb-3">
+              <div class="small text-muted mb-2">Вид ПТС</div>
+              <div class="btn-group btn-group-sm w-100" role="group" aria-label="Вид ПТС">
+                <input type="radio" class="btn-check" name="pts_electronic" id="pts_electronic_1" value="1"
+                       {% if r.pts_electronic %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="pts_electronic_1">Электронный (ЭПТС)</label>
+                <input type="radio" class="btn-check" name="pts_electronic" id="pts_electronic_0" value="0"
+                       {% if r.pts_electronic is False %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="pts_electronic_0">Бумажный</label>
+              </div>
+            </div>
+
+            <div id="pts-electronic-fields" class="pts-type-fields" style="display:none;">
+              <div class="alert alert-light border small py-2 mb-2">
+                У электронного ПТС нет серии — укажите номер ЭПТС (обычно 15 цифр), дату и организацию, выдавшую документ.
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="pts_number_electronic" name="pts_number"
+                       value="{{ r.pts_number }}" inputmode="numeric" pattern="[0-9]*" maxlength="20"
+                       placeholder="164302087797496">
+                <label for="pts_number_electronic">Номер ЭПТС</label>
+              </div>
+            </div>
+
+            <div id="pts-paper-fields" class="pts-type-fields" style="display:none;">
+              <div class="alert alert-light border small py-2 mb-2">
+                Для бумажного ПТС укажите серию и номер отдельно (например, серия «77 УН», номер «123456»).
+              </div>
+              <div class="row g-1">
+                <div class="col-sm-5">
+                  <div class="form-floating mb-2">
+                    <input class="form-control form-control-sm" type="text" id="pts_series" name="pts_series"
+                           value="{{ r.pts_series }}" maxlength="32" placeholder="77 УН">
+                    <label for="pts_series">Серия ПТС</label>
+                  </div>
+                </div>
+                <div class="col-sm-7">
+                  <div class="form-floating mb-2">
+                    <input class="form-control form-control-sm" type="text" id="pts_number_paper" name="pts_number"
+                           value="{{ r.pts_number }}" maxlength="32" placeholder="123456">
+                    <label for="pts_number_paper">Номер ПТС</label>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            <div class="row g-1">
               <div class="col-sm-6">
                 <div class="form-floating mb-2">
                   <input class="form-control form-control-sm" type="date" id="pts_date" name="pts_date" value="{% if r.pts_date %}{{ r.pts_date|date:'Y-m-d' }}{% endif %}">
@@ -262,15 +321,21 @@
               <div class="col-12">
                 <div class="form-floating mb-2">
                   <input class="form-control form-control-sm" type="text" id="pts_org_issuer" name="pts_org_issuer" value="{{ r.pts_org_issuer }}">
-                  <label for="pts_org_issuer">Организация, выдавшая ПТС</label>
+                  <label for="pts_org_issuer">Кем выдан ПТС</label>
                 </div>
               </div>
-              <div class="col-12">
+              <div class="col-12 pts-paper-only" style="display:none;">
                 <div class="form-floating mb-2">
                   <input class="form-control form-control-sm" type="text" id="pts_org_address" name="pts_org_address" value="{{ r.pts_org_address }}">
                   <label for="pts_org_address">Адрес организации ПТС</label>
                 </div>
               </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="small text-muted mb-2">СТС</div>
+            <div class="row g-1">
               <div class="col-sm-6">
                 <div class="form-floating mb-2">
                   <input class="form-control form-control-sm" type="text" id="sts_number" name="sts_number" value="{{ r.sts_number }}">
@@ -295,7 +360,7 @@
                   <label for="body_number">Номер кузова</label>
                 </div>
               </div>
-              <div class="col-sm-6 d-flex align-items-center">
+              <div class="col-sm-6 pts-paper-only d-flex align-items-center" style="display:none;">
                 <div class="form-check mt-2">
                   <input class="form-check-input" type="checkbox" id="pts_original" name="pts_original" value="1" {% if r.pts_original %}checked{% endif %}>
                   <label class="form-check-label" for="pts_original">ПТС оригинал</label>
@@ -418,6 +483,129 @@
         </a>
       </div>
     </form>
+
+    <script>
+    (function() {
+      var $staff = $('#staff');
+      if (!$staff.length || typeof $.fn.select2 !== 'function') {
+        return;
+      }
+
+      var $wrapper = $staff.closest('.search-select-wrapper.select2-wrapper');
+      $staff.select2({
+        placeholder: 'Поиск по ФИО...',
+        allowClear: true,
+        width: '100%',
+        minimumInputLength: 2,
+        language: {
+          inputTooShort: function() { return 'Введите минимум 2 символа'; },
+          noResults: function() { return 'Никого не найдено'; },
+          searching: function() { return 'Поиск...'; }
+        },
+        ajax: {
+          url: '{% url "eco:reception_staff_search" %}',
+          dataType: 'json',
+          delay: 300,
+          data: function(params) {
+            return { q: params.term || '' };
+          },
+          processResults: function(data) {
+            return { results: data.results || [] };
+          }
+        }
+      });
+
+      function syncStaffLabel() {
+        var hasValue = !!$staff.val();
+        $wrapper.toggleClass('has-value', hasValue);
+      }
+
+      $staff.on('select2:select select2:unselect select2:clear change', syncStaffLabel);
+      syncStaffLabel();
+    })();
+
+    (function() {
+      var electronicRadio = document.getElementById('pts_electronic_1');
+      var paperRadio = document.getElementById('pts_electronic_0');
+      var electronicBlock = document.getElementById('pts-electronic-fields');
+      var paperBlock = document.getElementById('pts-paper-fields');
+      var paperOnlyEls = document.querySelectorAll('.pts-paper-only');
+      var ptsNumberElectronic = document.getElementById('pts_number_electronic');
+      var ptsNumberPaper = document.getElementById('pts_number_paper');
+      var ptsSeries = document.getElementById('pts_series');
+
+      function currentMode() {
+        if (electronicRadio && electronicRadio.checked) {
+          return 'electronic';
+        }
+        if (paperRadio && paperRadio.checked) {
+          return 'paper';
+        }
+        return null;
+      }
+
+      function guessModeFromValue() {
+        var value = '';
+        if (ptsNumberElectronic && ptsNumberElectronic.value) {
+          value = ptsNumberElectronic.value;
+        } else if (ptsNumberPaper && ptsNumberPaper.value) {
+          value = ptsNumberPaper.value;
+        }
+        if (!value) {
+          return null;
+        }
+        var digits = value.replace(/\D/g, '');
+        if (digits.length >= 15) {
+          return 'electronic';
+        }
+        return 'paper';
+      }
+
+      function syncPtsFields() {
+        var mode = currentMode();
+        if (!mode) {
+          mode = guessModeFromValue();
+          if (mode === 'electronic' && electronicRadio) {
+            electronicRadio.checked = true;
+          } else if (mode === 'paper' && paperRadio) {
+            paperRadio.checked = true;
+          }
+        }
+
+        var isElectronic = mode === 'electronic';
+        var isPaper = mode === 'paper';
+
+        if (electronicBlock) {
+          electronicBlock.style.display = isElectronic ? '' : 'none';
+        }
+        if (paperBlock) {
+          paperBlock.style.display = isPaper ? '' : 'none';
+        }
+        paperOnlyEls.forEach(function(el) {
+          el.style.display = isPaper ? '' : 'none';
+        });
+
+        if (ptsNumberElectronic) {
+          ptsNumberElectronic.disabled = !isElectronic;
+        }
+        if (ptsNumberPaper) {
+          ptsNumberPaper.disabled = !isPaper;
+        }
+        if (ptsSeries) {
+          ptsSeries.disabled = !isPaper;
+        }
+      }
+
+      if (electronicRadio) {
+        electronicRadio.addEventListener('change', syncPtsFields);
+      }
+      if (paperRadio) {
+        paperRadio.addEventListener('change', syncPtsFields);
+      }
+      syncPtsFields();
+    })();
+    </script>
+
     {% endwith %}
   {% endif %}
 

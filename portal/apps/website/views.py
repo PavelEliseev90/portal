@@ -19,7 +19,7 @@ from django.http.response import JsonResponse
 from rest_framework import status
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 import json
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -441,14 +441,71 @@ def get_sound_count(user, date):
     return Records_voice_recorder.objects.filter(user = user).filter(date__gte = date).count()
 
 
+def _login_safe_next(request):
+    """Безопасный next после входа (только относительные пути текущего хоста)."""
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    next_url = (request.GET.get('next') or request.POST.get('next') or '').strip()
+    if not next_url:
+        return ''
+    if url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return ''
+
+
+def csrf_failure_view(request, reason=''):
+    """
+    CSRF на /login/ чаще всего из-за устаревшей формы в другой вкладке.
+    Если пользователь уже авторизован — редирект на next, иначе обновляем страницу входа.
+    """
+    from django.conf import settings
+
+    login_url = getattr(settings, 'LOGIN_URL', '/login/')
+    path = (request.path or '').rstrip('/')
+    login_path = login_url.rstrip('/')
+
+    if request.user.is_authenticated:
+        next_url = _login_safe_next(request)
+        return HttpResponseRedirect(next_url or '/')
+
+    if path == login_path or path.endswith(login_path):
+        next_url = _login_safe_next(request)
+        redirect_to = login_url
+        query_parts = []
+        if request.GET.get('single_device') == '1':
+            query_parts.append('single_device=1')
+        if next_url:
+            from urllib.parse import urlencode
+            query_parts.append(urlencode({'next': next_url}))
+        if query_parts:
+            redirect_to = login_url + '?' + '&'.join(query_parts)
+        return HttpResponseRedirect(redirect_to)
+
+    return custom_permission_denied_view(request, exception=reason)
+
+
+def login_session_status(request):
+    """Проверка сессии для страницы входа (устаревшая форма в другой вкладке)."""
+    return JsonResponse({
+        'authenticated': bool(getattr(request.user, 'is_authenticated', False) and request.user.is_authenticated),
+        'next': _login_safe_next(request),
+    })
+
+
+@ensure_csrf_cookie
 def loging(request):
     
     error = ''
     login = ''
     password = ''
     result = ''
-    next = request.GET.get('next', '') or request.POST.get('next', '')
+    next = _login_safe_next(request)
     data = ''
+    single_device = request.GET.get('single_device') == '1'
 
     from estimations.mobile_gallery_utils import is_mobile_gallery_next, mark_mobile_gallery_session
     skip_current_session_update = is_mobile_gallery_next(next)
@@ -476,7 +533,7 @@ def loging(request):
                     error = error + "Не указан пароль"
                 # next мог прийти только в POST
                 if not next:
-                    next = request.POST.get('next', '')
+                    next = _login_safe_next(request)
                     skip_current_session_update = is_mobile_gallery_next(next)
                 user = authenticate(username=login, password=password)
 
@@ -516,7 +573,7 @@ def loging(request):
                     if user is not None:
                         if user.is_active:
                             if next == '':
-                                next = request.POST.get('next', '')
+                                next = _login_safe_next(request)
                                 skip_current_session_update = is_mobile_gallery_next(next)
                             if skip_current_session_update:
                                 request._skip_current_session_update = True
@@ -537,12 +594,20 @@ def loging(request):
             'error' : error, 
             'login' : login,
             'result': result,
-            'data'  : data
+            'data'  : data,
+            'next': next,
+            'single_device': single_device,
         }
         
         return render(request, 'login.html', {'params': params})
     
-    return render(request, 'login.html' )
+    params = {
+        'error': '',
+        'login': '',
+        'next': next,
+        'single_device': single_device,
+    }
+    return render(request, 'login.html', {'params': params})
 
 
 def logout(request):

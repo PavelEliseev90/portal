@@ -19,10 +19,8 @@
                 <div class="portal-panel portal-margin" style="margin: 1rem;">
                       
                     {% csrf_token %}
-                    {% if request.GET.next %}
-                      <input type="hidden" name="next" value="{{ request.GET.next }}">
-                    {% elif request.POST.next %}
-                      <input type="hidden" name="next" value="{{ request.POST.next }}">
+                    {% if params.next %}
+                      <input type="hidden" name="next" value="{{ params.next }}">
                     {% endif %}
 
                     <h1 class="h3 mb-3 fw-normal text-center">
@@ -32,6 +30,12 @@
                       <h1 class="h3 mb-3 fw-normal ">
                         <span class="icon-mbri-users"></span> Вход
                       </h1>
+
+                      {% if params.single_device %}
+                        <div class="alert alert-warning py-2 small mb-3" role="alert">
+                          Сессия завершена: выполнен вход с другого устройства или вкладки. Войдите снова.
+                        </div>
+                      {% endif %}
                       
                       <div class="hidemobile">
                         <br>
@@ -79,6 +83,27 @@
 
     </body>      	
 		         
-</form>  
+</form>
+
+<script>
+(function() {
+  var nextUrl = '{{ params.next|default:""|escapejs }}';
+  var statusUrl = '{% url "website:login_status" %}' + (window.location.search || '');
+
+  fetch(statusUrl, {
+    credentials: 'same-origin',
+    headers: { 'Accept': 'application/json' }
+  })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (!data || !data.authenticated) {
+        return;
+      }
+      var target = (data.next || nextUrl || '/').trim();
+      window.location.replace(target || '/');
+    })
+    .catch(function() {});
+})();
+</script>
 
 {% endblock %}

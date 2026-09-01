@@ -2,6 +2,7 @@
 """Приём автомобиля по интерактивной оценке."""
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 
 from django.conf import settings
@@ -213,6 +214,26 @@ def _as_int(value, default=0):
         return default
 
 
+def _default_reception_staff(interactiv_rlk: RegInteractivOcenkaRLK):
+    """Оценщик для приёма в 1С: по умолчанию — кто начал оценку."""
+    estimation = interactiv_rlk.estimation
+    if estimation is not None and getattr(estimation, 'staff_id', None):
+        return estimation.staff
+    return getattr(interactiv_rlk, 'staff_rlk', None)
+
+
+def _infer_pts_electronic(proverki, pts_number=''):
+    """Определить вид ПТС: из проверок оценки или по формату номера."""
+    if proverki is not None and proverki.epts is not None:
+        return bool(proverki.epts)
+    digits = re.sub(r'\D', '', (pts_number or '').strip())
+    if len(digits) >= 15:
+        return True
+    if digits and len(digits) <= 8 and re.search(r'[A-Za-zА-Яа-я]', pts_number or ''):
+        return False
+    return None
+
+
 def _mark_model(estimation):
     mark = (getattr(estimation, 'mark_name', None) or '').strip()
     model = (getattr(estimation, 'model_name', None) or '').strip()
@@ -233,6 +254,7 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
     docs = getattr(estimation, 'page_documents', None) if estimation else None
     salon = getattr(estimation, 'page_salon', None) if estimation else None
     vnesh = getattr(estimation, 'page_vnesh', None) if estimation else None
+    proverki = getattr(estimation, 'page_proverki', None) if estimation else None
     mark, model = _mark_model(estimation) if estimation else ('', '')
 
     pts_date = None
@@ -252,6 +274,9 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
     mileage = 0
     if salon is not None and salon.run:
         mileage = _as_int(salon.run)
+
+    pts_number = (docs.pts_number if docs else '') or ''
+    pts_electronic = _infer_pts_electronic(proverki, pts_number)
 
     return {
         'type_reception': (
@@ -274,6 +299,7 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
             getattr(interactiv_rlk, 'store', None)
             or (docs.store if docs else None)
         ),
+        'staff': _default_reception_staff(interactiv_rlk),
         'customer_family': (docs.customer_family if docs else '') or '',
         'customer_name': (docs.customer_name if docs else '') or '',
         'customer_patronymic': (docs.customer_patronymic if docs else '') or '',
@@ -290,7 +316,9 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
         'count_keys': _as_int(docs.count_key if docs else 0),
         'chassis_number': '',
         'body_number': (estimation.number_body if estimation else '') or '',
-        'pts_number': (docs.pts_number if docs else '') or '',
+        'pts_electronic': pts_electronic,
+        'pts_series': '',
+        'pts_number': pts_number,
         'pts_date': pts_date,
         'pts_org_address': '',
         'sts_number': (docs.sts_number if docs else '') or '',
@@ -532,9 +560,39 @@ def ensure_kolesa_reception(estimation, user=None):
 
 def get_reception_or_none(interactiv_rlk: RegInteractivOcenkaRLK):
     try:
-        return interactiv_rlk.page_reception
+        return (
+            RegInteractivOcenkaReception.objects
+            .select_related('staff')
+            .get(interactiv_rlk=interactiv_rlk)
+        )
     except RegInteractivOcenkaReception.DoesNotExist:
         return None
+
+
+def search_reception_staff(query='', staff_id=None, limit=30):
+    """Поиск оценщиков для вкладки приёма (RefStaff по ФИО)."""
+    from refs.models import RefStaff
+
+    try:
+        limit = max(1, min(int(limit or 30), 50))
+    except (TypeError, ValueError):
+        limit = 30
+
+    qs = RefStaff.objects.exclude(name='')
+    if staff_id:
+        try:
+            qs = qs.filter(pk=int(staff_id))
+        except (TypeError, ValueError):
+            return []
+    elif query:
+        qs = qs.filter(name__icontains=query.strip())
+    else:
+        return []
+
+    return [
+        {'id': staff.pk, 'text': staff.name}
+        for staff in qs.order_by('name')[:limit]
+    ]
 
 
 def reception_select_options():
@@ -568,6 +626,7 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
     from refs.models import (
         RefFilial,
         RefOrganization,
+        RefStaff,
         RefStore,
         RefTypeReceptionCarsOrganization,
         RefUnit,
@@ -587,11 +646,12 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
     reception.filial = _fk(RefFilial, 'filial')
     reception.unit = _fk(RefUnit, 'unit')
     reception.store = _fk(RefStore, 'store')
+    reception.staff = _fk(RefStaff, 'staff')
 
     for field in (
         'customer_family', 'customer_name', 'customer_patronymic', 'customer_phone',
         'vin', 'vin2', 'mark', 'model', 'pts_mark_model', 'plate_number',
-        'chassis_number', 'body_number', 'pts_number', 'pts_org_address', 'sts_number',
+        'chassis_number', 'body_number', 'pts_series', 'pts_number', 'pts_org_address', 'sts_number',
         'pts_org_issuer', 'salon_color', 'body_color', 'engine_number', 'eco_class',
         'agreement_number_op',
     ):
@@ -609,11 +669,71 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
 
     reception.pts_original = str(post.get('pts_original', '')).lower() in ('1', 'true', 'on', 'yes')
 
+    if 'pts_electronic' in post:
+        raw = post.get('pts_electronic', '')
+        if raw in (None, '', 'None'):
+            reception.pts_electronic = None
+        elif str(raw).lower() in ('1', 'true', 'yes', 'on'):
+            reception.pts_electronic = True
+        else:
+            reception.pts_electronic = False
+
+    if reception.pts_electronic is True:
+        reception.pts_series = ''
+
+    if 'registration_owner_fl' in post:
+        raw = post.get('registration_owner_fl', '')
+        if raw in (None, '', 'None'):
+            reception.registration_owner_fl = None
+        elif str(raw).lower() in ('1', 'true', 'yes', 'on'):
+            reception.registration_owner_fl = True
+        else:
+            reception.registration_owner_fl = False
+
     if user is not None and getattr(user, 'is_authenticated', False):
         reception.updated_by = user
 
     reception.save()
     return reception
+
+
+def enrich_reception_export(reception_data: dict, reception: RegInteractivOcenkaReception) -> dict:
+    """Явные поля приёма для выгрузки в 1С (ПТС, оценщик)."""
+    if reception.pts_electronic is True:
+        pts_type = 'electronic'
+        pts_type_label = 'Электронный'
+        pts_number_full = (reception.pts_number or '').strip()
+    elif reception.pts_electronic is False:
+        pts_type = 'paper'
+        pts_type_label = 'Бумажный'
+        series = (reception.pts_series or '').strip()
+        number = (reception.pts_number or '').strip()
+        pts_number_full = ' '.join(part for part in (series, number) if part)
+    else:
+        pts_type = None
+        pts_type_label = None
+        pts_number_full = (reception.pts_number or '').strip()
+
+    staff = reception.staff
+    staff_id = reception.staff_id
+    staff_name = (staff.name if staff else '') or ''
+    staff_uin = (staff.uin if staff else '') or ''
+    staff_domain_login = (staff.domain_login if staff else '') or ''
+
+    reception_data = dict(reception_data)
+    reception_data.update({
+        'pts_electronic': reception.pts_electronic,
+        'pts_series': (reception.pts_series or '').strip(),
+        'pts_number': (reception.pts_number or '').strip(),
+        'pts_type': pts_type,
+        'pts_type_label': pts_type_label,
+        'pts_number_full': pts_number_full,
+        'staff_id': staff_id,
+        'staff_name': staff_name,
+        'staff_uin': staff_uin,
+        'staff_domain_login': staff_domain_login,
+    })
+    return reception_data
 
 
 def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception: RegInteractivOcenkaReception) -> dict:
@@ -637,7 +757,10 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
             else None
         ),
         'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
-        'Reception': RegInteractivOcenkaReceptionSerializer(reception, many=False).data,
+        'Reception': enrich_reception_export(
+            RegInteractivOcenkaReceptionSerializer(reception, many=False).data,
+            reception,
+        ),
         'ReceptionFiles': [
             serialize_reception_file(f)
             for f in get_reception_files_queryset(estimation)

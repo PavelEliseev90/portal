@@ -4071,6 +4071,14 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     store = models.ForeignKey(
         RefStore, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Склад поступления',
     )
+    staff = models.ForeignKey(
+        RefStaff,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='eco_receptions_staff',
+        verbose_name='Оценщик',
+    )
     amount_vzaimozachet = models.IntegerField(
         'Сумма взаимозачета', default=0, null=True, blank=True,
     )
@@ -4083,6 +4091,9 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     customer_name = models.CharField('Имя', max_length=250, default='', blank=True)
     customer_patronymic = models.CharField('Отчество', max_length=250, default='', blank=True)
     customer_phone = models.CharField('Телефон', max_length=250, default='', blank=True)
+    registration_owner_fl = models.BooleanField(
+        'Регистрация собственником ФЛ', null=True, blank=True,
+    )
 
     # Автомобиль
     vin = models.CharField('VIN', max_length=32, default='', blank=True)
@@ -4097,6 +4108,8 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     count_keys = models.IntegerField('Количество ключей', default=0, null=True, blank=True)
     chassis_number = models.CharField('Номер шасси / рамы', max_length=64, default='', blank=True)
     body_number = models.CharField('Номер кузова', max_length=64, default='', blank=True)
+    pts_electronic = models.BooleanField('Электронный ПТС (ЭПТС)', null=True, blank=True)
+    pts_series = models.CharField('Серия ПТС', max_length=32, default='', blank=True)
     pts_number = models.CharField('Номер ПТС', max_length=250, default='', blank=True)
     pts_date = models.DateField('Дата выдачи ПТС', blank=True, null=True)
     pts_org_address = models.CharField('Адрес организации ПТС', max_length=512, default='', blank=True)

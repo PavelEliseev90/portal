@@ -9,7 +9,8 @@ urlpatterns = [
    #path('',                TemplateView.as_view(template_name = 'login.html')),
    
    path('',                   views.start),
-   path('login/',             views.loging),
+   path('login/',             views.loging, name='login'),
+   path('login/status/',      views.login_session_status, name='login_status'),
    path('logout/',            views.logout),
    
    path('es/<slug:slug>/',       views.customer_est_es_redirect, name='customer_est_es_redirect'),
