@@ -3377,6 +3377,7 @@ def build_estimation_1c_payload(interactiv_rlk):
     """
     from eco.reception import (
         build_kolesa2_1c_extras,
+        enrich_reception_export,
         get_reception_files_queryset,
         get_reception_or_none,
         serialize_reception_file,
@@ -3397,7 +3398,10 @@ def build_estimation_1c_payload(interactiv_rlk):
         ),
         'Info': RegInteractivOcenkaRLKSerializer(interactiv_rlk, many=False).data,
         'Reception': (
-            RegInteractivOcenkaReceptionSerializer(reception, many=False).data
+            enrich_reception_export(
+                RegInteractivOcenkaReceptionSerializer(reception, many=False).data,
+                reception,
+            )
             if reception is not None
             else None
         ),

@@ -38,6 +38,7 @@ urlpatterns = [
     path('price-increase-analysis/detail/',    views.price_increase_analytics_detail, name='price_increase_analytics_detail'),
     path('chat-analysis/',                     views.chat_message_analytics, name='chat_message_analytics'),
     path('chat-analysis/authors/',             views.chat_message_authors_search, name='chat_message_authors_search'),
+    path('reception/staff-search/',             views.reception_staff_search, name='reception_staff_search'),
     path('market-trends/',                      views.market_model_trends, name='market_model_trends'),
     path('market-trends/model/',                views.market_model_detail, name='market_model_detail'),
     path('market-trends/month/',                views.market_model_month_detail, name='market_model_month_detail'),

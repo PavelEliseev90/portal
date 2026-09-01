@@ -15139,6 +15139,28 @@ def chat_message_authors_search(request):
 
 
 @login_required
+def reception_staff_search(request):
+    """AJAX: поиск оценщика для вкладки приёма автомобиля."""
+    from eco.reception import search_reception_staff
+
+    staff_id = (request.GET.get('id') or '').strip()
+    q = (request.GET.get('q') or request.GET.get('search') or '').strip()
+    try:
+        limit = int(request.GET.get('limit') or 30)
+    except (TypeError, ValueError):
+        limit = 30
+
+    if staff_id:
+        results = search_reception_staff(staff_id=staff_id, limit=1)
+    else:
+        if len(q) < 2:
+            return JsonResponse({'results': []})
+        results = search_reception_staff(query=q, limit=limit)
+
+    return JsonResponse({'results': results})
+
+
+@login_required
 def estimation_zg_detail(request):
     """Расшифровка: оценки или Autohub за выбранные месяц × ЦГ."""
     from eco.estimation_zg_analytics import (
