@@ -1,4 +1,5 @@
 from email.policy import default
+import os
 import uuid
 import re
 from django.db import models
@@ -807,6 +808,12 @@ class RefStaff(models.Model):
             return self.main_photo.url
         else:
             return '/media/no_image.png'
+
+    def get_database_label(self):
+        return 'КорсАвто' if self.buauto else 'АА6'
+
+    def get_reception_display_name(self):
+        return '{} ({})'.format(self.name, self.get_database_label())
 
 
     def save(self, *args, **kwargs):
@@ -2964,17 +2971,21 @@ class RefCarsOrganization(models.Model):
         return resolve_estimation_rlk_id(rlk, vin=self.vin)
 
     def get_photo_mini(self):
-        photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(main = True).count()
-        try:
-            if photos_count > 0:
-                return RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(main = True)[0].file_mini.url
-            else:
-                photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).count()
-                if photos_count > 0:
-                    return RefCarsOrganizationFiles.objects.filter(сars_organization = self)[0].file.url
-        except:
-            return '/media/nophoto.png'
+        photos = self._get_car_photos_ordered()
+        for photo in photos:
+            url = photo.get_thumbnail_url()
+            if url and url != '/media/nophoto.png':
+                return url
         return '/media/nophoto.png'
+
+    def _get_car_photos_ordered(self):
+        if hasattr(self, '_prefetched_objects_cache') and 'refcarsorganizationfiles_set' in self._prefetched_objects_cache:
+            photos = list(self.refcarsorganizationfiles_set.all())
+            photos.sort(key=lambda photo: (not photo.main, photo.date or datetime.min))
+            return photos
+        return list(
+            RefCarsOrganizationFiles.objects.filter(сars_organization=self).order_by('-main', 'date')
+        )
     
     def get_photo(self):
         photos_count = RefCarsOrganizationFiles.objects.filter(сars_organization = self).filter(car = True).filter(main = True).count()
@@ -3170,6 +3181,51 @@ class RefCarsOrganizationFiles(models.Model):
         if format.find('jpg') > -1 or format.find('jpeg') > -1 or format.find('svg') > -1 or format.find('gif') > -1 or format.find('png') > -1 or format.find('tiff') > -1:
             return False
         return True
+
+    def _image_field_url(self, field_name):
+        field = getattr(self, field_name, None)
+        if field and field.name:
+            try:
+                return field.url
+            except (ValueError, AttributeError):
+                pass
+        return ''
+
+    def get_image_url(self):
+        for field_name in ('file', 'file_bak'):
+            url = self._image_field_url(field_name)
+            if url:
+                return url
+        if self.url:
+            return self.url
+        return '/media/nophoto.png'
+
+    def get_thumbnail_url(self):
+        for field_name in ('file_mini', 'file', 'file_bak'):
+            url = self._image_field_url(field_name)
+            if url:
+                return url
+        if self.url_mini:
+            return self.url_mini
+        if self.url:
+            return self.url
+        return '/media/nophoto.png'
+
+    def get_display_name(self):
+        if self.name:
+            base_name = os.path.basename(self.name.replace('\\', '/'))
+            if base_name:
+                return base_name
+        for field_name in ('file', 'file_mini', 'file_bak'):
+            field = getattr(self, field_name, None)
+            if field and field.name:
+                base_name = os.path.basename(field.name.replace('\\', '/'))
+                if base_name:
+                    return base_name
+        return 'Фото'
+
+    def get_absolute_url(self):
+        return self.get_image_url()
 
     def __str__(self):
         return "{}".format(self.сars_organization)

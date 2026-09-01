@@ -590,7 +590,11 @@ def search_reception_staff(query='', staff_id=None, limit=30):
         return []
 
     return [
-        {'id': staff.pk, 'text': staff.name}
+        {
+            'id': staff.pk,
+            'text': staff.get_reception_display_name(),
+            'buauto': staff.buauto,
+        }
         for staff in qs.order_by('name')[:limit]
     ]
 

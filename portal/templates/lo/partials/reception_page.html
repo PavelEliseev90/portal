@@ -85,7 +85,7 @@
               <select class="form-select form-select-sm search-select reception-staff-select" id="staff" name="staff">
                 <option value=""></option>
                 {% if r.staff_id %}
-                  <option value="{{ r.staff_id }}" selected>{{ r.staff.name }}</option>
+                  <option value="{{ r.staff_id }}" selected>{{ r.staff.get_reception_display_name }}</option>
                 {% endif %}
               </select>
               <label for="staff">Оценщик</label>

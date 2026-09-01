@@ -1668,7 +1668,17 @@ def handle_car_photos_post(request, car):
 @login_required
 def price_edit(request, slug):
     
-    car     = RefCarsOrganization.objects.filter(slug = slug)[0]
+    car     = (
+        RefCarsOrganization.objects
+        .filter(slug=slug)
+        .select_related(
+            'lo', 'lo__rlk', 'status', 'status_availability', 'status_ransom',
+            'unit', 'store', 'type_reception', 'type_sale',
+        )
+        .first()
+    )
+    if car is None:
+        raise Http404
     base1C  = ''
     page    = _price_edit_page(request)
     if page == 1 and not request.user.profiles.korsavto_settings:
@@ -1725,20 +1735,8 @@ def price_edit(request, slug):
     car_options_ctx = build_car_options_context(car) if page == 11 else {}
     list_price = RegRefCarsOrganizationsPrice.objects.filter(car=car).order_by('-date')
 
-    interactiv = None
-
-    if car.lo_id and car.lo.rlk_id:
-        from documents.rlk_estimation import resolve_estimation_for_rlk
-        interactiv = resolve_estimation_for_rlk(car.lo.rlk, vin=car.vin)    
-    
-    agreement = None
-    if DocCarAgreement.objects.filter(active = True).filter(lo = car.lo).count() > 0:
-        agreement = DocCarAgreement.objects.filter(active = True).filter(lo = car.lo).order_by('-dataTime')[0] 
-    
-    shipment = None
-    if agreement != None:
-        if DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk).count() > 0:
-            shipment = DocCarShipment.objects.filter(active = True).filter(rlk = agreement.rlk)[0] 
+    from avtosalon.car_card_context import build_car_related_context
+    related = build_car_related_context(car, base1c=base1C if base1C else None)
 
     finance = round(car.cost_price * ((18 / 365) / 100) * car.days_in_stok, 2)
 
@@ -1788,9 +1786,16 @@ def price_edit(request, slug):
         'estimation_analytics': estimation_analytics,
         'finance'           : finance,
         'marketing'         : marketing,
-        'interactiv'        : interactiv,
-        'agreement'         : agreement,
-        'shipment'          : shipment,
+        'interactiv'        : related.get('estimation'),
+        'interactiv_rlk'    : related.get('interactiv_rlk'),
+        'eco_url'           : related.get('eco_url', ''),
+        'agreements'        : related.get('agreements', []),
+        'shipments'         : related.get('shipments', []),
+        'agreement'         : related['agreements'][0] if related.get('agreements') else None,
+        'shipment'          : related['shipments'][0] if related.get('shipments') else None,
+        'status_history'    : related.get('status_history', []),
+        'status_history_from_1c': related.get('status_history_from_1c', False),
+        'status_history_stored_in_portal': related.get('status_history_stored_in_portal', False),
         'calc_express'      : calc_express,
         'calc_autohub'      : calc_autohub,
         'calc_1C'           : calc_1C,

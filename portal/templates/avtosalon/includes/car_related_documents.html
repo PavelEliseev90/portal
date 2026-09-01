@@ -1,0 +1,115 @@
+{% comment %}
+  Связанные документы: интерактивная оценка, соглашения, отгрузки, история статусов.
+{% endcomment %}
+
+<div class="portal-panel mt-2">
+  <h6 class="mb-3 padding-portal d-flex align-items-center gap-2">
+    <span class="icon-mbri-link"></span> Связанные документы
+  </h6>
+
+  <div class="row g-2 mb-3">
+    <div class="col-md-4">
+      <div class="metric-card-portal h-100">
+        <div class="metric-card-label-portal">Интерактивная оценка</div>
+        {% if params.eco_url %}
+          <div class="mt-2">
+            <a class="btn btn-outline-primary btn-sm" href="{{ params.eco_url }}" target="_blank" rel="noopener">
+              Открыть оценку
+            </a>
+          </div>
+          {% if params.interactiv %}
+            <div class="small text-muted mt-2">
+              {% if params.interactiv.vin %}VIN {{ params.interactiv.vin }}{% endif %}
+              {% if params.interactiv.start_estimation %}
+                <br>Начата {{ params.interactiv.start_estimation|date:"d.m.Y H:i" }}
+              {% endif %}
+              {% if params.interactiv_rlk and params.interactiv_rlk.status %}
+                <br>Статус: {{ params.interactiv_rlk.status.name }}
+              {% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="small text-muted mt-2">Не найдена по листу оценки / VIN</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card-portal h-100">
+        <div class="metric-card-label-portal">Соглашения о покупке</div>
+        {% if params.agreements %}
+          <ul class="list-unstyled small mb-0 mt-2">
+            {% for item in params.agreements %}
+              <li class="mb-2">
+                <a href="/docs_car_agreement/{{ item.id }}/" target="_blank" rel="noopener">
+                  № {{ item.nomer }} от {{ item.dataTime|date:"d.m.Y" }}
+                </a>
+                {% if item.unit %}<span class="text-muted"> — {{ item.unit.name }}</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="small text-muted mt-2">Нет проведённых соглашений по этому автомобилю</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card-portal h-100">
+        <div class="metric-card-label-portal">Отгрузки</div>
+        {% if params.shipments %}
+          <ul class="list-unstyled small mb-0 mt-2">
+            {% for item in params.shipments %}
+              <li class="mb-2">
+                <a href="/doc_car_shipment/{{ item.id }}/" target="_blank" rel="noopener">
+                  № {{ item.nomer }} от {{ item.dataTime|date:"d.m.Y" }}
+                </a>
+                {% if item.unit %}<span class="text-muted"> — {{ item.unit.name }}</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="small text-muted mt-2">Нет проведённых отгрузок по этому автомобилю</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <h6 class="mb-2 padding-portal">История статусов</h6>
+  {% if params.status_history %}
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Статус</th>
+            <th>Комментарий</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.status_history %}
+            <tr>
+              <td>{{ row.date|default:"—" }}</td>
+              <td>{{ row.status|default:"—" }}</td>
+              <td>{{ row.comment|default:"" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small text-muted mt-2">Данные из ответа 1С при открытии карточки (не сохраняются в портале).</div>
+  {% else %}
+    <div class="small text-muted">
+      В портале хранится только <strong>текущий</strong> статус автомобиля
+      {% if params.object.status %}({{ params.object.status.name }}){% endif %}
+      {% if params.object.status_availability %}, наличие ({{ params.object.status_availability.name }}){% endif %}
+      {% if params.object.status_ransom %}, выкуп ({{ params.object.status_ransom.name }}){% endif %}.
+      Отдельная история смены статусов из 1С в базе портала <strong>не ведётся</strong>;
+      при обмене сохраняется только актуальное значение полей <code>status</code>,
+      <code>status_availability</code>, <code>status_ransom</code>.
+      {% if params.1C %}
+        В ответе 1С по этому автомобилю блок истории статусов не найден.
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
