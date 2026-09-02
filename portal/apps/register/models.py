@@ -4087,10 +4087,71 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     )
 
     # Клиент
+    CUSTOMER_TYPE_FL = 'fl'
+    CUSTOMER_TYPE_UL = 'ul'
+    CUSTOMER_TYPE_IP = 'ip'
+    CUSTOMER_TYPE_CHOICES = (
+        (CUSTOMER_TYPE_FL, 'Физическое лицо'),
+        (CUSTOMER_TYPE_UL, 'Юридическое лицо'),
+        (CUSTOMER_TYPE_IP, 'ИП'),
+    )
+    VAT_RATE_CHOICES = (
+        ('', '—'),
+        ('22', '22%'),
+        ('20', '20%'),
+        ('10', '10%'),
+        ('7', '7%'),
+        ('5', '5%'),
+        ('0', '0%'),
+        ('none', 'Без НДС'),
+    )
+    TAX_SYSTEM_CHOICES = (
+        ('', '—'),
+        ('osn', 'ОСН (общая)'),
+        ('usn_income', 'УСН «Доходы»'),
+        ('usn_income_expense', 'УСН «Доходы минус расходы»'),
+        ('psn', 'ПСН (патент)'),
+        ('eshn', 'ЕСХН'),
+        ('npd', 'НПД'),
+    )
+
+    customer_type = models.CharField(
+        'Тип клиента', max_length=8, choices=CUSTOMER_TYPE_CHOICES, default='', blank=True,
+    )
     customer_family = models.CharField('Фамилия', max_length=250, default='', blank=True)
     customer_name = models.CharField('Имя', max_length=250, default='', blank=True)
     customer_patronymic = models.CharField('Отчество', max_length=250, default='', blank=True)
     customer_phone = models.CharField('Телефон', max_length=250, default='', blank=True)
+    customer_inn = models.CharField('ИНН', max_length=12, default='', blank=True)
+    customer_kpp = models.CharField('КПП', max_length=9, default='', blank=True)
+    customer_ogrn = models.CharField('ОГРН / ОГРНИП', max_length=15, default='', blank=True)
+    customer_company_name = models.CharField(
+        'Наименование организации / ИП', max_length=512, default='', blank=True,
+    )
+    customer_legal_address = models.CharField(
+        'Юридический адрес', max_length=512, default='', blank=True,
+    )
+    customer_vat_rate = models.CharField(
+        'Ставка НДС', max_length=16, choices=VAT_RATE_CHOICES, default='', blank=True,
+    )
+    customer_tax_system = models.CharField(
+        'Система налогообложения', max_length=32, choices=TAX_SYSTEM_CHOICES, default='', blank=True,
+    )
+    customer_email = models.CharField('Email', max_length=250, default='', blank=True)
+    customer_contact_person = models.CharField(
+        'Контактное лицо', max_length=250, default='', blank=True,
+    )
+    customer_actual_address = models.CharField(
+        'Фактический адрес', max_length=512, default='', blank=True,
+    )
+    customer_bank_name = models.CharField('Банк', max_length=512, default='', blank=True)
+    customer_bank_bik = models.CharField('БИК', max_length=9, default='', blank=True)
+    customer_bank_account = models.CharField(
+        'Расчётный счёт', max_length=20, default='', blank=True,
+    )
+    customer_bank_corr_account = models.CharField(
+        'Корреспондентский счёт', max_length=20, default='', blank=True,
+    )
     registration_owner_fl = models.BooleanField(
         'Регистрация собственником ФЛ', null=True, blank=True,
     )

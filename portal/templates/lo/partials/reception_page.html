@@ -74,6 +74,17 @@
         {% endif %}
       </div>
 
+      {% if params.reception_form_errors %}
+        <div class="alert alert-danger py-2 mb-3" role="alert">
+          <strong>Не удалось сохранить:</strong>
+          <ul class="mb-0 mt-1 ps-3">
+            {% for err in params.reception_form_errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
       <div class="row g-2">
         <div class="col-xl-4">
           <div class="portal-panel h-100">
@@ -125,7 +136,9 @@
               <select class="form-select form-select-sm" id="type_reception" name="type_reception">
                 <option value="">—</option>
                 {% for item in s.type_receptions %}
-                  <option value="{{ item.id }}" {% if r.type_reception_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                  <option value="{{ item.id }}"
+                          data-is-commission="{% if item.is_commission %}1{% else %}0{% endif %}"
+                          {% if r.type_reception_id == item.id %}selected{% endif %}>{{ item.name }}</option>
                 {% endfor %}
               </select>
               <label for="type_reception">Тип приёма</label>
@@ -160,29 +173,142 @@
             <h6 class="d-flex align-items-center gap-2 mb-3">
               <span class="icon-mbri-user"></span> Клиент
             </h6>
-            <div class="form-floating mb-2">
-              <input class="form-control form-control-sm" type="text" id="customer_family" name="customer_family" value="{{ r.customer_family }}">
-              <label for="customer_family">Фамилия</label>
+
+            <div class="mb-3">
+              <label class="form-label small text-muted mb-1">Тип клиента</label>
+              <div class="btn-group btn-group-sm w-100 reception-customer-type-group" role="group" aria-label="Тип клиента">
+                {% for item in s.customer_types %}
+                  <input type="radio" class="btn-check" name="customer_type" id="customer_type_{{ item.value }}" value="{{ item.value }}"
+                         {% if r.customer_type == item.value %}checked{% elif not r.customer_type and item.value == 'fl' %}checked{% endif %}>
+                  <label class="btn btn-outline-secondary" for="customer_type_{{ item.value }}">{{ item.label }}</label>
+                {% endfor %}
+              </div>
             </div>
-            <div class="form-floating mb-2">
-              <input class="form-control form-control-sm" type="text" id="customer_name" name="customer_name" value="{{ r.customer_name }}">
-              <label for="customer_name">Имя</label>
+
+            <div id="customer-fields-fl" class="reception-customer-fields">
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_family" name="customer_family" value="{{ r.customer_family }}">
+                <label for="customer_family">Фамилия</label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_name" name="customer_name" value="{{ r.customer_name }}">
+                <label for="customer_name">Имя</label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_patronymic" name="customer_patronymic" value="{{ r.customer_patronymic }}">
+                <label for="customer_patronymic">Отчество</label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_phone_fl" name="customer_phone" value="{{ r.customer_phone }}">
+                <label for="customer_phone_fl">Телефон</label>
+              </div>
+              <div class="form-floating mb-2 reception-field-fl-inn" style="display:none;">
+                <input class="form-control form-control-sm" type="text" id="customer_inn_fl" name="customer_inn" value="{{ r.customer_inn }}" inputmode="numeric" maxlength="12" autocomplete="off">
+                <label for="customer_inn_fl">ИНН <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating">
+                <select class="form-select form-select-sm" id="registration_owner_fl" name="registration_owner_fl">
+                  <option value="" {% if r.registration_owner_fl is None %}selected{% endif %}>—</option>
+                  <option value="1" {% if r.registration_owner_fl is True %}selected{% endif %}>Да</option>
+                  <option value="0" {% if r.registration_owner_fl is False %}selected{% endif %}>Нет</option>
+                </select>
+                <label for="registration_owner_fl">Регистрация собственником ФЛ <span class="text-danger">*</span></label>
+              </div>
             </div>
-            <div class="form-floating mb-2">
-              <input class="form-control form-control-sm" type="text" id="customer_patronymic" name="customer_patronymic" value="{{ r.customer_patronymic }}">
-              <label for="customer_patronymic">Отчество</label>
+
+            <div id="customer-fields-ul" class="reception-customer-fields" style="display:none;">
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_company_name_ul" name="customer_company_name" value="{{ r.customer_company_name }}">
+                <label for="customer_company_name_ul">Наименование организации <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_inn_ul" name="customer_inn" value="{{ r.customer_inn }}" inputmode="numeric" maxlength="10" autocomplete="off">
+                <label for="customer_inn_ul">ИНН <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_kpp" name="customer_kpp" value="{{ r.customer_kpp }}" inputmode="numeric" maxlength="9" autocomplete="off">
+                <label for="customer_kpp">КПП <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_ogrn_ul" name="customer_ogrn" value="{{ r.customer_ogrn }}" inputmode="numeric" maxlength="13" autocomplete="off">
+                <label for="customer_ogrn_ul">ОГРН <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_legal_address_ul" name="customer_legal_address" value="{{ r.customer_legal_address }}">
+                <label for="customer_legal_address_ul">Юридический адрес <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_actual_address_ul" name="customer_actual_address" value="{{ r.customer_actual_address }}">
+                <label for="customer_actual_address_ul">Фактический адрес</label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_contact_person_ul" name="customer_contact_person" value="{{ r.customer_contact_person }}">
+                <label for="customer_contact_person_ul">Контактное лицо</label>
+              </div>
             </div>
-            <div class="form-floating mb-2">
-              <input class="form-control form-control-sm" type="text" id="customer_phone" name="customer_phone" value="{{ r.customer_phone }}">
-              <label for="customer_phone">Телефон</label>
+
+            <div id="customer-fields-ip" class="reception-customer-fields" style="display:none;">
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_company_name_ip" name="customer_company_name" value="{{ r.customer_company_name }}">
+                <label for="customer_company_name_ip">ФИО индивидуального предпринимателя <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_inn_ip" name="customer_inn" value="{{ r.customer_inn }}" inputmode="numeric" maxlength="12" autocomplete="off">
+                <label for="customer_inn_ip">ИНН <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_ogrn_ip" name="customer_ogrn" value="{{ r.customer_ogrn }}" inputmode="numeric" maxlength="15" autocomplete="off">
+                <label for="customer_ogrn_ip">ОГРНИП <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_legal_address_ip" name="customer_legal_address" value="{{ r.customer_legal_address }}">
+                <label for="customer_legal_address_ip">Адрес регистрации</label>
+              </div>
             </div>
-            <div class="form-floating">
-              <select class="form-select form-select-sm" id="registration_owner_fl" name="registration_owner_fl">
-                <option value="" {% if r.registration_owner_fl is None %}selected{% endif %}>—</option>
-                <option value="1" {% if r.registration_owner_fl is True %}selected{% endif %}>Да</option>
-                <option value="0" {% if r.registration_owner_fl is False %}selected{% endif %}>Нет</option>
-              </select>
-              <label for="registration_owner_fl">Регистрация собственником ФЛ</label>
+
+            <div id="customer-fields-business" class="reception-customer-fields" style="display:none;">
+              <div class="form-floating mb-2">
+                <select class="form-select form-select-sm" id="customer_tax_system" name="customer_tax_system">
+                  <option value="">—</option>
+                  {% for item in s.tax_systems %}
+                    <option value="{{ item.value }}" {% if r.customer_tax_system == item.value %}selected{% endif %}>{{ item.label }}</option>
+                  {% endfor %}
+                </select>
+                <label for="customer_tax_system">Система налогообложения <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <select class="form-select form-select-sm" id="customer_vat_rate" name="customer_vat_rate">
+                  <option value="">—</option>
+                  {% for item in s.vat_rates %}
+                    <option value="{{ item.value }}" {% if r.customer_vat_rate == item.value %}selected{% endif %}>{{ item.label }}</option>
+                  {% endfor %}
+                </select>
+                <label for="customer_vat_rate">Ставка НДС <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="email" id="customer_email" name="customer_email" value="{{ r.customer_email }}" autocomplete="email">
+                <label for="customer_email">Email <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_phone_business" name="customer_phone" value="{{ r.customer_phone }}">
+                <label for="customer_phone_business">Телефон</label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_bank_name" name="customer_bank_name" value="{{ r.customer_bank_name }}">
+                <label for="customer_bank_name">Банк <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_bank_bik" name="customer_bank_bik" value="{{ r.customer_bank_bik }}" inputmode="numeric" maxlength="9" autocomplete="off">
+                <label for="customer_bank_bik">БИК <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating mb-2">
+                <input class="form-control form-control-sm" type="text" id="customer_bank_account" name="customer_bank_account" value="{{ r.customer_bank_account }}" inputmode="numeric" maxlength="20" autocomplete="off">
+                <label for="customer_bank_account">Расчётный счёт <span class="text-danger">*</span></label>
+              </div>
+              <div class="form-floating">
+                <input class="form-control form-control-sm" type="text" id="customer_bank_corr_account" name="customer_bank_corr_account" value="{{ r.customer_bank_corr_account }}" inputmode="numeric" maxlength="20" autocomplete="off">
+                <label for="customer_bank_corr_account">Корреспондентский счёт <span class="text-danger">*</span></label>
+              </div>
             </div>
           </div>
         </div>
@@ -603,6 +729,195 @@
         paperRadio.addEventListener('change', syncPtsFields);
       }
       syncPtsFields();
+    })();
+
+    (function() {
+      var typeReception = document.getElementById('type_reception');
+      var customerTypeRadios = document.querySelectorAll('input[name="customer_type"]');
+      var blocks = {
+        fl: document.getElementById('customer-fields-fl'),
+        ul: document.getElementById('customer-fields-ul'),
+        ip: document.getElementById('customer-fields-ip'),
+        business: document.getElementById('customer-fields-business'),
+      };
+      var flInnBlock = document.querySelector('.reception-field-fl-inn');
+      var form = document.getElementById('reception-main-form');
+
+      function currentCustomerType() {
+        var selected = document.querySelector('input[name="customer_type"]:checked');
+        return selected ? selected.value : 'fl';
+      }
+
+      function isCommissionReception() {
+        if (!typeReception || !typeReception.selectedOptions.length) {
+          return false;
+        }
+        return typeReception.selectedOptions[0].getAttribute('data-is-commission') === '1';
+      }
+
+      function setBlockEnabled(block, enabled) {
+        if (!block) {
+          return;
+        }
+        block.querySelectorAll('input, select, textarea').forEach(function(el) {
+          el.disabled = !enabled;
+        });
+      }
+
+      function syncCustomerFields() {
+        var customerType = currentCustomerType();
+        var isBusiness = customerType === 'ul' || customerType === 'ip';
+
+        Object.keys(blocks).forEach(function(key) {
+          var block = blocks[key];
+          var visible;
+          if (key === 'business') {
+            visible = isBusiness;
+          } else {
+            visible = key === customerType;
+          }
+          if (block) {
+            block.style.display = visible ? '' : 'none';
+          }
+          setBlockEnabled(block, visible);
+        });
+
+        if (flInnBlock) {
+          var showFlInn = customerType === 'fl' && isCommissionReception();
+          flInnBlock.style.display = showFlInn ? '' : 'none';
+          var flInnInput = document.getElementById('customer_inn_fl');
+          if (flInnInput) {
+            flInnInput.disabled = !showFlInn;
+          }
+        }
+      }
+
+      function digitsOnly(value) {
+        return (value || '').replace(/\D/g, '');
+      }
+
+      function isValidEmail(value) {
+        var text = (value || '').trim();
+        if (!text) {
+          return false;
+        }
+        var parts = text.split('@');
+        return parts.length === 2 && parts[0] && parts[1] && parts[1].indexOf('.') > -1;
+      }
+
+      function validateBusinessFields(errors) {
+        var taxSystem = document.getElementById('customer_tax_system');
+        if (!taxSystem || !(taxSystem.value || '').trim()) {
+          errors.push('Укажите систему налогообложения.');
+        }
+        var vatRate = document.getElementById('customer_vat_rate');
+        if (!vatRate || !(vatRate.value || '').trim()) {
+          errors.push('Укажите ставку НДС.');
+        }
+        var email = document.getElementById('customer_email');
+        if (!isValidEmail(email ? email.value : '')) {
+          errors.push('Укажите корректный email.');
+        }
+        if (!(document.getElementById('customer_bank_name').value || '').trim()) {
+          errors.push('Укажите наименование банка.');
+        }
+        var bik = digitsOnly(document.getElementById('customer_bank_bik').value);
+        if (!bik || bik.length !== 9) {
+          errors.push('Укажите корректный БИК (9 цифр).');
+        }
+        var account = digitsOnly(document.getElementById('customer_bank_account').value);
+        if (!account || account.length !== 20) {
+          errors.push('Укажите корректный расчётный счёт (20 цифр).');
+        }
+        var corrAccount = digitsOnly(document.getElementById('customer_bank_corr_account').value);
+        if (!corrAccount || corrAccount.length !== 20) {
+          errors.push('Укажите корректный корреспондентский счёт (20 цифр).');
+        }
+      }
+
+      function validateCustomerFields() {
+        var errors = [];
+        var customerType = currentCustomerType();
+        var commission = isCommissionReception();
+
+        if (!customerType) {
+          errors.push('Укажите тип клиента.');
+          return errors;
+        }
+
+        if (customerType === 'fl') {
+          var ownerFl = document.getElementById('registration_owner_fl');
+          if (!ownerFl || ownerFl.value === '') {
+            errors.push('Для физического лица укажите «Регистрация собственником ФЛ».');
+          }
+          if (commission) {
+            var innFl = document.getElementById('customer_inn_fl');
+            var inn = digitsOnly(innFl ? innFl.value : '');
+            if (!inn) {
+              errors.push('Для приёма на комиссию укажите ИНН клиента.');
+            } else if (inn.length !== 12) {
+              errors.push('ИНН физического лица должен содержать 12 цифр.');
+            }
+          }
+        } else if (customerType === 'ul') {
+          if (!(document.getElementById('customer_company_name_ul').value || '').trim()) {
+            errors.push('Укажите наименование организации.');
+          }
+          var innUl = digitsOnly(document.getElementById('customer_inn_ul').value);
+          if (!innUl) {
+            errors.push('Укажите ИНН организации.');
+          } else if (innUl.length !== 10) {
+            errors.push('ИНН юридического лица должен содержать 10 цифр.');
+          }
+          var kpp = digitsOnly(document.getElementById('customer_kpp').value);
+          if (!kpp || kpp.length !== 9) {
+            errors.push('Укажите корректный КПП (9 цифр).');
+          }
+          var ogrnUl = digitsOnly(document.getElementById('customer_ogrn_ul').value);
+          if (!ogrnUl || ogrnUl.length !== 13) {
+            errors.push('Укажите корректный ОГРН (13 цифр).');
+          }
+          if (!(document.getElementById('customer_legal_address_ul').value || '').trim()) {
+            errors.push('Укажите юридический адрес организации.');
+          }
+          validateBusinessFields(errors);
+        } else if (customerType === 'ip') {
+          if (!(document.getElementById('customer_company_name_ip').value || '').trim()) {
+            errors.push('Укажите ФИО индивидуального предпринимателя.');
+          }
+          var innIp = digitsOnly(document.getElementById('customer_inn_ip').value);
+          if (!innIp || innIp.length !== 12) {
+            errors.push('Укажите корректный ИНН ИП (12 цифр).');
+          }
+          var ogrnIp = digitsOnly(document.getElementById('customer_ogrn_ip').value);
+          if (!ogrnIp || ogrnIp.length !== 15) {
+            errors.push('Укажите корректный ОГРНИП (15 цифр).');
+          }
+          validateBusinessFields(errors);
+        }
+
+        return errors;
+      }
+
+      customerTypeRadios.forEach(function(radio) {
+        radio.addEventListener('change', syncCustomerFields);
+      });
+      if (typeReception) {
+        typeReception.addEventListener('change', syncCustomerFields);
+      }
+
+      if (form) {
+        form.addEventListener('submit', function(event) {
+          syncCustomerFields();
+          var errors = validateCustomerFields();
+          if (errors.length) {
+            event.preventDefault();
+            window.alert(errors.join('\n'));
+          }
+        });
+      }
+
+      syncCustomerFields();
     })();
     </script>
 

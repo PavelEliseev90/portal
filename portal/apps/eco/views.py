@@ -4535,6 +4535,7 @@ def doc(request, id):
         reception = None
         reception_allowed = False
         reception_selects = {}
+        reception_form_errors = None
         reception_file_blocks = []
         kolesa2_needed = False
         kolesa_reception = None
@@ -4572,6 +4573,11 @@ def doc(request, id):
                 return HttpResponseRedirect(request.path_info + '?page=24')
             if reception is not None:
                 reception_selects = reception_select_options()
+                reception_form_errors = request.session.pop('reception_form_errors', None)
+                reception_form_draft = request.session.pop('reception_form_draft', None)
+                if reception_form_draft:
+                    from eco.reception import apply_post_to_reception
+                    apply_post_to_reception(reception, reception_form_draft, save=False)
                 reception_file_blocks = get_reception_file_blocks(estimation)
             if kolesa_reception is not None:
                 kolesa_reception_files = list(
@@ -4734,6 +4740,7 @@ def doc(request, id):
                 'reception': reception,
                 'reception_allowed': reception_allowed,
                 'reception_selects': reception_selects,
+                'reception_form_errors': reception_form_errors,
                 'reception_file_blocks': reception_file_blocks,
                 'kolesa2_needed': kolesa2_needed,
                 'kolesa_reception': kolesa_reception,
@@ -5327,16 +5334,25 @@ def doc(request, id):
                     get_reception_or_none,
                     reception_allowed as reception_is_allowed,
                     save_reception_files_from_request,
+                    validate_reception_client,
                 )
                 if reception_is_allowed(interactiv_rlk):
                     reception_obj = get_reception_or_none(interactiv_rlk)
                     if reception_obj is not None:
-                        apply_post_to_reception(reception_obj, request.POST, user=request.user)
-                        save_reception_files_from_request(
-                            reg_interactiv_ocenka,
-                            request.FILES,
-                            user=request.user,
-                        )
+                        apply_post_to_reception(reception_obj, request.POST, user=request.user, save=False)
+                        validation_errors = validate_reception_client(reception_obj)
+                        if validation_errors:
+                            request.session['reception_form_errors'] = validation_errors
+                            request.session['reception_form_draft'] = request.POST.dict()
+                        else:
+                            reception_obj.save()
+                            save_reception_files_from_request(
+                                reg_interactiv_ocenka,
+                                request.FILES,
+                                user=request.user,
+                            )
+                            request.session.pop('reception_form_errors', None)
+                            request.session.pop('reception_form_draft', None)
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'delete_reception_file':
                 from eco.reception import delete_reception_file, reception_allowed as reception_is_allowed
