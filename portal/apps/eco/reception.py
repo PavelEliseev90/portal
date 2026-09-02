@@ -599,6 +599,137 @@ def search_reception_staff(query='', staff_id=None, limit=30):
     ]
 
 
+def is_commission_reception(reception: RegInteractivOcenkaReception) -> bool:
+    """Приём на комиссию — по названию типа или известному id=3."""
+    type_reception = reception.type_reception
+    if type_reception is None:
+        return False
+    name = (type_reception.name or '').lower()
+    if 'комисс' in name:
+        return True
+    return type_reception.id == 3
+
+
+def _normalize_digits(value, max_len=None):
+    digits = re.sub(r'\D', '', value or '')
+    if max_len:
+        return digits[:max_len]
+    return digits
+
+
+def _vat_rate_label(reception: RegInteractivOcenkaReception) -> str:
+    raw = (reception.customer_vat_rate or '').strip()
+    if not raw:
+        return ''
+    for value, label in RegInteractivOcenkaReception.VAT_RATE_CHOICES:
+        if value == raw:
+            return label
+    return raw
+
+
+def _tax_system_label(reception: RegInteractivOcenkaReception) -> str:
+    raw = (reception.customer_tax_system or '').strip()
+    if not raw:
+        return ''
+    for value, label in RegInteractivOcenkaReception.TAX_SYSTEM_CHOICES:
+        if value == raw:
+            return label
+    return raw
+
+
+def _is_valid_email(value: str) -> bool:
+    text = (value or '').strip()
+    if not text:
+        return False
+    return '@' in text and '.' in text.split('@')[-1]
+
+
+def _validate_business_customer(reception: RegInteractivOcenkaReception, errors: list[str]) -> None:
+    """Общие проверки для юрлица и ИП."""
+    if not (reception.customer_tax_system or '').strip():
+        errors.append('Укажите систему налогообложения.')
+    if not (reception.customer_vat_rate or '').strip():
+        errors.append('Укажите ставку НДС.')
+    if not _is_valid_email(reception.customer_email):
+        errors.append('Укажите корректный email.')
+    if not (reception.customer_bank_name or '').strip():
+        errors.append('Укажите наименование банка.')
+    bik = _normalize_digits(reception.customer_bank_bik)
+    if not bik:
+        errors.append('Укажите БИК банка.')
+    elif len(bik) != 9:
+        errors.append('БИК должен содержать 9 цифр.')
+    account = _normalize_digits(reception.customer_bank_account)
+    if not account:
+        errors.append('Укажите расчётный счёт.')
+    elif len(account) != 20:
+        errors.append('Расчётный счёт должен содержать 20 цифр.')
+    corr_account = _normalize_digits(reception.customer_bank_corr_account)
+    if not corr_account:
+        errors.append('Укажите корреспондентский счёт.')
+    elif len(corr_account) != 20:
+        errors.append('Корреспондентский счёт должен содержать 20 цифр.')
+
+
+def validate_reception_client(reception: RegInteractivOcenkaReception) -> list[str]:
+    """Проверка блока «Клиент» перед сохранением приёма."""
+    errors = []
+    customer_type = (reception.customer_type or '').strip()
+    commission = is_commission_reception(reception)
+
+    if not customer_type:
+        errors.append('Укажите тип клиента: физическое лицо, юридическое лицо или ИП.')
+        return errors
+
+    inn = _normalize_digits(reception.customer_inn)
+
+    if customer_type == RegInteractivOcenkaReception.CUSTOMER_TYPE_FL:
+        if reception.registration_owner_fl is None:
+            errors.append('Для физического лица укажите «Регистрация собственником ФЛ».')
+        if commission:
+            if not inn:
+                errors.append('Для приёма на комиссию укажите ИНН клиента.')
+            elif len(inn) != 12:
+                errors.append('ИНН физического лица должен содержать 12 цифр.')
+
+    elif customer_type == RegInteractivOcenkaReception.CUSTOMER_TYPE_UL:
+        if not (reception.customer_company_name or '').strip():
+            errors.append('Укажите наименование организации.')
+        if not inn:
+            errors.append('Укажите ИНН организации.')
+        elif len(inn) != 10:
+            errors.append('ИНН юридического лица должен содержать 10 цифр.')
+        kpp = _normalize_digits(reception.customer_kpp)
+        if not kpp:
+            errors.append('Укажите КПП организации.')
+        elif len(kpp) != 9:
+            errors.append('КПП должен содержать 9 цифр.')
+        ogrn = _normalize_digits(reception.customer_ogrn)
+        if not ogrn:
+            errors.append('Укажите ОГРН организации.')
+        elif len(ogrn) != 13:
+            errors.append('ОГРН должен содержать 13 цифр.')
+        if not (reception.customer_legal_address or '').strip():
+            errors.append('Укажите юридический адрес организации.')
+        _validate_business_customer(reception, errors)
+
+    elif customer_type == RegInteractivOcenkaReception.CUSTOMER_TYPE_IP:
+        if not (reception.customer_company_name or '').strip():
+            errors.append('Укажите ФИО индивидуального предпринимателя.')
+        if not inn:
+            errors.append('Укажите ИНН ИП.')
+        elif len(inn) != 12:
+            errors.append('ИНН ИП должен содержать 12 цифр.')
+        ogrn = _normalize_digits(reception.customer_ogrn)
+        if not ogrn:
+            errors.append('Укажите ОГРНИП.')
+        elif len(ogrn) != 15:
+            errors.append('ОГРНИП должен содержать 15 цифр.')
+        _validate_business_customer(reception, errors)
+
+    return errors
+
+
 def reception_select_options():
     from refs.models import (
         RefFilial,
@@ -608,9 +739,28 @@ def reception_select_options():
         RefUnit,
     )
     return {
-        'type_receptions': list(
-            RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name').values('id', 'name')
-        ),
+        'type_receptions': [
+            {
+                'id': item['id'],
+                'name': item['name'],
+                'is_commission': 'комисс' in (item['name'] or '').lower() or item['id'] == 3,
+            }
+            for item in RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name').values('id', 'name')
+        ],
+        'customer_types': [
+            {'value': value, 'label': label}
+            for value, label in RegInteractivOcenkaReception.CUSTOMER_TYPE_CHOICES
+        ],
+        'vat_rates': [
+            {'value': value, 'label': label}
+            for value, label in RegInteractivOcenkaReception.VAT_RATE_CHOICES
+            if value
+        ],
+        'tax_systems': [
+            {'value': value, 'label': label}
+            for value, label in RegInteractivOcenkaReception.TAX_SYSTEM_CHOICES
+            if value
+        ],
         'organizations': list(
             RefOrganization.objects.exclude(name='').order_by('name').values('id', 'name')
         ),
@@ -626,7 +776,12 @@ def reception_select_options():
     }
 
 
-def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=None) -> RegInteractivOcenkaReception:
+def apply_post_to_reception(
+    reception: RegInteractivOcenkaReception,
+    post,
+    user=None,
+    save=True,
+) -> RegInteractivOcenkaReception:
     from refs.models import (
         RefFilial,
         RefOrganization,
@@ -654,6 +809,11 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
 
     for field in (
         'customer_family', 'customer_name', 'customer_patronymic', 'customer_phone',
+        'customer_type', 'customer_inn', 'customer_kpp', 'customer_ogrn',
+        'customer_company_name', 'customer_legal_address', 'customer_vat_rate',
+        'customer_tax_system', 'customer_email', 'customer_contact_person',
+        'customer_actual_address', 'customer_bank_name', 'customer_bank_bik',
+        'customer_bank_account', 'customer_bank_corr_account',
         'vin', 'vin2', 'mark', 'model', 'pts_mark_model', 'plate_number',
         'chassis_number', 'body_number', 'pts_series', 'pts_number', 'pts_org_address', 'sts_number',
         'pts_org_issuer', 'salon_color', 'body_color', 'engine_number', 'eco_class',
@@ -661,6 +821,19 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
     ):
         if field in post:
             setattr(reception, field, (post.get(field) or '').strip())
+
+    if 'customer_inn' in post:
+        reception.customer_inn = _normalize_digits(post.get('customer_inn'), 12)
+    if 'customer_kpp' in post:
+        reception.customer_kpp = _normalize_digits(post.get('customer_kpp'), 9)
+    if 'customer_ogrn' in post:
+        reception.customer_ogrn = _normalize_digits(post.get('customer_ogrn'), 15)
+    if 'customer_bank_bik' in post:
+        reception.customer_bank_bik = _normalize_digits(post.get('customer_bank_bik'), 9)
+    if 'customer_bank_account' in post:
+        reception.customer_bank_account = _normalize_digits(post.get('customer_bank_account'), 20)
+    if 'customer_bank_corr_account' in post:
+        reception.customer_bank_corr_account = _normalize_digits(post.get('customer_bank_corr_account'), 20)
 
     for field in ('year', 'mileage', 'count_owners', 'count_keys', 'mass', 'max_mass', 'amount_vzaimozachet'):
         if field in post:
@@ -697,7 +870,8 @@ def apply_post_to_reception(reception: RegInteractivOcenkaReception, post, user=
     if user is not None and getattr(user, 'is_authenticated', False):
         reception.updated_by = user
 
-    reception.save()
+    if save:
+        reception.save()
     return reception
 
 
@@ -736,6 +910,26 @@ def enrich_reception_export(reception_data: dict, reception: RegInteractivOcenka
         'staff_name': staff_name,
         'staff_uin': staff_uin,
         'staff_domain_login': staff_domain_login,
+        'customer_type': (reception.customer_type or '').strip(),
+        'customer_type_label': reception.get_customer_type_display() if reception.customer_type else '',
+        'customer_inn': (reception.customer_inn or '').strip(),
+        'customer_kpp': (reception.customer_kpp or '').strip(),
+        'customer_ogrn': (reception.customer_ogrn or '').strip(),
+        'customer_company_name': (reception.customer_company_name or '').strip(),
+        'customer_legal_address': (reception.customer_legal_address or '').strip(),
+        'customer_vat_rate': (reception.customer_vat_rate or '').strip(),
+        'customer_vat_rate_label': _vat_rate_label(reception),
+        'customer_tax_system': (reception.customer_tax_system or '').strip(),
+        'customer_tax_system_label': _tax_system_label(reception),
+        'customer_email': (reception.customer_email or '').strip(),
+        'customer_contact_person': (reception.customer_contact_person or '').strip(),
+        'customer_actual_address': (reception.customer_actual_address or '').strip(),
+        'customer_bank_name': (reception.customer_bank_name or '').strip(),
+        'customer_bank_bik': (reception.customer_bank_bik or '').strip(),
+        'customer_bank_account': (reception.customer_bank_account or '').strip(),
+        'customer_bank_corr_account': (reception.customer_bank_corr_account or '').strip(),
+        'registration_owner_fl': reception.registration_owner_fl,
+        'is_commission_reception': is_commission_reception(reception),
     })
     return reception_data
 
