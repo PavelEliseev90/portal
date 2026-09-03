@@ -205,6 +205,36 @@ def _as_date(value):
     return None
 
 
+def _as_datetime(value):
+    """Парсинг даты и времени из datetime-local / строки формы."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, date):
+        return datetime.combine(value, datetime.min.time())
+    text = str(value).strip()
+    if not text:
+        return None
+    text = text.replace('T', ' ')
+    for fmt in (
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%d %H:%M',
+        '%d.%m.%Y %H:%M:%S',
+        '%d.%m.%Y %H:%M',
+        '%d/%m/%Y %H:%M',
+    ):
+        try:
+            return datetime.strptime(text[:19], fmt)
+        except ValueError:
+            continue
+    # Только дата — полночь
+    only_date = _as_date(text)
+    if only_date is not None:
+        return datetime.combine(only_date, datetime.min.time())
+    return None
+
+
 def _as_int(value, default=0):
     if value is None or value == '':
         return default
@@ -333,6 +363,7 @@ def build_prefill(interactiv_rlk: RegInteractivOcenkaRLK) -> dict:
         'eco_class': '',
         'amount_vzaimozachet': 0,
         'agreement_number_op': '',
+        'actual_reception_at': timezone.now(),
     }
 
 
@@ -674,6 +705,10 @@ def _validate_business_customer(reception: RegInteractivOcenkaReception, errors:
 def validate_reception_client(reception: RegInteractivOcenkaReception) -> list[str]:
     """Проверка блока «Клиент» перед сохранением приёма."""
     errors = []
+
+    if not reception.actual_reception_at:
+        errors.append('Укажите фактическую дату и время приёма автомобиля.')
+
     customer_type = (reception.customer_type or '').strip()
     commission = is_commission_reception(reception)
 
@@ -807,6 +842,9 @@ def apply_post_to_reception(
     reception.store = _fk(RefStore, 'store')
     reception.staff = _fk(RefStaff, 'staff')
 
+    if 'actual_reception_at' in post:
+        reception.actual_reception_at = _as_datetime(post.get('actual_reception_at'))
+
     for field in (
         'customer_family', 'customer_name', 'customer_patronymic', 'customer_phone',
         'customer_type', 'customer_inn', 'customer_kpp', 'customer_ogrn',
@@ -900,6 +938,12 @@ def enrich_reception_export(reception_data: dict, reception: RegInteractivOcenka
 
     reception_data = dict(reception_data)
     reception_data.update({
+        'actual_reception_at': reception.actual_reception_at,
+        'actual_reception_at_str': (
+            reception.actual_reception_at.strftime('%d.%m.%Y %H:%M')
+            if reception.actual_reception_at
+            else ''
+        ),
         'pts_electronic': reception.pts_electronic,
         'pts_series': (reception.pts_series or '').strip(),
         'pts_number': (reception.pts_number or '').strip(),

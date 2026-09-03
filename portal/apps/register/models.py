@@ -4071,6 +4071,12 @@ class RegInteractivOcenkaReception(ChangeloggableMixin, models.Model):
     store = models.ForeignKey(
         RefStore, null=True, blank=True, on_delete=models.SET_NULL, verbose_name='Склад поступления',
     )
+    actual_reception_at = models.DateTimeField(
+        'Фактическая дата приёма автомобиля',
+        null=True,
+        blank=True,
+        help_text='Дата и время фактического приёма автомобиля',
+    )
     staff = models.ForeignKey(
         RefStaff,
         null=True,

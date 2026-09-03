@@ -92,6 +92,18 @@
               <span class="icon-mbri-home"></span> Данные приёма
             </h6>
 
+            <div class="form-floating mb-2">
+              <input
+                type="datetime-local"
+                class="form-control form-control-sm"
+                id="actual_reception_at"
+                name="actual_reception_at"
+                required
+                value="{% if r.actual_reception_at %}{{ r.actual_reception_at|date:'Y-m-d' }}T{{ r.actual_reception_at|date:'H:i' }}{% endif %}"
+              >
+              <label for="actual_reception_at">Фактическая дата приёма автомобиля <span class="text-danger">*</span></label>
+            </div>
+
             <div class="search-select-wrapper select2-wrapper mb-2{% if r.staff_id %} has-value{% endif %}">
               <select class="form-select form-select-sm search-select reception-staff-select" id="staff" name="staff">
                 <option value=""></option>
