@@ -53,6 +53,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link {% if params.mode == 'requeue' %}active{% endif %}"
+           href="?mode=requeue&ib_target={{ params.ib_target }}">
+          Переотправка estimation
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link {% if params.mode == 'kolesa' %}active{% endif %}"
            href="?mode=kolesa&ib_target={{ params.ib_target }}{% if params.custom_url %}&custom_url={{ params.custom_url|urlencode }}{% endif %}&reception_id={{ params.reception_id }}&estimation_id={{ params.estimation_id }}">
           Приёмка 2КК
@@ -134,6 +140,25 @@
           <input type="number" class="form-control form-control-sm" name="rlk_id" id="rlk_id"
                  value="{{ params.rlk_id }}" placeholder="DocRLK.id">
         </div>
+      {% elif params.mode == 'requeue' %}
+        <div class="col-md-4">
+          <label class="form-label small text-muted mb-1" for="requeue_event">Событие</label>
+          <select class="form-select form-select-sm" name="requeue_event" id="requeue_event">
+            {% for code, label in params.requeue.filters.event_choices %}
+              <option value="{{ code }}" {% if params.requeue.filters.event == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small text-muted mb-1" for="requeue_date_from">Дата с</label>
+          <input type="date" class="form-control form-control-sm" name="requeue_date_from" id="requeue_date_from"
+                 value="{{ params.requeue.filters.date_from_str }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small text-muted mb-1" for="requeue_date_to">по</label>
+          <input type="date" class="form-control form-control-sm" name="requeue_date_to" id="requeue_date_to"
+                 value="{{ params.requeue.filters.date_to_str }}">
+        </div>
       {% elif params.mode == 'kolesa' %}
         <div class="col-md-3">
           <label class="form-label small text-muted mb-1" for="reception_id">ID приёмки 2КК</label>
@@ -198,7 +223,91 @@
     {% endif %}
   </div>
 
-  {% if params.info %}
+  {% if params.mode == 'requeue' and params.requeue %}
+    <div class="ex-card">
+      <h3>Переотправка Type=estimation → RegSwapKors</h3>
+      <div class="ex-meta mb-2">
+        {{ params.info.note }}
+        Отбор по дате согласования (РЛК / оценка). Уже стоящие в очереди (status_code=60) пропускаются.
+      </div>
+      <div class="mb-3">
+        <span class="ex-badge ex-badge-info">найдено оценок: {{ params.requeue.total }}</span>
+        <span class="ex-badge ex-badge-warn">уже в очереди: {{ params.requeue.already_queued }}</span>
+        <span class="ex-badge ex-badge-ok">будет поставлено: {{ params.requeue.will_queue }}</span>
+        {% if params.requeue.truncated %}
+          <span class="ex-badge ex-badge-no">лимит {{ params.requeue.limit }}</span>
+        {% endif %}
+      </div>
+
+      {% if params.action_message %}
+        <div class="text-success small mb-2">{{ params.action_message }}</div>
+      {% endif %}
+
+      <form method="post" class="ex-actions mb-3"
+            onsubmit="return confirm('Поставить в очередь {{ params.requeue.will_queue }} оценок (Type=estimation)?');">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="requeue">
+        <input type="hidden" name="ib_target" value="{{ params.ib_target }}">
+        <input type="hidden" name="requeue_event" value="{{ params.requeue.filters.event }}">
+        <input type="hidden" name="requeue_date_from" value="{{ params.requeue.filters.date_from_str }}">
+        <input type="hidden" name="requeue_date_to" value="{{ params.requeue.filters.date_to_str }}">
+        <input type="hidden" name="action" value="bulk_queue_estimations">
+        <button type="submit" class="btn btn-danger btn-sm"
+                {% if not params.requeue.will_queue %}disabled{% endif %}>
+          Поставить в очередь выгрузки ({{ params.requeue.will_queue }})
+        </button>
+        <a class="btn btn-outline-secondary btn-sm" href="/monitorings/queue/send_1c/">Открыть очередь send_1c</a>
+      </form>
+
+      {% if params.requeue.preview_rows %}
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead>
+              <tr>
+                <th>Оценка</th>
+                <th>РЛК</th>
+                <th>VIN</th>
+                <th>Подразделение</th>
+                <th>Дата</th>
+                <th>Цена до КД</th>
+                <th>Цена после КД</th>
+                <th>Очередь</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in params.requeue.preview_rows %}
+                <tr>
+                  <td>
+                    <a href="?mode=estimation&estimation_id={{ row.estimation_id }}" target="_blank">#{{ row.estimation_id }}</a>
+                  </td>
+                  <td>#{{ row.rlk_id }} {{ row.rlk_nomer }}</td>
+                  <td>{{ row.vin }}</td>
+                  <td>{{ row.unit }}</td>
+                  <td>{% if row.filter_date %}{{ row.filter_date|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+                  <td>{{ row.price_before_kd }}</td>
+                  <td>{{ row.price_after_kd }}</td>
+                  <td>
+                    {% if row.in_queue %}
+                      <span class="ex-badge ex-badge-warn">60</span>
+                    {% else %}
+                      <span class="ex-badge ex-badge-ok">нет</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if params.requeue.total > params.requeue.preview_limit %}
+          <div class="ex-meta mt-2">Превью {{ params.requeue.preview_limit }} из {{ params.requeue.total }}.</div>
+        {% endif %}
+      {% else %}
+        <div class="ex-meta">По отбору ничего не найдено. Укажите период (например с 01.09.2026) и нажмите «Загрузить».</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if params.info and params.mode != 'requeue' %}
     <div class="ex-card">
       <h3>Контекст</h3>
       {% if params.info.mode == 'estimation' %}

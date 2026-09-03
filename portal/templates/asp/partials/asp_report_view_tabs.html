@@ -1,0 +1,7 @@
+<div class="view-tabs d-flex flex-wrap gap-2 mb-3 align-items-center">
+  {% for mode, label in params.view_modes %}
+    <a class="btn btn-sm {% if params.view == mode %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+       href="?{% if params.query_string_base %}{{ params.query_string_base }}&{% endif %}view={{ mode }}">{{ label }}</a>
+  {% endfor %}
+  <span class="asp-hint ms-1">режим сохраняется в ссылке</span>
+</div>
