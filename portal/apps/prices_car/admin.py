@@ -1,4 +1,10 @@
 from django.contrib import admin
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+
 from .models import (
     BrandKM,
     CarCalculations,
@@ -10,6 +16,7 @@ from .models import (
     PriceCarKmDiscount,
     PriceCarStageKM,
 )
+
 
 @admin.register(CarCalculations)
 class CarCalculationsAdmin(admin.ModelAdmin):
@@ -106,26 +113,65 @@ class KMCarAdmin(admin.ModelAdmin):
 @admin.register(DealCalcTelegramSettings)
 class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
     list_display = ('enabled', 'bot_username', 'chat_ids', 'updated_at')
-    fields = ('enabled', 'bot_token', 'bot_username', 'chat_ids', 'webhook_secret', 'updated_at')
-    readonly_fields = ('updated_at', 'webhook_secret')
-    actions = ['register_webhook']
+    fields = (
+        'enabled',
+        'bot_token',
+        'bot_username',
+        'chat_ids',
+        'api_proxy',
+        'webhook_secret',
+        'webhook_help',
+        'updated_at',
+    )
+    readonly_fields = ('updated_at', 'webhook_secret', 'webhook_help')
 
     def has_add_permission(self, request):
-        return not DealCalcTelegramSettings.objects.exists()
+        try:
+            return not DealCalcTelegramSettings.objects.exists()
+        except Exception:
+            return True
 
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.action(description='Зарегистрировать webhook Telegram')
-    def register_webhook(self, request, queryset):
-        from django.contrib import messages
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                'register-webhook/',
+                self.admin_site.admin_view(self.register_webhook_view),
+                name='prices_car_dealcalctelegramsettings_register_webhook',
+            ),
+        ]
+        return custom + urls
+
+    def webhook_help(self, obj=None):
+        from avtosalon.deal_calc_telegram import webhook_url
+
+        url = webhook_url()
+        register_url = reverse('admin:prices_car_dealcalctelegramsettings_register_webhook')
+        return mark_safe(
+            '<p>Сначала сохраните токен бота и включите функцию, затем нажмите кнопку.</p>'
+            '<p>URL webhook: <code>{}</code></p>'
+            '<p><a class="button" href="{}">Зарегистрировать webhook Telegram</a></p>'
+            .format(url, register_url)
+        )
+    webhook_help.short_description = 'Webhook'
+
+    def register_webhook_view(self, request):
         from avtosalon.deal_calc_telegram import register_telegram_webhook, webhook_url
+
         ok, message = register_telegram_webhook()
         if ok:
-            self.message_user(request, message)
+            self.message_user(request, message, level=messages.SUCCESS)
         else:
             self.message_user(
                 request,
                 '{} (ожидаемый URL: {})'.format(message, webhook_url()),
                 level=messages.ERROR,
             )
+        # Вернуться на карточку singleton
+        obj = DealCalcTelegramSettings.load()
+        return HttpResponseRedirect(
+            reverse('admin:prices_car_dealcalctelegramsettings_change', args=[obj.pk])
+        )

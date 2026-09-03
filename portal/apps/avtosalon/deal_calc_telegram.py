@@ -82,11 +82,11 @@ def normalize_telegram_chat_id(raw):
 def get_runtime_config():
     cfg = _settings_dict()
     force_off = bool(cfg.get('force_off'))
-    timeout = int(cfg.get('timeout') or 5)
+    timeout = int(cfg.get('timeout') or 20)
     if timeout < 1:
         timeout = 1
-    if timeout > 10:
-        timeout = 10
+    if timeout > 60:
+        timeout = 60
 
     public_base_url = (
         (cfg.get('public_base_url') or '').rstrip('/')
@@ -95,23 +95,28 @@ def get_runtime_config():
     )
     env_token = (cfg.get('bot_token') or '').strip()
     env_chat_ids = _parse_chat_ids(cfg.get('chat_ids') or '')
+    env_proxy = (cfg.get('proxy') or '').strip()
 
     enabled = False
     bot_token = env_token
     broadcast_chat_ids = list(env_chat_ids)
     bot_username = ''
     webhook_secret = ''
+    proxy = env_proxy
+
+    empty = {
+        'enabled': False,
+        'bot_token': '',
+        'broadcast_chat_ids': [],
+        'timeout': timeout,
+        'public_base_url': public_base_url,
+        'bot_username': '',
+        'webhook_secret': '',
+        'proxy': '',
+    }
 
     if force_off:
-        return {
-            'enabled': False,
-            'bot_token': '',
-            'broadcast_chat_ids': [],
-            'timeout': timeout,
-            'public_base_url': public_base_url,
-            'bot_username': '',
-            'webhook_secret': '',
-        }
+        return empty
 
     try:
         from prices_car.models import DealCalcTelegramSettings
@@ -125,6 +130,8 @@ def get_runtime_config():
             broadcast_chat_ids = db_chats
         bot_username = (row.bot_username or '').strip().lstrip('@')
         webhook_secret = (row.webhook_secret or '').strip()
+        if (getattr(row, 'api_proxy', None) or '').strip():
+            proxy = row.api_proxy.strip()
     except Exception:
         logger.exception('deal_calc_telegram: failed to load settings')
         enabled = False
@@ -140,7 +147,16 @@ def get_runtime_config():
         'public_base_url': public_base_url,
         'bot_username': bot_username,
         'webhook_secret': webhook_secret,
+        'proxy': proxy,
     }
+
+
+def _requests_proxies(runtime=None):
+    runtime = runtime or get_runtime_config()
+    proxy = (runtime.get('proxy') or '').strip()
+    if not proxy:
+        return None
+    return {'http': proxy, 'https': proxy}
 
 
 def is_telegram_notify_enabled():
@@ -180,6 +196,7 @@ def register_telegram_webhook():
                 'drop_pending_updates': False,
             },
             timeout=runtime['timeout'],
+            proxies=_requests_proxies(runtime),
         )
         data = response.json() if response.content else {}
         if response.status_code == 200 and data.get('ok'):
@@ -187,7 +204,14 @@ def register_telegram_webhook():
         return False, 'Ошибка setWebhook: {}'.format(data or response.text)
     except Exception as exc:
         logger.exception('deal_calc_telegram: setWebhook failed')
-        return False, 'Ошибка setWebhook: {}'.format(exc)
+        hint = ''
+        if not runtime.get('proxy'):
+            hint = (
+                ' Сервер не достучался до api.telegram.org. '
+                'Укажите прокси в настройках или зарегистрируйте webhook '
+                'с ПК, где Telegram доступен (curl setWebhook).'
+            )
+        return False, 'Ошибка setWebhook: {}{}'.format(exc, hint)
 
 
 def chat_ids_from_users(users):
@@ -372,7 +396,8 @@ def _api_call(method, payload, runtime=None):
         response = requests.post(
             'https://api.telegram.org/bot{}/{}'.format(token, method),
             data=payload,
-            timeout=runtime.get('timeout') or 5,
+            timeout=runtime.get('timeout') or 20,
+            proxies=_requests_proxies(runtime),
         )
         if response.status_code != 200:
             logger.warning(

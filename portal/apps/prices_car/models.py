@@ -548,6 +548,15 @@ class DealCalcTelegramSettings(models.Model):
         help_text='Заголовок X-Telegram-Bot-Api-Secret-Token. '
                   'Сгенерируется при сохранении, если пусто.',
     )
+    api_proxy = models.CharField(
+        'Прокси для api.telegram.org',
+        max_length=512,
+        blank=True,
+        default='',
+        help_text='Если с сервера нет доступа к Telegram: '
+                  'http://host:port или http://user:pass@host:port. '
+                  'Пусто — DEAL_CALC_TELEGRAM_PROXY из окружения.',
+    )
     updated_at = models.DateTimeField('Обновлено', auto_now=True)
 
     class Meta:
