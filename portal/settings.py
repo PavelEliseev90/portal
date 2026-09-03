@@ -413,7 +413,9 @@ DEAL_CALC_TELEGRAM = {
     'force_off': os.getenv('DEAL_CALC_TELEGRAM_FORCE_OFF', '0') in ('1', 'true', 'True', 'yes'),
     'bot_token': os.getenv('DEAL_CALC_TELEGRAM_BOT_TOKEN', ''),
     'chat_ids': os.getenv('DEAL_CALC_TELEGRAM_CHAT_IDS', ''),
-    'timeout': int(os.getenv('DEAL_CALC_TELEGRAM_TIMEOUT', '5') or '5'),
+    # Если сервер не достучится до api.telegram.org — HTTP(S) прокси, напр. http://127.0.0.1:1080
+    'proxy': os.getenv('DEAL_CALC_TELEGRAM_PROXY', ''),
+    'timeout': int(os.getenv('DEAL_CALC_TELEGRAM_TIMEOUT', '20') or '20'),
     'public_base_url': os.getenv(
         'DEAL_CALC_TELEGRAM_PUBLIC_BASE_URL',
         MYKORS_PORTAL_PUBLIC_BASE_URL,
