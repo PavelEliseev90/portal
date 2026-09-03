@@ -1,0 +1,67 @@
+{% load l10n %}
+{% if report_key == 'margin' %}
+  {% if col.key == 'date' %}
+  <td>
+    <div class="fw-semibold">{% if r.date %}{{ r.date|date:"d.m.Y" }}{% else %}—{% endif %}</div>
+    <div class="small text-muted">{{ r.nomer|default:"—" }}</div>
+  </td>
+  {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
+  {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
+  {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
+  {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
+  {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
+  {% elif col.key == 'type_sale' %}<td>{{ r.type_sale|default:"—" }}</td>
+  {% elif col.key == 'amount' %}<td class="num">{{ r.amount|floatformat:"0g" }}</td>
+  {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
+  {% elif col.key == 'outlay' %}<td class="num">{{ r.outlay|floatformat:"0g" }}</td>
+  {% elif col.key == 'doc_margin' %}<td class="num {% if r.doc_margin >= 0 %}pos{% else %}neg{% endif %}">{{ r.doc_margin|floatformat:"0g" }}</td>
+  {% elif col.key == 'cm_actual' %}<td class="num">{% if r.has_cm %}{{ r.cm_actual|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'amount_reward_credit' %}<td class="num">{{ r.amount_reward_credit|floatformat:"0g" }}</td>
+  {% elif col.key == 'amount_reward_opfu' %}<td class="num">{{ r.amount_reward_opfu|floatformat:"0g" }}</td>
+  {% elif col.key == 'amount_kits' %}<td class="num">{{ r.amount_kits|floatformat:"0g" }}</td>
+  {% elif col.key == 'pbi_cum' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_cum_full|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'pbi_kvp' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_kvp|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'agreement' %}<td>{{ r.agreement_nomer|default:"—" }}</td>
+  {% endif %}
+{% elif report_key == 'stock' %}
+  {% if col.key == 'car' %}
+  <td>
+    <div class="fw-semibold">
+      {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
+    </div>
+  </td>
+  {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
+  {% elif col.key == 'year' %}<td>{{ r.year }}</td>
+  {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
+  {% elif col.key == 'status' %}<td>{{ r.status_name }}{% if r.type_reception %}<div class="small text-muted">{{ r.type_reception }}</div>{% endif %}</td>
+  {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}</td>
+  {% elif col.key == 'days' %}<td class="num">{{ r.days_in_stok }}</td>
+  {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
+  {% elif col.key == 'price' %}<td class="num">{{ r.price|floatformat:"0g" }}</td>
+  {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
+  {% elif col.key == 'outlay' %}<td class="num">{{ r.outlay|floatformat:"0g" }}</td>
+  {% elif col.key == 'margin' %}<td class="num {% if r.margin >= 0 %}pos{% else %}neg{% endif %}">{{ r.margin|floatformat:"0g" }}</td>
+  {% elif col.key == 'store' %}
+  <td>{{ r.store_name|default:"—" }}<div class="small text-muted">{{ r.stage_price }} {% if r.group_price %}· {{ r.group_price }}{% endif %}</div></td>
+  {% elif col.key == 'run' %}<td class="num">{{ r.run|floatformat:"0g" }}</td>
+  {% endif %}
+{% elif report_key == 'accepted' %}
+  {% if col.key == 'date' %}
+  <td>
+    <div class="fw-semibold">{% if r.date %}{{ r.date|date:"d.m.Y" }}{% else %}—{% endif %}</div>
+    <div class="small text-muted">{{ r.nomer|default:"—" }}{% if r.rlk_id %} · <a href="/eco/{{ r.rlk_id }}/" target="_blank">РЛ {{ r.rlk_nomer }}</a>{% endif %}</div>
+  </td>
+  {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
+  {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}{% if r.year %} · {{ r.year }}{% endif %}</td>
+  {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
+  {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
+  {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
+  {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
+  {% elif col.key == 'bcp' %}<td class="num">{{ r.bcp|floatformat:"0g" }}</td>
+  {% elif col.key == 'run' %}<td class="num">{{ r.run|floatformat:"0g" }}</td>
+  {% elif col.key == 'unit' %}<td>{{ r.unit_name }}{% if r.store_name %}<div class="small text-muted">{{ r.store_name }}</div>{% endif %}</td>
+  {% elif col.key == 'store' %}<td>{{ r.store_name|default:"—" }}</td>
+  {% elif col.key == 'year' %}<td>{{ r.year }}</td>
+  {% elif col.key == 'plate' %}<td>{{ r.plate|default:"—" }}</td>
+  {% endif %}
+{% endif %}

@@ -18,6 +18,7 @@ from asp.report_common import (
     report_shell,
     sum_money,
 )
+from asp.report_table import resolve_order_by
 from refs.models import RefCarsOrganization, RefStatusCarsOrganization
 
 SUM_MAP = {
@@ -160,7 +161,9 @@ def build_stock_report(get) -> dict[str, Any]:
     paginator = None
 
     if view == 'main':
-        values_qs = qs.order_by('unit__name', '-days_in_stok', 'mark', 'model').values(*DETAIL_VALUES)
+        _ui, orm_order = resolve_order_by('stock', filters.get('order_by'))
+        filters['order_by'] = _ui
+        values_qs = qs.order_by(*orm_order).values(*DETAIL_VALUES)
         rows, page_obj, paginator = paginate_values_qs(
             values_qs, filters['page'], row_mapper=_car_row_from_values,
         )

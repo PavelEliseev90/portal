@@ -7,7 +7,7 @@
 {% block content %}
 {% include 'asp/partials/asp_report_styles.html' %}
 
-<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}">
+<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}" data-report-key="stock">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
     <div>
       <h2>{{ params.report_title }}</h2>
@@ -37,109 +37,92 @@
   {% include 'asp/partials/asp_report_view_tabs.html' %}
   {% include 'asp/partials/asp_report_filters.html' %}
 
-  <div class="asp-rep-panel">
-    <h3>
+  <div class="asp-rep-panel no-padding">
+    <h3 class="padding-title mb-0 p-3">
       {% if params.view == 'by_unit' %}По подразделениям — клик разворачивает детали
       {% elif params.view == 'by_person' %}По оценщикам — клик разворачивает детали
       {% else %}Основной список{% endif %}
     </h3>
-    <div class="table-responsive">
-      <table class="table table-sm table-hover table-asp mb-0">
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-hover table-striped table-asp mb-0">
         <thead>
           <tr>
-            {% if params.view != 'main' %}<th></th>{% endif %}
-            <th>Группа / авто</th>
-            <th>Статус</th>
-            <th class="num">Дней</th>
-            <th>Оценщик</th>
-            <th class="num">Цена</th>
-            <th class="num">Себест.</th>
-            <th class="num">Расходы</th>
-            <th class="num">Маржа</th>
-            <th>Склад / этап</th>
+            {% if params.view != 'main' %}<th style="width:2rem"></th>{% endif %}
+            {% for col in params.table_columns %}
+              {% include 'asp/partials/_asp_col_head.html' with col=col params=params %}
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% if params.view == 'main' %}
             {% for r in params.rows %}
               <tr>
-                <td>
-                  <div class="fw-semibold">
-                    {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
-                  </div>
-                  <div class="small text-muted">{{ r.vin }} · {{ r.year }} · {{ r.run|floatformat:"0g" }} км · {{ r.unit_name }}</div>
-                </td>
-                <td>{{ r.status_name }}{% if r.type_reception %}<div class="small text-muted">{{ r.type_reception }}</div>{% endif %}</td>
-                <td class="num">{{ r.days_in_stok }}</td>
-                <td>{{ r.person_name }}</td>
-                <td class="num">{{ r.price|floatformat:"0g" }}</td>
-                <td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
-                <td class="num">{{ r.outlay|floatformat:"0g" }}</td>
-                <td class="num {% if r.margin >= 0 %}pos{% else %}neg{% endif %}">{{ r.margin|floatformat:"0g" }}</td>
-                <td>
-                  {{ r.store_name|default:"—" }}
-                  <div class="small text-muted">{{ r.stage_price }} {% if r.group_price %}· {{ r.group_price }}{% endif %}</div>
-                </td>
+                {% for col in params.table_columns %}
+                  {% include 'asp/partials/_asp_col_cell.html' with col=col r=r report_key='stock' %}
+                {% endfor %}
               </tr>
             {% empty %}
-              <tr><td colspan="9" class="text-center text-muted py-4">Нет остатков по фильтру</td></tr>
+              <tr><td colspan="{{ params.table_columns|length }}" class="text-center text-muted py-4">Нет остатков по фильтру</td></tr>
             {% endfor %}
           {% else %}
             {% for g in params.groups %}
               <tr class="table-group-header" data-group-key="{{ g.key }}">
                 <td><span class="toggle-icon">▸</span></td>
-                <td colspan="2"><strong>{{ g.label }}</strong> · {{ g.count }} а/м</td>
-                <td class="num">{{ g.avg_days|floatformat:0 }}</td>
-                <td></td>
-                <td class="num">{{ g.price|floatformat:"0g" }}</td>
-                <td class="num">{{ g.cost_price|floatformat:"0g" }}</td>
-                <td class="num">{{ g.outlay|floatformat:"0g" }}</td>
-                <td class="num {% if g.margin >= 0 %}pos{% else %}neg{% endif %}">{{ g.margin|floatformat:"0g" }}</td>
-                <td class="num">{{ g.margin_pct|floatformat:1 }}%</td>
+                <td colspan="{{ params.table_columns|length }}">
+                  <strong>{{ g.label }}</strong>
+                  · {{ g.count }} а/м
+                  · цена {{ g.price|floatformat:"0g" }}
+                  · маржа <span class="{% if g.margin >= 0 %}pos{% else %}neg{% endif %}">{{ g.margin|floatformat:"0g" }}</span>
+                  · ср. дней {{ g.avg_days|floatformat:0 }}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="10" class="text-center text-muted py-4">Нет данных</td></tr>
+              <tr><td colspan="{{ params.table_columns|length|add:1 }}" class="text-center text-muted py-4">Нет данных</td></tr>
             {% endfor %}
           {% endif %}
         </tbody>
-        {% if params.totals.count %}
+        {% if params.view == 'main' and params.totals.count %}
         <tfoot>
           <tr class="row-total">
-            {% if params.view != 'main' %}<td></td>{% endif %}
-            <td>Итого · {{ params.totals.count }}</td>
-            <td></td>
-            <td class="num">{{ params.totals.avg_days|floatformat:0 }}</td>
-            <td></td>
-            <td class="num">{{ params.totals.price|floatformat:"0g" }}</td>
-            <td class="num">{{ params.totals.cost_price|floatformat:"0g" }}</td>
-            <td class="num">{{ params.totals.outlay|floatformat:"0g" }}</td>
-            <td class="num {% if params.totals.margin >= 0 %}pos{% else %}neg{% endif %}">{{ params.totals.margin|floatformat:"0g" }}</td>
-            <td></td>
+            <td colspan="{{ params.table_columns|length }}">Итого · {{ params.totals.count }} · маржа {{ params.totals.margin|floatformat:"0g" }} · ср. дней {{ params.totals.avg_days|floatformat:0 }}</td>
           </tr>
         </tfoot>
         {% endif %}
       </table>
     </div>
-    {% include 'asp/partials/asp_report_pagination.html' %}
+    <div class="p-3">{% include 'asp/partials/asp_report_pagination.html' %}</div>
   </div>
 </div>
 <script>
+window.aspTableColumns = {{ params.table_columns_json|safe }};
+window.aspReportKey = 'stock';
 window.aspRenderDetailRow = function(r, money, esc) {
-  var title = esc((r.mark || '') + ' ' + (r.model || ''));
-  var link = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank">' + title + '</a>' : title;
-  var cls = (r.margin || 0) >= 0 ? 'pos' : 'neg';
-  return '<td></td>' +
-    '<td><div class="fw-semibold">' + link + '</div><div class="small text-muted">' +
-    esc(r.vin) + ' · ' + esc(r.year) + ' · ' + esc(r.unit_name) + '</div></td>' +
-    '<td>' + esc(r.status_name) + '</td>' +
-    '<td class="num">' + esc(r.days_in_stok) + '</td>' +
-    '<td>' + esc(r.person_name) + '</td>' +
-    '<td class="num">' + money(r.price) + '</td>' +
-    '<td class="num">' + money(r.cost_price) + '</td>' +
-    '<td class="num">' + money(r.outlay) + '</td>' +
-    '<td class="num ' + cls + '">' + money(r.margin) + '</td>' +
-    '<td>' + esc(r.store_name || '—') + '</td>';
+  var cols = window.aspTableColumns || [];
+  var html = '<td></td>';
+  cols.forEach(function(col) {
+    var cls = col.num ? ' class="num"' : '';
+    var val = '—';
+    var title = esc((r.mark || '') + ' ' + (r.model || ''));
+    var link = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank">' + title + '</a>' : title;
+    if (col.key === 'car') val = '<div class="fw-semibold">' + link + '</div>';
+    else if (col.key === 'vin') val = esc(r.vin);
+    else if (col.key === 'year') val = esc(r.year);
+    else if (col.key === 'unit') val = esc(r.unit_name);
+    else if (col.key === 'status') val = esc(r.status_name);
+    else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
+    else if (col.key === 'days') val = esc(r.days_in_stok);
+    else if (col.key === 'person') val = esc(r.person_name);
+    else if (col.key === 'price') val = money(r.price);
+    else if (col.key === 'cost_price') val = money(r.cost_price);
+    else if (col.key === 'outlay') val = money(r.outlay);
+    else if (col.key === 'margin') { cls = ' class="num ' + ((r.margin || 0) >= 0 ? 'pos' : 'neg') + '"'; val = money(r.margin); }
+    else if (col.key === 'store') val = esc(r.store_name || '—');
+    else if (col.key === 'run') val = money(r.run);
+    html += '<td' + cls + '>' + val + '</td>';
+  });
+  return html;
 };
 </script>
 {% include 'asp/partials/asp_report_expand_js.html' %}
+{% include 'asp/partials/asp_report_columns_modal.html' %}
 {% endblock %}

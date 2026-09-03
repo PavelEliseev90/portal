@@ -2,14 +2,29 @@ from django.contrib.auth.decorators import login_required
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse, QueryDict
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 from asp.report_common import VIEW_COOKIE, VIEW_COOKIE_MAX_AGE, preferred_view_from_cookie
+from asp.report_table import (
+    COLUMNS_COOKIE_MAX_AGE,
+    REPORTS,
+    attach_table_ui,
+    columns_cookie_value,
+    cookie_name,
+    normalize_columns,
+)
 
 ASP_VARIANT_TEMPLATES = {
     '1': 'asp/asp.html',
     '2': 'asp/asp_bento.html',
     '3': 'asp/asp_command.html',
     '4': 'asp/asp_22c.html',
+}
+
+REPORT_KEY_BY_TYPE = {
+    'asp_cumulative_margin': 'margin',
+    'asp_stock_report': 'stock',
+    'asp_accepted_report': 'accepted',
 }
 
 
@@ -39,6 +54,7 @@ def _redirect_with_default_view(request):
 def _ajax_or_report(request, build_report, build_details, export_fn, template_name, report_type):
     ajax = (request.GET.get('ajax') or '').strip()
     export = (request.GET.get('export') or '').strip().lower()
+    report_key = REPORT_KEY_BY_TYPE.get(report_type, 'margin')
 
     # Режим просмотра фиксируем в URL (удобно шарить ссылку / обновлять страницу)
     if 'view' not in request.GET and ajax != 'details' and export not in ('xlsx', 'excel', '1'):
@@ -52,9 +68,10 @@ def _ajax_or_report(request, build_report, build_details, export_fn, template_na
             return JsonResponse({'ok': False, 'error': str(exc), 'rows': []}, status=500)
 
     if export in ('xlsx', 'excel', '1'):
-        return export_fn(request.GET)
+        return export_fn(request.GET, request=request)
 
     report = build_report(request.GET)
+    attach_table_ui(report, request, report_key)
     params = {
         'type': report_type,
         'nav_selected': 4,
@@ -114,3 +131,36 @@ def accepted_report(request):
         'asp/accepted_report.html',
         'asp_accepted_report',
     )
+
+
+@login_required
+@require_POST
+def report_columns_save(request):
+    """Сохранение состава/порядка столбцов отчёта (cookie, как персональная настройка)."""
+    import json
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Некорректный JSON'}, status=400)
+
+    report_key = (payload.get('report_key') or '').strip()
+    if report_key not in REPORTS:
+        return JsonResponse({'error': 'Неизвестный отчёт'}, status=400)
+
+    columns = payload.get('columns')
+    if not isinstance(columns, list):
+        return JsonResponse({'error': 'Передайте массив columns'}, status=400)
+
+    normalized = normalize_columns(report_key, columns)
+    if not normalized:
+        return JsonResponse({'error': 'Выберите хотя бы один столбец'}, status=400)
+
+    response = JsonResponse({'ok': True, 'columns': normalized})
+    response.set_cookie(
+        cookie_name(report_key),
+        columns_cookie_value(normalized),
+        max_age=COLUMNS_COOKIE_MAX_AGE,
+        samesite='Lax',
+    )
+    return response

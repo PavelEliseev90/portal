@@ -507,6 +507,100 @@ class EmailPushCar(models.Model):
         verbose_name_plural = "Оповещения по автомобилям"
 
 
+class DealCalcTelegramSettings(models.Model):
+    """
+    Настройки Telegram-уведомлений по согласованию КП.
+    Singleton: в админке должна быть одна запись. По умолчанию выключено.
+    """
+    enabled = models.BooleanField(
+        'Включить Telegram по КП',
+        default=False,
+        help_text='Параллельно email. Ошибки Telegram не влияют на почту и согласование.',
+    )
+    bot_token = models.CharField(
+        'Токен бота',
+        max_length=256,
+        blank=True,
+        default='',
+        help_text='Если пусто — берётся DEAL_CALC_TELEGRAM_BOT_TOKEN из окружения.',
+    )
+    chat_ids = models.CharField(
+        'Общие chat ID (через запятую)',
+        max_length=512,
+        blank=True,
+        default='',
+        help_text='Опциональный тестовый/общий канал. Личные уведомления — '
+                  'через telegram_chat_id в профиле пользователя. '
+                  'Если пусто — DEAL_CALC_TELEGRAM_CHAT_IDS из окружения.',
+    )
+    bot_username = models.CharField(
+        'Username бота (без @)',
+        max_length=128,
+        blank=True,
+        default='',
+        help_text='Для подсказки в профиле: ссылка t.me/…',
+    )
+    webhook_secret = models.CharField(
+        'Секрет webhook',
+        max_length=128,
+        blank=True,
+        default='',
+        help_text='Заголовок X-Telegram-Bot-Api-Secret-Token. '
+                  'Сгенерируется при сохранении, если пусто.',
+    )
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        db_table = 'prices_car_deal_calc_telegram_settings'
+        verbose_name = 'Telegram: согласование КП'
+        verbose_name_plural = 'Telegram: согласование КП'
+
+    def __str__(self):
+        return 'Telegram КП: {}'.format('вкл' if self.enabled else 'выкл')
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        if not (self.webhook_secret or '').strip():
+            import secrets
+            self.webhook_secret = secrets.token_urlsafe(24)
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class DealCalcTelegramPendingAction(models.Model):
+    """Ожидание комментария от пользователя в Telegram после нажатия кнопки."""
+    chat_id = models.CharField('Chat ID', max_length=64, db_index=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='deal_calc_telegram_pending',
+        verbose_name='Пользователь',
+    )
+    calc = models.ForeignKey(
+        CarCalculations,
+        on_delete=models.CASCADE,
+        related_name='telegram_pending_actions',
+        verbose_name='КП',
+    )
+    action = models.CharField('Действие', max_length=64)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+
+    class Meta:
+        db_table = 'prices_car_deal_calc_telegram_pending'
+        verbose_name = 'Telegram: ожидание комментария КП'
+        verbose_name_plural = 'Telegram: ожидания комментария КП'
+
+    def __str__(self):
+        return '{} {} calc={}'.format(self.chat_id, self.action, self.calc_id)
+
+
 class KMCar(models.Model):
     date                = models.DateTimeField('Дата создания', default=datetime.now, blank=False)
     car                 = models.ForeignKey(RefCarsOrganization, on_delete=models.CASCADE, verbose_name='Автомобиль')

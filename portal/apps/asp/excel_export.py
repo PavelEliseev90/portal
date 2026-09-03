@@ -105,10 +105,17 @@ def _fmt_filter_sheet(ws, title: str, filters: dict, totals: dict, extra_lines: 
     _autosize(ws, max_width=48)
 
 
-def export_stock_xlsx(get) -> HttpResponse:
+def export_stock_xlsx(get, request=None) -> HttpResponse:
     from openpyxl import Workbook
 
     from asp.report_common import aggregate_groups, aggregate_totals, parse_common_filters
+    from asp.report_table import (
+        STOCK_DEFAULT_COLUMNS,
+        build_table_columns,
+        export_row_values,
+        get_user_columns,
+        resolve_order_by,
+    )
     from asp.stock_report import (
         DETAIL_VALUES,
         SUM_MAP,
@@ -163,33 +170,21 @@ def export_stock_xlsx(get) -> HttpResponse:
             ),
         )
 
-    values = list(
-        qs.order_by('unit__name', '-days_in_stok', 'mark', 'model')
-        .values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT]
-    )
+    _ui, orm_order = resolve_order_by('stock', filters.get('order_by'))
+    values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
     rows = [_car_row_from_values(v) for v in values]
+    visible = get_user_columns(request, 'stock') if request else list(STOCK_DEFAULT_COLUMNS)
+    cols = build_table_columns('stock', visible)
     ws = wb.create_sheet('Детали')
     _append_rows(
         ws,
-        [
-            'Подразделение', 'Марка', 'Модель', 'Год', 'VIN', 'Пробег', 'Статус',
-            'Дней', 'Оценщик', 'Цена', 'Себест.', 'Расходы', 'Маржа', 'БЦП',
-            'Тип приёма', 'Тип продажи', 'Склад', 'Этап', 'Категория',
-        ],
-        (
-            [
-                r['unit_name'], r['mark'], r['model'], r['year'], r['vin'], r['run'],
-                r['status_name'], r['days_in_stok'], r['person_name'], r['price'],
-                r['cost_price'], r['outlay'], r['margin'], r['bcp'], r['type_reception'],
-                r['type_sale'], r['store_name'], r['stage_price'], r['group_price'],
-            ]
-            for r in rows
-        ),
+        [c['label_export'] for c in cols],
+        (export_row_values('stock', r, cols) for r in rows),
     )
     return workbook_response(wb, 'asp_stock')
 
 
-def export_accepted_xlsx(get) -> HttpResponse:
+def export_accepted_xlsx(get, request=None) -> HttpResponse:
     from openpyxl import Workbook
 
     from asp.accepted_report import (
@@ -199,6 +194,13 @@ def export_accepted_xlsx(get) -> HttpResponse:
         filtered_accepted_qs,
     )
     from asp.report_common import aggregate_groups, aggregate_totals, parse_common_filters
+    from asp.report_table import (
+        ACCEPTED_DEFAULT_COLUMNS,
+        build_table_columns,
+        export_row_values,
+        get_user_columns,
+        resolve_order_by,
+    )
 
     filters = parse_common_filters(get, default_month=True)
     qs = filtered_accepted_qs(filters)
@@ -238,30 +240,21 @@ def export_accepted_xlsx(get) -> HttpResponse:
             ([g['label'], g['count'], g['cost_price'], g['bcp'], g['run']] for g in groups),
         )
 
-    values = list(qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
+    _ui, orm_order = resolve_order_by('accepted', filters.get('order_by'))
+    values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
     rows = [_lo_row_from_values(v) for v in values]
+    visible = get_user_columns(request, 'accepted') if request else list(ACCEPTED_DEFAULT_COLUMNS)
+    cols = build_table_columns('accepted', visible)
     ws = wb.create_sheet('Детали')
     _append_rows(
         ws,
-        [
-            'Дата', '№ ЛО', 'РЛ', 'Подразделение', 'Марка', 'Модель', 'Год', 'VIN',
-            'Госномер', 'Клиент', 'Оценщик', 'Тип приёма', 'Себест.', 'БЦП',
-            'Пробег', 'Владельцев', 'Ключей', 'Аукцион',
-        ],
-        (
-            [
-                r['date'], r['nomer'], r['rlk_nomer'], r['unit_name'], r['mark'], r['model'],
-                r['year'], r['vin'], r['plate'], r['client'], r['person_name'],
-                r['type_reception'], r['cost_price'], r['bcp'], r['run'], r['owners'],
-                r['keys'], r['auction'],
-            ]
-            for r in rows
-        ),
+        [c['label_export'] for c in cols],
+        (export_row_values('accepted', r, cols) for r in rows),
     )
     return workbook_response(wb, 'asp_accepted')
 
 
-def export_margin_xlsx(get) -> HttpResponse:
+def export_margin_xlsx(get, request=None) -> HttpResponse:
     from openpyxl import Workbook
 
     from asp.cumulative_margin_report import (
@@ -273,6 +266,13 @@ def export_margin_xlsx(get) -> HttpResponse:
         filtered_shipments_qs,
     )
     from asp.report_common import aggregate_groups, aggregate_totals, parse_common_filters
+    from asp.report_table import (
+        MARGIN_DEFAULT_COLUMNS,
+        build_table_columns,
+        export_row_values,
+        get_user_columns,
+        resolve_order_by,
+    )
 
     filters = parse_common_filters(get, default_month=True)
     qs = filtered_shipments_qs(filters)
@@ -324,7 +324,8 @@ def export_margin_xlsx(get) -> HttpResponse:
             ),
         )
 
-    values = list(qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
+    _ui, orm_order = resolve_order_by('margin', filters.get('order_by'))
+    values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
     pbi_map = (
         _load_powerbi_by_vin([v.get('cars__vin') or '' for v in values])
         if include_pbi else {}
@@ -334,30 +335,12 @@ def export_margin_xlsx(get) -> HttpResponse:
         vin = (v.get('cars__vin') or '').strip().upper()
         rows.append(_shipment_row_from_values(v, pbi_map.get(vin)))
 
-    headers = [
-        'Дата', '№ отгрузки', 'Подразделение', 'Марка', 'Модель', 'Год', 'VIN',
-        'Клиент', 'Продавец', 'Тип', 'Продажа', 'Себест.', 'Расходы', 'Маржа',
-        '№ соглашения', 'КМ факт', 'КМ расчёт',
-    ]
-    if include_pbi:
-        headers += ['БУ кумул.', 'КВП', 'Маржа БУ', 'ВПОПФУ']
-
-    def row_values(r):
-        base = [
-            r['date'], r['nomer'], r['unit_name'], r['mark'], r['model'], r['year'],
-            r['vin'], r['client'], r['person_name'], r['type_sale'], r['amount'],
-            r['cost_price'], r['outlay'], r['doc_margin'], r['agreement_nomer'],
-            r['cm_actual'] if r['has_cm'] else '', r['cm_est'] if r['has_cm'] else '',
-        ]
-        if include_pbi:
-            base += [
-                r['pbi_cum_full'] if r['has_pbi'] else '',
-                r['pbi_kvp'] if r['has_pbi'] else '',
-                r['pbi_marzhi'] if r['has_pbi'] else '',
-                r['pbi_vpopfu'] if r['has_pbi'] else '',
-            ]
-        return base
-
+    visible = get_user_columns(request, 'margin') if request else list(MARGIN_DEFAULT_COLUMNS)
+    cols = build_table_columns('margin', visible)
     ws = wb.create_sheet('Детали')
-    _append_rows(ws, headers, (row_values(r) for r in rows))
+    _append_rows(
+        ws,
+        [c['label_export'] for c in cols],
+        (export_row_values('margin', r, cols) for r in rows),
+    )
     return workbook_response(wb, 'asp_cumulative_margin')

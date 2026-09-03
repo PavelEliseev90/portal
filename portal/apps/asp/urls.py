@@ -20,4 +20,9 @@ urlpatterns = [
         views.accepted_report,
         name='accepted_report',
     ),
+    path(
+        'reports/columns/',
+        views.report_columns_save,
+        name='report_columns_save',
+    ),
 ]

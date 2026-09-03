@@ -1,0 +1,154 @@
+<div class="modal fade" id="modalAspColumns" tabindex="-1" aria-labelledby="modalAspColumnsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAspColumnsLabel">Настройка столбцов таблицы</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">Отметьте нужные столбцы и перетащите строки для изменения порядка. Настройка сохраняется и применяется к Excel.</p>
+        <ul class="list-group mb-3" id="aspColumnsList">
+          {% for col in params.columns_settings %}
+          <li class="list-group-item d-flex align-items-center gap-2 asp-col-item" draggable="true" data-key="{{ col.key }}">
+            <span class="text-muted" style="cursor: grab;" title="Перетащить">☰</span>
+            <input class="form-check-input m-0 asp-col-check" type="checkbox" id="asp-col-{{ col.key }}" {% if col.visible %}checked{% endif %}>
+            <label class="form-check-label flex-grow-1 mb-0" for="asp-col-{{ col.key }}">{{ col.label }}</label>
+          </li>
+          {% endfor %}
+        </ul>
+        <div id="aspColumnsError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+      </div>
+      <input type="hidden" id="aspColumnsCsrf" value="{{ csrf_token }}">
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn-calculate-secondary-sm" id="aspColumnsReset"><span class="icon-mbri-bulleted-list"></span> По умолчанию</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn-calculate-secondary-sm" data-bs-dismiss="modal"><span class="icon-mbri-close"></span> Отмена</button>
+          <button type="button" class="btn-calculate-success-sm" id="aspColumnsSave"><span class="icon-mbri-save"></span> Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  document.querySelectorAll('.asp-sort-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var field = btn.getAttribute('data-sort-key');
+      var url = new URL(document.location.href);
+      var current = url.searchParams.get('order_by') || '';
+      if (current === field) url.searchParams.set('order_by', '-' + field);
+      else if (current === '-' + field) url.searchParams.set('order_by', field);
+      else url.searchParams.set('order_by', field);
+      url.searchParams.set('page', '1');
+      document.location.href = url.href;
+    });
+  });
+
+  var list = document.getElementById('aspColumnsList');
+  var saveBtn = document.getElementById('aspColumnsSave');
+  var resetBtn = document.getElementById('aspColumnsReset');
+  var errorBox = document.getElementById('aspColumnsError');
+  var saveUrl = '{% url "asp:report_columns_save" %}';
+  var reportKey = '{{ params.report_key }}';
+  var builtInDefaults = {{ params.columns_defaults_json|safe }};
+  var dragItem = null;
+  if (!list || !saveBtn) return;
+
+  function showError(msg) {
+    if (!errorBox) return;
+    errorBox.textContent = msg;
+    errorBox.classList.remove('d-none');
+  }
+  function hideError() {
+    if (!errorBox) return;
+    errorBox.classList.add('d-none');
+    errorBox.textContent = '';
+  }
+  function getCsrfToken() {
+    var inp = document.getElementById('aspColumnsCsrf');
+    if (inp && inp.value) return inp.value;
+    var match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+  function collectColumns() {
+    return Array.prototype.map.call(list.querySelectorAll('.asp-col-item'), function(item) {
+      var cb = item.querySelector('.asp-col-check');
+      if (!cb || !cb.checked) return null;
+      return item.getAttribute('data-key');
+    }).filter(Boolean);
+  }
+
+  list.querySelectorAll('.asp-col-item').forEach(function(item) {
+    item.addEventListener('dragstart', function(e) {
+      dragItem = item;
+      item.classList.add('opacity-50');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', function() {
+      item.classList.remove('opacity-50');
+      dragItem = null;
+    });
+    item.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragItem || dragItem === item) return;
+      var rect = item.getBoundingClientRect();
+      var before = (e.clientY - rect.top) < rect.height / 2;
+      list.insertBefore(dragItem, before ? item : item.nextSibling);
+    });
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      hideError();
+      var order = builtInDefaults.slice();
+      var byKey = {};
+      list.querySelectorAll('.asp-col-item').forEach(function(item) {
+        byKey[item.getAttribute('data-key')] = item;
+      });
+      order.forEach(function(key) {
+        if (byKey[key]) list.appendChild(byKey[key]);
+      });
+      Object.keys(byKey).forEach(function(key) {
+        if (order.indexOf(key) === -1) list.appendChild(byKey[key]);
+      });
+      list.querySelectorAll('.asp-col-item').forEach(function(item) {
+        var cb = item.querySelector('.asp-col-check');
+        if (cb) cb.checked = order.indexOf(item.getAttribute('data-key')) !== -1;
+      });
+    });
+  }
+
+  saveBtn.addEventListener('click', function() {
+    hideError();
+    var columns = collectColumns();
+    if (!columns.length) {
+      showError('Выберите хотя бы один столбец.');
+      return;
+    }
+    saveBtn.disabled = true;
+    fetch(saveUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify({ report_key: reportKey, columns: columns })
+    })
+      .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          showError((res.data && res.data.error) || 'Не удалось сохранить');
+          saveBtn.disabled = false;
+          return;
+        }
+        document.location.reload();
+      })
+      .catch(function() {
+        showError('Ошибка сети');
+        saveBtn.disabled = false;
+      });
+  });
+})();
+</script>

@@ -18,6 +18,7 @@ from asp.report_common import (
     report_shell,
     sum_money,
 )
+from asp.report_table import resolve_order_by
 from documents.models import DocLO
 from refs.models import RefTypeReceptionCarsOrganization
 
@@ -140,7 +141,9 @@ def build_accepted_report(get) -> dict[str, Any]:
     paginator = None
 
     if view == 'main':
-        values_qs = qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)
+        _ui, orm_order = resolve_order_by('accepted', filters.get('order_by'))
+        filters['order_by'] = _ui
+        values_qs = qs.order_by(*orm_order).values(*DETAIL_VALUES)
         rows, page_obj, paginator = paginate_values_qs(
             values_qs, filters['page'], row_mapper=_lo_row_from_values,
         )

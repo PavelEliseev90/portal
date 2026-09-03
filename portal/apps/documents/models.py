@@ -1068,7 +1068,10 @@ class DocCarShipment(models.Model):
     discountAmountTradeINComment            = models.CharField('Комментарий  скидки трейд ин', default='', null=True, max_length=512, blank=True) 
     run                                     = models.IntegerField("Пробег", blank=True, default=0)
     owners                                  = models.IntegerField("Владельцев", blank=True, default=0)
-    typeSale                                = models.CharField('Тип продажи', default='', null=True, max_length=512, blank=True) 
+    typeSale                                = models.CharField('Тип продажи', default='', null=True, max_length=512, blank=True)
+    amount_reward_credit                    = models.FloatField("Сумма вознаграждения кредит", default=0.0, blank=True)
+    amount_reward_opfu                      = models.FloatField("Сумма вознаграждения ОПФУ", default=0.0, blank=True)
+    amount_kits                             = models.FloatField("Сумма продажи комплектов", default=0.0, blank=True)
     
     def cum(self):
         return self.amount - (self.cost_price + self.outlay)

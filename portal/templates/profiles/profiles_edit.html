@@ -82,6 +82,23 @@
           </div>
         {% endif %}
 
+        {% if params.user.profiles.price_car_new_director or params.user.profiles.price_car_new_all %}
+          <hr>
+          <h5 class="mb-3">Telegram — согласование КП</h5>
+          <div class="alert alert-light border small">
+            <ol class="mb-2 ps-3">
+              <li>Откройте бота{% if params.telegram_bot_url %} <a href="{{ params.telegram_bot_url }}" target="_blank" rel="noopener">{{ params.telegram_bot_username }}</a>{% else %} (username бота уточните у администратора){% endif %} и нажмите <strong>Start</strong>.</li>
+              <li>Узнайте свой chat ID: напишите боту <a href="https://t.me/userinfobot" target="_blank" rel="noopener">@userinfobot</a> — в ответе поле <strong>Id</strong>.</li>
+              <li>Вставьте Id ниже и сохраните профиль.</li>
+            </ol>
+            После привязки КП приходят в Telegram: жмёте кнопку → пишете комментарий в чат бота → согласование выполняется без открытия портала.
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" placeholder="123456789" value="{{ params.user.profiles.telegram_chat_id }}" autocomplete="off">
+            <label for="telegram_chat_id">Telegram chat ID</label>
+          </div>
+        {% endif %}
+
         <div class="row">
           <div class="col w-100 text-end">
             <button class="btn btn-block btn-outline-success" type="submit" id="update_info" name="update_info"><span class="icon-mbri-success"></span> Сохранить </button>

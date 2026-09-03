@@ -1,0 +1,48 @@
+{% extends 'base_web.html' %}
+
+{% block title %} - подтверждение согласования КП {% endblock %}
+{% block title_navbar %} - подтверждение согласования КП {% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 720px;">
+  <h4 class="mb-3">{{ action_label }}</h4>
+
+  <div class="mb-3">
+    <div><strong>КП #{{ calc.number|default:calc.pk }}</strong></div>
+    {% if car_title %}<div>Авто: {{ car_title }}</div>{% endif %}
+    {% if calc.car and calc.car.vin %}<div>VIN: {{ calc.car.vin|upper }}</div>{% endif %}
+    {% if unit_name %}<div>ДЦ: {{ unit_name }}</div>{% endif %}
+    <div>КВП: {{ kvp_display }}</div>
+    {% if status_label %}<div>Статус: {{ status_label }}</div>{% endif %}
+  </div>
+
+  {% if not can_act %}
+    <div class="alert alert-warning">
+      {{ block_reason|default:"Действие недоступно для вашей учётной записи или статуса КП." }}
+    </div>
+    <a class="btn btn-outline-secondary" href="/cars/deal/calculation/{{ calc.pk }}/">Открыть КП</a>
+  {% else %}
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="approval_action" value="{{ action }}">
+      <div class="mb-3">
+        <label for="approval_comment" class="form-label">Комментарий <span class="text-danger">*</span></label>
+        <textarea
+          class="form-control"
+          id="approval_comment"
+          name="approval_comment"
+          rows="4"
+          required
+          maxlength="2000"
+          placeholder="Обязательный комментарий к согласованию"
+        >{{ comment_value }}</textarea>
+        <div class="form-text">Без комментария согласование не будет выполнено.</div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-success">Подтвердить</button>
+        <a class="btn btn-outline-secondary" href="/cars/deal/calculation/{{ calc.pk }}/">Отмена / открыть КП</a>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

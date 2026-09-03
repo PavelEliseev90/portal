@@ -4,6 +4,7 @@ from .models import (
     CarCalculations,
     CarCalculationsTypeDetail,
     CarCalculationUkApproval,
+    DealCalcTelegramSettings,
     KMCar,
     PriceCarBrand,
     PriceCarKmDiscount,
@@ -100,3 +101,31 @@ class KMCarAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
     ordering = ('-date',)
     readonly_fields = ('km',)
+
+
+@admin.register(DealCalcTelegramSettings)
+class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
+    list_display = ('enabled', 'bot_username', 'chat_ids', 'updated_at')
+    fields = ('enabled', 'bot_token', 'bot_username', 'chat_ids', 'webhook_secret', 'updated_at')
+    readonly_fields = ('updated_at', 'webhook_secret')
+    actions = ['register_webhook']
+
+    def has_add_permission(self, request):
+        return not DealCalcTelegramSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.action(description='Зарегистрировать webhook Telegram')
+    def register_webhook(self, request, queryset):
+        from django.contrib import messages
+        from avtosalon.deal_calc_telegram import register_telegram_webhook, webhook_url
+        ok, message = register_telegram_webhook()
+        if ok:
+            self.message_user(request, message)
+        else:
+            self.message_user(
+                request,
+                '{} (ожидаемый URL: {})'.format(message, webhook_url()),
+                level=messages.ERROR,
+            )

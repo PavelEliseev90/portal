@@ -5628,6 +5628,14 @@ def get_shipment(shipment):
     if 'TypeSale' in shipment:
         shipment_object.typeSale = shipment['TypeSale']
 
+    # Вознаграждения / комплекты — заполняем только если ключ есть в пакете
+    if 'AmountRewardCredit' in shipment:
+        shipment_object.amount_reward_credit = shipment['AmountRewardCredit']
+    if 'AmountRewardOpfu' in shipment:
+        shipment_object.amount_reward_opfu = shipment['AmountRewardOpfu']
+    if 'AmountKits' in shipment:
+        shipment_object.amount_kits = shipment['AmountKits']
+
     shipment_object.save()
 
     return shipment_object

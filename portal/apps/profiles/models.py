@@ -59,6 +59,15 @@ class Profiles(models.Model):
         "Разрешённый ключ сессии (один вход)",
         max_length=40, null=True, blank=True, db_index=True
     )
+    telegram_chat_id = models.CharField(
+        'Telegram chat ID',
+        max_length=64,
+        blank=True,
+        default='',
+        help_text='Личный chat_id. Задаётся только в админке или '
+                  'на странице редактирования профиля. '
+                  'Узнать: @userinfobot → Id.',
+    )
 
     def image_img(self):
         if self.image:

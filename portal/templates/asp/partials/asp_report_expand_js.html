@@ -24,6 +24,11 @@
     return document.querySelectorAll('tr[data-parent-key="' + key + '"]');
   }
 
+  function colSpan() {
+    var cols = (window.aspTableColumns && window.aspTableColumns.length) || 11;
+    return cols + 1; // + toggle column
+  }
+
   function bindGroupHeaders() {
     var root = document.querySelector('[data-asp-details-url]');
     var detailsUrl = root ? root.getAttribute('data-asp-details-url') : '';
@@ -49,7 +54,7 @@
         var loading = document.createElement('tr');
         loading.setAttribute('data-parent-key', key);
         loading.className = 'table-group-detail detail-loading';
-        loading.innerHTML = '<td colspan="12" class="text-muted small py-2">Загрузка…</td>';
+        loading.innerHTML = '<td colspan="' + colSpan() + '" class="text-muted small py-2">Загрузка…</td>';
         header.parentNode.insertBefore(loading, header.nextSibling);
 
         var params = new URLSearchParams(window.location.search);
@@ -74,7 +79,7 @@
               empty.setAttribute('data-parent-key', key);
               empty.className = 'table-group-detail';
               empty.style.display = stillOpen ? '' : 'none';
-              empty.innerHTML = '<td colspan="12" class="text-muted small">Нет строк</td>';
+              empty.innerHTML = '<td colspan="' + colSpan() + '" class="text-muted small">Нет строк</td>';
               frag.appendChild(empty);
             } else {
               rows.forEach(function(row) {
@@ -84,7 +89,7 @@
                 tr.style.display = stillOpen ? '' : 'none';
                 tr.innerHTML = renderer
                   ? renderer(row, money, escapeHtml, fmtDate)
-                  : '<td colspan="12">' + escapeHtml(JSON.stringify(row)) + '</td>';
+                  : '<td colspan="' + colSpan() + '">' + escapeHtml(JSON.stringify(row)) + '</td>';
                 frag.appendChild(tr);
               });
               if (data.truncated) {
@@ -92,7 +97,7 @@
                 more.setAttribute('data-parent-key', key);
                 more.className = 'table-group-detail';
                 more.style.display = stillOpen ? '' : 'none';
-                more.innerHTML = '<td colspan="12" class="text-muted small">Показаны первые ' + rows.length + ' строк. Уточните фильтры.</td>';
+                more.innerHTML = '<td colspan="' + colSpan() + '" class="text-muted small">Показаны первые ' + rows.length + ' строк. Уточните фильтры.</td>';
                 frag.appendChild(more);
               }
             }
@@ -104,7 +109,7 @@
             var err = document.createElement('tr');
             err.setAttribute('data-parent-key', key);
             err.className = 'table-group-detail';
-            err.innerHTML = '<td colspan="12" class="text-danger small">Ошибка загрузки</td>';
+            err.innerHTML = '<td colspan="' + colSpan() + '" class="text-danger small">Ошибка загрузки</td>';
             header.parentNode.insertBefore(err, header.nextSibling);
           });
       });

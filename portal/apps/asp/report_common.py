@@ -187,6 +187,7 @@ def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
         'view': view_mode,
         'page': max(1, int(get.get('page') or 1) if str(get.get('page') or '').isdigit() else 1),
         'group_key': (get.get('group_key') or '').strip(),
+        'order_by': (get.get('order_by') or '').strip(),
     }
 
 
@@ -216,7 +217,7 @@ def build_query_string(
             pairs.append(('unit', str(uid)))
     keys = (
         'vin', 'mark', 'model', 'status', 'person', 'type_reception', 'type_sale',
-        'client', 'nomer', 'days_from', 'days_to', 'view', 'include_pbi',
+        'client', 'nomer', 'days_from', 'days_to', 'view', 'include_pbi', 'order_by',
     ) + tuple(extra_keys)
     for key in keys:
         if key in exclude_set:
@@ -250,6 +251,7 @@ def filters_for_template(filters: dict[str, Any]) -> dict[str, Any]:
         'include_pbi': bool(filters.get('include_pbi')),
         'view': filters.get('view') or 'main',
         'page': filters.get('page') or 1,
+        'order_by': filters.get('order_by') or '',
     }
 
 
@@ -376,6 +378,7 @@ def report_shell(
         'person_label': person_label,
         'filters': filters_for_template(filters),
         'units': asp_sales_units_list(),
+        'units_qs': asp_sales_units_qs(),
         'view_modes': VIEW_MODES,
         'view': view,
         'totals': totals,
