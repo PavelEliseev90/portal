@@ -406,6 +406,20 @@ MSSQL_TRADEINFUNNEL = {
     'trust_server_certificate': os.getenv('MSSQL_TRADEINFUNNEL_TRUST_CERT', 'yes'),
 }
 
+# --- Telegram уведомления по согласованию КП (параллельно email) ---
+# Основной выключатель — в админке (DealCalcTelegramSettings).
+# force_off=1 полностью отключает отправку без правки БД (аварийный стоп).
+DEAL_CALC_TELEGRAM = {
+    'force_off': os.getenv('DEAL_CALC_TELEGRAM_FORCE_OFF', '0') in ('1', 'true', 'True', 'yes'),
+    'bot_token': os.getenv('DEAL_CALC_TELEGRAM_BOT_TOKEN', ''),
+    'chat_ids': os.getenv('DEAL_CALC_TELEGRAM_CHAT_IDS', ''),
+    'timeout': int(os.getenv('DEAL_CALC_TELEGRAM_TIMEOUT', '5') or '5'),
+    'public_base_url': os.getenv(
+        'DEAL_CALC_TELEGRAM_PUBLIC_BASE_URL',
+        MYKORS_PORTAL_PUBLIC_BASE_URL,
+    ),
+}
+
 
 
 LOG_DIR = os.path.join(BASE_DIR, 'logs')

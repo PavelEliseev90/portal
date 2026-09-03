@@ -38,6 +38,7 @@ urlpatterns = [
    path('deal/rlk-chat/<int:rlk_id>/',        views.rlk_op_chat, name='rlk_op_chat'),
    path('deal/calculation/<int:id>/client-suggestions/count/', views.deal_calc_client_suggestions_count, name='deal_calc_client_suggestions_count'),
    path('deal/calculation/<int:id>/client-suggestions/', views.deal_calc_client_suggestions_list, name='deal_calc_client_suggestions_list'),
+   path('deal/calculation/tg-action/<str:token>/', views.deal_calc_telegram_action, name='deal_calc_telegram_action'),
    path('deal/calculation/<int:id>/',        views.deal_calculation_doc, name='deal_calculation_doc'),
    path('deal/calculation/',                 views.deal_calculation, name='deal_calculation'),
    path('<slug:slug>/sms/send-code/',        views.car_sms_send_code, name='car_sms_send_code'),

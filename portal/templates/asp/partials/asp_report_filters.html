@@ -1,35 +1,37 @@
-<form class="asp-rep-filter" method="get">
+<form class="asp-rep-filter" method="get" id="aspReportFilters">
   <input type="hidden" name="view" value="{{ params.view }}">
-  <div class="row g-3 align-items-end">
+  {% if params.filters.order_by %}<input type="hidden" name="order_by" value="{{ params.filters.order_by }}">{% endif %}
+  <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
+  <div class="row g-3">
     {% if params.show_dates %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Период с</label>
+      <div class="metric-card-label-portal">Период с</div>
       <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
     </div>
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">по</label>
+      <div class="metric-card-label-portal">по</div>
       <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
     </div>
     {% endif %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">VIN</label>
-      <input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}" placeholder="часть VIN">
+      <div class="metric-card-label-portal">VIN</div>
+      <input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
     </div>
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Марка</label>
-      <input type="text" class="form-control" name="mark" value="{{ params.filters.mark }}">
+      <div class="metric-card-label-portal">Марка</div>
+      <input type="text" class="form-control" name="mark" value="{{ params.filters.mark }}" autocomplete="off">
     </div>
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Модель</label>
-      <input type="text" class="form-control" name="model" value="{{ params.filters.model }}">
+      <div class="metric-card-label-portal">Модель</div>
+      <input type="text" class="form-control" name="model" value="{{ params.filters.model }}" autocomplete="off">
     </div>
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">{{ params.person_label|default:"Сотрудник" }}</label>
-      <input type="text" class="form-control" name="person" value="{{ params.filters.person }}" placeholder="ФИО">
+      <div class="metric-card-label-portal">{{ params.person_label|default:"Сотрудник" }}</div>
+      <input type="text" class="form-control" name="person" value="{{ params.filters.person }}" placeholder="ФИО" autocomplete="off">
     </div>
     {% if params.show_status_filter %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Статус</label>
+      <div class="metric-card-label-portal">Статус</div>
       <select class="form-select" name="status">
         <option value="">Все</option>
         {% for s in params.statuses %}
@@ -40,18 +42,18 @@
     {% endif %}
     {% if params.show_days_filter %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Дней на складе от</label>
+      <div class="metric-card-label-portal">Дней на складе от</div>
       <input type="number" class="form-control" name="days_from" value="{{ params.filters.days_from }}" min="0">
     </div>
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">до</label>
+      <div class="metric-card-label-portal">до</div>
       <input type="number" class="form-control" name="days_to" value="{{ params.filters.days_to }}" min="0">
     </div>
     {% endif %}
     {% if params.type_sales %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Тип продажи</label>
-      <input type="text" class="form-control" name="type_sale" value="{{ params.filters.type_sale }}" list="aspTypeSaleList">
+      <div class="metric-card-label-portal">Тип продажи</div>
+      <input type="text" class="form-control" name="type_sale" value="{{ params.filters.type_sale }}" list="aspTypeSaleList" autocomplete="off">
       <datalist id="aspTypeSaleList">
         {% for t in params.type_sales %}<option value="{{ t }}">{% endfor %}
       </datalist>
@@ -59,49 +61,52 @@
     {% endif %}
     {% if params.type_receptions %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Тип приёма</label>
-      <input type="text" class="form-control" name="type_reception" value="{{ params.filters.type_reception }}" list="aspTypeReceptionList">
+      <div class="metric-card-label-portal">Тип приёма</div>
+      <input type="text" class="form-control" name="type_reception" value="{{ params.filters.type_reception }}" list="aspTypeReceptionList" autocomplete="off">
       <datalist id="aspTypeReceptionList">
         {% for t in params.type_receptions %}<option value="{{ t }}">{% endfor %}
       </datalist>
     </div>
     {% endif %}
     <div class="col-6 col-md-3 col-lg-2">
-      <label class="form-label">Клиент / №</label>
-      <div class="input-group">
-        <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="клиент">
-        <input type="text" class="form-control" name="nomer" value="{{ params.filters.nomer }}" placeholder="номер">
-      </div>
+      <div class="metric-card-label-portal">Клиент</div>
+      <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="клиент" autocomplete="off">
     </div>
-    <div class="col-12 col-lg-5">
-      <label class="form-label">Подразделения ОП АСП</label>
-      <div class="unit-checks">
-        {% for u in params.units %}
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="unit" value="{{ u.id }}" id="asp_unit_{{ u.id }}"
-                   {% if u.id in params.filters.unit_ids %}checked{% endif %}>
-            <label class="form-check-label" for="asp_unit_{{ u.id }}">{{ u.name }}</label>
-          </div>
-        {% empty %}
-          <div class="text-muted small">Нет подразделений направления «Отдел продаж АСП»</div>
-        {% endfor %}
-      </div>
-      <div class="asp-hint mt-1">Пустой выбор = все подразделения ОП АСП.</div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Номер</div>
+      <input type="text" class="form-control" name="nomer" value="{{ params.filters.nomer }}" placeholder="номер" autocomplete="off">
     </div>
-    <div class="col-12 col-lg-2 d-flex gap-2">
-      <button type="submit" class="btn btn-primary flex-grow-1">Применить</button>
-      <a class="btn btn-outline-secondary" href="{{ request.path }}">Сброс</a>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix='aspUnit' field_name='unit' label='Подразделения ОП АСП' placeholder='Поиск по подразделениям...' items=params.units_qs selected_ids=params.filters.unit_ids hint='Пустой выбор = все подразделения ОП АСП' empty_text='Нет подразделений направления «Отдел продаж АСП»' %}
     </div>
-    {% if params.show_pbi_toggle %}
-    <div class="col-12">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="include_pbi" value="1" id="include_pbi"
-               {% if params.filters.include_pbi %}checked{% endif %}>
-        <label class="form-check-label" for="include_pbi">
-          Подтянуть PowerBI (кумулятив БУ / КВП) — медленнее, только для детального анализа
-        </label>
-      </div>
-    </div>
-    {% endif %}
   </div>
+
+  <div class="row g-2 align-items-center mt-3">
+    <div class="col-auto">
+      <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    <div class="col-auto">
+      <a class="btn-calculate-secondary-sm" href="{{ request.path }}?view={{ params.view }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+    </div>
+    <div class="col-auto ms-md-auto d-flex flex-wrap gap-2">
+      <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalAspColumns" title="Настроить столбцы таблицы">
+        <span class="icon-mbri-setting"></span> Столбцы
+      </button>
+      <a class="btn-calculate-secondary-sm" href="{{ params.export_url|default:'?export=xlsx' }}" title="Выгрузить в Excel">
+        <span class="icon-mbri-download"></span> Excel
+      </a>
+    </div>
+  </div>
+
+  {% if params.show_pbi_toggle %}
+  <div class="mt-3">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="include_pbi" value="1" id="include_pbi"
+             {% if params.filters.include_pbi %}checked{% endif %}>
+      <label class="form-check-label" for="include_pbi">
+        Подтянуть PowerBI (кумулятив БУ / КВП) — медленнее, только для детального анализа
+      </label>
+    </div>
+  </div>
+  {% endif %}
 </form>

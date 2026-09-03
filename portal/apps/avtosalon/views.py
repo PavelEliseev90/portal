@@ -3606,6 +3606,128 @@ def deal_calculation(request):
     return render(request, 'avtosalon/deal_calculation.html', {'params': params})
 
 
+@login_required(login_url='/login')
+def deal_calc_telegram_action(request, token):
+    """Подтверждение согласования КП по ссылке из Telegram (логин + обязательный комментарий)."""
+    from django.contrib import messages
+    from prices_car.models import CarCalculations
+    from avtosalon.deal_calc_approval import (
+        director_can_approve_without_uk,
+        user_has_deal_calc_uk_access,
+        user_is_deal_calc_director_for_calc,
+    )
+    from avtosalon.deal_calc_telegram import (
+        ACTION_BUTTON_LABELS,
+        token_errors_message,
+        unsign_action_token,
+    )
+
+    try:
+        calc_id, action = unsign_action_token(token)
+    except Exception as exc:
+        messages.error(request, token_errors_message(exc))
+        return HttpResponseRedirect('/cars/deal/calculation/')
+
+    if action not in ACTION_BUTTON_LABELS:
+        messages.error(request, 'Неизвестное действие согласования.')
+        return HttpResponseRedirect('/cars/deal/calculation/')
+
+    try:
+        calc = CarCalculations.objects.select_related(
+            'car', 'car__unit', 'unit',
+            'car__modification_autoru',
+            'car__modification_autoru__model',
+            'car__modification_autoru__model__mark',
+        ).get(pk=calc_id)
+    except CarCalculations.DoesNotExist:
+        messages.error(request, 'КП не найдено.')
+        return HttpResponseRedirect('/cars/deal/calculation/')
+
+    cumulative_data = None
+    if calc.car_id:
+        try:
+            cumulative_data = calc.car.cumulative_data()
+        except Exception:
+            cumulative_data = None
+
+    status = calc.soglasovanie_status or CarCalculations.SOGLASOVANIE_PENDING
+    status_label = dict(CarCalculations.SOGLASOVANIE_STATUS_CHOICES).get(status, status)
+    action_label = ACTION_BUTTON_LABELS.get(action, action)
+
+    can_act = False
+    block_reason = ''
+    if action in ('director_approve', 'director_send_uk', 'director_reject'):
+        if not user_is_deal_calc_director_for_calc(request.user, calc):
+            block_reason = 'Нет прав директора ДЦ для этого КП.'
+        elif status != CarCalculations.SOGLASOVANIE_PENDING:
+            block_reason = 'КП уже обработано директором.'
+        elif action == 'director_approve' and not director_can_approve_without_uk(calc, cumulative_data):
+            block_reason = 'КВП не позволяет согласовать без УК — используйте «В УК».'
+        elif action == 'director_send_uk' and director_can_approve_without_uk(calc, cumulative_data):
+            block_reason = 'КВП выше мин. КМ ДЦ — согласуйте без отправки в УК.'
+        else:
+            can_act = True
+    elif action in ('uk_approve', 'uk_reject'):
+        if not user_has_deal_calc_uk_access(request.user):
+            block_reason = 'Нет прав на согласование УК.'
+        elif status != CarCalculations.SOGLASOVANIE_PENDING_UK:
+            block_reason = 'КП не ожидает согласования УК.'
+        else:
+            can_act = True
+    else:
+        block_reason = 'Действие недоступно.'
+
+    if request.method == 'POST':
+        if not can_act:
+            messages.error(request, block_reason or 'Действие недоступно.')
+            return HttpResponseRedirect('/cars/deal/calculation/{}/'.format(calc.pk))
+        from avtosalon.deal_calc_approval import apply_deal_calc_approval
+        comment = (request.POST.get('approval_comment') or '').strip()
+        ok, message = apply_deal_calc_approval(
+            request.user, calc, action, comment, cumulative_data,
+        )
+        if ok:
+            messages.success(request, message)
+            return HttpResponseRedirect('/cars/deal/calculation/{}/'.format(calc.pk))
+        messages.error(request, message)
+        # fall through to re-render form if comment empty / business error
+
+    car_title = ''
+    unit_name = ''
+    try:
+        car = calc.car
+        if car:
+            if car.unit:
+                unit_name = car.unit.name
+            mod = car.modification_autoru
+            if mod and mod.model:
+                mark = mod.model.mark.name if mod.model.mark_id else ''
+                car_title = '{} {}'.format(mark, mod.model.name).strip()
+            if not car_title:
+                car_title = car.name or ''
+    except Exception:
+        pass
+
+    try:
+        kvp_display = '{:,}'.format(int(calc.kvp or 0)).replace(',', ' ')
+    except (TypeError, ValueError):
+        kvp_display = str(calc.kvp or 0)
+
+    return render(request, 'avtosalon/deal_calc_telegram_action.html', {
+        'params': {'type': 'deal_calculation', 'request': request},
+        'calc': calc,
+        'action': action,
+        'action_label': action_label,
+        'can_act': can_act,
+        'block_reason': block_reason,
+        'car_title': car_title,
+        'unit_name': unit_name,
+        'kvp_display': kvp_display,
+        'status_label': status_label,
+        'comment_value': (request.POST.get('approval_comment') or '') if request.method == 'POST' else '',
+    })
+
+
 @login_required
 def deal_calculation_doc(request, id):
     

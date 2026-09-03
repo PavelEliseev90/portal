@@ -7,7 +7,7 @@
 {% block content %}
 {% include 'asp/partials/asp_report_styles.html' %}
 
-<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}">
+<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}" data-report-key="accepted">
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
     <div>
       <h2>{{ params.report_title }}</h2>
@@ -34,102 +34,89 @@
   {% include 'asp/partials/asp_report_view_tabs.html' %}
   {% include 'asp/partials/asp_report_filters.html' %}
 
-  <div class="asp-rep-panel">
-    <h3>
+  <div class="asp-rep-panel no-padding">
+    <h3 class="padding-title mb-0 p-3">
       {% if params.view == 'by_unit' %}По подразделениям — клик разворачивает детали
       {% elif params.view == 'by_person' %}По оценщикам — клик разворачивает детали
       {% else %}Основной список{% endif %}
     </h3>
-    <div class="table-responsive">
-      <table class="table table-sm table-hover table-asp mb-0">
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-hover table-striped table-asp mb-0">
         <thead>
           <tr>
-            {% if params.view != 'main' %}<th></th>{% endif %}
-            <th>Дата / №</th>
-            <th>Авто / VIN</th>
-            <th>Клиент</th>
-            <th>Оценщик</th>
-            <th>Тип приёма</th>
-            <th class="num">Себест.</th>
-            <th class="num">БЦП</th>
-            <th class="num">Пробег</th>
-            <th>Подразделение</th>
+            {% if params.view != 'main' %}<th style="width:2rem"></th>{% endif %}
+            {% for col in params.table_columns %}
+              {% include 'asp/partials/_asp_col_head.html' with col=col params=params %}
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% if params.view == 'main' %}
             {% for r in params.rows %}
               <tr>
-                <td>
-                  <div class="fw-semibold">{{ r.date|date:"d.m.Y" }}</div>
-                  <div class="small text-muted">{{ r.nomer|default:"—" }}{% if r.rlk_id %} · <a href="/eco/{{ r.rlk_id }}/" target="_blank">РЛ {{ r.rlk_nomer }}</a>{% endif %}</div>
-                </td>
-                <td>
-                  <div class="fw-semibold">{{ r.mark }} {{ r.model }}</div>
-                  <div class="small text-muted">{{ r.vin }} · {{ r.year }}{% if r.plate %} · {{ r.plate }}{% endif %}</div>
-                </td>
-                <td>{{ r.client|default:"—" }}</td>
-                <td>{{ r.person_name }}</td>
-                <td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
-                <td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
-                <td class="num">{{ r.bcp|floatformat:"0g" }}</td>
-                <td class="num">{{ r.run|floatformat:"0g" }}</td>
-                <td>{{ r.unit_name }}{% if r.store_name %}<div class="small text-muted">{{ r.store_name }}</div>{% endif %}</td>
+                {% for col in params.table_columns %}
+                  {% include 'asp/partials/_asp_col_cell.html' with col=col r=r report_key='accepted' %}
+                {% endfor %}
               </tr>
             {% empty %}
-              <tr><td colspan="9" class="text-center text-muted py-4">Нет принятых по фильтру</td></tr>
+              <tr><td colspan="{{ params.table_columns|length }}" class="text-center text-muted py-4">Нет принятых по фильтру</td></tr>
             {% endfor %}
           {% else %}
             {% for g in params.groups %}
               <tr class="table-group-header" data-group-key="{{ g.key }}">
                 <td><span class="toggle-icon">▸</span></td>
-                <td colspan="4"><strong>{{ g.label }}</strong> · {{ g.count }} принятых</td>
-                <td></td>
-                <td class="num">{{ g.cost_price|floatformat:"0g" }}</td>
-                <td class="num">{{ g.bcp|floatformat:"0g" }}</td>
-                <td class="num">{{ g.run|floatformat:"0g" }}</td>
-                <td></td>
+                <td colspan="{{ params.table_columns|length }}">
+                  <strong>{{ g.label }}</strong>
+                  · {{ g.count }} принятых
+                  · себест. {{ g.cost_price|floatformat:"0g" }}
+                  · БЦП {{ g.bcp|floatformat:"0g" }}
+                </td>
               </tr>
             {% empty %}
-              <tr><td colspan="10" class="text-center text-muted py-4">Нет данных</td></tr>
+              <tr><td colspan="{{ params.table_columns|length|add:1 }}" class="text-center text-muted py-4">Нет данных</td></tr>
             {% endfor %}
           {% endif %}
         </tbody>
-        {% if params.totals.count %}
+        {% if params.view == 'main' and params.totals.count %}
         <tfoot>
           <tr class="row-total">
-            {% if params.view != 'main' %}<td></td>{% endif %}
-            <td colspan="5">Итого · {{ params.totals.count }}</td>
-            <td class="num">{{ params.totals.cost_price|floatformat:"0g" }}</td>
-            <td class="num">{{ params.totals.bcp|floatformat:"0g" }}</td>
-            <td class="num">{{ params.totals.run|floatformat:"0g" }}</td>
-            <td></td>
+            <td colspan="{{ params.table_columns|length }}">Итого · {{ params.totals.count }} · себест. {{ params.totals.cost_price|floatformat:"0g" }} · БЦП {{ params.totals.bcp|floatformat:"0g" }}</td>
           </tr>
         </tfoot>
         {% endif %}
       </table>
     </div>
-    {% include 'asp/partials/asp_report_pagination.html' %}
+    <div class="p-3">{% include 'asp/partials/asp_report_pagination.html' %}</div>
   </div>
 </div>
 <script>
+window.aspTableColumns = {{ params.table_columns_json|safe }};
+window.aspReportKey = 'accepted';
 window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
-  var rlk = r.rlk_id
-    ? ' · <a href="/eco/' + esc(r.rlk_id) + '/" target="_blank">РЛ</a>'
-    : '';
-  return '<td></td>' +
-    '<td><div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' +
-    esc(r.nomer || '—') + rlk + '</div></td>' +
-    '<td><div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) +
-    '</div><div class="small text-muted">' + esc(r.vin) + '</div></td>' +
-    '<td>' + esc(r.client || '—') + '</td>' +
-    '<td>' + esc(r.person_name) + '</td>' +
-    '<td>' + esc(r.type_reception || '—') + '</td>' +
-    '<td class="num">' + money(r.cost_price) + '</td>' +
-    '<td class="num">' + money(r.bcp) + '</td>' +
-    '<td class="num">' + money(r.run) + '</td>' +
-    '<td>' + esc(r.unit_name) + '</td>';
+  var cols = window.aspTableColumns || [];
+  var html = '<td></td>';
+  cols.forEach(function(col) {
+    var cls = col.num ? ' class="num"' : '';
+    var val = '—';
+    var rlk = r.rlk_id ? ' · <a href="/eco/' + esc(r.rlk_id) + '/" target="_blank">РЛ</a>' : '';
+    if (col.key === 'date') val = '<div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' + esc(r.nomer || '—') + rlk + '</div>';
+    else if (col.key === 'car') val = '<div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) + '</div>';
+    else if (col.key === 'vin') val = esc(r.vin);
+    else if (col.key === 'client') val = esc(r.client || '—');
+    else if (col.key === 'person') val = esc(r.person_name);
+    else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
+    else if (col.key === 'cost_price') val = money(r.cost_price);
+    else if (col.key === 'bcp') val = money(r.bcp);
+    else if (col.key === 'run') val = money(r.run);
+    else if (col.key === 'unit') val = esc(r.unit_name);
+    else if (col.key === 'store') val = esc(r.store_name || '—');
+    else if (col.key === 'year') val = esc(r.year);
+    else if (col.key === 'plate') val = esc(r.plate || '—');
+    html += '<td' + cls + '>' + val + '</td>';
+  });
+  return html;
 };
 </script>
 {% include 'asp/partials/asp_report_expand_js.html' %}
+{% include 'asp/partials/asp_report_columns_modal.html' %}
 {% endblock %}

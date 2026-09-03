@@ -19,6 +19,7 @@ from asp.report_common import (
     report_shell,
     sum_money,
 )
+from asp.report_table import resolve_order_by
 from documents.models import DocCarShipment
 
 SUM_MAP = {
@@ -27,6 +28,9 @@ SUM_MAP = {
     'outlay': sum_money('outlay'),
     'cm_actual': sum_money('agreement__cm_actual'),
     'cm_est': sum_money('agreement__cm_est'),
+    'amount_reward_credit': sum_money('amount_reward_credit'),
+    'amount_reward_opfu': sum_money('amount_reward_opfu'),
+    'amount_kits': sum_money('amount_kits'),
 }
 
 
@@ -67,6 +71,7 @@ DETAIL_VALUES = (
     'cars__model', 'cars__year', 'clientName', 'staff_id', 'staff__name', 'typeSale',
     'amount', 'cost_price', 'outlay', 'agreement_id', 'agreement__nomer',
     'agreement__cm_actual', 'agreement__cm_est',
+    'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
 )
 
 
@@ -98,6 +103,9 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
         'cm_actual': money(row.get('agreement__cm_actual')) if has_cm else 0.0,
         'cm_est': money(row.get('agreement__cm_est')) if has_cm else 0.0,
         'has_cm': has_cm,
+        'amount_reward_credit': money(row.get('amount_reward_credit')),
+        'amount_reward_opfu': money(row.get('amount_reward_opfu')),
+        'amount_kits': money(row.get('amount_kits')),
         'pbi_cum_full': money(pbi.get('cum_full')),
         'pbi_kvp': money(pbi.get('kvp')),
         'pbi_marzhi': money(pbi.get('summa_marzhi_bez_nds')),
@@ -217,7 +225,9 @@ def build_cumulative_margin_report(get) -> dict[str, Any]:
     paginator = None
 
     if view == 'main':
-        values_qs = qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)
+        _ui, orm_order = resolve_order_by('margin', filters.get('order_by'))
+        filters['order_by'] = _ui
+        values_qs = qs.order_by(*orm_order).values(*DETAIL_VALUES)
         paginator = Paginator(values_qs, PAGE_SIZE)
         page_obj = paginator.get_page(filters['page'])
         page_values = list(page_obj.object_list)

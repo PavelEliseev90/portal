@@ -1,6 +1,7 @@
 from django.urls import path, include
 from django.views.generic import TemplateView
 from api import views_cars_bu, views, views_avtosalon, views_catalog, views_mobile_android_api_v1, views_mobile_android_api_v2, views_kolesa_reception
+from avtosalon.deal_calc_telegram_webhook import deal_calc_telegram_webhook
 from rest_framework_swagger.views import get_swagger_view
 
 from rest_framework import permissions
@@ -208,5 +209,8 @@ urlpatterns = [
    path('kolesa_reception/',                          views_kolesa_reception.kolesa_reception_list),
    path('kolesa_reception/accept/',                   views_kolesa_reception.kolesa_reception_accept),
    path('kolesa_reception/<int:reception_id>/',       views_kolesa_reception.kolesa_reception_detail),
+
+   # Telegram bot webhook — согласование КП
+   path('telegram/deal-calc-webhook/',                deal_calc_telegram_webhook),
    
 ]
