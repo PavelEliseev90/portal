@@ -1,0 +1,107 @@
+<form class="asp-rep-filter" method="get">
+  <input type="hidden" name="view" value="{{ params.view }}">
+  <div class="row g-3 align-items-end">
+    {% if params.show_dates %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Период с</label>
+      <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">по</label>
+      <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+    </div>
+    {% endif %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">VIN</label>
+      <input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}" placeholder="часть VIN">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Марка</label>
+      <input type="text" class="form-control" name="mark" value="{{ params.filters.mark }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Модель</label>
+      <input type="text" class="form-control" name="model" value="{{ params.filters.model }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">{{ params.person_label|default:"Сотрудник" }}</label>
+      <input type="text" class="form-control" name="person" value="{{ params.filters.person }}" placeholder="ФИО">
+    </div>
+    {% if params.show_status_filter %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Статус</label>
+      <select class="form-select" name="status">
+        <option value="">Все</option>
+        {% for s in params.statuses %}
+          <option value="{{ s.id }}" {% if params.filters.status == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% if params.show_days_filter %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Дней на складе от</label>
+      <input type="number" class="form-control" name="days_from" value="{{ params.filters.days_from }}" min="0">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">до</label>
+      <input type="number" class="form-control" name="days_to" value="{{ params.filters.days_to }}" min="0">
+    </div>
+    {% endif %}
+    {% if params.type_sales %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Тип продажи</label>
+      <input type="text" class="form-control" name="type_sale" value="{{ params.filters.type_sale }}" list="aspTypeSaleList">
+      <datalist id="aspTypeSaleList">
+        {% for t in params.type_sales %}<option value="{{ t }}">{% endfor %}
+      </datalist>
+    </div>
+    {% endif %}
+    {% if params.type_receptions %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Тип приёма</label>
+      <input type="text" class="form-control" name="type_reception" value="{{ params.filters.type_reception }}" list="aspTypeReceptionList">
+      <datalist id="aspTypeReceptionList">
+        {% for t in params.type_receptions %}<option value="{{ t }}">{% endfor %}
+      </datalist>
+    </div>
+    {% endif %}
+    <div class="col-6 col-md-3 col-lg-2">
+      <label class="form-label">Клиент / №</label>
+      <div class="input-group">
+        <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="клиент">
+        <input type="text" class="form-control" name="nomer" value="{{ params.filters.nomer }}" placeholder="номер">
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <label class="form-label">Подразделения ОП АСП</label>
+      <div class="unit-checks">
+        {% for u in params.units %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="unit" value="{{ u.id }}" id="asp_unit_{{ u.id }}"
+                   {% if u.id in params.filters.unit_ids %}checked{% endif %}>
+            <label class="form-check-label" for="asp_unit_{{ u.id }}">{{ u.name }}</label>
+          </div>
+        {% empty %}
+          <div class="text-muted small">Нет подразделений направления «Отдел продаж АСП»</div>
+        {% endfor %}
+      </div>
+      <div class="asp-hint mt-1">Пустой выбор = все подразделения ОП АСП.</div>
+    </div>
+    <div class="col-12 col-lg-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary flex-grow-1">Применить</button>
+      <a class="btn btn-outline-secondary" href="{{ request.path }}">Сброс</a>
+    </div>
+    {% if params.show_pbi_toggle %}
+    <div class="col-12">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="include_pbi" value="1" id="include_pbi"
+               {% if params.filters.include_pbi %}checked{% endif %}>
+        <label class="form-check-label" for="include_pbi">
+          Подтянуть PowerBI (кумулятив БУ / КВП) — медленнее, только для детального анализа
+        </label>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</form>

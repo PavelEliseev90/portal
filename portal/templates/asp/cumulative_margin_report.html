@@ -1,0 +1,141 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — {{ params.report_title }} {% endblock %}
+{% block title_navbar %} — Кумулятивная маржа {% endblock %}
+
+{% block content %}
+{% include 'asp/partials/asp_report_styles.html' %}
+
+<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <h2>{{ params.report_title }}</h2>
+      <p class="lead mb-0">{{ params.report_subtitle }}</p>
+    </div>
+    {% include 'asp/partials/asp_report_actions.html' %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Отгрузок</div><div class="v">{{ params.totals.count }}</div><div class="s">за период</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Выручка</div><div class="v">{{ params.totals.amount|floatformat:"0g" }}</div><div class="s">сумма продажи</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Себестоимость</div><div class="v">{{ params.totals.cost_price|floatformat:"0g" }}</div><div class="s">+ расходы {{ params.totals.outlay|floatformat:"0g" }}</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Маржа отгрузки</div><div class="v {% if params.totals.doc_margin >= 0 %}text-success{% else %}text-danger{% endif %}">{{ params.totals.doc_margin|floatformat:"0g" }}</div><div class="s">{{ params.totals.margin_pct|floatformat:1 }}%</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">КМ факт</div><div class="v">{{ params.totals.cm_actual|floatformat:"0g" }}</div><div class="s">из соглашений</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">Кумулятив БУ</div>
+        <div class="v">{% if params.filters.include_pbi %}в строках{% else %}—{% endif %}</div>
+        <div class="s">{% if params.filters.include_pbi %}PowerBI включён{% else %}включите в фильтрах{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'asp/partials/asp_report_view_tabs.html' %}
+  {% include 'asp/partials/asp_report_filters.html' %}
+
+  <div class="asp-rep-panel">
+    <h3>
+      {% if params.view == 'by_unit' %}По подразделениям — клик разворачивает детали
+      {% elif params.view == 'by_person' %}По продавцам — клик разворачивает детали
+      {% else %}Основной список отгрузок{% endif %}
+    </h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-asp mb-0">
+        <thead>
+          <tr>
+            {% if params.view != 'main' %}<th></th>{% endif %}
+            <th>Дата / №</th>
+            <th>Авто / VIN</th>
+            <th>Клиент / продавец</th>
+            <th>Тип</th>
+            <th class="num">Продажа</th>
+            <th class="num">Себест.</th>
+            <th class="num">Расходы</th>
+            <th class="num">Маржа</th>
+            <th class="num">КМ факт</th>
+            <th class="num">БУ кумул.</th>
+            <th class="num">КВП</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.view == 'main' %}
+            {% for r in params.rows %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ r.date|date:"d.m.Y" }}</div>
+                  <div class="small text-muted">{{ r.nomer|default:"—" }} · {{ r.unit_name }}</div>
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ r.mark }} {{ r.model }}</div>
+                  <div class="small text-muted">{{ r.vin }}</div>
+                </td>
+                <td>{{ r.client|default:"—" }}<div class="small text-muted">{{ r.person_name }}</div></td>
+                <td>{{ r.type_sale|default:"—" }}</td>
+                <td class="num">{{ r.amount|floatformat:"0g" }}</td>
+                <td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
+                <td class="num">{{ r.outlay|floatformat:"0g" }}</td>
+                <td class="num {% if r.doc_margin >= 0 %}pos{% else %}neg{% endif %}">{{ r.doc_margin|floatformat:"0g" }}</td>
+                <td class="num">{% if r.has_cm %}{{ r.cm_actual|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                <td class="num">{% if r.has_pbi %}{{ r.pbi_cum_full|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                <td class="num">{% if r.has_pbi %}{{ r.pbi_kvp|floatformat:"0g" }}{% else %}—{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="11" class="text-center text-muted py-4">Нет отгрузок</td></tr>
+            {% endfor %}
+          {% else %}
+            {% for g in params.groups %}
+              <tr class="table-group-header" data-group-key="{{ g.key }}">
+                <td><span class="toggle-icon">▸</span></td>
+                <td colspan="3"><strong>{{ g.label }}</strong> · {{ g.count }} отгрузок · {{ g.margin_pct|floatformat:1 }}%</td>
+                <td></td>
+                <td class="num">{{ g.amount|floatformat:"0g" }}</td>
+                <td class="num">{{ g.cost_price|floatformat:"0g" }}</td>
+                <td class="num">{{ g.outlay|floatformat:"0g" }}</td>
+                <td class="num {% if g.doc_margin >= 0 %}pos{% else %}neg{% endif %}">{{ g.doc_margin|floatformat:"0g" }}</td>
+                <td class="num">{{ g.cm_actual|floatformat:"0g" }}</td>
+                <td class="num">—</td>
+                <td class="num">—</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="12" class="text-center text-muted py-4">Нет данных</td></tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {% include 'asp/partials/asp_report_pagination.html' %}
+    {% if params.formula_hint %}<p class="asp-hint mt-3 mb-0">{{ params.formula_hint }}</p>{% endif %}
+  </div>
+</div>
+<script>
+window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
+  var cls = (r.doc_margin || 0) >= 0 ? 'pos' : 'neg';
+  return '<td></td>' +
+    '<td><div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' +
+    esc(r.nomer || '—') + ' · ' + esc(r.unit_name) + '</div></td>' +
+    '<td><div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) +
+    '</div><div class="small text-muted">' + esc(r.vin) + '</div></td>' +
+    '<td>' + esc(r.client || '—') + '<div class="small text-muted">' + esc(r.person_name) + '</div></td>' +
+    '<td>' + esc(r.type_sale || '—') + '</td>' +
+    '<td class="num">' + money(r.amount) + '</td>' +
+    '<td class="num">' + money(r.cost_price) + '</td>' +
+    '<td class="num">' + money(r.outlay) + '</td>' +
+    '<td class="num ' + cls + '">' + money(r.doc_margin) + '</td>' +
+    '<td class="num">' + (r.has_cm ? money(r.cm_actual) : '—') + '</td>' +
+    '<td class="num">' + (r.has_pbi ? money(r.pbi_cum_full) : '—') + '</td>' +
+    '<td class="num">' + (r.has_pbi ? money(r.pbi_kvp) : '—') + '</td>';
+};
+</script>
+{% include 'asp/partials/asp_report_expand_js.html' %}
+{% endblock %}
