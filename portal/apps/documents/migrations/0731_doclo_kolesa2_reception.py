@@ -1,4 +1,8 @@
 # Generated manually
+# На копии D:\kors_group\portal уже есть:
+#   0730_merge_20260903_1521
+#   0731_alter_doсrecomendation_kod_recomendation
+# Нельзя зависеть от несуществующего 0730_merge_doccarshipment_kod_recomendation.
 
 from django.db import migrations, models
 
@@ -6,7 +10,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('documents', '0730_merge_doccarshipment_kod_recomendation'),
+        ('documents', '0730_merge_20260903_1521'),
+        ('documents', '0731_alter_doсrecomendation_kod_recomendation'),
     ]
 
     operations = [
