@@ -1067,6 +1067,8 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
     date_priem = None
     if kolesa_reception and kolesa_reception.date:
         date_priem = kolesa_reception.date
+    elif page_reception and getattr(page_reception, 'actual_reception_at', None):
+        date_priem = page_reception.actual_reception_at
     elif page_reception and getattr(page_reception, 'created_at', None):
         date_priem = page_reception.created_at
     elif lo and lo.dataTime:

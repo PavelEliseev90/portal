@@ -881,6 +881,11 @@ class DocLO(models.Model):
     agreement_unit_bu       = models.BooleanField("Соглашение БУ", default=False)
     auction                 = models.BooleanField("Аукцион", default=False)
     auction_comment         = models.CharField("Аукцион коментарий", max_length=1024, default='', blank=True)
+    kolesa2_reception       = models.BooleanField(
+        "Приёмка второго комплекта колёс",
+        default=False,
+        help_text='Признак, что по листу оценки принят второй комплект колёс',
+    )
 
     def __str__(self):
         return "{} ({} - {}) - {}".format(self.dataTime, self.clientName, self.nomer, self.type_reception)

@@ -4994,6 +4994,10 @@ def get_lo(lo):
     else:
         object.agreement_unit_bu = False
 
+    if 'Kolesa2Reception' in lo:
+        raw = lo.get('Kolesa2Reception')
+        object.kolesa2_reception = raw in (True, 1, '1', 'true', 'True', 'yes', 'Yes')
+
     modificationAutoru = lo['ModificationAutoru']
     if modificationAutoru > 0:
         modification = get_modification(modificationAutoru)
