@@ -7,7 +7,8 @@ from io import BytesIO
 from typing import Any, Iterable
 
 from django.http import HttpResponse
-from django.utils import timezone
+
+from asp.report_common import local_now
 
 EXCEL_ROW_LIMIT = 10000
 
@@ -61,7 +62,7 @@ def _append_rows(ws, headers: list[str], rows: Iterable[Iterable[Any]]):
 
 
 def workbook_response(wb, filename_stem: str) -> HttpResponse:
-    stamp = timezone.localtime().strftime('%Y%m%d_%H%M')
+    stamp = local_now().strftime('%Y%m%d_%H%M')
     filename = f'{filename_stem}_{stamp}.xlsx'
     buf = BytesIO()
     wb.save(buf)
@@ -76,7 +77,7 @@ def workbook_response(wb, filename_stem: str) -> HttpResponse:
 
 def _fmt_filter_sheet(ws, title: str, filters: dict, totals: dict, extra_lines: list | None = None):
     ws.append(['Отчёт', title])
-    ws.append(['Сформировано', timezone.localtime().strftime('%d.%m.%Y %H:%M')])
+    ws.append(['Сформировано', local_now().strftime('%d.%m.%Y %H:%M')])
     ws.append(['Режим', filters.get('view') or 'main'])
     if filters.get('date_from') or filters.get('date_to'):
         ws.append([
@@ -154,7 +155,10 @@ def export_stock_xlsx(get) -> HttpResponse:
             ws_g,
             ['Группа', 'Кол-во', 'Цена', 'Себест.', 'Расходы', 'Маржа', 'Дней (сумма)'],
             (
-                [g['label'], g['count'], g['price'], g['cost_price'], g['outlay'], g['margin'], g['days_in_stok']]
+                [
+                    g['label'], g['count'], g['price'], g['cost_price'], g['outlay'],
+                    g['price'] - g['cost_price'] - g['outlay'], g['days_in_stok'],
+                ]
                 for g in groups
             ),
         )
@@ -312,7 +316,10 @@ def export_margin_xlsx(get) -> HttpResponse:
             ws_g,
             ['Группа', 'Кол-во', 'Продажа', 'Себест.', 'Расходы', 'Маржа', 'КМ факт'],
             (
-                [g['label'], g['count'], g['amount'], g['cost_price'], g['outlay'], g['doc_margin'], g['cm_actual']]
+                [
+                    g['label'], g['count'], g['amount'], g['cost_price'], g['outlay'],
+                    g['amount'] - g['cost_price'] - g['outlay'], g['cm_actual'],
+                ]
                 for g in groups
             ),
         )

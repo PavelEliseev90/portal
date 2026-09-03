@@ -8,7 +8,7 @@ from typing import Any, Iterable
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
-from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum, Value
+from django.db.models import Count, F, FloatField, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -50,8 +50,23 @@ def parse_int_ids(values) -> list[int]:
     return result
 
 
+def local_today() -> date:
+    """Безопасная «сегодня» при USE_TZ=False (localdate/localtime падают на naive)."""
+    try:
+        return timezone.localdate()
+    except ValueError:
+        return datetime.now().date()
+
+
+def local_now() -> datetime:
+    try:
+        return timezone.localtime(timezone.now())
+    except ValueError:
+        return datetime.now()
+
+
 def month_bounds(today: date | None = None) -> tuple[date, date]:
-    today = today or timezone.localdate()
+    today = today or local_today()
     start = today.replace(day=1)
     if today.month == 12:
         end = date(today.year + 1, 1, 1) - timedelta(days=1)
@@ -68,15 +83,10 @@ def money(value) -> float:
 
 
 def sum_money(field: str):
+    """Sum по полю модели. Алиас агрегата не должен совпадать с field в том же annotate,
+    если другое выражение ссылается на F(field) — см. aggregate_totals / SUM_MAP без sum_diff.
+    """
     return Sum(Coalesce(F(field), Value(0)), output_field=FloatField())
-
-
-def sum_diff(*fields: str):
-    """Sum(f1 - f2 - …) с явным FloatField — без ошибок mixed types."""
-    expr = Coalesce(F(fields[0]), Value(0))
-    for name in fields[1:]:
-        expr = expr - Coalesce(F(name), Value(0))
-    return Sum(ExpressionWrapper(expr, output_field=FloatField()))
 
 
 @lru_cache(maxsize=1)
@@ -248,7 +258,9 @@ def zero_sum(fields: Iterable[str]) -> dict[str, float]:
 
 
 def aggregate_totals(qs, field_map: dict[str, Any], *, count_field='id') -> dict[str, Any]:
-    """field_map: output_name -> Sum(expr)."""
+    """field_map: output_name -> Sum(expr). Имена алиасов = имена полей модели — ок,
+    пока выражения не ссылаются на F('то_же_имя') внутри того же aggregate.
+    """
     ann = {'count': Count(count_field, distinct=True)}
     for name, expr in field_map.items():
         ann[name] = expr
@@ -260,13 +272,18 @@ def aggregate_totals(qs, field_map: dict[str, Any], *, count_field='id') -> dict
 
 
 def aggregate_groups(qs, *, group_id_field: str, group_name_field: str, field_map: dict[str, Any]) -> list[dict]:
-    ann = {'count': Count('id', distinct=True)}
+    # Алиасы с префиксом agg_, чтобы F('outlay') внутри выражений не путался с Sum(outlay)
+    # (на случай если в field_map снова появятся составные Sum).
+    ann = {'agg_count': Count('id', distinct=True)}
+    alias_map = {}
     for name, expr in field_map.items():
-        ann[name] = expr
+        alias = f'agg_{name}'
+        alias_map[name] = alias
+        ann[alias] = expr
     rows = (
         qs.values(group_id_field, group_name_field)
         .annotate(**ann)
-        .order_by('-count', group_name_field)
+        .order_by('-agg_count', group_name_field)
     )
     result = []
     for row in rows:
@@ -276,12 +293,12 @@ def aggregate_groups(qs, *, group_id_field: str, group_name_field: str, field_ma
         item = {
             'key': gid,
             'label': row.get(group_name_field) or '—',
-            'count': int(row.get('count') or 0),
+            'count': int(row.get('agg_count') or 0),
             'rows': [],
             'lazy': True,
         }
-        for name in field_map:
-            item[name] = money(row.get(name))
+        for name, alias in alias_map.items():
+            item[name] = money(row.get(alias))
         result.append(item)
     return result
 

@@ -16,7 +16,6 @@ from asp.report_common import (
     paginate_values_qs,
     parse_common_filters,
     report_shell,
-    sum_diff,
     sum_money,
 )
 from refs.models import RefCarsOrganization, RefStatusCarsOrganization
@@ -28,7 +27,6 @@ SUM_MAP = {
     'bcp': sum_money('bcp'),
     'quantity': sum_money('quantity'),
     'days_in_stok': sum_money('days_in_stok'),
-    'margin': sum_diff('price', 'cost_price', 'outlay'),
 }
 
 
@@ -69,6 +67,7 @@ def filtered_stock_qs(filters: dict[str, Any]):
 
 
 def _enrich_totals(totals: dict) -> dict:
+    totals['margin'] = totals.get('price', 0) - totals.get('cost_price', 0) - totals.get('outlay', 0)
     if totals['count']:
         totals['avg_days'] = totals['days_in_stok'] / totals['count']
         totals['avg_price'] = totals['price'] / totals['count']
@@ -174,6 +173,7 @@ def build_stock_report(get) -> dict[str, Any]:
             field_map=SUM_MAP,
         )
         for g in groups:
+            g['margin'] = g['price'] - g['cost_price'] - g['outlay']
             g['avg_days'] = (g['days_in_stok'] / g['count']) if g['count'] else 0
             g['margin_pct'] = (g['margin'] / g['price'] * 100) if g['price'] else 0
         truncated = False
@@ -187,6 +187,7 @@ def build_stock_report(get) -> dict[str, Any]:
         for g in groups:
             if not g['label'] or g['label'] == '—':
                 g['label'] = 'Без оценщика'
+            g['margin'] = g['price'] - g['cost_price'] - g['outlay']
             g['avg_days'] = (g['days_in_stok'] / g['count']) if g['count'] else 0
             g['margin_pct'] = (g['margin'] / g['price'] * 100) if g['price'] else 0
         truncated = False
