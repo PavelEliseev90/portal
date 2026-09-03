@@ -27,18 +27,39 @@
     </h2>
 
     <div class="row g-3 mb-3">
-      <div class="col-6 col-md-4">
+      <div class="col-6 col-md-4 col-xl-2">
         <div class="zg-metric">
           <div class="t">Продаж</div>
           <div class="v">{{ params.detail.summary.total }}</div>
           <div class="s">в ЦГ</div>
         </div>
       </div>
-      <div class="col-6 col-md-4">
+      <div class="col-6 col-md-4 col-xl-2">
         <div class="zg-metric">
           <div class="t">Мед. цена</div>
           <div class="v">{{ params.detail.summary.med_price|unlocalize }}</div>
           <div class="s">price_sale</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="zg-metric">
+          <div class="t">Вознагр. кредит</div>
+          <div class="v">{{ params.detail.summary.amount_reward_credit|unlocalize }}</div>
+          <div class="s">сумма</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="zg-metric">
+          <div class="t">Вознагр. ОПФУ</div>
+          <div class="v">{{ params.detail.summary.amount_reward_opfu|unlocalize }}</div>
+          <div class="s">сумма</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="zg-metric">
+          <div class="t">Комплекты</div>
+          <div class="v">{{ params.detail.summary.amount_kits|unlocalize }}</div>
+          <div class="s">сумма</div>
         </div>
       </div>
     </div>
@@ -55,6 +76,9 @@
               <th>Источник</th>
               <th>Тип оценки</th>
               <th class="text-end">Цена</th>
+              <th class="text-end">Вознагр. кредит</th>
+              <th class="text-end">Вознагр. ОПФУ</th>
+              <th class="text-end">Комплекты</th>
               <th>Статус оценки</th>
             </tr>
           </thead>
@@ -68,10 +92,13 @@
               <td>{{ row.unit_source|default:"—" }}</td>
               <td>{{ row.type_name|default:"—" }}</td>
               <td class="text-end">{{ row.price_sale|unlocalize }}</td>
+              <td class="text-end">{{ row.amount_reward_credit|unlocalize }}</td>
+              <td class="text-end">{{ row.amount_reward_opfu|unlocalize }}</td>
+              <td class="text-end">{{ row.amount_kits|unlocalize }}</td>
               <td>{{ row.stage|default:"—" }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="8" class="text-muted">Нет продаж за этот месяц и ЦГ.</td></tr>
+            <tr><td colspan="11" class="text-muted">Нет продаж за этот месяц и ЦГ.</td></tr>
             {% endfor %}
           </tbody>
         </table>

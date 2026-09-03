@@ -72,6 +72,7 @@ DETAIL_VALUES = (
     'amount', 'cost_price', 'outlay', 'agreement_id', 'agreement__nomer',
     'agreement__cm_actual', 'agreement__cm_est',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
+    'lo__kolesa2_reception', 'agreement__lo__kolesa2_reception',
 )
 
 
@@ -106,6 +107,9 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
         'amount_reward_credit': money(row.get('amount_reward_credit')),
         'amount_reward_opfu': money(row.get('amount_reward_opfu')),
         'amount_kits': money(row.get('amount_kits')),
+        'kolesa2_reception': bool(
+            row.get('lo__kolesa2_reception') or row.get('agreement__lo__kolesa2_reception')
+        ),
         'pbi_cum_full': money(pbi.get('cum_full')),
         'pbi_kvp': money(pbi.get('kvp')),
         'pbi_marzhi': money(pbi.get('summa_marzhi_bez_nds')),

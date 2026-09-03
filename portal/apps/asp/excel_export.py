@@ -294,6 +294,9 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
             'Расходы': totals.get('outlay'),
             'Маржа отгрузки': totals.get('doc_margin'),
             'КМ факт': totals.get('cm_actual'),
+            'Вознагр. кредит': totals.get('amount_reward_credit'),
+            'Вознагр. ОПФУ': totals.get('amount_reward_opfu'),
+            'Комплекты': totals.get('amount_kits'),
         },
         extra_lines=[
             ('PowerBI в деталях', 'да' if include_pbi else 'нет'),
@@ -314,11 +317,14 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
         ws_g = wb.create_sheet(group_title[:31])
         _append_rows(
             ws_g,
-            ['Группа', 'Кол-во', 'Продажа', 'Себест.', 'Расходы', 'Маржа', 'КМ факт'],
+            ['Группа', 'Кол-во', 'Продажа', 'Себест.', 'Расходы', 'Маржа', 'КМ факт',
+             'Вознагр. кредит', 'Вознагр. ОПФУ', 'Комплекты'],
             (
                 [
                     g['label'], g['count'], g['amount'], g['cost_price'], g['outlay'],
                     g['amount'] - g['cost_price'] - g['outlay'], g['cm_actual'],
+                    g.get('amount_reward_credit', 0), g.get('amount_reward_opfu', 0),
+                    g.get('amount_kits', 0),
                 ]
                 for g in groups
             ),

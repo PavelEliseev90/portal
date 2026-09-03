@@ -33,6 +33,15 @@
       <div class="asp-rep-metric"><div class="t">КМ факт</div><div class="v">{{ params.totals.cm_actual|floatformat:"0g" }}</div><div class="s">из соглашений</div></div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Вознагр. кредит</div><div class="v">{{ params.totals.amount_reward_credit|floatformat:"0g" }}</div><div class="s">AmountRewardCredit</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Вознагр. ОПФУ</div><div class="v">{{ params.totals.amount_reward_opfu|floatformat:"0g" }}</div><div class="s">AmountRewardOpfu</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric"><div class="t">Комплекты</div><div class="v">{{ params.totals.amount_kits|floatformat:"0g" }}</div><div class="s">AmountKits</div></div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
       <div class="asp-rep-metric">
         <div class="t">Кумулятив БУ</div>
         <div class="v">{% if params.filters.include_pbi %}в строках{% else %}—{% endif %}</div>
@@ -81,6 +90,9 @@
                   · продажа {{ g.amount|floatformat:"0g" }}
                   · маржа <span class="{% if g.doc_margin >= 0 %}pos{% else %}neg{% endif %}">{{ g.doc_margin|floatformat:"0g" }}</span>
                   · {{ g.margin_pct|floatformat:1 }}%
+                  · кр. {{ g.amount_reward_credit|floatformat:"0g" }}
+                  · опфу {{ g.amount_reward_opfu|floatformat:"0g" }}
+                  · компл. {{ g.amount_kits|floatformat:"0g" }}
                 </td>
               </tr>
             {% empty %}
@@ -118,6 +130,7 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     else if (col.key === 'amount_reward_credit') val = money(r.amount_reward_credit);
     else if (col.key === 'amount_reward_opfu') val = money(r.amount_reward_opfu);
     else if (col.key === 'amount_kits') val = money(r.amount_kits);
+    else if (col.key === 'kolesa2_reception') val = r.kolesa2_reception ? 'Да' : 'Нет';
     else if (col.key === 'pbi_cum') val = r.has_pbi ? money(r.pbi_cum_full) : '—';
     else if (col.key === 'pbi_kvp') val = r.has_pbi ? money(r.pbi_kvp) : '—';
     else if (col.key === 'agreement') val = esc(r.agreement_nomer || '—');
