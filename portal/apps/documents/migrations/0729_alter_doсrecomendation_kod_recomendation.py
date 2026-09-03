@@ -1,0 +1,18 @@
+# Generated manually to align with server leaf
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('documents', '0728_alter_doсrecomendation_kod_recomendation'),
+    ]
+
+    operations = [
+        migrations.AlterField(
+            model_name='doсrecomendation',
+            name='kod_recomendation',
+            field=models.IntegerField(default=1337, verbose_name='Код согласования'),
+        ),
+    ]
