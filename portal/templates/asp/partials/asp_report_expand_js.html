@@ -1,0 +1,120 @@
+<script>
+(function() {
+  function money(v) {
+    var n = Math.round(Number(v) || 0);
+    return n.toLocaleString('ru-RU');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    var m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[3] + '.' + m[2] + '.' + m[1];
+    return escapeHtml(d);
+  }
+
+  function detailRows(key) {
+    return document.querySelectorAll('tr[data-parent-key="' + key + '"]');
+  }
+
+  function bindGroupHeaders() {
+    var root = document.querySelector('[data-asp-details-url]');
+    var detailsUrl = root ? root.getAttribute('data-asp-details-url') : '';
+    document.querySelectorAll('.table-group-header').forEach(function(header) {
+      if (header.dataset.bound === '1') return;
+      header.dataset.bound = '1';
+      header.style.cursor = 'pointer';
+      header.addEventListener('click', function() {
+        var key = header.getAttribute('data-group-key');
+        if (key === null || key === undefined) return;
+        var icon = header.querySelector('.toggle-icon');
+        var open = header.classList.toggle('is-open');
+        if (icon) icon.textContent = open ? '▾' : '▸';
+
+        var existing = detailRows(key);
+        if (existing.length) {
+          existing.forEach(function(row) { row.style.display = open ? '' : 'none'; });
+          return;
+        }
+        if (!open || !detailsUrl || header.dataset.loading === '1') return;
+
+        header.dataset.loading = '1';
+        var loading = document.createElement('tr');
+        loading.setAttribute('data-parent-key', key);
+        loading.className = 'table-group-detail detail-loading';
+        loading.innerHTML = '<td colspan="12" class="text-muted small py-2">Загрузка…</td>';
+        header.parentNode.insertBefore(loading, header.nextSibling);
+
+        var params = new URLSearchParams(window.location.search);
+        params.set('ajax', 'details');
+        params.set('group_key', key);
+        var url = detailsUrl.split('?')[0] + '?' + params.toString();
+
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .then(function(data) {
+            header.dataset.loading = '0';
+            detailRows(key).forEach(function(row) { row.remove(); });
+            var rows = (data && data.rows) || [];
+            var renderer = window.aspRenderDetailRow;
+            var frag = document.createDocumentFragment();
+            var stillOpen = header.classList.contains('is-open');
+            if (!rows.length) {
+              var empty = document.createElement('tr');
+              empty.setAttribute('data-parent-key', key);
+              empty.className = 'table-group-detail';
+              empty.style.display = stillOpen ? '' : 'none';
+              empty.innerHTML = '<td colspan="12" class="text-muted small">Нет строк</td>';
+              frag.appendChild(empty);
+            } else {
+              rows.forEach(function(row) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-parent-key', key);
+                tr.className = 'table-group-detail';
+                tr.style.display = stillOpen ? '' : 'none';
+                tr.innerHTML = renderer
+                  ? renderer(row, money, escapeHtml, fmtDate)
+                  : '<td colspan="12">' + escapeHtml(JSON.stringify(row)) + '</td>';
+                frag.appendChild(tr);
+              });
+              if (data.truncated) {
+                var more = document.createElement('tr');
+                more.setAttribute('data-parent-key', key);
+                more.className = 'table-group-detail';
+                more.style.display = stillOpen ? '' : 'none';
+                more.innerHTML = '<td colspan="12" class="text-muted small">Показаны первые ' + rows.length + ' строк. Уточните фильтры.</td>';
+                frag.appendChild(more);
+              }
+            }
+            header.parentNode.insertBefore(frag, header.nextSibling);
+          })
+          .catch(function() {
+            header.dataset.loading = '0';
+            detailRows(key).forEach(function(row) { row.remove(); });
+            var err = document.createElement('tr');
+            err.setAttribute('data-parent-key', key);
+            err.className = 'table-group-detail';
+            err.innerHTML = '<td colspan="12" class="text-danger small">Ошибка загрузки</td>';
+            header.parentNode.insertBefore(err, header.nextSibling);
+          });
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindGroupHeaders);
+  } else {
+    bindGroupHeaders();
+  }
+})();
+</script>

@@ -1,0 +1,135 @@
+{% extends 'base_web.html' %}
+{% load l10n %}
+
+{% block title %} — {{ params.report_title }} {% endblock %}
+{% block title_navbar %} — {{ params.report_title }} {% endblock %}
+
+{% block content %}
+{% include 'asp/partials/asp_report_styles.html' %}
+
+<div class="asp-rep" data-asp-details-url="{{ params.details_url|default:request.path }}">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <h2>{{ params.report_title }}</h2>
+      <p class="lead mb-0">{{ params.report_subtitle }}</p>
+    </div>
+    {% include 'asp/partials/asp_report_actions.html' %}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric"><div class="t">Принято</div><div class="v">{{ params.totals.count }}</div><div class="s">листов оценки</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric"><div class="t">Себестоимость</div><div class="v">{{ params.totals.cost_price|floatformat:"0g" }}</div><div class="s">по листам</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric"><div class="t">БЦП</div><div class="v">{{ params.totals.bcp|floatformat:"0g" }}</div><div class="s">сумма</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="asp-rep-metric"><div class="t">Пробег (сумма)</div><div class="v">{{ params.totals.run|floatformat:"0g" }}</div><div class="s">км</div></div>
+    </div>
+  </div>
+
+  {% include 'asp/partials/asp_report_view_tabs.html' %}
+  {% include 'asp/partials/asp_report_filters.html' %}
+
+  <div class="asp-rep-panel">
+    <h3>
+      {% if params.view == 'by_unit' %}По подразделениям — клик разворачивает детали
+      {% elif params.view == 'by_person' %}По оценщикам — клик разворачивает детали
+      {% else %}Основной список{% endif %}
+    </h3>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-asp mb-0">
+        <thead>
+          <tr>
+            {% if params.view != 'main' %}<th></th>{% endif %}
+            <th>Дата / №</th>
+            <th>Авто / VIN</th>
+            <th>Клиент</th>
+            <th>Оценщик</th>
+            <th>Тип приёма</th>
+            <th class="num">Себест.</th>
+            <th class="num">БЦП</th>
+            <th class="num">Пробег</th>
+            <th>Подразделение</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if params.view == 'main' %}
+            {% for r in params.rows %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ r.date|date:"d.m.Y" }}</div>
+                  <div class="small text-muted">{{ r.nomer|default:"—" }}{% if r.rlk_id %} · <a href="/eco/{{ r.rlk_id }}/" target="_blank">РЛ {{ r.rlk_nomer }}</a>{% endif %}</div>
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ r.mark }} {{ r.model }}</div>
+                  <div class="small text-muted">{{ r.vin }} · {{ r.year }}{% if r.plate %} · {{ r.plate }}{% endif %}</div>
+                </td>
+                <td>{{ r.client|default:"—" }}</td>
+                <td>{{ r.person_name }}</td>
+                <td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
+                <td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
+                <td class="num">{{ r.bcp|floatformat:"0g" }}</td>
+                <td class="num">{{ r.run|floatformat:"0g" }}</td>
+                <td>{{ r.unit_name }}{% if r.store_name %}<div class="small text-muted">{{ r.store_name }}</div>{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="9" class="text-center text-muted py-4">Нет принятых по фильтру</td></tr>
+            {% endfor %}
+          {% else %}
+            {% for g in params.groups %}
+              <tr class="table-group-header" data-group-key="{{ g.key }}">
+                <td><span class="toggle-icon">▸</span></td>
+                <td colspan="4"><strong>{{ g.label }}</strong> · {{ g.count }} принятых</td>
+                <td></td>
+                <td class="num">{{ g.cost_price|floatformat:"0g" }}</td>
+                <td class="num">{{ g.bcp|floatformat:"0g" }}</td>
+                <td class="num">{{ g.run|floatformat:"0g" }}</td>
+                <td></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="10" class="text-center text-muted py-4">Нет данных</td></tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+        {% if params.totals.count %}
+        <tfoot>
+          <tr class="row-total">
+            {% if params.view != 'main' %}<td></td>{% endif %}
+            <td colspan="5">Итого · {{ params.totals.count }}</td>
+            <td class="num">{{ params.totals.cost_price|floatformat:"0g" }}</td>
+            <td class="num">{{ params.totals.bcp|floatformat:"0g" }}</td>
+            <td class="num">{{ params.totals.run|floatformat:"0g" }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+    {% include 'asp/partials/asp_report_pagination.html' %}
+  </div>
+</div>
+<script>
+window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
+  var rlk = r.rlk_id
+    ? ' · <a href="/eco/' + esc(r.rlk_id) + '/" target="_blank">РЛ</a>'
+    : '';
+  return '<td></td>' +
+    '<td><div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' +
+    esc(r.nomer || '—') + rlk + '</div></td>' +
+    '<td><div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) +
+    '</div><div class="small text-muted">' + esc(r.vin) + '</div></td>' +
+    '<td>' + esc(r.client || '—') + '</td>' +
+    '<td>' + esc(r.person_name) + '</td>' +
+    '<td>' + esc(r.type_reception || '—') + '</td>' +
+    '<td class="num">' + money(r.cost_price) + '</td>' +
+    '<td class="num">' + money(r.bcp) + '</td>' +
+    '<td class="num">' + money(r.run) + '</td>' +
+    '<td>' + esc(r.unit_name) + '</td>';
+};
+</script>
+{% include 'asp/partials/asp_report_expand_js.html' %}
+{% endblock %}

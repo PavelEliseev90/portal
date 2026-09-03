@@ -1,0 +1,22 @@
+{% if params.paginator and params.paginator.num_pages > 1 %}
+<nav class="asp-rep-pager mt-3" aria-label="Страницы">
+  <ul class="pagination pagination-sm mb-0 flex-wrap">
+    {% if params.page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if params.query_string %}{{ params.query_string }}&{% endif %}page={{ params.page_obj.previous_page_number }}">←</a>
+      </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">
+        {{ params.page_obj.number }} / {{ params.paginator.num_pages }}
+        · {{ params.paginator.count }} записей
+      </span>
+    </li>
+    {% if params.page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?{% if params.query_string %}{{ params.query_string }}&{% endif %}page={{ params.page_obj.next_page_number }}">→</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

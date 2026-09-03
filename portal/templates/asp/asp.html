@@ -167,6 +167,30 @@
         </a>
       </div>
       <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:cumulative_margin_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-graph-up"></span> Кумулятивная маржа</div>
+            <div class="metric-card-value text-muted fs-8"> Отгрузки ОП АСП: маржа и КВП</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:stock_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-box-seam"></span> Остатки ОП АСП</div>
+            <div class="metric-card-value text-muted fs-8"> Склад: статус, дни, себестоимость</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:accepted_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-clipboard-check"></span> Принятые ОП АСП</div>
+            <div class="metric-card-value text-muted fs-8"> Листы оценки: приём автомобилей</div>
+          </div>
+        </a>
+      </div>
+      <div class="col-12 col-sm-auto">
         <a href="{% url 'eco:market_model_trends' %}" class="text-decoration-none text-dark">
           <div class="metric-card">
             <div class="metric-card-value"><span class="bi bi-graph-up-arrow"></span> Тренд рынка</div>
@@ -301,6 +325,33 @@
           <div class="metric-card">
             <div class="metric-card-value"><span class="icon-mbri-database"></span> Расчетные данные соглашений</div>
             <div class="metric-card-value text-muted fs-8"> Расчетные данные соглашений АМ</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:cumulative_margin_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-graph-up"></span> Кумулятивная маржа</div>
+            <div class="metric-card-value text-muted fs-8"> Отчёт по отгрузкам ОП АСП</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:stock_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-box-seam"></span> Остатки</div>
+            <div class="metric-card-value text-muted fs-8"> Остатки склада ОП АСП</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-12 col-sm-auto">
+        <a href="{% url 'asp:accepted_report' %}" class="text-decoration-none text-dark">
+          <div class="metric-card">
+            <div class="metric-card-value"><span class="bi bi-clipboard-check"></span> Принятые</div>
+            <div class="metric-card-value text-muted fs-8"> Листы оценки ОП АСП</div>
           </div>
         </a>
       </div>

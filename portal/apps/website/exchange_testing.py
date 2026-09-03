@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Any
 
 import requests
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from eco.reception import (
     build_kolesa_reception_send_payload,
@@ -50,6 +53,14 @@ IB_PRESETS = (
 URL_KM_CAR = 'http://k01srv1c10/ralfa01/hs/mb/?type=KMCar'
 KM_CAR_HTTP_AUTH = ('reglament', 'aliluj24')
 KM_CAR_BATCH_PREVIEW_LIMIT = 20
+
+REQUEUE_EVENT_CHOICES = (
+    ('before_kd', 'Согласование цены до диагностики (price_before_kd)'),
+    ('after_kd', 'Согласование цены после диагностики (price_after_kd)'),
+    ('any_soglasovanie', 'Есть страница согласования'),
+)
+REQUEUE_PREVIEW_LIMIT = 50
+REQUEUE_ENQUEUE_LIMIT = 5000
 
 
 def _json_dumps(data) -> str:
@@ -873,6 +884,194 @@ def fetch_queue_rows(estimation_id: int | None):
     )
 
 
+def _parse_requeue_date(raw) -> date | None:
+    text = (raw or '').strip()
+    if not text:
+        return None
+    for fmt in ('%Y-%m-%d', '%d.%m.%Y'):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def build_requeue_filters_from_request(request) -> dict[str, Any]:
+    src = request.POST if request.method == 'POST' else request.GET
+    event = (src.get('requeue_event') or 'before_kd').strip()
+    if event not in {c[0] for c in REQUEUE_EVENT_CHOICES}:
+        event = 'before_kd'
+    date_from = _parse_requeue_date(src.get('requeue_date_from'))
+    date_to = _parse_requeue_date(src.get('requeue_date_to'))
+    # дефолт периода только при первом открытии вкладки без параметров дат
+    if (
+        'requeue_date_from' not in src
+        and 'requeue_date_to' not in src
+        and date_from is None
+        and date_to is None
+    ):
+        today = timezone.localdate()
+        date_from = today.replace(day=1)
+    return {
+        'event': event,
+        'date_from': date_from,
+        'date_to': date_to,
+        'date_from_str': date_from.isoformat() if date_from else '',
+        'date_to_str': date_to.isoformat() if date_to else '',
+        'event_choices': REQUEUE_EVENT_CHOICES,
+    }
+
+
+def queryset_estimations_for_requeue(*, event: str, date_from: date | None, date_to: date | None):
+    """
+    Отбор интерактивных оценок (через RegInteractivOcenkaRLK) для перепостановки в RegSwapKors.
+    В 1С уходит Type=estimation (build_estimation_1c_payload).
+    """
+    qs = (
+        RegInteractivOcenkaRLK.objects
+        .filter(estimation_id__isnull=False, rlk_id__isnull=False)
+        .select_related('estimation', 'rlk', 'page_soglasovanie', 'rlk__unit')
+    )
+
+    if event == 'before_kd':
+        qs = qs.filter(page_soglasovanie__price_before_kd__gt=0).annotate(
+            filter_date=Coalesce('date_s_do_diag', 'estimation__date_s_do_diag'),
+        )
+    elif event == 'after_kd':
+        qs = qs.filter(page_soglasovanie__price_after_kd__gt=0).annotate(
+            filter_date=Coalesce(
+                'date_s_diag', 'estimation__date_s_diag',
+                'date_s_do_diag', 'estimation__date_s_do_diag',
+            ),
+        )
+    else:
+        qs = qs.filter(page_soglasovanie__isnull=False).annotate(
+            filter_date=Coalesce(
+                'date_s_do_diag', 'estimation__date_s_do_diag',
+                'date_s_diag', 'estimation__date_s_diag',
+            ),
+        )
+
+    if date_from:
+        qs = qs.filter(filter_date__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(filter_date__date__lte=date_to)
+
+    return qs.order_by('-filter_date', '-id')
+
+
+def preview_requeue_estimations(filters: dict[str, Any]) -> dict[str, Any]:
+    qs = queryset_estimations_for_requeue(
+        event=filters['event'],
+        date_from=filters.get('date_from'),
+        date_to=filters.get('date_to'),
+    )
+    total = qs.values('estimation_id').order_by().distinct().count()
+    truncated = total > REQUEUE_ENQUEUE_LIMIT
+
+    preview_links = []
+    seen = set()
+    for link in qs.iterator(chunk_size=200):
+        eid = link.estimation_id
+        if eid in seen:
+            continue
+        seen.add(eid)
+        preview_links.append(link)
+        if len(preview_links) >= REQUEUE_PREVIEW_LIMIT:
+            break
+
+    # для счётчика «уже в очереди» берём до лимита id
+    all_ids_sample = []
+    seen_all = set()
+    for eid in qs.values_list('estimation_id', flat=True).iterator(chunk_size=500):
+        if eid in seen_all:
+            continue
+        seen_all.add(eid)
+        all_ids_sample.append(eid)
+        if len(all_ids_sample) >= REQUEUE_ENQUEUE_LIMIT:
+            break
+
+    queued_ids = set()
+    if all_ids_sample:
+        queued_ids = set(
+            RegSwapKors.objects
+            .filter(estimation_id__in=all_ids_sample, status_code=60)
+            .values_list('estimation_id', flat=True)
+        )
+    already_queued = len(queued_ids)
+    effective = min(total, REQUEUE_ENQUEUE_LIMIT)
+
+    preview_rows = []
+    for link in preview_links:
+        est = link.estimation
+        sog = link.page_soglasovanie
+        preview_rows.append({
+            'estimation_id': link.estimation_id,
+            'rlk_id': link.rlk_id,
+            'rlk_nomer': getattr(link.rlk, 'nomer', '') or '',
+            'vin': getattr(est, 'vin', '') or '',
+            'unit': getattr(getattr(link.rlk, 'unit', None), 'name', '') or '',
+            'filter_date': getattr(link, 'filter_date', None),
+            'price_before_kd': (getattr(sog, 'price_before_kd', 0) or 0) if sog else 0,
+            'price_after_kd': (getattr(sog, 'price_after_kd', 0) or 0) if sog else 0,
+            'in_queue': link.estimation_id in queued_ids,
+        })
+
+    return {
+        'total': total,
+        'already_queued': already_queued,
+        'will_queue': max(0, effective - already_queued),
+        'truncated': truncated,
+        'limit': REQUEUE_ENQUEUE_LIMIT,
+        'preview_rows': preview_rows,
+        'preview_limit': REQUEUE_PREVIEW_LIMIT,
+        'filters': filters,
+    }
+
+
+def bulk_queue_estimations(filters: dict[str, Any], *, comment: str = 'requeue_exchange_testing') -> dict[str, Any]:
+    qs = queryset_estimations_for_requeue(
+        event=filters['event'],
+        date_from=filters.get('date_from'),
+        date_to=filters.get('date_to'),
+    )
+    # Берём по одной связи на estimation_id (последняя)
+    seen = set()
+    queued = 0
+    skipped = 0
+    errors = 0
+    processed = 0
+
+    for link in qs.iterator(chunk_size=200):
+        eid = link.estimation_id
+        if eid in seen:
+            continue
+        seen.add(eid)
+        processed += 1
+        if processed > REQUEUE_ENQUEUE_LIMIT:
+            break
+        try:
+            ok = queue_estimation_for_1c(link.estimation, comment=comment[:250])
+            if ok:
+                queued += 1
+            else:
+                skipped += 1
+        except Exception:
+            errors += 1
+
+    return {
+        'ok': True,
+        'queued': queued,
+        'skipped': skipped,
+        'errors': errors,
+        'processed': processed,
+        'message': (
+            f'В очередь Type=estimation поставлено: {queued}. '
+            f'Уже были в очереди (60): {skipped}. Ошибок: {errors}.'
+        ),
+    }
+
+
 def handle_send_action(
     action: str,
     *,
@@ -886,8 +1085,8 @@ def handle_send_action(
     km_row=None,
     offer=None,
     km_batch: bool = False,
-    scenario_key: str,
-    mark_cumulative_sent: bool,
+    scenario_key: str = '',
+    mark_cumulative_sent: bool = False,
     request=None,
 ) -> dict:
     """Выполнить отправку по ключу сценария."""
@@ -1016,6 +1215,7 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
         'queue_rows': [],
         'send_result': None,
         'action_message': '',
+        'requeue': None,
     }
 
     interactiv_rlk = None
@@ -1032,7 +1232,20 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
             if ib_target == 'custom' and not custom_url else ''
         )
 
-        if mode == 'estimation':
+        if mode == 'requeue':
+            requeue_filters = build_requeue_filters_from_request(request)
+            # не подставлять дефолт месяца, если пользователь явно открыл вкладку с пустыми датами
+            # через GET без параметров — дефолт уже в build_requeue_filters_from_request
+            params['requeue'] = preview_requeue_estimations(requeue_filters)
+            params['info'] = {
+                'mode': 'requeue',
+                'note': (
+                    'Массовая постановка в RegSwapKors (status_code=60). '
+                    'Воркер отправит JSON с Type=estimation.'
+                ),
+            }
+
+        elif mode == 'estimation':
             if estimation_id or rlk_id:
                 interactiv_rlk = _find_interactiv_rlk(estimation_id, rlk_id)
                 if interactiv_rlk is None:
@@ -1156,8 +1369,25 @@ def process_exchange_testing_request(request) -> dict[str, Any]:
         return params
 
     if request.method == 'POST' and action:
-        if action == 'queue_estimation' and interactiv_rlk is not None:
-            result = handle_send_action('queue_estimation', ib_target=ib_target, interactiv_rlk=interactiv_rlk)
+        if action == 'bulk_queue_estimations' and mode == 'requeue':
+            requeue_filters = build_requeue_filters_from_request(request)
+            if not requeue_filters.get('date_from') and not requeue_filters.get('date_to'):
+                params['error'] = 'Укажите период отбора (хотя бы дату «с»)'
+                params['requeue'] = preview_requeue_estimations(requeue_filters)
+            else:
+                result = bulk_queue_estimations(
+                    requeue_filters,
+                    comment=f'requeue:{requeue_filters["event"]}',
+                )
+                params['action_message'] = result.get('message', '')
+                params['send_result'] = result
+                params['requeue'] = preview_requeue_estimations(requeue_filters)
+        elif action == 'queue_estimation' and interactiv_rlk is not None:
+            result = handle_send_action(
+                'queue_estimation',
+                ib_target=ib_target,
+                interactiv_rlk=interactiv_rlk,
+            )
             params['action_message'] = result.get('message', '')
             params['send_result'] = result
             if interactiv_rlk.estimation_id:
