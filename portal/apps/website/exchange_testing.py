@@ -910,7 +910,7 @@ def build_requeue_filters_from_request(request) -> dict[str, Any]:
         and date_from is None
         and date_to is None
     ):
-        today = timezone.localdate()
+        today = timezone.now().date()
         date_from = today.replace(day=1)
     return {
         'event': event,

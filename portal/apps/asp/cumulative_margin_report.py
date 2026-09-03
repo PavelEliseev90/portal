@@ -17,7 +17,6 @@ from asp.report_common import (
     money,
     parse_common_filters,
     report_shell,
-    sum_diff,
     sum_money,
 )
 from documents.models import DocCarShipment
@@ -26,7 +25,6 @@ SUM_MAP = {
     'amount': sum_money('amount'),
     'cost_price': sum_money('cost_price'),
     'outlay': sum_money('outlay'),
-    'doc_margin': sum_diff('amount', 'cost_price', 'outlay'),
     'cm_actual': sum_money('agreement__cm_actual'),
     'cm_est': sum_money('agreement__cm_est'),
 }
@@ -188,6 +186,9 @@ def build_group_details(get) -> dict[str, Any]:
 
 
 def _enrich_totals(totals: dict) -> dict:
+    totals['doc_margin'] = (
+        totals.get('amount', 0) - totals.get('cost_price', 0) - totals.get('outlay', 0)
+    )
     totals['pbi_cum_full'] = 0
     totals['pbi_kvp'] = 0
     totals['pbi_marzhi'] = 0
@@ -237,6 +238,7 @@ def build_cumulative_margin_report(get) -> dict[str, Any]:
             field_map=SUM_MAP,
         )
         for g in groups:
+            g['doc_margin'] = g['amount'] - g['cost_price'] - g['outlay']
             g['avg_doc_margin'] = (g['doc_margin'] / g['count']) if g['count'] else 0
             g['margin_pct'] = (g['doc_margin'] / g['amount'] * 100) if g['amount'] else 0
         truncated = False
@@ -250,6 +252,7 @@ def build_cumulative_margin_report(get) -> dict[str, Any]:
         for g in groups:
             if not g['label'] or g['label'] == '—':
                 g['label'] = 'Без продавца'
+            g['doc_margin'] = g['amount'] - g['cost_price'] - g['outlay']
             g['avg_doc_margin'] = (g['doc_margin'] / g['count']) if g['count'] else 0
             g['margin_pct'] = (g['doc_margin'] / g['amount'] * 100) if g['amount'] else 0
         truncated = False
