@@ -142,6 +142,11 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.register_webhook_view),
                 name='prices_car_dealcalctelegramsettings_register_webhook',
             ),
+            path(
+                'webhook-info/',
+                self.admin_site.admin_view(self.webhook_info_view),
+                name='prices_car_dealcalctelegramsettings_webhook_info',
+            ),
         ]
         return custom + urls
 
@@ -150,11 +155,16 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
 
         url = webhook_url()
         register_url = reverse('admin:prices_car_dealcalctelegramsettings_register_webhook')
+        info_url = reverse('admin:prices_car_dealcalctelegramsettings_webhook_info')
         return mark_safe(
             '<p>Сначала сохраните токен бота и включите функцию, затем нажмите кнопку.</p>'
             '<p>URL webhook: <code>{}</code></p>'
-            '<p><a class="button" href="{}">Зарегистрировать webhook Telegram</a></p>'
-            .format(url, register_url)
+            '<p><a class="button" href="{}">Зарегистрировать webhook Telegram</a> '
+            '<a class="button" href="{}">Проверить webhook (getWebhookInfo)</a></p>'
+            '<p class="help">Если /start молчит: почти всегда сервер не может '
+            'ответить в api.telegram.org без HTTP-прокси в поле api_proxy. '
+            'Webhook принимает входящие, а ответ бота идёт исходящим запросом.</p>'
+            .format(url, register_url, info_url)
         )
     webhook_help.short_description = 'Webhook'
 
@@ -170,7 +180,20 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
                 '{} (ожидаемый URL: {})'.format(message, webhook_url()),
                 level=messages.ERROR,
             )
-        # Вернуться на карточку singleton
+        obj = DealCalcTelegramSettings.load()
+        return HttpResponseRedirect(
+            reverse('admin:prices_car_dealcalctelegramsettings_change', args=[obj.pk])
+        )
+
+    def webhook_info_view(self, request):
+        from avtosalon.deal_calc_telegram import get_telegram_webhook_info
+
+        ok, message, _info = get_telegram_webhook_info()
+        self.message_user(
+            request,
+            message,
+            level=messages.SUCCESS if ok else messages.ERROR,
+        )
         obj = DealCalcTelegramSettings.load()
         return HttpResponseRedirect(
             reverse('admin:prices_car_dealcalctelegramsettings_change', args=[obj.pk])

@@ -12,6 +12,7 @@ COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 MARGIN_DEFAULT_COLUMNS = [
     'date', 'unit', 'car', 'vin', 'client', 'person', 'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
+    'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
 ]
 MARGIN_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
@@ -29,6 +30,7 @@ MARGIN_COLUMN_DEFS = {
     'amount_reward_credit': {'label': 'Вознагр. кредит', 'sortable': True, 'sort_key': 'amount_reward_credit', 'num': True},
     'amount_reward_opfu': {'label': 'Вознагр. ОПФУ', 'sortable': True, 'sort_key': 'amount_reward_opfu', 'num': True},
     'amount_kits': {'label': 'Комплекты', 'sortable': True, 'sort_key': 'amount_kits', 'num': True},
+    'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
     'pbi_cum': {'label': 'БУ кумул.', 'sortable': False, 'num': True},
     'pbi_kvp': {'label': 'КВП', 'sortable': False, 'num': True},
     'agreement': {'label': 'Соглашение', 'sortable': True, 'sort_key': 'agreement', 'num': False},
@@ -49,6 +51,7 @@ MARGIN_SORT_FIELDS = {
     'amount_reward_credit': 'amount_reward_credit',
     'amount_reward_opfu': 'amount_reward_opfu',
     'amount_kits': 'amount_kits',
+    'kolesa2_reception': 'lo__kolesa2_reception',
     'agreement': 'agreement__nomer',
 }
 
@@ -71,6 +74,7 @@ STOCK_COLUMN_DEFS = {
     'margin': {'label': 'Маржа', 'sortable': True, 'sort_key': 'margin', 'num': True, 'signed': True},
     'store': {'label': 'Склад / этап', 'sortable': True, 'sort_key': 'store', 'num': False},
     'run': {'label': 'Пробег', 'sortable': True, 'sort_key': 'run', 'num': True},
+    'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
 }
 STOCK_SORT_FIELDS = {
     'car': 'mark',
@@ -87,11 +91,13 @@ STOCK_SORT_FIELDS = {
     'margin': 'price',
     'store': 'store__name',
     'run': 'run',
+    'kolesa2_reception': 'lo__kolesa2_reception',
 }
 
 # --- Принятые ---
 ACCEPTED_DEFAULT_COLUMNS = [
-    'date', 'car', 'vin', 'client', 'person', 'type_reception', 'cost_price', 'bcp', 'run', 'unit',
+    'date', 'car', 'vin', 'client', 'person', 'type_reception', 'kolesa2_reception',
+    'cost_price', 'bcp', 'run', 'unit',
 ]
 ACCEPTED_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
@@ -100,6 +106,7 @@ ACCEPTED_COLUMN_DEFS = {
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
+    'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
     'bcp': {'label': 'БЦП', 'sortable': True, 'sort_key': 'bcp', 'num': True},
     'run': {'label': 'Пробег', 'sortable': True, 'sort_key': 'run', 'num': True},
@@ -115,6 +122,7 @@ ACCEPTED_SORT_FIELDS = {
     'client': 'clientName',
     'person': 'staff__name',
     'type_reception': 'type_reception__name',
+    'kolesa2_reception': 'kolesa2_reception',
     'cost_price': 'cost_price',
     'bcp': 'bcp',
     'run': 'run',
@@ -282,6 +290,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'amount_reward_credit': row.get('amount_reward_credit'),
             'amount_reward_opfu': row.get('amount_reward_opfu'),
             'amount_kits': row.get('amount_kits'),
+            'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
             'pbi_cum': row.get('pbi_cum_full') if row.get('has_pbi') else '',
             'pbi_kvp': row.get('pbi_kvp') if row.get('has_pbi') else '',
             'agreement': row.get('agreement_nomer'),
@@ -307,6 +316,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'margin': row.get('margin'),
             'store': f"{row.get('store_name') or ''} {row.get('stage_price') or ''}".strip(),
             'run': row.get('run'),
+            'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
         }
         return mapping.get(key, '')
     # accepted
@@ -317,6 +327,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
         'client': row.get('client'),
         'person': row.get('person_name'),
         'type_reception': row.get('type_reception'),
+        'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
         'cost_price': row.get('cost_price'),
         'bcp': row.get('bcp'),
         'run': row.get('run'),

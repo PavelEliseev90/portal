@@ -118,6 +118,7 @@ window.aspRenderDetailRow = function(r, money, esc) {
     else if (col.key === 'margin') { cls = ' class="num ' + ((r.margin || 0) >= 0 ? 'pos' : 'neg') + '"'; val = money(r.margin); }
     else if (col.key === 'store') val = esc(r.store_name || '—');
     else if (col.key === 'run') val = money(r.run);
+    else if (col.key === 'kolesa2_reception') val = r.kolesa2_reception ? 'Да' : 'Нет';
     html += '<td' + cls + '>' + val + '</td>';
   });
   return html;
