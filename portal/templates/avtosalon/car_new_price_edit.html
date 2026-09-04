@@ -1361,6 +1361,27 @@
 						</span>				
 					</div>
 
+					{% if params.object.organization %}
+					<div class="kors-metric-card">
+						<span class="kors-metric-card__label">Организация</span>
+						<span class="kors-metric-card__value fs-6">{{ params.object.organization.name }}</span>
+					</div>
+					{% endif %}
+
+					{% if params.object.store %}
+					<div class="kors-metric-card">
+						<span class="kors-metric-card__label">Склад</span>
+						<span class="kors-metric-card__value fs-6">{{ params.object.store.name }}</span>
+					</div>
+					{% endif %}
+
+					<div class="kors-metric-card">
+						<span class="kors-metric-card__label">Владельцев / ключей</span>
+						<span class="kors-metric-card__value fs-6">
+							{{ params.object.owners }} / {{ params.object.keys }}
+						</span>
+					</div>
+
 				</div>
 
 				<br>
@@ -1396,6 +1417,9 @@
 
   	</section>
 
+	{% include 'avtosalon/includes/car_intake_summary.html' %}
+	{% include 'avtosalon/includes/car_wheels_summary.html' %}
+	{% include 'avtosalon/includes/car_expenses_summary.html' %}
 	{% include 'avtosalon/includes/car_related_documents.html' %}
 
 	<div class="row">

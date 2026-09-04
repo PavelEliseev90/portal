@@ -97,6 +97,19 @@
             <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" placeholder="123456789" value="{{ params.user.profiles.telegram_chat_id }}" autocomplete="off">
             <label for="telegram_chat_id">Telegram chat ID</label>
           </div>
+          <div class="mb-2 fw-semibold">Какие уведомления присылать в бот</div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_pending" name="telegram_notify_pending" {% if params.user.profiles.telegram_notify_pending %}checked{% endif %}>
+            <label class="form-check-label" for="telegram_notify_pending">Требуется согласование (кнопки в боте)</label>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_auto_approved" name="telegram_notify_auto_approved" {% if params.user.profiles.telegram_notify_auto_approved %}checked{% endif %}>
+            <label class="form-check-label" for="telegram_notify_auto_approved">Автоматически согласованные КП</label>
+          </div>
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_results" name="telegram_notify_results" {% if params.user.profiles.telegram_notify_results %}checked{% endif %}>
+            <label class="form-check-label" for="telegram_notify_results">Результаты согласования (согласовано / отказ)</label>
+          </div>
         {% endif %}
 
         <div class="row">

@@ -26,11 +26,17 @@ class ProfilesAdmin(admin.ModelAdmin):
 			),
 		}),
 		('Telegram — согласование КП', {
-			'fields': ('telegram_chat_id',),
+			'fields': (
+				'telegram_chat_id',
+				'telegram_notify_pending',
+				'telegram_notify_auto_approved',
+				'telegram_notify_results',
+			),
 			'description': (
 				'Привязка личного Telegram только здесь (админка) '
 				'или на странице редактирования профиля пользователя. '
-				'Chat ID — числовой Id из @userinfobot.'
+				'Chat ID — числовой Id из @userinfobot. '
+				'Ниже — какие типы оповещений слать в бот.'
 			),
 		}),
 		('Права и доступы', {

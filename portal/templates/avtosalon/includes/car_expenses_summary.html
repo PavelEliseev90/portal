@@ -1,0 +1,110 @@
+{% comment %}
+  Фактические затраты по ЛО (как блок «Затраты» на ECO ?page=20).
+  Ожидает params.expenses.
+{% endcomment %}
+
+{% if params.expenses and params.expenses.has_data %}
+<div class="portal-panel mt-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <h6 class="mb-0 padding-portal d-flex align-items-center gap-2">
+      <span class="icon-mbri-cash"></span> Фактические затраты
+      {% if params.expenses.count %}
+        <span class="badge text-bg-primary">{{ params.expenses.count }} поз.</span>
+      {% endif %}
+    </h6>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge text-bg-success fs-6">
+        Итого {{ params.expenses.total_amount|floatformat:"0g" }} ₽
+      </span>
+      {% if params.expenses.car_outlay %}
+        <span class="badge text-bg-light border">
+          Outlay авто: {{ params.expenses.car_outlay|floatformat:"0g" }} ₽
+        </span>
+      {% endif %}
+      {% if params.expenses.expenses_url %}
+        <a class="btn btn-outline-primary btn-sm" href="{{ params.expenses.expenses_url }}" target="_blank" rel="noopener">
+          Открыть в ECO
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if params.expenses.type_totals %}
+    <div class="row g-2 mb-3">
+      {% for t in params.expenses.type_totals %}
+        <div class="col-6 col-md-4 col-xl-3">
+          <div class="metric-card-portal h-100">
+            <div class="metric-card-label-portal">{{ t.type }}</div>
+            <div class="fw-semibold mt-1" style="color:#002a5a;">{{ t.amount|floatformat:"0g" }} ₽</div>
+            <div class="small text-muted">{{ t.count }} поз.</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if params.expenses.items %}
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-hover table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Тип</th>
+            <th>Дата</th>
+            <th>Документ</th>
+            <th>Наименование</th>
+            <th class="text-end">Кол-во</th>
+            <th class="text-end">Цена</th>
+            <th class="text-end">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in params.expenses.items %}
+            <tr>
+              <td><span class="badge text-bg-info">{{ row.type|default:"—" }}</span></td>
+              <td class="text-nowrap small">
+                {% if row.date %}{{ row.date|date:"d.m.Y" }}{% else %}—{% endif %}
+              </td>
+              <td class="small">{{ row.document|default:"—" }}</td>
+              <td>
+                <div>{{ row.name|default:"—" }}</div>
+                {% if row.description %}
+                  <div class="small text-muted">{{ row.description }}</div>
+                {% endif %}
+              </td>
+              <td class="text-end">{{ row.quantity|floatformat:"2g" }}</td>
+              <td class="text-end">{{ row.price|floatformat:"0g" }}</td>
+              <td class="text-end fw-semibold">{{ row.amount|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-light">
+            <th colspan="4">Итого</th>
+            <th class="text-end">{{ params.expenses.total_quantity|floatformat:"2g" }}</th>
+            <th></th>
+            <th class="text-end">{{ params.expenses.total_amount|floatformat:"0g" }} ₽</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% if params.expenses.items_hidden %}
+      <div class="small text-muted mt-2">
+        Показаны первые {{ params.expenses.items|length }} позиций,
+        ещё {{ params.expenses.items_hidden }} —
+        {% if params.expenses.expenses_url %}
+          <a href="{{ params.expenses.expenses_url }}" target="_blank" rel="noopener">полный список в ECO</a>.
+        {% else %}
+          полный список в ECO.
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="small text-muted">
+      Детализация по ЗН/услугам не найдена.
+      {% if params.expenses.car_outlay %}
+        На карточке склада указаны расходы (outlay): {{ params.expenses.car_outlay|floatformat:"0g" }} ₽.
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endif %}
