@@ -1672,8 +1672,10 @@ def price_edit(request, slug):
         RefCarsOrganization.objects
         .filter(slug=slug)
         .select_related(
-            'lo', 'lo__rlk', 'status', 'status_availability', 'status_ransom',
-            'unit', 'store', 'type_reception', 'type_sale',
+            'lo', 'lo__rlk', 'lo__organization', 'lo__unit', 'lo__store',
+            'lo__type_reception', 'lo__staff',
+            'status', 'status_availability', 'status_ransom',
+            'unit', 'store', 'type_reception', 'type_sale', 'organization',
         )
         .first()
     )
@@ -1796,6 +1798,9 @@ def price_edit(request, slug):
         'status_history'    : related.get('status_history', []),
         'status_history_from_1c': related.get('status_history_from_1c', False),
         'status_history_stored_in_portal': related.get('status_history_stored_in_portal', False),
+        'intake'            : related.get('intake') or {},
+        'wheels'            : related.get('wheels') or {},
+        'expenses'          : related.get('expenses') or {},
         'calc_express'      : calc_express,
         'calc_autohub'      : calc_autohub,
         'calc_1C'           : calc_1C,

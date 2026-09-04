@@ -55,6 +55,15 @@ def profiles_edit(request):
                     else:
                         profiles.telegram_chat_id = chat_id
 
+                    profiles.telegram_notify_pending = (
+                        'telegram_notify_pending' in request.POST
+                    )
+                    profiles.telegram_notify_auto_approved = (
+                        'telegram_notify_auto_approved' in request.POST
+                    )
+                    profiles.telegram_notify_results = (
+                        'telegram_notify_results' in request.POST
+                    )
             if 'eco_toast' in request.POST:
                 profiles.eco_toast = True
             else:

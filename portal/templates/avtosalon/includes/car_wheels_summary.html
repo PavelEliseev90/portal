@@ -1,0 +1,108 @@
+{% comment %}
+  Колёса на автомобиле + второй комплект / приёмка 2КК.
+  Ожидает params.wheels.
+{% endcomment %}
+
+{% if params.wheels and params.wheels.has_data %}
+<div class="portal-panel mt-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <h6 class="mb-0 padding-portal d-flex align-items-center gap-2">
+      <span class="icon-mbri-setting"></span> Колёса
+      {% if params.wheels.has_kolesa2 %}
+        <span class="badge text-bg-warning">есть 2КК</span>
+      {% endif %}
+      {% if params.wheels.lo_kolesa2_reception %}
+        <span class="badge text-bg-success">приёмка 2КК на ЛО</span>
+      {% endif %}
+    </h6>
+    <div class="d-flex flex-wrap gap-2">
+      {% if params.wheels.kolesa_url %}
+        <a class="btn btn-outline-secondary btn-sm" href="{{ params.wheels.kolesa_url }}" target="_blank" rel="noopener">
+          Колёса в оценке
+        </a>
+      {% endif %}
+      {% if params.wheels.reception_url %}
+        <a class="btn btn-outline-primary btn-sm" href="{{ params.wheels.reception_url }}" target="_blank" rel="noopener">
+          Карточка приёмки 2КК
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 {% if params.wheels.estimated_2kk.show or params.wheels.reception_2kk.show %}col-lg-6{% endif %}">
+      <div class="metric-card-portal h-100">
+        <div class="metric-card-label-portal mb-2">{{ params.wheels.primary.title }}</div>
+        {% if params.wheels.primary.rows %}
+          <div class="row g-2">
+            {% for row in params.wheels.primary.rows %}
+              <div class="col-6">
+                <div class="small text-muted">{{ row.label }}</div>
+                <div class="fw-semibold" style="color:#002a5a; word-break:break-word;">{{ row.value }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="small text-muted">Нет данных со страницы «Колёса» оценки</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if params.wheels.estimated_2kk.show %}
+    <div class="col-12 {% if params.wheels.reception_2kk.show %}col-lg-6{% else %}col-lg-6{% endif %}">
+      <div class="metric-card-portal h-100">
+        <div class="metric-card-label-portal mb-2">{{ params.wheels.estimated_2kk.title }}</div>
+        {% if params.wheels.estimated_2kk.rows %}
+          <div class="row g-2">
+            {% for row in params.wheels.estimated_2kk.rows %}
+              <div class="col-6">
+                <div class="small text-muted">{{ row.label }}</div>
+                <div class="fw-semibold" style="color:#002a5a; word-break:break-word;">{{ row.value }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="small text-muted">В оценке отмечен второй комплект, детали не заполнены</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if params.wheels.reception_2kk.show %}
+    <div class="col-12">
+      <div class="metric-card-portal">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+          <div class="metric-card-label-portal mb-0">{{ params.wheels.reception_2kk.title }}</div>
+          {% if params.wheels.reception_url %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ params.wheels.reception_url }}" target="_blank" rel="noopener">Открыть</a>
+          {% endif %}
+        </div>
+        {% if params.wheels.reception_2kk.rows %}
+          <div class="row g-2">
+            {% for row in params.wheels.reception_2kk.rows %}
+              <div class="col-6 col-md-4 col-xl-3">
+                <div class="small text-muted">{{ row.label }}</div>
+                <div class="fw-semibold" style="color:#002a5a; word-break:break-word;">
+                  {% if row.label == 'Дата приёмки' %}
+                    {{ row.value|date:"d.m.Y H:i" }}
+                  {% else %}
+                    {{ row.value }}
+                  {% endif %}
+                </div>
+                {% if row.extra %}
+                  <div class="small text-muted">{{ row.extra }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="small text-muted">
+            Приёмка 2КК отмечена на листе оценки, отдельная карточка приёмки не найдена.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

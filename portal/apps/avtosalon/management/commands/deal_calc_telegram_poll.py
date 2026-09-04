@@ -9,6 +9,9 @@ Long polling Telegram-бота согласования КП.
 
 Запуск (держать процесс):
   python manage.py deal_calc_telegram_poll
+
+На сервере удобнее watchdog-bat с автоперезапуском:
+  sheduler\\deal_calc_telegram_poll.bat
 """
 from django.core.management.base import BaseCommand
 
@@ -51,6 +54,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(
                 'Telegram по КП выключен (DealCalcTelegramSettings.enabled).'
             ))
+            # ненулевой код — bat перезапустит; если выключено надолго, просто будет ждать
             return
         if not runtime.get('bot_token'):
             self.stderr.write(self.style.ERROR('Не задан токен бота.'))
@@ -61,7 +65,10 @@ class Command(BaseCommand):
             style = self.style.SUCCESS if ok else self.style.ERROR
             self.stdout.write(style(message))
             if not ok:
-                return
+                self.stderr.write(self.style.WARNING(
+                    'Продолжаю polling даже если deleteWebhook не удался '
+                    '(возможно webhook уже снят).'
+                ))
 
         self.stdout.write(self.style.NOTICE(
             'Старт long polling… Ctrl+C для остановки. '

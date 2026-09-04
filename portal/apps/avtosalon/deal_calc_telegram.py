@@ -277,7 +277,12 @@ def run_telegram_polling_loop(
     """
     Long polling цикл. Сервер сам тянет updates у Telegram —
     работает, когда Telegram не может достучаться до webhook (Connection timed out).
+
+    При сетевых ошибках делает паузу с backoff и продолжает работу
+    (не завершает процесс).
     """
+    import time
+
     runtime = get_runtime_config()
     if not runtime.get('enabled'):
         logger.warning('deal_calc_telegram poll: disabled in settings')
@@ -288,6 +293,7 @@ def run_telegram_polling_loop(
 
     offset = None
     iterations = 0
+    fail_streak = 0
     logger.info(
         'deal_calc_telegram poll: started poll_timeout=%s proxy=%s',
         poll_timeout,
@@ -300,43 +306,78 @@ def run_telegram_polling_loop(
             break
         iterations += 1
 
-        runtime = get_runtime_config()
-        if not runtime.get('enabled') or not runtime.get('bot_token'):
-            logger.warning('deal_calc_telegram poll: stopped (disabled or no token)')
-            break
+        try:
+            runtime = get_runtime_config()
+            if not runtime.get('enabled') or not runtime.get('bot_token'):
+                logger.warning('deal_calc_telegram poll: stopped (disabled or no token)')
+                break
 
-        ok, updates, err = fetch_telegram_updates(
-            offset=offset,
-            timeout_sec=poll_timeout,
-            runtime=runtime,
-        )
-        if not ok:
-            logger.warning('deal_calc_telegram poll: %s', err)
-            if idle_sleep:
-                import time
-                time.sleep(idle_sleep)
-            continue
-
-        for update in updates:
-            try:
-                update_id = int(update.get('update_id'))
-                offset = update_id + 1
-            except (TypeError, ValueError):
+            ok, updates, err = fetch_telegram_updates(
+                offset=offset,
+                timeout_sec=poll_timeout,
+                runtime=runtime,
+            )
+            if not ok:
+                fail_streak += 1
+                # 1, 2, 4, 8, 16, 32, max 60 сек — сеть/Telegram отвалились
+                sleep_sec = min(60, max(int(idle_sleep or 1), 2 ** min(fail_streak, 5)))
+                logger.warning(
+                    'deal_calc_telegram poll: %s (streak=%s, sleep=%ss)',
+                    err,
+                    fail_streak,
+                    sleep_sec,
+                )
+                time.sleep(sleep_sec)
                 continue
-            process_telegram_update(update)
 
-        if not updates and idle_sleep:
-            # long poll уже ждал; короткая пауза не обязательна
-            pass
+            fail_streak = 0
+            for update in updates:
+                try:
+                    update_id = int(update.get('update_id'))
+                    offset = update_id + 1
+                except (TypeError, ValueError):
+                    continue
+                try:
+                    process_telegram_update(update)
+                except Exception:
+                    logger.exception(
+                        'deal_calc_telegram poll: update failed update_id=%s',
+                        update.get('update_id'),
+                    )
+        except Exception:
+            fail_streak += 1
+            sleep_sec = min(60, max(5, 2 ** min(fail_streak, 5)))
+            logger.exception(
+                'deal_calc_telegram poll: unexpected error (streak=%s, sleep=%ss)',
+                fail_streak,
+                sleep_sec,
+            )
+            time.sleep(sleep_sec)
 
 
 
-def chat_ids_from_users(users):
+NOTIFY_KIND_PENDING = 'pending'
+NOTIFY_KIND_AUTO_APPROVED = 'auto_approved'
+NOTIFY_KIND_RESULTS = 'results'
+
+NOTIFY_PREF_FIELDS = {
+    NOTIFY_KIND_PENDING: 'telegram_notify_pending',
+    NOTIFY_KIND_AUTO_APPROVED: 'telegram_notify_auto_approved',
+    NOTIFY_KIND_RESULTS: 'telegram_notify_results',
+}
+
+
+def chat_ids_from_users(users, notify_kind=None):
+    """chat_id пользователей с учётом персональных настроек уведомлений."""
     ids = []
     seen = set()
+    pref_field = NOTIFY_PREF_FIELDS.get(notify_kind) if notify_kind else None
     for user in users or []:
         try:
             profile = getattr(user, 'profiles', None)
+            if pref_field and profile is not None:
+                if not bool(getattr(profile, pref_field, True)):
+                    continue
             chat_id = normalize_telegram_chat_id(
                 getattr(profile, 'telegram_chat_id', '') if profile else ''
             )
@@ -887,6 +928,7 @@ def notify_calc_telegram(
     actions=None,
     recipient_users=None,
     include_open_button=True,
+    notify_kind=None,
 ):
     try:
         if not calc or not getattr(calc, 'pk', None):
@@ -898,7 +940,7 @@ def notify_calc_telegram(
 
         chat_ids = []
         seen = set()
-        for chat_id in chat_ids_from_users(recipient_users):
+        for chat_id in chat_ids_from_users(recipient_users, notify_kind=notify_kind):
             if chat_id not in seen:
                 seen.add(chat_id)
                 chat_ids.append(chat_id)
@@ -955,6 +997,7 @@ def notify_pending_director_telegram(calc, comment='', recipient_users=None):
         comment=text,
         actions=['director_approve', 'director_send_uk', 'director_reject'],
         recipient_users=recipient_users,
+        notify_kind=NOTIFY_KIND_PENDING,
     )
 
 
@@ -965,6 +1008,7 @@ def notify_auto_approved_telegram(calc, comment='', recipient_users=None):
         comment=comment,
         actions=None,
         recipient_users=recipient_users,
+        notify_kind=NOTIFY_KIND_AUTO_APPROVED,
     )
 
 
@@ -982,12 +1026,22 @@ def notify_result_telegram(calc, event, comment='', recipient_users=None):
     actions = None
     if event == 'director_send_uk':
         actions = ['uk_approve', 'uk_reject']
+        return notify_calc_telegram(
+            calc,
+            title,
+            comment=comment,
+            actions=actions,
+            recipient_users=recipient_users,
+            # УК-очередь — это действие «требуется согласование»
+            notify_kind=NOTIFY_KIND_PENDING,
+        )
     return notify_calc_telegram(
         calc,
         title,
         comment=comment,
         actions=actions,
         recipient_users=recipient_users,
+        notify_kind=NOTIFY_KIND_RESULTS,
     )
 
 

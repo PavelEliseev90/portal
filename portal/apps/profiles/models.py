@@ -68,6 +68,21 @@ class Profiles(models.Model):
                   'на странице редактирования профиля. '
                   'Узнать: @userinfobot → Id.',
     )
+    telegram_notify_pending = models.BooleanField(
+        'Telegram: требуется согласование',
+        default=True,
+        help_text='Карточки КП, ожидающие согласования директором / УК.',
+    )
+    telegram_notify_auto_approved = models.BooleanField(
+        'Telegram: автоматически согласованные',
+        default=True,
+        help_text='Оповещения, когда КП согласовано автоматически по правилам.',
+    )
+    telegram_notify_results = models.BooleanField(
+        'Telegram: результаты согласования',
+        default=True,
+        help_text='Согласовано / отклонено / отправлено в УК.',
+    )
 
     def image_img(self):
         if self.image:

@@ -28,6 +28,13 @@
               {% endif %}
             </div>
           {% endif %}
+          {% if params.intake.reception_url %}
+            <div class="mt-2">
+              <a class="btn btn-outline-secondary btn-sm" href="{{ params.intake.reception_url }}" target="_blank" rel="noopener">
+                Приём автомобиля
+              </a>
+            </div>
+          {% endif %}
         {% else %}
           <div class="small text-muted mt-2">Не найдена по листу оценки / VIN</div>
         {% endif %}
