@@ -147,6 +147,11 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.webhook_info_view),
                 name='prices_car_dealcalctelegramsettings_webhook_info',
             ),
+            path(
+                'delete-webhook/',
+                self.admin_site.admin_view(self.delete_webhook_view),
+                name='prices_car_dealcalctelegramsettings_delete_webhook',
+            ),
         ]
         return custom + urls
 
@@ -156,15 +161,22 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
         url = webhook_url()
         register_url = reverse('admin:prices_car_dealcalctelegramsettings_register_webhook')
         info_url = reverse('admin:prices_car_dealcalctelegramsettings_webhook_info')
+        delete_url = reverse('admin:prices_car_dealcalctelegramsettings_delete_webhook')
         return mark_safe(
-            '<p>Сначала сохраните токен бота и включите функцию, затем нажмите кнопку.</p>'
+            '<p>Сначала сохраните токен бота и включите функцию.</p>'
             '<p>URL webhook: <code>{}</code></p>'
-            '<p><a class="button" href="{}">Зарегистрировать webhook Telegram</a> '
-            '<a class="button" href="{}">Проверить webhook (getWebhookInfo)</a></p>'
-            '<p class="help">Если /start молчит: почти всегда сервер не может '
-            'ответить в api.telegram.org без HTTP-прокси в поле api_proxy. '
-            'Webhook принимает входящие, а ответ бота идёт исходящим запросом.</p>'
-            .format(url, register_url, info_url)
+            '<p>'
+            '<a class="button" href="{}">Зарегистрировать webhook</a> '
+            '<a class="button" href="{}">Проверить webhook</a> '
+            '<a class="button" href="{}">Снять webhook (для polling)</a>'
+            '</p>'
+            '<p class="help">'
+            'Если getWebhookInfo показывает <b>Connection timed out</b> — '
+            'Telegram не достучится до портала (firewall/сеть). '
+            'Тогда: снимите webhook и держите процесс '
+            '<code>python manage.py deal_calc_telegram_poll --delete-webhook</code>.'
+            '</p>'
+            .format(url, register_url, info_url, delete_url)
         )
     webhook_help.short_description = 'Webhook'
 
@@ -189,6 +201,20 @@ class DealCalcTelegramSettingsAdmin(admin.ModelAdmin):
         from avtosalon.deal_calc_telegram import get_telegram_webhook_info
 
         ok, message, _info = get_telegram_webhook_info()
+        self.message_user(
+            request,
+            message,
+            level=messages.SUCCESS if ok else messages.ERROR,
+        )
+        obj = DealCalcTelegramSettings.load()
+        return HttpResponseRedirect(
+            reverse('admin:prices_car_dealcalctelegramsettings_change', args=[obj.pk])
+        )
+
+    def delete_webhook_view(self, request):
+        from avtosalon.deal_calc_telegram import delete_telegram_webhook
+
+        ok, message = delete_telegram_webhook(drop_pending=False)
         self.message_user(
             request,
             message,

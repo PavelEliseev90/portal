@@ -214,6 +214,123 @@ def register_telegram_webhook():
         return False, 'Ошибка setWebhook: {}{}'.format(exc, hint)
 
 
+def delete_telegram_webhook(drop_pending=False):
+    """Снять webhook (нужно для long polling getUpdates)."""
+    runtime = get_runtime_config()
+    if not runtime['bot_token']:
+        return False, 'Не задан токен бота.'
+    try:
+        response = requests.post(
+            'https://api.telegram.org/bot{}/deleteWebhook'.format(runtime['bot_token']),
+            json={'drop_pending_updates': bool(drop_pending)},
+            timeout=runtime['timeout'],
+            proxies=_requests_proxies(runtime),
+        )
+        data = response.json() if response.content else {}
+        if response.status_code == 200 and data.get('ok'):
+            return True, 'Webhook снят. Дальше используйте: python manage.py deal_calc_telegram_poll'
+        return False, 'Ошибка deleteWebhook: {}'.format(data or response.text)
+    except Exception as exc:
+        logger.exception('deal_calc_telegram: deleteWebhook failed')
+        return False, 'Ошибка deleteWebhook: {}'.format(exc)
+
+
+def fetch_telegram_updates(offset=None, timeout_sec=25, runtime=None):
+    """Один long-poll getUpdates. Возвращает (ok, updates_list, error_message)."""
+    runtime = runtime or get_runtime_config()
+    if not runtime.get('bot_token'):
+        return False, [], 'Не задан токен бота.'
+    payload = {
+        'timeout': max(1, min(int(timeout_sec or 25), 50)),
+        'allowed_updates': json.dumps(['message', 'callback_query']),
+    }
+    if offset is not None:
+        payload['offset'] = int(offset)
+    # HTTP timeout чуть больше long-poll timeout
+    http_timeout = payload['timeout'] + max(10, int(runtime.get('timeout') or 20))
+    try:
+        response = requests.get(
+            'https://api.telegram.org/bot{}/getUpdates'.format(runtime['bot_token']),
+            params=payload,
+            timeout=http_timeout,
+            proxies=_requests_proxies(runtime),
+        )
+        data = response.json() if response.content else {}
+        if response.status_code != 200 or not data.get('ok'):
+            return False, [], 'Ошибка getUpdates: {}'.format(data or response.text)
+        updates = data.get('result') or []
+        if not isinstance(updates, list):
+            updates = []
+        return True, updates, ''
+    except Exception as exc:
+        logger.exception('deal_calc_telegram: getUpdates failed')
+        return False, [], 'Ошибка getUpdates: {}'.format(exc)
+
+
+def run_telegram_polling_loop(
+    *,
+    poll_timeout=25,
+    idle_sleep=1,
+    max_iterations=None,
+    stop_event=None,
+):
+    """
+    Long polling цикл. Сервер сам тянет updates у Telegram —
+    работает, когда Telegram не может достучаться до webhook (Connection timed out).
+    """
+    runtime = get_runtime_config()
+    if not runtime.get('enabled'):
+        logger.warning('deal_calc_telegram poll: disabled in settings')
+        return
+    if not runtime.get('bot_token'):
+        logger.warning('deal_calc_telegram poll: no bot token')
+        return
+
+    offset = None
+    iterations = 0
+    logger.info(
+        'deal_calc_telegram poll: started poll_timeout=%s proxy=%s',
+        poll_timeout,
+        bool(runtime.get('proxy')),
+    )
+    while True:
+        if stop_event is not None and stop_event.is_set():
+            break
+        if max_iterations is not None and iterations >= max_iterations:
+            break
+        iterations += 1
+
+        runtime = get_runtime_config()
+        if not runtime.get('enabled') or not runtime.get('bot_token'):
+            logger.warning('deal_calc_telegram poll: stopped (disabled or no token)')
+            break
+
+        ok, updates, err = fetch_telegram_updates(
+            offset=offset,
+            timeout_sec=poll_timeout,
+            runtime=runtime,
+        )
+        if not ok:
+            logger.warning('deal_calc_telegram poll: %s', err)
+            if idle_sleep:
+                import time
+                time.sleep(idle_sleep)
+            continue
+
+        for update in updates:
+            try:
+                update_id = int(update.get('update_id'))
+                offset = update_id + 1
+            except (TypeError, ValueError):
+                continue
+            process_telegram_update(update)
+
+        if not updates and idle_sleep:
+            # long poll уже ждал; короткая пауза не обязательна
+            pass
+
+
+
 def chat_ids_from_users(users):
     ids = []
     seen = set()
