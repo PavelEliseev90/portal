@@ -401,15 +401,32 @@ def _api_call(method, payload, runtime=None):
         )
         if response.status_code != 200:
             logger.warning(
-                'deal_calc_telegram api %s failed status=%s body=%s',
+                'deal_calc_telegram api %s failed status=%s body=%s proxy=%s',
                 method,
                 response.status_code,
+                (response.text or '')[:300],
+                bool(runtime.get('proxy')),
+            )
+            return False
+        data = {}
+        try:
+            data = response.json() if response.content else {}
+        except Exception:
+            data = {}
+        if data and data.get('ok') is False:
+            logger.warning(
+                'deal_calc_telegram api %s ok=false body=%s',
+                method,
                 (response.text or '')[:300],
             )
             return False
         return True
     except Exception:
-        logger.exception('deal_calc_telegram api %s error', method)
+        logger.exception(
+            'deal_calc_telegram api %s error proxy=%s',
+            method,
+            bool((runtime or {}).get('proxy')),
+        )
         return False
 
 
@@ -418,9 +435,17 @@ def _send_telegram_message(
     chat_id,
     text,
     reply_markup=None,
-    timeout=5,
+    timeout=None,
     force_reply=False,
+    runtime=None,
 ):
+    """Отправить сообщение. Важно: всегда берём proxy из runtime (иначе сервер
+    без прямого доступа к api.telegram.org молча не отвечает на /start)."""
+    runtime = dict(runtime or get_runtime_config())
+    if bot_token:
+        runtime['bot_token'] = bot_token
+    if timeout is not None:
+        runtime['timeout'] = timeout
     payload = {
         'chat_id': chat_id,
         'text': text,
@@ -433,11 +458,39 @@ def _send_telegram_message(
         )
     elif reply_markup is not None:
         payload['reply_markup'] = json.dumps(reply_markup, ensure_ascii=False)
-    return _api_call(
-        'sendMessage',
-        payload,
-        runtime={'bot_token': bot_token, 'timeout': timeout},
-    )
+    return _api_call('sendMessage', payload, runtime=runtime)
+
+
+def get_telegram_webhook_info():
+    """getWebhookInfo — диагностика. Возвращает (ok, message, data)."""
+    runtime = get_runtime_config()
+    if not runtime['bot_token']:
+        return False, 'Не задан токен бота.', {}
+    try:
+        response = requests.get(
+            'https://api.telegram.org/bot{}/getWebhookInfo'.format(runtime['bot_token']),
+            timeout=runtime['timeout'],
+            proxies=_requests_proxies(runtime),
+        )
+        data = response.json() if response.content else {}
+        if response.status_code != 200 or not data.get('ok'):
+            return False, 'Ошибка getWebhookInfo: {}'.format(data or response.text), data
+        info = data.get('result') or {}
+        lines = [
+            'url: {}'.format(info.get('url') or '—'),
+            'pending_update_count: {}'.format(info.get('pending_update_count')),
+            'last_error_date: {}'.format(info.get('last_error_date') or '—'),
+            'last_error_message: {}'.format(info.get('last_error_message') or '—'),
+            'has_custom_certificate: {}'.format(info.get('has_custom_certificate')),
+            'max_connections: {}'.format(info.get('max_connections')),
+            'ожидаемый URL портала: {}'.format(webhook_url(runtime['public_base_url'])),
+            'прокси для исходящих: {}'.format(runtime.get('proxy') or 'не задан'),
+        ]
+        return True, '\n'.join(lines), info
+    except Exception as exc:
+        logger.exception('deal_calc_telegram: getWebhookInfo failed')
+        return False, 'Ошибка getWebhookInfo: {}'.format(exc), {}
+
 
 
 def build_desktop_reply_keyboard(role):
@@ -568,6 +621,7 @@ def send_desktop_section_cards(user, chat_id, section, runtime=None):
             'Нет доступа к этому списку.',
             timeout=runtime['timeout'],
             reply_markup=build_desktop_reply_keyboard(role) if role else None,
+            runtime=runtime,
         )
         return False
 
@@ -589,6 +643,7 @@ def send_desktop_section_cards(user, chat_id, section, runtime=None):
         header,
         timeout=runtime['timeout'],
         reply_markup=build_desktop_reply_keyboard(role),
+        runtime=runtime,
     )
 
     for calc in items:
@@ -605,6 +660,7 @@ def send_desktop_section_cards(user, chat_id, section, runtime=None):
             build_desktop_card_text(calc),
             reply_markup=markup,
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
 
     if total > DESKTOP_LIST_LIMIT:
@@ -615,6 +671,7 @@ def send_desktop_section_cards(user, chat_id, section, runtime=None):
                 DESKTOP_LIST_LIMIT, total,
             ),
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
     return True
 
@@ -630,6 +687,7 @@ def send_bot_home(user, chat_id, runtime=None):
             chat_id,
             'Привязка есть ({}). Ожидайте уведомления по КП.'.format(name),
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
         return
 
@@ -647,6 +705,7 @@ def send_bot_home(user, chat_id, runtime=None):
         text,
         reply_markup=keyboard,
         timeout=runtime['timeout'],
+        runtime=runtime,
     )
     if inline:
         _send_telegram_message(
@@ -655,6 +714,7 @@ def send_bot_home(user, chat_id, runtime=None):
             'Быстрые кнопки:',
             reply_markup=inline,
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
 
 
@@ -750,6 +810,7 @@ def notify_calc_telegram(
                     text,
                     reply_markup=reply_markup,
                     timeout=runtime['timeout'],
+                    runtime=runtime,
                 ):
                     ok_any = True
             except Exception:
@@ -887,6 +948,7 @@ def handle_bot_callback_query(callback, runtime=None):
         ).format(number, label),
         timeout=runtime['timeout'],
         force_reply=True,
+        runtime=runtime,
     )
 
 
@@ -919,6 +981,7 @@ def handle_bot_message(message, runtime=None):
                     '3) После привязки: /start — меню очередей и согласование'
                 ),
                 timeout=runtime['timeout'],
+                runtime=runtime,
             )
         return
 
@@ -932,6 +995,7 @@ def handle_bot_message(message, runtime=None):
             chat_id,
             'Отменено.',
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
         return
 
@@ -958,6 +1022,7 @@ def handle_bot_message(message, runtime=None):
             chat_id,
             'Сессия согласования сброшена. Нажмите кнопку ещё раз.',
             timeout=runtime['timeout'],
+            runtime=runtime,
         )
         return
 
@@ -986,6 +1051,7 @@ def handle_bot_message(message, runtime=None):
         chat_id,
         ('✅ ' if ok else '❌ ') + message_text,
         timeout=runtime['timeout'],
+        runtime=runtime,
     )
 
 
