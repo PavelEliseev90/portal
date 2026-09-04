@@ -68,7 +68,8 @@ DETAIL_VALUES = (
     'id', 'nomer', 'dataTime', 'unit_id', 'unit__name', 'store__name',
     'staff_id', 'staff__name', 'vin', 'vin2', 'year', 'run', 'owners', 'keys',
     'carsGRZ', 'clientName', 'cost_price', 'bcp', 'rlk_id', 'rlk__nomer',
-    'auction', 'type_reception__name', 'cars__mark', 'cars__model', 'cars__vin',
+    'auction', 'type_reception__name', 'kolesa2_reception',
+    'cars__mark', 'cars__model', 'cars__vin',
 )
 
 
@@ -92,6 +93,7 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'plate': row.get('carsGRZ') or '',
         'client': row.get('clientName') or '',
         'type_reception': row.get('type_reception__name') or '',
+        'kolesa2_reception': bool(row.get('kolesa2_reception')),
         'cost_price': money(row.get('cost_price')),
         'bcp': money(row.get('bcp')),
         'rlk_id': row.get('rlk_id'),

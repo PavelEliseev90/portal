@@ -19,6 +19,7 @@
   {% elif col.key == 'amount_reward_credit' %}<td class="num">{{ r.amount_reward_credit|floatformat:"0g" }}</td>
   {% elif col.key == 'amount_reward_opfu' %}<td class="num">{{ r.amount_reward_opfu|floatformat:"0g" }}</td>
   {% elif col.key == 'amount_kits' %}<td class="num">{{ r.amount_kits|floatformat:"0g" }}</td>
+  {% elif col.key == 'kolesa2_reception' %}<td>{% if r.kolesa2_reception %}Да{% else %}Нет{% endif %}</td>
   {% elif col.key == 'pbi_cum' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_cum_full|floatformat:"0g" }}{% else %}—{% endif %}</td>
   {% elif col.key == 'pbi_kvp' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_kvp|floatformat:"0g" }}{% else %}—{% endif %}</td>
   {% elif col.key == 'agreement' %}<td>{{ r.agreement_nomer|default:"—" }}</td>
@@ -44,6 +45,7 @@
   {% elif col.key == 'store' %}
   <td>{{ r.store_name|default:"—" }}<div class="small text-muted">{{ r.stage_price }} {% if r.group_price %}· {{ r.group_price }}{% endif %}</div></td>
   {% elif col.key == 'run' %}<td class="num">{{ r.run|floatformat:"0g" }}</td>
+  {% elif col.key == 'kolesa2_reception' %}<td>{% if r.kolesa2_reception %}Да{% else %}Нет{% endif %}</td>
   {% endif %}
 {% elif report_key == 'accepted' %}
   {% if col.key == 'date' %}
@@ -56,6 +58,7 @@
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
   {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
+  {% elif col.key == 'kolesa2_reception' %}<td>{% if r.kolesa2_reception %}Да{% else %}Нет{% endif %}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
   {% elif col.key == 'bcp' %}<td class="num">{{ r.bcp|floatformat:"0g" }}</td>
   {% elif col.key == 'run' %}<td class="num">{{ r.run|floatformat:"0g" }}</td>

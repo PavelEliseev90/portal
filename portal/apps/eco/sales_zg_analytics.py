@@ -270,8 +270,14 @@ def build_sales_zg_detail(
     ship_items = []
     rlk_ids = set()
     prices = []
+    sum_reward_credit = 0.0
+    sum_reward_opfu = 0.0
+    sum_kits = 0.0
 
-    for s in ship_qs.only('rlk_id', 'dataTime', 'amount').iterator(chunk_size=2000):
+    for s in ship_qs.only(
+        'rlk_id', 'dataTime', 'amount',
+        'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
+    ).iterator(chunk_size=2000):
         if not s.dataTime or not s.rlk_id:
             continue
         price = float(s.amount or 0)
@@ -280,12 +286,21 @@ def build_sales_zg_detail(
         row_zg = zg_from_price(price)
         if row_zg != target_zg:
             continue
+        reward_credit = float(s.amount_reward_credit or 0)
+        reward_opfu = float(s.amount_reward_opfu or 0)
+        kits = float(s.amount_kits or 0)
         rlk_ids.add(s.rlk_id)
         prices.append(price)
+        sum_reward_credit += reward_credit
+        sum_reward_opfu += reward_opfu
+        sum_kits += kits
         ship_items.append({
             'rlk_id': s.rlk_id,
             'date_sale': s.dataTime,
             'price_sale': price,
+            'amount_reward_credit': reward_credit,
+            'amount_reward_opfu': reward_opfu,
+            'amount_kits': kits,
         })
 
     funnel_map = {}
@@ -320,6 +335,9 @@ def build_sales_zg_detail(
             'type_name': (f.type_reception_name if f else '') or '',
             'stage': (f.stage if f else '') or '',
             'price_sale': item['price_sale'],
+            'amount_reward_credit': item['amount_reward_credit'],
+            'amount_reward_opfu': item['amount_reward_opfu'],
+            'amount_kits': item['amount_kits'],
         })
 
     total = len(rows)
@@ -332,6 +350,9 @@ def build_sales_zg_detail(
         'summary': {
             'total': total,
             'med_price': int(round(_median(prices))) if prices else 0,
+            'amount_reward_credit': int(round(sum_reward_credit)),
+            'amount_reward_opfu': int(round(sum_reward_opfu)),
+            'amount_kits': int(round(sum_kits)),
         },
     }
 
