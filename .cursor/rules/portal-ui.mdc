@@ -1,0 +1,62 @@
+---
+description: Стиль и UI-конвенции портала (макет, классы, палитра) для новых страниц и рефакторинга
+globs: portal/templates/**/*.html, static/css/portal-style*.css, docs/portal-ui*.md
+alwaysApply: false
+---
+
+# UI портала
+
+Эталон: `docs/portal-ui-conventions.md`, витрина `/dev/styleguide/`.
+Стили в рантайме: **`static/css/portal-style-v2.css`** (подключается из `base_web.html`). Документ может ещё писать `portal-style.css` — ориентироваться на v2.
+
+## Каркас страницы
+
+```django
+{% extends 'base_web.html' %}
+{% block content %}
+<div class="portal-page">
+  <div class="portal-header">
+    <h2>Заголовок</h2>
+    <p>Краткое описание</p>
+  </div>
+  <div class="portal-panel">…</div>
+</div>
+{% endblock %}
+```
+
+- Секции — `portal-panel` (белый блок, тень, радиус ~1.2rem). Таблицы вплотную: `portal-panel no-padding`.
+- Сетка / формы / модалки — Bootstrap 5; портальная надстройка только в `portal-style-v2.css`.
+- Новый корневой `<область>-page` — только если лейаут реально особый; иначе `portal-*`.
+
+## Предпочитать
+
+| Роль | Классы |
+|------|--------|
+| Метрики | `metric-card-portal`, `metric-card-label-portal`, `metric-card-value-portal` |
+| Кнопки | `btn-calculate`, `btn-calculate-sm`, `btn-calculate-success-sm`, `btn-calculate-secondary-sm` |
+| Таблицы | `table table-sm table-hover` (+ `table-asp`, `.num` / `.pos` / `.neg` в отчётах АСП) |
+| Крошки | `breadcrumb-nav` |
+| Мультифильтр | `{% include 'includes/portal_multi_checkbox_filter.html' %}` (см. rule `portal-multi-checkbox-filter`) |
+
+## Палитра (де-факто)
+
+- Фон страницы: `#f4f7fb`
+- Бренд / заголовки: `#002a5a` (градиенты с `#00509d`)
+- CTA: `#4a90e2` → `#357abd`
+- Подписи / muted: `#8ea1ba`, `#6c7a92`
+- Лейблы в панелях: uppercase + letter-spacing
+- Не вводить purple/cream «AI-темы» и чужие палитры
+
+## Анти-паттерны
+
+- Legacy `panel`, `metric-card` без `-portal` на новых экранах
+- Голые глобальные селекторы в CSS (`table {}`) — только `.portal-page …` / `.portal-panel …`
+- Постоянный `<style>` в шаблоне для переиспользуемого хрома (прототип → перенос в v2)
+- Дублировать skin отчётов (`asp-rep*`) в каждом шаблоне — при правках АСП выносить общее в CSS
+- `<select multiple>` + Select2 для мультивыбора подразделений/списков
+
+## Перед сдачей
+
+- [ ] `base_web.html` + `portal-page` shell (или явное обоснование иного base)
+- [ ] Классы из таблицы выше, без новой дизайн-системы
+- [ ] Новый переиспользуемый паттерн — по возможности в `/dev/styleguide/`

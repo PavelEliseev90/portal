@@ -1,340 +1,268 @@
 {% extends 'base_web.html' %}
-
 {% load custom_template_tags %}
 
+{% block title %} — СМС опросы сервиса {% endblock %}
+{% block title_navbar %} — СМС опросы сервиса {% endblock %}
 
-{% block url %}; <!--URL=http://a01srvdash/ros"--> {% endblock %} 
-
-{% block title %} - СМС опросы сервиса {% endblock %}
-
-{% block title_navbar %} - СМС опросы сервиса {% endblock %}
-    
 {% block content %}
-<div class="row">
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+      <h2>СМС опросы сервиса</h2>
+      <p class="mb-0">Ответы клиентов по заказ-нарядам сервиса</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" id="save" class="btn-calculate-secondary-sm">
+        <span class="icon-mbri-download"></span> Excel
+      </button>
+    </div>
+  </div>
 
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-xl-3">
+      <div class="metric-card-portal">
+        <h4>Всего записей</h4>
+        <div class="value">{{ params.objects.paginator.count }}</div>
+        <div class="sub">по текущему фильтру</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <div class="metric-card-portal">
+        <h4>На странице</h4>
+        <div class="value">{{ params.objects|length }}</div>
+        <div class="sub">из выбранного лимита</div>
+      </div>
+    </div>
+  </div>
 
-	<div class="modal fade" id="exampleModal_download" tabindex="-1" aria-labelledby="exampleModal_download" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-			
-				<div class="modal-body" style="padding: 0rem;">
-				
+  <form method="get" class="portal-panel">
+    <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр{% if params.filtr.filtr_count %} · {{ params.filtr.filtr_count }}{% endif %}</h6>
+    <div class="row g-3">
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Период с</div>
+        <input class="form-control" type="date" id="date_start" name="date_start" value="{{ params.filtr.date_start|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">по</div>
+        <input class="form-control" type="date" id="date_end" name="date_end" value="{{ params.filtr.date_end|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Подразделение</div>
+        <select class="form-select" id="unit_id" name="unit_id">
+          <option value=""></option>
+          {% for unit in params.selected.units %}
+            <option value="{{ unit.id }}" {% if params.filtr.unit_id == unit.id %}selected{% endif %}>{{ unit.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Вид ЗН</div>
+        <select class="form-select" name="type_zn" id="type_zn">
+          <option value=""></option>
+          {% for type_zn in params.selected.types_zn %}
+            <option value="{{ type_zn.zn__typeRemont }}" {% if params.filtr.type_zn == type_zn.zn__typeRemont %}selected{% endif %}>{{ type_zn.zn__typeRemont__name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Статус</div>
+        <select class="form-select" name="status" id="status">
+          <option value="" {% if params.filtr.status == '' %}selected{% endif %}></option>
+          <option value="Не пройден" {% if params.filtr.status == 'Не пройден' %}selected{% endif %}>Не пройден</option>
+          <option value="Пройден" {% if params.filtr.status == 'Пройден' %}selected{% endif %}>Пройден</option>
+          <option value="Аппелирован" {% if params.filtr.status == 'Аппелирован' %}selected{% endif %}>Аппелирован</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Негативный</div>
+        <select class="form-select" name="negative" id="negative">
+          <option value="" {% if params.filtr.negative == '' %}selected{% endif %}></option>
+          <option value="Да" {% if params.filtr.negative == 'Да' %}selected{% endif %}>Да</option>
+          <option value="Нет" {% if params.filtr.negative == 'Нет' %}selected{% endif %}>Нет</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="metric-card-label-portal">Клиент / № ЗН / АМ</div>
+        <input type="text" class="form-control" id="name" name="name" value="{{ params.filtr.name }}" placeholder="Клиент, номер, марка, модель, VIN" autocomplete="off">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Телефон</div>
+        <input type="text" class="form-control" id="phone" name="phone" value="{{ params.filtr.phone }}" autocomplete="off">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Комментарий</div>
+        <input type="text" class="form-control" id="coment" name="coment" value="{{ params.filtr.coment }}" placeholder="содержит…" autocomplete="off">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Выводить</div>
+        <select class="form-select" name="select_count" id="select_count">
+          <option value="25" {% if params.filtr.select_count == 25 or params.filtr.select_count == '25' %}selected{% endif %}>25</option>
+          <option value="50" {% if params.filtr.select_count == 50 or params.filtr.select_count == '50' %}selected{% endif %}>50</option>
+          <option value="100" {% if params.filtr.select_count == 100 or params.filtr.select_count == '100' %}selected{% endif %}>100</option>
+          <option value="200" {% if params.filtr.select_count == 200 or params.filtr.select_count == '200' %}selected{% endif %}>200</option>
+        </select>
+      </div>
+    </div>
+    <div class="row g-2 align-items-center mt-3">
+      <div class="col-auto">
+        <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
+      </div>
+      <div class="col-auto">
+        <a class="btn-calculate-secondary-sm" href="{{ request.path }}"><span class="icon-mbri-close"></span> Сбросить</a>
+      </div>
+    </div>
+  </form>
 
-					<p class="fs-6 text-center"> Формируем файл для скачивания.</p>
+  <div class="portal-panel no-padding">
+    <h3 class="padding-title mb-0 p-3">Список опросов</h3>
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-hover table-striped mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Статус</th>
+            <th scope="col">Дата опроса</th>
+            <th scope="col">Дата ЗН</th>
+            <th scope="col">Номер ЗН</th>
+            <th scope="col">Подразделение</th>
+            <th scope="col">Вид ЗН</th>
+            <th scope="col">Клиент</th>
+            <th scope="col">Телефон</th>
+            <th scope="col">Автомобиль</th>
+            <th scope="col" class="text-end">В1</th>
+            <th scope="col" class="text-end">В2</th>
+            <th scope="col" class="text-end">В3</th>
+            <th scope="col" class="text-end">В4</th>
+            <th scope="col" class="text-end">В5</th>
+            <th scope="col" class="text-end">В6</th>
+            <th scope="col" class="text-end">В7</th>
+            <th scope="col">Комментарий</th>
+            <th scope="col">Сотрудник</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in params.objects %}
+            <tr class="{% if doc.v2 < 8 and doc.close %}table-danger{% endif %}">
+              <td>
+                <a href="{{ doc.id }}/" class="text-decoration-none">
+                  {% if doc.close and doc.canceled %}
+                    <span class="badge text-bg-danger">Апеллирован</span>
+                  {% elif doc.close %}
+                    <span class="badge text-bg-success">Пройден</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Не пройден</span>
+                  {% endif %}
+                </a>
+              </td>
+              <td>{{ doc.dataTime }}</td>
+              <td>{{ doc.zn.dataTime }}</td>
+              <td>{{ doc.zn.nomer }}</td>
+              <td>{{ doc.zn.unit.name }}</td>
+              <td>{{ doc.zn.typeRemont }}</td>
+              <td>{{ doc.zn.customer.name }}</td>
+              <td>{{ doc.phone }}</td>
+              <td>
+                <div class="fw-semibold">{{ doc.zn.cars.mark }} {{ doc.zn.cars.model }}</div>
+                <div class="small text-muted">{{ doc.zn.cars.vin }}</div>
+              </td>
+              <td class="text-end">{{ doc.v1 }}</td>
+              <td class="text-end {% if doc.v2 < 8 and doc.close %}fw-semibold text-danger{% endif %}">{{ doc.v2 }}</td>
+              <td class="text-end">{{ doc.v3 }}</td>
+              <td class="text-end">{{ doc.v4 }}</td>
+              <td class="text-end">{{ doc.v5 }}</td>
+              <td class="text-end">{{ doc.v6 }}</td>
+              <td class="text-end">{{ doc.v7 }}</td>
+              <td class="text-truncate" style="max-width: 220px;" title="{{ doc.v8 }}">{{ doc.v8 }}</td>
+              <td>{{ doc.zn.master }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="18" class="text-center text-muted py-4">Нет опросов по выбранному фильтру</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-					<img src="/static/images/loading.gif"/>
-
-					<p class="fs-6 text-center"> Нужно немного подождать программа работает в отличии от котика.</p>
-
-				</div>
-
-			</div>
-		</div>
-	</div>
-
-
-	<button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
-
-	<div class="col-sm-auto">
-		
-		<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-				<div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					
-						<div class="modal-body">
-
-							<form method="get">
-								<div class="row">
-									<div class="col">
-										<div class="form-floating mb-3">
-											<input class="form-control form-control-sm" type="date" id="date_start" name="date_start" value="{{params.filtr.date_start|date:"Y-m-d"}}">
-											<label for="floatingInput">C</label>
-										</div>
-									</div>
-									<div class="col">
-										<div class="form-floating mb-3">
-											<input class="form-control form-control-sm" type="date" id="date_end" name="date_end" value="{{params.filtr.date_end|date:"Y-m-d"}}">
-											<label for="floatingInput">По</label>
-										</div>
-									</div>
-								</div>
-								
-								<div class="form-floating mb-3">							
-									<select class="form-select" id="unit_id" name="unit_id" placeholder="">
-										<option></option>
-										{% for unit in params.selected.units %}
-											<option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
-										{% endfor %}
-									</select>
-									<label for="floatingInput">Подразделение</label>
-								</div>
-								
-                				<div class="form-floating mb-3">
-									<select class="form-select form-control" name = "type_zn" id ="type_zn">
-										<option></option>
-										{% for type_zn in params.selected.types_zn %}
-											<option value="{{type_zn.zn__typeRemont}}" {% if params.filtr.type_zn == type_zn.zn__typeRemont %} selected {% endif %}> {{type_zn.zn__typeRemont__name}} </option>
-										{% endfor %}
-									</select>
-									<label for="select_count">Вид зн</label>
-								</div>
-
-								<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
-									<label for="floatingInput">Клиент, Номер ЗН или АМ, Марка или модель АМ</label>
-								</div>
-								
-								<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="phone" name="phone" placeholder="" value="{{params.filtr.phone}}" autocomplete="off">
-									<label for="floatingInput">Телефон</label>
-								</div>
-
-                				<div class="form-floating mb-3">
-									<input type="text" class="form-control" id="coment" name="coment" placeholder="" value="{{params.filtr.coment}}" autocomplete="off">
-									<label for="floatingInput">Комментарий содержит</label>
-								</div>
-
-								<div class="form-floating mb-3">
-									<select class="form-select form-control" name = "status" id ="status">
-										<option {% if params.filtr.status == '' %} selected {% endif %}></option>
-										<option {% if params.filtr.status == 'Не пройден' %} selected {% endif %}>Не пройден</option>
-										<option {% if params.filtr.status == 'Пройден' %} selected {% endif %}>Пройден</option>
-                    					<option {% if params.filtr.status == 'Аппелирован' %} selected {% endif %}>Аппелирован</option>
-									</select>
-									<label for="select_count">Статус</label>
-								</div>
-
-								<div class="form-floating mb-3">
-									<select class="form-select form-control" name = "negative" id ="negative">
-										<option {% if params.filtr.negative == '' %} selected {% endif %}></option>
-										<option {% if params.filtr.negative == 'Да' %} selected {% endif %}>Да</option>
-										<option {% if params.filtr.negative == 'Нет' %} selected {% endif %}>Нет</option>
-									</select>
-									<label for="select_count">Негативный</label>
-								</div>
-
-								<div class="form-floating mb-3">
-									<select class="form-select form-control" name = "select_count" id ="select_count">
-										<option {% if params.filtr.select_count == 25 %} selected {% endif %}>25</option>
-										<option {% if params.filtr.select_count == 50 %} selected {% endif %}>50</option>
-										<option {% if params.filtr.select_count == 100 %} selected {% endif %}>100</option>
-										<option {% if params.filtr.select_count == 200 %} selected {% endif %}> 200</option>
-									</select>
-									<label for="select_count">Выводить</label>
-								</div>
-
-								<div class="d-grid gap-2">
-									<button class="btn btn-block btn-outline-secondary" type="submit"><span class="icon-mbri-success"></span> Применить</button>
-								</div>
-							</form>
-						</div>
-
-					</div>
-				</div>
-		</div>
-		
-		<br>
-
-	</div>
-
-	<hr>
-	
-	<div class="col-sm">
-		<div class="table-responsive">
-			<table class="table table-hover">
-				
-				<thead class="table-light">
-					<tr>
-						<th scope="col"></th>
-						<th scope="col">Дата опроса</th>
-						<th scope="col">Дата ЗН</th>
-						<th scope="col">Номер ЗН</th>
-						<th scope="col">Подразделение</th>
-						<th scope="col">Вид ЗН</th>
-						<th scope="col">Клиент</th>
-						<th scope="col">Телефон</th>
-						<th scope="col">Автомобиль</th>
-						<th scope="col">Вопрос 1</th>
-						<th scope="col">Вопрос 2</th>
-						<th scope="col">Вопрос 3</th>
-						<th scope="col">Вопрос 4</th>
-						<th scope="col">Вопрос 5</th>
-						<th scope="col">Вопрос 6</th>
-						<th scope="col">Вопрос 7</th>
-						<th scope="col">Комментарий</th>
-						<th scope="col">Сотрудник</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% if params.objects|length > 0 %}
-						{% for doc in params.objects  %}
-								
-							<tr class="{% if doc.v2 < 8 and doc.close %} opros-negative {% endif %}" style="padding: 0.2em;">
-								<td class="col-sm">
-									<a href="{{doc.id}}/" class="link-dark">
-										{% if doc.close and doc.canceled %}
-											<span class="icon-mbri-close text-danger"><br>Апеллирован</span>
-											
-										{% elif doc.close %}
-											<span class="icon-mbri-success text-success"><br>Пройден</span>
-											
-										{% else %}
-											<span class="icon-mbri-timer text-secondary bg-opacity-75"><br>Не пройден</span>
-											
-										{% endif %}
-									</a>
-								</td>
-								<td class="col-sm">
-									{{doc.dataTime}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.dataTime}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.nomer}}
-								</td>								
-								<td class="col-sm">
-									{{doc.zn.unit.name}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.typeRemont}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.customer.name}} 										
-								</td>
-								<td class="col-sm">
-									{{doc.phone}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.cars.mark}} {{doc.zn.cars.model}} / {{doc.zn.cars.vin}} 
-								</td>
-								<td class="col-sm">
-									{{doc.v1}}
-								</td>
-								<td class="col-sm">
-									{{doc.v2}}
-								</td>
-								<td class="col-sm">
-									{{doc.v3}}
-								</td>
-								<td class="col-sm">
-									{{doc.v4}}
-								</td>
-                				<td class="col-sm">
-									{{doc.v5}}
-								</td>
-               				 	<td class="col-sm">
-									{{doc.v6}}
-								</td>
-                				<td class="col-sm">
-									{{doc.v7}}
-								</td>
-               					<td class="col-3 col-sm-3 text-truncate" style="max-width: 250px;">
-									{{doc.v8}}
-								</td>
-								<td class="col-sm">
-									{{doc.zn.master}}
-								</td>
-							</tr>
-
-						{% endfor %} 
-					{% endif %}
-				</tbody>
-			</table>
-		</div>
-	</div>
-
-	<br>
-	
-	<div class="row align-self-center align-items-center">
-		
-		<div class="col-auto">
-			<p class="fw-normal">Всего записей: {{params.objects.paginator.count}} / Выведено: {{params.objects|length}}</p>
-		</div>
-
-		<div class="col-auto">
-			<button id="save" class="btn btn-outline-secondary"> <span class="icon-mbri-download"> Сохранить</span> </button>
-		</div>
-
-		<div class="col-auto align-items-center align-self-center justify-content-center">
-			<nav aria-label="Page navigation example">
-				<ul class="pagination justify-content-center">
-				
-					{% if params.objects.has_previous %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
-						</li>
-					{% endif %}
-			
-					{% for p in params.objects.paginator.page_range %}
-						{% if params.objects.number == p %}
-							<li class="page-num mbr-section-btn disabled">
-								<a class="btn btn-secondary display-7">
-									<b>{{p}}</b>
-								</a>
-							</li>
-						{% elif p >=  params.objects.number|add:-2 and p <=  params.objects.number|add:2  %}
-							<li class="page-num mbr-section-btn">
-								<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-							</li>
-						{% endif %}
-					{% endfor %}
-						
-					{% if params.objects.has_next %}
-						<li class="page-num mbr-section-btn">
-							<a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
-						</li>
-					{% endif %}
-		
-				</ul>
-			</nav>
-		</div>
-
-	</div>
-	
-	</div>
-
+    <div class="p-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-auto">
+          <span class="text-muted small">
+            Всего: {{ params.objects.paginator.count }} · на странице: {{ params.objects|length }}
+          </span>
+        </div>
+        <div class="col-auto ms-md-auto">
+          <nav aria-label="Страницы">
+            <ul class="pagination mb-0">
+              {% if params.objects.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% url_replace page=params.objects.previous_page_number %}">&lt;</a>
+                </li>
+              {% endif %}
+              {% for p in params.objects.paginator.page_range %}
+                {% if params.objects.number == p %}
+                  <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                {% elif p >= params.objects.number|add:-2 and p <= params.objects.number|add:2 %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% url_replace page=p %}">{{ p }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              {% if params.objects.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% url_replace page=params.objects.next_page_number %}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-	
-</form>
 
-<script language="JavaScript">
-	
-	
+<div class="modal fade" id="exampleModal_download" tabindex="-1" aria-labelledby="exampleModal_download_label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <p class="mb-3">Формируем файл для скачивания…</p>
+        <img src="/static/images/loading.gif" alt="Загрузка">
+        <p class="small text-muted mt-3 mb-0">Нужно немного подождать</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-	$('#save').click(function(e) {
-		
-		e.preventDefault();
-		$('#exampleModal_download').modal('show');
-		{% autoescape off %}
-		var url = "{% url_replace_download data=request.get_full_path %}";
-        {% endautoescape %}   
-		url = url.replace('&amp;', '&');
-		var request = new XMLHttpRequest();
-		request.responseType = "blob";
-		request.open("GET", url);
+<script>
+(function() {
+  var saveBtn = document.getElementById('save');
+  if (!saveBtn) return;
+  saveBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    var modalEl = document.getElementById('exampleModal_download');
+    var modal = window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+    if (modal) modal.show();
+    else if (window.jQuery) $('#exampleModal_download').modal('show');
 
-		var self = this;
-		request.onreadystatechange = function () {
-			if (request.readyState === 4) {
-				var file = $(self).data('file_name');
-				var fileName = request.getResponseHeader("file_name") 
-				var anchor = document.createElement('a');
-				anchor.download = fileName; 
-				anchor.href = window.URL.createObjectURL(request.response);
-				anchor.click();
-				$('#exampleModal_download').modal('hide');
-			}
-		};
+    {% autoescape off %}
+    var url = "{% url_replace_download data=request.get_full_path %}";
+    {% endautoescape %}
+    url = url.replace(/&amp;/g, '&');
 
-		request.send();
-
-	});
-
+    var request = new XMLHttpRequest();
+    request.responseType = 'blob';
+    request.open('GET', url);
+    request.onreadystatechange = function() {
+      if (request.readyState !== 4) return;
+      var fileName = request.getResponseHeader('file_name') || 'sms_opros_service.xlsx';
+      var anchor = document.createElement('a');
+      anchor.download = fileName;
+      anchor.href = window.URL.createObjectURL(request.response);
+      anchor.click();
+      if (modal) modal.hide();
+      else if (window.jQuery) $('#exampleModal_download').modal('hide');
+    };
+    request.send();
+  });
+})();
 </script>
-
 {% endblock %}
