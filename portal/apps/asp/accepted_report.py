@@ -69,7 +69,7 @@ DETAIL_VALUES = (
     'staff_id', 'staff__name', 'vin', 'vin2', 'year', 'run', 'owners', 'keys',
     'carsGRZ', 'clientName', 'cost_price', 'bcp', 'rlk_id', 'rlk__nomer',
     'auction', 'type_reception__name', 'kolesa2_reception',
-    'cars__mark', 'cars__model', 'cars__vin',
+    'cars__mark', 'cars__model', 'cars__vin', 'rlk__unit_dc__name',
 )
 
 
@@ -80,6 +80,7 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'date': row.get('dataTime'),
         'unit_id': row.get('unit_id'),
         'unit_name': row.get('unit__name') or '—',
+        'unit_source_name': row.get('rlk__unit_dc__name') or '',
         'store_name': row.get('store__name') or '',
         'person_id': row.get('staff_id') or 0,
         'person_name': row.get('staff__name') or 'Без оценщика',

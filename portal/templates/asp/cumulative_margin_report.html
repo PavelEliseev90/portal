@@ -118,6 +118,7 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     if (col.key === 'date') val = '<div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' + esc(r.nomer || '—') + '</div>';
     else if (col.key === 'reception_date') val = fmtDate(r.reception_date);
     else if (col.key === 'unit') val = esc(r.unit_name);
+    else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');
     else if (col.key === 'car') val = '<div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) + '</div>';
     else if (col.key === 'vin') val = esc(r.vin);
     else if (col.key === 'client') val = esc(r.client || '—');

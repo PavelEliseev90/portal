@@ -108,6 +108,7 @@ window.aspRenderDetailRow = function(r, money, esc) {
     else if (col.key === 'vin') val = esc(r.vin);
     else if (col.key === 'year') val = esc(r.year);
     else if (col.key === 'unit') val = esc(r.unit_name);
+    else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');
     else if (col.key === 'status') val = esc(r.status_name);
     else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
     else if (col.key === 'days') val = esc(r.days_in_stok);

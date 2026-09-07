@@ -75,6 +75,8 @@ DETAIL_VALUES = (
     'lo__kolesa2_reception', 'agreement__lo__kolesa2_reception',
     'lo__dataTime', 'agreement__lo__dataTime',
     'lo__staff__name', 'agreement__lo__staff__name',
+    'rlk__unit_dc__name', 'lo__rlk__unit_dc__name',
+    'agreement__rlk__unit_dc__name', 'agreement__lo__rlk__unit_dc__name',
 )
 
 
@@ -115,6 +117,13 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
         'reception_date': row.get('lo__dataTime') or row.get('agreement__lo__dataTime'),
         'appraiser_name': (
             row.get('lo__staff__name') or row.get('agreement__lo__staff__name') or ''
+        ),
+        'unit_source_name': (
+            row.get('lo__rlk__unit_dc__name')
+            or row.get('agreement__lo__rlk__unit_dc__name')
+            or row.get('rlk__unit_dc__name')
+            or row.get('agreement__rlk__unit_dc__name')
+            or ''
         ),
         'pbi_cum_full': money(pbi.get('cum_full')),
         'pbi_kvp': money(pbi.get('kvp')),

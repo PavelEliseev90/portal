@@ -9,12 +9,14 @@ COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
-    'margin': 'v2',
+    'margin': 'v3',
+    'stock': 'v2',
+    'accepted': 'v2',
 }
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'reception_date', 'unit', 'car', 'vin', 'client', 'person', 'appraiser',
+    'date', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'client', 'person', 'appraiser',
     'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
@@ -23,6 +25,7 @@ MARGIN_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
     'reception_date': {'label': 'Дата приёма', 'sortable': True, 'sort_key': 'reception_date', 'num': False},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
+    'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
@@ -46,6 +49,7 @@ MARGIN_SORT_FIELDS = {
     'date': 'dataTime',
     'reception_date': 'lo__dataTime',
     'unit': 'unit__name',
+    'unit_source': 'rlk__unit_dc__name',
     'car': 'cars__mark',
     'vin': 'cars__vin',
     'client': 'clientName',
@@ -66,13 +70,14 @@ MARGIN_SORT_FIELDS = {
 
 # --- Склад ---
 STOCK_DEFAULT_COLUMNS = [
-    'car', 'vin', 'unit', 'status', 'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
+    'car', 'vin', 'unit', 'unit_source', 'status', 'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
 ]
 STOCK_COLUMN_DEFS = {
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'year': {'label': 'Год', 'sortable': True, 'sort_key': 'year', 'num': False},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
+    'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'status': {'label': 'Статус', 'sortable': True, 'sort_key': 'status', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
     'days': {'label': 'Дней', 'sortable': True, 'sort_key': 'days', 'num': True},
@@ -90,6 +95,7 @@ STOCK_SORT_FIELDS = {
     'vin': 'vin',
     'year': 'year',
     'unit': 'unit__name',
+    'unit_source': 'lo__rlk__unit_dc__name',
     'status': 'status__name',
     'type_reception': 'type_reception__name',
     'days': 'days_in_stok',
@@ -106,7 +112,7 @@ STOCK_SORT_FIELDS = {
 # --- Принятые ---
 ACCEPTED_DEFAULT_COLUMNS = [
     'date', 'car', 'vin', 'client', 'person', 'type_reception', 'kolesa2_reception',
-    'cost_price', 'bcp', 'run', 'unit',
+    'cost_price', 'bcp', 'run', 'unit', 'unit_source',
 ]
 ACCEPTED_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
@@ -120,6 +126,7 @@ ACCEPTED_COLUMN_DEFS = {
     'bcp': {'label': 'БЦП', 'sortable': True, 'sort_key': 'bcp', 'num': True},
     'run': {'label': 'Пробег', 'sortable': True, 'sort_key': 'run', 'num': True},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
+    'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'store': {'label': 'Склад', 'sortable': True, 'sort_key': 'store', 'num': False},
     'year': {'label': 'Год', 'sortable': True, 'sort_key': 'year', 'num': False},
     'plate': {'label': 'Госномер', 'sortable': False, 'num': False},
@@ -136,6 +143,7 @@ ACCEPTED_SORT_FIELDS = {
     'bcp': 'bcp',
     'run': 'run',
     'unit': 'unit__name',
+    'unit_source': 'rlk__unit_dc__name',
     'store': 'store__name',
     'year': 'year',
 }
@@ -290,6 +298,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'date': row.get('date'),
             'reception_date': row.get('reception_date'),
             'unit': row.get('unit_name'),
+            'unit_source': row.get('unit_source_name'),
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
             'vin': row.get('vin'),
             'client': row.get('client'),
@@ -320,6 +329,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'vin': row.get('vin'),
             'year': row.get('year'),
             'unit': row.get('unit_name'),
+            'unit_source': row.get('unit_source_name'),
             'status': row.get('status_name'),
             'type_reception': row.get('type_reception'),
             'days': row.get('days_in_stok'),
@@ -346,6 +356,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
         'bcp': row.get('bcp'),
         'run': row.get('run'),
         'unit': row.get('unit_name'),
+        'unit_source': row.get('unit_source_name'),
         'store': row.get('store_name'),
         'year': row.get('year'),
         'plate': row.get('plate'),
