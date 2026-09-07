@@ -73,6 +73,8 @@ DETAIL_VALUES = (
     'agreement__cm_actual', 'agreement__cm_est',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
     'lo__kolesa2_reception', 'agreement__lo__kolesa2_reception',
+    'lo__dataTime', 'agreement__lo__dataTime',
+    'lo__staff__name', 'agreement__lo__staff__name',
 )
 
 
@@ -109,6 +111,10 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
         'amount_kits': money(row.get('amount_kits')),
         'kolesa2_reception': bool(
             row.get('lo__kolesa2_reception') or row.get('agreement__lo__kolesa2_reception')
+        ),
+        'reception_date': row.get('lo__dataTime') or row.get('agreement__lo__dataTime'),
+        'appraiser_name': (
+            row.get('lo__staff__name') or row.get('agreement__lo__staff__name') or ''
         ),
         'pbi_cum_full': money(pbi.get('cum_full')),
         'pbi_kvp': money(pbi.get('kvp')),

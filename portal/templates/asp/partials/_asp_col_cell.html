@@ -5,11 +5,13 @@
     <div class="fw-semibold">{% if r.date %}{{ r.date|date:"d.m.Y" }}{% else %}—{% endif %}</div>
     <div class="small text-muted">{{ r.nomer|default:"—" }}</div>
   </td>
+  {% elif col.key == 'reception_date' %}<td>{% if r.reception_date %}{{ r.reception_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
   {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
   {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
+  {% elif col.key == 'appraiser' %}<td>{{ r.appraiser_name|default:"—" }}</td>
   {% elif col.key == 'type_sale' %}<td>{{ r.type_sale|default:"—" }}</td>
   {% elif col.key == 'amount' %}<td class="num">{{ r.amount|floatformat:"0g" }}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>

@@ -7,20 +7,27 @@ from typing import Any
 
 COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+# Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
+COLUMNS_COOKIE_VERSION = {
+    'margin': 'v2',
+}
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'unit', 'car', 'vin', 'client', 'person', 'type_sale',
+    'date', 'reception_date', 'unit', 'car', 'vin', 'client', 'person', 'appraiser',
+    'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
 ]
 MARGIN_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
+    'reception_date': {'label': 'Дата приёма', 'sortable': True, 'sort_key': 'reception_date', 'num': False},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Продавец', 'sortable': True, 'sort_key': 'person', 'num': False},
+    'appraiser': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'appraiser', 'num': False},
     'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'amount': {'label': 'Продажа', 'sortable': True, 'sort_key': 'amount', 'num': True},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
@@ -37,11 +44,13 @@ MARGIN_COLUMN_DEFS = {
 }
 MARGIN_SORT_FIELDS = {
     'date': 'dataTime',
+    'reception_date': 'lo__dataTime',
     'unit': 'unit__name',
     'car': 'cars__mark',
     'vin': 'cars__vin',
     'client': 'clientName',
     'person': 'staff__name',
+    'appraiser': 'lo__staff__name',
     'type_sale': 'typeSale',
     'amount': 'amount',
     'cost_price': 'cost_price',
@@ -154,6 +163,9 @@ REPORTS = {
 
 
 def cookie_name(report_key: str) -> str:
+    ver = COLUMNS_COOKIE_VERSION.get(report_key)
+    if ver:
+        return f'{COLUMNS_COOKIE_PREFIX}{report_key}_{ver}'
     return f'{COLUMNS_COOKIE_PREFIX}{report_key}'
 
 
@@ -276,11 +288,13 @@ def cell_export_value(report_key: str, row: dict, key: str):
     if report_key == 'margin':
         mapping = {
             'date': row.get('date'),
+            'reception_date': row.get('reception_date'),
             'unit': row.get('unit_name'),
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
             'vin': row.get('vin'),
             'client': row.get('client'),
             'person': row.get('person_name'),
+            'appraiser': row.get('appraiser_name'),
             'type_sale': row.get('type_sale'),
             'amount': row.get('amount'),
             'cost_price': row.get('cost_price'),
