@@ -74,6 +74,17 @@
         {% endif %}
       </div>
 
+      {% if params.reception_am_accepted and not params.reception_fields_editable %}
+        <div class="alert alert-info py-2 mb-3" role="alert">
+          Статус <strong>АМ принят</strong> — поля приёма доступны только сотрудникам ЕЦО.
+          Кнопки и создание приёма второго комплекта колёс (если ещё не создан) остаются доступны.
+        </div>
+      {% elif params.reception_am_accepted and params.reception_fields_editable %}
+        <div class="alert alert-warning py-2 mb-3" role="alert">
+          Статус <strong>АМ принят</strong> — вы редактируете как сотрудник ЕЦО.
+        </div>
+      {% endif %}
+
       {% if params.reception_form_errors %}
         <div class="alert alert-danger py-2 mb-3" role="alert">
           <strong>Не удалось сохранить:</strong>
@@ -85,6 +96,7 @@
         </div>
       {% endif %}
 
+      <fieldset class="reception-fields-lock border-0 p-0 m-0"{% if not params.reception_fields_editable %} disabled{% endif %}>
       <div class="row g-2">
         <div class="col-xl-4">
           <div class="portal-panel h-100">
@@ -604,6 +616,7 @@
           {% endfor %}
         </div>
       </div>
+      </fieldset>
 
       <div class="d-flex flex-wrap gap-2 mt-3">
         <button type="submit" class="btn btn-outline-success" name="save" value="close"
@@ -635,6 +648,7 @@
         allowClear: true,
         width: '100%',
         minimumInputLength: 2,
+        disabled: {% if params.reception_fields_editable %}false{% else %}true{% endif %},
         language: {
           inputTooShort: function() { return 'Введите минимум 2 символа'; },
           noResults: function() { return 'Никого не найдено'; },
@@ -920,6 +934,16 @@
 
       if (form) {
         form.addEventListener('submit', function(event) {
+          var fieldsEditable = {% if params.reception_fields_editable %}true{% else %}false{% endif %};
+          var typePost = (document.getElementById('reception_type_post') || {}).value || '';
+          if (!fieldsEditable && (typePost === 'save_reception' || typePost === 'delete_reception_file')) {
+            event.preventDefault();
+            window.alert('После статуса «АМ принят» поля приёма может менять только сотрудник ЕЦО.');
+            return;
+          }
+          if (!fieldsEditable) {
+            return;
+          }
           syncCustomerFields();
           var errors = validateCustomerFields();
           if (errors.length) {

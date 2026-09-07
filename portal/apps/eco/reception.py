@@ -90,6 +90,38 @@ def reception_allowed(interactiv_rlk: RegInteractivOcenkaRLK) -> bool:
     return interactiv_rlk is not None
 
 
+def status_is_am_accepted(interactiv_rlk: RegInteractivOcenkaRLK) -> bool:
+    """Статус оценки — «АМ принят» (автомобиль уже принят)."""
+    if interactiv_rlk is None:
+        return False
+    status = getattr(interactiv_rlk, 'status', None)
+    name = (getattr(status, 'name', None) or '').strip().lower()
+    return 'ам принят' in name
+
+
+def user_is_eco_staff(user) -> bool:
+    """Сотрудник ЕЦО, которому разрешено править приём после «АМ принят»."""
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    if getattr(user, 'is_superuser', False):
+        return True
+    profiles = getattr(user, 'profiles', None)
+    return bool(getattr(profiles, 'eco', False))
+
+
+def reception_fields_editable(interactiv_rlk: RegInteractivOcenkaRLK, user) -> bool:
+    """
+    Поля карточки приёма можно редактировать.
+    После статуса «АМ принят» — только сотрудники ЕЦО (и суперпользователь).
+    Кнопки печати / 1С / создание 2КК этим флагом не ограничиваются.
+    """
+    if not reception_allowed(interactiv_rlk):
+        return False
+    if not status_is_am_accepted(interactiv_rlk):
+        return True
+    return user_is_eco_staff(user)
+
+
 def serialize_reception_file(file_obj: RegRegInteractivOcenkaFiles) -> dict:
     return {
         'id': file_obj.pk,

@@ -4534,6 +4534,8 @@ def doc(request, id):
 
         reception = None
         reception_allowed = False
+        reception_fields_editable = True
+        reception_am_accepted = False
         reception_selects = {}
         reception_form_errors = None
         reception_file_blocks = []
@@ -4548,13 +4550,17 @@ def doc(request, id):
                 get_reception_file_blocks,
                 get_reception_or_none,
                 reception_allowed as reception_is_allowed,
+                reception_fields_editable as reception_is_fields_editable,
                 reception_select_options,
                 send_reception_1c,
+                status_is_am_accepted,
             )
             from register.models import RegRegInteractivOcenkaFilesKolesaReception
             from estimations.mobile_gallery_utils import build_mobile_upload_url
             reception_allowed = reception_is_allowed(interactiv_rlk)
             reception = get_reception_or_none(interactiv_rlk)
+            reception_fields_editable = reception_is_fields_editable(interactiv_rlk, request.user)
+            reception_am_accepted = status_is_am_accepted(interactiv_rlk)
             kolesa2_needed = estimation_has_kolesa2(estimation)
             kolesa_reception = get_kolesa_reception_or_none(estimation)
             mobile_gallery = {
@@ -4739,6 +4745,8 @@ def doc(request, id):
                 'current_estimation_settings': current_estimation_settings,
                 'reception': reception,
                 'reception_allowed': reception_allowed,
+                'reception_fields_editable': reception_fields_editable,
+                'reception_am_accepted': reception_am_accepted,
                 'reception_selects': reception_selects,
                 'reception_form_errors': reception_form_errors,
                 'reception_file_blocks': reception_file_blocks,
@@ -5333,31 +5341,45 @@ def doc(request, id):
                     apply_post_to_reception,
                     get_reception_or_none,
                     reception_allowed as reception_is_allowed,
+                    reception_fields_editable as reception_is_fields_editable,
                     save_reception_files_from_request,
                     validate_reception_client,
                 )
                 if reception_is_allowed(interactiv_rlk):
-                    reception_obj = get_reception_or_none(interactiv_rlk)
-                    if reception_obj is not None:
-                        apply_post_to_reception(reception_obj, request.POST, user=request.user, save=False)
-                        validation_errors = validate_reception_client(reception_obj)
-                        if validation_errors:
-                            request.session['reception_form_errors'] = validation_errors
-                            request.session['reception_form_draft'] = request.POST.dict()
-                        else:
-                            reception_obj.save()
-                            save_reception_files_from_request(
-                                reg_interactiv_ocenka,
-                                request.FILES,
-                                user=request.user,
-                            )
-                            request.session.pop('reception_form_errors', None)
-                            request.session.pop('reception_form_draft', None)
+                    if not reception_is_fields_editable(interactiv_rlk, request.user):
+                        request.session['reception_form_errors'] = [
+                            'После статуса «АМ принят» поля приёма может менять только сотрудник ЕЦО.',
+                        ]
+                    else:
+                        reception_obj = get_reception_or_none(interactiv_rlk)
+                        if reception_obj is not None:
+                            apply_post_to_reception(reception_obj, request.POST, user=request.user, save=False)
+                            validation_errors = validate_reception_client(reception_obj)
+                            if validation_errors:
+                                request.session['reception_form_errors'] = validation_errors
+                                request.session['reception_form_draft'] = request.POST.dict()
+                            else:
+                                reception_obj.save()
+                                save_reception_files_from_request(
+                                    reg_interactiv_ocenka,
+                                    request.FILES,
+                                    user=request.user,
+                                )
+                                request.session.pop('reception_form_errors', None)
+                                request.session.pop('reception_form_draft', None)
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'delete_reception_file':
-                from eco.reception import delete_reception_file, reception_allowed as reception_is_allowed
-                if reception_is_allowed(interactiv_rlk):
+                from eco.reception import (
+                    delete_reception_file,
+                    reception_allowed as reception_is_allowed,
+                    reception_fields_editable as reception_is_fields_editable,
+                )
+                if reception_is_allowed(interactiv_rlk) and reception_is_fields_editable(interactiv_rlk, request.user):
                     delete_reception_file(reg_interactiv_ocenka, request.POST.get('file_id'))
+                elif reception_is_allowed(interactiv_rlk):
+                    request.session['reception_form_errors'] = [
+                        'После статуса «АМ принят» файлы приёма может менять только сотрудник ЕЦО.',
+                    ]
                 return HttpResponseRedirect(request.path_info + '?page=24')
             elif type_post == 'create_kolesa_reception':
                 from eco.reception import ensure_kolesa_reception, estimation_has_kolesa2, queue_estimation_for_1c
