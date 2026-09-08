@@ -5505,12 +5505,11 @@ def get_agreement(agreement):
         lo_link_number  = car.get('Lo_link_number', '').upper()
         lo_uin          = car.get('Lo_uin', '').upper()
 
-        car_object, created = RefCarsOrganization.objects.filter(Q(vin = vin) 
-                                                                 and Q(lo_link_number = lo_link_number) 
-                                                                 and Q(lo_uin = lo_uin),).get_or_create(vin = vin,
-                lo_link_number = lo_link_number,
-                lo_uin = lo_uin
-            )
+        car_object, created = RefCarsOrganization.objects.get_or_create(
+            vin=vin,
+            lo_link_number=lo_link_number,
+            lo_uin=lo_uin,
+        )
         car_object.date_refresh     = datetime.now()    
         car_object.organization     = get_organization(car['Organization'])    
         car_object.unit             = agreement_object.unit 
