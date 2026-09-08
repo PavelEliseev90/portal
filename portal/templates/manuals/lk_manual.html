@@ -1,77 +1,121 @@
- {% extends 'base_web.html' %}
+{% extends 'base_web.html' %}
 
-{% block title %} - {{params.manual.title}} {% endblock %}
+{% block title %} - {{ params.manual.title }} {% endblock %}
 
-
-{% block title_navbar %} - {{params.manual.title}} {% endblock %}
-
+{% block title_navbar %} - {{ params.manual.title }} {% endblock %}
 
 {% block content %}
 
+<style>
+	.manual-content img { max-width: 100%; height: auto; }
+	.manual-content table { max-width: 100%; }
+	.manual-toc a { text-decoration: none; }
+	.manual-toc a:hover { text-decoration: underline; }
+	@media print {
+		.portal-header, .manual-toolbar, .manual-aside, .navbar, footer { display: none !important; }
+		.portal-page { background: #fff; padding: 0; }
+		.portal-panel { box-shadow: none; }
+	}
+</style>
 
-  <div class="row g-2">
-    
-    <h2>{{params.manual.title}}</h2>
-    
-    <hr>
-    
-    <div class="card">
-      <div class="card-body">
-        {% autoescape off %}
-            {{params.manual.text}}
-        {% endautoescape %}   
-      </div>
-    </div>
+<div class="portal-page">
+	<div class="portal-header">
+		<h2>{{ params.manual.title }}</h2>
+		<p>
+			<a href="/manuals/">← К списку</a>
+			{% if not params.manual.activated %}
+				· <span class="badge text-bg-secondary">Неактивна</span>
+			{% endif %}
+		</p>
+	</div>
 
-    <div class="card">
-      <div class="card-body">
-       
-        <div class="row">
-          {% for tag in params.manual.tags.all %}
-          <div class="col-sm-auto">
-            <input name="tag_id_{{tag.id}}" type="checkbox" class="btn-check" id="{{tag.id}}" autocomplete="off">
-            <label class="btn btn-outline-dark" for="{{tag.id}}">{{tag.name}}</label><br>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
+	<div class="row g-2">
+		<div class="col-12 col-lg-9">
+			<div class="portal-panel manual-toolbar mb-2">
+				<div class="d-flex flex-wrap gap-2">
+					<a class="btn-calculate-sm" href="/manuals/manual_edit/?id={{ params.manual.id }}"><span class="icon-mbri-edit"></span> Редактировать</a>
+					<button type="button" class="btn-calculate-secondary-sm" id="manualCopyLink">Копировать ссылку</button>
+					<button type="button" class="btn-calculate-secondary-sm" onclick="window.print()">Печать</button>
+				</div>
+			</div>
 
-    <div class="card">
-      <div class="card-body">
-        <p class="text-muted">
-          Автор: {{params.manual.author}} <br>
-          Обновлено: {{params.manual.dateUpdate}}
-          <a href="/manuals/manual_edit/?id={{params.manual.id}}" class="text-decoration-none">Редактировать</a>
-        </p>
-      </div>
-    </div>
+			<div class="portal-panel">
+				<article class="manual-content" id="manualContent">
+					{% autoescape off %}
+						{{ params.manual.text }}
+					{% endautoescape %}
+				</article>
+			</div>
+		</div>
 
-  </div>
-       
-  <script>
-    $(document).ready(function ($) {
+		<div class="col-12 col-lg-3 manual-aside">
+			<div class="portal-panel">
+				<h6 class="mb-3">Содержание</h6>
+				<nav class="manual-toc small" id="manualToc">
+					<div class="text-muted">Заголовки появятся, если в тексте есть H2 / H3.</div>
+				</nav>
+			</div>
 
-      $('img').each(function () {
-          $(this).removeAttr('style')
+			<div class="portal-panel">
+				<h6 class="mb-3">Теги</h6>
+				<div class="d-flex flex-wrap gap-1">
+					{% for tag in params.manual.tags.all %}
+						<a class="badge text-bg-light border text-decoration-none" href="/manuals/?tag_id={{ tag.id }}">{{ tag.name }}</a>
+					{% empty %}
+						<span class="text-muted small">Без тегов</span>
+					{% endfor %}
+				</div>
+			</div>
 
-      });
+			<div class="portal-panel">
+				<div class="metric-card-label-portal">Автор</div>
+				<div class="metric-card-value-portal">{{ params.manual.author }}</div>
+				<br>
+				<div class="metric-card-label-portal">Обновлено</div>
+				<div class="metric-card-value-portal">{{ params.manual.dateUpdate|date:"d.m.Y H:i" }}</div>
+			</div>
+		</div>
+	</div>
+</div>
 
-    });
-    
-    CKEDITOR.on("instanceReady", function(event) {
-    event.editor.on("beforeCommandExec", function(event) {
-        // Show the paste dialog for the paste buttons and right-click paste
-        if (event.data.name == "paste") {
-            event.editor._.forcePasteDialog = true;
-        }
-        // Don't show the paste dialog for Ctrl+Shift+V
-        if (event.data.name == "pastetext" && event.data.commandData.from == "keystrokeHandler") {
-            event.cancel();
-        }
-    })
-});
+<script>
+	$(document).ready(function ($) {
+		$('.manual-content img').each(function () {
+			$(this).removeAttr('style');
+		});
 
-  </script>
-             
+		var toc = document.getElementById('manualToc');
+		var headings = document.querySelectorAll('#manualContent h2, #manualContent h3');
+		if (toc && headings.length) {
+			toc.innerHTML = '';
+			var list = document.createElement('ul');
+			list.className = 'list-unstyled mb-0';
+			headings.forEach(function (h, i) {
+				if (!h.id) {
+					h.id = 'm-h-' + i;
+				}
+				var li = document.createElement('li');
+				li.className = h.tagName === 'H3' ? 'ms-3 mb-1' : 'mb-1';
+				var a = document.createElement('a');
+				a.href = '#' + h.id;
+				a.textContent = h.textContent;
+				li.appendChild(a);
+				list.appendChild(li);
+			});
+			toc.appendChild(list);
+		}
+
+		var copyBtn = document.getElementById('manualCopyLink');
+		if (copyBtn) {
+			copyBtn.addEventListener('click', function () {
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					navigator.clipboard.writeText(window.location.href);
+					copyBtn.textContent = 'Скопировано';
+					setTimeout(function () { copyBtn.textContent = 'Копировать ссылку'; }, 1500);
+				}
+			});
+		}
+	});
+</script>
+
 {% endblock %}
