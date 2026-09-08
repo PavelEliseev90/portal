@@ -3413,7 +3413,8 @@ def build_estimation_1c_payload(interactiv_rlk):
     }
     if estimation is not None:
         payload.update(build_kolesa2_1c_extras(estimation))
-    return payload
+    from django.core.serializers.json import DjangoJSONEncoder
+    return json.loads(json.dumps(payload, cls=DjangoJSONEncoder))
 
 
 def resolve_estimation_1c_url(rlk):
