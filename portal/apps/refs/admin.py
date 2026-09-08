@@ -558,7 +558,9 @@ admin.site.register(PriceGroupStageDaysSnapshot, PriceGroupStageDaysSnapshotAdmi
 @admin.register(RefTypeReceptionCarsOrganization)
 class RefTypeReceptionCarsOrganizationAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'is_vtd')
+    list_display_links = ('pk', 'name')
     list_filter = ('is_vtd',)
     search_fields = ('name',)
     list_editable = ('is_vtd',)
     ordering = ('name',)
+    fields = ('name', 'is_vtd')
