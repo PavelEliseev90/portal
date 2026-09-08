@@ -3106,8 +3106,13 @@ class RefCarsOrganization(models.Model):
                     self.lo = lo
 
         slug_missing = not self.slug or len(self.slug) < 8
+        inserted_for_slug = False
         if slug_missing and not self.pk:
+            # Нужен pk в slug. Первый INSERT нельзя потом повторить:
+            # get_or_create вызывает save(force_insert=True), второй INSERT
+            # с тем же id даёт UniqueViolation на refCarsOrganization_pkey.
             super().save(*args, **kwargs)
+            inserted_for_slug = True
 
         if not self.slug or len(self.slug) < 8:
             self.slug = self.build_organization_car_slug()
@@ -3150,6 +3155,11 @@ class RefCarsOrganization(models.Model):
 
         if self.is_new:
             self.update()
+
+        if inserted_for_slug:
+            kwargs = dict(kwargs)
+            kwargs.pop('force_insert', None)
+            kwargs['force_update'] = True
 
         super().save(*args, **kwargs)
     
