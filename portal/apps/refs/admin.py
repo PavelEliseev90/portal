@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AuctionStructureFiles, RefCarsOrganizationAuctionStatus, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail,  Auction, AuctionStructure, RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation, RefGroupPrice, UnitPriceGroupSettings
+from .models import AuctionStructureFiles, RefCarsOrganizationAuctionStatus, AutoruModificationOptions, RefModificationsOptionGroup, RefModificationsOption, AutoruModificationOptionsDetail,  Auction, AuctionStructure, RefStatusEstimation, RefTypeDrive, RefMarkTyres, RefWidthTyres, RefProfileTyres, RefRadius, RefSezonTyres, RefPsdDisk, RefTypeDisk, RefDiaDisk, RefEtDisk, RefFilial, AutoruModificationSpecifications, RefSpecification, RefSpecificationData, RefEventCarsOrganization, RefRatingCarsOrganization, RefStore, RefCarsOrganizationFiles, RefCarsOrganization, RefAvito, RefTypeBody, RefTypeEngine, RefUnitGroup, RefExchangeCars, RefTypeCanceledCheckList, RefIb, RefTypeItemRepair, AutoruMark, AutoruModification, AutoruComplectation, AutoruModel, RefArea, RefCity, RefOrganization, RefUnit, RefCustomer, RefCars, RefStaff, RefTypeDocRLK, RefWork, RefProduct, RefTypeRepair, RefStatusDocZN, RefContactType, RefStatusEvent, RefBoardsPage, RefTypeCanceledSMS, RefManufacturer, RefCatalogProduct, RefTypeResourcePlanning, RefBoards, RefPageOcenka, RefCustomerFiltr, RefAvitoComplectation, RefGroupPrice, UnitPriceGroupSettings, RefTypeReceptionCarsOrganization
 from django_mptt_admin.admin import DjangoMpttAdmin
 
 
@@ -553,3 +553,12 @@ class PriceGroupStageDaysSnapshotAdmin(admin.ModelAdmin):
 
 
 admin.site.register(PriceGroupStageDaysSnapshot, PriceGroupStageDaysSnapshotAdmin)
+
+
+@admin.register(RefTypeReceptionCarsOrganization)
+class RefTypeReceptionCarsOrganizationAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'is_vtd')
+    list_filter = ('is_vtd',)
+    search_fields = ('name',)
+    list_editable = ('is_vtd',)
+    ordering = ('name',)

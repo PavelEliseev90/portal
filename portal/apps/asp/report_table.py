@@ -9,15 +9,16 @@ COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
-    'margin': 'v3',
-    'stock': 'v2',
-    'accepted': 'v2',
+    'margin': 'v4',
+    'stock': 'v3',
+    'accepted': 'v3',
 }
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'client', 'person', 'appraiser',
-    'type_sale',
+    'date', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'vin_new',
+    'client', 'person', 'appraiser',
+    'type_reception', 'vtd', 'group_price', 'stage_price', 'iznos', 'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
 ]
@@ -28,9 +29,15 @@ MARGIN_COLUMN_DEFS = {
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
+    'vin_new': {'label': 'VIN нового', 'sortable': True, 'sort_key': 'vin_new', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Продавец', 'sortable': True, 'sort_key': 'person', 'num': False},
     'appraiser': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'appraiser', 'num': False},
+    'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
+    'vtd': {'label': 'ВТД', 'sortable': True, 'sort_key': 'vtd', 'num': False},
+    'group_price': {'label': 'Ценовая группа', 'sortable': False, 'num': False},
+    'stage_price': {'label': 'Этап цены', 'sortable': False, 'num': False},
+    'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
     'type_sale': {'label': 'Тип продажи', 'sortable': True, 'sort_key': 'type_sale', 'num': False},
     'amount': {'label': 'Продажа', 'sortable': True, 'sort_key': 'amount', 'num': True},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
@@ -52,9 +59,13 @@ MARGIN_SORT_FIELDS = {
     'unit_source': 'rlk__unit_dc__name',
     'car': 'cars__mark',
     'vin': 'cars__vin',
+    'vin_new': 'lo__vin_new',
     'client': 'clientName',
     'person': 'staff__name',
     'appraiser': 'lo__staff__name',
+    'type_reception': 'lo__type_reception__name',
+    'vtd': 'lo__type_reception__is_vtd',
+    'iznos': 'lo__rlk__reginteractivocenka__iznos',
     'type_sale': 'typeSale',
     'amount': 'amount',
     'cost_price': 'cost_price',
@@ -70,7 +81,9 @@ MARGIN_SORT_FIELDS = {
 
 # --- Склад ---
 STOCK_DEFAULT_COLUMNS = [
-    'car', 'vin', 'unit', 'unit_source', 'status', 'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
+    'car', 'vin', 'unit', 'unit_source', 'status', 'type_reception',
+    'group_price', 'stage_price', 'iznos',
+    'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
 ]
 STOCK_COLUMN_DEFS = {
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
@@ -80,6 +93,9 @@ STOCK_COLUMN_DEFS = {
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'status': {'label': 'Статус', 'sortable': True, 'sort_key': 'status', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
+    'group_price': {'label': 'Ценовая группа', 'sortable': True, 'sort_key': 'group_price', 'num': False},
+    'stage_price': {'label': 'Этап УС', 'sortable': True, 'sort_key': 'stage_price', 'num': False},
+    'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
     'days': {'label': 'Дней', 'sortable': True, 'sort_key': 'days', 'num': True},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
     'price': {'label': 'Цена', 'sortable': True, 'sort_key': 'price', 'num': True},
@@ -98,6 +114,9 @@ STOCK_SORT_FIELDS = {
     'unit_source': 'lo__rlk__unit_dc__name',
     'status': 'status__name',
     'type_reception': 'type_reception__name',
+    'group_price': 'group_price__name',
+    'stage_price': 'stage_price__name',
+    'iznos': 'lo__rlk__reginteractivocenka__iznos',
     'days': 'days_in_stok',
     'person': 'lo__staff__name',
     'price': 'price',
@@ -111,7 +130,8 @@ STOCK_SORT_FIELDS = {
 
 # --- Принятые ---
 ACCEPTED_DEFAULT_COLUMNS = [
-    'date', 'car', 'vin', 'client', 'person', 'type_reception', 'kolesa2_reception',
+    'date', 'car', 'vin', 'client', 'person', 'type_reception',
+    'group_price', 'stage_price', 'iznos', 'kolesa2_reception',
     'cost_price', 'bcp', 'run', 'unit', 'unit_source',
 ]
 ACCEPTED_COLUMN_DEFS = {
@@ -121,6 +141,9 @@ ACCEPTED_COLUMN_DEFS = {
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
     'type_reception': {'label': 'Тип приёма', 'sortable': True, 'sort_key': 'type_reception', 'num': False},
+    'group_price': {'label': 'Ценовая группа', 'sortable': False, 'num': False},
+    'stage_price': {'label': 'Этап УС', 'sortable': False, 'num': False},
+    'iznos': {'label': 'Износ', 'sortable': True, 'sort_key': 'iznos', 'num': False},
     'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
     'bcp': {'label': 'БЦП', 'sortable': True, 'sort_key': 'bcp', 'num': True},
@@ -138,6 +161,7 @@ ACCEPTED_SORT_FIELDS = {
     'client': 'clientName',
     'person': 'staff__name',
     'type_reception': 'type_reception__name',
+    'iznos': 'rlk__reginteractivocenka__iznos',
     'kolesa2_reception': 'kolesa2_reception',
     'cost_price': 'cost_price',
     'bcp': 'bcp',
@@ -301,9 +325,21 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'unit_source': row.get('unit_source_name'),
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
             'vin': row.get('vin'),
+            'vin_new': row.get('vin_new'),
             'client': row.get('client'),
             'person': row.get('person_name'),
             'appraiser': row.get('appraiser_name'),
+            'type_reception': row.get('type_reception'),
+            'vtd': (
+                'Да' if row.get('has_vtd') and row.get('vtd')
+                else ('Нет' if row.get('has_vtd') else '')
+            ),
+            'group_price': row.get('group_price'),
+            'stage_price': row.get('stage_price'),
+            'iznos': (
+                'Да' if row.get('has_iznos') and row.get('iznos')
+                else ('Нет' if row.get('has_iznos') else '')
+            ),
             'type_sale': row.get('type_sale'),
             'amount': row.get('amount'),
             'cost_price': row.get('cost_price'),
@@ -332,6 +368,12 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'unit_source': row.get('unit_source_name'),
             'status': row.get('status_name'),
             'type_reception': row.get('type_reception'),
+            'group_price': row.get('group_price'),
+            'stage_price': row.get('stage_price'),
+            'iznos': (
+                'Да' if row.get('has_iznos') and row.get('iznos')
+                else ('Нет' if row.get('has_iznos') else '')
+            ),
             'days': row.get('days_in_stok'),
             'person': row.get('person_name'),
             'price': row.get('price'),
@@ -351,6 +393,12 @@ def cell_export_value(report_key: str, row: dict, key: str):
         'client': row.get('client'),
         'person': row.get('person_name'),
         'type_reception': row.get('type_reception'),
+        'group_price': row.get('group_price'),
+        'stage_price': row.get('stage_price'),
+        'iznos': (
+            'Да' if row.get('has_iznos') and row.get('iznos')
+            else ('Нет' if row.get('has_iznos') else '')
+        ),
         'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
         'cost_price': row.get('cost_price'),
         'bcp': row.get('bcp'),

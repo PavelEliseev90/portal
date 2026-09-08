@@ -105,6 +105,9 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     else if (col.key === 'client') val = esc(r.client || '—');
     else if (col.key === 'person') val = esc(r.person_name);
     else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
+    else if (col.key === 'group_price') val = esc(r.group_price || '—');
+    else if (col.key === 'stage_price') val = esc(r.stage_price || '—');
+    else if (col.key === 'iznos') val = r.has_iznos ? (r.iznos ? 'Да' : 'Нет') : '—';
     else if (col.key === 'kolesa2_reception') val = r.kolesa2_reception ? 'Да' : 'Нет';
     else if (col.key === 'cost_price') val = money(r.cost_price);
     else if (col.key === 'bcp') val = money(r.bcp);

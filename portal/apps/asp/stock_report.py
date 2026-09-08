@@ -84,6 +84,7 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
     price = money(row.get('price'))
     cost = money(row.get('cost_price'))
     outlay = money(row.get('outlay'))
+    iznos = row.get('lo__rlk__reginteractivocenka__iznos')
     return {
         'id': row['id'],
         'slug': row.get('slug') or '',
@@ -96,10 +97,16 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
         'unit_name': row.get('unit__name') or '—',
         'store_name': row.get('store__name') or '',
         'status_name': row.get('status__name') or '—',
-        'type_reception': row.get('type_reception__name') or '',
+        'type_reception': (
+            row.get('type_reception__name')
+            or row.get('lo__type_reception__name')
+            or ''
+        ),
         'type_sale': row.get('type_sale__name') or '',
         'stage_price': row.get('stage_price__name') or '',
         'group_price': row.get('group_price__name') or '',
+        'iznos': bool(iznos) if iznos is not None else None,
+        'has_iznos': iznos is not None,
         'person_id': row.get('lo__staff_id') or 0,
         'person_name': row.get('lo__staff__name') or 'Без оценщика',
         'unit_source_name': row.get('lo__rlk__unit_dc__name') or '',
@@ -119,6 +126,7 @@ DETAIL_VALUES = (
     'store__name', 'status__name', 'type_reception__name', 'type_sale__name',
     'stage_price__name', 'group_price__name', 'lo__staff_id', 'lo__staff__name',
     'lo__kolesa2_reception', 'lo__rlk__unit_dc__name',
+    'lo__type_reception__name', 'lo__rlk__reginteractivocenka__iznos',
     'price', 'cost_price', 'outlay', 'bcp', 'quantity', 'days_in_stok',
 )
 

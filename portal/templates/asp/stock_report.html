@@ -111,6 +111,9 @@ window.aspRenderDetailRow = function(r, money, esc) {
     else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');
     else if (col.key === 'status') val = esc(r.status_name);
     else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
+    else if (col.key === 'group_price') val = esc(r.group_price || '—');
+    else if (col.key === 'stage_price') val = esc(r.stage_price || '—');
+    else if (col.key === 'iznos') val = r.has_iznos ? (r.iznos ? 'Да' : 'Нет') : '—';
     else if (col.key === 'days') val = esc(r.days_in_stok);
     else if (col.key === 'person') val = esc(r.person_name);
     else if (col.key === 'price') val = money(r.price);
