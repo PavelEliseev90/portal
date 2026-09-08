@@ -3059,6 +3059,42 @@ class RefCarsOrganization(models.Model):
         except:
             s = 1
     
+    def build_organization_car_slug(self):
+        """Человекочитаемый slug + id карточки на портале.
+
+        Номера листов оценки и куски VIN повторяются между ИБ 1С,
+        поэтому без pk ссылка /cars/<slug>/ не уникальна.
+        """
+        vin = self.vin or ''
+        if not self.is_new:
+            lo_num = (self.lo_link_number or '').replace('ПО-', '')
+            name_slug = (
+                transliterate(self.name or '')
+                + '_'
+                + str(vin[0:5])
+                + str(vin[15:18])
+                + '_'
+                + str(lo_num)
+            )
+        else:
+            name_slug = ''
+            try:
+                name_slug = transliterate(self.modification_autoru.model.mark.name).replace(' ', '_')
+                name_slug = name_slug + '_' + transliterate(self.modification_autoru.model.name).replace(' ', '_')
+            except Exception:
+                name_slug = ''
+            if name_slug:
+                name_slug = name_slug + '_'
+            lo_uin = self.lo_uin or ''
+            name_slug = name_slug + str(lo_uin[0:10]) + str(lo_uin[14:18])
+
+        base = slugify((name_slug or 'car').lower()).strip('-_') or 'car'
+        if self.pk:
+            suffix = f'_{self.pk}'
+            if not base.endswith(suffix):
+                base = f'{base}{suffix}'
+        return base[:512]
+
     def save(self, *args, **kwargs):
         
         self.vin = self.vin.upper()
@@ -3069,22 +3105,12 @@ class RefCarsOrganization(models.Model):
                 if lo != None:
                     self.lo = lo
 
-        if not self.slug or len(self.slug) < 8:
-            if self.is_new == False:
-                name_slug = transliterate(self.name) + '_' + str(self.vin[0:5]) + self.vin[15:18] + '_' + str(self.lo_link_number.replace('ПО-', ''))
-                self.slug = slugify(name_slug.lower())
-            else:
-                name_slug = ''
-                try:
-                    name_slug = transliterate(self.modification_autoru.model.mark.name).replace(' ', '_')
-                    name_slug = name_slug + '_' + transliterate(self.modification_autoru.model.name).replace(' ', '_')
-                except:
-                    s = 1
-                if name_slug != '':
-                    name_slug = name_slug + "_"
+        slug_missing = not self.slug or len(self.slug) < 8
+        if slug_missing and not self.pk:
+            super().save(*args, **kwargs)
 
-                name_slug = name_slug + str(self.lo_uin[0:10]) + self.lo_uin[14:18]
-                self.slug = slugify(name_slug.lower())
+        if not self.slug or len(self.slug) < 8:
+            self.slug = self.build_organization_car_slug()
         
         try:
             text_search = ''

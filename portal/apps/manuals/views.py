@@ -85,7 +85,8 @@ def manuals(request):
 			
 			user = request.user
 			
-			tags = ManualsTag.objects.all()
+			tags = ManualsTag.objects.all().order_by('name')
+			manuals = manuals.select_related('author').prefetch_related('tags')
 			
 			filtr = {
 				'tag_id'			: tag_id,
@@ -111,45 +112,52 @@ def manual_edit(request):
 		if request.user.is_authenticated:
 			if request.method == "GET":
 				id = 0 
-				manual = ''
+				manual = None
+				selected_tag_ids = []
 				if 'id' in request.GET:
 					id 		= int(request.GET['id'])
 					manual 	= Manuals.objects.get(pk=id)
+					selected_tag_ids = list(manual.tags.values_list('id', flat=True))
 				
 				user = request.user
-				tags = ManualsTag.objects.all()
+				tags = ManualsTag.objects.all().order_by('name')
 				
 				params = {
-					'type'		: 'manuals',
-					'user'		: user,
-					'manual'	: manual,
-					'tags'		: tags,
-					'user'		: request.user,
+					'type'				: 'manuals',
+					'user'				: user,
+					'manual'			: manual,
+					'tags'				: tags,
+					'selected_tag_ids'	: selected_tag_ids,
 				}
 				return render(request, 'manuals/lk_manual_edit.html', {'params': params})
 			else:
 				title 		= request.POST['manual_title']
 				text 		= request.POST['text']
 				activated 	= False
-				id 			= request.POST.get('uin', 0)
+				id_raw		= request.POST.get('uin') or '0'
+				try:
+					pk = int(id_raw)
+				except (TypeError, ValueError):
+					pk = 0
 				
 				if 'activated' in request.POST:
 					activated = True
 				
-				if id == 0:
+				if pk == 0:
 					new_manual = Manuals()
+					new_manual.dateCreate = DT.datetime.now()
 				else:
-					new_manual = Manuals.objects.get(pk=int(id))
+					new_manual = Manuals.objects.get(pk=pk)
 
 				new_manual.title 		= title
 				new_manual.text 		= text
 				new_manual.author 		= request.user
-				new_manual.dateCreate 	= DT.datetime.now()
 				new_manual.dateUpdate 	= DT.datetime.now()
 				new_manual.activated 	= activated
 				
 				new_manual.save()
 
+				new_manual.tags.clear()
 				for key in request.POST.keys():
 					if key.startswith('tag_id_'):
 						tad_id = int(key.replace('tag_id_', ''))
@@ -157,6 +165,8 @@ def manual_edit(request):
 				
 				new_manual.save()
 
+				if new_manual.slug:
+					return HttpResponseRedirect('/manuals/' + new_manual.slug + '/')
 				return HttpResponseRedirect('/manuals')	
 		else:
 			return HttpResponseRedirect('/login')

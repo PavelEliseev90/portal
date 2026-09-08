@@ -635,3 +635,69 @@ def cumulative_send(request):
     if query:
         return redirect(f'{url}?{urlencode(query)}')
     return redirect(url)
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def cars_delete_search(request):
+    """Поиск автомобиля организации для удаления вместе со связанными записями."""
+    from .car_delete import related_total, search_organization_cars
+
+    q = (request.GET.get('q') or '').strip()
+    cars = search_organization_cars(q) if q else []
+    rows = []
+    for car in cars:
+        rows.append({
+            'car': car,
+            'related_total': related_total(car),
+        })
+    params = {
+        'type': 'monitoring_cars_delete',
+        'q': q,
+        'rows': rows,
+        'found': len(rows),
+    }
+    return render(request, 'monitoring/cars_delete.html', {'params': params})
+
+
+@login_required
+@user_passes_test(_staff_required, login_url='/login/')
+def cars_delete_preview(request, pk):
+    """Показать связанные объекты и удалить автомобиль организации."""
+    from .car_delete import delete_organization_car, inspect_car_relations
+
+    car = get_object_or_404(
+        RefCarsOrganization.objects.select_related('unit', 'store', 'lo', 'organization'),
+        pk=pk,
+    )
+
+    if request.method == 'POST':
+        if request.POST.get('confirm') != '1' or str(request.POST.get('car_id')) != str(car.pk):
+            messages.error(request, 'Подтвердите удаление: отметьте галочку.')
+            return redirect('monitoring:cars_delete_preview', pk=car.pk)
+        try:
+            result = delete_organization_car(car, user=request.user)
+        except Exception as exc:
+            messages.error(request, f'Не удалось удалить: {exc}')
+            return redirect('monitoring:cars_delete_preview', pk=pk)
+        messages.success(
+            request,
+            'Удалён автомобиль id={pk} VIN {vin}: связанных записей {n}.'.format(
+                pk=result['pk'],
+                vin=result['vin'] or '—',
+                n=result['related_total'],
+            ),
+        )
+        q = (result['vin'] or '').strip()
+        url = reverse('monitoring:cars_delete_search')
+        if q:
+            return redirect(f'{url}?q={q}')
+        return redirect(url)
+
+    relations = inspect_car_relations(car)
+    params = {
+        'type': 'monitoring_cars_delete',
+        'car': car,
+        'relations': relations,
+    }
+    return render(request, 'monitoring/cars_delete_preview.html', {'params': params})
