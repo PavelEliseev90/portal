@@ -2,6 +2,7 @@
 """Приём автомобиля по интерактивной оценке."""
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime
 
@@ -1041,7 +1042,8 @@ def build_reception_1c_payload(interactiv_rlk: RegInteractivOcenkaRLK, reception
         ],
     }
     payload.update(build_kolesa2_1c_extras(estimation))
-    return payload
+    from django.core.serializers.json import DjangoJSONEncoder
+    return json.loads(json.dumps(payload, cls=DjangoJSONEncoder))
 
 
 def send_reception_1c(interactiv_rlk: RegInteractivOcenkaRLK, reception: RegInteractivOcenkaReception | None = None):
