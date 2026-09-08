@@ -190,7 +190,7 @@ def export_accepted_xlsx(get, request=None) -> HttpResponse:
     from asp.accepted_report import (
         DETAIL_VALUES,
         SUM_MAP,
-        _lo_row_from_values,
+        _lo_rows_from_values,
         filtered_accepted_qs,
     )
     from asp.report_common import aggregate_groups, aggregate_totals, parse_common_filters
@@ -242,7 +242,7 @@ def export_accepted_xlsx(get, request=None) -> HttpResponse:
 
     _ui, orm_order = resolve_order_by('accepted', filters.get('order_by'))
     values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
-    rows = [_lo_row_from_values(v) for v in values]
+    rows = _lo_rows_from_values(values)
     visible = get_user_columns(request, 'accepted') if request else list(ACCEPTED_DEFAULT_COLUMNS)
     cols = build_table_columns('accepted', visible)
     ws = wb.create_sheet('Детали')
@@ -262,7 +262,7 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
         SUM_MAP,
         _enrich_totals,
         _load_powerbi_by_vin,
-        _shipment_row_from_values,
+        _rows_from_values,
         filtered_shipments_qs,
     )
     from asp.report_common import aggregate_groups, aggregate_totals, parse_common_filters
@@ -336,10 +336,7 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
         _load_powerbi_by_vin([v.get('cars__vin') or '' for v in values])
         if include_pbi else {}
     )
-    rows = []
-    for v in values:
-        vin = (v.get('cars__vin') or '').strip().upper()
-        rows.append(_shipment_row_from_values(v, pbi_map.get(vin)))
+    rows = _rows_from_values(values, pbi_map)
 
     visible = get_user_columns(request, 'margin') if request else list(MARGIN_DEFAULT_COLUMNS)
     cols = build_table_columns('margin', visible)

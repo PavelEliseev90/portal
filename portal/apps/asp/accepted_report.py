@@ -70,10 +70,12 @@ DETAIL_VALUES = (
     'carsGRZ', 'clientName', 'cost_price', 'bcp', 'rlk_id', 'rlk__nomer',
     'auction', 'type_reception__name', 'kolesa2_reception',
     'cars__mark', 'cars__model', 'cars__vin', 'rlk__unit_dc__name',
+    'rlk__reginteractivocenka__iznos',
 )
 
 
 def _lo_row_from_values(row: dict) -> dict[str, Any]:
+    iznos = row.get('rlk__reginteractivocenka__iznos')
     return {
         'id': row['id'],
         'nomer': row.get('nomer') or '',
@@ -94,6 +96,10 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'plate': row.get('carsGRZ') or '',
         'client': row.get('clientName') or '',
         'type_reception': row.get('type_reception__name') or '',
+        'group_price': '',
+        'stage_price': '',
+        'iznos': bool(iznos) if iznos is not None else None,
+        'has_iznos': iznos is not None,
         'kolesa2_reception': bool(row.get('kolesa2_reception')),
         'cost_price': money(row.get('cost_price')),
         'bcp': money(row.get('bcp')),
@@ -103,11 +109,65 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
     }
 
 
+def _apply_stock_price_fields(rows: list[dict]) -> None:
+    """ЦГ и этап УС с карточки автомобиля, связанной с листом оценки."""
+    lo_ids = []
+    seen = set()
+    for row in rows:
+        lo_id = row.get('id')
+        if lo_id and lo_id not in seen:
+            seen.add(lo_id)
+            lo_ids.append(lo_id)
+    if not lo_ids:
+        return
+    try:
+        from refs.models import RefCarsOrganization
+    except Exception:
+        return
+
+    by_lo_vin = {}
+    by_lo = {}
+    chunk = 500
+    for i in range(0, len(lo_ids), chunk):
+        part = lo_ids[i:i + chunk]
+        qs = (
+            RefCarsOrganization.objects
+            .filter(lo_id__in=part)
+            .order_by('-pk')
+            .values('lo_id', 'vin', 'group_price__name', 'stage_price__name')
+        )
+        for item in qs:
+            lo_id = item.get('lo_id')
+            vin = (item.get('vin') or '').strip().upper()
+            payload = {
+                'group_price': item.get('group_price__name') or '',
+                'stage_price': item.get('stage_price__name') or '',
+            }
+            if vin and (lo_id, vin) not in by_lo_vin:
+                by_lo_vin[(lo_id, vin)] = payload
+            if lo_id not in by_lo:
+                by_lo[lo_id] = payload
+
+    for row in rows:
+        lo_id = row.get('id')
+        vin = (row.get('vin') or '').strip().upper()
+        info = by_lo_vin.get((lo_id, vin)) if lo_id and vin else None
+        if not info and lo_id:
+            info = by_lo.get(lo_id)
+        info = info or {}
+        row['group_price'] = info.get('group_price') or ''
+        row['stage_price'] = info.get('stage_price') or ''
+
+
+def _lo_rows_from_values(values: list[dict]) -> list[dict[str, Any]]:
+    rows = [_lo_row_from_values(row) for row in values]
+    _apply_stock_price_fields(rows)
+    return rows
+
+
 def iter_detail_rows(qs, limit=GROUP_DETAIL_LIMIT):
-    return [
-        _lo_row_from_values(row)
-        for row in qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)[:limit]
-    ]
+    values = list(qs.order_by('-dataTime', '-pk').values(*DETAIL_VALUES)[:limit])
+    return _lo_rows_from_values(values)
 
 
 def build_group_details(get) -> dict[str, Any]:
@@ -150,6 +210,7 @@ def build_accepted_report(get) -> dict[str, Any]:
         rows, page_obj, paginator = paginate_values_qs(
             values_qs, filters['page'], row_mapper=_lo_row_from_values,
         )
+        _apply_stock_price_fields(rows)
         truncated = False
     elif view == 'by_unit':
         groups = aggregate_groups(

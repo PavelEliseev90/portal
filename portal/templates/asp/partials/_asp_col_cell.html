@@ -10,9 +10,15 @@
   {% elif col.key == 'unit_source' %}<td>{{ r.unit_source_name|default:"—" }}</td>
   {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
+  {% elif col.key == 'vin_new' %}<td class="small">{{ r.vin_new|default:"—" }}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
   {% elif col.key == 'appraiser' %}<td>{{ r.appraiser_name|default:"—" }}</td>
+  {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}</td>
+  {% elif col.key == 'vtd' %}<td>{% if r.has_vtd %}{% if r.vtd %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
+  {% elif col.key == 'group_price' %}<td>{{ r.group_price|default:"—" }}</td>
+  {% elif col.key == 'stage_price' %}<td>{{ r.stage_price|default:"—" }}</td>
+  {% elif col.key == 'iznos' %}<td>{% if r.has_iznos %}{% if r.iznos %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
   {% elif col.key == 'type_sale' %}<td>{{ r.type_sale|default:"—" }}</td>
   {% elif col.key == 'amount' %}<td class="num">{{ r.amount|floatformat:"0g" }}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
@@ -40,6 +46,9 @@
   {% elif col.key == 'unit_source' %}<td>{{ r.unit_source_name|default:"—" }}</td>
   {% elif col.key == 'status' %}<td>{{ r.status_name }}{% if r.type_reception %}<div class="small text-muted">{{ r.type_reception }}</div>{% endif %}</td>
   {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}</td>
+  {% elif col.key == 'group_price' %}<td>{{ r.group_price|default:"—" }}</td>
+  {% elif col.key == 'stage_price' %}<td>{{ r.stage_price|default:"—" }}</td>
+  {% elif col.key == 'iznos' %}<td>{% if r.has_iznos %}{% if r.iznos %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
   {% elif col.key == 'days' %}<td class="num">{{ r.days_in_stok }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
   {% elif col.key == 'price' %}<td class="num">{{ r.price|floatformat:"0g" }}</td>
@@ -62,6 +71,9 @@
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
   {% elif col.key == 'type_reception' %}<td>{{ r.type_reception|default:"—" }}{% if r.auction %} <span class="badge bg-warning text-dark">аукцион</span>{% endif %}</td>
+  {% elif col.key == 'group_price' %}<td>{{ r.group_price|default:"—" }}</td>
+  {% elif col.key == 'stage_price' %}<td>{{ r.stage_price|default:"—" }}</td>
+  {% elif col.key == 'iznos' %}<td>{% if r.has_iznos %}{% if r.iznos %}Да{% else %}Нет{% endif %}{% else %}—{% endif %}</td>
   {% elif col.key == 'kolesa2_reception' %}<td>{% if r.kolesa2_reception %}Да{% else %}Нет{% endif %}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
   {% elif col.key == 'bcp' %}<td class="num">{{ r.bcp|floatformat:"0g" }}</td>

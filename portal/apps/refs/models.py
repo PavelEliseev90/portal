@@ -1831,7 +1831,12 @@ class RefTypeSaleCarsOrganization(models.Model):
 
 class RefTypeReceptionCarsOrganization(models.Model):
     name            = models.CharField("Наименование", max_length=200, default='')
-    
+    is_vtd          = models.BooleanField(
+        'ВТД',
+        default=False,
+        help_text='Трейд-ин б/у на б/у. Используется в отчёте кумулятивной маржи.',
+    )
+
     def __str__(self):
         return "{}".format(self.name)
 

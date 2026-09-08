@@ -121,9 +121,15 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');
     else if (col.key === 'car') val = '<div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) + '</div>';
     else if (col.key === 'vin') val = esc(r.vin);
+    else if (col.key === 'vin_new') val = esc(r.vin_new || '—');
     else if (col.key === 'client') val = esc(r.client || '—');
     else if (col.key === 'person') val = esc(r.person_name);
     else if (col.key === 'appraiser') val = esc(r.appraiser_name || '—');
+    else if (col.key === 'type_reception') val = esc(r.type_reception || '—');
+    else if (col.key === 'vtd') val = r.has_vtd ? (r.vtd ? 'Да' : 'Нет') : '—';
+    else if (col.key === 'group_price') val = esc(r.group_price || '—');
+    else if (col.key === 'stage_price') val = esc(r.stage_price || '—');
+    else if (col.key === 'iznos') val = r.has_iznos ? (r.iznos ? 'Да' : 'Нет') : '—';
     else if (col.key === 'type_sale') val = esc(r.type_sale || '—');
     else if (col.key === 'amount') val = money(r.amount);
     else if (col.key === 'cost_price') val = money(r.cost_price);

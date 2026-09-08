@@ -72,12 +72,33 @@ DETAIL_VALUES = (
     'amount', 'cost_price', 'outlay', 'agreement_id', 'agreement__nomer',
     'agreement__cm_actual', 'agreement__cm_est',
     'amount_reward_credit', 'amount_reward_opfu', 'amount_kits',
+    'lo_id', 'agreement__lo_id',
     'lo__kolesa2_reception', 'agreement__lo__kolesa2_reception',
     'lo__dataTime', 'agreement__lo__dataTime',
     'lo__staff__name', 'agreement__lo__staff__name',
+    'lo__type_reception__name', 'agreement__lo__type_reception__name',
+    'lo__type_reception__is_vtd', 'agreement__lo__type_reception__is_vtd',
+    'lo__vin_new', 'agreement__lo__vin_new',
+    'lo__rlk__reginteractivocenka__iznos',
+    'agreement__lo__rlk__reginteractivocenka__iznos',
+    'rlk__reginteractivocenka__iznos',
     'rlk__unit_dc__name', 'lo__rlk__unit_dc__name',
     'agreement__rlk__unit_dc__name', 'agreement__lo__rlk__unit_dc__name',
 )
+
+
+def _first_text(*vals):
+    for v in vals:
+        if v not in (None, ''):
+            return v
+    return ''
+
+
+def _first_bool(*vals):
+    for v in vals:
+        if v is not None:
+            return bool(v)
+    return None
 
 
 def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, Any]:
@@ -86,6 +107,21 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
     outlay = money(row.get('outlay'))
     pbi = pbi or {}
     has_cm = bool(row.get('agreement_id'))
+    type_reception = _first_text(
+        row.get('lo__type_reception__name'),
+        row.get('agreement__lo__type_reception__name'),
+    )
+    if row.get('lo__type_reception__name'):
+        vtd = bool(row.get('lo__type_reception__is_vtd'))
+    elif row.get('agreement__lo__type_reception__name'):
+        vtd = bool(row.get('agreement__lo__type_reception__is_vtd'))
+    else:
+        vtd = None
+    iznos = _first_bool(
+        row.get('lo__rlk__reginteractivocenka__iznos'),
+        row.get('agreement__lo__rlk__reginteractivocenka__iznos'),
+        row.get('rlk__reginteractivocenka__iznos'),
+    )
     return {
         'id': row['id'],
         'nomer': row.get('nomer') or '',
@@ -130,7 +166,81 @@ def _shipment_row_from_values(row: dict, pbi: dict | None = None) -> dict[str, A
         'pbi_marzhi': money(pbi.get('summa_marzhi_bez_nds')),
         'pbi_vpopfu': money(pbi.get('vpopfu')),
         'has_pbi': bool(pbi),
+        'type_reception': type_reception,
+        'vin_new': _first_text(row.get('lo__vin_new'), row.get('agreement__lo__vin_new')),
+        'iznos': iznos,
+        'has_iznos': iznos is not None,
+        'vtd': vtd,
+        'has_vtd': vtd is not None,
+        'group_price': '',
+        'stage_price': '',
     }
+
+
+def _load_stock_price_map(values: list[dict]) -> dict[str, Any]:
+    """ЦГ и этап УС с карточки автомобиля, без join в .values() отгрузки."""
+    lo_ids = []
+    seen = set()
+    for row in values:
+        lo_id = row.get('lo_id') or row.get('agreement__lo_id')
+        if lo_id and lo_id not in seen:
+            seen.add(lo_id)
+            lo_ids.append(lo_id)
+    if not lo_ids:
+        return {'by_lo_vin': {}, 'by_lo': {}}
+    try:
+        from refs.models import RefCarsOrganization
+    except Exception:
+        return {'by_lo_vin': {}, 'by_lo': {}}
+
+    by_lo_vin = {}
+    by_lo = {}
+    chunk = 500
+    for i in range(0, len(lo_ids), chunk):
+        part = lo_ids[i:i + chunk]
+        qs = (
+            RefCarsOrganization.objects
+            .filter(lo_id__in=part)
+            .order_by('-pk')
+            .values('lo_id', 'vin', 'group_price__name', 'stage_price__name')
+        )
+        for item in qs:
+            lo_id = item.get('lo_id')
+            vin = (item.get('vin') or '').strip().upper()
+            payload = {
+                'group_price': item.get('group_price__name') or '',
+                'stage_price': item.get('stage_price__name') or '',
+            }
+            if vin and (lo_id, vin) not in by_lo_vin:
+                by_lo_vin[(lo_id, vin)] = payload
+            if lo_id not in by_lo:
+                by_lo[lo_id] = payload
+    return {'by_lo_vin': by_lo_vin, 'by_lo': by_lo}
+
+
+def _apply_stock_price_fields(values: list[dict], rows: list[dict]) -> None:
+    stock = _load_stock_price_map(values)
+    by_lo_vin = stock['by_lo_vin']
+    by_lo = stock['by_lo']
+    for src, row in zip(values, rows):
+        lo_id = src.get('lo_id') or src.get('agreement__lo_id')
+        vin = (src.get('cars__vin') or '').strip().upper()
+        info = by_lo_vin.get((lo_id, vin)) if lo_id and vin else None
+        if not info and lo_id:
+            info = by_lo.get(lo_id)
+        info = info or {}
+        row['group_price'] = info.get('group_price') or ''
+        row['stage_price'] = info.get('stage_price') or ''
+
+
+def _rows_from_values(values: list[dict], pbi_map: dict | None = None) -> list[dict[str, Any]]:
+    pbi_map = pbi_map or {}
+    rows = []
+    for v in values:
+        vin = (v.get('cars__vin') or '').strip().upper()
+        rows.append(_shipment_row_from_values(v, pbi_map.get(vin)))
+    _apply_stock_price_fields(values, rows)
+    return rows
 
 
 def _load_powerbi_by_vin(vins: list[str]) -> dict[str, Any]:
@@ -183,11 +293,7 @@ def iter_detail_rows(qs, include_pbi=False, limit=GROUP_DETAIL_LIMIT):
     pbi_map = {}
     if include_pbi:
         pbi_map = _load_powerbi_by_vin([v.get('cars__vin') or '' for v in values])
-    rows = []
-    for v in values:
-        vin = (v.get('cars__vin') or '').strip().upper()
-        rows.append(_shipment_row_from_values(v, pbi_map.get(vin)))
-    return rows
+    return _rows_from_values(values, pbi_map)
 
 
 def build_group_details(get) -> dict[str, Any]:
@@ -254,10 +360,7 @@ def build_cumulative_margin_report(get) -> dict[str, Any]:
             _load_powerbi_by_vin([v.get('cars__vin') or '' for v in page_values])
             if include_pbi else {}
         )
-        rows = []
-        for v in page_values:
-            vin = (v.get('cars__vin') or '').strip().upper()
-            rows.append(_shipment_row_from_values(v, pbi_map.get(vin)))
+        rows = _rows_from_values(page_values, pbi_map)
         truncated = False
     elif view == 'by_unit':
         groups = aggregate_groups(
