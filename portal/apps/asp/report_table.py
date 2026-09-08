@@ -9,14 +9,14 @@ COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
-    'margin': 'v4',
+    'margin': 'v5',
     'stock': 'v3',
     'accepted': 'v3',
 }
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'vin_new',
+    'date', 'agreement', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'vin_new',
     'client', 'person', 'appraiser',
     'type_reception', 'vtd', 'group_price', 'stage_price', 'iznos', 'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
@@ -48,8 +48,6 @@ MARGIN_COLUMN_DEFS = {
     'amount_reward_opfu': {'label': 'Вознагр. ОПФУ', 'sortable': True, 'sort_key': 'amount_reward_opfu', 'num': True},
     'amount_kits': {'label': 'Комплекты', 'sortable': True, 'sort_key': 'amount_kits', 'num': True},
     'kolesa2_reception': {'label': 'Приёмка 2КК', 'sortable': True, 'sort_key': 'kolesa2_reception', 'num': False},
-    'pbi_cum': {'label': 'БУ кумул.', 'sortable': False, 'num': True},
-    'pbi_kvp': {'label': 'КВП', 'sortable': False, 'num': True},
     'agreement': {'label': 'Соглашение', 'sortable': True, 'sort_key': 'agreement', 'num': False},
 }
 MARGIN_SORT_FIELDS = {
@@ -60,7 +58,7 @@ MARGIN_SORT_FIELDS = {
     'car': 'cars__mark',
     'vin': 'cars__vin',
     'vin_new': 'lo__vin_new',
-    'client': 'clientName',
+    'client': 'client__name',
     'person': 'staff__name',
     'appraiser': 'lo__staff__name',
     'type_reception': 'lo__type_reception__name',
@@ -350,8 +348,6 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'amount_reward_opfu': row.get('amount_reward_opfu'),
             'amount_kits': row.get('amount_kits'),
             'kolesa2_reception': 'Да' if row.get('kolesa2_reception') else 'Нет',
-            'pbi_cum': row.get('pbi_cum_full') if row.get('has_pbi') else '',
-            'pbi_kvp': row.get('pbi_kvp') if row.get('has_pbi') else '',
             'agreement': row.get('agreement_nomer'),
         }
         if key == 'date':

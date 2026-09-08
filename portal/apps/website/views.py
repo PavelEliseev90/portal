@@ -3023,24 +3023,131 @@ def docs_rlk(request):
 def doc_rlk(request, id):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
-    else:
-        countListRecord = 25
-        if request.GET.get('select_count', 25):
-            countListRecord = int(request.GET.get('select_count', 25))
-        name    = ''
-        toast   = ''
-        doc   = DocRLK.objects.get(pk = id)
 
-        filtr = {
-            'name': name
-        }
-        params = {
-            'type'          : 'docs_rlk',
-            'filtr'         : filtr,
-            'toast'         : toast,
-            'doc'           : doc
-        }
-        return render(request, 'website/doc_rlk.html', {'params': params}) 
+    doc = (
+        DocRLK.objects.select_related(
+            'unit', 'unit_dc', 'staff', 'customer', 'cars', 'type', 'status',
+            'contacType', 'type_archive', 'footing', 'staffECO1', 'staffECO2',
+        )
+        .filter(pk=id)
+        .first()
+    )
+    if doc is None:
+        raise Http404
+
+    events = list(
+        DocRLKEvents.objects.filter(rlk=doc)
+        .select_related('contacType', 'staff', 'status')
+        .order_by('dataTime')
+    )
+
+    sales_rlk = doc.footing if (doc.eco and doc.footing_id) else doc
+    rlk_ids = {doc.pk}
+    if sales_rlk and sales_rlk.pk not in rlk_ids:
+        rlk_ids.add(sales_rlk.pk)
+
+    agreements = list(
+        DocCarAgreement.objects.filter(rlk_id__in=rlk_ids)
+        .select_related('unit', 'client')
+        .order_by('-dataTime')[:8]
+    )
+    shipments = list(
+        DocCarShipment.objects.filter(rlk_id__in=rlk_ids)
+        .select_related('unit', 'client')
+        .order_by('-dataTime')[:8]
+    )
+    trade_ins = list(
+        doc.rlk_trade_in().select_related('unit', 'status').order_by('-dataTime')[:8]
+    )
+    opfu = list(
+        doc.opfu_in().select_related('unit', 'status').order_by('-dataTime')[:8]
+    )
+
+    estimation_id = doc.estimation()
+    estimation_rlk = doc.estimation_source_rlk()
+
+    check = None
+    check_url = None
+    if doc.unit_id:
+        try:
+            check = doc.get_check()
+        except Exception:
+            check = None
+        if check is not None:
+            if doc.unit.buauto:
+                check_url = '/checklists/glav/op_kors/op_kors_doc/?checkid={}'.format(doc.id)
+            else:
+                check_url = '/checklists/glav/op/doc/?checkid={}'.format(doc.id)
+
+    opros = doc.get_opros()
+    opros_rating = opros.get_rating() if opros else None
+
+    chat = Chat.objects.filter(Q(rlk_id=doc.pk) | Q(slug='rlk_' + str(doc.pk))).first()
+
+    lo = DocLO.objects.filter(rlk_id__in=rlk_ids).order_by('-dataTime').first()
+    car_slug = None
+    if lo is not None:
+        org_car = RefCarsOrganization.objects.filter(lo_id=lo.id).exclude(slug='').only('slug').first()
+        if org_car:
+            car_slug = org_car.slug
+    if not car_slug:
+        vin = (doc.vin_trade_in or '').strip()
+        if not vin and doc.cars_id:
+            vin = (getattr(doc.cars, 'vin', None) or '').strip()
+        if vin:
+            org_car = (
+                RefCarsOrganization.objects.filter(vin__iexact=vin)
+                .exclude(slug='')
+                .only('slug')
+                .order_by('-id')
+                .first()
+            )
+            if org_car:
+                car_slug = org_car.slug
+
+    calc = None
+    try:
+        from prices_car.models import CarCalculations
+        calc = (
+            CarCalculations.objects.filter(rlk_id__in=rlk_ids)
+            .select_related('car')
+            .order_by('-date')
+            .first()
+        )
+        if not car_slug and calc and calc.car_id and calc.car.slug:
+            car_slug = calc.car.slug
+    except Exception:
+        calc = None
+
+    visit_duration = None
+    try:
+        if doc.dataTimeCreate and doc.dataEnd and doc.dataEnd > doc.dataTimeCreate:
+            visit_duration = doc.dataEnd - doc.dataTimeCreate
+    except Exception:
+        visit_duration = None
+
+    params = {
+        'type'              : 'docs_rlk',
+        'doc'               : doc,
+        'events'            : events,
+        'agreements'        : agreements,
+        'shipments'         : shipments,
+        'trade_ins'         : trade_ins,
+        'opfu'              : opfu,
+        'estimation_id'     : estimation_id,
+        'estimation_rlk'    : estimation_rlk,
+        'check'             : check,
+        'check_url'         : check_url,
+        'opros'             : opros,
+        'opros_rating'      : opros_rating,
+        'chat'              : chat,
+        'car_slug'          : car_slug,
+        'lo'                : lo,
+        'calc'              : calc,
+        'visit_duration'    : visit_duration,
+        'sales_rlk'         : sales_rlk,
+    }
+    return render(request, 'website/doc_rlk.html', {'params': params}) 
 
 
 
@@ -6783,16 +6890,9 @@ def doc_car_agreement(request, id):
     return render(request, 'website/doc_car_agreement.html', {'params': params}) 
 
 
-def docs_car_shipment(request):
-    
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    filtr_count = 0
-    subqyery                = RefCarsOrganization.objects.filter(lo__id = OuterRef(name='lo__id'))
-    
-    docs        = DocCarShipment.objects.all().order_by('-dataTime')
-    docs        = docs.annotate(
+def _annotate_lo_from_cars_org(qs):
+    subqyery = RefCarsOrganization.objects.filter(lo__id=OuterRef(name='lo__id'))
+    qs = qs.annotate(
         lo_date                     = Subquery(subqyery.values('lo_link_date')[:1])).annotate(
         lo_number                   = Subquery(subqyery.values('lo_link_number')[:1])).annotate(
         lo_type_reception           = Subquery(subqyery.values('type_reception__name')[:1])).annotate(
@@ -6808,24 +6908,32 @@ def docs_car_shipment(request):
         lo_stageprice               = Subquery(subqyery.values('stage_price__name')[:1])).annotate(
         lo_rating                   = Subquery(subqyery.values('rating__name')[:1])).annotate(
         lo_mark                     = Subquery(subqyery.values('modification_autoru__model__mark__name')[:1])).annotate(
-        lo_model                    = Subquery(subqyery.values('modification_autoru__model__name')[:1])).annotate(     
-        lo_modification             = Subquery(subqyery.values('modification_autoru__name')[:1])).annotate(    
-        lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(     
-        lo_quantity                 = Subquery(subqyery.values('quantity')[:1])).annotate(   
-        lo_run                      = Subquery(subqyery.values('run')[:1])).annotate(     
+        lo_model                    = Subquery(subqyery.values('modification_autoru__model__name')[:1])).annotate(
+        lo_modification             = Subquery(subqyery.values('modification_autoru__name')[:1])).annotate(
         lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(
-        lo_color                    = Subquery(subqyery.values('color')[:1])).annotate(     
-        lo_days_next_stage          = Subquery(subqyery.values('days_next_stage')[:1])).annotate(     
-        lo_task                     = Subquery(subqyery.values('task')[:1])).annotate(                 
+        lo_quantity                 = Subquery(subqyery.values('quantity')[:1])).annotate(
+        lo_run                      = Subquery(subqyery.values('run')[:1])).annotate(
+        lo_color                    = Subquery(subqyery.values('color')[:1])).annotate(
+        lo_days_next_stage          = Subquery(subqyery.values('days_next_stage')[:1])).annotate(
+        lo_task                     = Subquery(subqyery.values('task')[:1])).annotate(
         lo_store                    = Subquery(subqyery.values('store__name')[:1])).annotate(
         lo_unit                     = Subquery(subqyery.values('unit__name')[:1])).annotate(
         lo_is_new                   = Subquery(subqyery.values('is_new')[:1])).annotate(
         lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
         lo_slug                     = Subquery(subqyery.values('slug')[:1]))
-        
     from documents.rlk_estimation import subquery_estimation_id
-    docs = docs.annotate(
-        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
+    return qs.annotate(estimation=subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
+
+
+def docs_car_shipment(request):
+    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    
+    filtr_count = 0
+    docs = _annotate_lo_from_cars_org(
+        DocCarShipment.objects.select_related('unit', 'client', 'cars', 'agreement').all().order_by('-dataTime')
+    )
     
     name = request.GET.get('name', '')
     if name != '':
@@ -6853,55 +6961,36 @@ def doc_car_shipment(request, id):
     
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    subqyery                = RefCarsOrganization.objects.filter(lo__id = OuterRef(name='lo__id'))
-    shipment                = DocCarShipment.objects.get(pk = id)
-    agreement               = shipment.agreement
 
-    doc        = DocCarAgreement.objects.filter(pk = agreement.id)
-    doc        = doc.annotate(
-        lo_date                     = Subquery(subqyery.values('lo_link_date')[:1])).annotate(
-        lo_number                   = Subquery(subqyery.values('lo_link_number')[:1])).annotate(
-        lo_type_reception           = Subquery(subqyery.values('type_reception__name')[:1])).annotate(
-        lo_status                   = Subquery(subqyery.values('status__name')[:1])).annotate(
-        lo_vin                      = Subquery(subqyery.values('vin')[:1])).annotate(
-        lo_vin2                     = Subquery(subqyery.values('vin2')[:1])).annotate(
-        lo_days_in_stok             = Subquery(subqyery.values('days_in_stok')[:1])).annotate(
-        lo_type_sale                = Subquery(subqyery.values('type_sale__name')[:1])).annotate(
-        lo_description_podgotovka   = Subquery(subqyery.values('description_podgotovka')[:1])).annotate(
-        lo_description_op           = Subquery(subqyery.values('description_op')[:1])).annotate(
-        lo_evaluation               = Subquery(subqyery.values('evaluation__name')[:1])).annotate(
-        lo_group_price              = Subquery(subqyery.values('group_price__name')[:1])).annotate(
-        lo_stageprice               = Subquery(subqyery.values('stage_price__name')[:1])).annotate(
-        lo_rating                   = Subquery(subqyery.values('rating__name')[:1])).annotate(
-        lo_mark                     = Subquery(subqyery.values('modification_autoru__model__mark__name')[:1])).annotate(
-        lo_model                    = Subquery(subqyery.values('modification_autoru__model__name')[:1])).annotate(     
-        lo_modification             = Subquery(subqyery.values('modification_autoru__name')[:1])).annotate(    
-        lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(     
-        lo_quantity                 = Subquery(subqyery.values('quantity')[:1])).annotate(   
-        lo_run                      = Subquery(subqyery.values('run')[:1])).annotate(     
-        lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(
-        lo_color                    = Subquery(subqyery.values('color')[:1])).annotate(     
-        lo_days_next_stage          = Subquery(subqyery.values('days_next_stage')[:1])).annotate(     
-        lo_task                     = Subquery(subqyery.values('task')[:1])).annotate(                 
-        lo_store                    = Subquery(subqyery.values('store__name')[:1])).annotate(
-        lo_unit                     = Subquery(subqyery.values('unit__name')[:1])).annotate(
-        lo_is_new                   = Subquery(subqyery.values('is_new')[:1])).annotate(
-        lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
-        lo_slug                     = Subquery(subqyery.values('slug')[:1]))
-        
-    from documents.rlk_estimation import subquery_estimation_id
-    doc = doc.annotate(
-        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
-    
+    docs = _annotate_lo_from_cars_org(
+        DocCarShipment.objects.filter(pk=id).select_related(
+            'organization', 'unit', 'client', 'staff', 'cars', 'rlk', 'lo', 'agreement'
+        )
+    )
+    shipment = docs.first()
+    if shipment is None:
+        raise Http404
 
-    doc = doc[0]   
+    agreement = None
+    if shipment.agreement_id:
+        agreement = _annotate_lo_from_cars_org(
+            DocCarAgreement.objects.filter(pk=shipment.agreement_id).select_related(
+                'organization', 'unit', 'client', 'staff', 'rlk', 'lo'
+            )
+        ).first()
+
+    car = shipment
+    if not getattr(shipment, 'lo_slug', None) and agreement is not None:
+        car = agreement
+
     params = {
-        
         'type'          : 'doc_car_shipment',
         'user'          : request.user,
-        'object'        : doc,
-        'shipment'      : shipment
+        'object'        : shipment,
+        'shipment'      : shipment,
+        'agreement'     : agreement,
+        'car'           : car,
+        'opros'         : shipment.get_opros(),
     }
     return render(request, 'website/doc_car_shipment.html', {'params':params}) 
 

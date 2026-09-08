@@ -111,6 +111,8 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
         'person_name': row.get('lo__staff__name') or 'Без оценщика',
         'unit_source_name': row.get('lo__rlk__unit_dc__name') or '',
         'kolesa2_reception': bool(row.get('lo__kolesa2_reception')),
+        'rlk_id': row.get('lo__rlk_id'),
+        'lo_id': row.get('lo_id'),
         'price': price,
         'cost_price': cost,
         'outlay': outlay,
@@ -125,7 +127,7 @@ DETAIL_VALUES = (
     'id', 'slug', 'vin', 'mark', 'model', 'year', 'run', 'unit_id', 'unit__name',
     'store__name', 'status__name', 'type_reception__name', 'type_sale__name',
     'stage_price__name', 'group_price__name', 'lo__staff_id', 'lo__staff__name',
-    'lo__kolesa2_reception', 'lo__rlk__unit_dc__name',
+    'lo__kolesa2_reception', 'lo__rlk_id', 'lo_id', 'lo__rlk__unit_dc__name',
     'lo__type_reception__name', 'lo__rlk__reginteractivocenka__iznos',
     'price', 'cost_price', 'outlay', 'bcp', 'quantity', 'days_in_stok',
 )

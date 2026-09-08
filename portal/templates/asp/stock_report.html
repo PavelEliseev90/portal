@@ -103,7 +103,7 @@ window.aspRenderDetailRow = function(r, money, esc) {
     var cls = col.num ? ' class="num"' : '';
     var val = '—';
     var title = esc((r.mark || '') + ' ' + (r.model || ''));
-    var link = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank">' + title + '</a>' : title;
+    var link = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank" rel="noopener">' + title + '</a>' : title;
     if (col.key === 'car') val = '<div class="fw-semibold">' + link + '</div>';
     else if (col.key === 'vin') val = esc(r.vin);
     else if (col.key === 'year') val = esc(r.year);

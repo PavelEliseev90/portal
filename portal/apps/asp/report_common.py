@@ -183,7 +183,6 @@ def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
         'nomer': (get.get('nomer') or '').strip(),
         'days_from': (get.get('days_from') or '').strip(),
         'days_to': (get.get('days_to') or '').strip(),
-        'include_pbi': (get.get('include_pbi') or '').strip() in ('1', 'true', 'on', 'yes'),
         'view': view_mode,
         'page': max(1, int(get.get('page') or 1) if str(get.get('page') or '').isdigit() else 1),
         'group_key': (get.get('group_key') or '').strip(),
@@ -217,16 +216,12 @@ def build_query_string(
             pairs.append(('unit', str(uid)))
     keys = (
         'vin', 'mark', 'model', 'status', 'person', 'type_reception', 'type_sale',
-        'client', 'nomer', 'days_from', 'days_to', 'view', 'include_pbi', 'order_by',
+        'client', 'nomer', 'days_from', 'days_to', 'view', 'order_by',
     ) + tuple(extra_keys)
     for key in keys:
         if key in exclude_set:
             continue
         val = filters.get(key)
-        if key == 'include_pbi':
-            if val:
-                pairs.append(('include_pbi', '1'))
-            continue
         if val not in (None, '', [], False):
             pairs.append((key, str(val)))
     return urlencode(pairs)
@@ -248,7 +243,6 @@ def filters_for_template(filters: dict[str, Any]) -> dict[str, Any]:
         'nomer': filters.get('nomer') or '',
         'days_from': filters.get('days_from') or '',
         'days_to': filters.get('days_to') or '',
-        'include_pbi': bool(filters.get('include_pbi')),
         'view': filters.get('view') or 'main',
         'page': filters.get('page') or 1,
         'order_by': filters.get('order_by') or '',
@@ -394,7 +388,6 @@ def report_shell(
         'show_dates': False,
         'show_days_filter': False,
         'show_status_filter': False,
-        'show_pbi_toggle': False,
     }
     if extra:
         data.update(extra)

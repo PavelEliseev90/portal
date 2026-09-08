@@ -92,8 +92,6 @@ def _fmt_filter_sheet(ws, title: str, filters: dict, totals: dict, extra_lines: 
         ws.append(['Модель', filters['model']])
     if filters.get('person'):
         ws.append(['Сотрудник', filters['person']])
-    if filters.get('include_pbi'):
-        ws.append(['PowerBI', 'да'])
     ws.append([])
     ws.append(['Показатель', 'Значение'])
     for key, val in (totals or {}).items():
@@ -261,7 +259,6 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
         DETAIL_VALUES,
         SUM_MAP,
         _enrich_totals,
-        _load_powerbi_by_vin,
         _rows_from_values,
         filtered_shipments_qs,
     )
@@ -278,7 +275,6 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
     qs = filtered_shipments_qs(filters)
     totals = _enrich_totals(aggregate_totals(qs, SUM_MAP))
     view = filters['view']
-    include_pbi = bool(filters.get('include_pbi'))
 
     wb = Workbook()
     ws_info = wb.active
@@ -299,7 +295,6 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
             'Комплекты': totals.get('amount_kits'),
         },
         extra_lines=[
-            ('PowerBI в деталях', 'да' if include_pbi else 'нет'),
             ('Лимит строк деталей', EXCEL_ROW_LIMIT),
         ],
     )
@@ -332,11 +327,7 @@ def export_margin_xlsx(get, request=None) -> HttpResponse:
 
     _ui, orm_order = resolve_order_by('margin', filters.get('order_by'))
     values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
-    pbi_map = (
-        _load_powerbi_by_vin([v.get('cars__vin') or '' for v in values])
-        if include_pbi else {}
-    )
-    rows = _rows_from_values(values, pbi_map)
+    rows = _rows_from_values(values)
 
     visible = get_user_columns(request, 'margin') if request else list(MARGIN_DEFAULT_COLUMNS)
     cols = build_table_columns('margin', visible)

@@ -7,551 +7,361 @@
 {% block title_navbar %} - рабочий лист №{{params.doc.nomer}} от {{params.doc.dataTime}} {% endblock %}
     
 {% block content %}
- 	
 
-
-<div class="col-sm">
-	
-	<label class="fs-4 text-start fw-normal">
-		№ {{params.doc.nomer}} от {{params.doc.dataTime}} 
-	</label><br>
-
-	<label class="fs-6 text-start fw-normal">
-		Подразделение: 
-	</label> 
-	
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.unit.name}} г. {{params.doc.unit.city}}</span>
-	</label>
-	
-	<br>
-
-	<label class="fs-6 text-start fw-normal">
-		Менеджер: 
-	</label> 
-	
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.staff.name}} </span>
-	</label>
-	
-
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		Вид контакта: 
-	</label> 
-	
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.contacType}}</span>
-	</label>
-	
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		Клиент: 
-	</label> <br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.customer}}</span><br>
-
-	</label>
-	
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		Комментарий администратора: 
-	</label> <br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.commentAdministrator}}</span><br>
-	</label>
-
-	<br>
-	<label class="fs-6 text-start fw-normal">
-		Комментарий менеджера: 
-	</label> <br>
-	<label class="fs-6 text-start fw-normal">
-		<span class="icon-mbri-minus text-secondary">{{params.doc.commentManager}}</span><br>
-	</label>
-
-	<hr style="width: 75%;">
-			
-	<div class="accordion accordion-flush" id="accordionFlushExample">
-	
-		<div class="accordion-item">
-		<h2 class="accordion-header" id="flush-headingOne">
-		<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseOne">
-			События  - {{params.doc.events|length}}
-		</button>
-		</h2>
-		<div id="flush-collapseOne{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-			<div class="accordion-body">
-				<div class="table-responsive-sm">
-					<table class="table table-sm table-striped table-hover">
-						<tbody> 
-							{% for event in params.doc.events %}
-								<tr class="align-middle"> 
-									<td class="align-middle">{{event.dataTime}}</td>
-									<td class="align-middle">{{event.dataTimeEvent}}</td>
-									<td class="align-middle">{{event.contacType}}</td>
-									<td class="align-middle">{{event.comment}}</td>
-									<td class="align-middle">{{event.contacType}}</td>
-									<td class="align-middle">{{event.staff}}</td>
-									<td class="align-middle">{{event.status}}</td>
-								</tr>
-							{% endfor %}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-		</div>
-		
-		<div class="accordion-item">
-			<h2 class="accordion-header" id="flush-headingTwo">
-			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo{{ forloop.counter }}" aria-expanded="false" aria-controls="flush-collapseTwo">
-				Контроль качества
-			</button>
-			</h2>
-			<div id="flush-collapseTwo{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
-			<div class="accordion-body">
-				<div class="row g-1">
-					
-					
-					{% if params.doc.get_check != None %}
-						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px;">
-			
-							<div class="card text-center align-self-center text-center">
-								<div class="card-body text-center align-self-center text-center">
-									<figure class="highcharts-figure">
-										<div id="container-check" class="chart-container"></div>
-									</figure>
-								</div>
-
-								{% if params.doc.unit.buauto %}						
-									<a href="/checklists/glav/op_kors/op_kors_doc/?checkid={{params.doc.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-								{% else %}
-									<a href="/checklists/glav/op/doc/?checkid={{params.doc.id}}" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-								{% endif %}
-							</div>
-							
-							<script>
-
-								var gaugeOptions = {
-								chart: {
-									type: 'solidgauge'
-								},
-								
-								title: null,
-								
-								pane: {
-									center: ['50%', '85%'],
-									size: '140%',
-									startAngle: -90,
-									endAngle: 90,
-									background: {
-										backgroundColor:
-											Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-										innerRadius: '60%',
-										outerRadius: '100%',
-										shape: 'arc'
-									}
-								},
-								
-								exporting: {
-									enabled: false
-								},
-								
-								tooltip: {
-									enabled: false
-								},
-								
-								// the value axis
-								yAxis: {
-									stops: [
-										[0.3, '#DF5353'], // green
-										[0.5, '#DDDF0D'], // yellow
-										[0.7, '#55BF3B'] // red
-									],
-									lineWidth: 0,
-									tickWidth: 0,
-									minorTickInterval: null,
-									tickAmount: 2,
-									title: {
-										y: -70
-									},
-									labels: {
-										y: 16
-									}
-								},
-								
-								plotOptions: {
-									solidgauge: {
-										dataLabels: {
-											y: 5,
-											borderWidth: 0,
-											useHTML: true
-										}
-									}
-								}
-								};
-								
-								// The speed gauge
-								var chart_cvc = Highcharts.chart('container-check', Highcharts.merge(gaugeOptions, {
-								yAxis: {
-									min: 0,
-									max: 100,
-									title: {
-										text: 'Выполнение чек листа'
-									}
-								},
-								
-								credits: {
-									enabled: false
-								},
-								
-								series: [{
-									name: 'CVC',
-									data: [{{params.doc.get_check.result}}],
-									dataLabels: {
-										format:
-											'<div style="text-align:center">' +
-											'<span style="font-size:25px">{y}</span><br/>' +
-											'<span style="font-size:12px;opacity:0.4">%</span>' +
-											'</div>'
-									}
-								}]
-								
-								}));
-								
-								
-							</script>
-
-						</div>
-					{% endif %}
-
-					{% if params.doc.get_opros != None %}
-						<div class="col-sm-3 align-self-center text-center" style="text-align: center; min-width: 300px; ">
-			
-							<div class="card text-center align-self-center text-center">
-								<div class="card-body text-center align-self-center text-center">
-									<figure class="highcharts-figure">
-										<div id="container-sms" class="chart-container"></div>
-									</figure>
-								</div>
-								<a href="/sms_opros_op/{{params.doc.get_opros.id}}/" class="text-end link-dark" style="padding: 0.5rem;">Посмотреть <span class="icon-mbri-right"></span> </a>
-							</div>
-						
-						</div>
-					{% endif %}
-
-				</div>
-			</div>
-			</div>
-		</div>
-		
+<div class="portal-page">
+	<div class="portal-header">
+	  <h2>Рабочий лист ОП</h2>
+	  <p>
+		№ {{params.doc.nomer}} от {{params.doc.dataTime}}
+		{% if params.doc.archive %}
+			<span class="badge text-bg-danger bg-opacity-75" style="font-size: smaller;">Архив</span>
+		{% endif %}
+		{% if params.doc.is_missed %}
+			<span class="badge text-bg-warning bg-opacity-75" style="font-size: smaller;">Упущенный клиент</span>
+		{% endif %}
+		{% if params.doc.eco %}
+			<span class="badge text-bg-secondary bg-opacity-75" style="font-size: smaller;">Оценка / Trade-in</span>
+		{% endif %}
+	  </p>
 	</div>
-		
-	<hr>
-		  
+
+	<div class="portal-panel">
+		<div class="row g-1">
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_rlk/"><span class="icon-mbri-left"></span> К списку</a>
+			</div>
+			{% if params.car_slug %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/cars/{{params.car_slug}}/"><span class="icon-truck"></span> Автомобиль</a>
+			</div>
+			{% endif %}
+			{% if params.estimation_id %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/eco/{{params.estimation_rlk.id}}/"><span class="icon-mbri-delivery"></span> Интерактивная оценка</a>
+			</div>
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/estimations/{{params.estimation_rlk.id}}/"><span class="icon-mbri-edit"></span> Оценка</a>
+			</div>
+			{% endif %}
+			{% if params.doc.eco %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/rlks_trade_in/{{params.doc.id}}/"><span class="icon-mbri-refresh"></span> Карточка Trade-in</a>
+			</div>
+			{% endif %}
+			{% if params.doc.footing_id %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_rlk/{{params.doc.footing_id}}/"><span class="icon-doc"></span> РЛ отдела продаж</a>
+			</div>
+			{% endif %}
+			{% for agr in params.agreements %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_car_agreement/{{agr.id}}/"><span class="icon-money"></span> Соглашение {{agr.nomer}}</a>
+			</div>
+			{% endfor %}
+			{% for sp in params.shipments %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/docs_car_shipment/{{sp.id}}/"><span class="icon-mbri-shopping-bag"></span> Отгрузка {{sp.nomer}}</a>
+			</div>
+			{% endfor %}
+			{% if params.calc %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/cars/deal/calculation/{{params.calc.id}}/"><span class="icon-mbri-credit-card"></span> Калькуляция</a>
+			</div>
+			{% endif %}
+			{% if params.check_url %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="{{params.check_url}}"><span class="icon-mbri-success"></span> Чек-лист</a>
+			</div>
+			{% endif %}
+			{% if params.opros %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/sms_opros_op/{{params.opros.id}}/"><span class="icon-mbri-letter"></span> СМС опрос</a>
+			</div>
+			{% endif %}
+			{% if params.chat and params.chat.slug %}
+			<div class="col-auto">
+				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/chats/{{params.chat.slug}}/"><span class="icon-mbri-chat"></span> Чат</a>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-info"></span> Данные документа</h6>
+
+		<div class="row g-1">
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-home"></span> Подразделение</div>
+				<div class="metric-card-value-portal">
+					{% if params.doc.unit %}
+						{{params.doc.unit.name}}{% if params.doc.unit.city %} г. {{params.doc.unit.city}}{% endif %}
+					{% elif params.doc.unit_dc %}
+						{{params.doc.unit_dc.name}}
+					{% else %}—{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Менеджер</div>
+				<div class="metric-card-value-portal">{{params.doc.staff.name|default:"—"}}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-info"></span> Вид контакта</div>
+				<div class="metric-card-value-portal">{{params.doc.contacType|default:"—"}}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-info"></span> Статус / тип</div>
+				<div class="metric-card-value-portal">{{params.doc.status|default:"—"}}{% if params.doc.type %} · {{params.doc.type}}{% endif %}</div>
+			</div>
+		</div>
+		<br>
+		<div class="row g-1">
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Клиент</div>
+				<div class="metric-card-value-portal">{% firstof params.doc.customer params.doc.clientName "—" %}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-mobile"></span> Телефон</div>
+				<div class="metric-card-value-portal">
+					{% if params.doc.phone %}
+						<a href="tel:{{params.doc.phone}}">{{params.doc.phone}}</a>
+						<button type="button" class="btn btn-link p-0 align-baseline" data-copy="{{params.doc.phone}}" title="Копировать телефон">скопировать</button>
+					{% else %}—{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-info"></span> UIN</div>
+				<div class="metric-card-value-portal">
+					{% if params.doc.uin %}
+						{{params.doc.uin}}
+						<button type="button" class="btn btn-link p-0 align-baseline" data-copy="{{params.doc.uin}}" title="Копировать UIN">скопировать</button>
+					{% else %}—{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-timer"></span> Визит</div>
+				<div class="metric-card-value-portal">
+					{% if params.doc.dataTimeCreate %}{{params.doc.dataTimeCreate}}{% else %}—{% endif %}
+					{% if params.doc.dataEnd %} → {{params.doc.dataEnd}}{% endif %}
+					{% if params.visit_duration %}<div class="text-muted" style="font-size: 0.8rem;">{{params.visit_duration}}</div>{% endif %}
+				</div>
+			</div>
+		</div>
+		<br>
+		<div class="row g-1">
+			<div class="col-12 col-sm-6">
+				<div class="metric-card-label-portal"><span class="icon-mbri-edit"></span> Комментарий администратора</div>
+				<div class="metric-card-value-portal">{{params.doc.commentAdministrator|default:"—"|linebreaksbr}}</div>
+			</div>
+			<div class="col-12 col-sm-6">
+				<div class="metric-card-label-portal"><span class="icon-mbri-edit"></span> Комментарий менеджера</div>
+				<div class="metric-card-value-portal">{{params.doc.commentManager|default:"—"|linebreaksbr}}</div>
+			</div>
+		</div>
+		{% if params.doc.archive %}
+		<br>
+		<div class="row g-1">
+			<div class="col-12 col-sm-6">
+				<div class="metric-card-label-portal"><span class="icon-mbri-close"></span> Причина архива</div>
+				<div class="metric-card-value-portal">{% firstof params.doc.type_archive params.doc.reasonArchive "—" %}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-calendar"></span> Дата архива</div>
+				<div class="metric-card-value-portal">{{params.doc.dateArchive|default:"—"}}</div>
+			</div>
+		</div>
+		{% endif %}
+	</div>
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-truck"></span> Автомобиль</h6>
+		<div class="row g-1">
+			<div class="col-12 col-sm-4">
+				<div class="metric-card-label-portal"><span class="icon-truck"></span> Интерес / модель</div>
+				<div class="metric-card-value-portal">
+					{% if params.doc.cars %}
+						{{params.doc.cars.mark}} {{params.doc.cars.model}} {{params.doc.cars.modification}}
+					{% elif params.doc.tradeInModel %}
+						{{params.doc.tradeInModel}}
+					{% else %}—{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-info"></span> VIN</div>
+				<div class="metric-card-value-portal">
+					{% firstof params.doc.vin_trade_in params.doc.cars.vin "—" %}
+					{% if params.doc.vin_trade_in or params.doc.cars.vin %}
+						<button type="button" class="btn btn-link p-0 align-baseline" data-copy="{% firstof params.doc.vin_trade_in params.doc.cars.vin %}" title="Копировать VIN">скопировать</button>
+					{% endif %}
+				</div>
+			</div>
+			<div class="col-12 col-sm-2">
+				<div class="metric-card-label-portal"><span class="icon-mbri-calendar"></span> Год</div>
+				<div class="metric-card-value-portal">{% firstof params.doc.cars.year "—" %}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-mbri-user"></span> Менеджер Trade-in</div>
+				<div class="metric-card-value-portal">{{params.doc.manager_trade_in|default:"—"}}</div>
+			</div>
+		</div>
+		{% if params.lo %}
+		<br>
+		<div class="row g-1">
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal"><span class="icon-doc"></span> Лист оценки</div>
+				<div class="metric-card-value-portal">№ {{params.lo.nomer}} от {{params.lo.dataTime}}</div>
+			</div>
+		</div>
+		{% endif %}
+	</div>
+
+	{% if params.agreements or params.shipments or params.trade_ins or params.opfu or params.calc %}
+	<div class="portal-panel no-padding">
+		<div class="p-3 pb-0">
+			<h6 class="mb-0"><span class="icon-mbri-link"></span> Связанные документы</h6>
+		</div>
+		<div class="table-responsive portal-radius">
+			<table class="table table-sm table-striped table-hover mb-0">
+				<thead>
+					<tr>
+						<th class="text-white">Тип</th>
+						<th class="text-white">Номер / Дата</th>
+						<th class="text-white">Клиент / статус</th>
+						<th class="text-white">Сумма</th>
+						<th class="text-white"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for agr in params.agreements %}
+					<tr>
+						<td>Соглашение</td>
+						<td>{{agr.dataTime}} / {{agr.nomer}}</td>
+						<td>{{agr.client.name|default:agr.clientName}}</td>
+						<td class="text-end">{{agr.amount|floatformat:"2g"}} &#8381;</td>
+						<td><a href="/docs_car_agreement/{{agr.id}}/">открыть</a></td>
+					</tr>
+					{% endfor %}
+					{% for sp in params.shipments %}
+					<tr>
+						<td>Отгрузка{% if not sp.active %} <span class="text-muted">не проведена</span>{% endif %}</td>
+						<td>{{sp.dataTime}} / {{sp.nomer}}</td>
+						<td>{{sp.client.name|default:sp.clientName}}</td>
+						<td class="text-end">{{sp.amount|floatformat:"2g"}} &#8381;</td>
+						<td><a href="/docs_car_shipment/{{sp.id}}/">открыть</a></td>
+					</tr>
+					{% endfor %}
+					{% if params.calc %}
+					<tr>
+						<td>Калькуляция</td>
+						<td>{{params.calc.date}} / {{params.calc.number}}</td>
+						<td>{% if params.calc.car %}{{params.calc.car.name}}{% endif %}</td>
+						<td class="text-end">{{params.calc.amount|floatformat:"2g"}} &#8381;</td>
+						<td><a href="/cars/deal/calculation/{{params.calc.id}}/">открыть</a></td>
+					</tr>
+					{% endif %}
+					{% for ti in params.trade_ins %}
+					<tr>
+						<td>Trade-in</td>
+						<td>{{ti.dataTime}} / {{ti.nomer}}</td>
+						<td>{{ti.status|default:"—"}}{% if ti.vin_trade_in %} · {{ti.vin_trade_in}}{% endif %}</td>
+						<td></td>
+						<td>
+							<a href="/docs_rlk/{{ti.id}}/">РЛ</a>
+							·
+							<a href="/rlks_trade_in/{{ti.id}}/">карточка</a>
+						</td>
+					</tr>
+					{% endfor %}
+					{% for pf in params.opfu %}
+					<tr>
+						<td>ОПФУ</td>
+						<td>{{pf.dataTime}} / {{pf.nomer}}</td>
+						<td>{{pf.status|default:"—"}}</td>
+						<td></td>
+						<td><a href="/docs_rlk/{{pf.id}}/">открыть</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{% endif %}
+
+	{% if params.check or params.opros %}
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-mbri-success"></span> Контроль качества</h6>
+		<div class="row g-3">
+			{% if params.check %}
+			<div class="col-12 col-sm-auto">
+				<div class="metric-card-label-portal">Чек-лист</div>
+				<div class="metric-card-value-portal">{{params.check.result}}%</div>
+				{% if params.check_url %}
+					<a href="{{params.check_url}}">Открыть чек-лист</a>
+				{% endif %}
+			</div>
+			{% endif %}
+			{% if params.opros %}
+			<div class="col-12 col-sm-auto">
+				<div class="metric-card-label-portal">СМС опрос</div>
+				<div class="metric-card-value-portal">{{params.opros_rating|floatformat:"1"}} / 5</div>
+				<a href="/sms_opros_op/{{params.opros.id}}/">Открыть опрос</a>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="portal-panel no-padding">
+		<div class="p-3 pb-0">
+			<h6 class="mb-0"><span class="icon-mbri-calendar"></span> События — {{params.events|length}}</h6>
+		</div>
+		<div class="table-responsive portal-radius">
+			<table class="table table-sm table-striped table-hover mb-0">
+				<thead>
+					<tr>
+						<th class="text-white">Дата записи</th>
+						<th class="text-white">Дата события</th>
+						<th class="text-white">Вид контакта</th>
+						<th class="text-white">Комментарий</th>
+						<th class="text-white">Менеджер</th>
+						<th class="text-white">Статус</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% if params.events %}
+						{% for event in params.events %}
+						<tr>
+							<td>{{event.dataTime}}</td>
+							<td>{{event.dataTimeEvent|default:"—"}}</td>
+							<td>{{event.contacType|default:"—"}}</td>
+							<td>{{event.comment|default:""}}</td>
+							<td>{{event.staff|default:"—"}}</td>
+							<td>{{event.status|default:"—"}}</td>
+						</tr>
+						{% endfor %}
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-muted text-center p-4">Событий нет</td>
+						</tr>
+					{% endif %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
 </div>
-	
-
-
-<script language="JavaScript">
-	function change_link(){
-		link_1= document.getElementById("unit");
-		link_1.href = link_1.href+"&unitid=" + document.getElementById("unit").value;	
-	}
-</script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
 
 <script>
-	$(document).ready(function(){
-		
-		$("#uploadForm").on('submit', function(e){
-			e.preventDefault();
-			$.ajax({
-				xhr: function() {
-					var xhr = new window.XMLHttpRequest();
-					xhr.upload.addEventListener("progress", function(evt) {
-						if (evt.lengthComputable) {
-							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
-							$(".progress-bar").width(percentComplete+'%');
-							$(".progress-bar").html(percentComplete+' %');
-						}
-					}, false);
-					return xhr;
-				},
-				type: 'POST',
-				url: '',
-				data: new FormData(this),
-				contentType: false,
-				cache: false,
-				processData: false,
-				beforeSend: function(){
-					$(".progress-bar").width('0%');
-					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
-				},
-				error:function(){
-					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
-				},
-				success: function(resp, textStatus){
-					if(textStatus == 'success'){
-						$('#uploadForm')[0].reset();
-						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
-						location.reload();
-					}else {
-						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
-					}
-				}
-			});
-		});
-		
-		$("#uploadFormMCU").on('submit', function(e){
-			e.preventDefault();
-			$.ajax({
-				xhr: function() {
-					var xhr = new window.XMLHttpRequest();
-					xhr.upload.addEventListener("progressMCU", function(evt) {
-						if (evt.lengthComputable) {
-							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
-							$(".progress-bar").width(percentComplete+'%');
-							$(".progress-bar").html(percentComplete+' %');
-						}
-					}, false);
-					return xhr;
-				},
-				type: 'POST',
-				url: '',
-				data: new FormData(this),
-				contentType: false,
-				cache: false,
-				processData: false,
-				beforeSend: function(){
-					$(".progress-bar").width('0%');
-					$('#uploadStatusMCU').html('<img src="/static/images/loading.gif"/>');
-				},
-				error:function(){
-					$('#uploadStatusMCU').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
-				},
-				success: function(resp, textStatus){
-					if(textStatus == 'success'){
-						$('#uploadFormMCU')[0].reset();
-						$('#uploadStatusMCU').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
-						location.reload();
-					}else {
-						$('#uploadStatusMCU').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
-					}
-				}
-			});
-		});
-		
-		$("#videoForm").on('submit', function(e){
-			e.preventDefault();
-			$.ajax({
-				xhr: function() {
-					var xhr = new window.XMLHttpRequest();
-					xhr.upload.addEventListener("progress", function(evt) {
-						if (evt.lengthComputable) {
-							var percentComplete = Math.round(((evt.loaded / evt.total) * 100));
-							$(".progress-bar").width(percentComplete+'%');
-							$(".progress-bar").html(percentComplete+' %');
-						}
-					}, false);
-					return xhr;
-				},
-				type: 'POST',
-				url: '',
-				data: new FormData(this),
-				contentType: false,
-				cache: false,
-				processData: false,
-				beforeSend: function(){
-					$(".progress-bar").width('0%');
-					$('#uploadStatus').html('<img src="/static/images/loading.gif"/>');
-				},
-				error:function(){
-					$('#uploadStatus').html('<p style="color:#EA4335;">Ошибка передачи файла, повторите попытку.</p>');
-				},
-				success: function(resp, textStatus){
-					if(textStatus == 'success'){
-						$('#videoForm')[0].reset();
-						$('#uploadStatus').html('<p style="color:#28A74B;">Файл успешно загружен!</p>');
-						location.reload();
-					}else {
-						$('#uploadStatus').html('<p style="color:#EA4335;">Неверный ответ сервера файла.</p>');
-					}
-				}
-			});
-		});
-
-		// File type validation
-		$("#fileInput").change(function(){
-			var allowedTypes = ['audio/wav', 'audio/mp3'];
-			var file = this.files[0];
-			var fileType = file.type;
-			if(!allowedTypes.includes(fileType)){
-				alert('Please select a valid file (mp3/wav/).');
-				$("#fileInput").val('');
-				return false;
+	document.querySelectorAll('[data-copy]').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			var text = this.getAttribute('data-copy') || '';
+			if (!text) {
+				return;
+			}
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(text);
 			}
 		});
 	});
 </script>
-
-
-<script>
-
-	var gaugeOptions = {
-	  chart: {
-		  type: 'solidgauge'
-	  },
-	
-	  title: null,
-	
-	  pane: {
-		  center: ['50%', '85%'],
-		  size: '140%',
-		  startAngle: -90,
-		  endAngle: 90,
-		  background: {
-			  backgroundColor:
-				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-			  innerRadius: '60%',
-			  outerRadius: '100%',
-			  shape: 'arc'
-		  }
-	  },
-	
-	  exporting: {
-		  enabled: false
-	  },
-	
-	  tooltip: {
-		  enabled: false
-	  },
-	
-	  // the value axis
-	  yAxis: {
-		  stops: [
-			  [0.3, '#DF5353'], // green
-			  [0.5, '#DDDF0D'], // yellow
-			  [0.7, '#55BF3B'] // red
-		  ],
-		  lineWidth: 0,
-		  tickWidth: 0,
-		  minorTickInterval: null,
-		  tickAmount: 0,
-		  title: {
-			  y: -70
-		  },
-		  labels: {
-			  y: 16
-		  }
-	  },
-	
-	  plotOptions: {
-		  solidgauge: {
-			  dataLabels: {
-				  y: 5,
-				  borderWidth: 0,
-				  useHTML: true
-			  }
-		  }
-	  }
-	};
-	
-	var gaugeOptions_sms = {
-	  chart: {
-		  type: 'solidgauge'
-	  },
-	
-	  title: null,
-	
-	  pane: {
-		  center: ['50%', '85%'],
-		  size: '140%',
-		  startAngle: -90,
-		  endAngle: 90,
-		  background: {
-			  backgroundColor:
-				  Highcharts.defaultOptions.legend.backgroundColor || '#EEE',
-			  innerRadius: '60%',
-			  outerRadius: '100%',
-			  shape: 'arc'
-		  }
-	  },
-	
-	  exporting: {
-		  enabled: false
-	  },
-	
-	  tooltip: {
-		  enabled: false
-	  },
-	
-	  // the value axis
-	  yAxis: {
-		  stops: [
-			  [0.3, '#DF5353'], // green
-			  [0.5, '#DDDF0D'], // yellow
-			  [0.7, '#55BF3B'] // red
-		  ],
-		  lineWidth: 0,
-		  tickWidth: 0,
-		 
-		 
-		  title: {
-			  y: -70
-		  },
-		  labels: {
-			  y: 16
-		  }
-	  },
-	
-	  plotOptions: {
-		  solidgauge: {
-			  dataLabels: {
-				  y: 5,
-				  borderWidth: 0,
-				  useHTML: true
-			  }
-		  }
-	  }
-	};
-	
-	
-	var chartRpm = Highcharts.chart('container-sms', Highcharts.merge(gaugeOptions_sms, {
-	  yAxis: {
-		  min: 0,
-		  max: 5.0,
-		  title: {
-			  text: 'SMS'
-		  }
-	  },
-	
-	  series: [{
-		  name: 'SMS',
-		  data: [{{params.doc.rating_sms_opros}}],
-		  dataLabels: {
-			format:
-				  '<div style="text-align:center">' +
-				  '<span style="font-size:25px">{y}</span><br/>' +
-				  '<span style="font-size:12px;opacity:0.4"><span class="icon-mbri-star fw-bold"></span></span>' +
-				  '</div>'
-		  }
-	  }]
-	
-	}));
-	  
-	</script>
 
 {% endblock %}
