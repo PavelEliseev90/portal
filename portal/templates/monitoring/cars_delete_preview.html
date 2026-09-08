@@ -1,0 +1,151 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Удаление авто #{{ params.car.pk }} {% endblock %}
+{% block title_navbar %} — Удаление авто #{{ params.car.pk }} {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header">
+		<h2>Удаление автомобиля организации</h2>
+		<p>
+			<a href="{% url 'monitoring:cars_delete_search' %}{% if params.car.vin %}?q={{ params.car.vin }}{% endif %}">← К поиску</a>
+			·
+			<a href="{% url 'monitoring:hub' %}">Панель мониторинга</a>
+		</p>
+	</div>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }} py-2 small mb-3">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<div class="portal-panel">
+		<h6 class="mb-3"><span class="icon-truck"></span> Автомобиль</h6>
+		<div class="row g-2">
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal">ID / VIN</div>
+				<div class="metric-card-value-portal">{{ params.car.pk }} · {{ params.car.vin|default:"—" }}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal">Наименование</div>
+				<div class="metric-card-value-portal">{{ params.car.name|default:"—" }}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal">Подразделение / стоянка</div>
+				<div class="metric-card-value-portal">{{ params.car.unit.name|default:"—" }} · {{ params.car.store.name|default:"—" }}</div>
+			</div>
+			<div class="col-12 col-sm-3">
+				<div class="metric-card-label-portal">Наличие / slug</div>
+				<div class="metric-card-value-portal">{{ params.car.quantity }} · {{ params.car.slug|default:"—" }}</div>
+			</div>
+		</div>
+		{% if params.car.lo_id %}
+		<br>
+		<div class="text-muted small">
+			Лист оценки № {{ params.car.lo.nomer|default:params.car.lo_link_number }} (id={{ params.car.lo_id }})
+			<strong>не удаляется</strong> — это ссылка с карточки авто, не подчинённый объект.
+		</div>
+		{% endif %}
+		{% if params.car.slug %}
+		<div class="mt-2">
+			<a href="/cars/{{ params.car.slug }}/" target="_blank" rel="noopener">Открыть карточку авто</a>
+		</div>
+		{% endif %}
+	</div>
+
+	<div class="row g-2 mb-3">
+		<div class="col-12 col-sm-3">
+			<div class="portal-panel mb-0">
+				<div class="metric-card-label-portal">Всего связанных</div>
+				<div class="metric-card-value-portal">{{ params.relations.total }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-sm-3">
+			<div class="portal-panel mb-0">
+				<div class="metric-card-label-portal">Удалятся (CASCADE)</div>
+				<div class="metric-card-value-portal">{{ params.relations.delete_count }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-sm-3">
+			<div class="portal-panel mb-0">
+				<div class="metric-card-label-portal">Сначала снимем (PROTECT)</div>
+				<div class="metric-card-value-portal">{{ params.relations.protect_count }}</div>
+			</div>
+		</div>
+		<div class="col-12 col-sm-3">
+			<div class="portal-panel mb-0">
+				<div class="metric-card-label-portal">Ссылка очистится (SET NULL)</div>
+				<div class="metric-card-value-portal">{{ params.relations.null_count }}</div>
+			</div>
+		</div>
+	</div>
+
+	{% if params.relations.groups %}
+	{% for group in params.relations.groups %}
+	<div class="portal-panel no-padding mb-3">
+		<div class="p-3 pb-2 d-flex flex-wrap justify-content-between gap-2">
+			<div>
+				<h6 class="mb-1">{{ group.verbose }} <span class="text-muted">({{ group.model }})</span></h6>
+				<div class="small text-muted">{{ group.action_label }}</div>
+			</div>
+			<div>
+				{% if group.action == 'delete' %}
+					<span class="badge text-bg-danger">удалить · {{ group.count }}</span>
+				{% elif group.action == 'protect' %}
+					<span class="badge text-bg-warning">снять блок · {{ group.count }}</span>
+				{% elif group.action == 'null' %}
+					<span class="badge text-bg-secondary">очистить ссылку · {{ group.count }}</span>
+				{% else %}
+					<span class="badge text-bg-dark">{{ group.count }}</span>
+				{% endif %}
+			</div>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-sm table-striped mb-0">
+				<tbody>
+					{% for item in group.items %}
+					<tr>
+						<td class="text-muted" style="width: 5rem;">#{{ item.pk }}</td>
+						<td class="small">{{ item.label }}</td>
+					</tr>
+					{% endfor %}
+					{% if group.truncated %}
+					<tr>
+						<td colspan="2" class="text-muted small">Показаны первые {{ params.relations.sample_limit }} из {{ group.count }}</td>
+					</tr>
+					{% endif %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{% endfor %}
+	{% else %}
+	<div class="portal-panel">
+		<p class="text-muted mb-0">Связанных записей нет — будет удалена только карточка автомобиля.</p>
+	</div>
+	{% endif %}
+
+	<div class="portal-panel">
+		<h6 class="mb-3 text-danger">Подтверждение удаления</h6>
+		<p class="small text-muted">
+			Будут удалены подчинённые записи (фото, калькуляции, задачи, расходы и т.д.).
+			Лист оценки, клиент, подразделение и 1С-объекты, на которые авто только ссылается, не трогаем.
+		</p>
+		<form method="post">
+			{% csrf_token %}
+			<input type="hidden" name="car_id" value="{{ params.car.pk }}">
+			<div class="form-check mb-3">
+				<input class="form-check-input" type="checkbox" name="confirm" value="1" id="confirmDelete" required>
+				<label class="form-check-label" for="confirmDelete">
+					Удалить автомобиль id={{ params.car.pk }}
+					{% if params.car.vin %}VIN {{ params.car.vin }}{% endif %}
+					и {{ params.relations.total }} связанных записей
+				</label>
+			</div>
+			<button type="submit" class="btn btn-danger">Удалить</button>
+			<a href="{% url 'monitoring:cars_delete_search' %}{% if params.car.vin %}?q={{ params.car.vin }}{% endif %}" class="btn btn-outline-secondary">Отмена</a>
+		</form>
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Удаление автомобиля организации {% endblock %}
+{% block title_navbar %} — Удаление автомобиля организации {% endblock %}
+
+{% block content %}
+<div class="portal-page">
+	<div class="portal-header">
+		<h2>Удаление автомобиля организации</h2>
+		<p>
+			<a href="{% url 'monitoring:hub' %}">← Панель мониторинга</a>
+			·
+			<a href="{% url 'website:board_exchange_testing' %}">Тестирование обменов</a>
+			· поиск по VIN, slug, id, госномеру, номеру листа оценки.
+			Лист оценки и справочники не удаляются.
+		</p>
+	</div>
+
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags|default:'info' }} py-2 small mb-3">{{ message }}</div>
+	{% endfor %}
+	{% endif %}
+
+	<form method="get" class="portal-panel mb-3">
+		<div class="row g-2 align-items-end">
+			<div class="col-12 col-md-8 col-lg-6">
+				<label class="form-label small">VIN / slug / id / госномер / номер ЛО</label>
+				<input type="text" name="q" class="form-control" value="{{ params.q }}"
+					placeholder="например VIN или id карточки" autocomplete="off">
+			</div>
+			<div class="col-12 col-md-4 col-lg-3">
+				<button type="submit" class="btn btn-calculate-sm">Найти</button>
+				<a href="{% url 'monitoring:cars_delete_search' %}" class="btn btn-calculate-secondary-sm">Сбросить</a>
+			</div>
+		</div>
+	</form>
+
+	{% if params.q %}
+	<div class="portal-panel no-padding">
+		<div class="p-3 pb-0">
+			<h6 class="mb-0">Найдено: {{ params.found }}</h6>
+		</div>
+		<div class="table-responsive portal-radius">
+			<table class="table table-sm table-hover mb-0">
+				<thead>
+					<tr>
+						<th class="text-white">ID</th>
+						<th class="text-white">VIN</th>
+						<th class="text-white">Авто</th>
+						<th class="text-white">Подразделение</th>
+						<th class="text-white">Стоянка</th>
+						<th class="text-white">Наличие</th>
+						<th class="text-white">Связанных</th>
+						<th class="text-white"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in params.rows %}
+					<tr>
+						<td>{{ row.car.pk }}</td>
+						<td>
+							<code>{{ row.car.vin|default:"—" }}</code>
+							{% if row.car.slug %}
+							<div class="small text-muted">{{ row.car.slug }}</div>
+							{% endif %}
+						</td>
+						<td>
+							<div class="fw-semibold">{{ row.car.name|default:"—" }}</div>
+							<div class="small text-muted">{{ row.car.year }} · {{ row.car.plate_number|default:"" }}</div>
+						</td>
+						<td>{{ row.car.unit.name|default:"—" }}</td>
+						<td>{{ row.car.store.name|default:"—" }}</td>
+						<td>{{ row.car.quantity }}</td>
+						<td>
+							{% if row.related_total %}
+								<span class="badge text-bg-warning">{{ row.related_total }}</span>
+							{% else %}
+								<span class="text-muted">0</span>
+							{% endif %}
+						</td>
+						<td>
+							<a href="{% url 'monitoring:cars_delete_preview' row.car.pk %}">связанные и удаление</a>
+							{% if row.car.slug %}
+							· <a href="/cars/{{ row.car.slug }}/" target="_blank" rel="noopener">карточка</a>
+							{% endif %}
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="8" class="text-muted text-center p-4">Ничего не найдено</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{% endif %}
+</div>
+{% endblock %}

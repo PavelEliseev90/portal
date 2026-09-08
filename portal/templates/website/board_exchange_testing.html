@@ -41,7 +41,10 @@
         Типы: estimation, reception, kolesa_reception, agreement_cumulative, settings_dc, matrix, ChangeKP, KMCar, CreateAvitoWorksheet, auto_repricing_export.
       </div>
     </div>
-    <a class="btn btn-outline-secondary btn-sm" href="/monitorings_eco/">← К мониторингу ECO</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'monitoring:cars_delete_search' %}">Удаление авто организации</a>
+      <a class="btn btn-outline-secondary btn-sm" href="/monitorings_eco/">← К мониторингу ECO</a>
+    </div>
   </div>
 
   <div class="ex-card">
