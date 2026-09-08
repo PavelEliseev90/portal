@@ -2,13 +2,25 @@
 {% if report_key == 'margin' %}
   {% if col.key == 'date' %}
   <td>
+    {% if r.id %}<a href="/docs_car_shipment/{{ r.id }}/" target="_blank" rel="noopener" class="text-decoration-none">{% endif %}
     <div class="fw-semibold">{% if r.date %}{{ r.date|date:"d.m.Y" }}{% else %}—{% endif %}</div>
     <div class="small text-muted">{{ r.nomer|default:"—" }}</div>
+    {% if r.id %}</a>{% endif %}
   </td>
-  {% elif col.key == 'reception_date' %}<td>{% if r.reception_date %}{{ r.reception_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'reception_date' %}
+  <td>
+    {% if r.rlk_id and r.reception_date %}<a href="/eco/{{ r.rlk_id }}/" target="_blank" rel="noopener">{% endif %}
+    {% if r.reception_date %}{{ r.reception_date|date:"d.m.Y" }}{% else %}—{% endif %}
+    {% if r.rlk_id and r.reception_date %}</a>{% endif %}
+  </td>
   {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
   {% elif col.key == 'unit_source' %}<td>{{ r.unit_source_name|default:"—" }}</td>
-  {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
+  {% elif col.key == 'car' %}
+  <td>
+    <div class="fw-semibold">
+      {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
+    </div>
+  </td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
   {% elif col.key == 'vin_new' %}<td class="small">{{ r.vin_new|default:"—" }}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
@@ -29,15 +41,16 @@
   {% elif col.key == 'amount_reward_opfu' %}<td class="num">{{ r.amount_reward_opfu|floatformat:"0g" }}</td>
   {% elif col.key == 'amount_kits' %}<td class="num">{{ r.amount_kits|floatformat:"0g" }}</td>
   {% elif col.key == 'kolesa2_reception' %}<td>{% if r.kolesa2_reception %}Да{% else %}Нет{% endif %}</td>
-  {% elif col.key == 'pbi_cum' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_cum_full|floatformat:"0g" }}{% else %}—{% endif %}</td>
-  {% elif col.key == 'pbi_kvp' %}<td class="num">{% if r.has_pbi %}{{ r.pbi_kvp|floatformat:"0g" }}{% else %}—{% endif %}</td>
-  {% elif col.key == 'agreement' %}<td>{{ r.agreement_nomer|default:"—" }}</td>
+  {% elif col.key == 'agreement' %}
+  <td>
+    {% if r.agreement_id %}<a href="/docs_car_agreement/{{ r.agreement_id }}/" target="_blank" rel="noopener">{{ r.agreement_nomer|default:"открыть" }}</a>{% else %}{{ r.agreement_nomer|default:"—" }}{% endif %}
+  </td>
   {% endif %}
 {% elif report_key == 'stock' %}
   {% if col.key == 'car' %}
   <td>
     <div class="fw-semibold">
-      {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
+      {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
     </div>
   </td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
@@ -63,10 +76,17 @@
 {% elif report_key == 'accepted' %}
   {% if col.key == 'date' %}
   <td>
+    {% if r.rlk_id %}<a href="/eco/{{ r.rlk_id }}/" target="_blank" rel="noopener" class="text-decoration-none">{% endif %}
     <div class="fw-semibold">{% if r.date %}{{ r.date|date:"d.m.Y" }}{% else %}—{% endif %}</div>
-    <div class="small text-muted">{{ r.nomer|default:"—" }}{% if r.rlk_id %} · <a href="/eco/{{ r.rlk_id }}/" target="_blank">РЛ {{ r.rlk_nomer }}</a>{% endif %}</div>
+    <div class="small text-muted">{{ r.nomer|default:"—" }}</div>
+    {% if r.rlk_id %}</a>{% endif %}
   </td>
-  {% elif col.key == 'car' %}<td><div class="fw-semibold">{{ r.mark }} {{ r.model }}</div></td>
+  {% elif col.key == 'car' %}
+  <td>
+    <div class="fw-semibold">
+      {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
+    </div>
+  </td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}{% if r.year %} · {{ r.year }}{% endif %}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>

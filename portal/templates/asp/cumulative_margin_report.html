@@ -41,13 +41,6 @@
     <div class="col-6 col-md-4 col-xl-2">
       <div class="asp-rep-metric"><div class="t">Комплекты</div><div class="v">{{ params.totals.amount_kits|floatformat:"0g" }}</div><div class="s">AmountKits</div></div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="asp-rep-metric">
-        <div class="t">Кумулятив БУ</div>
-        <div class="v">{% if params.filters.include_pbi %}в строках{% else %}—{% endif %}</div>
-        <div class="s">{% if params.filters.include_pbi %}PowerBI включён{% else %}включите в фильтрах{% endif %}</div>
-      </div>
-    </div>
   </div>
 
   {% include 'asp/partials/asp_report_view_tabs.html' %}
@@ -115,11 +108,17 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
   cols.forEach(function(col) {
     var cls = col.num ? ' class="num"' : '';
     var val = '—';
-    if (col.key === 'date') val = '<div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' + esc(r.nomer || '—') + '</div>';
-    else if (col.key === 'reception_date') val = fmtDate(r.reception_date);
+    var dateInner = '<div class="fw-semibold">' + fmtDate(r.date) + '</div><div class="small text-muted">' + esc(r.nomer || '—') + '</div>';
+    if (r.id) dateInner = '<a href="/docs_car_shipment/' + esc(r.id) + '/" target="_blank" rel="noopener" class="text-decoration-none">' + dateInner + '</a>';
+    var recDate = fmtDate(r.reception_date);
+    if (r.rlk_id && r.reception_date) recDate = '<a href="/eco/' + esc(r.rlk_id) + '/" target="_blank" rel="noopener">' + recDate + '</a>';
+    var carTitle = esc((r.mark || '') + ' ' + (r.model || ''));
+    var car = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank" rel="noopener">' + carTitle + '</a>' : carTitle;
+    if (col.key === 'date') val = dateInner;
+    else if (col.key === 'reception_date') val = recDate;
     else if (col.key === 'unit') val = esc(r.unit_name);
     else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');
-    else if (col.key === 'car') val = '<div class="fw-semibold">' + esc((r.mark || '') + ' ' + (r.model || '')) + '</div>';
+    else if (col.key === 'car') val = '<div class="fw-semibold">' + car + '</div>';
     else if (col.key === 'vin') val = esc(r.vin);
     else if (col.key === 'vin_new') val = esc(r.vin_new || '—');
     else if (col.key === 'client') val = esc(r.client || '—');
@@ -140,9 +139,7 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     else if (col.key === 'amount_reward_opfu') val = money(r.amount_reward_opfu);
     else if (col.key === 'amount_kits') val = money(r.amount_kits);
     else if (col.key === 'kolesa2_reception') val = r.kolesa2_reception ? 'Да' : 'Нет';
-    else if (col.key === 'pbi_cum') val = r.has_pbi ? money(r.pbi_cum_full) : '—';
-    else if (col.key === 'pbi_kvp') val = r.has_pbi ? money(r.pbi_kvp) : '—';
-    else if (col.key === 'agreement') val = esc(r.agreement_nomer || '—');
+    else if (col.key === 'agreement') val = r.agreement_id ? '<a href="/docs_car_agreement/' + esc(r.agreement_id) + '/" target="_blank" rel="noopener">' + esc(r.agreement_nomer || 'открыть') + '</a>' : esc(r.agreement_nomer || '—');
     html += '<td' + cls + '>' + val + '</td>';
   });
   return html;

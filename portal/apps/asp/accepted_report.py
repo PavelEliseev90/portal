@@ -106,6 +106,7 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'rlk_id': row.get('rlk_id'),
         'rlk_nomer': row.get('rlk__nomer') or '',
         'auction': bool(row.get('auction')),
+        'slug': '',
     }
 
 
@@ -134,7 +135,7 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
             RefCarsOrganization.objects
             .filter(lo_id__in=part)
             .order_by('-pk')
-            .values('lo_id', 'vin', 'group_price__name', 'stage_price__name')
+            .values('lo_id', 'vin', 'slug', 'group_price__name', 'stage_price__name')
         )
         for item in qs:
             lo_id = item.get('lo_id')
@@ -142,6 +143,7 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
             payload = {
                 'group_price': item.get('group_price__name') or '',
                 'stage_price': item.get('stage_price__name') or '',
+                'slug': item.get('slug') or '',
             }
             if vin and (lo_id, vin) not in by_lo_vin:
                 by_lo_vin[(lo_id, vin)] = payload
@@ -157,6 +159,7 @@ def _apply_stock_price_fields(rows: list[dict]) -> None:
         info = info or {}
         row['group_price'] = info.get('group_price') or ''
         row['stage_price'] = info.get('stage_price') or ''
+        row['slug'] = info.get('slug') or ''
 
 
 def _lo_rows_from_values(values: list[dict]) -> list[dict[str, Any]]:
