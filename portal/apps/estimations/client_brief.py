@@ -901,11 +901,26 @@ def build_client_brief(estimation) -> dict[str, Any]:
 
     preview_url = ''
     try:
-        prev = estimation.fotos_prev()
-        if prev is not None and getattr(prev, 'file', None):
-            preview_url = prev.file.url
+        from register.models import RegRegInteractivOcenkaFiles
+        prev = (
+            RegRegInteractivOcenkaFiles.objects
+            .filter(estimation=estimation, type_file='vnesh_car_all')
+            .exclude(file='')
+            .exclude(blank=True)
+            .order_by('file_number', 'id')
+            .first()
+        )
+        if prev is None:
+            prev = estimation.fotos_prev()
+        if prev is not None and getattr(prev, 'file', None) and prev.file.name:
+            preview_url = prev.get_thumbnail_url() or prev.get_absolute_url()
     except Exception:
         preview_url = ''
+
+    price_eco = 0
+    remote = getattr(estimation, 'page_remote', None)
+    if remote is not None:
+        price_eco = _int(remote.price_eco)
 
     return {
         'title': title,
@@ -929,6 +944,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
         'offer_sale': offer_sale,
         'offer_before': offer_before,
         'offer_after': offer_after,
+        'price_eco': price_eco,
         'client_price': client_price,
         'repairs': repairs_prep,
         'market_low': market_low,

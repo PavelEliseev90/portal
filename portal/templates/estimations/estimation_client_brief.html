@@ -66,6 +66,9 @@
 .est-brief-count-con { background: rgba(193, 18, 31, 0.1); color: #c1121f; }
 .est-brief-count-star { background: rgba(224, 159, 62, 0.15); color: #9a6b1a; }
 .est-brief-car-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+.est-brief-buyout { margin: 0.75rem 0 1rem; }
+.est-brief-buyout-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
+.est-brief-buyout-label { font-size: 0.8rem; color: #8ea1ba; }
 </style>
 {% endblock %}
 
@@ -85,11 +88,6 @@
 			{% endif %}
 			<button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Печать</button>
 		</div>
-	</div>
-
-	<div class="alert alert-warning py-2 small est-brief-noprint">
-		Черновик для разговора с клиентом. Не показываем внутренние ценовые группы и настройки.
-		Опираемся на осмотр, Автотеку, Автохаб, объявления и диагностику.
 	</div>
 
 	{% if not params.estimation %}
@@ -116,6 +114,27 @@
 						{% if b.gear %}{{ b.gear }} · {% endif %}
 						{% if b.drive %}{{ b.drive }}{% endif %}
 					</p>
+					<div class="est-brief-buyout">
+						{% if b.offer_after %}
+							<div class="est-brief-buyout-value">{{ b.offer_after|floatformat:"0g" }} ₽</div>
+							<div class="est-brief-buyout-label">Выкуп · после диагностики</div>
+							{% if b.offer_before and b.offer_before != b.offer_after %}
+								<div class="small text-muted mt-1">До диагностики: {{ b.offer_before|floatformat:"0g" }} ₽</div>
+							{% endif %}
+						{% elif b.offer_before %}
+							<div class="est-brief-buyout-value">{{ b.offer_before|floatformat:"0g" }} ₽</div>
+							<div class="est-brief-buyout-label">Выкуп · до диагностики</div>
+						{% elif b.price_eco %}
+							<div class="est-brief-buyout-value">{{ b.price_eco|floatformat:"0g" }} ₽</div>
+							<div class="est-brief-buyout-label">Выкуп · до осмотра</div>
+						{% else %}
+							<div class="est-brief-buyout-value">—</div>
+							<div class="est-brief-buyout-label">Выкуп · ещё не согласован</div>
+						{% endif %}
+						{% if b.offer_sale %}
+							<div class="small text-muted mt-1">Ориентир витрины: {{ b.offer_sale|floatformat:"0g" }} ₽</div>
+						{% endif %}
+					</div>
 					<div class="d-flex flex-wrap gap-2 mb-3">
 						{% if b.scale %}
 							<span class="est-brief-count est-brief-count-star">{{ b.scale.stars }} ★ · {{ b.scale.label }}</span>
@@ -153,7 +172,7 @@
 			<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.scale.stars }} из 5 — {{ b.scale.label }}</div>
 			<p class="mb-3">{{ b.scale.hint }}</p>
 			{% if b.scale.factors %}
-			<p class="small text-muted est-brief-noprint">Старт {{ b.scale.base }} ★, дальше плюсы и минусы по фактам оценки.{% if params.can_edit_weights %} Веса можно менять в настройках.{% endif %}</p>
+			<p class="small text-muted est-brief-noprint">Старт {{ b.scale.base }} ★, дальше плюсы и минусы по фактам оценки.</p>
 			<div class="table-responsive est-brief-noprint">
 				<table class="table table-sm mb-0">
 					<thead><tr><th>Факт</th><th>Группа</th><th class="text-end">Вес</th></tr></thead>
@@ -369,14 +388,6 @@
 					<li>{{ m }}</li>
 				{% endfor %}
 			</ul>
-		</div>
-		{% endif %}
-
-		{% if b.eco_comment or b.eco_comment_kd %}
-		<div class="portal-panel mb-3 est-brief-noprint">
-			<h5 class="mb-2">Служебно (не читать клиенту)</h5>
-			{% if b.eco_comment %}<p class="mb-1">{{ b.eco_comment }}</p>{% endif %}
-			{% if b.eco_comment_kd %}<p class="mb-0 text-muted">{{ b.eco_comment_kd }}</p>{% endif %}
 		</div>
 		{% endif %}
 		{% endwith %}
