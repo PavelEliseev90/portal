@@ -154,6 +154,168 @@ def _diag_items(estimation) -> list[dict]:
     return rows
 
 
+_SIDE_LABELS = {
+    'array_images_pered': 'перед',
+    'vnesh_car_osmotr_pered': 'перед',
+    'array_images_vod': 'водительская сторона',
+    'vnesh_car_osmotr_vod': 'водительская сторона',
+    'array_images_zad': 'зад',
+    'vnesh_car_osmotr_zad': 'зад',
+    'array_images_pass': 'пассажирская сторона',
+    'vnesh_car_osmotr_pass': 'пассажирская сторона',
+    'array_images_up': 'крыша',
+    'vnesh_car_osmotr_up': 'крыша',
+    'array_images_down': 'низ / пороги',
+    'vnesh_car_osmotr_down': 'низ / пороги',
+    'array_images_pol': 'пол',
+    'vnesh_car_osmotr_pol': 'пол',
+}
+
+
+def _dashboard_errors(salon) -> list[dict]:
+    if salon is None:
+        return []
+    try:
+        rows = []
+        for err in salon.dashboard_error.all().order_by('-critical', 'name')[:12]:
+            rows.append({
+                'name': (err.name or '').strip() or 'Индикатор',
+                'description': (err.description or '').strip(),
+                'critical': bool(err.critical),
+            })
+        return rows
+    except Exception:
+        return []
+
+
+def _scheme_capture_url(estimation, type_file: str) -> str:
+    """URL сохранённого скриншота схемы с отметками (без placeholder)."""
+    from register.models import RegRegInteractivOcenkaFiles
+
+    try:
+        row = (
+            RegRegInteractivOcenkaFiles.objects
+            .filter(estimation=estimation, type_file=type_file)
+            .exclude(file='')
+            .order_by('-date')
+            .first()
+        )
+    except Exception:
+        return ''
+    if row is None:
+        return ''
+    try:
+        return (row.get_absolute_url() or '').strip()
+    except Exception:
+        return ''
+
+
+def _scheme_marks_count(estimation, array_type: str) -> int:
+    from register.models import RegRegInteractivOcenkaFiles
+
+    try:
+        return (
+            RegRegInteractivOcenkaFiles.objects
+            .filter(estimation=estimation, type_file=array_type)
+            .exclude(type_point='')
+            .count()
+        )
+    except Exception:
+        return 0
+
+
+def _inspection_schemes(estimation) -> dict[str, Any]:
+    """Главные фото схем осмотра кузова / днища / салона с отметками."""
+    body_defs = (
+        ('Перед', 'vnesh_car_osmotr_pered', 'array_images_pered'),
+        ('Водительская сторона', 'vnesh_car_osmotr_vod', 'array_images_vod'),
+        ('Пассажирская сторона', 'vnesh_car_osmotr_pass', 'array_images_pass'),
+        ('Зад', 'vnesh_car_osmotr_zad', 'array_images_zad'),
+        ('Крыша', 'vnesh_car_osmotr_up', 'array_images_up'),
+    )
+    under_defs = (
+        ('Днище', 'vnesh_car_osmotr_pol', 'array_images_pol'),
+    )
+    salon_defs = (
+        ('Салон — основной вид', 'osmotr_salon', 'array_images_osmotr_salon'),
+        ('Салон — вид 2', 'osmotr_salon_v1_1', 'array_images_osmotr_salon_v1_1'),
+        ('Салон — вид 3', 'osmotr_salon_v1_2', 'array_images_osmotr_salon_v1_2'),
+        ('Салон — вид 4', 'osmotr_salon_v1_3', 'array_images_osmotr_salon_v1_3'),
+    )
+
+    def _group(defs):
+        items = []
+        marks_total = 0
+        for title, capture_type, array_type in defs:
+            url = _scheme_capture_url(estimation, capture_type)
+            if not url:
+                continue
+            marks = _scheme_marks_count(estimation, array_type)
+            marks_total += marks
+            items.append({
+                'title': title,
+                'url': url,
+                'marks': marks,
+            })
+        return {'items': items, 'marks': marks_total, 'has': bool(items)}
+
+    body = _group(body_defs)
+    underbody = _group(under_defs)
+    salon = _group(salon_defs)
+    return {
+        'body': body,
+        'underbody': underbody,
+        'salon': salon,
+        'has': body['has'] or underbody['has'] or salon['has'],
+    }
+
+
+def _paint_thickness(estimation) -> dict[str, Any]:
+    """Точки толщиномера: >300 мкм — окрашено, >900 — сильная перекраска."""
+    from register.models import RegRegInteractivOcenkaFiles
+
+    empty = {'count': 0, 'strong': 0, 'max_um': 0, 'points': [], 'sides': [], 'measured': 0}
+    try:
+        measured = (
+            RegRegInteractivOcenkaFiles.objects
+            .filter(estimation=estimation, type_point='толщиномер', kraska__gt=0)
+            .count()
+        )
+        qs = (
+            RegRegInteractivOcenkaFiles.objects
+            .filter(estimation=estimation, type_point='толщиномер', kraska__gt=300)
+            .order_by('-kraska')[:20]
+        )
+    except Exception:
+        return empty
+
+    points = []
+    sides = set()
+    strong = 0
+    max_um = 0
+    for row in qs:
+        um = _int(row.kraska)
+        if um > max_um:
+            max_um = um
+        if um > 900:
+            strong += 1
+        side = _SIDE_LABELS.get(row.type_file or '', '') or (row.type_file or 'кузов')
+        sides.add(side)
+        points.append({
+            'um': um,
+            'side': side,
+            'strong': um > 900,
+        })
+    return {
+        'count': len(points),
+        'strong': strong,
+        'max_um': max_um,
+        'points': points[:8],
+        'sides': sorted(sides),
+        'measured': measured,
+    }
+
+
 def _autoteka_signal(vin: str) -> dict:
     if not vin:
         return {}
@@ -445,6 +607,9 @@ def build_client_brief(estimation) -> dict[str, Any]:
 
     diag = _diag_items(estimation)
     damage_n = _body_damage_count(estimation)
+    paint = _paint_thickness(estimation)
+    dashboard_errors = _dashboard_errors(salon)
+    schemes = _inspection_schemes(estimation)
     signal = _autoteka_signal(vin)
     sales = _our_sales_60d(estimation)
 
@@ -483,6 +648,39 @@ def build_client_brief(estimation) -> dict[str, Any]:
         _add(pros, 'VIN совпадает', 'Номер на кузове проверен, расхождений нет.', source='Внешний осмотр', factor='vin_ok')
     if vnesh and vnesh.check_engine_int == 1:
         _add(pros, 'Двигатель и коробка на месте', 'При осмотре агрегатов замечаний нет.', source='Внешний осмотр', factor='engine_place_ok')
+    if td:
+        readable_ok = []
+        if getattr(td, 'unreadable_vin_int', 10) == 1:
+            readable_ok.append('VIN')
+        if getattr(td, 'unreadable_engine_num_int', 10) == 1:
+            readable_ok.append('№ ДВС')
+        if getattr(td, 'unreadable_rama_int', 10) == 1:
+            readable_ok.append('№ рамы / кузова')
+        if len(readable_ok) >= 2:
+            _add(
+                pros,
+                'Идентификаторы читаются',
+                'Проверено: {}.'.format(', '.join(readable_ok)),
+                source='Проверки',
+                factor='ids_readable',
+            )
+        td_core = ('engine', 'gear', 'suspension', 'brake', 'wheel')
+        if all(getattr(td, a, 10) == 1 for a in td_core) and not getattr(td, 'no_test', False):
+            _add(
+                pros,
+                'Тест-драйв без замечаний',
+                'Основные узлы (двигатель, КПП, подвеска, тормоза, рулевое) в порядке.',
+                source='Тест-драйв',
+                factor='diag_ok',
+            )
+    if paint.get('measured') and paint['count'] == 0 and damage_n == 0:
+        _add(
+            pros,
+            'Кузов без следов перекраса',
+            'По толщиномеру явной перекраски (больше 300 мкм) не отмечено.',
+            source='Внешний осмотр',
+            factor='paint_ok',
+        )
     dtp = _int(estimation.count_dtp) or (_int(proverki.count_dtp) if proverki else 0)
     if dtp == 0 and (proverki is not None or estimation.avtoteka_data):
         _add(pros, 'Без зафиксированных ДТП', 'В доступных проверках аварий нет.', source='Автотека / проверки', factor='no_dtp')
@@ -641,6 +839,47 @@ def build_client_brief(estimation) -> dict[str, Any]:
             effect='Юридический риск. Пока не закрыт — оценку не поднимаем.',
             factor='vin_problem',
         )
+    if vnesh and vnesh.check_engine_int == 0:
+        _add(
+            cons, 'Замечание по ДВС / КПП на месте',
+            'При осмотре агрегатов есть замечания.',
+            source='Внешний осмотр',
+            effect='Нужна ясность до сделки. Покупатель это заметит.',
+            factor='engine_place_fail',
+        )
+    if td:
+        if getattr(td, 'unreadable_vin_int', 10) == 0:
+            _add(
+                cons, 'VIN не читается',
+                'Идентификатор VIN на кузове читается плохо или не читается.',
+                source='Проверки',
+                effect='Юридический и рыночный риск. Такие авто принимают консервативнее.',
+                factor='unreadable_vin',
+            )
+        if getattr(td, 'unreadable_engine_num_int', 10) == 0:
+            _add(
+                cons, 'Номер двигателя не читается',
+                'Номер ДВС читается плохо или не читается.',
+                source='Проверки',
+                effect='Риск при регистрации и перепродаже. В цене есть запас.',
+                factor='unreadable_engine',
+            )
+        if getattr(td, 'unreadable_rama_int', 10) == 0:
+            _add(
+                cons, 'Номер рамы / кузова не читается',
+                'Номер рамы или кузова читается плохо или не читается.',
+                source='Проверки',
+                effect='Сомнения у покупателя и у ГИБДД. Оценка консервативная.',
+                factor='unreadable_rama',
+            )
+        if getattr(td, 'no_test', False):
+            _add(
+                cons, 'Тест-драйв не проводился',
+                'Диагностика / тест-драйв не выполнен.',
+                source='Тест-драйв',
+                effect='Часть рисков по ходовой и агрегатам ещё не закрыта.',
+                factor='no_test',
+            )
     if salon and salon.cleaning_int == 1:
         _add(
             cons, 'Нужна химчистка',
@@ -674,18 +913,65 @@ def build_client_brief(estimation) -> dict[str, Any]:
             )
             break
     if salon:
-        try:
-            if salon.dashboard_error.exists():
-                names = list(salon.dashboard_error.values_list('name', flat=True)[:6])
+        for attr, label in (
+            ('hand_brake', 'ручник'),
+            ('conductor', 'кондиционер / климат'),
+            ('wiper', 'дворники'),
+            ('signal', 'сигнализация / звуковой сигнал'),
+            ('power_windows', 'стеклоподъёмники'),
+            ('seat_belt', 'ремни безопасности'),
+        ):
+            if getattr(salon, attr, 10) == 0:
                 _add(
-                    cons, 'Ошибки на панели',
-                    'Горят индикаторы: {}.'.format(', '.join(n for n in names if n) or 'есть ошибки'),
+                    cons, 'Не работает: {}'.format(label),
+                    'На осмотре салона отмечено: {} не в порядке.'.format(label),
                     source='Салон',
-                    effect='Нужна диагностика электроники. Пока лампы горят — цена ниже.',
-                    factor='dashboard',
+                    effect='Ремонт до продажи или скидка покупателю.',
+                    factor='salon_systems',
                 )
-        except Exception:
-            pass
+                break
+        if dashboard_errors:
+            critical_n = sum(1 for e in dashboard_errors if e['critical'])
+            names = [e['name'] for e in dashboard_errors[:6] if e['name']]
+            text = 'Горят индикаторы: {}.'.format(', '.join(names) or 'есть ошибки')
+            if critical_n:
+                text += ' Критичных: {}.'.format(critical_n)
+            _add(
+                cons,
+                'Ошибки на панели',
+                text,
+                source='Салон',
+                effect='Нужна диагностика. Расшифровка индикаторов — в блоке ниже.',
+                factor='dashboard_critical' if critical_n else 'dashboard',
+            )
+    if paint['count'] >= 3 or paint['strong'] >= 1:
+        sides = ', '.join(paint['sides'][:4]) or 'кузов'
+        _add(
+            cons,
+            'Перекраска элементов кузова',
+            'Толщиномер показал окраску (больше 300 мкм) на {} точках{}, зоны: {}. Макс. {} мкм.'.format(
+                paint['count'],
+                (', сильная перекраска: {}'.format(paint['strong'])) if paint['strong'] else '',
+                sides,
+                paint['max_um'],
+            ),
+            source='ЛКП / толщиномер',
+            effect='Покупатель увидит перекрас толщиномером. История кузова давит на цену.',
+            factor='paint_strong' if paint['strong'] else 'paint_many',
+        )
+    elif paint['count'] > 0:
+        sides = ', '.join(paint['sides'][:4]) or 'кузов'
+        sample = '; '.join(
+            '{} — {} мкм'.format(p['side'], p['um']) for p in paint['points'][:3]
+        )
+        _add(
+            cons,
+            'Есть окрашенные элементы',
+            'Толщиномер больше 300 мкм ({}). {}'.format(sides, sample),
+            source='ЛКП / толщиномер',
+            effect='Элемент красили. Это не всегда ДТП, но на рынке торгуются.',
+            factor='paint_few',
+        )
     if damage_n >= 3:
         _add(
             cons, 'Повреждения кузова',
@@ -705,34 +991,44 @@ def build_client_brief(estimation) -> dict[str, Any]:
     if td:
         for attr, label in (
             ('engine', 'двигатель'),
+            ('system_og', 'система выпуска ОГ'),
             ('gear', 'коробка передач'),
             ('suspension', 'подвеска'),
             ('brake', 'тормоза'),
             ('wheel', 'рулевое'),
             ('airbag', 'подушки безопасности'),
+            ('subframe', 'подрамник'),
+            ('conditioner', 'кондиционер'),
+            ('turbo', 'турбина'),
+            ('drive', 'привод'),
         ):
             val = getattr(td, attr, 10)
             comment = (getattr(td, 'comment_' + attr, None) or '').strip()
             if val == 0:
                 _add(
-                    cons, 'Диагностика: {}'.format(label),
-                    (comment or 'По диагностике узел не в порядке.').strip(),
-                    source='Диагностика',
+                    cons, 'Тест-драйв: {}'.format(label),
+                    (comment or 'По диагностике / тест-драйву узел не в порядке.').strip(),
+                    source='Тест-драйв',
                     effect='Ремонт до продажи. Сумма работ вычитается из рыночной цены.',
                     factor='diag_fail',
                 )
             elif val == 2:
                 _add(
                     cons, 'Замечания: {}'.format(label),
-                    (comment or 'Есть замечания по диагностике.').strip(),
-                    source='Диагностика',
+                    (comment or 'Есть замечания по тест-драйву / диагностике.').strip(),
+                    source='Тест-драйв',
                     effect='Либо устраняем, либо закладываем риск в цену.',
                     factor='diag_remarks',
                 )
     for item in diag[:8]:
+        text_parts = []
+        if item['consequences']:
+            text_parts.append(item['consequences'])
+        if item['causes']:
+            text_parts.append('Возможные причины: {}.'.format(item['causes']))
         _add(
             cons, item['title'] or 'Замечание диагностики',
-            item['consequences'] or item['causes'] or (item['category'] or 'Диагностика'),
+            ' '.join(text_parts) or (item['category'] or 'Диагностика'),
             source='Диагностика',
             effect=item['consequences'] or 'Может потребовать ремонта и влияет на цену приёма.',
             factor='diag_item',
@@ -789,10 +1085,14 @@ def build_client_brief(estimation) -> dict[str, Any]:
         sources.append('Автохаб (рынок)')
     if avito_avg or avito_min:
         sources.append('Объявления Avito')
-    if diag or (td and any(getattr(td, a, 10) in (0, 2) for a in ('engine', 'gear', 'suspension', 'brake'))):
-        sources.append('Диагностика')
+    if diag or (td and any(getattr(td, a, 10) in (0, 2) for a in ('engine', 'gear', 'suspension', 'brake', 'wheel', 'airbag'))):
+        sources.append('Тест-драйв / диагностика')
     if sog and sog.no_diagnostica:
         sources.append('Без диагностики (решение по осмотру)')
+    if paint.get('measured'):
+        sources.append('Толщиномер ЛКП')
+    if dashboard_errors:
+        sources.append('Индикаторы панели')
     if sales.get('total') or sales.get('factor') == 'our_sales_none':
         sources.append('Наши продажи за {} дней'.format(OUR_SALES_DAYS))
 
@@ -927,6 +1227,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
         'year': year,
         'vin': vin,
         'plate': plate,
+        'number_body': (getattr(estimation, 'number_body', None) or '').strip(),
         'modification': _mod_label(estimation),
         'run': run,
         'owners': owners,
@@ -940,6 +1241,9 @@ def build_client_brief(estimation) -> dict[str, Any]:
         'preview_url': preview_url,
         'pros_count': len(pros),
         'cons_count': len(cons),
+        'dashboard_errors': dashboard_errors,
+        'paint': paint,
+        'schemes': schemes,
         'offer_reception': offer_reception,
         'offer_sale': offer_sale,
         'offer_before': offer_before,

@@ -69,6 +69,78 @@
 .est-brief-buyout { margin: 0.75rem 0 1rem; }
 .est-brief-buyout-value { font-size: 1.35rem; font-weight: 700; color: #002a5a; line-height: 1.2; }
 .est-brief-buyout-label { font-size: 0.8rem; color: #8ea1ba; }
+.est-brief-dash {
+	border-left: 4px solid #e09f3e;
+	padding-left: 0.75rem;
+	margin-bottom: 0.85rem;
+}
+.est-brief-dash-critical { border-left-color: #c1121f; }
+.est-brief-crit {
+	display: inline-block;
+	font-size: 0.7rem;
+	font-weight: 600;
+	letter-spacing: .03em;
+	text-transform: uppercase;
+	color: #c1121f;
+	background: rgba(193, 18, 31, 0.1);
+	border-radius: 999px;
+	padding: 0.15rem 0.5rem;
+	margin-left: 0.35rem;
+}
+.est-brief-paint-um { font-variant-numeric: tabular-nums; color: #002a5a; font-weight: 600; }
+.est-brief-schemes details {
+	border: 1px solid #d5deea;
+	border-radius: 0.75rem;
+	padding: 0.65rem 0.9rem;
+	margin-bottom: 0.65rem;
+	background: #fff;
+}
+.est-brief-schemes summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: #002a5a;
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+.est-brief-schemes summary::-webkit-details-marker { display: none; }
+.est-brief-schemes summary::before {
+	content: "▸";
+	display: inline-block;
+	color: #8ea1ba;
+	transition: transform .15s ease;
+}
+.est-brief-schemes details[open] > summary::before { transform: rotate(90deg); }
+.est-brief-scheme-hint { font-weight: 400; font-size: 0.8rem; color: #8ea1ba; }
+.est-brief-scheme-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 0.75rem;
+	margin-top: 0.85rem;
+}
+.est-brief-scheme-card {
+	background: #f4f7fb;
+	border-radius: 0.65rem;
+	overflow: hidden;
+}
+.est-brief-scheme-card img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 4 / 3;
+	object-fit: contain;
+	background: #e8eef5;
+}
+.est-brief-scheme-card .cap {
+	padding: 0.45rem 0.6rem;
+	font-size: 0.8rem;
+	color: #002a5a;
+}
+@media print {
+	.est-brief-schemes details { border: 1px solid #ccc; break-inside: avoid; }
+}
 </style>
 {% endblock %}
 
@@ -147,6 +219,9 @@
 						<div class="col-6 col-md-3"><div class="small text-muted">Госномер</div><div>{{ b.plate|default:"—" }}</div></div>
 						<div class="col-6 col-md-3"><div class="small text-muted">Пробег</div><div>{% if b.run %}{{ b.run }} км{% else %}—{% endif %}</div></div>
 						<div class="col-6 col-md-3"><div class="small text-muted">Владельцы / ключи</div><div>{{ b.owners|default:"—" }} / {{ b.keys|default:"—" }}</div></div>
+						{% if b.number_body %}
+						<div class="col-6 col-md-3"><div class="small text-muted">№ кузова</div><div>{{ b.number_body }}</div></div>
+						{% endif %}
 					</div>
 					{% if b.color %}
 						<p class="small text-muted mb-0 mt-2">Цвет: {{ b.color }}</p>
@@ -362,6 +437,126 @@
 			</div>
 		</div>
 
+		{% if b.dashboard_errors %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Индикаторы приборной панели</h5>
+			<p class="small text-muted mb-3">Расшифровка того, что горит на панели — можно назвать клиенту.</p>
+			{% for e in b.dashboard_errors %}
+				<div class="est-brief-dash {% if e.critical %}est-brief-dash-critical{% endif %}">
+					<div class="fw-semibold">
+						{{ e.name }}
+						{% if e.critical %}<span class="est-brief-crit">критично</span>{% endif %}
+					</div>
+					{% if e.description %}
+						<div class="mt-1">{{ e.description }}</div>
+					{% else %}
+						<div class="text-muted mt-1">Описание в справочнике не заполнено — уточните по диагностике.</div>
+					{% endif %}
+				</div>
+			{% endfor %}
+		</div>
+		{% endif %}
+
+		{% if b.schemes.has %}
+		<div class="portal-panel mb-3 est-brief-schemes">
+			<h5 class="mb-2">Схемы осмотра</h5>
+			<p class="small text-muted mb-3">Сохранённые фото схем с отметками — можно показать клиенту.</p>
+
+			{% if b.schemes.body.has %}
+			<details>
+				<summary>
+					Кузов
+					<span class="est-brief-scheme-hint">
+						{{ b.schemes.body.items|length }} фото{% if b.schemes.body.marks %} · отметок: {{ b.schemes.body.marks }}{% endif %}
+					</span>
+				</summary>
+				<div class="est-brief-scheme-grid">
+					{% for s in b.schemes.body.items %}
+					<figure class="est-brief-scheme-card mb-0">
+						<a href="{{ s.url }}" target="_blank" rel="noopener">
+							<img src="{{ s.url }}" alt="{{ s.title }}" loading="lazy">
+						</a>
+						<figcaption class="cap">
+							{{ s.title }}{% if s.marks %} · {{ s.marks }}{% endif %}
+						</figcaption>
+					</figure>
+					{% endfor %}
+				</div>
+			</details>
+			{% endif %}
+
+			{% if b.schemes.underbody.has %}
+			<details>
+				<summary>
+					Днище
+					<span class="est-brief-scheme-hint">
+						{% if b.schemes.underbody.marks %}отметок: {{ b.schemes.underbody.marks }}{% else %}схема осмотра{% endif %}
+					</span>
+				</summary>
+				<div class="est-brief-scheme-grid">
+					{% for s in b.schemes.underbody.items %}
+					<figure class="est-brief-scheme-card mb-0">
+						<a href="{{ s.url }}" target="_blank" rel="noopener">
+							<img src="{{ s.url }}" alt="{{ s.title }}" loading="lazy">
+						</a>
+						<figcaption class="cap">
+							{{ s.title }}{% if s.marks %} · {{ s.marks }}{% endif %}
+						</figcaption>
+					</figure>
+					{% endfor %}
+				</div>
+			</details>
+			{% endif %}
+
+			{% if b.schemes.salon.has %}
+			<details>
+				<summary>
+					Салон
+					<span class="est-brief-scheme-hint">
+						{{ b.schemes.salon.items|length }} фото{% if b.schemes.salon.marks %} · отметок: {{ b.schemes.salon.marks }}{% endif %}
+					</span>
+				</summary>
+				<div class="est-brief-scheme-grid">
+					{% for s in b.schemes.salon.items %}
+					<figure class="est-brief-scheme-card mb-0">
+						<a href="{{ s.url }}" target="_blank" rel="noopener">
+							<img src="{{ s.url }}" alt="{{ s.title }}" loading="lazy">
+						</a>
+						<figcaption class="cap">
+							{{ s.title }}{% if s.marks %} · {{ s.marks }}{% endif %}
+						</figcaption>
+					</figure>
+					{% endfor %}
+				</div>
+			</details>
+			{% endif %}
+		</div>
+		{% endif %}
+
+		{% if b.paint.points %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Лакокрасочное покрытие</h5>
+			<p class="small text-muted mb-3">
+				Точки толщиномера больше 300 мкм (окраска). Сильная перекраска — больше 900 мкм.
+				{% if b.paint.measured %} Замеров всего: {{ b.paint.measured }}.{% endif %}
+			</p>
+			<div class="table-responsive">
+				<table class="table table-sm mb-0">
+					<thead><tr><th>Зона</th><th class="text-end">мкм</th><th></th></tr></thead>
+					<tbody>
+					{% for p in b.paint.points %}
+						<tr>
+							<td>{{ p.side }}</td>
+							<td class="text-end est-brief-paint-um">{{ p.um }}</td>
+							<td>{% if p.strong %}<span class="est-brief-crit">сильная</span>{% else %}окрашено{% endif %}</td>
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		{% endif %}
+
 		{% if b.objections %}
 		<div class="portal-panel mb-3">
 			<h5 class="mb-2">Если клиент говорит…</h5>
@@ -397,13 +592,20 @@
 (function () {
 	var btn = document.getElementById('estBriefCopy');
 	var box = document.getElementById('estBriefTalk');
-	if (!btn || !box) return;
-	btn.addEventListener('click', function () {
-		var text = box.innerText || '';
-		if (navigator.clipboard && navigator.clipboard.writeText) {
-			navigator.clipboard.writeText(text).then(function () { btn.textContent = 'Скопировано'; });
-		}
-	});
+	if (btn && box) {
+		btn.addEventListener('click', function () {
+			var text = box.innerText || '';
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(text).then(function () { btn.textContent = 'Скопировано'; });
+			}
+		});
+	}
+	var schemeDetails = document.querySelectorAll('.est-brief-schemes details');
+	if (schemeDetails.length) {
+		window.addEventListener('beforeprint', function () {
+			schemeDetails.forEach(function (el) { el.setAttribute('open', ''); });
+		});
+	}
 })();
 </script>
 {% endblock %}
