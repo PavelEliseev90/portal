@@ -799,7 +799,8 @@ def build_client_brief(estimation) -> dict[str, Any]:
             effect='Сделку нельзя закрыть, пока не снят залог. Срок и риски закладываются в предложение.',
             factor='credit',
         )
-    if vnesh and vnesh.windshield_error_int == 0:
+    # В UI: 0 = ок / не обнаружено, 1 = есть проблемы (как на кнопках оценки).
+    if vnesh and vnesh.windshield_error_int == 1:
         _add(
             cons, 'Лобовое стекло',
             'Есть повреждения лобового.',
@@ -807,7 +808,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
             effect='Замена стекла — ощутимая сумма, её вычитают из цены приёма.',
             factor='windshield',
         )
-    if vnesh and vnesh.light_error_int == 0:
+    if vnesh and vnesh.light_error_int == 1:
         _add(
             cons, 'Свет',
             'Проблемы со световыми приборами.',
@@ -815,7 +816,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
             effect='Ремонт/замена фар. Влияет на безопасность и на оценку.',
             factor='lights',
         )
-    if vnesh and vnesh.oil_error_int == 0:
+    if vnesh and vnesh.oil_error_int == 1:
         _add(
             cons, 'Подтекание масла',
             'На осмотре видны следы масла.',
@@ -823,7 +824,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
             effect='Нужна диагностика двигателя. Пока причина не ясна — консервативная цена.',
             factor='oil_leak',
         )
-    if vnesh and vnesh.water_error_int == 0:
+    if vnesh and vnesh.water_error_int == 1:
         _add(
             cons, 'Антифриз',
             'Следы подтекания охлаждающей жидкости.',
