@@ -1,0 +1,160 @@
+{% include 'lo/partials/history_list_styles.html' %}
+
+<div class="hidemobile">
+	<h5>История ремонтов{% if params.tab_repairs_count %} · {{ params.tab_repairs_count }}{% endif %}</h5>
+	<hr class="my-3">
+</div>
+
+{% if params.repairs_info %}
+<div class="lo-hist-list">
+{% for doc in params.repairs_info %}
+	<article
+		class="lo-hist-card lo-hist-card--click {% if doc.recomendations_new > 0 %}lo-hist-card--warn{% elif doc.closed %}lo-hist-card--ok{% elif doc.active %}lo-hist-card--active{% else %}lo-hist-card--open{% endif %}"
+		data-bs-toggle="modal"
+		data-bs-target="#example_repair_{{ doc.pk }}"
+		role="button"
+		tabindex="0"
+	>
+		<div class="lo-hist-top">
+			<span class="lo-hist-date">{% if doc.dataTime %}{{ doc.dataTime|date:"d.m.Y" }}{% else %}{{ doc.dataTime }}{% endif %}</span>
+			{% if doc.nomer %}
+				<span class="lo-hist-badge lo-hist-badge--muted">ЗН {{ doc.nomer }}</span>
+			{% endif %}
+			{% if doc.recomendations_new > 0 %}
+				<span class="lo-hist-badge lo-hist-badge--warn">Есть рекомендации</span>
+			{% elif doc.closed %}
+				<span class="lo-hist-badge lo-hist-badge--ok">Закрыт</span>
+			{% elif doc.active %}
+				<span class="lo-hist-badge lo-hist-badge--ok">Проведён</span>
+			{% else %}
+				<span class="lo-hist-badge lo-hist-badge--bad">Открыт</span>
+			{% endif %}
+			{% if doc.typeRemont %}
+				<span class="lo-hist-badge">{{ doc.typeRemont }}</span>
+			{% endif %}
+		</div>
+
+		<p class="lo-hist-title">
+			{% if doc.unit %}{{ doc.unit.name }}{% else %}Подразделение не указано{% endif %}
+			{% if doc.cars_grz_board %} · {{ doc.cars_grz_board }}{% endif %}
+		</p>
+
+		<div class="lo-hist-meta">
+			<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.run %}{{ doc.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
+			<div class="lo-hist-meta__item"><span class="lbl">Сумма</span><span class="val">{% if doc.amount %}{{ doc.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</span></div>
+			<div class="lo-hist-meta__item"><span class="lbl">Рекомендации ЗН</span><span class="val">{{ doc.recomendationsZN_count|default:0 }}</span></div>
+		</div>
+
+		{% if doc.customerWords %}
+			<div class="lo-hist-comment">{{ doc.customerWords }}</div>
+		{% endif %}
+
+		{% if doc.recomendationsZN %}
+			<ul class="lo-hist-recs">
+				{% for recomendation in doc.recomendationsZN %}
+					<li>{{ recomendation.name }}</li>
+				{% endfor %}
+			</ul>
+		{% endif %}
+
+		<div class="lo-hist-foot">
+			<div class="lo-hist-counts">
+				<span>Товары {{ doc.products_count|default:0 }}</span>
+				<span>Работы {{ doc.works_count|default:0 }}</span>
+				<span>Рек. клиента {{ doc.recomendations_customer_count|default:0 }}</span>
+				<span>Рек. МЦУ {{ doc.recomendations_mcu_count|default:0 }}</span>
+			</div>
+			<div class="lo-hist-price ms-auto">
+				<span class="lbl">Итого</span>
+				<span class="val">{% if doc.amount %}{{ doc.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+			</div>
+		</div>
+	</article>
+
+	<div class="modal fade lo-hist-modal" id="example_repair_{{ doc.pk }}" tabindex="-1" aria-labelledby="repairModalLabel_{{ doc.pk }}" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-scrollable modal-xl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<span id="repairModalLabel_{{ doc.pk }}">Заказ-наряд №{{ doc.nomer }}{% if doc.dataTime %} от {{ doc.dataTime|date:"d.m.Y" }}{% endif %}</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+				</div>
+				<div class="modal-body">
+					<div class="lo-hist-meta mb-3">
+						<div class="lo-hist-meta__item"><span class="lbl">Дата</span><span class="val">{% if doc.dataTime %}{{ doc.dataTime|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span></div>
+						<div class="lo-hist-meta__item"><span class="lbl">Подразделение</span><span class="val">{% if doc.unit %}{{ doc.unit.name }}{% else %}—{% endif %}</span></div>
+						<div class="lo-hist-meta__item"><span class="lbl">Тип</span><span class="val">{{ doc.typeRemont|default:"—" }}</span></div>
+						<div class="lo-hist-meta__item"><span class="lbl">ГРЗ</span><span class="val">{{ doc.cars_grz_board|default:"—" }}</span></div>
+						<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.run %}{{ doc.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
+					</div>
+
+					{% if doc.customerWords %}
+						<div class="lo-hist-comment">{{ doc.customerWords }}</div>
+					{% endif %}
+
+					<div class="table-responsive">
+						<table class="table table-sm mb-3">
+							<thead>
+								<tr>
+									<th>Наименование</th>
+									<th class="text-end">Кол-во</th>
+									<th class="text-end">Цена</th>
+									<th class="text-end">Скидка %</th>
+									<th class="text-end">Скидка</th>
+									<th class="text-end">Сумма</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% if doc.works_count > 0 %}
+									{% for work_zn in doc.works %}
+									<tr>
+										<td>{{ work_zn.work.name }}</td>
+										<td class="text-end">{{ work_zn.quantity }}</td>
+										<td class="text-end">{{ work_zn.price|floatformat:"0g" }} ₽</td>
+										<td class="text-end">{{ work_zn.discountPercentage }}</td>
+										<td class="text-end">{{ work_zn.discountAmount|floatformat:"0g" }} ₽</td>
+										<td class="text-end">{{ work_zn.amountResult|floatformat:"0g" }} ₽</td>
+									</tr>
+									{% endfor %}
+								{% endif %}
+								{% if doc.products_count > 0 %}
+									{% for product_zn in doc.products %}
+									<tr>
+										<td>{{ product_zn.product.name }}</td>
+										<td class="text-end">{{ product_zn.quantity }}</td>
+										<td class="text-end">{{ product_zn.price|floatformat:"0g" }} ₽</td>
+										<td class="text-end">{{ product_zn.discountPercentage }}</td>
+										<td class="text-end">{{ product_zn.discountAmount|floatformat:"0g" }} ₽</td>
+										<td class="text-end">{{ product_zn.amountResult|floatformat:"0g" }} ₽</td>
+									</tr>
+									{% endfor %}
+								{% endif %}
+								{% if not doc.works_count and not doc.products_count %}
+									<tr><td colspan="6" class="text-muted">Нет позиций в заказ-наряде.</td></tr>
+								{% endif %}
+							</tbody>
+						</table>
+					</div>
+
+					<div class="lo-hist-foot">
+						<div class="lo-hist-price">
+							<span class="lbl">Товары</span>
+							<span class="val">{% if doc.products_amount %}{{ doc.products_amount|floatformat:"0g" }} ₽{% else %}0 ₽{% endif %}</span>
+						</div>
+						<div class="lo-hist-price">
+							<span class="lbl">Работы</span>
+							<span class="val">{% if doc.works_amount %}{{ doc.works_amount|floatformat:"0g" }} ₽{% else %}0 ₽{% endif %}</span>
+						</div>
+						<div class="lo-hist-price ms-auto">
+							<span class="lbl">Итого</span>
+							<span class="val">{% if doc.amount %}{{ doc.amount|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="lo-hist-empty">Истории ремонтов по этому автомобилю пока нет.</div>
+{% endif %}
