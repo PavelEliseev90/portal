@@ -1343,8 +1343,14 @@
 					</div>
 			
 					<div class="kors-metric-card">
-						<span class="kors-metric-card__label">Поступление</span>
-						<span class="kors-metric-card__value fs-6">{{params.object.lo_link_number}} от {{params.object.lo_link_date}}</span>			
+						<span class="kors-metric-card__label">Складской №</span>
+						<span class="kors-metric-card__value fs-6">
+							{% if params.object.lo_link_number %}
+								{{ params.object.lo_link_number }}{% if params.object.lo_link_date %} от {{ params.object.lo_link_date|date:"d.m.Y" }}{% endif %}
+							{% else %}
+								—
+							{% endif %}
+						</span>
 					</div>
 			
 					<div class="kors-metric-card">
@@ -1417,11 +1423,6 @@
 
   	</section>
 
-	{% include 'avtosalon/includes/car_intake_summary.html' %}
-	{% include 'avtosalon/includes/car_wheels_summary.html' %}
-	{% include 'avtosalon/includes/car_expenses_summary.html' %}
-	{% include 'avtosalon/includes/car_related_documents.html' %}
-
 	<div class="row">
 		<div class="col-2 text-center hidemobile">
 			<div class="sticky-top portal-sidebar" id="position-sticky">
@@ -1460,7 +1461,7 @@
 						<span>История оценок - {{ params.tab_counts.estimation }}</span>                
 					</a>
 					<a  href="?{% url_replace page=6 %}" class="kors-anchor-button" data-tab-target="6">
-						<span>История ремонтов - {{params.tab_repairs_count|default:0}}</span>               
+						<span>История ремонтов{% if params.tab_counts.repairs %} - {{ params.tab_counts.repairs }}{% endif %}</span>               
 					</a>
 					<a href="?{% url_replace page=7 %}" class="kors-anchor-button" data-tab-target="7">
 						<span>Автотека</span>                
@@ -1495,81 +1496,50 @@
 		{% else %}
 
 		<div class="portal-panel">
-			<h6 class="mb-3 padding-portal">Информация по статусам</h6>
-			<div class="row g-1">
-				
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
-						<div class="metric-card-label-portal">Транзит</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.group_price.name}}</div>
-					</div>
-				</div>
-
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
-						<div class="metric-card-label-portal">Подготовка</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.evaluation.name}}</div>
-					</div>
-				</div>
-
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
-						<div class="metric-card-label-portal">Готов</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.stage_price.name}}</div>
-					</div>
-				</div>
-				
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
-						<div class="metric-card-label-portal">В продаже</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.stage_price.name}}</div>
-					</div>
-				</div>
-
-			</div>
-		</div>
-		
-		<div class="portal-panel">
-			<div class="row g-1">
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
+			<h6 class="mb-3 padding-portal">Ценообразование</h6>
+			<div class="row g-2">
+				<div class="col-6 col-md-3">
+					<div class="metric-card-portal h-100">
 						<div class="metric-card-label-portal">Ценовая группа</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.group_price.name}}</div>
+						<div class="metric-card-value-portal fw-bold">{{ params.object.group_price.name|default:"—" }}</div>
 					</div>
 				</div>
-
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
+				<div class="col-6 col-md-3">
+					<div class="metric-card-portal h-100">
 						<div class="metric-card-label-portal">Вариант управления</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.evaluation.name}}</div>
+						<div class="metric-card-value-portal fw-bold">{{ params.object.evaluation.name|default:"—" }}</div>
 					</div>
 				</div>
-
-				<div class="col-12 col-sm-3">
-					<div class="metric-card-portal">
-						<div class="metric-card-label-portal">Этап управления</div>
-						<div class="metric-card-value-portal fw-bold">{{params.object.stage_price.name}}</div>
+				<div class="col-6 col-md-3">
+					<div class="metric-card-portal h-100">
+						<div class="metric-card-label-portal">Этап УС</div>
+						<div class="metric-card-value-portal fw-bold">{{ params.object.stage_price.name|default:"—" }}</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-3">
+					<div class="metric-card-portal h-100">
+						<div class="metric-card-label-portal">Финансирование (оценка)</div>
+						<div class="metric-card-value-portal fw-bold">{{ params.finance|floatformat:"0g" }} ₽</div>
+						<div class="small text-muted mt-1">≈ 18% год. × дни на складе × СС</div>
 					</div>
 				</div>
 			</div>
 		</div>
 
 		<div class="portal-panel">
-			
 			<h6 class="mb-3 padding-portal">Управление минимальным КМ</h6>
-				
 			<form method="post">
 				{% csrf_token %}
 				<div class="row g-2 mb-3">
 					<div class="col-sm">
 						<div class="form-floating">
-							<input type="text" class="form-control text-dark" id="min_km" name="min_km" value="{{params.1C.MinKM}}" autocomplete="off">
+							<input type="text" class="form-control text-dark" id="min_km" name="min_km" value="{% if params.1C %}{{ params.1C.MinKM }}{% endif %}" autocomplete="off">
 							<label for="min_km">Минимальный КМ</label>
 						</div>
 					</div>
 					<div class="col-sm">
 						<div class="form-floating">
-							<input type="text" class="form-control text-dark" id="percent_ss" name="percent_ss" value="{{params.1C.PercentSS}}" autocomplete="off">
+							<input type="text" class="form-control text-dark" id="percent_ss" name="percent_ss" value="{% if params.1C %}{{ params.1C.PercentSS }}{% endif %}" autocomplete="off">
 							<label for="percent_ss">Процент наценки СС</label>
 						</div>
 					</div>
@@ -1581,26 +1551,27 @@
 		</div>
 		
 		<div class="portal-panel">
-			
-			<h6 class="mb-3 padding-portal">Описание</h6>
-				
-			<div class="row g-2 mb-3">
-				
+			<h6 class="mb-3 padding-portal">Комментарии</h6>
+			<div class="row g-2 mb-0">
 				<div class="col-12 col-sm-6">
 					<div class="metric-card-label-portal">Для отдела подготовки</div>
 					<div class="form-floating mb-3">
-						<textarea class="form-control" rows="8">{{params.object.description_podgotovka}}</textarea>						
+						<textarea class="form-control" rows="8" readonly>{{params.object.description_podgotovka}}</textarea>
 					</div>
 				</div>
 				<div class="col-12 col-sm-6">
 					<div class="metric-card-label-portal">Для отдела продаж</div>
 					<div class="form-floating">
-						<textarea  class="form-control" rows="8">{{params.object.description_op}}</textarea>						
+						<textarea class="form-control" rows="8" readonly>{{params.object.description_op}}</textarea>
 					</div>
 				</div>
 			</div>
-
 		</div>
+
+		{% include 'avtosalon/includes/car_related_documents.html' %}
+		{% include 'avtosalon/includes/car_intake_summary.html' %}
+		{% include 'avtosalon/includes/car_wheels_summary.html' %}
+		{% include 'avtosalon/includes/car_expenses_summary.html' %}
 
 		{% endif %}
 

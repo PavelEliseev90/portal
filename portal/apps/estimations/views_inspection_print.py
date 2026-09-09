@@ -34,6 +34,15 @@ def build_inspection_sheet(*, estimation, rlk=None, back_url=''):
             .first()
         )
 
+    try:
+        from avtosalon.car_card_context import _sklad_nomer as _resolve_sklad_nomer
+        vin_for_sklad = ((estimation.vin or estimation.number_body or '') if estimation else '').strip()
+        if not vin_for_sklad and lo is not None:
+            vin_for_sklad = (lo.vin or '').strip()
+        sklad_nomer = _resolve_sklad_nomer(lo=lo, rlk=rlk, vin=vin_for_sklad)
+    except Exception:
+        sklad_nomer = (lo.nomer if lo and lo.nomer else '') or (rlk.nomer if rlk and rlk.nomer else '') or ''
+
     # Клиент
     customer_fio = ''
     if docs:
@@ -240,6 +249,7 @@ def build_inspection_sheet(*, estimation, rlk=None, back_url=''):
         'doc_date': doc_date,
         'unit_name': unit_name,
         'rlk_nomer': (rlk.nomer if rlk else '') or '',
+        'sklad_nomer': sklad_nomer,
         'customer_fio': customer_fio,
         'customer_phone': customer_phone,
         'manager_name': manager_name,

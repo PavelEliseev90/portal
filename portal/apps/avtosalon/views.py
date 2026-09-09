@@ -1295,8 +1295,14 @@ def _car_avtohub_queryset(car):
 
 def _price_edit_tab_counts(car):
     """Лёгкие счётчики для навигации price_edit (без тяжёлой аналитики)."""
+    from documents.models import DocZN
+
     avtohub_n = _car_avtohub_queryset(car).count()
     estimation_n = RegEstimationRefCarsOrganizations.objects.filter(car_id=car.pk).count()
+    repairs_n = 0
+    vin = (car.vin or '').strip()
+    if vin:
+        repairs_n = DocZN.objects.filter(cars__vin=vin).count()
     return {
         'photos': RefCarsOrganizationFiles.objects.filter(сars_organization=car).count(),
         'price_revaluations': RegRefCarsOrganizationsPrice.objects.filter(car=car).count(),
@@ -1304,6 +1310,7 @@ def _price_edit_tab_counts(car):
         'avtohub': avtohub_n,
         'estimation': estimation_n,
         'analytics_total': avtohub_n + estimation_n,
+        'repairs': repairs_n,
     }
 
 
@@ -1676,6 +1683,7 @@ def price_edit(request, slug):
             'lo__type_reception', 'lo__staff',
             'status', 'status_availability', 'status_ransom',
             'unit', 'store', 'type_reception', 'type_sale', 'organization',
+            'group_price', 'evaluation', 'stage_price', 'rating',
         )
         .first()
     )

@@ -30,7 +30,7 @@
 				<span class="lo-hist-badge lo-hist-badge--bad">Открыт</span>
 			{% endif %}
 			{% if doc.typeRemont %}
-				<span class="lo-hist-badge">{{ doc.typeRemont }}</span>
+				<span class="lo-hist-badge">{% firstof doc.typeRemont.name doc.typeRemont %}</span>
 			{% endif %}
 		</div>
 
@@ -82,7 +82,7 @@
 					<div class="lo-hist-meta mb-3">
 						<div class="lo-hist-meta__item"><span class="lbl">Дата</span><span class="val">{% if doc.dataTime %}{{ doc.dataTime|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span></div>
 						<div class="lo-hist-meta__item"><span class="lbl">Подразделение</span><span class="val">{% if doc.unit %}{{ doc.unit.name }}{% else %}—{% endif %}</span></div>
-						<div class="lo-hist-meta__item"><span class="lbl">Тип</span><span class="val">{{ doc.typeRemont|default:"—" }}</span></div>
+						<div class="lo-hist-meta__item"><span class="lbl">Тип</span><span class="val">{% firstof doc.typeRemont.name doc.typeRemont "—" %}</span></div>
 						<div class="lo-hist-meta__item"><span class="lbl">ГРЗ</span><span class="val">{{ doc.cars_grz_board|default:"—" }}</span></div>
 						<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.run %}{{ doc.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
 					</div>

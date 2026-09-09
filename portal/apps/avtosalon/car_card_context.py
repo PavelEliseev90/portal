@@ -21,6 +21,21 @@ def _fk_name(obj):
     return (getattr(obj, 'name', None) or '').strip()
 
 
+def _type_label(value, fallback=''):
+    """Строка типа ремонта/затрат: FK, dict или уже строка."""
+    if value is None:
+        return fallback
+    if isinstance(value, str):
+        return value.strip() or fallback
+    if isinstance(value, dict):
+        return (value.get('name') or value.get('Name') or '').strip() or fallback
+    name = getattr(value, 'name', None)
+    if name is not None:
+        return str(name).strip() or fallback
+    text = str(value).strip()
+    return text or fallback
+
+
 def _dash(value):
     if value is None:
         return ''
@@ -79,6 +94,18 @@ def get_car_interactiv_context(car):
     eco_url = ''
 
     lo = getattr(car, 'lo', None)
+    if lo is None:
+        try:
+            from documents.models import DocLO
+            lo_uin = (getattr(car, 'lo_uin', None) or '').strip()
+            if lo_uin:
+                lo = DocLO.objects.filter(uin__icontains=lo_uin).select_related('rlk').order_by('-active', '-dataTime', '-id').first()
+            if lo is None:
+                nomer = (getattr(car, 'lo_link_number', None) or '').strip()
+                if nomer:
+                    lo = DocLO.objects.filter(nomer__iexact=nomer).select_related('rlk').order_by('-active', '-dataTime', '-id').first()
+        except Exception:
+            lo = None
     rlk = getattr(lo, 'rlk', None) if lo is not None else None
     if rlk is None:
         return {
@@ -166,6 +193,44 @@ def _customer_type_label(reception) -> str:
     return mapping.get(ctype, '')
 
 
+def _sklad_nomer(*, car=None, lo=None, rlk=None, vin='') -> str:
+    """Складской номер = номер листа оценки (ЛО / lo_link_number)."""
+    if lo is not None:
+        n = (getattr(lo, 'nomer', None) or '').strip()
+        if n:
+            return n
+    if car is not None:
+        n = (getattr(car, 'lo_link_number', None) or '').strip()
+        if n:
+            return n
+    try:
+        from refs.models import RefCarsOrganization
+        qs = RefCarsOrganization.objects.all()
+        linked = None
+        if lo is not None and getattr(lo, 'pk', None):
+            linked = qs.filter(lo_id=lo.pk).order_by('-id').first()
+        if linked is None and lo is not None and (getattr(lo, 'uin', None) or '').strip():
+            linked = qs.filter(lo_uin=(lo.uin or '').strip()).order_by('-id').first()
+        if linked is None and (vin or '').strip():
+            linked = (
+                qs.filter(vin=(vin or '').strip().upper())
+                .exclude(lo_link_number='')
+                .order_by('-id')
+                .first()
+            )
+        if linked is not None:
+            n = (linked.lo_link_number or '').strip()
+            if n:
+                return n
+    except Exception:
+        pass
+    if rlk is not None:
+        n = (getattr(rlk, 'nomer', None) or '').strip()
+        if n:
+            return n
+    return ''
+
+
 def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
     """
     Сводка приёма / ЛО для карточки склада (без файлов).
@@ -177,6 +242,7 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
         'source_label': '',
         'reception': None,
         'reception_url': '',
+        'sklad_nomer': '',
         'rows': [],
     }
 
@@ -197,9 +263,67 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
             reception = None
 
     lo = getattr(car, 'lo', None)
+    if lo is None:
+        try:
+            from documents.models import DocLO
+            lo_uin = (getattr(car, 'lo_uin', None) or '').strip()
+            if lo_uin:
+                lo = (
+                    DocLO.objects
+                    .filter(uin__icontains=lo_uin)
+                    .select_related('organization', 'unit', 'store', 'type_reception', 'staff')
+                    .order_by('-active', '-dataTime', '-id')
+                    .first()
+                )
+            if lo is None:
+                nomer = (getattr(car, 'lo_link_number', None) or '').strip()
+                if nomer:
+                    lo = (
+                        DocLO.objects
+                        .filter(nomer__iexact=nomer)
+                        .select_related('organization', 'unit', 'store', 'type_reception', 'staff')
+                        .order_by('-active', '-dataTime', '-id')
+                        .first()
+                    )
+        except Exception:
+            lo = None
+    rlk = None
+    if interactiv_rlk is not None:
+        rlk = getattr(interactiv_rlk, 'rlk', None)
+    elif lo is not None:
+        rlk = getattr(lo, 'rlk', None)
+    sklad_nomer = _sklad_nomer(car=car, lo=lo, rlk=rlk)
+
     reception_url = ''
     if eco_url:
         reception_url = '{}?page=24'.format(eco_url.rstrip('/'))
+
+    def _lo_extra_rows():
+        if lo is None:
+            return []
+        extra = [
+            {'label': 'Цвет (ЛО)', 'value': _dash(getattr(lo, 'color', ''))},
+            {'label': 'Себестоимость (ЛО)', 'value': getattr(lo, 'cost_price', None) or ''},
+            {'label': 'БЦП (ЛО)', 'value': getattr(lo, 'bcp', None) or ''},
+            {
+                'label': 'Аукцион (ЛО)',
+                'value': 'да' if getattr(lo, 'auction', False) else '',
+                'extra': _dash(getattr(lo, 'auction_comment', '')),
+            },
+            {
+                'label': 'Комментарий подготовке (ЛО)',
+                'value': _dash(getattr(lo, 'description_podgotovka', '')),
+            },
+            {
+                'label': 'Комментарий ОП (ЛО)',
+                'value': _dash(getattr(lo, 'description_op', '')),
+            },
+            {
+                'label': 'Рекомендация / диагностика (ЛО)',
+                'value': _dash(getattr(lo, 'recomendation', '')),
+            },
+        ]
+        return [r for r in extra if r.get('value') not in (None, '', [])]
 
     if reception is not None:
         client = _client_label_from_reception(reception)
@@ -215,25 +339,27 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
             client_extra.append('ИНН {}'.format(inn))
 
         rows = [
+            {'label': 'Складской №', 'value': sklad_nomer},
             {'label': 'Дата приёма', 'value': reception.actual_reception_at},
-            {'label': 'Оценщик', 'value': _fk_name(reception.staff)},
-            {'label': 'Организация', 'value': _fk_name(reception.organization)},
+            {'label': 'Дата ЛО', 'value': getattr(lo, 'dataTime', None) if lo else None},
+            {'label': 'Оценщик', 'value': _fk_name(reception.staff) or (_fk_name(getattr(lo, 'staff', None)) if lo else '')},
+            {'label': 'Организация', 'value': _fk_name(reception.organization) or (_fk_name(getattr(lo, 'organization', None)) if lo else '')},
             {'label': 'Филиал', 'value': _fk_name(reception.filial)},
-            {'label': 'Подразделение', 'value': _fk_name(reception.unit)},
-            {'label': 'Склад', 'value': _fk_name(reception.store)},
-            {'label': 'Тип приёма', 'value': _fk_name(reception.type_reception)},
+            {'label': 'Подразделение', 'value': _fk_name(reception.unit) or (_fk_name(getattr(lo, 'unit', None)) if lo else '')},
+            {'label': 'Склад', 'value': _fk_name(reception.store) or (_fk_name(getattr(lo, 'store', None)) if lo else '')},
+            {'label': 'Тип приёма', 'value': _fk_name(reception.type_reception) or (_fk_name(getattr(lo, 'type_reception', None)) if lo else '')},
             {
                 'label': 'Клиент',
-                'value': client,
+                'value': client or (_dash(getattr(lo, 'clientName', '')) if lo else ''),
                 'extra': ' · '.join(client_extra),
             },
-            {'label': 'Госномер', 'value': _dash(reception.plate_number)},
+            {'label': 'Госномер', 'value': _dash(reception.plate_number) or (_dash(getattr(lo, 'carsGRZ', '')) if lo else '')},
             {'label': 'VIN', 'value': _dash(reception.vin) or _dash(getattr(car, 'vin', ''))},
             {'label': 'VIN 2 / кузов', 'value': _dash(reception.vin2) or _dash(reception.body_number)},
-            {'label': 'Год', 'value': reception.year or ''},
-            {'label': 'Пробег', 'value': reception.mileage or ''},
-            {'label': 'Владельцев', 'value': reception.count_owners},
-            {'label': 'Ключей', 'value': reception.count_keys},
+            {'label': 'Год', 'value': reception.year or (getattr(lo, 'year', None) if lo else '') or ''},
+            {'label': 'Пробег', 'value': reception.mileage or (getattr(lo, 'run', None) if lo else '') or ''},
+            {'label': 'Владельцев', 'value': reception.count_owners if reception.count_owners is not None else (getattr(lo, 'owners', None) if lo else None)},
+            {'label': 'Ключей', 'value': reception.count_keys if reception.count_keys is not None else (getattr(lo, 'keys', None) if lo else None)},
             {'label': 'ПТС', 'value': _pts_short_from_reception(reception)},
             {'label': 'СТС', 'value': _sts_short_from_reception(reception)},
             {
@@ -243,7 +369,7 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
                         (reception.body_color or '').strip(),
                         (reception.salon_color or '').strip(),
                     ) if p
-                ),
+                ) or (_dash(getattr(lo, 'color', '')) if lo else ''),
             },
             {
                 'label': 'Взаимозачёт',
@@ -259,19 +385,21 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
                 'extra': _dash(reception.sent_to_1c_status),
             },
         ]
+        rows.extend(_lo_extra_rows())
         return {
             'has_data': True,
             'source': 'reception',
-            'source_label': 'Карточка приёма (интерактивная оценка)',
+            'source_label': 'Карточка приёма + лист оценки',
             'reception': reception,
             'reception_url': reception_url,
+            'sklad_nomer': sklad_nomer,
             'rows': [r for r in rows if r.get('value') not in (None, '', [])],
         }
 
     if lo is not None:
         rows = [
+            {'label': 'Складской №', 'value': sklad_nomer or _dash(getattr(lo, 'nomer', ''))},
             {'label': 'Дата ЛО', 'value': getattr(lo, 'dataTime', None)},
-            {'label': '№ ЛО', 'value': _dash(getattr(lo, 'nomer', ''))},
             {'label': 'Оценщик', 'value': _fk_name(getattr(lo, 'staff', None))},
             {'label': 'Организация', 'value': _fk_name(getattr(lo, 'organization', None))},
             {'label': 'Подразделение', 'value': _fk_name(getattr(lo, 'unit', None))},
@@ -285,6 +413,26 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
             {'label': 'Пробег', 'value': getattr(lo, 'run', None) or ''},
             {'label': 'Владельцев', 'value': getattr(lo, 'owners', None)},
             {'label': 'Ключей', 'value': getattr(lo, 'keys', None)},
+            {'label': 'Цвет', 'value': _dash(getattr(lo, 'color', ''))},
+            {'label': 'Себестоимость', 'value': getattr(lo, 'cost_price', None) or ''},
+            {'label': 'БЦП', 'value': getattr(lo, 'bcp', None) or ''},
+            {
+                'label': 'Аукцион',
+                'value': 'да' if getattr(lo, 'auction', False) else '',
+                'extra': _dash(getattr(lo, 'auction_comment', '')),
+            },
+            {
+                'label': 'Комментарий подготовке',
+                'value': _dash(getattr(lo, 'description_podgotovka', '')),
+            },
+            {
+                'label': 'Комментарий ОП',
+                'value': _dash(getattr(lo, 'description_op', '')),
+            },
+            {
+                'label': 'Рекомендация / диагностика',
+                'value': _dash(getattr(lo, 'recomendation', '')),
+            },
         ]
         return {
             'has_data': True,
@@ -292,10 +440,12 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
             'source_label': 'Лист оценки (карточка приёма ещё не создана)',
             'reception': None,
             'reception_url': reception_url,
+            'sklad_nomer': sklad_nomer or _dash(getattr(lo, 'nomer', '')),
             'rows': [r for r in rows if r.get('value') not in (None, '', [])],
         }
 
     rows = [
+        {'label': 'Складской №', 'value': sklad_nomer},
         {'label': 'Организация', 'value': _fk_name(getattr(car, 'organization', None))},
         {'label': 'Подразделение', 'value': _fk_name(getattr(car, 'unit', None))},
         {'label': 'Склад', 'value': _fk_name(getattr(car, 'store', None))},
@@ -315,6 +465,7 @@ def get_car_intake_summary(car, interactiv_rlk=None, eco_url=''):
         'source_label': 'Данные карточки склада',
         'reception': None,
         'reception_url': reception_url,
+        'sklad_nomer': sklad_nomer,
         'rows': filtered,
     }
 
@@ -587,9 +738,9 @@ def _list_expenses_for_lo(lo) -> list[dict]:
         return []
 
     items = []
-    for list_work in DocZNWorkKA.objects.filter(zn__lo=lo).select_related('zn', 'work'):
+    for list_work in DocZNWorkKA.objects.filter(zn__lo=lo).select_related('zn', 'zn__typeRemont', 'work'):
         items.append({
-            'type': getattr(list_work.zn, 'typeRemont', None) or 'Работы',
+            'type': _type_label(getattr(list_work.zn, 'typeRemont', None), 'Работы'),
             'date': getattr(list_work.zn, 'dataTime', None),
             'document': getattr(list_work.zn, 'nomer', None) or '',
             'name': getattr(getattr(list_work, 'work', None), 'name', None) or '',
@@ -599,9 +750,9 @@ def _list_expenses_for_lo(lo) -> list[dict]:
             'description': '',
             'kind': 'work',
         })
-    for list_product in DocZNProductKA.objects.filter(zn__lo=lo).select_related('zn', 'product'):
+    for list_product in DocZNProductKA.objects.filter(zn__lo=lo).select_related('zn', 'zn__typeRemont', 'product'):
         items.append({
-            'type': getattr(list_product.zn, 'typeRemont', None) or 'Товары',
+            'type': _type_label(getattr(list_product.zn, 'typeRemont', None), 'Товары'),
             'date': getattr(list_product.zn, 'dataTime', None),
             'document': getattr(list_product.zn, 'nomer', None) or '',
             'name': getattr(getattr(list_product, 'product', None), 'name', None) or '',
@@ -611,9 +762,9 @@ def _list_expenses_for_lo(lo) -> list[dict]:
             'description': '',
             'kind': 'product',
         })
-    for list_service in DocZNServicesKA.objects.filter(zn__lo=lo).select_related('zn', 'service'):
+    for list_service in DocZNServicesKA.objects.filter(zn__lo=lo).select_related('zn', 'zn__typeRemont', 'service'):
         items.append({
-            'type': getattr(list_service.zn, 'typeRemont', None) or 'Услуги',
+            'type': _type_label(getattr(list_service.zn, 'typeRemont', None), 'Услуги'),
             'date': getattr(list_service.zn, 'dataTime', None),
             'document': getattr(list_service.zn, 'nomer', None) or '',
             'name': getattr(getattr(list_service, 'service', None), 'name', None) or '',
@@ -661,7 +812,7 @@ def get_car_expenses_summary(car, estimation=None, eco_url='', limit=40):
             raw = list_expenses(estimation) or []
             for row in raw:
                 items.append({
-                    'type': row.get('type') or '',
+                    'type': _type_label(row.get('type'), 'Прочее'),
                     'date': row.get('date'),
                     'document': row.get('document') or '',
                     'name': row.get('name') or '',
@@ -682,7 +833,7 @@ def get_car_expenses_summary(car, estimation=None, eco_url='', limit=40):
 
     by_type = {}
     for item in items:
-        key = (item.get('type') or 'Прочее').strip() or 'Прочее'
+        key = _type_label(item.get('type'), 'Прочее') or 'Прочее'
         bucket = by_type.setdefault(key, {'type': key, 'count': 0, 'amount': 0.0})
         bucket['count'] += 1
         bucket['amount'] += _money(item.get('amount'))
