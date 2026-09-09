@@ -899,6 +899,14 @@ def build_client_brief(estimation) -> dict[str, Any]:
     if salon is None:
         missing.append('Не заполнен салон')
 
+    preview_url = ''
+    try:
+        prev = estimation.fotos_prev()
+        if prev is not None and getattr(prev, 'file', None):
+            preview_url = prev.file.url
+    except Exception:
+        preview_url = ''
+
     return {
         'title': title,
         'year': year,
@@ -914,6 +922,9 @@ def build_client_brief(estimation) -> dict[str, Any]:
         'gear': getattr(estimation.type_gear, 'name', '') or '',
         'body': getattr(estimation.type_body, 'name', '') or '',
         'status': getattr(estimation.status, 'name', '') or '',
+        'preview_url': preview_url,
+        'pros_count': len(pros),
+        'cons_count': len(cons),
         'offer_reception': offer_reception,
         'offer_sale': offer_sale,
         'offer_before': offer_before,

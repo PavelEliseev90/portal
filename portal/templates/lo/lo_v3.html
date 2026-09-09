@@ -1762,7 +1762,10 @@
               </div>
       
               <div class="kors-metric-card">
-                <span class="kors-metric-card__label">Лист оценки</span>
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <span class="kors-metric-card__label">Лист оценки</span>
+                  <a href="/estimations/{{ params.rlk.id }}/client-brief/" class="kors-metric-card__action" title="Сводка для разговора с клиентом">Сводка клиенту</a>
+                </div>
                 <span class="kors-metric-card__value">{% if params.lo %}{{params.lo.nomer}}{% else %}---{% endif %}</span>
                 <span class="kors-metric-card__sub">Обновлено {{params.lo.dataTime|date:"d.m.Y"}}</span>
               </div>
