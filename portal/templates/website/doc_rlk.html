@@ -42,6 +42,11 @@
 			<div class="col-auto">
 				<a class="btn btn-primary bg-gradient bg-opacity-50" href="/estimations/{{params.estimation_rlk.id}}/"><span class="icon-mbri-edit"></span> Оценка</a>
 			</div>
+			{% if user.is_superuser %}
+			<div class="col-auto">
+				<a class="btn btn-outline-secondary" href="/estimations/{{params.estimation_rlk.id}}/client-brief/"><span class="icon-mbri-info"></span> Сводка для клиента</a>
+			</div>
+			{% endif %}
 			{% endif %}
 			{% if params.doc.eco %}
 			<div class="col-auto">
