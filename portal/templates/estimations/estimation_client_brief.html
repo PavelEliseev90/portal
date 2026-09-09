@@ -73,8 +73,24 @@
 	border-left: 4px solid #e09f3e;
 	padding-left: 0.75rem;
 	margin-bottom: 0.85rem;
+	display: grid;
+	grid-template-columns: 72px 1fr;
+	gap: 0.75rem;
+	align-items: start;
 }
 .est-brief-dash-critical { border-left-color: #c1121f; }
+.est-brief-dash-img {
+	width: 72px;
+	height: 72px;
+	object-fit: contain;
+	border-radius: 0.5rem;
+	background: #e8eef5;
+	display: block;
+}
+.est-brief-dash-body { min-width: 0; }
+.est-brief-dash-noimg {
+	grid-template-columns: 1fr;
+}
 .est-brief-crit {
 	display: inline-block;
 	font-size: 0.7rem;
@@ -222,6 +238,12 @@
 						{% if b.number_body %}
 						<div class="col-6 col-md-3"><div class="small text-muted">№ кузова</div><div>{{ b.number_body }}</div></div>
 						{% endif %}
+						{% if b.pts_label %}
+						<div class="col-6 col-md-3"><div class="small text-muted">ПТС</div><div>{{ b.pts_label }}</div></div>
+						{% endif %}
+						{% if b.sts_label %}
+						<div class="col-6 col-md-3"><div class="small text-muted">Дата СТС</div><div>{{ b.sts_label }}</div></div>
+						{% endif %}
 					</div>
 					{% if b.color %}
 						<p class="small text-muted mb-0 mt-2">Цвет: {{ b.color }}</p>
@@ -326,17 +348,27 @@
 			</p>
 			{% if b.our_sales.total %}
 				<div class="row g-2 mb-2">
-					<div class="col-6 col-md-4">
+					<div class="col-6 col-md-3">
 						<div class="small text-muted">Продаж</div>
 						<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.our_sales.total }}</div>
 						<div class="small text-muted">{% if b.our_sales.year_match %}тот же год{% else %}другие годы{% endif %}</div>
 					</div>
-					<div class="col-6 col-md-4">
+					<div class="col-6 col-md-3">
+						<div class="small text-muted">Тип продажи</div>
+						<div>
+							{% if b.our_sales.retail_count or b.our_sales.auction_count %}
+								розница {{ b.our_sales.retail_count|default:0 }} · аукцион {{ b.our_sales.auction_count|default:0 }}
+							{% else %}
+								—
+							{% endif %}
+						</div>
+					</div>
+					<div class="col-6 col-md-3">
 						<div class="small text-muted">Цена отгрузки</div>
 						<div>{% if b.our_sales.avg_price %}{{ b.our_sales.min_price|floatformat:"0g" }} – {{ b.our_sales.max_price|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>
 						{% if b.our_sales.avg_price %}<div class="small text-muted">средняя {{ b.our_sales.avg_price|floatformat:"0g" }} ₽</div>{% endif %}
 					</div>
-					<div class="col-6 col-md-4">
+					<div class="col-6 col-md-3">
 						<div class="small text-muted">Дней на складе</div>
 						<div>{% if b.our_sales.avg_days != None %}~ {{ b.our_sales.avg_days }}{% else %}—{% endif %}</div>
 						<div class="small text-muted">среднее до отгрузки</div>
@@ -365,6 +397,7 @@
 								<th>Дата</th>
 								<th>Год</th>
 								<th>Пробег</th>
+								<th>Тип</th>
 								<th>Этап</th>
 								<th>Дней</th>
 								<th class="text-end">Цена</th>
@@ -377,10 +410,87 @@
 								<td>{{ row.date|date:"d.m.Y" }}</td>
 								<td>{{ row.year|default:"—" }}</td>
 								<td>{% if row.run %}{{ row.run }} км{% else %}—{% endif %}</td>
+								<td>{% if row.is_auction %}<span class="est-brief-crit">аукцион</span>{% else %}{{ row.sale_type|default:"розница" }}{% endif %}</td>
 								<td>{{ row.stage }}</td>
 								<td>{% if row.days != None %}{{ row.days }}{% else %}—{% endif %}</td>
 								<td class="text-end">{% if row.price %}{{ row.price|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
 								<td class="small">{{ row.unit|default:"" }}</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% endif %}
+			{% endif %}
+		</div>
+		{% endif %}
+
+		{% if b.our_stock %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Сейчас на складе</h5>
+			{% if b.our_stock.reason and not b.our_stock.total %}
+				<p class="mb-0 text-muted">{{ b.our_stock.reason }}</p>
+			{% elif b.our_stock.total %}
+				{% if b.our_stock.reason %}
+					<p class="small text-muted mb-2">{{ b.our_stock.reason }}</p>
+				{% endif %}
+				<div class="row g-2 mb-2">
+					<div class="col-6 col-md-3">
+						<div class="small text-muted">В наличии</div>
+						<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.our_stock.total }}</div>
+						<div class="small text-muted">{% if b.our_stock.year_match %}тот же год{% else %}другие годы{% endif %}</div>
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="small text-muted">Тип продажи</div>
+						<div>
+							{% if b.our_stock.retail_count or b.our_stock.auction_count %}
+								розница {{ b.our_stock.retail_count|default:0 }} · аукцион {{ b.our_stock.auction_count|default:0 }}
+							{% else %}
+								—
+							{% endif %}
+						</div>
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="small text-muted">Цена на витрине</div>
+						<div>{% if b.our_stock.avg_price %}{{ b.our_stock.min_price|floatformat:"0g" }} – {{ b.our_stock.max_price|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>
+						{% if b.our_stock.avg_price %}<div class="small text-muted">средняя {{ b.our_stock.avg_price|floatformat:"0g" }} ₽</div>{% endif %}
+					</div>
+					<div class="col-6 col-md-3">
+						<div class="small text-muted">Дней на складе</div>
+						<div>{% if b.our_stock.avg_days != None %}~ {{ b.our_stock.avg_days }}{% else %}—{% endif %}</div>
+						<div class="small text-muted">среднее сейчас</div>
+					</div>
+				</div>
+				{% if b.our_stock.rows %}
+				<div class="table-responsive est-brief-noprint">
+					<table class="table table-sm mb-0">
+						<thead>
+							<tr>
+								<th>Год</th>
+								<th>Пробег</th>
+								<th>Тип</th>
+								<th>Этап</th>
+								<th>Дней</th>
+								<th class="text-end">Цена</th>
+								<th>Площадка</th>
+								<th>VIN</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for row in b.our_stock.rows %}
+							<tr>
+								<td>{{ row.year|default:"—" }}</td>
+								<td>{% if row.run %}{{ row.run }} км{% else %}—{% endif %}</td>
+								<td>
+									{% if row.is_auction %}<span class="est-brief-crit">аукцион</span>
+									{% else %}{{ row.sale_type|default:"—" }}{% endif %}
+									{% if row.reserve %} · резерв{% endif %}
+								</td>
+								<td>{{ row.stage }}</td>
+								<td>{% if row.days != None %}{{ row.days }}{% else %}—{% endif %}</td>
+								<td class="text-end">{% if row.price %}{{ row.price|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+								<td class="small">{{ row.unit|default:"" }}</td>
+								<td class="small text-muted">…{{ row.vin }}</td>
 							</tr>
 						{% endfor %}
 						</tbody>
@@ -440,18 +550,23 @@
 		{% if b.dashboard_errors %}
 		<div class="portal-panel mb-3">
 			<h5 class="mb-2">Индикаторы приборной панели</h5>
-			<p class="small text-muted mb-3">Расшифровка того, что горит на панели — можно назвать клиенту.</p>
+			<p class="small text-muted mb-3">Название, картинка из справочника и расшифровка — можно показать клиенту.</p>
 			{% for e in b.dashboard_errors %}
-				<div class="est-brief-dash {% if e.critical %}est-brief-dash-critical{% endif %}">
-					<div class="fw-semibold">
-						{{ e.name }}
-						{% if e.critical %}<span class="est-brief-crit">критично</span>{% endif %}
-					</div>
-					{% if e.description %}
-						<div class="mt-1">{{ e.description }}</div>
-					{% else %}
-						<div class="text-muted mt-1">Описание в справочнике не заполнено — уточните по диагностике.</div>
+				<div class="est-brief-dash {% if e.critical %}est-brief-dash-critical{% endif %} {% if not e.image_url %}est-brief-dash-noimg{% endif %}">
+					{% if e.image_url %}
+						<img class="est-brief-dash-img" src="{{ e.image_url }}" alt="{{ e.name }}" loading="lazy">
 					{% endif %}
+					<div class="est-brief-dash-body">
+						<div class="fw-semibold">
+							{{ e.name }}
+							{% if e.critical %}<span class="est-brief-crit">критично</span>{% endif %}
+						</div>
+						{% if e.description %}
+							<div class="mt-1">{{ e.description }}</div>
+						{% else %}
+							<div class="text-muted mt-1">Описание в справочнике не заполнено — уточните по диагностике.</div>
+						{% endif %}
+					</div>
 				</div>
 			{% endfor %}
 		</div>

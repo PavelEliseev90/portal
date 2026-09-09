@@ -178,14 +178,64 @@ def _dashboard_errors(salon) -> list[dict]:
     try:
         rows = []
         for err in salon.dashboard_error.all().order_by('-critical', 'name')[:12]:
+            name = (err.name or '').strip()
+            description = (err.description or '').strip()
+            if not name and description:
+                name = description.split('.')[0].strip()[:80] or 'Индикатор'
+            elif not name:
+                name = 'Индикатор'
+            image_url = ''
+            try:
+                image_url = (err.get_absolute_url() or '').strip()
+                if image_url.endswith('no_foto.jpg'):
+                    image_url = ''
+            except Exception:
+                image_url = ''
             rows.append({
-                'name': (err.name or '').strip() or 'Индикатор',
-                'description': (err.description or '').strip(),
+                'name': name,
+                'description': description,
                 'critical': bool(err.critical),
+                'image_url': image_url,
             })
         return rows
     except Exception:
         return []
+
+
+_COMPLECT_ITEMS = (
+    ('zapas_int', 'запасное колесо / докатка'),
+    ('ognet_int', 'огнетушитель'),
+    ('znak_av_int', 'знак аварийной остановки'),
+    ('aptechka_int', 'аптечка'),
+    ('domkrat_int', 'домкрат'),
+    ('ball_key_int', 'баллонный ключ'),
+    ('tros_int', 'буксировочный трос'),
+    ('kovrik_int', 'коврики'),
+    ('prikur_int', 'прикуриватель'),
+)
+
+_CLEANING_LABELS = {
+    0: 'не требуется',
+    3: 'лёгкая',
+    2: 'средняя',
+    1: 'сложная',
+}
+
+
+def _sts_age_days(docs) -> int | None:
+    if docs is None or not getattr(docs, 'sts_date', None):
+        return None
+    try:
+        from django.utils import timezone
+
+        raw = docs.sts_date
+        d = raw.date() if hasattr(raw, 'date') else raw
+        days = (timezone.now().date() - d).days
+        if days < 0:
+            return None
+        return days
+    except Exception:
+        return None
 
 
 def _scheme_capture_url(estimation, type_file: str) -> str:
@@ -369,6 +419,8 @@ def _empty_sales(*, has_mod=False, reason=''):
         'reason': reason,
         'by_stage': [{'id': sid, 'name': name, 'count': 0} for sid, name in _STAGE_LABELS],
         'unknown_stage': 0,
+        'retail_count': 0,
+        'auction_count': 0,
         'avg_price': 0,
         'min_price': 0,
         'max_price': 0,
@@ -378,6 +430,40 @@ def _empty_sales(*, has_mod=False, reason=''):
         'test_share': 0,
         'factor': '',
         'client_line': '',
+        'rows': [],
+    }
+
+
+def _sale_type_info(doc) -> tuple[str, bool | None]:
+    """Тип продажи из отгрузки (typeSale) или флага аукциона на ЛО."""
+    raw = (getattr(doc, 'typeSale', None) or '').strip()
+    if raw:
+        low = raw.lower()
+        if 'аукцион' in low:
+            return raw, True
+        if 'розниц' in low:
+            return raw, False
+        return raw, None
+    try:
+        if doc.lo_id and doc.lo is not None and bool(getattr(doc.lo, 'auction', False)):
+            return 'Аукцион', True
+    except Exception:
+        pass
+    return 'Розница', False
+
+
+def _empty_stock(*, has_mod=False, reason=''):
+    return {
+        'total': 0,
+        'year_match': True,
+        'has_mod': has_mod,
+        'reason': reason,
+        'avg_price': 0,
+        'min_price': 0,
+        'max_price': 0,
+        'avg_days': None,
+        'retail_count': 0,
+        'auction_count': 0,
         'rows': [],
     }
 
@@ -484,6 +570,7 @@ def _sale_row(doc, row_year: int) -> dict[str, Any]:
             unit = (doc.unit.name_dop or doc.unit.name or '').strip()
     except Exception:
         unit = ''
+    sale_type, is_auction = _sale_type_info(doc)
     price = _num(doc.amount)
     return {
         'id': doc.pk,
@@ -496,6 +583,8 @@ def _sale_row(doc, row_year: int) -> dict[str, Any]:
         'days': days,
         'unit': unit,
         'vin': ((doc.cars.vin or '') if doc.cars_id else '')[-6:],
+        'sale_type': sale_type,
+        'is_auction': is_auction,
     }
 
 
@@ -504,6 +593,8 @@ def _sales_summary(rows: list, *, total_any_year: int, year_match: bool, year: i
     unknown = 0
     prices = []
     days_list = []
+    retail_count = 0
+    auction_count = 0
     for row in rows:
         sid = row.get('stage_id')
         if sid in counts:
@@ -514,6 +605,10 @@ def _sales_summary(rows: list, *, total_any_year: int, year_match: bool, year: i
             prices.append(row['price'])
         if row.get('days') is not None:
             days_list.append(row['days'])
+        if row.get('is_auction') is True:
+            auction_count += 1
+        elif row.get('is_auction') is False:
+            retail_count += 1
 
     total = len(rows)
     early = sum(counts[sid] for sid in _STAGE_EARLY)
@@ -553,6 +648,8 @@ def _sales_summary(rows: list, *, total_any_year: int, year_match: bool, year: i
         'reason': '' if year_match else 'За этот год продаж нет — ниже та же модификация, другие годы.',
         'by_stage': [{'id': sid, 'name': name, 'count': counts[sid]} for sid, name in _STAGE_LABELS],
         'unknown_stage': unknown,
+        'retail_count': retail_count,
+        'auction_count': auction_count,
         'avg_price': int(round(sum(prices) / len(prices))) if prices else 0,
         'min_price': int(round(min(prices))) if prices else 0,
         'max_price': int(round(max(prices))) if prices else 0,
@@ -566,13 +663,132 @@ def _sales_summary(rows: list, *, total_any_year: int, year_match: bool, year: i
     }
 
 
+def _stock_for_mod(mod_id, *, year=None, limit=30):
+    from django.db.models import Q
+
+    from refs.models import RefCarsOrganization
+
+    qs = (
+        RefCarsOrganization.objects
+        .filter(
+            modification_autoru_id=mod_id,
+            quantity__gt=0,
+            is_new=False,
+            unit__buauto=True,
+        )
+        .select_related('unit', 'stage_price', 'type_sale', 'store')
+        .order_by('-days_in_stok', '-id')
+    )
+    if year:
+        qs = qs.filter(Q(year=year) | Q(year=int(year)))
+    return list(qs[:limit])
+
+
+def _stock_sale_type(car) -> tuple[str, bool | None]:
+    name = ''
+    try:
+        if car.type_sale_id and car.type_sale:
+            name = (car.type_sale.name or '').strip()
+    except Exception:
+        name = ''
+    if name:
+        low = name.lower()
+        if 'аукцион' in low:
+            return name, True
+        if 'розниц' in low:
+            return name, False
+        return name, None
+    return '', None
+
+
+def _our_stock(estimation) -> dict[str, Any]:
+    """Аналоги на складе БУ той же модификации Auto.ru."""
+    mod_id = getattr(estimation, 'modification_id', None)
+    if not mod_id:
+        return _empty_stock(reason='Нет модификации Auto.ru — склад не с чем сопоставить.')
+
+    year = _int(estimation.year)
+    try:
+        cars = _stock_for_mod(mod_id, year=year) if year else []
+        year_match = bool(cars)
+        if not cars:
+            cars = _stock_for_mod(mod_id, year=None)
+            year_match = False
+    except Exception:
+        return _empty_stock(has_mod=True, reason='Ошибка выборки склада.')
+
+    if not cars:
+        return _empty_stock(has_mod=True, reason='На складе БУ таких же сейчас нет.')
+
+    rows = []
+    prices = []
+    days_list = []
+    retail_count = 0
+    auction_count = 0
+    for car in cars:
+        sale_type, is_auction = _stock_sale_type(car)
+        if is_auction is True:
+            auction_count += 1
+        elif is_auction is False:
+            retail_count += 1
+        price = _int(car.price)
+        days = _int(car.days_in_stok)
+        if price > 0:
+            prices.append(price)
+        if days > 0:
+            days_list.append(days)
+        unit = ''
+        try:
+            if car.unit_id:
+                unit = (car.unit.name_dop or car.unit.name or '').strip()
+        except Exception:
+            unit = ''
+        stage = ''
+        try:
+            if car.stage_price_id and car.stage_price:
+                stage = (car.stage_price.name or '').strip()
+        except Exception:
+            stage = ''
+        rows.append({
+            'id': car.pk,
+            'year': _int(car.year) or None,
+            'run': _int(car.run),
+            'price': price,
+            'days': days if days > 0 else None,
+            'stage': stage or 'не указан',
+            'sale_type': sale_type or 'не указан',
+            'is_auction': is_auction,
+            'unit': unit,
+            'vin': (car.vin or '')[-6:],
+            'reserve': _int(car.reserve) > 0,
+            'owners': _int(car.owners),
+        })
+
+    return {
+        'total': len(rows),
+        'year_match': year_match or not year,
+        'year': year,
+        'has_mod': True,
+        'reason': (
+            '' if year_match or not year
+            else 'За этот год на складе нет — ниже та же модификация, другие годы.'
+        ),
+        'avg_price': int(round(sum(prices) / len(prices))) if prices else 0,
+        'min_price': int(round(min(prices))) if prices else 0,
+        'max_price': int(round(max(prices))) if prices else 0,
+        'avg_days': int(round(sum(days_list) / len(days_list))) if days_list else None,
+        'retail_count': retail_count,
+        'auction_count': auction_count,
+        'rows': rows[:15],
+    }
+
+
 def build_client_brief(estimation) -> dict[str, Any]:
     docs = estimation.page_documents
     salon = estimation.page_salon
     vnesh = estimation.page_vnesh
     proverki = estimation.page_proverki
     sog = estimation.page_soglasovanie
-    kolesa = estimation.page_kolesa
     complect = estimation.page_complectnost
     td = estimation.page_test_drive
 
@@ -612,6 +828,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
     schemes = _inspection_schemes(estimation)
     signal = _autoteka_signal(vin)
     sales = _our_sales_60d(estimation)
+    stock = _our_stock(estimation)
 
     hub_min = _num(estimation.hub_price_min)
     hub_max = _num(estimation.hub_price_max)
@@ -640,14 +857,23 @@ def build_client_brief(estimation) -> dict[str, Any]:
         _add(pros, 'Полный комплект ключей', 'Ключей: {}.'.format(keys), source='Документы', factor='keys_full')
     if docs and docs.pts_original:
         _add(pros, 'Оригинал ПТС', 'Документ на руках в оригинале.', source='Документы', factor='pts_original')
-    if proverki and proverki.epts_success:
+    # epts=True → электронный, False → бумажный. «Действующий» имеет смысл только для ЭПТС.
+    if proverki and proverki.epts and proverki.epts_success:
         _add(pros, 'Электронный ПТС в порядке', 'ЭПТС действующий.', source='Проверки', factor='epts_ok')
+    elif proverki and proverki.epts and proverki.epts_success is False:
+        _add(
+            cons, 'ЭПТС не действующий',
+            'Электронный ПТС отмечен как не действующий.',
+            source='Проверки',
+            effect='Нужно закрыть статус ЭПТС до сделки — иначе риск по документам.',
+            factor='epts_bad',
+        )
     if salon and salon.run_respond == 1:
         _add(pros, 'Пробег выглядит честно', 'Состояние салона соответствует заявленному пробегу.', source='Салон', factor='run_matches')
     if vnesh and vnesh.check_vin_int == 1:
         _add(pros, 'VIN совпадает', 'Номер на кузове проверен, расхождений нет.', source='Внешний осмотр', factor='vin_ok')
     if vnesh and vnesh.check_engine_int == 1:
-        _add(pros, 'Двигатель и коробка на месте', 'При осмотре агрегатов замечаний нет.', source='Внешний осмотр', factor='engine_place_ok')
+        _add(pros, 'Проверка ДВС и КПП при осмотре', 'При осмотре замечаний нет.', source='Внешний осмотр', factor='engine_place_ok')
     if td:
         readable_ok = []
         if getattr(td, 'unreadable_vin_int', 10) == 1:
@@ -686,10 +912,49 @@ def build_client_brief(estimation) -> dict[str, Any]:
         _add(pros, 'Без зафиксированных ДТП', 'В доступных проверках аварий нет.', source='Автотека / проверки', factor='no_dtp')
     if (proverki is not None or estimation.avtoteka_data) and not estimation.taxi and not estimation.carsharing:
         _add(pros, 'Не такси и не каршеринг', 'По данным проверок коммерческой эксплуатации нет.', source='Автотека', factor='no_taxi_share')
-    if kolesa and kolesa.kolesa2:
-        _add(pros, 'Второй комплект колёс', 'Есть зимний/летний комплект — это плюс при продаже.', source='Колёса', factor='kolesa2')
-    if complect and complect.zapas_int == 1:
-        _add(pros, 'Есть запаска', 'Запасное колесо на месте.', source='Комплектность', factor='spare_ok')
+
+    complect_present = []
+    complect_missing = []
+    if complect:
+        for attr, label in _COMPLECT_ITEMS:
+            val = getattr(complect, attr, 10)
+            if val == 1:
+                complect_present.append(label)
+            elif val == 0:
+                complect_missing.append(label)
+        if complect_present and not complect_missing and len(complect_present) >= 6:
+            _add(
+                pros,
+                'Комплектность в порядке',
+                'На месте: {}.'.format(', '.join(complect_present[:6])),
+                source='Комплектность',
+                factor='complect_ok',
+            )
+        elif len(complect_present) >= 5 and len(complect_missing) <= 2:
+            _add(
+                pros,
+                'Комплектность в основном полная',
+                'Есть: {}.'.format(', '.join(complect_present[:5])),
+                source='Комплектность',
+                factor='complect_ok',
+            )
+        if complect.zapas_int == 1 and 'complect_ok' not in {p.get('factor') for p in pros}:
+            _add(pros, 'Есть запаска', 'Запасное колесо на месте.', source='Комплектность', factor='spare_ok')
+
+    if salon and salon.cleaning_int == 0:
+        _add(
+            pros, 'Химчистка не нужна',
+            'Салон не требует химчистки.',
+            source='Салон',
+            factor='cleaning_ok',
+        )
+    if salon and salon.ceiling_int == 0:
+        _add(
+            pros, 'Потолок салона в норме',
+            'Перетяжка потолка не требуется.',
+            source='Салон',
+            factor='ceiling_ok',
+        )
     if _num(estimation.hub_sale_total) >= 5:
         _add(
             pros,
@@ -842,8 +1107,8 @@ def build_client_brief(estimation) -> dict[str, Any]:
         )
     if vnesh and vnesh.check_engine_int == 0:
         _add(
-            cons, 'Замечание по ДВС / КПП на месте',
-            'При осмотре агрегатов есть замечания.',
+            cons, 'Проверка ДВС и КПП при осмотре',
+            'При осмотре есть замечания.',
             source='Внешний осмотр',
             effect='Нужна ясность до сделки. Покупатель это заметит.',
             factor='engine_place_fail',
@@ -881,22 +1146,57 @@ def build_client_brief(estimation) -> dict[str, Any]:
                 effect='Часть рисков по ходовой и агрегатам ещё не закрыта.',
                 factor='no_test',
             )
-    if salon and salon.cleaning_int == 1:
+    if complect_missing:
         _add(
-            cons, 'Нужна химчистка',
-            'Салон требует химчистки.',
+            cons,
+            'Неполная комплектность',
+            'Отсутствует: {}.'.format(', '.join(complect_missing[:8])),
+            source='Комплектность',
+            effect='Мелкий, но заметный покупателю минус — либо докупаем, либо учитываем в цене.',
+            factor='complect_miss' if len(complect_missing) <= 3 else 'complect_miss_many',
+        )
+
+    if salon and salon.cleaning_int in (1, 2, 3):
+        degree = _CLEANING_LABELS.get(salon.cleaning_int, 'требуется')
+        factor = {
+            3: 'cleaning_light',
+            2: 'cleaning_mid',
+            1: 'cleaning_hard',
+        }.get(salon.cleaning_int, 'cleaning_mid')
+        _add(
+            cons, 'Химчистка салона',
+            'Требуется химчистка: степень «{}».'.format(degree),
             source='Салон',
             effect='Расход на подготовку перед продажей.',
-            factor='cleaning',
+            factor=factor,
         )
     if salon and salon.ceiling_int == 1:
         _add(
-            cons, 'Потолок',
+            cons, 'Потолок салона',
             'Нужна перетяжка потолка.',
             source='Салон',
             effect='Заметная сумма подготовки, снижает цену приёма.',
             factor='ceiling',
         )
+
+    sts_days = _sts_age_days(docs)
+    if sts_days is not None and sts_days < 90:
+        months = max(1, int(round(sts_days / 30))) if sts_days >= 30 else 0
+        age_text = (
+            'менее месяца назад'
+            if sts_days < 30
+            else 'около {} мес. назад'.format(months)
+        )
+        _add(
+            cons, 'Свежая дата СТС',
+            'СТС выдан {} ({} дн.). Возможна перепродажа / перекуп или скрытые проблемы.'.format(
+                age_text, sts_days
+            ),
+            source='Документы',
+            effect='Свежий СТС — повод внимательнее смотреть историю и не поднимать цену «на удачу».',
+            factor='sts_fresh',
+        )
+
     for attr, label in (
         ('damage_seat_int', 'сиденья'),
         ('damage_wheel_int', 'руль'),
@@ -1148,9 +1448,6 @@ def build_client_brief(estimation) -> dict[str, Any]:
         )
     if sales.get('client_line'):
         price_story.append(sales['client_line'])
-    price_story.append(
-        'Цифры внутренних настроек дилера клиенту не называем: говорим про рынок, состояние, историю и необходимые работы. Этапы УС (тест-прайс, РДО, ТХТ) — только для нас.'
-    )
 
     talk_lines = [
         '{} {}{}, VIN {}{}.'.format(
@@ -1223,12 +1520,32 @@ def build_client_brief(estimation) -> dict[str, Any]:
     if remote is not None:
         price_eco = _int(remote.price_eco)
 
+    pts_label = ''
+    if proverki is not None and proverki.epts is True:
+        pts_label = 'ЭПТС' + (' · действующий' if proverki.epts_success else ' · не действующий')
+    elif proverki is not None and proverki.epts is False:
+        pts_label = 'Бумажный ПТС'
+
+    sts_label = ''
+    sts_days = _sts_age_days(docs)
+    if docs is not None and getattr(docs, 'sts_date', None):
+        try:
+            raw = docs.sts_date
+            d = raw.date() if hasattr(raw, 'date') else raw
+            sts_label = d.strftime('%d.%m.%Y')
+            if sts_days is not None and sts_days < 90:
+                sts_label += ' · свежий'
+        except Exception:
+            sts_label = ''
+
     return {
         'title': title,
         'year': year,
         'vin': vin,
         'plate': plate,
         'number_body': (getattr(estimation, 'number_body', None) or '').strip(),
+        'pts_label': pts_label,
+        'sts_label': sts_label,
         'modification': _mod_label(estimation),
         'run': run,
         'owners': owners,
@@ -1265,6 +1582,7 @@ def build_client_brief(estimation) -> dict[str, Any]:
         'scale': scale,
         'objections': objections,
         'our_sales': sales,
+        'our_stock': stock,
         'sources': sources,
         'missing': missing,
         'works_names': works['names'],

@@ -9,20 +9,20 @@
     <h6 class="mb-0 padding-portal d-flex align-items-center gap-2">
       <span class="icon-mbri-cash"></span> Фактические затраты
       {% if params.expenses.count %}
-        <span class="badge text-bg-primary">{{ params.expenses.count }} поз.</span>
+        <span class="badge rounded-pill" style="background:rgba(0,42,90,.08);color:#002a5a;">{{ params.expenses.count }} поз.</span>
       {% endif %}
     </h6>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-      <span class="badge text-bg-success fs-6">
+      <span class="fw-semibold" style="color:#002a5a;font-size:1.1rem;">
         Итого {{ params.expenses.total_amount|floatformat:"0g" }} ₽
       </span>
       {% if params.expenses.car_outlay %}
-        <span class="badge text-bg-light border">
-          Outlay авто: {{ params.expenses.car_outlay|floatformat:"0g" }} ₽
+        <span class="small text-muted">
+          Outlay: {{ params.expenses.car_outlay|floatformat:"0g" }} ₽
         </span>
       {% endif %}
       {% if params.expenses.expenses_url %}
-        <a class="btn btn-outline-primary btn-sm" href="{{ params.expenses.expenses_url }}" target="_blank" rel="noopener">
+        <a class="btn btn-outline-secondary btn-sm" href="{{ params.expenses.expenses_url }}" target="_blank" rel="noopener">
           Открыть в ECO
         </a>
       {% endif %}
@@ -60,7 +60,7 @@
         <tbody>
           {% for row in params.expenses.items %}
             <tr>
-              <td><span class="badge text-bg-info">{{ row.type|default:"—" }}</span></td>
+              <td><span class="small" style="color:#002a5a;">{{ row.type|default:"—" }}</span></td>
               <td class="text-nowrap small">
                 {% if row.date %}{{ row.date|date:"d.m.Y" }}{% else %}—{% endif %}
               </td>

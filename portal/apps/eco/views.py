@@ -5682,7 +5682,7 @@ def list_expenses(estimation):
         list_works                  = DocZNWorkKA.objects.filter(zn__lo = lo)
         for list_work in list_works:
             item = {
-                'type'          : list_work.zn.typeRemont,
+                'type'          : getattr(getattr(list_work.zn, 'typeRemont', None), 'name', None) or 'Работы',
                 'date'          : list_work.zn.dataTime,
                 'document'      : list_work.zn.nomer,
                 'name'          : list_work.work.name,
@@ -5695,7 +5695,7 @@ def list_expenses(estimation):
         list_products               = DocZNProductKA.objects.filter(zn__lo = lo)
         for list_product in list_products:
             item = {
-                'type'          : list_product.zn.typeRemont,
+                'type'          : getattr(getattr(list_product.zn, 'typeRemont', None), 'name', None) or 'Товары',
                 'date'          : list_product.zn.dataTime,
                 'document'      : list_product.zn.nomer,
                 'name'          : list_product.product.name,
@@ -5708,7 +5708,7 @@ def list_expenses(estimation):
         list_services               = DocZNServicesKA.objects.filter(zn__lo = lo)
         for list_service in list_services:
             item = {
-                'type'          : list_service.zn.typeRemont,
+                'type'          : getattr(getattr(list_service.zn, 'typeRemont', None), 'name', None) or 'Услуги',
                 'date'          : list_service.zn.dataTime,
                 'document'      : list_service.zn.nomer,
                 'name'          : list_service.service.name,

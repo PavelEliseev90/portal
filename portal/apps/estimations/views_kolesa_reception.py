@@ -1002,11 +1002,22 @@ def build_route_sheet(*, estimation=None, rlk=None, kolesa_reception=None, page_
             .first()
         )
 
-    sklad_nomer = ''
-    if lo and lo.nomer:
-        sklad_nomer = lo.nomer
-    elif rlk and rlk.nomer:
-        sklad_nomer = rlk.nomer
+    try:
+        from avtosalon.car_card_context import _sklad_nomer as _resolve_sklad_nomer
+        vin_for_sklad = ''
+        if estimation is not None:
+            vin_for_sklad = (estimation.vin or estimation.number_body or '').strip()
+        if not vin_for_sklad and page_reception is not None:
+            vin_for_sklad = (page_reception.vin or '').strip()
+        if not vin_for_sklad and lo is not None:
+            vin_for_sklad = (lo.vin or '').strip()
+        sklad_nomer = _resolve_sklad_nomer(lo=lo, rlk=rlk, vin=vin_for_sklad)
+    except Exception:
+        sklad_nomer = ''
+        if lo and lo.nomer:
+            sklad_nomer = lo.nomer
+        elif rlk and rlk.nomer:
+            sklad_nomer = rlk.nomer
 
     org_name = ''
     if lo and lo.organization_id and lo.organization:

@@ -10,6 +10,9 @@
       <span class="icon-mbri-edit"></span> Данные приёма
     </h6>
     <div class="d-flex flex-wrap gap-2 align-items-center">
+      {% if params.intake.sklad_nomer %}
+        <span class="badge text-bg-primary">Складской № {{ params.intake.sklad_nomer }}</span>
+      {% endif %}
       <span class="badge text-bg-light border">{{ params.intake.source_label }}</span>
       {% if params.intake.reception_url %}
         <a class="btn btn-outline-primary btn-sm" href="{{ params.intake.reception_url }}" target="_blank" rel="noopener">
@@ -30,7 +33,7 @@
                 {{ row.value|date:"d.m.Y H:i" }}
               {% elif row.label == 'Пробег' %}
                 {{ row.value|floatformat:"0g" }} км
-              {% elif row.label == 'Взаимозачёт' %}
+              {% elif row.label == 'Взаимозачёт' or row.label == 'Себестоимость' or row.label == 'Себестоимость (ЛО)' or row.label == 'БЦП' or row.label == 'БЦП (ЛО)' %}
                 {{ row.value|floatformat:"0g" }} ₽
               {% else %}
                 {{ row.value }}

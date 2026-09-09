@@ -1,0 +1,134 @@
+{% include 'lo/partials/history_list_styles.html' %}
+
+<div class="hidemobile">
+	<h5>История оценок{% if params.tab_estimations_count %} · {{ params.tab_estimations_count }}{% endif %}</h5>
+	<hr class="my-3">
+</div>
+
+{% if params.estimations_info %}
+<div class="lo-hist-list">
+{% for doc in params.estimations_info %}
+	{% if doc.interactiv %}
+		{% with st_id=doc.status.id|default:0 %}
+		<article class="lo-hist-card lo-hist-card--s{{ st_id }}">
+			<div class="lo-hist-top">
+				<span class="lo-hist-date">{% if doc.start_estimation %}{{ doc.start_estimation|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
+				{% if doc.status %}
+					<span class="lo-hist-badge">{{ doc.status }}</span>
+				{% endif %}
+				<span class="lo-hist-badge lo-hist-badge--muted">Интерактивная</span>
+			</div>
+
+			<p class="lo-hist-title">
+				{% if doc.modification %}
+					{{ doc.modification.model.mark.name }} {{ doc.modification.model.name }} {{ doc.modification.name }}
+				{% endif %}
+				{% if doc.vin %} · {{ doc.vin }}{% endif %}
+				{% if doc.year %} · {{ doc.year }} г.{% endif %}
+			</p>
+
+			<div class="lo-hist-meta">
+				{% if doc.page_remote and not doc.page_remote.end_estimation %}
+					<div class="lo-hist-meta__item"><span class="lbl">РЛК</span><span class="val">{{ doc.rlk.nomer|default:"—" }}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Площадка</span><span class="val">{% if doc.page_remote.store %}{{ doc.page_remote.store.name }}{% else %}—{% endif %}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Приём</span><span class="val">{{ doc.page_remote.type_reception|default:"—" }}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.page_remote.run %}{{ doc.page_remote.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
+				{% else %}
+					<div class="lo-hist-meta__item"><span class="lbl">ЛО</span><span class="val">{{ doc.lo_number|default:"—" }}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Площадка</span><span class="val">{% if doc.page_documents.store %}{{ doc.page_documents.store.name }}{% else %}—{% endif %}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Приём</span><span class="val">{% if doc.page_documents %}{{ doc.page_documents.type_reception|default:"—" }}{% else %}—{% endif %}</span></div>
+					<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.page_salon.run %}{{ doc.page_salon.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
+				{% endif %}
+				<div class="lo-hist-meta__item"><span class="lbl">Оценщик</span><span class="val">{{ doc.staff|default:"—" }}</span></div>
+			</div>
+
+			{% if doc.page_remote and not doc.page_remote.end_estimation %}
+				{% if doc.page_remote.comment %}
+					<div class="lo-hist-comment">{{ doc.page_remote.comment }}</div>
+				{% endif %}
+			{% elif doc.page_soglasovanie.comment %}
+				<div class="lo-hist-comment">{{ doc.page_soglasovanie.comment }}</div>
+			{% endif %}
+
+			<div class="lo-hist-foot">
+				{% if doc.rlk_id %}
+					<a class="btn btn-outline-secondary btn-sm" href="/eco/{{ doc.rlk.id }}/" target="_blank" rel="noopener">Открыть оценку</a>
+				{% endif %}
+				{% if doc.page_remote and not doc.page_remote.end_estimation %}
+					<div class="lo-hist-price">
+						<span class="lbl">Приём</span>
+						<span class="val">{% if doc.page_remote.price_eco %}{{ doc.page_remote.price_eco|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+					</div>
+					<div class="lo-hist-price">
+						<span class="lbl">БЦП</span>
+						<span class="val">{% if doc.bcp %}{{ doc.bcp|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+					</div>
+				{% else %}
+					<div class="lo-hist-price">
+						<span class="lbl">Приём</span>
+						<span class="val">
+							{% if doc.page_soglasovanie.price_after_kd %}
+								{{ doc.page_soglasovanie.price_after_kd|floatformat:"0g" }} ₽
+							{% elif doc.page_soglasovanie.price_before_kd %}
+								{{ doc.page_soglasovanie.price_before_kd|floatformat:"0g" }} ₽
+							{% else %}
+								—
+							{% endif %}
+						</span>
+					</div>
+					<div class="lo-hist-price">
+						<span class="lbl">БЦП</span>
+						<span class="val">{% if doc.page_soglasovanie.price_bcp %}{{ doc.page_soglasovanie.price_bcp|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+					</div>
+				{% endif %}
+			</div>
+		</article>
+		{% endwith %}
+	{% else %}
+		<article class="lo-hist-card {% if doc.active %}lo-hist-card--active{% else %}lo-hist-card--inactive{% endif %}">
+			<div class="lo-hist-top">
+				<span class="lo-hist-date">{% if doc.dataTime %}{{ doc.dataTime|date:"d.m.Y H:i" }}{% else %}{{ doc.dataTime }}{% endif %}</span>
+				{% if doc.active %}
+					<span class="lo-hist-badge lo-hist-badge--ok">Проведён</span>
+				{% else %}
+					<span class="lo-hist-badge lo-hist-badge--bad">Не проведён</span>
+				{% endif %}
+				<span class="lo-hist-badge lo-hist-badge--muted">Лист оценки</span>
+				{% if doc.nomer %}
+					<span class="lo-hist-badge lo-hist-badge--muted">№ {{ doc.nomer }}</span>
+				{% endif %}
+			</div>
+
+			<p class="lo-hist-title">{{ doc.clientName|default:"Клиент не указан" }}{% if doc.carsGRZ %} · {{ doc.carsGRZ }}{% endif %}</p>
+
+			<div class="lo-hist-meta">
+				<div class="lo-hist-meta__item"><span class="lbl">Площадка</span><span class="val">{{ doc.store|default:"—" }}</span></div>
+				<div class="lo-hist-meta__item"><span class="lbl">Приём</span><span class="val">{{ doc.type_reception|default:"—" }}</span></div>
+				<div class="lo-hist-meta__item"><span class="lbl">Пробег</span><span class="val">{% if doc.run %}{{ doc.run|floatformat:"0g" }} км{% else %}—{% endif %}</span></div>
+				<div class="lo-hist-meta__item"><span class="lbl">Оценщик</span><span class="val">{{ doc.staff|default:"—" }}</span></div>
+			</div>
+
+			{% if doc.description_podgotovka %}
+				<div class="lo-hist-comment"><strong>Подготовка:</strong> {{ doc.description_podgotovka }}</div>
+			{% endif %}
+			{% if doc.description_op %}
+				<div class="lo-hist-comment"><strong>ОП:</strong> {{ doc.description_op }}</div>
+			{% endif %}
+
+			<div class="lo-hist-foot">
+				<div class="lo-hist-price">
+					<span class="lbl">Приём</span>
+					<span class="val">{% if doc.cost_price %}{{ doc.cost_price|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+				</div>
+				<div class="lo-hist-price">
+					<span class="lbl">БЦП</span>
+					<span class="val">{% if doc.bcp %}{{ doc.bcp|floatformat:"0g" }} ₽{% else %}—{% endif %}</span>
+				</div>
+			</div>
+		</article>
+	{% endif %}
+{% endfor %}
+</div>
+{% else %}
+<div class="lo-hist-empty">Истории оценок по этому автомобилю пока нет.</div>
+{% endif %}
