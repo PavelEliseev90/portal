@@ -9,6 +9,7 @@ from . import views_transfer_rlk
 from . import views_transfer_kolesa_reception
 from . import views_transfer_rlk_chat
 from . import views_help
+from . import views_client_brief
 
 app_name = 'eco'
 
@@ -35,6 +36,8 @@ urlpatterns = [
     path('transfer-rlk-chat/',                                                  views_transfer_rlk_chat.transfer_rlk_chat, name='transfer_rlk_chat'),
     path('transfer-kolesa-reception/',                                          views_transfer_kolesa_reception.transfer_kolesa_reception, name='transfer_kolesa_reception'),
     path('help/',                                                               views_help.estimation_appraiser_help, name='estimation_appraiser_help'),
+    path('client-brief/settings/',                                              views_client_brief.client_brief_settings, name='estimation_client_brief_settings'),
+    path('<slug:rlk_id>/client-brief/',                                         views_client_brief.estimation_client_brief, name='estimation_client_brief'),
 
     path('kolesa-reception/',                                                   views_kolesa_reception.kolesa_reception_list, name='kolesa_reception_list'),
     path('kolesa-reception/sb/',                                                views_kolesa_reception_sb.kolesa_reception_sb_list, name='kolesa_reception_sb_list'),

@@ -1,0 +1,105 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Веса шкалы сводки клиенту {% endblock %}
+{% block title_navbar %} — Веса шкалы {% endblock %}
+
+{% block head %}
+<style>
+.est-brief-w-plus { color: #2d6a4f; }
+.est-brief-w-minus { color: #c1121f; }
+.est-brief-set textarea { min-height: 4.2rem; font-size: 0.85rem; }
+.est-brief-set input[type=number] { max-width: 6.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page" style="max-width: 1100px;">
+	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+		<div>
+			<h2 class="mb-1">Шкала состояния: веса и возражения</h2>
+			<p class="text-muted mb-0">Тестовый режим · только суперпользователь</p>
+		</div>
+		<a href="/estimations/help/" class="btn btn-outline-secondary btn-sm">Инструкция оценщика</a>
+	</div>
+
+	<div class="portal-panel mb-3">
+		<p class="mb-2">
+			Оценка стартует с <strong>{{ params.base_score }} из 5</strong>.
+			Сработавшие факты прибавляют или вычитают вес. Итог округляется до целых звёзд:
+			5 — отличный вариант, 4 — хороший, 3 — с замечаниями, 2 — много вложений, 1 — высокий риск.
+		</p>
+		<p class="mb-2 text-muted small">
+			Клиенту называем осмотр, Автотеку, Автохаб, объявления, диагностику и факт «такие у нас продаются / стоят дольше» —
+			не этапы УС и не внутренние коэффициенты.
+			Галочка «в шкале» выключает пункт, не удаляя его.
+		</p>
+		<p class="mb-0 text-muted small">
+			Группа «Наши продажи» по умолчанию выключена: блок на сводке есть всегда, на звёзды влияет только после включения галочки.
+		</p>
+	</div>
+
+	{% if params.migrate_error %}
+		<div class="alert alert-danger">{{ params.migrate_error }}</div>
+	{% else %}
+		{% if params.saved %}
+			<div class="alert alert-success py-2">Сохранено. На сводке клиента веса применятся сразу.</div>
+		{% endif %}
+
+		<form method="post" class="est-brief-set">
+			{% csrf_token %}
+			<div class="d-flex gap-2 flex-wrap mb-3">
+				<button type="submit" class="btn btn-primary">Сохранить веса</button>
+				<button type="submit" name="reset_defaults" value="1" class="btn btn-outline-secondary"
+					onclick="return confirm('Вернуть заводские веса и тексты возражений?');">
+					Сбросить к заводским
+				</button>
+			</div>
+
+			{% for g in params.groups %}
+			<div class="portal-panel mb-3">
+				<h5 class="mb-3">{{ g.name }}</h5>
+				<div class="table-responsive">
+					<table class="table table-sm align-top mb-0">
+						<thead>
+							<tr>
+								<th style="width: 16%">Пункт</th>
+								<th style="width: 7%">Вес</th>
+								<th style="width: 5%">В шкале</th>
+								<th>Если клиент говорит</th>
+								<th>Ответ</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for row in g.rows %}
+							<tr>
+								<td>
+									<div>{{ row.label }}</div>
+									<div class="small text-muted">{{ row.key }}</div>
+								</td>
+								<td>
+									<input type="number" step="0.05" name="weight_{{ row.id }}" value="{{ row.weight }}"
+										class="form-control form-control-sm {% if row.weight > 0 %}est-brief-w-plus{% elif row.weight < 0 %}est-brief-w-minus{% endif %}">
+								</td>
+								<td>
+									<input type="checkbox" name="active_{{ row.id }}" value="1"{% if row.active %} checked{% endif %}>
+								</td>
+								<td>
+									<input type="text" name="objection_{{ row.id }}" value="{{ row.objection }}"
+										class="form-control form-control-sm" maxlength="300" placeholder="Возражение">
+								</td>
+								<td>
+									<textarea name="answer_{{ row.id }}" class="form-control form-control-sm" rows="3">{{ row.answer }}</textarea>
+								</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{% endfor %}
+
+			<button type="submit" class="btn btn-primary mb-4">Сохранить веса</button>
+		</form>
+	{% endif %}
+</div>
+{% endblock %}

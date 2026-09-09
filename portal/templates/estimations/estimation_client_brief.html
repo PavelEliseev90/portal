@@ -1,0 +1,333 @@
+{% extends 'base_web.html' %}
+
+{% block title %} — Сводка для клиента {% endblock %}
+{% block title_navbar %} — Сводка для клиента {% endblock %}
+
+{% block head %}
+<style>
+@media print {
+	.est-brief-noprint, .portal-header .btn, nav, header, footer { display: none !important; }
+	.portal-page { max-width: 100% !important; }
+	.portal-panel { box-shadow: none !important; border: 1px solid #ccc; }
+}
+.est-brief-pro { border-left: 4px solid #2d6a4f; padding-left: 0.75rem; margin-bottom: 0.85rem; }
+.est-brief-con { border-left: 4px solid #c1121f; padding-left: 0.75rem; margin-bottom: 0.85rem; }
+.est-brief-talk { white-space: pre-wrap; background: #f4f7fb; border-radius: 0.75rem; padding: 1rem; font-size: 0.95rem; }
+.est-brief-badge { font-size: 0.7rem; letter-spacing: .04em; text-transform: uppercase; color: #8ea1ba; }
+.est-brief-star { color: #e09f3e; font-size: 1.35rem; letter-spacing: 0.08rem; }
+.est-brief-star-off { color: #d5deea; }
+.est-brief-q { font-weight: 600; margin-bottom: 0.25rem; }
+.est-brief-a { margin-bottom: 1rem; }
+.est-brief-w-plus { color: #2d6a4f; }
+.est-brief-w-minus { color: #c1121f; }
+.est-brief-stage { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1rem; }
+.est-brief-stage-item {
+	flex: 1 1 110px; background: #f4f7fb; border-radius: 0.6rem; padding: 0.55rem 0.7rem;
+	min-width: 7rem;
+}
+.est-brief-stage-item strong { display: block; font-size: 1.15rem; color: #002a5a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portal-page" style="max-width: 960px;">
+	<div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2">
+		<div>
+			<h2 class="mb-1">Сводка для клиента</h2>
+			<p class="text-muted mb-0">
+				Тестовый режим · только суперпользователь · РЛ {{ params.rlk.nomer }}
+			</p>
+		</div>
+		<div class="d-flex gap-2 flex-wrap est-brief-noprint">
+			<a href="/estimations/{{ params.rlk.id }}/" class="btn btn-outline-secondary btn-sm">К оценке</a>
+			<a href="/eco/{{ params.rlk.id }}/" class="btn btn-outline-secondary btn-sm">ЕЦО</a>
+			<a href="/estimations/client-brief/settings/" class="btn btn-outline-secondary btn-sm">Веса шкалы</a>
+			<button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Печать</button>
+		</div>
+	</div>
+
+	<div class="alert alert-warning py-2 small est-brief-noprint">
+		Черновик для разговора с клиентом. Не показываем внутренние ценовые группы и настройки.
+		Опираемся на осмотр, Автотеку, Автохаб, объявления и диагностику.
+	</div>
+
+	{% if not params.estimation %}
+		<div class="portal-panel">
+			<p class="mb-0">По этому рабочему листу ещё нет интерактивной оценки.</p>
+		</div>
+	{% else %}
+		{% with b=params.brief %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">{{ b.year }} {{ b.title }}</h5>
+			<p class="text-muted mb-3">
+				{% if b.modification %}{{ b.modification }} · {% endif %}
+				{% if b.body %}{{ b.body }} · {% endif %}
+				{% if b.engine %}{{ b.engine }} · {% endif %}
+				{% if b.gear %}{{ b.gear }} · {% endif %}
+				{% if b.drive %}{{ b.drive }}{% endif %}
+			</p>
+			<div class="row g-2">
+				<div class="col-6 col-md-3"><div class="small text-muted">VIN</div><div>{{ b.vin|default:"—" }}</div></div>
+				<div class="col-6 col-md-3"><div class="small text-muted">Госномер</div><div>{{ b.plate|default:"—" }}</div></div>
+				<div class="col-6 col-md-3"><div class="small text-muted">Пробег</div><div>{% if b.run %}{{ b.run }} км{% else %}—{% endif %}</div></div>
+				<div class="col-6 col-md-3"><div class="small text-muted">Владельцы / ключи</div><div>{{ b.owners|default:"—" }} / {{ b.keys|default:"—" }}</div></div>
+			</div>
+			{% if b.status %}
+				<p class="small text-muted mb-0 mt-2">Статус оценки: {{ b.status }}</p>
+			{% endif %}
+		</div>
+
+		{% if b.scale %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Шкала состояния</h5>
+			<div class="est-brief-star mb-1" aria-label="{{ b.scale.stars }} из 5">
+				{% for _ in b.scale.stars_on %}★{% endfor %}<span class="est-brief-star-off">{% for _ in b.scale.stars_off %}★{% endfor %}</span>
+			</div>
+			<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.scale.stars }} из 5 — {{ b.scale.label }}</div>
+			<p class="mb-3">{{ b.scale.hint }}</p>
+			<p class="small text-muted">Старт {{ b.scale.base }} ★, дальше плюсы и минусы по фактам оценки. Веса можно менять в настройках.</p>
+			{% if b.scale.factors %}
+			<div class="table-responsive">
+				<table class="table table-sm mb-0">
+					<thead><tr><th>Факт</th><th>Группа</th><th class="text-end">Вес</th></tr></thead>
+					<tbody>
+					{% for f in b.scale.factors %}
+						<tr>
+							<td>{{ f.label }}</td>
+							<td class="text-muted">{{ f.group }}</td>
+							<td class="text-end {% if f.plus %}est-brief-w-plus{% else %}est-brief-w-minus{% endif %}">
+								{% if f.plus %}+{% endif %}{{ f.weight }}
+							</td>
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			{% endif %}
+		</div>
+		{% endif %}
+
+		<div class="portal-panel mb-3">
+			<h5 class="mb-3">Цифры, которые можно назвать</h5>
+			<div class="row g-3">
+				<div class="col-md-4">
+					<div class="small text-muted">Предложение клиенту</div>
+					<div class="fs-4 fw-semibold" style="color:#002a5a;">
+						{% if b.client_price %}{{ b.client_price|floatformat:"0g" }} ₽{% else %}ещё нет{% endif %}
+					</div>
+					<div class="small text-muted">приём / зачёт
+						{% if b.offer_after %} · после диагностики{% elif b.offer_before %} · до диагностики{% endif %}
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="small text-muted">Рынок похожих авто</div>
+					<div class="fs-5">
+						{% if b.market_low and b.market_high %}
+							{{ b.market_low|floatformat:"0g" }} – {{ b.market_high|floatformat:"0g" }} ₽
+						{% elif b.hub_avg %}
+							~ {{ b.hub_avg|floatformat:"0g" }} ₽
+						{% else %}
+							нет данных
+						{% endif %}
+					</div>
+					<div class="small text-muted">Автохаб / объявления, не наша «внутренняя» цена</div>
+				</div>
+				<div class="col-md-4">
+					<div class="small text-muted">Работы до продажи</div>
+					<div class="fs-5">{% if b.repairs %}{{ b.repairs|floatformat:"0g" }} ₽{% else %}не выделены{% endif %}</div>
+					<div class="small text-muted">подготовка, кузов, слесарка</div>
+				</div>
+			</div>
+			{% if b.offer_sale %}
+				<p class="small mb-0 mt-3 text-muted">Ориентир витрины после подготовки: {{ b.offer_sale|floatformat:"0g" }} ₽</p>
+			{% endif %}
+		</div>
+
+		{% if b.our_sales %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Как продавали такие за {{ b.our_sales.days }} дней</h5>
+			{% if b.our_sales.client_line %}
+				<p class="mb-2">{{ b.our_sales.client_line }}</p>
+			{% elif b.our_sales.reason %}
+				<p class="mb-2 text-muted">{{ b.our_sales.reason }}</p>
+			{% endif %}
+			{% if b.our_sales.total and b.our_sales.reason %}
+				<p class="small text-muted">{{ b.our_sales.reason }}</p>
+			{% endif %}
+			<p class="small text-muted mb-2">
+				Влияние на звёзды:
+				{% if b.our_sales.stars_on %}<strong>сейчас учтено</strong>
+				{% elif b.our_sales.stars_enabled %}в настройках включено, по этой машине нейтрально
+				{% else %}выключено{% endif %}
+				· <a class="est-brief-noprint" href="/estimations/client-brief/settings/">настроить</a>
+			</p>
+			{% if b.our_sales.total %}
+				<div class="row g-2 mb-2">
+					<div class="col-6 col-md-4">
+						<div class="small text-muted">Продаж</div>
+						<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.our_sales.total }}</div>
+						<div class="small text-muted">{% if b.our_sales.year_match %}тот же год{% else %}другие годы{% endif %}</div>
+					</div>
+					<div class="col-6 col-md-4">
+						<div class="small text-muted">Цена отгрузки</div>
+						<div>{% if b.our_sales.avg_price %}{{ b.our_sales.min_price|floatformat:"0g" }} – {{ b.our_sales.max_price|floatformat:"0g" }} ₽{% else %}—{% endif %}</div>
+						{% if b.our_sales.avg_price %}<div class="small text-muted">средняя {{ b.our_sales.avg_price|floatformat:"0g" }} ₽</div>{% endif %}
+					</div>
+					<div class="col-6 col-md-4">
+						<div class="small text-muted">Дней на складе</div>
+						<div>{% if b.our_sales.avg_days != None %}~ {{ b.our_sales.avg_days }}{% else %}—{% endif %}</div>
+						<div class="small text-muted">среднее до отгрузки</div>
+					</div>
+				</div>
+				<div class="est-brief-stage est-brief-noprint">
+					{% for st in b.our_sales.by_stage %}
+						<div class="est-brief-stage-item">
+							<div class="small text-muted">{{ st.name }}</div>
+							<strong>{{ st.count }}</strong>
+						</div>
+					{% endfor %}
+					{% if b.our_sales.unknown_stage %}
+						<div class="est-brief-stage-item">
+							<div class="small text-muted">Этап не указан</div>
+							<strong>{{ b.our_sales.unknown_stage }}</strong>
+						</div>
+					{% endif %}
+				</div>
+				<p class="small text-muted est-brief-noprint mb-2">Этапы УС клиенту не называем. Говорим «быстро находят покупателя» или «дольше стоят на площадке».</p>
+				{% if b.our_sales.rows %}
+				<div class="table-responsive est-brief-noprint">
+					<table class="table table-sm mb-0">
+						<thead>
+							<tr>
+								<th>Дата</th>
+								<th>Год</th>
+								<th>Пробег</th>
+								<th>Этап</th>
+								<th>Дней</th>
+								<th class="text-end">Цена</th>
+								<th>Площадка</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for row in b.our_sales.rows %}
+							<tr>
+								<td>{{ row.date|date:"d.m.Y" }}</td>
+								<td>{{ row.year|default:"—" }}</td>
+								<td>{% if row.run %}{{ row.run }} км{% else %}—{% endif %}</td>
+								<td>{{ row.stage }}</td>
+								<td>{% if row.days != None %}{{ row.days }}{% else %}—{% endif %}</td>
+								<td class="text-end">{% if row.price %}{{ row.price|floatformat:"0g" }} ₽{% else %}—{% endif %}</td>
+								<td class="small">{{ row.unit|default:"" }}</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% endif %}
+			{% endif %}
+		</div>
+		{% endif %}
+
+		<div class="portal-panel mb-3">
+			<h5 class="mb-3">Почему такая цена</h5>
+			{% for p in b.price_story %}
+				<p class="mb-2">{{ p }}</p>
+			{% endfor %}
+			<p class="small text-muted mb-0">Источники: {{ b.sources|join:", " }}</p>
+		</div>
+
+		<div class="row g-3 mb-3">
+			<div class="col-md-6">
+				<div class="portal-panel h-100">
+					<h5 class="mb-3">Плюсы</h5>
+					{% if b.pros %}
+						{% for item in b.pros %}
+							<div class="est-brief-pro">
+								<div class="fw-semibold">{{ item.title }}</div>
+								<div>{{ item.text }}</div>
+								<div class="est-brief-badge">{{ item.source }}</div>
+							</div>
+						{% endfor %}
+					{% else %}
+						<p class="text-muted mb-0">Явных плюсов в заполненных данных мало — проверьте осмотр.</p>
+					{% endif %}
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="portal-panel h-100">
+					<h5 class="mb-3">Минусы и на что влияют</h5>
+					{% if b.cons %}
+						{% for item in b.cons %}
+							<div class="est-brief-con">
+								<div class="fw-semibold">{{ item.title }}</div>
+								<div>{{ item.text }}</div>
+								{% if item.effect %}
+									<div class="small mt-1"><strong>Для сделки:</strong> {{ item.effect }}</div>
+								{% endif %}
+								<div class="est-brief-badge">{{ item.source }}</div>
+							</div>
+						{% endfor %}
+					{% else %}
+						<p class="text-muted mb-0">Критических минусов в данных нет.</p>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		{% if b.objections %}
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Если клиент говорит…</h5>
+			<p class="small text-muted">Аргументация по фактам этой оценки. Внутренние настройки не называем.</p>
+			{% for o in b.objections %}
+				<div class="est-brief-q">«{{ o.question }}»</div>
+				<div class="est-brief-a">{{ o.answer }}{% if o.source %} <span class="est-brief-badge">{{ o.source }}</span>{% endif %}</div>
+			{% endfor %}
+		</div>
+		{% endif %}
+
+		<div class="portal-panel mb-3">
+			<h5 class="mb-2">Текст для разговора</h5>
+			<p class="small text-muted">Можно зачитать или вставить в мессенджер. Кнопка копирует в буфер.</p>
+			<div class="est-brief-talk" id="estBriefTalk">{{ b.talk_text }}</div>
+			<button type="button" class="btn btn-outline-secondary btn-sm mt-2 est-brief-noprint" id="estBriefCopy">Скопировать</button>
+		</div>
+
+		{% if b.missing %}
+		<div class="portal-panel mb-3 est-brief-noprint">
+			<h5 class="mb-2">Пока не хватает в оценке</h5>
+			<ul class="mb-0">
+				{% for m in b.missing %}
+					<li>{{ m }}</li>
+				{% endfor %}
+			</ul>
+		</div>
+		{% endif %}
+
+		{% if b.eco_comment or b.eco_comment_kd %}
+		<div class="portal-panel mb-3 est-brief-noprint">
+			<h5 class="mb-2">Служебно (не читать клиенту)</h5>
+			{% if b.eco_comment %}<p class="mb-1">{{ b.eco_comment }}</p>{% endif %}
+			{% if b.eco_comment_kd %}<p class="mb-0 text-muted">{{ b.eco_comment_kd }}</p>{% endif %}
+		</div>
+		{% endif %}
+
+		{% if b.avtoteka_url %}
+			<p class="small est-brief-noprint"><a href="{{ b.avtoteka_url }}" target="_blank" rel="noopener">Отчёт Автотеки</a></p>
+		{% endif %}
+		{% endwith %}
+	{% endif %}
+</div>
+<script>
+(function () {
+	var btn = document.getElementById('estBriefCopy');
+	var box = document.getElementById('estBriefTalk');
+	if (!btn || !box) return;
+	btn.addEventListener('click', function () {
+		var text = box.innerText || '';
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(text).then(function () { btn.textContent = 'Скопировано'; });
+		}
+	});
+})();
+</script>
+{% endblock %}
