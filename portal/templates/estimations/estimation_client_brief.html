@@ -26,6 +26,46 @@
 	min-width: 7rem;
 }
 .est-brief-stage-item strong { display: block; font-size: 1.15rem; color: #002a5a; }
+.est-brief-car {
+	display: grid;
+	grid-template-columns: 160px 1fr;
+	gap: 1rem;
+	align-items: start;
+}
+@media (max-width: 575.98px) {
+	.est-brief-car { grid-template-columns: 1fr; }
+}
+.est-brief-preview {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	border-radius: 0.75rem;
+	background: #e8eef5;
+	display: block;
+}
+.est-brief-preview-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #8ea1ba;
+	font-size: 0.85rem;
+	text-align: center;
+	padding: 0.75rem;
+}
+.est-brief-count {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	border-radius: 999px;
+	padding: 0.2rem 0.65rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	line-height: 1.2;
+}
+.est-brief-count-pro { background: rgba(45, 106, 79, 0.12); color: #2d6a4f; }
+.est-brief-count-con { background: rgba(193, 18, 31, 0.1); color: #c1121f; }
+.est-brief-count-star { background: rgba(224, 159, 62, 0.15); color: #9a6b1a; }
+.est-brief-car-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
 </style>
 {% endblock %}
 
@@ -35,13 +75,14 @@
 		<div>
 			<h2 class="mb-1">Сводка для клиента</h2>
 			<p class="text-muted mb-0">
-				Тестовый режим · только суперпользователь · РЛ {{ params.rlk.nomer }}
+				РЛ {{ params.rlk.nomer }} · для разговора на площадке
 			</p>
 		</div>
 		<div class="d-flex gap-2 flex-wrap est-brief-noprint">
-			<a href="/estimations/{{ params.rlk.id }}/" class="btn btn-outline-secondary btn-sm">К оценке</a>
-			<a href="/eco/{{ params.rlk.id }}/" class="btn btn-outline-secondary btn-sm">ЕЦО</a>
+			<a href="/eco/{{ params.rlk.id }}/" class="btn btn-outline-secondary btn-sm">Интерактивная оценка</a>
+			{% if params.can_edit_weights %}
 			<a href="/estimations/client-brief/settings/" class="btn btn-outline-secondary btn-sm">Веса шкалы</a>
+			{% endif %}
 			<button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Печать</button>
 		</div>
 	</div>
@@ -58,23 +99,49 @@
 	{% else %}
 		{% with b=params.brief %}
 		<div class="portal-panel mb-3">
-			<h5 class="mb-2">{{ b.year }} {{ b.title }}</h5>
-			<p class="text-muted mb-3">
-				{% if b.modification %}{{ b.modification }} · {% endif %}
-				{% if b.body %}{{ b.body }} · {% endif %}
-				{% if b.engine %}{{ b.engine }} · {% endif %}
-				{% if b.gear %}{{ b.gear }} · {% endif %}
-				{% if b.drive %}{{ b.drive }}{% endif %}
-			</p>
-			<div class="row g-2">
-				<div class="col-6 col-md-3"><div class="small text-muted">VIN</div><div>{{ b.vin|default:"—" }}</div></div>
-				<div class="col-6 col-md-3"><div class="small text-muted">Госномер</div><div>{{ b.plate|default:"—" }}</div></div>
-				<div class="col-6 col-md-3"><div class="small text-muted">Пробег</div><div>{% if b.run %}{{ b.run }} км{% else %}—{% endif %}</div></div>
-				<div class="col-6 col-md-3"><div class="small text-muted">Владельцы / ключи</div><div>{{ b.owners|default:"—" }} / {{ b.keys|default:"—" }}</div></div>
+			<div class="est-brief-car">
+				<div>
+					{% if b.preview_url %}
+						<img class="est-brief-preview" src="{{ b.preview_url }}" alt="{{ b.title }}">
+					{% else %}
+						<div class="est-brief-preview est-brief-preview-empty">Нет фото внешнего осмотра</div>
+					{% endif %}
+				</div>
+				<div>
+					<h5 class="mb-2">{{ b.year }} {{ b.title }}</h5>
+					<p class="text-muted mb-2">
+						{% if b.modification %}{{ b.modification }} · {% endif %}
+						{% if b.body %}{{ b.body }} · {% endif %}
+						{% if b.engine %}{{ b.engine }} · {% endif %}
+						{% if b.gear %}{{ b.gear }} · {% endif %}
+						{% if b.drive %}{{ b.drive }}{% endif %}
+					</p>
+					<div class="d-flex flex-wrap gap-2 mb-3">
+						{% if b.scale %}
+							<span class="est-brief-count est-brief-count-star">{{ b.scale.stars }} ★ · {{ b.scale.label }}</span>
+						{% endif %}
+						<span class="est-brief-count est-brief-count-pro">+ {{ b.pros_count }} плюсы</span>
+						<span class="est-brief-count est-brief-count-con">− {{ b.cons_count }} минусы</span>
+					</div>
+					<div class="row g-2">
+						<div class="col-6 col-md-3"><div class="small text-muted">VIN</div><div>{{ b.vin|default:"—" }}</div></div>
+						<div class="col-6 col-md-3"><div class="small text-muted">Госномер</div><div>{{ b.plate|default:"—" }}</div></div>
+						<div class="col-6 col-md-3"><div class="small text-muted">Пробег</div><div>{% if b.run %}{{ b.run }} км{% else %}—{% endif %}</div></div>
+						<div class="col-6 col-md-3"><div class="small text-muted">Владельцы / ключи</div><div>{{ b.owners|default:"—" }} / {{ b.keys|default:"—" }}</div></div>
+					</div>
+					{% if b.color %}
+						<p class="small text-muted mb-0 mt-2">Цвет: {{ b.color }}</p>
+					{% endif %}
+					{% if b.status %}
+						<p class="small text-muted mb-0 mt-1">Статус оценки: {{ b.status }}</p>
+					{% endif %}
+					{% if b.avtoteka_url %}
+					<div class="est-brief-car-actions est-brief-noprint">
+						<a href="{{ b.avtoteka_url }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noopener">Отчёт Автотеки</a>
+					</div>
+					{% endif %}
+				</div>
 			</div>
-			{% if b.status %}
-				<p class="small text-muted mb-0 mt-2">Статус оценки: {{ b.status }}</p>
-			{% endif %}
 		</div>
 
 		{% if b.scale %}
@@ -85,9 +152,9 @@
 			</div>
 			<div class="fs-5 fw-semibold" style="color:#002a5a;">{{ b.scale.stars }} из 5 — {{ b.scale.label }}</div>
 			<p class="mb-3">{{ b.scale.hint }}</p>
-			<p class="small text-muted">Старт {{ b.scale.base }} ★, дальше плюсы и минусы по фактам оценки. Веса можно менять в настройках.</p>
 			{% if b.scale.factors %}
-			<div class="table-responsive">
+			<p class="small text-muted est-brief-noprint">Старт {{ b.scale.base }} ★, дальше плюсы и минусы по фактам оценки.{% if params.can_edit_weights %} Веса можно менять в настройках.{% endif %}</p>
+			<div class="table-responsive est-brief-noprint">
 				<table class="table table-sm mb-0">
 					<thead><tr><th>Факт</th><th>Группа</th><th class="text-end">Вес</th></tr></thead>
 					<tbody>
@@ -154,12 +221,14 @@
 			{% if b.our_sales.total and b.our_sales.reason %}
 				<p class="small text-muted">{{ b.our_sales.reason }}</p>
 			{% endif %}
-			<p class="small text-muted mb-2">
+			<p class="small text-muted mb-2 est-brief-noprint">
 				Влияние на звёзды:
 				{% if b.our_sales.stars_on %}<strong>сейчас учтено</strong>
 				{% elif b.our_sales.stars_enabled %}в настройках включено, по этой машине нейтрально
 				{% else %}выключено{% endif %}
-				· <a class="est-brief-noprint" href="/estimations/client-brief/settings/">настроить</a>
+				{% if params.can_edit_weights %}
+				· <a href="/estimations/client-brief/settings/">настроить</a>
+				{% endif %}
 			</p>
 			{% if b.our_sales.total %}
 				<div class="row g-2 mb-2">
@@ -309,10 +378,6 @@
 			{% if b.eco_comment %}<p class="mb-1">{{ b.eco_comment }}</p>{% endif %}
 			{% if b.eco_comment_kd %}<p class="mb-0 text-muted">{{ b.eco_comment_kd }}</p>{% endif %}
 		</div>
-		{% endif %}
-
-		{% if b.avtoteka_url %}
-			<p class="small est-brief-noprint"><a href="{{ b.avtoteka_url }}" target="_blank" rel="noopener">Отчёт Автотеки</a></p>
 		{% endif %}
 		{% endwith %}
 	{% endif %}

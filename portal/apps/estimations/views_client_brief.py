@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Сводка оценки для клиента — только суперпользователь (тест)."""
+"""Сводка оценки для клиента (просмотр — как у интерактивной оценки, веса — superuser)."""
 from collections import OrderedDict
 
 from django.contrib.auth.decorators import login_required
@@ -13,11 +13,48 @@ from estimations.client_brief import build_client_brief
 from register.models import RegInteractivOcenkaRLK
 
 
+def _user_can_view_client_brief(user, interactiv_rlk, estimation):
+    """Те же правила, что у страницы /eco/<rlk>/ (без сессии 1С)."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if interactiv_rlk is None or estimation is None:
+        return False
+
+    profiles = getattr(user, 'profiles', None)
+    if profiles is None:
+        return False
+
+    if profiles.user_sb or profiles.eco or profiles.eco_visible:
+        return True
+
+    staff_rlk = getattr(interactiv_rlk, 'staff_rlk', None)
+    if staff_rlk and user.username == (staff_rlk.domain_login or ''):
+        return True
+
+    if user in interactiv_rlk.access_user.all():
+        return True
+    if user in estimation.access_user.all():
+        return True
+
+    staff = getattr(estimation, 'staff', None)
+    if staff and user.username == (staff.domain_login or ''):
+        return True
+
+    docs = getattr(estimation, 'page_documents', None)
+    store = getattr(docs, 'store', None) if docs is not None else None
+    if store is not None and interactiv_rlk.store_id:
+        if interactiv_rlk.store in profiles.korsavto_stores.all():
+            return True
+        return False
+
+    # Как в eco: без склада в документах — не режем доступ по складу
+    return True
+
+
 @login_required
 def estimation_client_brief(request, rlk_id):
-    if not request.user.is_superuser:
-        return HttpResponseForbidden('Тестовый режим: страница доступна только суперпользователю.')
-
     rlk = get_object_or_404(DocRLK, pk=rlk_id)
     from documents.rlk_estimation import resolve_estimation_rlk_id
     target_id = resolve_estimation_rlk_id(rlk)
@@ -45,16 +82,25 @@ def estimation_client_brief(request, rlk_id):
             'estimation__page_proverki',
             'estimation__page_soglasovanie',
             'estimation__page_remote',
+            'estimation__staff',
+            'staff_rlk',
+            'store',
+            'status',
         )
         .first()
     )
     estimation = link.estimation if link else None
+
+    if not _user_can_view_client_brief(request.user, link, estimation):
+        return HttpResponseForbidden('Нет доступа к сводке по этой оценке.')
+
     brief = build_client_brief(estimation) if estimation else None
     return render(request, 'estimations/estimation_client_brief.html', {
         'params': {
             'rlk': rlk,
             'estimation': estimation,
             'brief': brief,
+            'can_edit_weights': request.user.is_superuser,
         },
     })
 
@@ -71,7 +117,7 @@ def _parse_weight(raw, fallback):
 @login_required
 def client_brief_settings(request):
     if not request.user.is_superuser:
-        return HttpResponseForbidden('Тестовый режим: страница доступна только суперпользователю.')
+        return HttpResponseForbidden('Настройка весов шкалы доступна только суперпользователю.')
 
     from estimations.models import EstimationBriefFactor
 
@@ -137,4 +183,3 @@ def client_brief_settings(request):
             'base_score': BASE_SCORE,
         },
     })
-

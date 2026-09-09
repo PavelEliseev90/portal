@@ -326,14 +326,6 @@
             </div>
           {% endif %}
 
-          {% if user.is_superuser and params.interactiv_rlk %}
-            <div class="alert alert-secondary py-2 mb-2">
-              Тест:
-              <a href="/estimations/{{ params.interactiv_rlk.rlk_id }}/client-brief/">сводка для клиента</a>
-              — плюсы/минусы и почему такая цена (без ценовых групп).
-            </div>
-          {% endif %}
-
           <div class="modal fade" id="edit_modification" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
