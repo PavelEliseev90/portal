@@ -54,11 +54,52 @@ def _annotate_report_staff(qs):
     )
 
 
+def _apply_alfa_transition_filter(qs, unit_ids: list[int]):
+    """Отбор ЛО по дате перехода подразделения на Альфа-Авто.
+
+    Если у подразделения заполнена alfa_auto_transition_date:
+    - ИБ не Альфа (ib.alfa=False) → документы строго до этой даты;
+    - ИБ Альфа (ib.alfa=True) → документы с этой даты включительно.
+    Без даты перехода ограничение не накладывается.
+    """
+    if not unit_ids:
+        return qs
+
+    from refs.models import RefUnit
+
+    units = list(
+        RefUnit.objects
+        .filter(pk__in=unit_ids, alfa_auto_transition_date__isnull=False)
+        .select_related('ib')
+        .only('id', 'alfa_auto_transition_date', 'ib_id', 'ib__alfa')
+    )
+    if not units:
+        return qs
+
+    transition_ids = {u.pk for u in units}
+    plain_ids = [uid for uid in unit_ids if uid not in transition_ids]
+
+    date_q = Q()
+    if plain_ids:
+        date_q |= Q(unit_id__in=plain_ids)
+
+    for unit in units:
+        transition = unit.alfa_auto_transition_date
+        is_alfa = bool(getattr(getattr(unit, 'ib', None), 'alfa', False))
+        if is_alfa:
+            date_q |= Q(unit_id=unit.pk, dataTime__date__gte=transition)
+        else:
+            date_q |= Q(unit_id=unit.pk, dataTime__date__lt=transition)
+
+    return qs.filter(date_q)
+
+
 def filtered_accepted_qs(filters: dict[str, Any]):
     unit_ids = allowed_unit_ids(filters)
     qs = _annotate_report_staff(
         DocLO.objects.filter(active=True, unit_id__in=unit_ids)
     )
+    qs = _apply_alfa_transition_filter(qs, unit_ids)
 
     if filters.get('date_from'):
         qs = qs.filter(dataTime__date__gte=filters['date_from'])
@@ -273,7 +314,7 @@ def build_accepted_report(get) -> dict[str, Any]:
         groups=groups,
         view=view,
         title='Принятые автомобили ОП АСП',
-        subtitle='По проведённым листам оценки. Итоги — из БД, детали групп — по клику.',
+        subtitle='По проведённым листам оценки. Для подразделений с датой перехода на Альфа: Корс — до даты, Альфа — с даты. Итоги — из БД, детали групп — по клику.',
         person_label='Оценщик',
         page_obj=page_obj,
         paginator=paginator,
