@@ -226,7 +226,7 @@ def export_accepted_xlsx(get, request=None) -> HttpResponse:
             groups = aggregate_groups(qs, group_id_field='unit_id', group_name_field='unit__name', field_map=SUM_MAP)
             group_title = 'По подразделениям'
         else:
-            groups = aggregate_groups(qs, group_id_field='staff_id', group_name_field='staff__name', field_map=SUM_MAP)
+            groups = aggregate_groups(qs, group_id_field='report_staff_id', group_name_field='report_staff_name', field_map=SUM_MAP)
             for g in groups:
                 if not g['label'] or g['label'] == '—':
                     g['label'] = 'Без оценщика'

@@ -157,7 +157,7 @@ ACCEPTED_SORT_FIELDS = {
     'car': 'cars__mark',
     'vin': 'vin',
     'client': 'clientName',
-    'person': 'staff__name',
+    'person': 'report_staff_name',
     'type_reception': 'type_reception__name',
     'iznos': 'rlk__reginteractivocenka__iznos',
     'kolesa2_reception': 'kolesa2_reception',
