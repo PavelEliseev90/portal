@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.db.models import Q
+from django.db.models import CharField, F, Q, Value
+from django.db.models.functions import Coalesce
 
 from asp.report_common import (
     GROUP_DETAIL_LIMIT,
@@ -31,9 +32,33 @@ SUM_MAP = {
 }
 
 
+def _annotate_report_staff(qs):
+    """Оценщик: вкладка приёма → интерактивная оценка → ЛО."""
+    return qs.annotate(
+        report_staff_id=Coalesce(
+            F('rlk__reginteractivocenkarlk__page_reception__staff_id'),
+            F('rlk__reginteractivocenkarlk__staff_rlk_id'),
+            F('rlk__reginteractivocenka__staff_id'),
+            F('rlk__reginteractivocenkarlk__estimation__staff_id'),
+            F('staff_id'),
+        ),
+        report_staff_name=Coalesce(
+            F('rlk__reginteractivocenkarlk__page_reception__staff__name'),
+            F('rlk__reginteractivocenkarlk__staff_rlk__name'),
+            F('rlk__reginteractivocenka__staff__name'),
+            F('rlk__reginteractivocenkarlk__estimation__staff__name'),
+            F('staff__name'),
+            Value(''),
+            output_field=CharField(),
+        ),
+    )
+
+
 def filtered_accepted_qs(filters: dict[str, Any]):
     unit_ids = allowed_unit_ids(filters)
-    qs = DocLO.objects.filter(active=True, unit_id__in=unit_ids)
+    qs = _annotate_report_staff(
+        DocLO.objects.filter(active=True, unit_id__in=unit_ids)
+    )
 
     if filters.get('date_from'):
         qs = qs.filter(dataTime__date__gte=filters['date_from'])
@@ -51,7 +76,7 @@ def filtered_accepted_qs(filters: dict[str, Any]):
         qs = qs.filter(Q(cars__model__icontains=model) | Q(name_new_auto__icontains=model))
     person = filters.get('person') or ''
     if person:
-        qs = qs.filter(staff__name__icontains=person)
+        qs = qs.filter(report_staff_name__icontains=person)
     type_reception = filters.get('type_reception') or ''
     if type_reception:
         qs = qs.filter(type_reception__name__icontains=type_reception)
@@ -66,7 +91,8 @@ def filtered_accepted_qs(filters: dict[str, Any]):
 
 DETAIL_VALUES = (
     'id', 'nomer', 'dataTime', 'unit_id', 'unit__name', 'store__name',
-    'staff_id', 'staff__name', 'vin', 'vin2', 'year', 'run', 'owners', 'keys',
+    'staff_id', 'staff__name', 'report_staff_id', 'report_staff_name',
+    'vin', 'vin2', 'year', 'run', 'owners', 'keys',
     'carsGRZ', 'clientName', 'cost_price', 'bcp', 'rlk_id', 'rlk__nomer',
     'auction', 'type_reception__name', 'kolesa2_reception',
     'cars__mark', 'cars__model', 'cars__vin', 'rlk__unit_dc__name',
@@ -76,6 +102,7 @@ DETAIL_VALUES = (
 
 def _lo_row_from_values(row: dict) -> dict[str, Any]:
     iznos = row.get('rlk__reginteractivocenka__iznos')
+    person_name = (row.get('report_staff_name') or row.get('staff__name') or '').strip()
     return {
         'id': row['id'],
         'nomer': row.get('nomer') or '',
@@ -84,8 +111,8 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'unit_name': row.get('unit__name') or '—',
         'unit_source_name': row.get('rlk__unit_dc__name') or '',
         'store_name': row.get('store__name') or '',
-        'person_id': row.get('staff_id') or 0,
-        'person_name': row.get('staff__name') or 'Без оценщика',
+        'person_id': row.get('report_staff_id') or row.get('staff_id') or 0,
+        'person_name': person_name or 'Без оценщика',
         'vin': row.get('vin') or row.get('cars__vin') or '',
         'mark': row.get('cars__mark') or '',
         'model': row.get('cars__model') or '',
@@ -184,9 +211,9 @@ def build_group_details(get) -> dict[str, Any]:
         key_int = 0
     if view == 'by_person':
         if key_int:
-            qs = qs.filter(staff_id=key_int)
+            qs = qs.filter(report_staff_id=key_int)
         else:
-            qs = qs.filter(staff__isnull=True)
+            qs = qs.filter(report_staff_id__isnull=True)
     else:
         if key_int:
             qs = qs.filter(unit_id=key_int)
@@ -226,8 +253,8 @@ def build_accepted_report(get) -> dict[str, Any]:
     else:
         groups = aggregate_groups(
             qs,
-            group_id_field='staff_id',
-            group_name_field='staff__name',
+            group_id_field='report_staff_id',
+            group_name_field='report_staff_name',
             field_map=SUM_MAP,
         )
         for g in groups:
