@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from functools import lru_cache
 from typing import Any, Iterable
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
 from django.db.models import Count, F, FloatField, Sum, Value
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Trim
 from django.utils import timezone
 
 from refs.models import RefUnit
@@ -89,28 +88,30 @@ def sum_money(field: str):
     return Sum(Coalesce(F(field), Value(0)), output_field=FloatField())
 
 
-@lru_cache(maxsize=1)
-def _asp_unit_ids_cached() -> tuple[int, ...]:
+def asp_sales_unit_ids() -> list[int]:
+    """Подразделения направления «Отдел продаж АСП» для отбора отчётов.
+
+    Без process-lifetime cache: направление у unit меняют в админке,
+    а @lru_cache оставлял старый список до рестарта воркеров.
+    """
     ids = list(
         RefUnit.objects
-        .filter(direction__name__iexact=ASP_DIRECTION_NAME)
-        .exclude(name='')
+        .annotate(_dir_name=Trim('direction__name'), _unit_name=Trim('name'))
+        .filter(_dir_name__iexact=ASP_DIRECTION_NAME)
+        .exclude(_unit_name='')
         .order_by('name')
         .values_list('pk', flat=True)
     )
     if ids:
-        return tuple(ids)
-    return tuple(
+        return ids
+    return list(
         RefUnit.objects
+        .annotate(_unit_name=Trim('name'))
         .filter(buauto=True, active_eco=True)
-        .exclude(name='')
+        .exclude(_unit_name='')
         .order_by('name')
         .values_list('pk', flat=True)
     )
-
-
-def asp_sales_unit_ids() -> list[int]:
-    return list(_asp_unit_ids_cached())
 
 
 def asp_sales_units_list() -> list[dict]:
