@@ -1,0 +1,147 @@
+{% comment %}
+  Сохранённые фильтры отчёта АСП.
+  Ожидает: params.report_key, params.saved_filters, params.filters.saved_filter (active id),
+  request.path для apply URL.
+{% endcomment %}
+<div class="asp-saved-filters mt-3 pt-3 border-top">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <span class="metric-card-label-portal mb-0">Сохранённые фильтры</span>
+    <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalAspSaveFilter">
+      <span class="icon-mbri-save"></span> Сохранить текущий
+    </button>
+  </div>
+  <div class="d-flex flex-wrap gap-2" id="aspSavedFilterChips">
+    {% for f in params.saved_filters %}
+      <div class="btn-group btn-group-sm" role="group">
+        <a class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           href="{{ request.path }}?saved_filter={{ f.id }}&view={{ params.view|default:params.filters.view|default:'main' }}"
+           title="{% if f.is_shared %}Общий пресет{% else %}Личный пресет{% endif %}">
+          {{ f.name }}{% if f.is_shared %} · общий{% endif %}
+        </a>
+        {% if f.is_owner or request.user.is_superuser %}
+        <button type="button" class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %} asp-saved-filter-del"
+                data-id="{{ f.id }}" title="Удалить" aria-label="Удалить">
+          ×
+        </button>
+        {% endif %}
+      </div>
+    {% empty %}
+      <span class="small text-muted">Нет сохранённых наборов — настройте фильтр и нажмите «Сохранить текущий».</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="modalAspSaveFilter" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Сохранить фильтр</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="aspSaveFilterName">Название</label>
+        <input type="text" class="form-control" id="aspSaveFilterName" maxlength="200" placeholder="Например: Мой ДЦ · текущий месяц" autocomplete="off">
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="aspSaveFilterShared">
+          <label class="form-check-label" for="aspSaveFilterShared">Общий фильтр (виден всем)</label>
+        </div>
+        {% endif %}
+        <div class="small text-muted mt-2">Будут сохранены текущие параметры из адресной строки (без страницы и раскрытых групп).</div>
+        <div class="small text-danger mt-2 d-none" id="aspSaveFilterError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" id="aspSaveFilterSubmit">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var reportKey = "{{ params.report_key|default:'margin' }}";
+  var saveUrl = "{% url 'asp:report_saved_filter_save' %}";
+  var deleteUrlTpl = "{% url 'asp:report_saved_filter_delete' 0 %}".replace('/0/', '/__ID__/');
+
+  function csrfToken() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  var submitBtn = document.getElementById('aspSaveFilterSubmit');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', function () {
+      var nameEl = document.getElementById('aspSaveFilterName');
+      var errEl = document.getElementById('aspSaveFilterError');
+      var sharedEl = document.getElementById('aspSaveFilterShared');
+      var name = (nameEl && nameEl.value || '').trim();
+      if (errEl) { errEl.classList.add('d-none'); errEl.textContent = ''; }
+      if (!name) {
+        if (errEl) { errEl.textContent = 'Укажите название'; errEl.classList.remove('d-none'); }
+        return;
+      }
+      var params = {};
+      var qs = new URLSearchParams(window.location.search);
+      qs.forEach(function (value, key) {
+        if (['page', 'ajax', 'export', 'group_key', 'saved_filter'].indexOf(key) >= 0) return;
+        if (!params[key]) params[key] = [];
+        params[key].push(value);
+      });
+      Object.keys(params).forEach(function (k) {
+        if (params[k].length === 1 && k !== 'unit' && k !== 'type_reception') {
+          params[k] = params[k][0];
+        }
+      });
+      fetch(saveUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken()
+        },
+        body: JSON.stringify({
+          report_key: reportKey,
+          name: name,
+          is_shared: !!(sharedEl && sharedEl.checked),
+          filter_data: params
+        })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.j.ok) {
+            if (errEl) {
+              errEl.textContent = (res.j && (res.j.error || res.j.message)) || 'Не удалось сохранить';
+              errEl.classList.remove('d-none');
+            }
+            return;
+          }
+          window.location.href = window.location.pathname
+            + '?saved_filter=' + res.j.id
+            + '&view={{ params.view|default:params.filters.view|default:"main" }}';
+        })
+        .catch(function () {
+          if (errEl) { errEl.textContent = 'Ошибка сети'; errEl.classList.remove('d-none'); }
+        });
+    });
+  }
+
+  document.querySelectorAll('.asp-saved-filter-del').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-id');
+      if (!id || !window.confirm('Удалить сохранённый фильтр?')) return;
+      fetch(deleteUrlTpl.replace('__ID__', id), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': csrfToken() }
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok && res.j.ok) {
+            window.location.reload();
+          } else {
+            alert((res.j && res.j.error) || 'Не удалось удалить');
+          }
+        });
+    });
+  });
+})();
+</script>

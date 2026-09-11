@@ -1,0 +1,142 @@
+{% comment %}
+  chips_only=1 — только чипы (для mobile offcanvas), без модалки/скрипта.
+{% endcomment %}
+<div class="asp-saved-filters {% if not chips_only %}mt-3 pt-3 border-top{% else %}mt-2{% endif %}">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <span class="metric-card-label-portal mb-0">Сохранённые фильтры</span>
+    <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalDispSaveFilter">
+      <span class="icon-mbri-save"></span> Сохранить текущий
+    </button>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% for f in params.saved_filters %}
+      <div class="btn-group btn-group-sm" role="group">
+        <a class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           href="{% url 'avtosalon:disposition' %}?saved_filter={{ f.id }}">
+          {{ f.name }}{% if f.is_shared %} · общий{% endif %}
+        </a>
+        {% if not chips_only %}
+          {% if f.is_owner or request.user.is_superuser %}
+          <button type="button" class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %} disp-saved-filter-del"
+                  data-id="{{ f.id }}" title="Удалить" aria-label="Удалить">×</button>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% empty %}
+      <span class="small text-muted">Нет сохранённых наборов.</span>
+    {% endfor %}
+  </div>
+</div>
+
+{% if not chips_only %}
+<div class="modal fade" id="modalDispSaveFilter" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Сохранить фильтр диспозиции</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="dispSaveFilterName">Название</label>
+        <input type="text" class="form-control" id="dispSaveFilterName" maxlength="200"
+               placeholder="Например: Готовые · мой ДЦ" autocomplete="off">
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="dispSaveFilterShared">
+          <label class="form-check-label" for="dispSaveFilterShared">Общий фильтр (виден всем)</label>
+        </div>
+        {% endif %}
+        <div class="small text-muted mt-2">Сохраняются текущие параметры из адресной строки (включая статус).</div>
+        <div class="small text-danger mt-2 d-none" id="dispSaveFilterError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn-calculate-sm" id="dispSaveFilterSubmit">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var saveUrl = "{% url 'avtosalon:disposition_saved_filter_save' %}";
+  var deleteUrlTpl = "{% url 'avtosalon:disposition_saved_filter_delete' 0 %}".replace('/0/', '/__ID__/');
+  var multiKeys = {
+    mark: 1, model: 1, body_type: 1, gear_type: 1, drive_type: 1,
+    evaluation_type: 1, unit: 1, store: 1
+  };
+
+  function csrfToken() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  var submitBtn = document.getElementById('dispSaveFilterSubmit');
+  if (submitBtn && !submitBtn.getAttribute('data-bound')) {
+    submitBtn.setAttribute('data-bound', '1');
+    submitBtn.addEventListener('click', function () {
+      var nameEl = document.getElementById('dispSaveFilterName');
+      var errEl = document.getElementById('dispSaveFilterError');
+      var sharedEl = document.getElementById('dispSaveFilterShared');
+      var name = (nameEl && nameEl.value || '').trim();
+      if (errEl) { errEl.classList.add('d-none'); errEl.textContent = ''; }
+      if (!name) {
+        if (errEl) { errEl.textContent = 'Укажите название'; errEl.classList.remove('d-none'); }
+        return;
+      }
+      var params = {};
+      var qs = new URLSearchParams(window.location.search);
+      qs.forEach(function (value, key) {
+        if (['page', 'ajax', 'saved_filter'].indexOf(key) >= 0) return;
+        if (!params[key]) params[key] = [];
+        params[key].push(value);
+      });
+      Object.keys(params).forEach(function (k) {
+        if (params[k].length === 1 && !multiKeys[k]) params[k] = params[k][0];
+      });
+      fetch(saveUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+        body: JSON.stringify({
+          name: name,
+          is_shared: !!(sharedEl && sharedEl.checked),
+          filter_data: params
+        })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.j.ok) {
+            if (errEl) {
+              errEl.textContent = (res.j && (res.j.error || res.j.message)) || 'Не удалось сохранить';
+              errEl.classList.remove('d-none');
+            }
+            return;
+          }
+          window.location.href = "{% url 'avtosalon:disposition' %}?saved_filter=" + res.j.id;
+        })
+        .catch(function () {
+          if (errEl) { errEl.textContent = 'Ошибка сети'; errEl.classList.remove('d-none'); }
+        });
+    });
+  }
+
+  document.querySelectorAll('.disp-saved-filter-del').forEach(function (btn) {
+    if (btn.getAttribute('data-bound')) return;
+    btn.setAttribute('data-bound', '1');
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-id');
+      if (!id || !window.confirm('Удалить сохранённый фильтр?')) return;
+      fetch(deleteUrlTpl.replace('__ID__', id), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': csrfToken() }
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok && res.j.ok) window.location.reload();
+          else alert((res.j && res.j.error) || 'Не удалось удалить');
+        });
+    });
+  });
+})();
+</script>
+{% endif %}

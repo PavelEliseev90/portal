@@ -4,6 +4,7 @@ from django.http import JsonResponse, QueryDict
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from asp.models import ReportSavedFilter
 from asp.report_common import VIEW_COOKIE, VIEW_COOKIE_MAX_AGE, preferred_view_from_cookie
 from asp.report_table import (
     COLUMNS_COOKIE_MAX_AGE,
@@ -12,6 +13,11 @@ from asp.report_table import (
     columns_cookie_value,
     cookie_name,
     normalize_columns,
+)
+from asp.saved_filters import (
+    resolve_report_get,
+    saved_filters_for_template,
+    snapshot_filter_data,
 )
 
 ASP_VARIANT_TEMPLATES = {
@@ -55,6 +61,7 @@ def _ajax_or_report(request, build_report, build_details, export_fn, template_na
     ajax = (request.GET.get('ajax') or '').strip()
     export = (request.GET.get('export') or '').strip().lower()
     report_key = REPORT_KEY_BY_TYPE.get(report_type, 'margin')
+    report_get = resolve_report_get(request, report_key)
 
     # Режим просмотра фиксируем в URL (удобно шарить ссылку / обновлять страницу)
     if 'view' not in request.GET and ajax != 'details' and export not in ('xlsx', 'excel', '1'):
@@ -62,16 +69,24 @@ def _ajax_or_report(request, build_report, build_details, export_fn, template_na
 
     if ajax == 'details':
         try:
-            payload = build_details(request.GET)
+            payload = build_details(report_get)
             return JsonResponse(payload, encoder=DjangoJSONEncoder)
         except Exception as exc:
             return JsonResponse({'ok': False, 'error': str(exc), 'rows': []}, status=500)
 
     if export in ('xlsx', 'excel', '1'):
-        return export_fn(request.GET, request=request)
+        return export_fn(report_get, request=request)
 
-    report = build_report(request.GET)
+    report = build_report(report_get)
     attach_table_ui(report, request, report_key)
+    active_saved = (request.GET.get('saved_filter') or report_get.get('saved_filter') or '').strip()
+    report['report_key'] = report_key
+    report['saved_filters'] = saved_filters_for_template(
+        request.user, report_key, active_id=active_saved,
+    )
+    filters = report.get('filters')
+    if isinstance(filters, dict):
+        filters['saved_filter'] = active_saved
     params = {
         'type': report_type,
         'nav_selected': 4,
@@ -164,3 +179,65 @@ def report_columns_save(request):
         samesite='Lax',
     )
     return response
+
+
+@login_required
+@require_POST
+def report_saved_filter_save(request):
+    """Создать / обновить сохранённый фильтр текущего отчёта."""
+    import json
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': 'Некорректный JSON'}, status=400)
+
+    report_key = (payload.get('report_key') or '').strip()
+    if report_key not in REPORTS:
+        return JsonResponse({'ok': False, 'error': 'Неизвестный отчёт'}, status=400)
+
+    name = (payload.get('name') or '').strip()
+    if not name:
+        return JsonResponse({'ok': False, 'error': 'Укажите название'}, status=400)
+    if len(name) > 200:
+        return JsonResponse({'ok': False, 'error': 'Слишком длинное название'}, status=400)
+
+    filter_data = payload.get('filter_data')
+    if filter_data is None:
+        filter_data = snapshot_filter_data(request.GET)
+    if not isinstance(filter_data, dict):
+        return JsonResponse({'ok': False, 'error': 'filter_data должен быть объектом'}, status=400)
+
+    is_shared = bool(payload.get('is_shared'))
+    if is_shared and not (request.user.is_staff or request.user.is_superuser):
+        is_shared = False
+
+    obj, created = ReportSavedFilter.objects.update_or_create(
+        user=request.user,
+        report_key=report_key,
+        name=name,
+        defaults={
+            'filter_data': filter_data,
+            'is_shared': is_shared,
+        },
+    )
+    return JsonResponse({
+        'ok': True,
+        'id': obj.pk,
+        'created': created,
+        'message': 'Фильтр сохранён' if created else 'Фильтр обновлён',
+    })
+
+
+@login_required
+@require_POST
+def report_saved_filter_delete(request, filter_id):
+    """Удалить свой (или любой — для superuser) сохранённый фильтр."""
+    qs = ReportSavedFilter.objects.filter(pk=filter_id)
+    if not request.user.is_superuser:
+        qs = qs.filter(user=request.user)
+    obj = qs.first()
+    if obj is None:
+        return JsonResponse({'ok': False, 'error': 'Фильтр не найден'}, status=404)
+    obj.delete()
+    return JsonResponse({'ok': True, 'message': 'Фильтр удалён'})

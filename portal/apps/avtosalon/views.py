@@ -450,19 +450,21 @@ def cars(request):
     return render(request, "avtosalon/cars_new.html", {'params': params})  
 
 
+@login_required
 def disposition(request):
-    """
-    Страница диспозиции - отображение автомобилей с фильтрацией
-    """
-    from datetime import datetime, timedelta
-    from django.db.models import Q
-    
-    # Параметры фильтрации
-    status_type = request.GET.get('status', 'all')  # По умолчанию "Все"
-    select_count = int(request.GET.get('select_count', 50))
-    
-    # ОПТИМИЗАЦИЯ: Добавляем select_related и prefetch_related для связанных объектов
-    # Базовый запрос
+    """Диспозиция: карточки авто + фильтры в стиле отчётов АСП + сохранённые пресеты."""
+    from avtosalon.disposition_filters import (
+        DISPOSITION_KEY,
+        apply_filters,
+        disposition_saved_filters,
+        has_active_filters,
+        parse_filters,
+        resolve_disposition_get,
+    )
+
+    get = resolve_disposition_get(request)
+    filtr = parse_filters(get)
+
     cars = RefCarsOrganization.objects.exclude(quantity=0).select_related(
         'modification_autoru',
         'modification_autoru__model',
@@ -475,374 +477,166 @@ def disposition(request):
         'unit',
         'evaluation',
         'type_drive',
-        'stage_price'
+        'stage_price',
+        'complectation_autoru',
     ).prefetch_related(
         'refcarsorganizationfiles_set'
     ).annotate(
-        # Подсчет активных задач (новые + в работе)
         active_tasks_count=Count('tasks', filter=Q(tasks__status__in=['new', 'in_progress']))
     )
-    
-    # Фильтр по статусу (тип диспозиции)
-    # Если status_type == 'all' или пустой, показываем все автомобили в наличии (без фильтра по статусу)
-    if status_type == 'all' or status_type == '':
-        # Не применяем фильтр по статусу - показываем все автомобили в наличии
-        pass
-    elif status_type == 'warehouse':
-        cars = cars.filter(status__name__icontains='Склад')
-    elif status_type == 'ready':
-        cars = cars.filter(status__name__icontains='Готов')
-    elif status_type == 'sale':
-        cars = cars.filter(status__name__icontains='В продаже')
-    elif status_type == 'auction':
-        cars = cars.filter(status__name__icontains='Аукцион')
-    elif status_type == 'reserve':
-        cars = cars.filter(reserve__gt=0)
-    elif status_type == 'transit':
-        cars = cars.filter(status__name__icontains='Транзит')
-    elif status_type == 'preparation':
-        cars = cars.filter(status__name__icontains='Подготовка')
-    elif status_type == 'repair':
-        cars = cars.filter(status__name__icontains='Ремонт')
-    elif status_type == 'sold':
-        cars = cars.filter(status__name__icontains='Продан')
-    elif status_type == 'no_sale':
-        cars = cars.filter(status__name__icontains='Не продавать')
-    elif status_type == 'returned':
-        cars = cars.filter(status__name__icontains='Возвращен')
-    
-    # Фильтры
-    vin = request.GET.get('vin', '').strip()
-    if vin:
-        cars = cars.filter(Q(vin__icontains=vin) | Q(vin2__icontains=vin))
-    
-    # Фильтр по search_fields (поиск по всем полям)
-    search_fields = request.GET.get('search_fields', '').strip()
-    if search_fields:
-        cars = cars.filter(search_fields__icontains=search_fields)
-    
-    # Фильтр по маркам (множественный выбор)
-    mark_ids = request.GET.getlist('mark[]')
-    if mark_ids:
-        try:
-            mark_ids_int = [int(mid) for mid in mark_ids if mid]
-            if mark_ids_int:
-                cars = cars.filter(modification_autoru__model__mark__id__in=mark_ids_int)
-        except ValueError:
-            pass
-    
-    # Фильтр по моделям (множественный выбор)
-    model_ids = request.GET.getlist('model[]')
-    if model_ids:
-        try:
-            model_ids_int = [int(mid) for mid in model_ids if mid]
-            if model_ids_int:
-                cars = cars.filter(modification_autoru__model__id__in=model_ids_int)
-        except ValueError:
-            pass
-    
-    year_start = request.GET.get('year_start', '')
-    if year_start:
-        try:
-            cars = cars.filter(year__gte=int(year_start))
-        except ValueError:
-            pass
-    
-    year_end = request.GET.get('year_end', '')
-    if year_end:
-        try:
-            cars = cars.filter(year__lte=int(year_end))
-        except ValueError:
-            pass
-    
-    price_start = request.GET.get('price_start', '')
-    if price_start:
-        try:
-            cars = cars.filter(price__gte=int(float(price_start)))
-        except ValueError:
-            pass
-    
-    price_end = request.GET.get('price_end', '')
-    if price_end:
-        try:
-            cars = cars.filter(price__lte=int(float(price_end)))
-        except ValueError:
-            pass
-    
-    stock_number = request.GET.get('stock_number', '').strip()
-    if stock_number:
-        cars = cars.filter(lo_link_number__icontains=stock_number)
-    
-    no_photo = request.GET.get('no_photo', '')
-    if no_photo == 'on':
-        cars = cars.annotate(photos_count=Count('refcarsorganizationfiles__id')).filter(photos_count=0)
-    
-    promotion = request.GET.get('promotion', '')
-    if promotion == 'on':
-        # Фильтр по акции (можно настроить по полю stage_price или другому)
-        cars = cars.filter(stage_price__name__icontains='акция')
-    
-    # Дополнительные фильтры - множественный выбор
-    body_type_ids = request.GET.getlist('body_type[]')
-    if body_type_ids:
-        try:
-            cars = cars.filter(modification_autoru__typeBody__id__in=[int(btid) for btid in body_type_ids])
-        except ValueError:
-            pass
-    
-    gear_type_ids = request.GET.getlist('gear_type[]')
-    if gear_type_ids:
-        try:
-            cars = cars.filter(modification_autoru__typeGear__id__in=[int(gtid) for gtid in gear_type_ids])
-        except ValueError:
-            pass
-    
-    drive_type_ids = request.GET.getlist('drive_type[]')
-    if drive_type_ids:
-        try:
-            cars = cars.filter(type_drive__id__in=[int(dtid) for dtid in drive_type_ids])
-        except ValueError:
-            pass
-    
-    evaluation_type_ids = request.GET.getlist('evaluation_type[]')
-    if evaluation_type_ids:
-        try:
-            cars = cars.filter(evaluation__id__in=[int(etid) for etid in evaluation_type_ids])
-        except ValueError:
-            pass
-    
-    unit_ids = request.GET.getlist('unit[]')
-    if unit_ids:
-        try:
-            cars = cars.filter(unit__id__in=[int(uid) for uid in unit_ids])
-        except ValueError:
-            pass
-    
-    store_ids = request.GET.getlist('store[]')
-    if store_ids:
-        try:
-            cars = cars.filter(store__id__in=[int(sid) for sid in store_ids])
-        except ValueError:
-            pass
-    
-    color = request.GET.get('color', '').strip()
-    if color:
-        cars = cars.filter(color__icontains=color)
-    
-    run_start = request.GET.get('run_start', '')
-    if run_start:
-        try:
-            cars = cars.filter(run__gte=int(run_start))
-        except ValueError:
-            pass
-    
-    run_end = request.GET.get('run_end', '')
-    if run_end:
-        try:
-            cars = cars.filter(run__lte=int(run_end))
-        except ValueError:
-            pass
-    
-    engine_volume_start = request.GET.get('engine_volume_start', '')
-    if engine_volume_start:
-        try:
-            cars = cars.filter(modification_autoru__engineVolume__gte=float(engine_volume_start))
-        except (ValueError, AttributeError):
-            pass
-    
-    engine_volume_end = request.GET.get('engine_volume_end', '')
-    if engine_volume_end:
-        try:
-            cars = cars.filter(modification_autoru__engineVolume__lte=float(engine_volume_end))
-        except (ValueError, AttributeError):
-            pass
-    
-    days_in_stock_start = request.GET.get('days_in_stock_start', '')
-    if days_in_stock_start:
-        try:
-            days = int(days_in_stock_start)
-            target_date = datetime.now().date() - timedelta(days=days)
-            cars = cars.filter(date_create__lte=target_date)
-        except ValueError:
-            pass
-    
-    days_in_stock_end = request.GET.get('days_in_stock_end', '')
-    if days_in_stock_end:
-        try:
-            days = int(days_in_stock_end)
-            target_date = datetime.now().date() - timedelta(days=days)
-            cars = cars.filter(date_create__gte=target_date)
-        except ValueError:
-            pass
-    
-    # Сортировка
-    order_by = request.GET.get('order_by', '-date_create')
-    if order_by:
-        cars = cars.order_by(order_by)
-    else:
-        cars = cars.order_by('-date_create')
-    
-    # Подсчет общего количества отфильтрованных автомобилей
+
+    cars = apply_filters(cars, filtr)
     total_cars_count = cars.count()
-    
-    # Пагинация
-    page_number = request.GET.get('page', 1)
-    paginator = Paginator(cars, select_count)
-    page_obj = paginator.get_page(page_number)
-    
-    # Проверка, есть ли активные фильтры (исключая статус, так как он всегда есть)
-    has_filters = bool(
-        vin or mark_ids or model_ids or year_start or year_end or 
-        price_start or price_end or stock_number or (no_photo == 'on') or 
-        (promotion == 'on') or body_type_ids or gear_type_ids or 
-        drive_type_ids or evaluation_type_ids or unit_ids or 
-        store_ids or color or run_start or run_end or 
-        engine_volume_start or engine_volume_end or 
-        days_in_stock_start or days_in_stock_end
-    )
-    
-    # ОПТИМИЗАЦИЯ: Используем only() для загрузки только необходимых полей
-    # Данные для фильтров
-    selected = {
-        'marks': AutoruMark.objects.only('id', 'name').order_by('name'),
-        'statuses': RefStatusCarsOrganization.objects.only('id', 'name').order_by('name'),
-        'stores': RefStore.objects.only('id', 'name').order_by('name'),
-        'units': RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name'),
-        'body_types': RefTypeBody.objects.only('id', 'name').order_by('name'),
-        'gear_types': RefTypeKpp.objects.only('id', 'name').order_by('name'),
-        'drive_types': RefTypeDrive.objects.only('id', 'name').order_by('name'),
-        'evaluation_types': RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
-    }
-    
-    # ОПТИМИЗАЦИЯ: Загружаем модели с select_related для марки
-    # Загружаем модели (все для множественного выбора, или отфильтрованные по выбранным маркам)
-    models_list = AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name')
-    if mark_ids:
-        try:
-            mark_ids_int = [int(mid) for mid in mark_ids if mid]
-            if mark_ids_int:
-                models_list = models_list.filter(mark__id__in=mark_ids_int)
-        except ValueError:
-            pass
-    
-    # Преобразуем списки в строки для шаблона (для удобства проверки selected)
-    mark_ids_str = [str(mid) for mid in mark_ids] if mark_ids else []
-    model_ids_str = [str(mid) for mid in model_ids] if model_ids else []
-    body_type_ids_str = [str(btid) for btid in body_type_ids] if body_type_ids else []
-    gear_type_ids_str = [str(gtid) for gtid in gear_type_ids] if gear_type_ids else []
-    drive_type_ids_str = [str(dtid) for dtid in drive_type_ids] if drive_type_ids else []
-    evaluation_type_ids_str = [str(etid) for etid in evaluation_type_ids] if evaluation_type_ids else []
-    unit_ids_str = [str(uid) for uid in unit_ids] if unit_ids else []
-    store_ids_str = [str(sid) for sid in store_ids] if store_ids else []
-    
-    # Для фильтров с чекбоксами - списки ID для проверки в шаблоне (всегда списки, даже пустые)
-    mark_ids_list = [int(mid) for mid in mark_ids if mid] if mark_ids else []
-    model_ids_list = [int(mid) for mid in model_ids if mid] if model_ids else []
-    body_type_ids_list = [int(btid) for btid in body_type_ids if btid] if body_type_ids else []
-    gear_type_ids_list = [int(gtid) for gtid in gear_type_ids if gtid] if gear_type_ids else []
-    drive_type_ids_list = [int(dtid) for dtid in drive_type_ids if dtid] if drive_type_ids else []
-    evaluation_type_ids_list = [int(etid) for etid in evaluation_type_ids if etid] if evaluation_type_ids else []
-    unit_ids_list = [int(uid) for uid in unit_ids if uid] if unit_ids else []
-    store_ids_list = [int(sid) for sid in store_ids if sid] if store_ids else []
-    
-    filtr = {
-        'status': status_type,
-        'vin': vin,
-        'search_fields': search_fields,
-        'mark': mark_ids_str,
-        'model': model_ids_str,
-        'year_start': year_start,
-        'year_end': year_end,
-        'price_start': price_start,
-        'price_end': price_end,
-        'stock_number': stock_number,
-        'no_photo': no_photo,
-        'promotion': promotion,
-        'select_count': select_count,
-        'order_by': order_by,
-        'body_type': body_type_ids_str,
-        'gear_type': gear_type_ids_str,
-        'drive_type': drive_type_ids_str,
-        'evaluation_type': evaluation_type_ids_str,
-        'unit': unit_ids_str,
-        'store': store_ids_str,
-        'color': color,
-        'run_start': run_start,
-        'run_end': run_end,
-        'engine_volume_start': engine_volume_start,
-        'engine_volume_end': engine_volume_end,
-        'days_in_stock_start': days_in_stock_start,
-        'days_in_stock_end': days_in_stock_end,
-    }
-    
+    paginator = Paginator(cars, filtr['select_count'])
+    page_obj = paginator.get_page(get.get('page') or 1)
+
+    models_qs = AutoruModel.objects.select_related('mark').only(
+        'id', 'name', 'mark_id', 'mark__id', 'mark__name'
+    ).order_by('name')
+    if filtr['mark_ids']:
+        models_qs = models_qs.filter(mark_id__in=filtr['mark_ids'])
+
+    from types import SimpleNamespace
+    models_for_filter = [
+        SimpleNamespace(
+            id=m.id,
+            pk=m.id,
+            name='{} · {}'.format(m.mark.name, m.name),
+        )
+        for m in models_qs[:800]
+    ]
+
     params = {
         'type': 'disposition',
+        'report_key': DISPOSITION_KEY,
         'page_obj': page_obj,
         'paginator': paginator,
-        'selected': selected,
         'filtr': filtr,
-        'models_list': models_list,
-        'all_models': AutoruModel.objects.select_related('mark').only('id', 'name', 'mark').order_by('name'),  # ОПТИМИЗАЦИЯ: Все модели для множественного выбора
+        'filters': filtr,
         'total_cars_count': total_cars_count,
-        'has_filters': has_filters,
-        # Для фильтров с чекбоксами
-        'mark_ids_list': mark_ids_list,
-        'model_ids_list': model_ids_list,
-        'body_type_ids_list': body_type_ids_list,
-        'gear_type_ids_list': gear_type_ids_list,
-        'drive_type_ids_list': drive_type_ids_list,
-        'evaluation_type_ids_list': evaluation_type_ids_list,
-        'unit_ids_list': unit_ids_list,
-        'store_ids_list': store_ids_list,
+        'has_filters': has_active_filters(filtr),
+        'saved_filters': disposition_saved_filters(request.user, filtr.get('saved_filter')),
+        'status_chips': (
+            ('all', 'Все'),
+            ('ready', 'Готов'),
+            ('sale', 'В продаже'),
+            ('auction', 'Аукцион'),
+            ('reserve', 'В резерве'),
+            ('transit', 'Транзит'),
+            ('preparation', 'Подготовка'),
+            ('repair', 'Ремонт'),
+        ),
+        'marks_qs': AutoruMark.objects.only('id', 'name').order_by('name'),
+        'models_qs': models_for_filter,
+        'stores_qs': RefStore.objects.only('id', 'name').order_by('name'),
+        'units_qs': RefUnit.objects.filter(buauto=True).only('id', 'name').order_by('name'),
+        'body_types_qs': RefTypeBody.objects.only('id', 'name').order_by('name'),
+        'gear_types_qs': RefTypeKpp.objects.only('id', 'name').order_by('name'),
+        'drive_types_qs': RefTypeDrive.objects.only('id', 'name').order_by('name'),
+        'evaluation_types_qs': RefTypeEvaluationCarsOrganization.objects.only('id', 'name').order_by('name'),
     }
-    
-    return render(request, "avtosalon/disposition.html", {'params': params})
+    return render(request, 'avtosalon/disposition.html', {'params': params})
+
+
+@login_required
+@require_POST
+def disposition_saved_filter_save(request):
+    from asp.models import ReportSavedFilter
+    from avtosalon.disposition_filters import DISPOSITION_KEY, snapshot_disposition_filters
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': 'Некорректный JSON'}, status=400)
+
+    name = (payload.get('name') or '').strip()
+    if not name:
+        return JsonResponse({'ok': False, 'error': 'Укажите название'}, status=400)
+    if len(name) > 200:
+        return JsonResponse({'ok': False, 'error': 'Слишком длинное название'}, status=400)
+
+    filter_data = payload.get('filter_data')
+    if filter_data is None:
+        filter_data = snapshot_disposition_filters(request.GET)
+    if not isinstance(filter_data, dict):
+        return JsonResponse({'ok': False, 'error': 'filter_data должен быть объектом'}, status=400)
+
+    is_shared = bool(payload.get('is_shared'))
+    if is_shared and not (request.user.is_staff or request.user.is_superuser):
+        is_shared = False
+
+    obj, created = ReportSavedFilter.objects.update_or_create(
+        user=request.user,
+        report_key=DISPOSITION_KEY,
+        name=name,
+        defaults={'filter_data': filter_data, 'is_shared': is_shared},
+    )
+    return JsonResponse({
+        'ok': True,
+        'id': obj.pk,
+        'created': created,
+        'message': 'Фильтр сохранён' if created else 'Фильтр обновлён',
+    })
+
+
+@login_required
+@require_POST
+def disposition_saved_filter_delete(request, filter_id):
+    from asp.models import ReportSavedFilter
+    from avtosalon.disposition_filters import DISPOSITION_KEY
+
+    qs = ReportSavedFilter.objects.filter(pk=filter_id, report_key=DISPOSITION_KEY)
+    if not request.user.is_superuser:
+        qs = qs.filter(user=request.user)
+    obj = qs.first()
+    if obj is None:
+        return JsonResponse({'ok': False, 'error': 'Фильтр не найден'}, status=404)
+    obj.delete()
+    return JsonResponse({'ok': True, 'message': 'Фильтр удалён'})
 
 
 def disposition_get_marks(request):
-    """
-    AJAX endpoint для загрузки марок (с поиском)
-    """
-    from django.http import JsonResponse
-    
     search = request.GET.get('search', '').strip()
-    
     try:
         marks = AutoruMark.objects.only('id', 'name').order_by('name')
         if search:
             marks = marks.filter(name__icontains=search)
-        # Ограничиваем количество для производительности
         marks = marks[:100]
-        marks_list = [{'id': mark.id, 'name': mark.name} for mark in marks]
-        return JsonResponse({'marks': marks_list})
+        return JsonResponse({'marks': [{'id': m.id, 'name': m.name} for m in marks]})
     except Exception as e:
         return JsonResponse({'marks': [], 'error': str(e)})
 
 
 def disposition_get_models(request):
-    """
-    AJAX endpoint для загрузки моделей по маркам (поддерживает несколько марок)
-    """
-    from django.http import JsonResponse
-    
-    mark_ids = request.GET.getlist('mark_ids[]')
+    mark_ids = request.GET.getlist('mark_ids[]') or request.GET.getlist('mark')
     search = request.GET.get('search', '').strip()
-    
     if not mark_ids:
         return JsonResponse({'models': []})
-    
     try:
         mark_ids_int = [int(mid) for mid in mark_ids if mid]
         if not mark_ids_int:
             return JsonResponse({'models': []})
-        
-        models = AutoruModel.objects.filter(mark__id__in=mark_ids_int).select_related('mark').only('id', 'name', 'mark').order_by('name')
+        models = (
+            AutoruModel.objects
+            .filter(mark__id__in=mark_ids_int)
+            .select_related('mark')
+            .only('id', 'name', 'mark')
+            .order_by('name')
+        )
         if search:
             models = models.filter(name__icontains=search)
-        # Ограничиваем количество для производительности
         models = models[:200]
-        models_list = [{'id': model.id, 'name': model.name, 'mark_id': model.mark.id, 'mark_name': model.mark.name} for model in models]
-        return JsonResponse({'models': models_list})
+        return JsonResponse({
+            'models': [
+                {
+                    'id': model.id,
+                    'name': model.name,
+                    'mark_id': model.mark.id,
+                    'mark_name': model.mark.name,
+                }
+                for model in models
+            ]
+        })
     except Exception as e:
         return JsonResponse({'models': [], 'error': str(e)})
 

@@ -1,0 +1,144 @@
+{% comment %}
+  Форма фильтров диспозиции.
+  Ожидает: params, id_prefix (уникальный для desktop/mobile), form_id, show_actions (bool)
+{% endcomment %}
+<form class="asp-rep-filter" method="get" id="{{ form_id }}" action="{% url 'avtosalon:disposition' %}">
+  <input type="hidden" name="status" value="{{ params.filtr.status|default:'all' }}">
+  {% if params.filtr.order_by %}<input type="hidden" name="order_by" value="{{ params.filtr.order_by }}">{% endif %}
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="metric-card-label-portal">VIN</div>
+      <input type="text" class="form-control" name="vin" id="{{ id_prefix }}Vin"
+             value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="metric-card-label-portal">Поиск</div>
+      <input type="text" class="form-control" name="search_fields" id="{{ id_prefix }}SearchFields"
+             value="{{ params.filtr.search_fields }}" placeholder="По всем полям" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="metric-card-label-portal">Ск. № / ЛО</div>
+      <input type="text" class="form-control" name="stock_number" id="{{ id_prefix }}Stock"
+             value="{{ params.filtr.stock_number }}" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="metric-card-label-portal">Цвет</div>
+      <input type="text" class="form-control" name="color" id="{{ id_prefix }}Color"
+             value="{{ params.filtr.color }}" autocomplete="off">
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Mark' field_name='mark' label='Марка' placeholder='Поиск по маркам…' items=params.marks_qs selected_ids=params.filtr.mark_ids hint='Пустой выбор = все марки' empty_text='Нет марок' %}
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Model' field_name='model' label='Модель' placeholder='Поиск по моделям…' items=params.models_qs selected_ids=params.filtr.model_ids hint='Список сужается по выбранным маркам после «Применить»' empty_text='Нет моделей' %}
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Unit' field_name='unit' label='Подразделение' placeholder='Поиск…' items=params.units_qs selected_ids=params.filtr.unit_ids hint='Пустой выбор = все' empty_text='Нет подразделений' %}
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Store' field_name='store' label='Стоянка' placeholder='Поиск…' items=params.stores_qs selected_ids=params.filtr.store_ids hint='Пустой выбор = все' empty_text='Нет стоянок' %}
+    </div>
+
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Год от</div>
+      <input type="number" class="form-control" name="year_start" value="{{ params.filtr.year_start }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Год до</div>
+      <input type="number" class="form-control" name="year_end" value="{{ params.filtr.year_end }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Цена от</div>
+      <input type="number" class="form-control" name="price_start" value="{{ params.filtr.price_start }}" step="1">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Цена до</div>
+      <input type="number" class="form-control" name="price_end" value="{{ params.filtr.price_end }}" step="1">
+    </div>
+  </div>
+
+  <div class="mt-2">
+    <a class="small text-decoration-none" data-bs-toggle="collapse" href="#{{ id_prefix }}MoreFilters" role="button" aria-expanded="false">
+      Дополнительные фильтры
+    </a>
+  </div>
+  <div class="collapse mt-3" id="{{ id_prefix }}MoreFilters">
+    <div class="row g-3">
+      <div class="col-12 col-md-6 col-lg-4">
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Body' field_name='body_type' label='Тип кузова' placeholder='Поиск…' items=params.body_types_qs selected_ids=params.filtr.body_type_ids empty_text='Нет типов' %}
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Gear' field_name='gear_type' label='КПП' placeholder='Поиск…' items=params.gear_types_qs selected_ids=params.filtr.gear_type_ids empty_text='Нет КПП' %}
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Drive' field_name='drive_type' label='Привод' placeholder='Поиск…' items=params.drive_types_qs selected_ids=params.filtr.drive_type_ids empty_text='Нет приводов' %}
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        {% include 'includes/portal_multi_checkbox_filter.html' with prefix=id_prefix|add:'Eval' field_name='evaluation_type' label='Тип оценки' placeholder='Поиск…' items=params.evaluation_types_qs selected_ids=params.filtr.evaluation_type_ids empty_text='Нет типов' %}
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Пробег от</div>
+        <input type="number" class="form-control" name="run_start" value="{{ params.filtr.run_start }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Пробег до</div>
+        <input type="number" class="form-control" name="run_end" value="{{ params.filtr.run_end }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Объём от, л</div>
+        <input type="number" class="form-control" name="engine_volume_start" value="{{ params.filtr.engine_volume_start }}" step="0.1">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Объём до, л</div>
+        <input type="number" class="form-control" name="engine_volume_end" value="{{ params.filtr.engine_volume_end }}" step="0.1">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Дней на складе от</div>
+        <input type="number" class="form-control" name="days_in_stock_start" value="{{ params.filtr.days_in_stock_start }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">Дней на складе до</div>
+        <input type="number" class="form-control" name="days_in_stock_end" value="{{ params.filtr.days_in_stock_end }}">
+      </div>
+      <div class="col-6 col-md-3 col-lg-2">
+        <div class="metric-card-label-portal">На странице</div>
+        <select class="form-select" name="select_count">
+          <option value="25" {% if params.filtr.select_count == 25 %}selected{% endif %}>25</option>
+          <option value="50" {% if params.filtr.select_count == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if params.filtr.select_count == 100 %}selected{% endif %}>100</option>
+          <option value="200" {% if params.filtr.select_count == 200 %}selected{% endif %}>200</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-4 d-flex align-items-end gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="no_photo" value="on" id="{{ id_prefix }}NoPhoto"
+                 {% if params.filtr.no_photo == 'on' %}checked{% endif %}>
+          <label class="form-check-label" for="{{ id_prefix }}NoPhoto">Без фото</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="promotion" value="on" id="{{ id_prefix }}Promo"
+                 {% if params.filtr.promotion == 'on' %}checked{% endif %}>
+          <label class="form-check-label" for="{{ id_prefix }}Promo">Акция</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if show_actions %}
+  <div class="row g-2 align-items-center mt-3">
+    <div class="col-auto">
+      <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    <div class="col-auto">
+      <a class="btn-calculate-secondary-sm" href="{% url 'avtosalon:disposition' %}?status={{ params.filtr.status|default:'all' }}">
+        <span class="icon-mbri-close"></span> Сбросить
+      </a>
+    </div>
+    <div class="col-12 col-md-auto ms-md-auto">
+      <span class="small text-muted">Найдено: <strong>{{ params.total_cars_count }}</strong></span>
+    </div>
+  </div>
+  {% endif %}
+</form>

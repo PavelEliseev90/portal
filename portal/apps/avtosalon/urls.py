@@ -11,6 +11,16 @@ urlpatterns = [
    path('disposition/',                      views.disposition, name='disposition'),
    path('disposition/get_marks/',            views.disposition_get_marks, name='disposition_get_marks'),
    path('disposition/get_models/',           views.disposition_get_models, name='disposition_get_models'),
+   path(
+       'disposition/saved-filters/save/',
+       views.disposition_saved_filter_save,
+       name='disposition_saved_filter_save',
+   ),
+   path(
+       'disposition/saved-filters/<int:filter_id>/delete/',
+       views.disposition_saved_filter_delete,
+       name='disposition_saved_filter_delete',
+   ),
    path('warehouse/analysis/',               views.warehouse_analysis, name='warehouse_analysis'),
    path('catalog/',                          views.cars_catalog),
    path('catalog/<slug:mark_name_en>/',      views.catalog_mark, name='slug'),

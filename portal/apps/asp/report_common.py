@@ -291,6 +291,7 @@ def filters_for_template(filters: dict[str, Any]) -> dict[str, Any]:
         'view': filters.get('view') or 'main',
         'page': filters.get('page') or 1,
         'order_by': filters.get('order_by') or '',
+        'saved_filter': filters.get('saved_filter') or '',
     }
 
 
