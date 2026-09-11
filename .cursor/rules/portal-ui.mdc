@@ -37,6 +37,7 @@ alwaysApply: false
 | Таблицы | `table table-sm table-hover` (+ `table-asp`, `.num` / `.pos` / `.neg` в отчётах АСП) |
 | Крошки | `breadcrumb-nav` |
 | Мультифильтр | `{% include 'includes/portal_multi_checkbox_filter.html' %}` (см. rule `portal-multi-checkbox-filter`) |
+| Списки / отчёты | Обязательный стандарт: rule `portal-report-ui-standard` (эталон — кумулятив АСП: мультифильтры, столбцы, сортировка, Excel, сохранённые фильтры) |
 
 ## Палитра (де-факто)
 

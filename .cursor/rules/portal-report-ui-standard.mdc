@@ -1,0 +1,32 @@
+---
+description: Единый стандарт UI списков и отчётов — обязательно при новых разработках
+alwaysApply: true
+---
+
+# Стандарт UI отчётов и списков (обязательный)
+
+**Эталон:** отчёт «Кумулятивная маржа ОП АСП» (`/asp/reports/cumulative-margin/`) и каркас ASP.
+
+При **любой новой** разработке или существенной доработке списка/отчёта/формы с таблицей — следовать этому стандарту. Не вводить Select2 multi, свои Excel «с нуля» или сохранение фильтров через сырой URL path.
+
+## Чеклист (все 5 пунктов)
+
+1. **Фильтры выбора** — поиск + мультивыбор: `includes/portal_multi_checkbox_filter.html` + `portal_multi_checkbox_filter.js`. Пустой выбор = «все». См. также `portal-multi-checkbox-filter.mdc`.
+2. **Столбцы** — настройка видимости и порядка (модалка), персональное сохранение; Excel = те же колонки.
+3. **Сортировка** — клик по заголовку, `order_by` / `-order_by`, whitelist полей, сброс `page=1`.
+4. **Excel** — кнопка в панели фильтров; текущие фильтры + видимые столбцы; сводка + данные (как `asp/excel_export.py`).
+5. **Сохранённые фильтры** — JSON params + `report_key`; сохранить / применить / удалить (эталон: `asp.ReportSavedFilter`, `asp/saved_filters.py`).
+
+## Куда смотреть в коде
+
+| Слой | Модуль / шаблон |
+|------|-----------------|
+| Фильтры / shell | `asp/report_common.py`, `asp/partials/asp_report_filters.html` |
+| Столбцы / sort | `asp/report_table.py`, `asp_report_columns_modal.html` |
+| Excel | `asp/excel_export.py` |
+| Оркестрация | `asp/views.py` → `_ajax_or_report` |
+| Пресеты фильтров | `asp/models.ReportSavedFilter`, `asp/partials/asp_report_saved_filters.html` |
+
+Новый отчёт АСП: builder + `REPORTS` + общие partials, без копипасты.
+
+Детали и нюансы: `.cursor/rules/portal-report-ui-standard.mdc` (тот же стандарт, расширенный).

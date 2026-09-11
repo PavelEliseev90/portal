@@ -25,4 +25,14 @@ urlpatterns = [
         views.report_columns_save,
         name='report_columns_save',
     ),
+    path(
+        'reports/saved-filters/save/',
+        views.report_saved_filter_save,
+        name='report_saved_filter_save',
+    ),
+    path(
+        'reports/saved-filters/<int:filter_id>/delete/',
+        views.report_saved_filter_delete,
+        name='report_saved_filter_delete',
+    ),
 ]

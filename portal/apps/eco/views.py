@@ -4067,6 +4067,13 @@ def estimation_inspection_sheet_print(request, id):
 
 
 @login_required
+def estimation_reception_check_sheet_print(request, id):
+    """Печать листа проверки автомобиля (бланк приёма)."""
+    from estimations.views_reception_check_print import estimation_reception_check_sheet_print as _print
+    return _print(request, id)
+
+
+@login_required
 def chat_email_notify_participants(request, id):
     """Оповещение на почту всем участникам интерактивной оценки (как при согласовании)."""
     if request.method != 'POST':

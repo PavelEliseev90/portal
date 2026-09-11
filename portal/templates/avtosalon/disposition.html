@@ -1,640 +1,262 @@
 {% extends 'base_web.html' %}
 {% load custom_template_tags %}
 
-{% block title %} Диспозиция {% endblock %}
-
-{% block title_navbar %} - Диспозиция {% endblock %}
+{% block title %}Диспозиция{% endblock %}
+{% block title_navbar %}Диспозиция{% endblock %}
 
 {% block content %}
 <style>
-
-  /* btn-group-wrapper в стиле form-floating для radio кнопок */
-.kors-btn-group-wrapper {
-  position: relative;
-  margin-bottom: 1rem;
-  width: 100%;
-  display: block;
-}
-
-.kors-btn-group-wrapper > label.fs-6 {
-  position: absolute;
-  top: 0.625rem;
-  left: 0.75rem;
-  padding: 0 0.25rem;
-  pointer-events: none;
-  transform-origin: 0 0;
-  color: #656b74;
-  font-size: 0.75rem;
-  z-index: 0;
-  background: #fff;
-  margin: 0;
-}
-
-
-.kors-btn-group-compact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-height: calc(3.5rem + 2px);
-  padding: 2.225rem 0.75rem 0.625rem;
-  border-radius: 0.95rem;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-  background: #fff;
-  box-shadow: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-  align-items: center;
-  width: 100%;
-}
-
-
-
-/* Стили для radio кнопок внутри */
-.kors-btn-group-compact .btn-check {
-  position: absolute;
-  clip: rect(0, 0, 0, 0);
-  pointer-events: none;
-}
-
-.kors-btn-group-compact .btn {
-  border-radius: 0.75rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-  background: #fff;
-  color: #002a5a;
-  font-size: 0.9rem;
-  box-shadow: 0 1px 3px rgba(0, 23, 61, 0.08);
-  cursor: pointer;
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  min-width: 0;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kors-btn-group-compact .btn:hover {
-  background: #f4f7fb;
-  border-color: rgba(0, 42, 90, 0.25);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 23, 61, 0.12);
-}
-
-.kors-btn-group-compact .btn-check:checked + .btn {
-  background: linear-gradient(140deg, #002c63, #000000);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 33, 79, 0.3);
-}
-
-.kors-btn-group-compact .btn-check:focus + .btn {
-  outline: none;
-  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
-}
-
-/* Специальные цвета для success, warning и danger */
-.kors-btn-group-compact .btn-outline-success {
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
-}
-
-.kors-btn-group-compact .btn-outline-success:hover {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.5);
-  color: #16a34a;
-}
-
-.kors-btn-group-compact .btn-check:checked + .btn-outline-success {
-  background: linear-gradient(140deg, #22c55e, #16a34a);
-  color: #fff;
-  border-color: transparent;
-}
-
-.kors-btn-group-compact .btn-outline-warning {
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #f59e0b;
-}
-
-.kors-btn-group-compact .btn-outline-warning:hover {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.5);
-  color: #d97706;
-}
-
-.kors-btn-group-compact .btn-check:checked + .btn-outline-warning {
-  background: linear-gradient(140deg, #f59e0b, #d97706);
-  color: #fff;
-  border-color: transparent;
-}
-
-.kors-btn-group-compact .btn-outline-danger {
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
-}
-
-.kors-btn-group-compact .btn-outline-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.5);
-  color: #dc2626;
-}
-
-.kors-btn-group-compact .btn-check:checked + .btn-outline-danger {
-  background: linear-gradient(140deg, #ef4444, #dc2626);
-  color: #fff;
-  border-color: transparent;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .kors-btn-group-compact {
-    flex-direction: column;
-    width: 100%;
-    padding: 2.225rem 0.75rem 0.625rem;
+  .disp-status-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
   }
+  .disp-status-scroll .btn { white-space: nowrap; flex: 0 0 auto; }
 
-  .kors-btn-group-compact .btn {
-    width: 100%;
-    flex: none;
+  .disp-fab-filters {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1040;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+    min-height: 3rem;
+    border: none;
+    border-radius: 999px;
+    background: #002a5a;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.28);
   }
-}
+  .disp-fab-filters .badge {
+    background: #fff;
+    color: #002a5a;
+  }
+  body.disp-has-fab { padding-bottom: 5rem; }
 
-/* search-select-wrapper */
-.search-select-wrapper {
-  position: relative;
-  margin-bottom: 0.75rem;
-}
-
-.search-select-wrapper label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  padding: 0.375rem 0.75rem;
-  pointer-events: none;
-  border: 1px solid transparent;
-  transform-origin: 0 0;
-  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
-  color: #8ea1ba;
-  font-size: 0.85rem;
-  z-index: 1;
-}
-
-.search-select {
-  border-radius: 0.95rem;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-  box-shadow: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-  padding: 1.625rem 0.75rem 0.625rem;
-  height: calc(3.5rem + 2px);
-  min-height: calc(3.5rem + 2px);
-}
-
-.search-select:focus {
-  border-color: #002a5a;
-  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
-  outline: 0;
-}
-
-.search-select:focus ~ label,
-.search-select:not([value=""]) ~ label,
-.search-select.has-value ~ label {
-  opacity: 0.65;
-  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-  color: #002a5a;
-}
-
-/* Стили для Select2 (если используется Select2) */
-.select2-container--default .select2-selection--single {
-  border-radius: 0.95rem;
-  border: 1px solid rgba(0, 42, 90, 0.15);
-  box-shadow: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-  height: calc(3.5rem + 2px);
-  min-height: calc(3.5rem + 2px);
-  padding: 1.2rem 0.75rem 0.625rem;
-}
-
-.select2-container--default .select2-selection--single:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 42, 90, 0.1);
-  outline: 0;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-  height: calc(3.5rem + 2px);
-  right: 0.75rem;
-}
-
-/* Обертка для label при использовании Select2 */
-.search-select-wrapper.select2-wrapper label {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  padding: 0.6rem 0.75rem;
-  pointer-events: none;
-  transform-origin: 0 0;
-  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
-  color: #8ea1ba;
-  font-size: 0.85rem;
-  z-index: 1;
-}
-
-.select2-container--default.select2-container--focus ~ label,
-.select2-container--default.select2-container--open ~ label,
-.search-select-wrapper.select2-wrapper.has-value label {
-  opacity: 0.65;
-  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-  color: #002a5a;
-}
-
-/* Иконка внутри form-floating - стилизованный вариант */
-.form-floating.position-relative {
-  position: relative;
-}
-
-.btn-floating-icon {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 42, 90, 0.05);
-  border: 1px solid rgba(0, 42, 90, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  color: #8ea1ba;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: auto;
-  min-width: 2rem;
-}
-
-.btn-floating-icon:hover {
-  color: #002a5a;
-  background: rgba(0, 42, 90, 0.1);
-  border-color: rgba(0, 42, 90, 0.2);
-}
-
-  .btn-floating-icon:active {
-    transform: translateY(-50%) scale(0.95);
+  .disposition-cards-horizontal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .disposition-card-horizontal {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    display: flex;
+    overflow: hidden;
+  }
+  .disposition-card-horizontal__photo-wrapper {
+    flex-shrink: 0;
+    width: 240px;
+    position: relative;
+    background: #f4f7fb;
+  }
+  .disposition-card-horizontal__photo-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+  .disposition-card-horizontal__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .disposition-card-horizontal__badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 2;
+  }
+  .disposition-card-horizontal__content {
+    flex: 1;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .disposition-card-horizontal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .disposition-card-horizontal__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+    line-height: 1.3;
+  }
+  .disposition-card-horizontal__subtitle {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.2rem;
+  }
+  .disposition-card-horizontal__price {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #00509d;
+    white-space: nowrap;
+  }
+  .disposition-card-horizontal__details-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem 1.25rem;
+  }
+  .disposition-card-horizontal__detail-item .detail-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #8ea1ba;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+  .disposition-card-horizontal__detail-item .detail-value {
+    font-size: 0.95rem;
+    color: #002a5a;
+    font-weight: 500;
+  }
+  .disposition-card-horizontal__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(0, 42, 90, 0.08);
   }
 
-/* Отступ для input */
-.form-floating.position-relative .form-control {
-  padding-right: 3rem;
-}
+  .mobile-car-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.1);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .mobile-car-card__photo-wrapper { position: relative; background: #f4f7fb; }
+  .mobile-car-card__photo {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+  .mobile-car-card__badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .mobile-car-card__content { padding: 1rem; }
+  .mobile-car-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .mobile-car-card__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin: 0;
+  }
+  .mobile-car-card__subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0.2rem 0 0;
+  }
+  .mobile-car-card__price {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #00509d;
+    white-space: nowrap;
+  }
+  .mobile-car-card__spec-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(0, 42, 90, 0.06);
+    font-size: 0.9rem;
+  }
+  .mobile-car-card__spec-row .spec-label { color: #8ea1ba; }
+  .mobile-car-card__spec-row .spec-value { color: #002a5a; font-weight: 500; text-align: right; }
+  .mobile-car-card__footer { margin-top: 0.85rem; }
 
-/* Стили для фильтров с чекбоксами (как в воронке приема) */
-.list-group {
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 42, 90, 0.15);
-}
-
-.list-group-item {
-  border: none;
-  border-bottom: 1px solid #e9ecef;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.list-group-item:hover {
-  background-color: #f8f9fa;
-}
-
-.list-group-item:last-child {
-  border-bottom: none;
-}
-
-.list-group-item .form-check-input {
-  margin-top: 0.25rem;
-}
-
-.list-group-item label {
-  cursor: pointer;
-  margin: 0;
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-
+  .offcanvas-disposition-filters { --bs-offcanvas-width: min(100vw, 420px); }
+  @media (max-width: 575.98px) {
+    .offcanvas-disposition-filters {
+      --bs-offcanvas-height: 92vh;
+    }
+  }
+  @media (max-width: 991.98px) {
+    .disposition-card-horizontal { flex-direction: column; }
+    .disposition-card-horizontal__photo-wrapper { width: 100%; height: 200px; }
+    .disposition-card-horizontal__details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
 </style>
 
 <div class="portal-page">
   <div class="portal-header">
-    <h2>Диспозиция: {% if params.filtr.status == 'all' or params.filtr.status == '' %}Все{% elif params.filtr.status == 'sale' %}В продаже{% elif params.filtr.status == 'warehouse' %}Склад{% elif params.filtr.status == 'ready' %}Готов{% elif params.filtr.status == 'auction' %}Аукцион{% elif params.filtr.status == 'reserve' %}В резерве{% elif params.filtr.status == 'transit' %}Транзит{% elif params.filtr.status == 'preparation' %}Подготовка{% elif params.filtr.status == 'repair' %}Ремонт{% elif params.filtr.status == 'sold' %}Проданные{% elif params.filtr.status == 'no_sale' %}Не продавать{% elif params.filtr.status == 'returned' %}Возвращенные клиенту{% else %}Все{% endif %}</h2>
-    <p>Управление автомобилями на складе</p>
+    <h2>Диспозиция: {{ params.filtr.status_label }}</h2>
+    <p>Склад автомобилей с пробегом · найдено {{ params.total_cars_count }}</p>
   </div>
 
-  <!-- Вкладки статусов -->
   <div class="portal-panel mb-3">
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'all' or params.filtr.status == '' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('all')">Все</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'ready' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('ready')">Готов</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'sale' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('sale')">В продаже</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'auction' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('auction')">Аукцион</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'reserve' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('reserve')">В резерве</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'transit' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('transit')">Транзит</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'preparation' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('preparation')">Подготовка</button>
-      <button type="button" class="btn btn-sm {% if params.filtr.status == 'repair' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="changeStatus('repair')">Ремонт</button>
+    <div class="disp-status-scroll" role="tablist" aria-label="Статус">
+      {% for key, label in params.status_chips %}
+        <a class="btn btn-sm {% if params.filtr.status == key %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           href="?{% url_replace status=key page=1 %}">
+          {{ label }}
+        </a>
+      {% endfor %}
     </div>
   </div>
 
-  <!-- Фильтры (скрыто на мобильных, показывается в модальном окне) -->
   <div class="portal-panel mb-3 d-none d-lg-block">
-    <form method="get" id="filtersForm" onsubmit="return prepareFormData(this);">
-      <input type="hidden" name="status" value="{{ params.filtr.status }}">
-      
-      <div class="row g-2">
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="text" class="form-control" id="vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
-            <label for="vin">ВИН</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="text" class="form-control" id="search_fields" name="search_fields" value="{{ params.filtr.search_fields }}" placeholder="Поиск">
-            <label for="search_fields">Поиск по всем полям</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Марка</label>
-          <div class="position-relative">
-            <input type="text" class="form-control" id="markSearch" placeholder="Поиск по маркам..." autocomplete="off"
-                   style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);">
-            <div class="list-group position-absolute w-100 mt-1" id="markDropdown" 
-                 style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
-              <!-- Марки будут загружены через AJAX -->
-            </div>
-          </div>
-          <div id="selectedMarks" class="mt-2"></div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <label class="form-label text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.18em; color: #8ea1ba; font-weight: 600;">Модель</label>
-          <div class="position-relative">
-            <input type="text" class="form-control" id="modelSearch" placeholder="Поиск по моделям..." autocomplete="off"
-                   style="border-radius: 0.95rem; border: 1px solid rgba(0, 42, 90, 0.15);" disabled>
-            <div class="list-group position-absolute w-100 mt-1" id="modelDropdown" 
-                 style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none; background: white; border: 1px solid #dee2e6; border-radius: 0.375rem; box-shadow: 0 4px 12px rgba(0, 23, 61, 0.1);">
-              <!-- Модели будут загружены через AJAX -->
-            </div>
-          </div>
-          <div id="selectedModels" class="mt-2"></div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="year_start" name="year_start" value="{{ params.filtr.year_start }}" placeholder="Год от">
-            <label for="year_start">Год выпуска от</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="year_end" name="year_end" value="{{ params.filtr.year_end }}" placeholder="Год до">
-            <label for="year_end">Год выпуска до</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="price_start" name="price_start" value="{{ params.filtr.price_start }}" placeholder="Цена от" step="0.01">
-            <label for="price_start">Цена продажи от</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="number" class="form-control" id="price_end" name="price_end" value="{{ params.filtr.price_end }}" placeholder="Цена до" step="0.01">
-            <label for="price_end">Цена продажи до</label>
-          </div>
-        </div>
-        
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="form-floating">
-            <input type="text" class="form-control" id="stock_number" name="stock_number" value="{{ params.filtr.stock_number }}" placeholder="Ск. №">
-            <label for="stock_number">Ск. №</label>
-          </div>
-        </div>
-       
-      </div>
-      
-      
-      <div class="mt-2" style="padding-bottom: 0.5rem;">
-        <a href="#" class="text-decoration-none small d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" id="additionalFiltersToggle">
-          <span>Дополнительные фильтры</span>
-          <span class="icon-mbri-down" id="additionalFiltersIcon" style="transition: transform 0.3s ease;"></span>
-        </a>
-      </div>
-      
-      <div class="collapse mt-2" id="additionalFilters">
-        <div class="row g-2">
-          <div class="col-12 col-md-6 col-lg-3">
-            <label class="form-label text-uppercase">Тип кузова</label>
-            <div class="position-relative">
-              <input type="text" class="form-control" id="bodyTypeSearch" placeholder="Поиск по типам кузова..." autocomplete="off">
-              <div class="list-group position-absolute w-100 mt-1" id="bodyTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                {% for body_type in params.selected.body_types %}
-                  <label class="list-group-item">
-                    <input class="form-check-input me-2" type="checkbox" name="body_type[]" value="{{ body_type.id }}" 
-                      {% if params.body_type_ids_list and body_type.id in params.body_type_ids_list %}checked{% endif %}>
-                    {{ body_type.name }}
-                  </label>
-                {% endfor %}
-              </div>
-            </div>
-            <div id="selectedBodyTypes" class="mt-2"></div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <label class="form-label text-uppercase">Коробка передач</label>
-            <div class="position-relative">
-              <input type="text" class="form-control" id="gearTypeSearch" placeholder="Поиск по коробкам передач..." autocomplete="off">
-              <div class="list-group position-absolute w-100 mt-1" id="gearTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                {% for gear_type in params.selected.gear_types %}
-                  <label class="list-group-item">
-                    <input class="form-check-input me-2" type="checkbox" name="gear_type[]" value="{{ gear_type.id }}" 
-                      {% if params.gear_type_ids_list and gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
-                    {{ gear_type.name }}
-                  </label>
-                {% endfor %}
-              </div>
-            </div>
-            <div id="selectedGearTypes" class="mt-2"></div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <label class="form-label text-uppercase">Привод</label>
-            <div class="position-relative">
-              <input type="text" class="form-control" id="driveTypeSearch" placeholder="Поиск по приводам..." autocomplete="off">
-              <div class="list-group position-absolute w-100 mt-1" id="driveTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                {% for drive_type in params.selected.drive_types %}
-                  <label class="list-group-item">
-                    <input class="form-check-input me-2" type="checkbox" name="drive_type[]" value="{{ drive_type.id }}" 
-                      {% if params.drive_type_ids_list and drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
-                    {{ drive_type.name }}
-                  </label>
-                {% endfor %}
-              </div>
-            </div>
-            <div id="selectedDriveTypes" class="mt-2"></div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <label class="form-label text-uppercase">Тип оценки</label>
-            <div class="position-relative">
-              <input type="text" class="form-control" id="evaluationTypeSearch" placeholder="Поиск по типам оценки..." autocomplete="off">
-              <div class="list-group position-absolute w-100 mt-1" id="evaluationTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                {% for eval_type in params.selected.evaluation_types %}
-                  <label class="list-group-item">
-                    <input class="form-check-input me-2" type="checkbox" name="evaluation_type[]" value="{{ eval_type.id }}" 
-                      {% if params.evaluation_type_ids_list and eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
-                    {{ eval_type.name }}
-                  </label>
-                {% endfor %}
-              </div>
-            </div>
-            <div id="selectedEvaluationTypes" class="mt-2"></div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <label class="form-label text-uppercase">Стоянка</label>
-            <div class="position-relative">
-              <input type="text" class="form-control" id="storeSearch" placeholder="Поиск по стоянкам..." autocomplete="off">
-              <div class="list-group position-absolute w-100 mt-1" id="storeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                {% for store in params.selected.stores %}
-                  <label class="list-group-item">
-                    <input class="form-check-input me-2" type="checkbox" name="store[]" value="{{ store.id }}" 
-                      {% if params.store_ids_list and store.id in params.store_ids_list %}checked{% endif %}>
-                    {{ store.name }}
-                  </label>
-                {% endfor %}
-              </div>
-            </div>
-            <div id="selectedStores" class="mt-2"></div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="text" class="form-control" id="color" name="color" value="{{ params.filtr.color }}" placeholder="Цвет">
-              <label for="color">Цвет</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="run_start" name="run_start" value="{{ params.filtr.run_start }}" placeholder="Пробег от">
-              <label for="run_start">Пробег от (км)</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="run_end" name="run_end" value="{{ params.filtr.run_end }}" placeholder="Пробег до">
-              <label for="run_end">Пробег до (км)</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="engine_volume_start" name="engine_volume_start" value="{{ params.filtr.engine_volume_start }}" placeholder="Объем от" step="0.1">
-              <label for="engine_volume_start">Объем двигателя от (л)</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="engine_volume_end" name="engine_volume_end" value="{{ params.filtr.engine_volume_end }}" placeholder="Объем до" step="0.1">
-              <label for="engine_volume_end">Объем двигателя до (л)</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="days_in_stock_start" name="days_in_stock_start" value="{{ params.filtr.days_in_stock_start }}" placeholder="Дней на складе от">
-              <label for="days_in_stock_start">Дней на складе от</label>
-            </div>
-          </div>
-          
-          <div class="col-12 col-md-6 col-lg-3">
-            <div class="form-floating">
-              <input type="number" class="form-control" id="days_in_stock_end" name="days_in_stock_end" value="{{ params.filtr.days_in_stock_end }}" placeholder="Дней на складе до">
-              <label for="days_in_stock_end">Дней на складе до</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row g-1">
-        
-        <div class="col-auto">
-          <button type="submit" class="btn btn-primary flex-fill">
-            <span class="icon-mbri-search me-1"></span>Применить
-          </button>
-        </div>
-
-        <div class="col-auto">
-          <a href="/cars/disposition/?status={{ params.filtr.status|default:'all' }}" class="btn btn-outline-secondary">
-            <span class="icon-mbri-close me-1"></span>Сбросить
-          </a>
-        </div>
-
-        <div class="col">
-          {% if params.has_filters %}
-            <div class="alert alert-info mb-0 d-flex align-items-center justify-content-between" style="padding: 0.5rem;">
-              <div>
-                <strong><span class="icon-mbri-search me-1"></span>Найдено автомобилей: {{ params.total_cars_count }}</strong>
-              </div>
-              <small class="text-muted">По текущим фильтрам</small>
-            </div>
-          {% endif %}            
-        </div>
-
-      </div>
-      
-
-    </form>
+    <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
+    {% include 'avtosalon/partials/disposition_filters_form.html' with form_id='dispFiltersDesktop' id_prefix='d' show_actions=True %}
+    {% include 'avtosalon/partials/disposition_saved_filters.html' %}
   </div>
 
-  <!-- Карточки автомобилей -->
-  <div class="portal-panel">
-    <!-- Десктопная версия - Вариант 1: Горизонтальные карточки -->
-    <div class="d-none d-lg-block">
+  <div class="portal-panel no-padding">
+    <div class="p-3 d-none d-lg-block">
       <div class="disposition-cards-horizontal">
         {% for car in params.page_obj %}
           <div class="disposition-card-horizontal">
             <div class="disposition-card-horizontal__photo-wrapper">
               {% if car.slug %}
                 <a href="/cars/{{ car.slug }}/" target="_blank" class="disposition-card-horizontal__photo-link">
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="disposition-card-horizontal__photo">
+                  <img src="{{ car.get_photo_mini }}" alt="" class="disposition-card-horizontal__photo">
                   <span class="disposition-card-horizontal__badge">{{ car.status.name|default:"—" }}</span>
                 </a>
               {% else %}
                 <div class="disposition-card-horizontal__photo-link">
-                  <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="disposition-card-horizontal__photo">
+                  <img src="{{ car.get_photo_mini }}" alt="" class="disposition-card-horizontal__photo">
                   <span class="disposition-card-horizontal__badge">{{ car.status.name|default:"—" }}</span>
                 </div>
               {% endif %}
             </div>
-            
             <div class="disposition-card-horizontal__content">
               <div class="disposition-card-horizontal__header">
                 <div>
@@ -649,123 +271,82 @@
                     <p class="disposition-card-horizontal__subtitle mb-0">{{ car.complectation_autoru.name }}</p>
                   {% endif %}
                 </div>
-                <div class="disposition-card-horizontal__price">
-                  <strong class="text-secondary">{{ car.price|floatformat:"2g"|default:"—" }} ₽</strong>
-                </div>
+                <div class="disposition-card-horizontal__price">{{ car.price|floatformat:"2g"|default:"—" }} ₽</div>
               </div>
-              
-              <div class="disposition-card-horizontal__details">
-                <div class="disposition-card-horizontal__details-grid">
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Год:</span>
-                    <span class="detail-value">{{ car.year|default:"—" }}</span>
-                  </div>
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Пробег:</span>
-                    <span class="detail-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span>
-                  </div>
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">ВИН:</span>
-                    <span class="detail-value">{{ car.vin|default:"—" }}</span>
-                  </div>
-                  {% if car.plate_number %}
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Гос. номер:</span>
-                    <span class="detail-value">{{ car.plate_number }}</span>
-                  </div>
-                  {% endif %}
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Кузов:</span>
-                    <span class="detail-value">{{ car.modification_autoru.typeBody.name}}</span>
-                  </div>
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Стоянка:</span>
-                    <span class="detail-value">{{ car.store.name|default:"—" }}</span>
-                  </div>
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Лист оценки:</span>
-                    <span class="detail-value">{{ car.lo_link_number|default:"—" }}</span>
-                  </div>
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">На складе:</span>
-                    <span class="detail-value">{{ car.days_in_stok|default:0 }} дн.</span>
-                  </div>
-                  {% if car.active_tasks_count > 0 %}
-                  <div class="disposition-card-horizontal__detail-item">
-                    <span class="detail-label">Активные задачи:</span>
-                    <span class="detail-value">
-                      <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="text-decoration-none" style="color: #dc3545; font-weight: 600;">
-                        <span class="icon-mbri-file me-1"></span>{{ car.active_tasks_count }}
-                      </a>
-                    </span>
-                  </div>
-                  {% endif %}
+              <div class="disposition-card-horizontal__details-grid">
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">Год</span>
+                  <span class="detail-value">{{ car.year|default:"—" }}</span>
                 </div>
-                
-                {% if car.description_op %}
-                <div class="disposition-card-horizontal__note mt-2">
-                  <small class="text-muted">{{ car.description_op|truncatewords:20 }}</small>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">Пробег</span>
+                  <span class="detail-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span>
+                </div>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">VIN</span>
+                  <span class="detail-value">{{ car.vin|default:"—" }}</span>
+                </div>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">Стоянка</span>
+                  <span class="detail-value">{{ car.store.name|default:"—" }}</span>
+                </div>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">Кузов</span>
+                  <span class="detail-value">{{ car.modification_autoru.typeBody.name|default:"—" }}</span>
+                </div>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">ЛО</span>
+                  <span class="detail-value">{{ car.lo_link_number|default:"—" }}</span>
+                </div>
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">На складе</span>
+                  <span class="detail-value">{{ car.days_in_stok|default:0 }} дн.</span>
+                </div>
+                {% if car.active_tasks_count > 0 %}
+                <div class="disposition-card-horizontal__detail-item">
+                  <span class="detail-label">Задачи</span>
+                  <span class="detail-value">
+                    <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="text-danger fw-semibold text-decoration-none">
+                      {{ car.active_tasks_count }}
+                    </a>
+                  </span>
                 </div>
                 {% endif %}
               </div>
-              
               <div class="disposition-card-horizontal__footer">
-                <div class="disposition-card-horizontal__meta">
-                  {% if car.evaluation.name %}
-                    <span class="badge bg-light text-dark me-2">{{ car.evaluation.name }}</span>
-                  {% endif %}
-                  {% if car.modification_autoru.type_body.name %}
-                    <span class="badge bg-light text-dark me-2">{{ car.modification_autoru.type_body.name }}</span>
-                  {% endif %}
-                  {% if car.color %}
-                    <span class="badge bg-light text-dark">{{ car.color }}</span>
-                  {% endif %}
+                <div class="d-flex flex-wrap gap-1">
+                  {% if car.evaluation.name %}<span class="badge bg-light text-dark">{{ car.evaluation.name }}</span>{% endif %}
+                  {% if car.color %}<span class="badge bg-light text-dark">{{ car.color }}</span>{% endif %}
                 </div>
                 {% if car.slug %}
-                <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-secondary btn-sm">
-                  <span class="icon-mbri-file me-1"></span>Открыть
-                </a>
+                  <a href="/cars/{{ car.slug }}/" target="_blank" class="btn-calculate-secondary-sm">Открыть</a>
                 {% endif %}
               </div>
             </div>
           </div>
         {% empty %}
-          <div class="text-center py-5 text-muted">
-            Нет автомобилей для отображения
-          </div>
+          <div class="text-center py-5 text-muted">Нет автомобилей по текущим фильтрам</div>
         {% endfor %}
       </div>
     </div>
 
-    
-    <!-- Мобильная версия -->
-    <div class="d-lg-none">
+    <div class="p-3 d-lg-none">
       {% for car in params.page_obj %}
         <div class="mobile-car-card">
-          <!-- Фото на всю ширину с бейджем статуса -->
           <div class="mobile-car-card__photo-wrapper">
             {% if car.slug %}
-              <a href="/cars/{{ car.slug }}/" target="_blank" class="mobile-car-card__photo-link">
-                <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="mobile-car-card__photo">
-                {% if car.status %}
-                  <span class="mobile-car-card__badge">{{ car.status.name }}</span>
-                {% endif %}
+              <a href="/cars/{{ car.slug }}/" target="_blank">
+                <img src="{{ car.get_photo_mini }}" alt="" class="mobile-car-card__photo">
+                <span class="mobile-car-card__badge">{{ car.status.name|default:"—" }}</span>
               </a>
             {% else %}
-              <div class="mobile-car-card__photo-link">
-                <img src="{{ car.get_photo_mini }}" alt="{{ car.name }}" class="mobile-car-card__photo">
-                {% if car.status %}
-                  <span class="mobile-car-card__badge">{{ car.status.name }}</span>
-                {% endif %}
-              </div>
+              <img src="{{ car.get_photo_mini }}" alt="" class="mobile-car-card__photo">
+              <span class="mobile-car-card__badge">{{ car.status.name|default:"—" }}</span>
             {% endif %}
           </div>
-          
-          <!-- Контент карточки -->
           <div class="mobile-car-card__content">
-            <!-- Заголовок и цена -->
             <div class="mobile-car-card__header">
-              <div class="mobile-car-card__title-wrapper">
+              <div>
                 <h5 class="mobile-car-card__title">
                   {% if car.modification_autoru %}
                     {{ car.modification_autoru.model.mark.name }} {{ car.modification_autoru.model.name }}
@@ -777,138 +358,45 @@
                   <p class="mobile-car-card__subtitle">{{ car.complectation_autoru.name }}</p>
                 {% endif %}
               </div>
-              <div class="mobile-car-card__price">
-                <strong>{{ car.price|floatformat:"2g"|default:"—" }} ₽</strong>
-              </div>
+              <div class="mobile-car-card__price">{{ car.price|floatformat:"2g"|default:"—" }} ₽</div>
             </div>
-            
-            <!-- Основные характеристики -->
-            <div class="mobile-car-card__specs">
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Год выпуска</span>
-                <span class="spec-value">{{ car.year|default:"—" }}</span>
-              </div>
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Пробег</span>
-                <span class="spec-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span>
-              </div>
-              {% if car.vin %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">ВИН</span>
-                <span class="spec-value spec-value--small">{{ car.vin }}</span>
-              </div>
-              {% endif %}
-              {% if car.plate_number %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Гос. номер</span>
-                <span class="spec-value">{{ car.plate_number }}</span>
-              </div>
-              {% endif %}
-              {% if car.modification_autoru.typeBody %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Кузов</span>
-                <span class="spec-value">{{ car.modification_autoru.typeBody.name }}</span>
-              </div>
-              {% endif %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Филиал</span>
-                <span class="spec-value">{{ car.unit.name|default:"—" }}</span>
-              </div>
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Стоянка</span>
-                <span class="spec-value">{{ car.store.name|default:"—" }}</span>
-              </div>
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">На складе</span>
-                <span class="spec-value">{{ car.days_in_stok|default:0 }} дн.</span>
-              </div>
-              {% if car.active_tasks_count > 0 %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Активные задачи</span>
-                <span class="spec-value">
-                  <a href="{% url 'avtosalon:car_tasks_list_by_car' car.id %}" class="text-decoration-none" style="color: #dc3545; font-weight: 600;">
-                    <span class="icon-mbri-file me-1"></span>{{ car.active_tasks_count }}
-                  </a>
-                </span>
-              </div>
-              {% endif %}
-              {% if car.lo_link_number %}
-              <div class="mobile-car-card__spec-row">
-                <span class="spec-label">Лист оценки</span>
-                <span class="spec-value">{{ car.lo_link_number }}</span>
-              </div>
-              {% endif %}
-            </div>
-            
-            <!-- Дополнительные бейджи -->
-            {% if car.evaluation.name or car.modification_autoru.type_body.name or car.color %}
-            <div class="mobile-car-card__badges">
-              {% if car.evaluation.name %}
-                <span class="badge bg-light text-dark">{{ car.evaluation.name }}</span>
-              {% endif %}
-              {% if car.modification_autoru.type_body.name %}
-                <span class="badge bg-light text-dark">{{ car.modification_autoru.type_body.name }}</span>
-              {% endif %}
-              {% if car.color %}
-                <span class="badge bg-light text-dark">{{ car.color }}</span>
-              {% endif %}
-            </div>
+            <div class="mobile-car-card__spec-row"><span class="spec-label">Год</span><span class="spec-value">{{ car.year|default:"—" }}</span></div>
+            <div class="mobile-car-card__spec-row"><span class="spec-label">Пробег</span><span class="spec-value">{{ car.run|floatformat:"0g"|default:"—" }} км</span></div>
+            <div class="mobile-car-card__spec-row"><span class="spec-label">Стоянка</span><span class="spec-value">{{ car.store.name|default:"—" }}</span></div>
+            <div class="mobile-car-card__spec-row"><span class="spec-label">На складе</span><span class="spec-value">{{ car.days_in_stok|default:0 }} дн.</span></div>
+            {% if car.vin %}
+            <div class="mobile-car-card__spec-row"><span class="spec-label">VIN</span><span class="spec-value">{{ car.vin }}</span></div>
             {% endif %}
-            
-            <!-- Примечание -->
-            {% if car.description_op %}
-            <div class="mobile-car-card__note">
-              <small class="text-muted">{{ car.description_op|truncatewords:20 }}</small>
-            </div>
-            {% endif %}
-            
-            <!-- Кнопка открытия карточки -->
             {% if car.slug %}
             <div class="mobile-car-card__footer">
-              <a href="/cars/{{ car.slug }}/" target="_blank" class="btn btn-primary w-100">
-                <span class="icon-mbri-file me-2"></span>Открыть карточку
-              </a>
+              <a href="/cars/{{ car.slug }}/" target="_blank" class="btn-calculate w-100 text-center">Открыть карточку</a>
             </div>
             {% endif %}
           </div>
         </div>
       {% empty %}
-        <div class="text-center py-5 text-muted">
-          <span class="icon-mbri-search" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></span>
-          <p>Нет автомобилей для отображения</p>
-        </div>
+        <div class="text-center py-5 text-muted">Нет автомобилей по текущим фильтрам</div>
       {% endfor %}
     </div>
-    
-    <!-- Пагинация -->
+
     {% if params.page_obj.has_other_pages %}
-      <nav aria-label="Навигация по страницам" class="mt-3">
-        <ul class="pagination justify-content-center">
+      <nav class="p-3" aria-label="Страницы">
+        <ul class="pagination justify-content-center mb-0 flex-wrap">
           {% if params.page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?{% url_replace page=params.page_obj.previous_page_number %}">
-                <span class="icon-mbri-left"></span>
-              </a>
+              <a class="page-link" href="?{% url_replace page=params.page_obj.previous_page_number %}">‹</a>
             </li>
           {% endif %}
-          
           {% for num in params.page_obj.paginator.page_range %}
             {% if params.page_obj.number == num %}
-              <li class="page-item active">
-                <span class="page-link">{{ num }}</span>
-              </li>
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
             {% elif num > params.page_obj.number|add:'-3' and num < params.page_obj.number|add:'3' %}
-              <li class="page-item">
-                <a class="page-link" href="?{% url_replace page=num %}">{{ num }}</a>
-              </li>
+              <li class="page-item"><a class="page-link" href="?{% url_replace page=num %}">{{ num }}</a></li>
             {% endif %}
           {% endfor %}
-          
           {% if params.page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?{% url_replace page=params.page_obj.next_page_number %}">
-                <span class="icon-mbri-right"></span>
-              </a>
+              <a class="page-link" href="?{% url_replace page=params.page_obj.next_page_number %}">›</a>
             </li>
           {% endif %}
         </ul>
@@ -917,1204 +405,76 @@
   </div>
 </div>
 
-<!-- Мобильная кнопка фильтров (закреплена внизу) -->
-<div class="d-lg-none">
-  <button type="button" class="mobile-filters-button" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
-    <span class="icon-mbri-setting me-2"></span>
-    <span>Фильтры</span>
-    {% if params.has_filters %}
-      <span class="mobile-filters-button__badge">{{ params.total_cars_count }}</span>
-    {% endif %}
-  </button>
-</div>
+<button type="button"
+        class="disp-fab-filters d-lg-none"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#dispFiltersOffcanvas"
+        aria-controls="dispFiltersOffcanvas">
+  <span class="icon-mbri-setting"></span>
+  Фильтры
+  {% if params.has_filters %}
+    <span class="badge rounded-pill">{{ params.total_cars_count }}</span>
+  {% endif %}
+</button>
 
-<!-- Модальное окно фильтров для мобильных -->
-<div class="modal fade" id="mobileFiltersModal" tabindex="-1" aria-labelledby="mobileFiltersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-scrollable modal-fullscreen">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="mobileFiltersModalLabel">
-          <span class="icon-mbri-setting me-2"></span>Фильтры
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-      </div>
-      <div class="modal-body">
-        <form method="get" id="mobileFiltersForm" onsubmit="return prepareFormData(this);">
-          <input type="hidden" name="status" value="{{ params.filtr.status }}">
-          
-          <div class="row g-2">
-            <div class="col-12">
-              <div class="form-floating">
-                <input type="text" class="form-control" id="mobile_vin" name="vin" value="{{ params.filtr.vin }}" placeholder="ВИН">
-                <label for="mobile_vin">ВИН</label>
-              </div>
-            </div>
-            
-            <div class="col-12">
-              <div class="form-floating">
-                <input type="text" class="form-control" id="mobile_search_fields" name="search_fields" value="{{ params.filtr.search_fields }}" placeholder="Поиск">
-                <label for="mobile_search_fields">Поиск по всем полям</label>
-              </div>
-            </div>
-            
-            <div class="col-6">
-              <div class="form-floating">
-                <input type="number" class="form-control" id="mobile_year_start" name="year_start" value="{{ params.filtr.year_start }}" placeholder="Год от">
-                <label for="mobile_year_start">Год от</label>
-              </div>
-            </div>
-            
-            <div class="col-6">
-              <div class="form-floating">
-                <input type="number" class="form-control" id="mobile_year_end" name="year_end" value="{{ params.filtr.year_end }}" placeholder="Год до">
-                <label for="mobile_year_end">Год до</label>
-              </div>
-            </div>
-            
-            <div class="col-6">
-              <div class="form-floating">
-                <input type="number" class="form-control" id="mobile_price_start" name="price_start" value="{{ params.filtr.price_start }}" placeholder="Цена от" step="0.01">
-                <label for="mobile_price_start">Цена от</label>
-              </div>
-            </div>
-            
-            <div class="col-6">
-              <div class="form-floating">
-                <input type="number" class="form-control" id="mobile_price_end" name="price_end" value="{{ params.filtr.price_end }}" placeholder="Цена до" step="0.01">
-                <label for="mobile_price_end">Цена до</label>
-              </div>
-            </div>
-            
-            <div class="col-12">
-              <div class="form-floating">
-                <input type="text" class="form-control" id="mobile_stock_number" name="stock_number" value="{{ params.filtr.stock_number }}" placeholder="Ск. №">
-                <label for="mobile_stock_number">Ск. №</label>
-              </div>
-            </div>
-            
-            <div class="col-12">
-              <a href="#" class="text-decoration-none d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#mobileAdditionalFilters" aria-expanded="false">
-                <span>Дополнительные фильтры</span>
-                <span class="icon-mbri-down" id="mobileAdditionalFiltersIcon" style="transition: transform 0.3s ease;"></span>
-              </a>
-            </div>
-          </div>
-          
-          <div class="collapse mt-2" id="mobileAdditionalFilters">
-            <div class="row g-2">
-              <div class="col-12">
-                <label class="form-label text-uppercase">Тип кузова</label>
-                <div class="position-relative">
-                  <input type="text" class="form-control" id="mobile_bodyTypeSearch" placeholder="Поиск по типам кузова..." autocomplete="off">
-                  <div class="list-group position-absolute w-100 mt-1" id="mobile_bodyTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                    {% for body_type in params.selected.body_types %}
-                      <label class="list-group-item">
-                        <input class="form-check-input me-2" type="checkbox" name="body_type[]" value="{{ body_type.id }}" 
-                          {% if body_type.id in params.body_type_ids_list %}checked{% endif %}>
-                        {{ body_type.name }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div id="mobile_selectedBodyTypes" class="mt-2"></div>
-              </div>
-              
-              <div class="col-12">
-                <label class="form-label text-uppercase">Коробка передач</label>
-                <div class="position-relative">
-                  <input type="text" class="form-control" id="mobile_gearTypeSearch" placeholder="Поиск по коробкам передач..." autocomplete="off">
-                  <div class="list-group position-absolute w-100 mt-1" id="mobile_gearTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                    {% for gear_type in params.selected.gear_types %}
-                      <label class="list-group-item">
-                        <input class="form-check-input me-2" type="checkbox" name="gear_type[]" value="{{ gear_type.id }}" 
-                          {% if gear_type.id in params.gear_type_ids_list %}checked{% endif %}>
-                        {{ gear_type.name }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div id="mobile_selectedGearTypes" class="mt-2"></div>
-              </div>
-              
-              <div class="col-12">
-                <label class="form-label text-uppercase">Привод</label>
-                <div class="position-relative">
-                  <input type="text" class="form-control" id="mobile_driveTypeSearch" placeholder="Поиск по приводам..." autocomplete="off">
-                  <div class="list-group position-absolute w-100 mt-1" id="mobile_driveTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                    {% for drive_type in params.selected.drive_types %}
-                      <label class="list-group-item">
-                        <input class="form-check-input me-2" type="checkbox" name="drive_type[]" value="{{ drive_type.id }}" 
-                          {% if drive_type.id in params.drive_type_ids_list %}checked{% endif %}>
-                        {{ drive_type.name }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div id="mobile_selectedDriveTypes" class="mt-2"></div>
-              </div>
-              
-              <div class="col-12">
-                <label class="form-label text-uppercase">Тип оценки</label>
-                <div class="position-relative">
-                  <input type="text" class="form-control" id="mobile_evaluationTypeSearch" placeholder="Поиск по типам оценки..." autocomplete="off">
-                  <div class="list-group position-absolute w-100 mt-1" id="mobile_evaluationTypeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                    {% for eval_type in params.selected.evaluation_types %}
-                      <label class="list-group-item">
-                        <input class="form-check-input me-2" type="checkbox" name="evaluation_type[]" value="{{ eval_type.id }}" 
-                          {% if eval_type.id in params.evaluation_type_ids_list %}checked{% endif %}>
-                        {{ eval_type.name }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div id="mobile_selectedEvaluationTypes" class="mt-2"></div>
-              </div>
-              
-              <div class="col-12">
-                <label class="form-label text-uppercase">Стоянка</label>
-                <div class="position-relative">
-                  <input type="text" class="form-control" id="mobile_storeSearch" placeholder="Поиск по стоянкам..." autocomplete="off">
-                  <div class="list-group position-absolute w-100 mt-1" id="mobile_storeDropdown" style="max-height: 200px; overflow-y: auto; z-index: 1000; display: none;">
-                    {% for store in params.selected.stores %}
-                      <label class="list-group-item">
-                        <input class="form-check-input me-2" type="checkbox" name="store[]" value="{{ store.id }}" 
-                          {% if store.id in params.store_ids_list %}checked{% endif %}>
-                        {{ store.name }}
-                      </label>
-                    {% endfor %}
-                  </div>
-                </div>
-                <div id="mobile_selectedStores" class="mt-2"></div>
-              </div>
-              
-              <div class="col-12">
-                <div class="form-floating">
-                  <input type="text" class="form-control" id="mobile_color" name="color" value="{{ params.filtr.color }}" placeholder="Цвет">
-                  <label for="mobile_color">Цвет</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_run_start" name="run_start" value="{{ params.filtr.run_start }}" placeholder="Пробег от">
-                  <label for="mobile_run_start">Пробег от (км)</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_run_end" name="run_end" value="{{ params.filtr.run_end }}" placeholder="Пробег до">
-                  <label for="mobile_run_end">Пробег до (км)</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_engine_volume_start" name="engine_volume_start" value="{{ params.filtr.engine_volume_start }}" placeholder="Объем от" step="0.1">
-                  <label for="mobile_engine_volume_start">Объем от (л)</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_engine_volume_end" name="engine_volume_end" value="{{ params.filtr.engine_volume_end }}" placeholder="Объем до" step="0.1">
-                  <label for="mobile_engine_volume_end">Объем до (л)</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_days_in_stock_start" name="days_in_stock_start" value="{{ params.filtr.days_in_stock_start }}" placeholder="Дней на складе от">
-                  <label for="mobile_days_in_stock_start">Дней на складе от</label>
-                </div>
-              </div>
-              
-              <div class="col-6">
-                <div class="form-floating">
-                  <input type="number" class="form-control" id="mobile_days_in_stock_end" name="days_in_stock_end" value="{{ params.filtr.days_in_stock_end }}" placeholder="Дней на складе до">
-                  <label for="mobile_days_in_stock_end">Дней на складе до</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {% if params.has_filters %}
-            <div class="alert alert-info mt-3 mb-0">
-              <strong><span class="icon-mbri-search me-1"></span>Найдено: {{ params.total_cars_count }} авто</strong>
-            </div>
-          {% endif %}
-        </form>
-      </div>
-      <div class="modal-footer">
-        <a href="/cars/disposition/?status={{ params.filtr.status|default:'all' }}" class="btn btn-outline-secondary">
-          <span class="icon-mbri-close me-1"></span>Сбросить
-        </a>
-        <button type="button" class="btn btn-primary" onclick="applyMobileFilters()">
-          <span class="icon-mbri-search me-1"></span>Применить
-        </button>
+<div class="offcanvas offcanvas-end offcanvas-disposition-filters"
+     tabindex="-1"
+     id="dispFiltersOffcanvas"
+     aria-labelledby="dispFiltersOffcanvasLabel">
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title" id="dispFiltersOffcanvasLabel">Фильтры</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Закрыть"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div class="mb-3">
+      <div class="metric-card-label-portal mb-2">Статус</div>
+      <div class="disp-status-scroll">
+        {% for key, label in params.status_chips %}
+          <button type="button"
+                  class="btn btn-sm disp-mobile-status {% if params.filtr.status == key or params.filtr.status == '' and key == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+                  data-status="{{ key }}">{{ label }}</button>
+        {% endfor %}
       </div>
     </div>
+    {% include 'avtosalon/partials/disposition_filters_form.html' with form_id='dispFiltersMobile' id_prefix='m' show_actions=False %}
+    {% include 'avtosalon/partials/disposition_saved_filters.html' with chips_only=1 %}
+  </div>
+  <div class="border-top p-3 d-flex gap-2">
+    <a class="btn-calculate-secondary-sm flex-fill text-center"
+       href="{% url 'avtosalon:disposition' %}?status={{ params.filtr.status|default:'all' }}">Сбросить</a>
+    <button type="submit" form="dispFiltersMobile" class="btn-calculate-sm flex-fill">Применить</button>
   </div>
 </div>
 
-<style>
-  /* ===== ВАРИАНТ 1: Горизонтальные карточки ===== */
-  .disposition-cards-horizontal {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  
-  .disposition-card-horizontal {
-    background: #fff;
-    border-radius: 1rem;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 23, 61, 0.08);
-    display: flex;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-  
-  .disposition-card-horizontal:hover {
-    box-shadow: 0 8px 24px rgba(0, 23, 61, 0.12);
-    transform: translateY(-2px);
-    border-color: rgba(0, 42, 90, 0.2);
-  }
-  
-  .disposition-card-horizontal__photo-wrapper {
-    flex-shrink: 0;
-    width: 280px;
-    max-height: 300px;
-    position: relative;
-    background: #f8f9fa;
-  }
-  
-  .disposition-card-horizontal__photo-link {
-    display: block;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    min-height: 200px;
-  }
-  
-  .disposition-card-horizontal__photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
-  }
-  
-  .disposition-card-horizontal__photo-link:hover .disposition-card-horizontal__photo {
-    transform: scale(1.05);
-  }
-  
-  .disposition-card-horizontal__badge {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    padding: 0.35rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    backdrop-filter: blur(4px);
-    z-index: 2;
-  }
-  
-  .disposition-card-horizontal__content {
-    flex: 1;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .disposition-card-horizontal__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .disposition-card-horizontal__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #002a5a;
-    margin: 0;
-    line-height: 1.3;
-  }
-  
-  .disposition-card-horizontal__subtitle {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-  }
-  
-  .disposition-card-horizontal__price {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #00509d;
-    white-space: nowrap;
-  }
-  
-  .disposition-card-horizontal__details {
-    flex: 1;
-  }
-  
-  .disposition-card-horizontal__details-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem 1.5rem;
-  }
-  
-  .disposition-card-horizontal__detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .disposition-card-horizontal__detail-item .detail-label {
-    font-size: 0.75rem;
-    color: #8ea1ba;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-  }
-  
-  .disposition-card-horizontal__detail-item .detail-value {
-    font-size: 0.95rem;
-    color: #002a5a;
-    font-weight: 500;
-  }
-  
-  .disposition-card-horizontal__note {
-    padding-top: 0.75rem;
-    border-top: 1px solid rgba(0, 42, 90, 0.08);
-  }
-  
-  .disposition-card-horizontal__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 0.75rem;
-    border-top: 1px solid rgba(0, 42, 90, 0.08);
-  }
-  
-  .disposition-card-horizontal__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  /* ===== ВАРИАНТ 2: Карточки в сетке ===== */
-  .disposition-card-grid {
-    background: #fff;
-    border-radius: 1.25rem;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    box-shadow: 0 4px 16px rgba(0, 23, 61, 0.08);
-    overflow: hidden;
-    transition: all 0.3s ease;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .disposition-card-grid:hover {
-    box-shadow: 0 12px 32px rgba(0, 23, 61, 0.15);
-    transform: translateY(-4px);
-    border-color: rgba(0, 42, 90, 0.2);
-  }
-  
-  .disposition-card-grid__photo {
-    position: relative;
-    width: 100%;
-    height: 240px;
-    overflow: hidden;
-    background: #f8f9fa;
-  }
-  
-  .disposition-card-grid__photo a {
-    display: block;
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  
-  .disposition-card-grid__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-  }
-  
-  .disposition-card-grid:hover .disposition-card-grid__image {
-    transform: scale(1.1);
-  }
-  
-  .disposition-card-grid__badge {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    padding: 0.4rem 0.85rem;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    backdrop-filter: blur(4px);
-    z-index: 2;
-  }
-  
-  .disposition-card-grid__overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 42, 90, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 1;
-  }
-  
-  .disposition-card-grid__overlay span {
-    font-size: 2rem;
-    color: #fff;
-  }
-  
-  .disposition-card-grid__photo:hover .disposition-card-grid__overlay {
-    opacity: 1;
-  }
-  
-  .disposition-card-grid__body {
-    padding: 1.5rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .disposition-card-grid__title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #002a5a;
-    margin: 0;
-    line-height: 1.3;
-  }
-  
-  .disposition-card-grid__subtitle {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin: -0.5rem 0 0 0;
-  }
-  
-  .disposition-card-grid__info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
-  }
-  
-  .disposition-card-grid__info-row {
-    font-size: 0.9rem;
-    color: #495057;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .disposition-card-grid__price {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #00509d;
-    padding-top: 0.75rem;
-    border-top: 1px solid rgba(0, 42, 90, 0.08);
-  }
-  
-  .disposition-card-grid__footer {
-    margin-top: auto;
-  }
-  
-  /* Адаптивность */
-  @media (max-width: 1199px) {
-    .disposition-card-horizontal__details-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  
-  @media (max-width: 991px) {
-    .disposition-card-horizontal__photo-wrapper {
-      width: 220px;
-    }
-    
-    .disposition-card-horizontal__details-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .portal-panel {
-      padding: 1rem;
-    }
-  }
-
-  /* ===== МОБИЛЬНАЯ ВЕРСИЯ КАРТОЧЕК ===== */
-  .mobile-car-card {
-    background: #fff;
-    border-radius: 1rem;
-    border: 1px solid rgba(0, 42, 90, 0.1);
-    box-shadow: 0 2px 12px rgba(0, 23, 61, 0.1);
-    margin-bottom: 1.25rem;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-
-  .mobile-car-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 23, 61, 0.15);
-    transform: translateY(-2px);
-  }
-
-  .mobile-car-card__photo-wrapper {
-    width: 100%;
-    position: relative;
-    background: #f8f9fa;
-    overflow: hidden;
-  }
-
-  .mobile-car-card__photo-link {
-    display: block;
-    width: 100%;
-    position: relative;
-    padding-top: 66.67%; /* 3:2 соотношение сторон */
-    overflow: hidden;
-  }
-
-  .mobile-car-card__photo {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
-  }
-
-  .mobile-car-card__photo-link:hover .mobile-car-card__photo {
-    transform: scale(1.05);
-  }
-
-  .mobile-car-card__badge {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    padding: 0.5rem 0.875rem;
-    border-radius: 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    backdrop-filter: blur(8px);
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  }
-
-  .mobile-car-card__content {
-    padding: 1.25rem;
-  }
-
-  .mobile-car-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.08);
-  }
-
-  .mobile-car-card__title-wrapper {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .mobile-car-card__title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #002a5a;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.3;
-    word-wrap: break-word;
-  }
-
-  .mobile-car-card__subtitle {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin: 0;
-  }
-
-  .mobile-car-card__price {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #00509d;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .mobile-car-card__specs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    margin-bottom: 1rem;
-  }
-
-  .mobile-car-card__spec-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    padding-bottom: 0.875rem;
-    border-bottom: 1px solid rgba(0, 42, 90, 0.05);
-  }
-
-  .mobile-car-card__spec-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .mobile-car-card__spec-row .spec-label {
-    font-size: 0.8125rem;
-    color: #8ea1ba;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
-    min-width: 110px;
-  }
-
-  .mobile-car-card__spec-row .spec-value {
-    font-size: 0.9375rem;
-    color: #002a5a;
-    font-weight: 500;
-    text-align: right;
-    word-break: break-word;
-    flex: 1;
-  }
-
-  .mobile-car-card__spec-row .spec-value--small {
-    font-size: 0.8125rem;
-    font-family: 'Courier New', monospace;
-  }
-
-  .mobile-car-card__badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(0, 42, 90, 0.08);
-  }
-
-  .mobile-car-card__note {
-    padding: 0.875rem;
-    background: #f8f9fa;
-    border-radius: 0.75rem;
-    margin-bottom: 1rem;
-    border-left: 3px solid #00509d;
-  }
-
-  .mobile-car-card__note small {
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: #495057;
-  }
-
-  .mobile-car-card__footer {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(0, 42, 90, 0.08);
-  }
-
-  /* ===== ЗАКРЕПЛЕННАЯ КНОПКА ФИЛЬТРОВ ===== */
-  .mobile-filters-button {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 1000;
-    background: linear-gradient(140deg, #002c63, #00509d);
-    color: #fff;
-    border: none;
-    border-radius: 2rem;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    box-shadow: 0 8px 24px rgba(0, 42, 90, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 140px;
-  }
-
-  .mobile-filters-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 42, 90, 0.5);
-    background: linear-gradient(140deg, #003b87, #0066cc);
-    color: #fff;
-  }
-
-  .mobile-filters-button:active {
-    transform: translateY(0);
-  }
-
-  .mobile-filters-button__badge {
-    margin-left: 0.5rem;
-    background: rgba(255, 255, 255, 0.25);
-    color: #fff;
-    padding: 0.125rem 0.5rem;
-    border-radius: 1rem;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    backdrop-filter: blur(4px);
-  }
-
-  /* Модальное окно для мобильных фильтров */
-  @media (max-width: 991.98px) {
-    #mobileFiltersModal .modal-dialog {
-      margin: 0;
-    }
-
-    #mobileFiltersModal .modal-content {
-      border-radius: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #mobileFiltersModal .modal-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.25rem;
-    }
-
-    #mobileFiltersModal .modal-header {
-      border-bottom: 1px solid rgba(0, 42, 90, 0.1);
-      padding: 1rem 1.25rem;
-    }
-
-    #mobileFiltersModal .modal-footer {
-      border-top: 1px solid rgba(0, 42, 90, 0.1);
-      padding: 1rem 1.25rem;
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    #mobileFiltersModal .modal-footer .btn {
-      flex: 1;
-    }
-  }
-
-  /* Анимация иконки дополнительных фильтров */
-  #mobileAdditionalFiltersIcon {
-    transition: transform 0.3s ease;
-  }
-
-  #mobileAdditionalFilters.show ~ #mobileAdditionalFiltersIcon,
-  #mobileAdditionalFilters.collapsing ~ #mobileAdditionalFiltersIcon {
-    transform: rotate(180deg);
-  }
-</style>
-
 <script>
-function changeStatus(status) {
-  const form = document.getElementById('filtersForm');
-  if (form) {
-    const statusInput = form.querySelector('input[name="status"]');
-    if (statusInput) {
-      statusInput.value = status;
-    }
-    // Сохраняем все параметры фильтров при смене статуса
-    const urlParams = new URLSearchParams(window.location.search);
-    urlParams.set('status', status);
-    // Сохраняем все остальные параметры из формы
-    const formData = new FormData(form);
-    for (const [key, value] of formData.entries()) {
-      if (key !== 'status' && value) {
-        if (key.endsWith('[]')) {
-          // Для массивов удаляем старые значения и добавляем новые
-          urlParams.delete(key);
-          const values = formData.getAll(key);
-          values.forEach(v => urlParams.append(key, v));
-        } else {
-          urlParams.set(key, value);
-        }
-      }
-    }
-    window.location.href = window.location.pathname + '?' + urlParams.toString();
+(function () {
+  if (window.matchMedia('(max-width: 991.98px)').matches) {
+    document.body.classList.add('disp-has-fab');
   }
-}
 
-function applyMobileFilters() {
-  const mobileForm = document.getElementById('mobileFiltersForm');
-  const desktopForm = document.getElementById('filtersForm');
-  
-  // Копируем значения из мобильной формы в десктопную
-  const mobileInputs = mobileForm.querySelectorAll('input, select');
-  mobileInputs.forEach(mobileInput => {
-    const name = mobileInput.name;
-    if (name) {
-      // Для множественных select
-      if (mobileInput.multiple) {
-        const desktopInput = desktopForm.querySelector(`select[name="${name}"]`);
-        if (desktopInput) {
-          const selectedValues = Array.from(mobileInput.selectedOptions).map(opt => opt.value);
-          Array.from(desktopInput.options).forEach(opt => {
-            opt.selected = selectedValues.includes(opt.value);
-          });
-        }
-      } else {
-        const desktopInput = desktopForm.querySelector(`[name="${name}"]`);
-        if (desktopInput) {
-          desktopInput.value = mobileInput.value;
-        }
-      }
-    }
+  document.querySelectorAll('.disp-mobile-status').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var form = document.getElementById('dispFiltersMobile');
+      if (!form) return;
+      var hidden = form.querySelector('input[name="status"]');
+      if (hidden) hidden.value = btn.getAttribute('data-status') || 'all';
+      document.querySelectorAll('.disp-mobile-status').forEach(function (b) {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-secondary');
+      });
+      btn.classList.remove('btn-outline-secondary');
+      btn.classList.add('btn-primary');
+    });
   });
-  
-  // Закрываем модальное окно
-  const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
-  if (modal) {
-    modal.hide();
-  }
-  
-  // Отправляем форму
-  desktopForm.submit();
-}
 
-// JavaScript для множественного выбора с поиском (как в воронке приема)
-(function() {
-  // Глобальные переменные для хранения загруженных данных
-  let marksLoaded = false;
-  let modelsLoaded = false;
-  let selectedMarkIds = [];
-  
-  function initMultiSelect(searchId, dropdownId, selectedDivId, loadDataFn = null) {
-    const searchInput = document.getElementById(searchId);
-    const dropdown = document.getElementById(dropdownId);
-    const selectedDiv = document.getElementById(selectedDivId);
-    
-    if (!searchInput || !dropdown || !selectedDiv) return;
-    
-    function updateSelected() {
-      const checked = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked'));
-      selectedDiv.innerHTML = '';
-      if (checked.length > 0) {
-        const badges = Array.from(checked).map(cb => {
-          const label = cb.closest('label');
-          const text = label ? label.textContent.trim() : '';
-          const value = cb.value;
-          return `<span class="badge bg-primary me-1 mb-1" style="font-size: 0.85em;">${text} <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65em;" onclick="document.querySelector('input[name=&quot;${cb.name}&quot;][value=&quot;${value}&quot;]').checked=false; updateSelected_${selectedDivId}();"></button></span>`;
-        }).join('');
-        selectedDiv.innerHTML = badges;
-      }
-    }
-    
-    window['updateSelected_' + selectedDivId] = updateSelected;
-    
-    searchInput.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase();
-      const items = dropdown.querySelectorAll('label');
-      items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(searchTerm) ? '' : 'none';
-      });
-      
-      // Для поиска моделей - перезагружаем при изменении текста
-      if (searchId === 'modelSearch' && modelsLoaded) {
-        const selectedMarks = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(cb => cb.value);
-        if (selectedMarks.length > 0) {
-          // Небольшая задержка для debounce
-          clearTimeout(window.modelSearchTimeout);
-          window.modelSearchTimeout = setTimeout(() => {
-            loadModels();
-          }, 300);
-        }
-      }
-      
-      // Для поиска марок - перезагружаем при изменении текста
-      if (searchId === 'markSearch' && marksLoaded) {
-        clearTimeout(window.markSearchTimeout);
-        window.markSearchTimeout = setTimeout(() => {
-          marksLoaded = false;
-          loadMarks();
-        }, 300);
+  var offcanvas = document.getElementById('dispFiltersOffcanvas');
+  if (offcanvas) {
+    offcanvas.addEventListener('shown.bs.offcanvas', function () {
+      if (window.PortalMultiCheckboxFilter) {
+        window.PortalMultiCheckboxFilter.initAll(offcanvas);
       }
     });
-    
-    searchInput.addEventListener('focus', function() {
-      dropdown.style.display = 'block';
-      // Загружаем данные при первом открытии, если функция загрузки указана
-      if (loadDataFn && !marksLoaded && searchId === 'markSearch') {
-        loadDataFn();
-      }
-    });
-    
-    searchInput.addEventListener('click', function() {
-      dropdown.style.display = 'block';
-      // Загружаем данные при первом открытии, если функция загрузки указана
-      if (loadDataFn && !marksLoaded && searchId === 'markSearch') {
-        loadDataFn();
-      }
-    });
-    
-    document.addEventListener('click', function(e) {
-      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
-    });
-    
-    dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', updateSelected);
-    });
-    
-    updateSelected();
-  }
-  
-  // Функция загрузки марок через AJAX
-  function loadMarks() {
-    const markSearch = document.getElementById('markSearch');
-    const markDropdown = document.getElementById('markDropdown');
-    
-    if (!markSearch || !markDropdown) return;
-    
-    const search = markSearch.value.trim();
-    const url = `/cars/disposition/get_marks/?search=${encodeURIComponent(search)}`;
-    
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (data.marks && data.marks.length > 0) {
-          markDropdown.innerHTML = '';
-          const selectedMarkIds = {% if params.mark_ids_list %}[{% for mid in params.mark_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %};
-          
-          data.marks.forEach(mark => {
-            const label = document.createElement('label');
-            label.className = 'list-group-item';
-            label.style.cssText = 'margin-bottom: 0; cursor: pointer;';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'form-check-input me-2';
-            checkbox.name = 'mark[]';
-            checkbox.value = mark.id;
-            
-            // Проверяем, была ли марка выбрана ранее
-            if (selectedMarkIds.includes(mark.id)) {
-              checkbox.checked = true;
-            }
-            
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(' ' + mark.name));
-            markDropdown.appendChild(label);
-          });
-          
-          // Инициализируем обработчики событий для новых чекбоксов
-          markDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', function() {
-              updateSelected_selectedMarks();
-              // При изменении выбранных марок загружаем модели
-              modelsLoaded = false;
-              loadModels();
-            });
-          });
-          
-          updateSelected_selectedMarks();
-          marksLoaded = true;
-        }
-      })
-      .catch(error => {
-        console.error('Ошибка загрузки марок:', error);
-      });
-  }
-  
-  // Функция загрузки моделей через AJAX
-  function loadModels() {
-    const modelSearch = document.getElementById('modelSearch');
-    const modelDropdown = document.getElementById('modelDropdown');
-    
-    if (!modelSearch || !modelDropdown) return;
-    
-    // Получаем выбранные марки
-    const selectedMarks = Array.from(document.querySelectorAll('input[name="mark[]"]:checked')).map(cb => cb.value);
-    
-    if (selectedMarks.length === 0) {
-      modelSearch.disabled = true;
-      modelDropdown.innerHTML = '';
-      updateSelected_selectedModels();
-      modelsLoaded = false;
-      return;
-    }
-    
-    modelSearch.disabled = false;
-    const search = modelSearch.value.trim();
-    const url = `/cars/disposition/get_models/?${selectedMarks.map(id => `mark_ids[]=${id}`).join('&')}&search=${encodeURIComponent(search)}`;
-    
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        if (data.models && data.models.length > 0) {
-          modelDropdown.innerHTML = '';
-          const selectedModelIds = {% if params.model_ids_list %}[{% for mid in params.model_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %};
-          
-          data.models.forEach(model => {
-            const label = document.createElement('label');
-            label.className = 'list-group-item';
-            label.style.cssText = 'margin-bottom: 0; cursor: pointer;';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'form-check-input me-2';
-            checkbox.name = 'model[]';
-            checkbox.value = model.id;
-            
-            // Проверяем, была ли модель выбрана ранее
-            if (selectedModelIds.includes(model.id)) {
-              checkbox.checked = true;
-            }
-            
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(' ' + model.name + ' (' + model.mark_name + ')'));
-            modelDropdown.appendChild(label);
-          });
-          
-          // Инициализируем обработчики событий для новых чекбоксов
-          modelDropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', function() {
-              updateSelected_selectedModels();
-            });
-          });
-          
-          updateSelected_selectedModels();
-          modelsLoaded = true;
-        } else {
-          modelDropdown.innerHTML = '<div class="list-group-item text-muted">Модели не найдены</div>';
-          modelsLoaded = true;
-        }
-      })
-      .catch(error => {
-        console.error('Ошибка загрузки моделей:', error);
-      });
-  }
-  
-  function prepareFormData(form) {
-    // Собираем все выбранные значения из чекбоксов
-    const checkboxes = form.querySelectorAll('input[type="checkbox"]:checked');
-    checkboxes.forEach(cb => {
-      // Убеждаемся, что чекбокс будет отправлен
-      if (!form.querySelector(`input[type="hidden"][name="${cb.name}"][value="${cb.value}"]`)) {
-        const hidden = document.createElement('input');
-        hidden.type = 'hidden';
-        hidden.name = cb.name;
-        hidden.value = cb.value;
-        form.appendChild(hidden);
-      }
-    });
-    
-    // Фильтры уже сохраняются в URL через GET параметры, так что они автоматически сохраняются при перезагрузке
-    return true;
-  }
-  
-  window.prepareFormData = prepareFormData;
-  
-  // Инициализация при загрузке страницы
-  function initializeFilters() {
-    // Десктоп версия
-    initMultiSelect('bodyTypeSearch', 'bodyTypeDropdown', 'selectedBodyTypes');
-    initMultiSelect('gearTypeSearch', 'gearTypeDropdown', 'selectedGearTypes');
-    initMultiSelect('driveTypeSearch', 'driveTypeDropdown', 'selectedDriveTypes');
-    initMultiSelect('evaluationTypeSearch', 'evaluationTypeDropdown', 'selectedEvaluationTypes');
-    initMultiSelect('storeSearch', 'storeDropdown', 'selectedStores');
-    
-    // Марки и модели с AJAX загрузкой
-    initMultiSelect('markSearch', 'markDropdown', 'selectedMarks', loadMarks);
-    initMultiSelect('modelSearch', 'modelDropdown', 'selectedModels');
-    
-    // Если есть выбранные марки, загружаем их и модели сразу
-    {% if params.mark_ids_list %}
-    const selectedMarkIds = [{% for mid in params.mark_ids_list %}{{ mid }}{% if not forloop.last %}, {% endif %}{% endfor %}];
-    if (selectedMarkIds.length > 0) {
-      // Загружаем марки и устанавливаем выбранные
-      loadMarks();
-      setTimeout(() => {
-        selectedMarkIds.forEach(markId => {
-          const checkbox = document.querySelector(`input[name="mark[]"][value="${markId}"]`);
-          if (checkbox) {
-            checkbox.checked = true;
-          }
-        });
-        updateSelected_selectedMarks();
-        // Загружаем модели для выбранных марок
-        loadModels();
-      }, 500);
-    }
-    {% endif %}
-    
-    // Мобильная версия
-    initMultiSelect('mobile_bodyTypeSearch', 'mobile_bodyTypeDropdown', 'mobile_selectedBodyTypes');
-    initMultiSelect('mobile_gearTypeSearch', 'mobile_gearTypeDropdown', 'mobile_selectedGearTypes');
-    initMultiSelect('mobile_driveTypeSearch', 'mobile_driveTypeDropdown', 'mobile_selectedDriveTypes');
-    initMultiSelect('mobile_evaluationTypeSearch', 'mobile_evaluationTypeDropdown', 'mobile_selectedEvaluationTypes');
-    initMultiSelect('mobile_storeSearch', 'mobile_storeDropdown', 'mobile_selectedStores');
-  }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeFilters);
-  } else {
-    initializeFilters();
   }
 })();
-
-// Обработка иконки раскрытия/сворачивания дополнительных фильтров
-document.addEventListener('DOMContentLoaded', function() {
-  const additionalFiltersToggle = document.getElementById('additionalFiltersToggle');
-  const additionalFiltersIcon = document.getElementById('additionalFiltersIcon');
-  const additionalFilters = document.getElementById('additionalFilters');
-  
-  if (additionalFiltersToggle && additionalFiltersIcon && additionalFilters) {
-    const isExpanded = additionalFilters.classList.contains('show');
-    if (isExpanded) {
-      additionalFiltersIcon.style.transform = 'rotate(180deg)';
-    }
-    
-    additionalFilters.addEventListener('show.bs.collapse', function() {
-      additionalFiltersIcon.style.transform = 'rotate(180deg)';
-    });
-    
-    additionalFilters.addEventListener('hide.bs.collapse', function() {
-      additionalFiltersIcon.style.transform = 'rotate(0deg)';
-    });
-  }
-
-  const mobileAdditionalFiltersIcon = document.getElementById('mobileAdditionalFiltersIcon');
-  const mobileAdditionalFilters = document.getElementById('mobileAdditionalFilters');
-  
-  if (mobileAdditionalFiltersIcon && mobileAdditionalFilters) {
-    mobileAdditionalFilters.addEventListener('show.bs.collapse', function() {
-      mobileAdditionalFiltersIcon.style.transform = 'rotate(180deg)';
-    });
-    
-    mobileAdditionalFilters.addEventListener('hide.bs.collapse', function() {
-      mobileAdditionalFiltersIcon.style.transform = 'rotate(0deg)';
-    });
-  }
-});
 </script>
 {% endblock %}
-
