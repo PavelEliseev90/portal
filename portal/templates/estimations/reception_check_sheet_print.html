@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Лист проверки автомобиля{% if params.vin %} — {{ params.vin }}{% endif %}</title>
+	<style>
+		@page { size: A4 portrait; margin: 8mm 9mm; }
+		* { box-sizing: border-box; }
+		html, body {
+			margin: 0;
+			padding: 0;
+			font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+			font-size: 10px;
+			line-height: 1.22;
+			color: #111;
+			background: #e8e8e8;
+		}
+		.toolbar {
+			position: sticky; top: 0; z-index: 10;
+			display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+			padding: 10px 16px; background: #1e293b; color: #fff;
+		}
+		.toolbar a, .toolbar button {
+			appearance: none; border: 0; border-radius: 6px;
+			padding: 7px 12px; font-size: 13px; cursor: pointer;
+			text-decoration: none; color: #fff; background: #334155;
+		}
+		.toolbar button.primary { background: #2563eb; }
+		.toolbar .hint { margin-left: auto; font-size: 12px; opacity: .85; }
+
+		.sheet-wrap { padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+		.sheet {
+			width: 210mm;
+			min-height: 297mm;
+			background: #fff;
+			padding: 6mm 7mm;
+			box-shadow: 0 2px 12px rgba(0,0,0,.18);
+		}
+		.sheet + .sheet { page-break-before: always; }
+
+		h1 {
+			margin: 0 0 4px;
+			text-align: center;
+			font-size: 15px;
+			font-weight: 700;
+			letter-spacing: .02em;
+		}
+		.subhead {
+			text-align: center;
+			font-size: 10px;
+			color: #333;
+			margin-bottom: 6px;
+		}
+
+		table.grid {
+			width: 100%;
+			border-collapse: collapse;
+			table-layout: fixed;
+			margin-bottom: 4px;
+		}
+		table.grid th, table.grid td {
+			border: 1px solid #222;
+			padding: 2px 4px;
+			vertical-align: middle;
+			word-wrap: break-word;
+		}
+		table.grid th {
+			font-weight: 600;
+			background: #f3f3f3;
+			text-align: left;
+			white-space: nowrap;
+		}
+		.val { font-weight: 600; }
+		.muted { color: #555; font-weight: 400; }
+		.center { text-align: center; }
+		.section-title {
+			font-weight: 700;
+			background: #ececec !important;
+			text-align: center;
+		}
+		.note {
+			font-size: 9px;
+			color: #333;
+			margin: 2px 0 4px;
+		}
+		.chk {
+			display: inline-block;
+			width: 11px; height: 11px;
+			border: 1.4px solid #222;
+			vertical-align: middle;
+			margin: 0 1px;
+		}
+		.chk.on { background: #111; }
+		.col-n, .col-r, .col-d { width: 7%; text-align: center; font-weight: 600; font-size: 9px; }
+		.col-num { width: 5%; text-align: center; font-weight: 700; }
+		.item-text { font-size: 9.5px; }
+		.lines {
+			border-collapse: collapse;
+			width: 100%;
+			margin: 4px 0;
+		}
+		.lines td {
+			border: none;
+			border-bottom: 1px solid #999;
+			height: 16px;
+		}
+		.sig {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 8px;
+		}
+		.sig td {
+			border: none;
+			padding: 5px 3px 2px;
+			vertical-align: bottom;
+		}
+		.sig .line {
+			border-bottom: 1px solid #222;
+			height: 16px;
+		}
+		.sig .caption { font-size: 9px; color: #333; padding-top: 1px; }
+		.footer-nomer {
+			margin-top: 6px;
+			text-align: right;
+			font-size: 9px;
+			color: #444;
+		}
+		.matrix th, .matrix td { text-align: center; font-size: 9px; }
+		.matrix .lab { text-align: left; font-weight: 600; background: #f7f7f7; }
+
+		@media print {
+			html, body { background: #fff; }
+			.toolbar { display: none !important; }
+			.sheet-wrap { padding: 0; gap: 0; }
+			.sheet {
+				width: auto;
+				min-height: auto;
+				box-shadow: none;
+				padding: 0;
+				page-break-after: always;
+			}
+			.sheet:last-child { page-break-after: auto; }
+		}
+	</style>
+</head>
+<body>
+	<div class="toolbar">
+		<button type="button" class="primary" onclick="window.print()">Печать</button>
+		{% if params.back_url %}<a href="{{ params.back_url }}">К приёму автомобиля</a>{% endif %}
+		{% if params.rlk %}
+		<a href="/eco/{{ params.rlk.id }}/route-sheet/print/" target="_blank">Маршрутный лист</a>
+		<a href="/eco/{{ params.rlk.id }}/inspection-sheet/print/" target="_blank">Лист осмотра</a>
+		{% endif %}
+		<span class="hint">Формат A4 · 3 страницы · бланк для заполнения от руки</span>
+	</div>
+
+	<div class="sheet-wrap">
+		{# ========== PAGE 1 ========== #}
+		<div class="sheet">
+			<h1>Лист проверки автомобиля</h1>
+			<div class="subhead">Заполняется при приёме · № листа оценки {{ params.lo_nomer|default:"—" }}</div>
+
+			<table class="grid">
+				<tr>
+					<th style="width:16%">Дата осмотра</th>
+					<td class="val" style="width:14%">{% if params.inspect_date %}{{ params.inspect_date|date:"d.m.Y" }}{% else %}________{% endif %}</td>
+					<th style="width:16%">№ листа оценки</th>
+					<td class="val" colspan="3">{{ params.lo_nomer|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Марка, модель</th>
+					<td class="val" colspan="5">{{ params.mark_model }}</td>
+				</tr>
+				<tr>
+					<th>Цвет</th>
+					<td class="val">{{ params.color|default:"—" }}</td>
+					<th>Двигатель</th>
+					<td class="val">{{ params.engine_label|default:"—" }}</td>
+					<th style="width:14%">Трансмиссия</th>
+					<td class="val">{{ params.gear_label|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Год выпуска</th>
+					<td class="val">{{ params.year|default:"—" }}</td>
+					<th>Кузов</th>
+					<td class="val" colspan="3">{{ params.body_label|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>VIN</th>
+					<td class="val" colspan="2"><code style="font-size:11px">{{ params.vin|default:"—" }}</code></td>
+					<th>№ и модель ДВС</th>
+					<td class="val" colspan="2">{{ params.engine_number|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Пробег по одометру</th>
+					<td class="val">{% if params.mileage %}{{ params.mileage }} км{% else %}________{% endif %}</td>
+					<th>Дата первой регистрации</th>
+					<td class="val" colspan="3">________</td>
+				</tr>
+				<tr>
+					<th>Гарантия завода</th>
+					<td colspan="2">
+						<span class="chk"></span> Да &nbsp; <span class="chk"></span> Нет
+						&nbsp; Период ____ мес.
+					</td>
+					<th>Последнее ТО (&gt;3500 км)</th>
+					<td colspan="2"><span class="chk"></span> Да &nbsp; <span class="chk"></span> Нет</td>
+				</tr>
+				<tr>
+					<th>ПТС серия, номер</th>
+					<td class="val" colspan="2">{{ params.pts_full|default:"________" }}</td>
+					<th>ПТС</th>
+					<td colspan="2">
+						<span class="chk {% if params.pts_original == True %}on{% endif %}"></span> оригинал
+						&nbsp;
+						<span class="chk {% if params.pts_original == False %}on{% endif %}"></span> дубликат
+					</td>
+				</tr>
+				<tr>
+					<th>Количество владельцев</th>
+					<td class="val" colspan="5">{% if params.count_owners %}{{ params.count_owners }}{% else %}________{% endif %}</td>
+				</tr>
+			</table>
+
+			<p class="note"><strong>Заполняется оценщиком</strong></p>
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="2">Комплектность автомобиля</th>
+					<th class="col-n section-title">Норма</th>
+					<th class="col-r section-title">Ремонт</th>
+					<th class="col-d section-title">Диагн.</th>
+				</tr>
+				{% for num, text in params.appraiser_items %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="5">9. Пробная поездка (заполняется оценщиком)</th>
+				</tr>
+				{% for num, text in params.test_drive_items %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th style="width:28%">Комментарий после тест-драйва</th>
+					<td style="height:36px; vertical-align:top;">{{ params.test_drive_comment }}</td>
+				</tr>
+				<tr>
+					<th>Комментарий после осмотра а/м<br><span class="muted">(отметить крашеные элементы)</span></th>
+					<td style="height:40px;"></td>
+				</tr>
+				<tr>
+					<th>Указать дополнительную информацию</th>
+					<td style="height:28px;"></td>
+				</tr>
+			</table>
+
+			<p class="note" style="margin-top:6px"><strong>Заполняется сотрудником сервиса (механик).</strong>
+				Без заполненной части оценщика в работу не принимать.</p>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="5">Подкапотное пространство</th>
+				</tr>
+				{% for num, text in params.service_underhood %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+			<div class="footer-nomer">№ листа осмотра {{ params.lo_nomer|default:"—" }} · стр. 1</div>
+		</div>
+
+		{# ========== PAGE 2 ========== #}
+		<div class="sheet">
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="5">Осмотр на подъемнике. Визуальная проверка плотности соединений и отсутствия подтеканий</th>
+				</tr>
+				{% for num, text in params.service_lift %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="5">Проверка оборудования автомобиля</th>
+				</tr>
+				{% for num, text in params.service_equipment %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="5">Проверка с использованием диагностического прибора («Короткий тест»)</th>
+				</tr>
+				{% for num, text in params.service_diag %}
+				<tr>
+					<td class="col-num">{{ num }}</td>
+					<td class="item-text">{{ text }}</td>
+					<td class="col-n"><span class="chk"></span></td>
+					<td class="col-r"><span class="chk"></span></td>
+					<td class="col-d"><span class="chk"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="4">Проверка диагностическим прибором подтверждения пробега</th>
+				</tr>
+				<tr>
+					<th style="width:28%">Указан на одометре</th>
+					<td class="val">{% if params.mileage %}{{ params.mileage }} км{% else %}________{% endif %}</td>
+					<th style="width:22%">Итоги подтверждения</th>
+					<td>________ км</td>
+				</tr>
+				<tr>
+					<td colspan="4" class="muted" style="font-size:9px">
+						Указать пробег на одометре и пробег, подтверждаемый диагностическим прибором в блоках.
+					</td>
+				</tr>
+			</table>
+
+			<table class="grid matrix">
+				<tr>
+					<th class="section-title" colspan="9">Замер компрессии по цилиндрам (кроме дизельных ДВС)</th>
+				</tr>
+				<tr>
+					<th class="lab">Цилиндр</th>
+					{% for i in "12345678" %}<th>{{ i }}</th>{% endfor %}
+				</tr>
+				<tr>
+					<td class="lab">Компрессия</td>
+					{% for i in "12345678" %}<td></td>{% endfor %}
+				</tr>
+			</table>
+			<p class="note">При отклонениях — подробные пояснения в комментариях ниже.</p>
+
+			<table class="grid matrix">
+				<tr>
+					<th class="section-title" colspan="9">Результаты осмотра эндоскопом (отметить «X»)</th>
+				</tr>
+				<tr>
+					<th class="lab">Цилиндр</th>
+					{% for i in "12345678" %}<th>{{ i }}</th>{% endfor %}
+				</tr>
+				<tr>
+					<td class="lab">Норма</td>
+					{% for i in "12345678" %}<td><span class="chk"></span></td>{% endfor %}
+				</tr>
+				<tr>
+					<td class="lab">Некритич. задиры</td>
+					{% for i in "12345678" %}<td><span class="chk"></span></td>{% endfor %}
+				</tr>
+				<tr>
+					<td class="lab">Задиры</td>
+					{% for i in "12345678" %}<td><span class="chk"></span></td>{% endfor %}
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="4">Эндоскоп: номер ДВС и рамы (фото → оценщику)</th>
+				</tr>
+				<tr>
+					<th style="width:18%">Номер рамы</th>
+					<td>совпадает <span class="chk"></span> &nbsp; НЕ совпадает <span class="chk"></span></td>
+					<th style="width:18%">Номер ДВС</th>
+					<td>совпадает <span class="chk"></span> &nbsp; НЕ совпадает <span class="chk"></span></td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" colspan="3">Результат проверки АКПП / вариатор / робот</th>
+				</tr>
+				<tr>
+					<th style="width:40%">STALL TEST (вариаторы)</th>
+					<td>Норма <span class="chk"></span></td>
+					<td>Требуется ремонт <span class="chk"></span></td>
+				</tr>
+				<tr>
+					<th>Роботизированные КПП — остаток сцепления</th>
+					<td>Норма <span class="chk"></span></td>
+					<td>Требуется ремонт <span class="chk"></span></td>
+				</tr>
+				<tr>
+					<th>Автоматические КПП (не вариатор/робот)</th>
+					<td>Норма <span class="chk"></span></td>
+					<td>Требуется ремонт <span class="chk"></span></td>
+				</tr>
+				<tr>
+					<th>Полный привод</th>
+					<td>Работает <span class="chk"></span></td>
+					<td>Не работает <span class="chk"></span></td>
+				</tr>
+			</table>
+			<div class="footer-nomer">№ листа осмотра {{ params.lo_nomer|default:"—" }} · стр. 2</div>
+		</div>
+
+		{# ========== PAGE 3 ========== #}
+		<div class="sheet">
+			<table class="grid">
+				<tr>
+					<th class="section-title">
+						Полные результаты диагностики. Заполняется механиком и диагностом.
+						Далее данные переносятся мастером-приёмщиком в заказ-наряд.
+					</th>
+				</tr>
+				<tr>
+					<td style="padding:0">
+						<table class="lines">
+							{% for i in "123456789012345" %}<tr><td></td></tr>{% endfor %}
+						</table>
+					</td>
+				</tr>
+			</table>
+
+			<p class="note" style="margin-top:10px"><strong>Подписи:</strong></p>
+			<table class="sig">
+				<tr>
+					<td style="width:4%"><strong>1.</strong></td>
+					<td style="width:22%">Оценщик ФИО</td>
+					<td style="width:34%">
+						<div class="line"></div>
+						<div class="caption">{{ params.appraiser|default:"ФИО" }}</div>
+					</td>
+					<td style="width:4%" class="center">/</td>
+					<td style="width:16%"><div class="line"></div><div class="caption">Подпись</div></td>
+					<td style="width:4%" class="center">/</td>
+					<td style="width:16%"><div class="line"></div><div class="caption">Дата</div></td>
+				</tr>
+				<tr>
+					<td><strong>2.</strong></td>
+					<td>Мастер-приёмщик ФИО</td>
+					<td><div class="line"></div><div class="caption">ФИО</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Подпись</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Дата</div></td>
+				</tr>
+				<tr>
+					<td><strong>3.</strong></td>
+					<td>Мастер смены ФИО</td>
+					<td><div class="line"></div><div class="caption">ФИО</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Подпись</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Дата</div></td>
+				</tr>
+				<tr>
+					<td><strong>4.</strong></td>
+					<td>Механик ФИО</td>
+					<td><div class="line"></div><div class="caption">ФИО</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Подпись</div></td>
+					<td class="center">/</td>
+					<td><div class="line"></div><div class="caption">Дата</div></td>
+				</tr>
+			</table>
+			<div class="footer-nomer">№ листа осмотра {{ params.lo_nomer|default:"—" }} · стр. 3</div>
+		</div>
+	</div>
+</body>
+</html>
