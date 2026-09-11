@@ -13,6 +13,7 @@ from asp.report_common import (
     aggregate_groups,
     aggregate_totals,
     allowed_unit_ids,
+    apply_type_reception_filter,
     details_payload,
     money,
     parse_common_filters,
@@ -67,6 +68,9 @@ def filtered_shipments_qs(filters: dict[str, Any]):
     person = filters.get('person') or ''
     if person:
         qs = qs.filter(staff__name__icontains=person)
+    qs = apply_type_reception_filter(
+        qs, filters, 'lo__type_reception_id', 'agreement__lo__type_reception_id',
+    )
     return qs
 
 

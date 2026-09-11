@@ -1660,6 +1660,84 @@ def worksheet_upsert(request):
     return JsonResponse(to_json, status=status.HTTP_200_OK)
 
 
+def _parse_rlk_uin_from_request(request, rlk_uin=None) -> str:
+    uin = (rlk_uin or '').strip()
+    if not uin:
+        uin = (
+            request.GET.get('rlk_uin')
+            or request.GET.get('Uin')
+            or request.GET.get('uin')
+            or ''
+        ).strip()
+    if not uin and getattr(request, 'method', '') == 'POST' and getattr(request, 'body', None):
+        data, parse_error = _parse_1c_exchange_body(request)
+        if parse_error is None and isinstance(data, dict):
+            nested = data.get('Worksheet') or data.get('Rlk') or {}
+            if isinstance(nested, dict):
+                uin = (nested.get('Uin') or nested.get('uin') or '').strip()
+            if not uin:
+                uin = (
+                    data.get('Uin')
+                    or data.get('uin')
+                    or data.get('RlkUin')
+                    or data.get('rlk_uin')
+                    or ''
+                ).strip()
+    return uin
+
+
+def _resolve_interactiv_rlk_by_uin(uin: str):
+    """Найти интерактивную оценку по UIN рабочего листа (Корс/Альфа)."""
+    from documents.models import DocRLK
+    from documents.rlk_estimation import resolve_interactiv_rlk_for_rlk
+    from register.models import RegInteractivOcenkaRLK
+
+    worksheets = list(
+        DocRLK.objects.filter(uin=uin)
+        .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
+        .order_by('-dataTime', '-id')
+    )
+    if not worksheets:
+        return None, 'worksheet'
+
+    interactiv_rlk = None
+    for rlk in worksheets:
+        link = resolve_interactiv_rlk_for_rlk(rlk)
+        if link is not None and link.estimation_id:
+            interactiv_rlk = link
+            break
+
+    if interactiv_rlk is None:
+        interactiv_rlk = (
+            RegInteractivOcenkaRLK.objects
+            .filter(rlk__uin=uin)
+            .exclude(estimation_id__isnull=True)
+            .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
+            .order_by('-id')
+            .first()
+        )
+
+    if interactiv_rlk is None or interactiv_rlk.estimation_id is None:
+        return None, 'estimation'
+
+    interactiv_rlk = (
+        RegInteractivOcenkaRLK.objects
+        .filter(pk=interactiv_rlk.pk)
+        .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
+        .first()
+    ) or interactiv_rlk
+    return interactiv_rlk, None
+
+
+def _dt_iso(value):
+    if value is None:
+        return None
+    try:
+        return value.isoformat(sep=' ', timespec='seconds')
+    except Exception:
+        return str(value)
+
+
 @api_view(['GET', 'POST'])
 def estimation_by_worksheet(request, rlk_uin=None):
     """
@@ -1675,83 +1753,86 @@ def estimation_by_worksheet(request, rlk_uin=None):
     GET: /api/estimation/by_worksheet/<rlk_uin>/ или ?rlk_uin= / ?Uin=
     POST: {"Uin": "..."} / {"RlkUin": "..."} / {"Worksheet": {"Uin": "..."}}
     """
-    from documents.models import DocRLK
-    from documents.rlk_estimation import resolve_interactiv_rlk_for_rlk
-    from register.models import RegInteractivOcenkaRLK
     from task_manager.views import build_estimation_1c_payload
 
-    uin = (rlk_uin or '').strip()
-    if not uin:
-        uin = (
-            request.GET.get('rlk_uin')
-            or request.GET.get('Uin')
-            or request.GET.get('uin')
-            or ''
-        ).strip()
-    if not uin and request.method == 'POST' and request.body:
-        data, parse_error = _parse_1c_exchange_body(request)
-        if parse_error is not None:
-            return JsonResponse(parse_error, status=status.HTTP_400_BAD_REQUEST)
-        if isinstance(data, dict):
-            nested = data.get('Worksheet') or data.get('Rlk') or {}
-            if isinstance(nested, dict):
-                uin = (nested.get('Uin') or nested.get('uin') or '').strip()
-            if not uin:
-                uin = (
-                    data.get('Uin')
-                    or data.get('uin')
-                    or data.get('RlkUin')
-                    or data.get('rlk_uin')
-                    or ''
-                ).strip()
-
+    uin = _parse_rlk_uin_from_request(request, rlk_uin)
     if not uin:
         return JsonResponse({'error': 'rlk_uin required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    worksheets = list(
-        DocRLK.objects.filter(uin=uin)
-        .select_related('unit', 'unit__ib', 'unit_dc', 'unit_dc__ib')
-        .order_by('-dataTime', '-id')
-    )
-    if not worksheets:
+    interactiv_rlk, miss = _resolve_interactiv_rlk_by_uin(uin)
+    if miss == 'worksheet':
         return JsonResponse(
             {'error': 'Worksheet not found', 'Uin': uin},
             status=status.HTTP_404_NOT_FOUND,
         )
-
-    interactiv_rlk = None
-    for rlk in worksheets:
-        link = resolve_interactiv_rlk_for_rlk(rlk)
-        if link is not None and link.estimation_id:
-            interactiv_rlk = link
-            break
-
-    if interactiv_rlk is None:
-        # Запасной путь: обёртка с оценкой по UIN (без ранжирования «лучшей»)
-        interactiv_rlk = (
-            RegInteractivOcenkaRLK.objects
-            .filter(rlk__uin=uin)
-            .exclude(estimation_id__isnull=True)
-            .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
-            .order_by('-id')
-            .first()
-        )
-
-    if interactiv_rlk is None or interactiv_rlk.estimation_id is None:
+    if miss == 'estimation' or interactiv_rlk is None:
         return JsonResponse(
             {'error': 'Estimation not found for worksheet', 'Uin': uin},
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    # Подтянуть связи для payload (resolve может вернуть объект без page_reception)
-    interactiv_rlk = (
-        RegInteractivOcenkaRLK.objects
-        .filter(pk=interactiv_rlk.pk)
-        .select_related('rlk', 'estimation', 'page_soglasovanie', 'page_reception')
-        .first()
-    ) or interactiv_rlk
-
     return JsonResponse(build_estimation_1c_payload(interactiv_rlk), status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def estimation_price_approval_dates_by_worksheet(request, rlk_uin=None):
+    """
+    Даты согласования цены до КД и после КД по UIN рабочего листа.
+
+    Источник: RegInteractivOcenkaRLK.date_s_do_diag / date_s_diag
+    (fallback на даты самой оценки RegInteractivOcenka).
+
+    GET: /api/estimation/price_approval_dates_by_worksheet/<rlk_uin>/
+         или ?rlk_uin= / ?Uin= / ?uin=
+    POST: {"Uin": "..."} / {"RlkUin": "..."} / {"Worksheet": {"Uin": "..."}}
+    """
+    uin = _parse_rlk_uin_from_request(request, rlk_uin)
+    if not uin:
+        return JsonResponse({'error': 'rlk_uin required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    interactiv_rlk, miss = _resolve_interactiv_rlk_by_uin(uin)
+    if miss == 'worksheet':
+        return JsonResponse(
+            {'error': 'Worksheet not found', 'Uin': uin},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if miss == 'estimation' or interactiv_rlk is None:
+        return JsonResponse(
+            {'error': 'Estimation not found for worksheet', 'Uin': uin},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    estimation = getattr(interactiv_rlk, 'estimation', None)
+    date_before = (
+        getattr(interactiv_rlk, 'date_s_do_diag', None)
+        or getattr(estimation, 'date_s_do_diag', None)
+    )
+    date_after = (
+        getattr(interactiv_rlk, 'date_s_diag', None)
+        or getattr(estimation, 'date_s_diag', None)
+    )
+    rlk = getattr(interactiv_rlk, 'rlk', None)
+    soglasovanie = getattr(interactiv_rlk, 'page_soglasovanie', None)
+
+    return JsonResponse(
+        {
+            'status': 'ok',
+            'Uin': uin,
+            'RlkId': getattr(rlk, 'pk', None),
+            'RlkNomer': getattr(rlk, 'nomer', None) or '',
+            'EstimationId': getattr(estimation, 'pk', None),
+            'InteractivRlkId': interactiv_rlk.pk,
+            # Даты согласования цены
+            'DatePriceApprovalBeforeKd': _dt_iso(date_before),
+            'DatePriceApprovalAfterKd': _dt_iso(date_after),
+            'date_s_do_diag': _dt_iso(date_before),
+            'date_s_diag': _dt_iso(date_after),
+            # Цены на момент согласования (для удобства 1С)
+            'PriceBeforeKd': getattr(soglasovanie, 'price_before_kd', None) or 0,
+            'PriceAfterKd': getattr(soglasovanie, 'price_after_kd', None) or 0,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(['GET'])

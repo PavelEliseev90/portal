@@ -59,15 +59,6 @@
       </datalist>
     </div>
     {% endif %}
-    {% if params.type_receptions %}
-    <div class="col-6 col-md-3 col-lg-2">
-      <div class="metric-card-label-portal">Тип приёма</div>
-      <input type="text" class="form-control" name="type_reception" value="{{ params.filters.type_reception }}" list="aspTypeReceptionList" autocomplete="off">
-      <datalist id="aspTypeReceptionList">
-        {% for t in params.type_receptions %}<option value="{{ t }}">{% endfor %}
-      </datalist>
-    </div>
-    {% endif %}
     <div class="col-6 col-md-3 col-lg-2">
       <div class="metric-card-label-portal">Клиент</div>
       <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="клиент" autocomplete="off">
@@ -78,6 +69,9 @@
     </div>
     <div class="col-sm-12 col-md-6 col-lg-4">
       {% include 'includes/portal_multi_checkbox_filter.html' with prefix='aspUnit' field_name='unit' label='Подразделения ОП АСП' placeholder='Поиск по подразделениям...' items=params.units_qs selected_ids=params.filters.unit_ids hint='Пустой выбор = все подразделения ОП АСП' empty_text='Нет подразделений направления «Отдел продаж АСП»' %}
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix='aspTypeReception' field_name='type_reception' label='Тип приёма' placeholder='Поиск по типу приёма...' items=params.type_receptions_qs selected_ids=params.filters.type_reception_ids hint='Пустой выбор = все типы приёма' empty_text='Нет типов приёма' %}
     </div>
   </div>
 

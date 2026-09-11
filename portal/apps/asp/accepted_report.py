@@ -12,6 +12,7 @@ from asp.report_common import (
     aggregate_groups,
     aggregate_totals,
     allowed_unit_ids,
+    apply_type_reception_filter,
     details_payload,
     money,
     paginate_values_qs,
@@ -21,7 +22,6 @@ from asp.report_common import (
 )
 from asp.report_table import resolve_order_by
 from documents.models import DocLO
-from refs.models import RefTypeReceptionCarsOrganization
 
 SUM_MAP = {
     'cost_price': sum_money('cost_price'),
@@ -118,9 +118,7 @@ def filtered_accepted_qs(filters: dict[str, Any]):
     person = filters.get('person') or ''
     if person:
         qs = qs.filter(report_staff_name__icontains=person)
-    type_reception = filters.get('type_reception') or ''
-    if type_reception:
-        qs = qs.filter(type_reception__name__icontains=type_reception)
+    qs = apply_type_reception_filter(qs, filters, 'type_reception_id')
     client = filters.get('client') or ''
     if client:
         qs = qs.filter(Q(clientName__icontains=client) | Q(customer__name__icontains=client))
@@ -303,10 +301,6 @@ def build_accepted_report(get) -> dict[str, Any]:
                 g['label'] = 'Без оценщика'
         truncated = False
 
-    type_receptions = list(
-        RefTypeReceptionCarsOrganization.objects.exclude(name='').order_by('name').values_list('name', flat=True)[:50]
-    )
-
     return report_shell(
         filters=filters,
         totals=totals,
@@ -320,7 +314,6 @@ def build_accepted_report(get) -> dict[str, Any]:
         paginator=paginator,
         truncated=truncated,
         extra={
-            'type_receptions': type_receptions,
             'show_dates': True,
             'details_url': '/asp/reports/accepted/',
         },

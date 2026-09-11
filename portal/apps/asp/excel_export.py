@@ -92,6 +92,23 @@ def _fmt_filter_sheet(ws, title: str, filters: dict, totals: dict, extra_lines: 
         ws.append(['Модель', filters['model']])
     if filters.get('person'):
         ws.append(['Сотрудник', filters['person']])
+    tr_ids = filters.get('type_reception_ids') or []
+    if tr_ids:
+        from refs.models import RefTypeReceptionCarsOrganization
+        names = list(
+            RefTypeReceptionCarsOrganization.objects
+            .filter(pk__in=tr_ids)
+            .order_by('name')
+            .values_list('name', flat=True)
+        )
+        ws.append(['Тип приёма', ', '.join(names) if names else ', '.join(str(i) for i in tr_ids)])
+    unit_ids = filters.get('unit_ids') or []
+    if unit_ids:
+        from refs.models import RefUnit
+        names = list(
+            RefUnit.objects.filter(pk__in=unit_ids).order_by('name').values_list('name', flat=True)
+        )
+        ws.append(['Подразделения', ', '.join(names) if names else ', '.join(str(i) for i in unit_ids)])
     ws.append([])
     ws.append(['Показатель', 'Значение'])
     for key, val in (totals or {}).items():

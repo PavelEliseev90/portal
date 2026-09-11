@@ -11,6 +11,7 @@ from asp.report_common import (
     aggregate_groups,
     aggregate_totals,
     allowed_unit_ids,
+    apply_type_reception_filter,
     details_payload,
     money,
     paginate_values_qs,
@@ -52,9 +53,7 @@ def filtered_stock_qs(filters: dict[str, Any]):
     person = filters.get('person') or ''
     if person:
         qs = qs.filter(lo__staff__name__icontains=person)
-    type_reception = filters.get('type_reception') or ''
-    if type_reception:
-        qs = qs.filter(type_reception__name__icontains=type_reception)
+    qs = apply_type_reception_filter(qs, filters, 'type_reception_id')
     type_sale = filters.get('type_sale') or ''
     if type_sale:
         qs = qs.filter(type_sale__name__icontains=type_sale)
