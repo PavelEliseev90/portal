@@ -681,8 +681,8 @@ class RefUnit(models.Model):
         return info
 
     def blocks_portal_estimation(self):
-        """Подразделение переведено на Альфа-Авто — оценка на портале недоступна."""
-        return self.alfa_auto_transition_date is not None
+        """Нельзя использовать для оценки на портале (см. unit_blocks_portal_estimation)."""
+        return unit_blocks_portal_estimation(self)
 
     def save(self, *args, **kwargs):
         self.name_search = self.name.upper()
@@ -707,15 +707,39 @@ class RefUnit(models.Model):
         verbose_name_plural = "Подразделения"
 
 
+def _portal_estimation_today():
+    """Локальная «сегодня» для отбора по дате перехода на Альфа-Авто."""
+    try:
+        from django.utils import timezone
+        return timezone.localdate()
+    except Exception:
+        from datetime import date
+        return date.today()
+
+
 def unit_blocks_portal_estimation(unit):
-    """True, если подразделение нельзя использовать для оценки на портале."""
+    """True, если подразделение нельзя использовать для оценки на портале.
+
+    Логика как в отчёте принятых (разрез Корс/Альфа по дате перехода):
+    - даты перехода нет → доступно;
+    - не Альфа и сегодня >= даты перехода → недоступно;
+    - Альфа и сегодня < даты перехода → недоступно;
+    - Альфа и сегодня >= даты перехода → доступно.
+    """
     if unit is None:
         return False
-    return bool(getattr(unit, 'alfa_auto_transition_date', None))
+    transition = getattr(unit, 'alfa_auto_transition_date', None)
+    if transition is None:
+        return False
+    today = _portal_estimation_today()
+    is_alfa = bool(getattr(getattr(unit, 'ib', None), 'alfa', False))
+    if is_alfa:
+        return today < transition
+    return today >= transition
 
 
 def rlk_blocks_portal_estimation(rlk):
-    """True, если по РЛ нельзя начинать оценку на портале (unit или unit_dc на Альфа-Авто)."""
+    """True, если по РЛ нельзя начинать оценку на портале (unit или unit_dc)."""
     if rlk is None:
         return False
     for attr in ('unit', 'unit_dc'):
@@ -725,8 +749,23 @@ def rlk_blocks_portal_estimation(rlk):
 
 
 def filter_units_available_for_portal_estimation(qs):
-    """Исключить подразделения с заполненной датой перехода на Альфа-Авто."""
-    return qs.filter(alfa_auto_transition_date__isnull=True)
+    """Подразделения, доступные для выбора в оценке на портале.
+
+    Без даты перехода — все подходящие по прочим фильтрам.
+    Не Альфа: скрываем с даты перехода (сегодня >= дата).
+    Альфа: показываем с даты перехода (сегодня >= дата).
+    """
+    from django.db.models import Q
+
+    today = _portal_estimation_today()
+    return qs.filter(
+        Q(alfa_auto_transition_date__isnull=True)
+        | Q(ib__alfa=True, alfa_auto_transition_date__lte=today)
+        | (
+            (Q(ib__alfa=False) | Q(ib__isnull=True))
+            & Q(alfa_auto_transition_date__gt=today)
+        )
+    )
 
 
 #Организации (Фирмы)
