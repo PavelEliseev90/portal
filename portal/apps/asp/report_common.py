@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
-from django.db.models import Count, F, FloatField, Sum, Value
+from django.db.models import Count, F, FloatField, Q, Sum, Value
 from django.db.models.functions import Coalesce, Trim
 from django.utils import timezone
 
@@ -128,6 +128,39 @@ def asp_sales_units_qs():
     return RefUnit.objects.filter(pk__in=ids).select_related('city', 'direction').order_by('name')
 
 
+def asp_type_receptions_qs():
+    from refs.models import RefTypeReceptionCarsOrganization
+    return (
+        RefTypeReceptionCarsOrganization.objects
+        .exclude(name='')
+        .order_by('name')
+    )
+
+
+def asp_type_reception_ids() -> list[int]:
+    return list(asp_type_receptions_qs().values_list('pk', flat=True))
+
+
+def _parse_multi_ids(get, *keys: str) -> list[int]:
+    getlist = getattr(get, 'getlist', None)
+    raw = []
+    if callable(getlist):
+        for key in keys:
+            raw.extend(list(getlist(key)))
+            raw.extend(list(getlist(f'{key}[]')))
+    else:
+        for key in keys:
+            for k in (key, f'{key}[]'):
+                val = get.get(k)
+                if val is None:
+                    continue
+                if isinstance(val, (list, tuple)):
+                    raw.extend(val)
+                else:
+                    raw.append(val)
+    return parse_int_ids(raw)
+
+
 def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
     raw_from = get.get('date_from') or get.get('date_start')
     raw_to = get.get('date_to') or get.get('date_end')
@@ -141,29 +174,17 @@ def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
     if default_month and not has_date_params and date_from is None and date_to is None:
         date_from, date_to = month_bounds()
 
-    getlist = getattr(get, 'getlist', None)
-    if callable(getlist):
-        unit_raw = (
-            list(getlist('unit[]'))
-            + list(getlist('unit'))
-            + list(getlist('unit_ids'))
-            + list(getlist('unit_id'))
-        )
-    else:
-        unit_raw = []
-        for key in ('unit[]', 'unit', 'unit_ids', 'unit_id'):
-            val = get.get(key)
-            if val is None:
-                continue
-            if isinstance(val, (list, tuple)):
-                unit_raw.extend(val)
-            else:
-                unit_raw.append(val)
-
-    unit_ids = parse_int_ids(unit_raw)
-    allowed = set(asp_sales_unit_ids())
+    unit_ids = _parse_multi_ids(get, 'unit', 'unit_ids', 'unit_id')
+    allowed_units = set(asp_sales_unit_ids())
     if unit_ids:
-        unit_ids = [uid for uid in unit_ids if uid in allowed]
+        unit_ids = [uid for uid in unit_ids if uid in allowed_units]
+
+    type_reception_ids = _parse_multi_ids(
+        get, 'type_reception', 'type_reception_ids', 'type_reception_id',
+    )
+    allowed_tr = set(asp_type_reception_ids())
+    if type_reception_ids:
+        type_reception_ids = [tid for tid in type_reception_ids if tid in allowed_tr]
 
     view_mode = (get.get('view') or 'main').strip()
     if view_mode not in {m[0] for m in VIEW_MODES}:
@@ -173,12 +194,12 @@ def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
         'date_from': date_from,
         'date_to': date_to,
         'unit_ids': unit_ids,
+        'type_reception_ids': type_reception_ids,
         'vin': (get.get('vin') or '').strip(),
         'mark': (get.get('mark') or '').strip(),
         'model': (get.get('model') or '').strip(),
         'status': (get.get('status') or '').strip(),
         'person': (get.get('person') or '').strip(),
-        'type_reception': (get.get('type_reception') or '').strip(),
         'type_sale': (get.get('type_sale') or '').strip(),
         'client': (get.get('client') or '').strip(),
         'nomer': (get.get('nomer') or '').strip(),
@@ -193,6 +214,26 @@ def parse_common_filters(get, *, default_month: bool = False) -> dict[str, Any]:
 
 def allowed_unit_ids(filters: dict[str, Any]) -> list[int]:
     return filters.get('unit_ids') or asp_sales_unit_ids() or [-1]
+
+
+def allowed_type_reception_ids(filters: dict[str, Any]) -> list[int]:
+    """Пустой выбор = без ограничения (все типы приёма)."""
+    return list(filters.get('type_reception_ids') or [])
+
+
+def apply_type_reception_filter(qs, filters: dict[str, Any], *field_names: str):
+    """Фильтр по выбранным типам приёма. Несколько field_names — OR по полям."""
+    ids = allowed_type_reception_ids(filters)
+    if not ids:
+        return qs
+    if not field_names:
+        field_names = ('type_reception_id',)
+    if len(field_names) == 1:
+        return qs.filter(**{f'{field_names[0]}__in': ids})
+    q = Q()
+    for field in field_names:
+        q |= Q(**{f'{field}__in': ids})
+    return qs.filter(q)
 
 
 def build_query_string(
@@ -215,8 +256,11 @@ def build_query_string(
     if 'unit_ids' not in exclude_set:
         for uid in filters.get('unit_ids') or []:
             pairs.append(('unit', str(uid)))
+    if 'type_reception_ids' not in exclude_set:
+        for tid in filters.get('type_reception_ids') or []:
+            pairs.append(('type_reception', str(tid)))
     keys = (
-        'vin', 'mark', 'model', 'status', 'person', 'type_reception', 'type_sale',
+        'vin', 'mark', 'model', 'status', 'person', 'type_sale',
         'client', 'nomer', 'days_from', 'days_to', 'view', 'order_by',
     ) + tuple(extra_keys)
     for key in keys:
@@ -233,12 +277,12 @@ def filters_for_template(filters: dict[str, Any]) -> dict[str, Any]:
         'date_from': filters['date_from'].isoformat() if filters.get('date_from') else '',
         'date_to': filters['date_to'].isoformat() if filters.get('date_to') else '',
         'unit_ids': filters.get('unit_ids') or [],
+        'type_reception_ids': filters.get('type_reception_ids') or [],
         'vin': filters.get('vin') or '',
         'mark': filters.get('mark') or '',
         'model': filters.get('model') or '',
         'status': filters.get('status') or '',
         'person': filters.get('person') or '',
-        'type_reception': filters.get('type_reception') or '',
         'type_sale': filters.get('type_sale') or '',
         'client': filters.get('client') or '',
         'nomer': filters.get('nomer') or '',
@@ -374,6 +418,7 @@ def report_shell(
         'filters': filters_for_template(filters),
         'units': asp_sales_units_list(),
         'units_qs': asp_sales_units_qs(),
+        'type_receptions_qs': asp_type_receptions_qs(),
         'view_modes': VIEW_MODES,
         'view': view,
         'totals': totals,

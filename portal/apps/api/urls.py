@@ -128,6 +128,16 @@ urlpatterns = [
    path('worksheet/', views.worksheet_upsert, name='worksheet_upsert'),
    path('estimation/by_worksheet/', views.estimation_by_worksheet, name='estimation_by_worksheet'),
    path('estimation/by_worksheet/<str:rlk_uin>/', views.estimation_by_worksheet, name='estimation_by_worksheet_uin'),
+   path(
+      'estimation/price_approval_dates_by_worksheet/',
+      views.estimation_price_approval_dates_by_worksheet,
+      name='estimation_price_approval_dates_by_worksheet',
+   ),
+   path(
+      'estimation/price_approval_dates_by_worksheet/<str:rlk_uin>/',
+      views.estimation_price_approval_dates_by_worksheet,
+      name='estimation_price_approval_dates_by_worksheet_uin',
+   ),
 
    #Обмен с 1С по формату общего модуля ОбменДаннымиAPI в 1С
    path('exchange/',                views.exchange),
