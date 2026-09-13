@@ -199,17 +199,22 @@ def build_reception_check_sheet(*, estimation=None, rlk=None, page_reception=Non
     engine_label = ''
     body_label = ''
     gear_label = ''
-    if estimation and estimation.modification_autoru_id and estimation.modification_autoru:
-        mod = estimation.modification_autoru
-        if getattr(mod, 'typeEngine', None):
-            engine_label = mod.typeEngine.name or ''
-        if getattr(mod, 'typeBody', None):
-            body_label = mod.typeBody.name or ''
-        if getattr(mod, 'typeGear', None):
-            gear_label = mod.typeGear.name or ''
-        # модель ДВС из имени модификации, если есть
-        if not engine_number and (mod.name or ''):
-            pass
+    if estimation is not None:
+        if estimation.type_engine_id and estimation.type_engine:
+            engine_label = estimation.type_engine.name or ''
+        if estimation.type_body_id and estimation.type_body:
+            body_label = estimation.type_body.name or ''
+        if estimation.type_gear_id and estimation.type_gear:
+            gear_label = estimation.type_gear.name or ''
+        # fallback с модификации Auto.ru
+        if estimation.modification_id and estimation.modification:
+            mod = estimation.modification
+            if not engine_label and getattr(mod, 'typeEngine', None):
+                engine_label = mod.typeEngine.name or ''
+            if not body_label and getattr(mod, 'typeBody', None):
+                body_label = mod.typeBody.name or ''
+            if not gear_label and getattr(mod, 'typeGear', None):
+                gear_label = mod.typeGear.name or ''
 
     mileage = ''
     mileage_val = None
@@ -321,12 +326,15 @@ def estimation_reception_check_sheet_print(request, rlk_id):
     try:
         link = RegInteractivOcenkaRLK.objects.select_related(
             'estimation',
-            'estimation__modification_autoru',
-            'estimation__modification_autoru__typeEngine',
-            'estimation__modification_autoru__typeBody',
-            'estimation__modification_autoru__typeGear',
-            'estimation__modification_autoru__model',
-            'estimation__modification_autoru__model__mark',
+            'estimation__modification',
+            'estimation__modification__model',
+            'estimation__modification__model__mark',
+            'estimation__modification__typeEngine',
+            'estimation__modification__typeBody',
+            'estimation__modification__typeGear',
+            'estimation__type_body',
+            'estimation__type_engine',
+            'estimation__type_gear',
             'estimation__staff',
             'estimation__page_documents',
             'estimation__page_salon',
@@ -341,12 +349,15 @@ def estimation_reception_check_sheet_print(request, rlk_id):
             estimation = (
                 RegInteractivOcenka.objects
                 .select_related(
-                    'modification_autoru',
-                    'modification_autoru__typeEngine',
-                    'modification_autoru__typeBody',
-                    'modification_autoru__typeGear',
-                    'modification_autoru__model',
-                    'modification_autoru__model__mark',
+                    'modification',
+                    'modification__model',
+                    'modification__model__mark',
+                    'modification__typeEngine',
+                    'modification__typeBody',
+                    'modification__typeGear',
+                    'type_body',
+                    'type_engine',
+                    'type_gear',
                     'staff',
                     'page_documents',
                     'page_salon',
