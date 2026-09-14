@@ -403,6 +403,195 @@ body.has-auction-doc,
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* Header Right Column (Checklist + Actions) */
+.ad-header__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.65rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 991px) {
+    .ad-header__right {
+        align-items: stretch;
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   PRE-FLIGHT CHECKLIST WIDGET (Готовность к торгам)
+   ========================================================================== */
+.ad-preflight {
+    background: linear-gradient(135deg, rgba(24, 24, 30, 0.9) 0%, rgba(13, 13, 16, 0.96) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 0.55rem 0.85rem;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.25s var(--ad-ease);
+    width: 100%;
+    max-width: 440px;
+    box-sizing: border-box;
+}
+
+.ad-preflight.is-ready {
+    border-color: rgba(16, 185, 129, 0.45);
+    box-shadow: 0 4px 22px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(16, 185, 129, 0.2);
+}
+
+.ad-preflight--shake {
+    animation: adPreflightShake 0.5s ease-in-out;
+    border-color: rgba(245, 130, 32, 0.8) !important;
+    box-shadow: 0 0 20px rgba(245, 130, 32, 0.3) !important;
+}
+
+@keyframes adPreflightShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.ad-preflight__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.ad-preflight__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ad-preflight__radar-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.ad-preflight__title {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #e5e7eb;
+}
+
+.ad-preflight__score-pill {
+    font-family: var(--ad-font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    line-height: 1.2;
+    transition: all 0.2s ease;
+}
+
+.ad-preflight__score-pill.is-pending {
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
+}
+
+.ad-preflight__score-pill.is-mid {
+    background: rgba(245, 130, 32, 0.14);
+    border: 1px solid rgba(245, 130, 32, 0.38);
+    color: #ffaa5a;
+}
+
+.ad-preflight__score-pill.is-ready {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #34d399;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.ad-preflight__bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.35rem 0 0.45rem;
+}
+
+.ad-preflight__bar-fill {
+    height: 100%;
+    transition: width 0.35s ease, background 0.3s ease;
+    border-radius: 999px;
+}
+
+.ad-preflight__bar-fill.is-pending {
+    background: #ef4444;
+}
+
+.ad-preflight__bar-fill.is-mid {
+    background: linear-gradient(90deg, #f58220 0%, #ffaa5a 100%);
+}
+
+.ad-preflight__bar-fill.is-ready {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+}
+
+.ad-preflight__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 0.65rem;
+}
+
+@media (max-width: 575px) {
+    .ad-preflight__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ad-preflight__item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0.35rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+}
+
+.ad-preflight__item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ad-preflight__item:focus-visible {
+    outline: 1px solid var(--ad-accent);
+}
+
+.ad-preflight__item-icon {
+    font-size: 0.76rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.ad-preflight__item-text {
+    font-size: 0.72rem;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s ease;
+}
+
+.ad-preflight__item.is-ok .ad-preflight__item-text {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.ad-preflight__item.is-pending .ad-preflight__item-text {
+    color: #94a3b8;
+}
+
+.ad-preflight__item:hover .ad-preflight__item-text {
+    color: #ffffff;
+}
+
 /* Header Actions Toolbar */
 .ad-actions-toolbar {
     display: flex;
@@ -475,6 +664,44 @@ body.has-auction-doc,
 .ad-btn--success:hover {
     background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+}
+
+/* --- СТИЛЬ КНОПКИ "НА ТОРГИ" --- */
+.ad-btn--send {
+    position: relative;
+    transition: all 0.25s var(--ad-ease);
+}
+
+.ad-btn--send.is-ready {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(52, 211, 153, 0.7) !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.6), 0 0 32px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+    animation: adReadyPulse 2s infinite ease-in-out;
+}
+
+@keyframes adReadyPulse {
+    0%, 100% {
+        box-shadow: 0 0 14px rgba(16, 185, 129, 0.55), 0 0 28px rgba(16, 185, 129, 0.25);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(16, 185, 129, 0.85), 0 0 44px rgba(16, 185, 129, 0.45);
+        transform: scale(1.02);
+    }
+}
+
+.ad-btn--send.is-unready {
+    background: #11221a !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
+    color: #6ee7b7 !important;
+    opacity: 0.65;
+    box-shadow: none !important;
+}
+
+.ad-btn--send.is-unready:hover {
+    opacity: 0.9;
+    border-color: rgba(16, 185, 129, 0.5) !important;
 }
 
 .ad-btn--outline {

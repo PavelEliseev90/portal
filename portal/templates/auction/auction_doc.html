@@ -245,31 +245,66 @@
 				</div>
 			</div>
 
-			<!-- Quick Actions Toolbar -->
-			<div class="ad-actions-toolbar {% if params.auction.winner_price > 0 %}d-none{% endif %}">
-				{% if params.can_edit %}
-					<button type="submit" class="ad-btn ad-btn--primary" id="save" name="save">
-						<span class="icon-mbri-save"></span> Сохранить
-					</button>
-
-					{% if params.sends %}
-						<button type="submit" name="send" id="send" class="ad-btn ad-btn--success">
-							<span class="icon-mbri-play"></span> Отправить
-						</button>
-					{% endif %}
-
-					<a href="{{request.path}}auction_doc_refresh/" class="ad-btn ad-btn--outline" title="Обновить данные из 1С / ЕСО">
-						<span class="icon-mbri-update"></span> Обновить
-					</a>
-
-					{% if params.sends == False %}
-						<div class="ad-time-warning">
-							<span class="icon-mbri-alert"></span> Отправка лотов недоступна с 10:00 до 14:00
+			<!-- Header Right: Checklist + Actions -->
+			<div class="ad-header__right">
+				<!-- PRE-FLIGHT CHECKLIST WIDGET -->
+				<div class="ad-preflight {% if params.auction.winner_price > 0 %}d-none{% endif %}" id="ad_preflight">
+					<div class="ad-preflight__header">
+						<div class="ad-preflight__title-wrap">
+							<span class="ad-preflight__radar-icon">🎯</span>
+							<span class="ad-preflight__title">Готовность к торгам</span>
 						</div>
+						<span class="ad-preflight__score-pill" id="preflight_score">0 / 4</span>
+					</div>
+					<div class="ad-preflight__bar">
+						<div class="ad-preflight__bar-fill" id="preflight_progress" style="width: 0%;"></div>
+					</div>
+					<div class="ad-preflight__grid">
+						<div class="ad-preflight__item is-pending" id="preflight_car" role="button" tabindex="0" title="Нажмите, чтобы добавить или просмотреть авто">
+							<span class="ad-preflight__item-icon">⚠️</span>
+							<span class="ad-preflight__item-text">Автомобиль прикреплён</span>
+						</div>
+						<div class="ad-preflight__item is-pending" id="preflight_photos" role="button" tabindex="0" title="Нажмите, чтобы настроить фотографии">
+							<span class="ad-preflight__item-icon">⚠️</span>
+							<span class="ad-preflight__item-text">Фотографии загружены</span>
+						</div>
+						<div class="ad-preflight__item is-pending" id="preflight_price" role="button" tabindex="0" title="Нажмите, чтобы указать стартовую цену">
+							<span class="ad-preflight__item-icon">⚠️</span>
+							<span class="ad-preflight__item-text">Стартовая цена указана</span>
+						</div>
+						<div class="ad-preflight__item is-pending" id="preflight_start" role="button" tabindex="0" title="Нажмите, чтобы назначить дату старта">
+							<span class="ad-preflight__item-icon">⚠️</span>
+							<span class="ad-preflight__item-text">Дата старта назначена</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Actions Toolbar -->
+				<div class="ad-actions-toolbar {% if params.auction.winner_price > 0 %}d-none{% endif %}">
+					{% if params.can_edit %}
+						<button type="submit" class="ad-btn ad-btn--primary" id="save" name="save">
+							<span class="icon-mbri-save"></span> Сохранить
+						</button>
+
+						{% if params.sends %}
+							<button type="submit" name="send" id="send" class="ad-btn ad-btn--success ad-btn--send">
+								<span class="icon-mbri-play"></span> На торги
+							</button>
+						{% endif %}
+
+						<a href="{{request.path}}auction_doc_refresh/" class="ad-btn ad-btn--outline" title="Обновить данные из 1С / ЕСО">
+							<span class="icon-mbri-update"></span> Обновить
+						</a>
+
+						{% if params.sends == False %}
+							<div class="ad-time-warning">
+								<span class="icon-mbri-alert"></span> Отправка лотов недоступна с 10:00 до 14:00
+							</div>
+						{% endif %}
+					{% else %}
+						<span class="text-muted small">Режим просмотра. Создание и редактирование недоступны.</span>
 					{% endif %}
-				{% else %}
-					<span class="text-muted small">Режим просмотра. Создание и редактирование недоступны.</span>
-				{% endif %}
+				</div>
 			</div>
 		</div>
 

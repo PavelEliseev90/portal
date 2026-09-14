@@ -16,6 +16,7 @@ $(document).ready(function() {
     initDateTimePicker();
     refresh_board();
     initAuctionBids();
+    initPreflightChecklist();
 
     // Price input real-time calculation
     $('#price_start').on('input change', function() {
@@ -277,6 +278,206 @@ function refresh_board() {
         $('#save').addClass('d-none');
         $('#send').addClass('d-none');
         $('#update').addClass('d-none');
+    }
+
+    checkPreflight();
+}
+
+/* ==========================================================================
+   PRE-FLIGHT CHECKLIST (Готовность лота к торгам)
+   ========================================================================== */
+function initPreflightChecklist() {
+    var $preflight = $('#ad_preflight');
+    if (!$preflight.length) return;
+
+    // Listen to changes on relevant fields
+    $('#dateStart').on('change input', function() {
+        checkPreflight();
+    });
+
+    $('#price_start').on('input change keyup', function() {
+        checkPreflight();
+    });
+
+    $(document).on('change', 'input[type="checkbox"][id*="_photo_"]', function() {
+        checkPreflight();
+    });
+
+    $(document).on('change', 'input[type="file"][id*="images_"]', function() {
+        checkPreflight();
+    });
+
+    // Item click navigation for interactive quick fix
+    $('#preflight_car').on('click', function() {
+        if ($('#add_cars').length && $('#add_cars').is(':visible')) {
+            $('#add_cars').trigger('click');
+        } else if ($('#no_cars button').length && $('#no_cars button').is(':visible')) {
+            $('#no_cars button').trigger('click');
+        } else if ($('#cars').length) {
+            $('html, body').animate({ scrollTop: $('#cars').offset().top - 90 }, 350);
+        }
+    });
+
+    $('#preflight_photos').on('click', function() {
+        var $editBtn = $('.ad-car-actions-row button[id*="edit_car_info_"]').first();
+        if ($editBtn.length) {
+            $editBtn.trigger('click');
+            setTimeout(function() {
+                $('.ad-tab-btn[data-target*="tab_gallery_"]').first().trigger('click');
+            }, 250);
+        } else if ($('#cars').length) {
+            $('html, body').animate({ scrollTop: $('#cars').offset().top - 90 }, 350);
+        }
+    });
+
+    $('#preflight_price').on('click', function() {
+        if ($('#price_start').length) {
+            $('html, body').animate({ scrollTop: $('#price_start').offset().top - 140 }, 350, function() {
+                $('#price_start').focus().select();
+            });
+        }
+    });
+
+    $('#preflight_start').on('click', function() {
+        if ($('#ad_dt_trigger').length) {
+            $('html, body').animate({ scrollTop: $('#ad_dt_trigger').offset().top - 140 }, 350, function() {
+                $('#ad_dt_trigger').trigger('click');
+            });
+        }
+    });
+
+    // Intercept submit on "На торги" button if not ready
+    $(document).on('click', '#send', function(e) {
+        if ($(this).hasClass('is-unready')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var $widget = $('#ad_preflight');
+            $widget.removeClass('ad-preflight--shake');
+            // Force reflow
+            if ($widget.length && $widget[0]) {
+                void $widget[0].offsetWidth;
+            }
+            $widget.addClass('ad-preflight--shake');
+
+            showAuctionToast('Заполните все 4 пункта чек-листа готовности перед отправкой лота на торги!', 'Внимание', 'warning');
+            return false;
+        }
+    });
+
+    checkPreflight();
+}
+
+function checkPreflight() {
+    var $preflight = $('#ad_preflight');
+    if (!$preflight.length) return;
+
+    var carCards = $('[id*="cars_list_data_id_"]');
+    var carCount = carCards.length;
+    var hasCar = carCount > 0;
+
+    // Photos check
+    var hasPhotos = false;
+    if (hasCar) {
+        carCards.each(function() {
+            var $thumb = $(this).find('.ad-car-thumb img');
+            if ($thumb.length && $thumb.attr('src') && $thumb.attr('src').indexOf('nophoto') === -1 && $thumb.css('display') !== 'none') {
+                hasPhotos = true;
+            }
+            var slug = this.id.replace('cars_list_data_id_', '');
+            var $modal = $('#cars_list_data_slug_' + slug + '_modal');
+            if ($modal.length) {
+                if ($modal.find('.ad-photo-tile').length > 0) {
+                    hasPhotos = true;
+                }
+                if ($modal.find('input[type="checkbox"][name*="_photo_"]:checked').length > 0) {
+                    hasPhotos = true;
+                }
+            }
+        });
+    }
+
+    // Price check
+    var priceStart = parseFloat($('#price_start').val()) || 0;
+    var minPrice = parseFloat($('#price_start').attr('min')) || 0;
+    var hasPrice = priceStart > 0 && (minPrice === 0 || priceStart >= minPrice);
+
+    // Date start check
+    var dateStartVal = ($('#dateStart').val() || '').trim();
+    var hasDateStart = dateStartVal.length > 0;
+
+    var items = [
+        {
+            $el: $('#preflight_car'),
+            ok: hasCar,
+            textOk: 'Автомобиль прикреплён',
+            textWarn: 'Автомобиль не прикреплён'
+        },
+        {
+            $el: $('#preflight_photos'),
+            ok: hasPhotos,
+            textOk: 'Фотографии загружены',
+            textWarn: 'Фотографии не загружены'
+        },
+        {
+            $el: $('#preflight_price'),
+            ok: hasPrice,
+            textOk: hasPrice ? ('Стартовая цена: ' + new Intl.NumberFormat('ru-RU').format(priceStart) + ' ₽') : 'Стартовая цена указана',
+            textWarn: 'Стартовая цена не указана'
+        },
+        {
+            $el: $('#preflight_start'),
+            ok: hasDateStart,
+            textOk: 'Дата старта назначена',
+            textWarn: 'Дата старта не назначена'
+        }
+    ];
+
+    var score = 0;
+    items.forEach(function(item) {
+        if (!item.$el.length) return;
+        if (item.ok) {
+            score++;
+            item.$el.removeClass('is-pending').addClass('is-ok');
+            item.$el.find('.ad-preflight__item-icon').text('✅');
+            item.$el.find('.ad-preflight__item-text').text(item.textOk);
+        } else {
+            item.$el.removeClass('is-ok').addClass('is-pending');
+            item.$el.find('.ad-preflight__item-icon').text('⚠️');
+            item.$el.find('.ad-preflight__item-text').text(item.textWarn);
+        }
+    });
+
+    var pct = Math.round((score / 4) * 100);
+    var $fill = $('#preflight_progress');
+    var $score = $('#preflight_score');
+
+    $fill.css('width', pct + '%');
+
+    if (score === 4) {
+        $score.text('4 / 4 • Готов!').removeClass('is-pending is-mid').addClass('is-ready');
+        $fill.removeClass('is-pending is-mid').addClass('is-ready');
+        $preflight.removeClass('is-incomplete').addClass('is-ready');
+    } else if (score >= 2) {
+        $score.text(score + ' / 4').removeClass('is-pending is-ready').addClass('is-mid');
+        $fill.removeClass('is-pending is-ready').addClass('is-mid');
+        $preflight.removeClass('is-ready').addClass('is-incomplete');
+    } else {
+        $score.text(score + ' / 4').removeClass('is-mid is-ready').addClass('is-pending');
+        $fill.removeClass('is-mid is-ready').addClass('is-pending');
+        $preflight.removeClass('is-ready').addClass('is-incomplete');
+    }
+
+    // "На торги" Button Highlight & state
+    var $sendBtn = $('#send');
+    if ($sendBtn.length) {
+        if (score === 4) {
+            $sendBtn.removeClass('is-unready').addClass('is-ready');
+            $sendBtn.attr('title', 'Все пункты выполнены! Нажмите для отправки лота на торги');
+        } else {
+            $sendBtn.removeClass('is-ready').addClass('is-unready');
+            $sendBtn.attr('title', 'Выполните все 4 пункта чек-листа готовности для отправки на торги (' + score + '/4)');
+        }
     }
 }
 
