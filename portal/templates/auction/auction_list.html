@@ -376,16 +376,59 @@
                         </div>
                     </td>
                     <td data-label="Стоянка">
-                        <div class="af-place">
-                            <strong>{{ object.store.name }}</strong>
-                            <span class="af-place__sub">{{ object.user.last_name }} {{ object.user.first_name }}</span>
+                        <div class="af-place-col">
+                            <div class="af-place-entry af-place-entry--store">
+                                <span class="af-place-lbl">
+                                    <svg class="af-place-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                    Стоянка
+                                </span>
+                                <div class="af-place-store">
+                                    {{ object.store.name|default:"Не указана" }}
+                                </div>
+                            </div>
+                            <div class="af-place-entry af-place-entry--user">
+                                <span class="af-place-lbl">
+                                    <svg class="af-place-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    Ответственный
+                                </span>
+                                <div class="af-place-user">
+                                    {% if object.user %}
+                                        {{ object.user.last_name }} {{ object.user.first_name }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </td>
                     <td data-label="Цена">
-                        <div class="af-price">{{ object.start_price|floatformat:"2g" }} ₽</div>
-                        {% if object.winner_name %}
-                        <div class="af-winner">
-                            {{ object.winner_name }} · {{ object.winner_price|floatformat:"2g" }} ₽
+                        {% if object.is_finished or object.winner_price > 0 %}
+                        <div class="af-price-col af-price-col--finished">
+                            <div class="af-price-entry">
+                                <span class="af-price-lbl af-price-lbl--win">Победная ставка</span>
+                                <div class="af-price af-price--win">
+                                    {{ object.winner_price|floatformat:"2g" }} ₽
+                                    {% if object.winner_delta > 0 %}
+                                    <span class="af-price-delta" title="Прирост к стартовой ставке">+{{ object.winner_delta|floatformat:"2g" }} ₽</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="af-price-entry af-price-entry--start">
+                                <span class="af-price-lbl">Начальная ставка</span>
+                                <div class="af-price-start">{{ object.start_price|floatformat:"2g" }} ₽</div>
+                            </div>
+                            {% if object.winner_name %}
+                            <div class="af-winner" title="Победитель: {{ object.winner_name }}">
+                                👤 {{ object.winner_name }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="af-price-col">
+                            <div class="af-price-entry">
+                                <span class="af-price-lbl">Начальная ставка</span>
+                                <div class="af-price">{{ object.start_price|floatformat:"2g" }} ₽</div>
+                            </div>
                         </div>
                         {% endif %}
                     </td>
