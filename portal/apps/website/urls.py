@@ -105,8 +105,8 @@ urlpatterns = [
    path('voice_recorders/<id>/',       views.voice_recorder, name='id'),
 
    # Рабочие листы
-   path('docs_rlk/',                   views.docs_rlk),
-   path('docs_rlk/<id>/',              views.doc_rlk, name='id'),
+   path('docs_rlk/',                   views.docs_rlk, name='docs_rlk'),
+   path('docs_rlk/<id>/',              views.doc_rlk, name='doc_rlk'),
 
 
    path('docs_zn/',                    views.docs_zn),

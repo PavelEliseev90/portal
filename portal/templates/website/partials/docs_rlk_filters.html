@@ -1,0 +1,120 @@
+{% comment %}
+  Фильтры списка рабочих листов ОП (в стиле отчёта кумулятивной маржи).
+{% endcomment %}
+<form class="asp-rep-filter" method="get" id="docsRlkFilters" action="{{ params.list_path }}">
+  {% if params.filters.order_by %}<input type="hidden" name="order_by" value="{{ params.filters.order_by }}">{% endif %}
+  <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
+  <div class="row g-3">
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Период с</div>
+      <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">по</div>
+      <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">VIN</div>
+      <input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Номер РЛК</div>
+      <input type="text" class="form-control" name="nomer" value="{{ params.filters.nomer }}" placeholder="Номер" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Марка</div>
+      <input type="text" class="form-control" name="mark" value="{{ params.filters.mark }}" placeholder="Марка" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Модель</div>
+      <input type="text" class="form-control" name="model" value="{{ params.filters.model }}" placeholder="Модель" autocomplete="off">
+    </div>
+
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Менеджер</div>
+      <input type="text" class="form-control" name="person" value="{{ params.filters.person }}" placeholder="ФИО менеджера" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Клиент</div>
+      <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="Клиент" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Телефон</div>
+      <input type="text" class="form-control" name="phone" value="{{ params.filters.phone }}" placeholder="Телефон" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Статус</div>
+      <select class="form-select" name="status_id">
+        <option value="">Все статусы</option>
+        {% for s in params.statuses_qs %}
+          <option value="{{ s.id }}" {% if params.filters.status_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Вид контакта</div>
+      <select class="form-select" name="contact_type_id">
+        <option value="">Все виды</option>
+        {% for ct in params.contact_types_qs %}
+          <option value="{{ ct.id }}" {% if params.filters.contact_type_id == ct.id %}selected{% endif %}>{{ ct.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Тип РЛ</div>
+      <select class="form-select" name="type_id">
+        <option value="">Все типы</option>
+        {% for t in params.types_qs %}
+          <option value="{{ t.id }}" {% if params.filters.type_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Архив</div>
+      <select class="form-select" name="archive">
+        <option value="" {% if not params.filters.archive %}selected{% endif %}>Все</option>
+        <option value="active" {% if params.filters.archive == 'active' or params.filters.archive == '0' or params.filters.archive == 'false' %}selected{% endif %}>Только в работе</option>
+        <option value="archived" {% if params.filters.archive == 'archived' or params.filters.archive == '1' or params.filters.archive == 'true' %}selected{% endif %}>Только в архиве</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Направление</div>
+      <select class="form-select" name="eco">
+        <option value="" {% if not params.filters.eco %}selected{% endif %}>Все</option>
+        <option value="op" {% if params.filters.eco == 'op' or params.filters.eco == '0' or params.filters.eco == 'false' %}selected{% endif %}>Только ОП</option>
+        <option value="eco" {% if params.filters.eco == 'eco' or params.filters.eco == '1' or params.filters.eco == 'true' %}selected{% endif %}>Оценка / Trade-in</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Упущенные</div>
+      <select class="form-select" name="is_missed">
+        <option value="" {% if not params.filters.is_missed %}selected{% endif %}>Все</option>
+        <option value="missed" {% if params.filters.is_missed == 'missed' or params.filters.is_missed == '1' or params.filters.is_missed == 'true' %}selected{% endif %}>Только упущенные</option>
+        <option value="no" {% if params.filters.is_missed == 'no' or params.filters.is_missed == '0' or params.filters.is_missed == 'false' %}selected{% endif %}>Без упущенных</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-6 col-lg-6">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix='docsRlkUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units_qs selected_ids=params.filters.unit_ids hint='Пустой выбор = все подразделения' empty_text='Нет подразделений' %}
+    </div>
+  </div>
+
+  <div class="row g-2 align-items-center mt-3">
+    <div class="col-auto">
+      <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    <div class="col-auto">
+      <a class="btn-calculate-secondary-sm" href="{{ params.list_path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+    </div>
+    <div class="col-auto ms-md-auto d-flex flex-wrap gap-2">
+      <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalAspColumns" title="Настроить столбцы таблицы">
+        <span class="icon-mbri-setting"></span> Столбцы
+      </button>
+      <a class="btn-calculate-secondary-sm" href="{{ params.export_url }}" title="Выгрузить в Excel">
+        <span class="icon-mbri-download"></span> Excel
+      </a>
+    </div>
+  </div>
+
+  {% include 'website/partials/docs_car_saved_filters.html' %}
+</form>

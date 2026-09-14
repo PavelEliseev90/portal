@@ -2928,96 +2928,13 @@ def record_strip(id, start, end, nomer, comment, times):
 @login_required
 def docs_rlk(request):
     if not request.user.is_authenticated:
-        return HttpResponseRedirect('/')
-    else:
-        countListRecord = 15
-        
-        filter_count = 0
-
-        name    = ''
-        toast   = ''
-        date    = ''
-
-        docs    = DocRLK.objects.all()
-
-        units_selected  = RefUnit.objects.filter(buauto = False).exclude(name = 'ЕЦО ГК').exclude(name = 'Основное подразделение') | RefUnit.objects.filter(buauto = True).filter(name__icontains = 'корсавто')
-        units_selected  = units_selected.order_by('name')
-       
-        date            = request.GET.get('date', '')
-        name            = request.GET.get('name', '')
-        organization    = request.GET.get('organization', '')
-        closed          = request.GET.get('closed', '')
-        new             = request.GET.get('new', '')
-        unit_id         = request.GET.get('unit_id', '')
-
-
-        if len(date) == 0:
-            date_period = DT.datetime.now()
-            date_start 	= date_period.replace(day = 1, hour = 0, minute=0, second=0, microsecond=0)
-            if date_period.month > 11:
-                month_end	= 1
-                year_end 	= date_period.year + 1
-            else:
-                month_end	= date_period.month + 1
-                year_end 	= date_period.year
-            date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-        else:
-            dates = date.split('-')
-            if len(dates) == 2:
-                year 	        = int(dates[0])
-                month 	        = int(dates[1])
-                date_period     = DT.datetime.now()
-                date_start 	    = date_period.replace(year = year, month = month, day = 1, hour = 0, minute=0, second=0, microsecond=0)
-                if month > 11:
-                    month_end 	= 1
-                    year_end 	= year + 1
-                else:
-                    month_end 	= month + 1 
-                    year_end 	= year
-                date_end 	= date_period.replace(year = year_end, month = month_end, day = 1, hour = 0, minute=0, second=0, microsecond=0)			
-        
-        date    = date_start
-
-        docs    = docs.filter(dataTime__gte = date_start).filter(dataTime__lt = date_end).order_by('-dataTime')
-        
-        filter_count = filter_count + 1
-
-        if len(unit_id) > 0:
-            filter_count = filter_count + 1
-            unit_id = int(unit_id)
-            docs = docs.filter(unit__id = unit_id)
-
-        count   = len(docs)
-        
-        page_number = request.GET.get('page')
-        
-        paginator   = Paginator(list(docs), countListRecord)
-        page_obj    = paginator.get_page(page_number)
-        
-        filtr = {
-            'name'          : name,
-            'date'          : date,
-            'organization'  : organization,
-            'new'           : new,
-            'closed'        : closed,
-            'unit_id'       : unit_id,
-            'filtr_count'   : filter_count
-        }
-
-        selected = {
-            'units' : units_selected
-        }
-        
-        params = {
-            'type'          : 'docs_rlk',
-            'page_number'   : page_number,
-            'paginator'     : page_obj,
-            'selected'      : selected,
-            'filtr'         : filtr,
-            'toast'         : toast,
-            'count'         : count
-        }
-        return render(request, 'website/docs_rlk.html', {'params': params})    
+        return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
+    from website.docs_rlk_list import build_rlk_list_context
+    result = build_rlk_list_context(request)
+    if isinstance(result, HttpResponse):
+        return result
+    return render(request, 'website/docs_rlk.html', {'params': result})
+    
 
 
 def doc_rlk(request, id):
@@ -6882,12 +6799,17 @@ def docs_car_shipment(request):
 @login_required
 @require_http_methods(['POST'])
 def docs_car_columns_save(request):
-    """Сохранение состава/порядка столбцов списков СОП / отгрузок."""
+    """Сохранение состава/порядка столбцов списков СОП / отгрузок / рабочих листов."""
     from website.docs_car_list import (
         COLUMNS_COOKIE_MAX_AGE,
         REPORTS,
         cookie_name,
         normalize_columns,
+    )
+    from website.docs_rlk_list import (
+        RLK_KEY,
+        cookie_name as rlk_cookie_name,
+        normalize_columns as rlk_normalize_columns,
     )
 
     try:
@@ -6896,12 +6818,25 @@ def docs_car_columns_save(request):
         return JsonResponse({'error': 'Некорректный JSON'}, status=400)
 
     report_key = (payload.get('report_key') or '').strip()
-    if report_key not in REPORTS:
-        return JsonResponse({'error': 'Неизвестный список'}, status=400)
-
     columns = payload.get('columns')
     if not isinstance(columns, list):
         return JsonResponse({'error': 'Передайте массив columns'}, status=400)
+
+    if report_key == RLK_KEY:
+        normalized = rlk_normalize_columns(columns)
+        if not normalized:
+            return JsonResponse({'error': 'Выберите хотя бы один столбец'}, status=400)
+        response = JsonResponse({'ok': True, 'columns': normalized})
+        response.set_cookie(
+            rlk_cookie_name(),
+            ','.join(normalized),
+            max_age=COLUMNS_COOKIE_MAX_AGE,
+            samesite='Lax',
+        )
+        return response
+
+    if report_key not in REPORTS:
+        return JsonResponse({'error': 'Неизвестный список'}, status=400)
 
     normalized = normalize_columns(report_key, columns)
     if not normalized:
@@ -6923,6 +6858,7 @@ def docs_car_saved_filter_save(request):
     from asp.models import ReportSavedFilter
     from asp.saved_filters import snapshot_filter_data
     from website.docs_car_list import AGREEMENT_KEY, SHIPMENT_KEY
+    from website.docs_rlk_list import RLK_KEY
 
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -6930,7 +6866,7 @@ def docs_car_saved_filter_save(request):
         return JsonResponse({'ok': False, 'error': 'Некорректный JSON'}, status=400)
 
     report_key = (payload.get('report_key') or '').strip()
-    if report_key not in (AGREEMENT_KEY, SHIPMENT_KEY):
+    if report_key not in (AGREEMENT_KEY, SHIPMENT_KEY, RLK_KEY):
         return JsonResponse({'ok': False, 'error': 'Неизвестный список'}, status=400)
 
     name = (payload.get('name') or '').strip()
@@ -6968,10 +6904,11 @@ def docs_car_saved_filter_save(request):
 def docs_car_saved_filter_delete(request, filter_id):
     from asp.models import ReportSavedFilter
     from website.docs_car_list import AGREEMENT_KEY, SHIPMENT_KEY
+    from website.docs_rlk_list import RLK_KEY
 
     qs = ReportSavedFilter.objects.filter(
         pk=filter_id,
-        report_key__in=(AGREEMENT_KEY, SHIPMENT_KEY),
+        report_key__in=(AGREEMENT_KEY, SHIPMENT_KEY, RLK_KEY),
     )
     if not request.user.is_superuser:
         qs = qs.filter(user=request.user)
