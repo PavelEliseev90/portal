@@ -6769,69 +6769,13 @@ def rlk_trade_in(request, id):
 
 
 def docs_car_agreement(request):
-    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    filtr_count = 0
-    subqyery                = RefCarsOrganization.objects.filter(lo__id = OuterRef(name='lo__id'))
-    
-    docs        = DocCarAgreement.objects.all().order_by('-dataTime')
-    docs        = docs.annotate(
-        lo_date                     = Subquery(subqyery.values('lo_link_date')[:1])).annotate(
-        lo_number                   = Subquery(subqyery.values('lo_link_number')[:1])).annotate(
-        lo_type_reception           = Subquery(subqyery.values('type_reception__name')[:1])).annotate(
-        lo_status                   = Subquery(subqyery.values('status__name')[:1])).annotate(
-        lo_vin                      = Subquery(subqyery.values('vin')[:1])).annotate(
-        lo_vin2                     = Subquery(subqyery.values('vin2')[:1])).annotate(
-        lo_days_in_stok             = Subquery(subqyery.values('days_in_stok')[:1])).annotate(
-        lo_type_sale                = Subquery(subqyery.values('type_sale__name')[:1])).annotate(
-        lo_description_podgotovka   = Subquery(subqyery.values('description_podgotovka')[:1])).annotate(
-        lo_description_op           = Subquery(subqyery.values('description_op')[:1])).annotate(
-        lo_evaluation               = Subquery(subqyery.values('evaluation__name')[:1])).annotate(
-        lo_group_price              = Subquery(subqyery.values('group_price__name')[:1])).annotate(
-        lo_stageprice               = Subquery(subqyery.values('stage_price__name')[:1])).annotate(
-        lo_rating                   = Subquery(subqyery.values('rating__name')[:1])).annotate(
-        lo_mark                     = Subquery(subqyery.values('modification_autoru__model__mark__name')[:1])).annotate(
-        lo_model                    = Subquery(subqyery.values('modification_autoru__model__name')[:1])).annotate(     
-        lo_modification             = Subquery(subqyery.values('modification_autoru__name')[:1])).annotate(    
-        lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(     
-        lo_quantity                 = Subquery(subqyery.values('quantity')[:1])).annotate(   
-        lo_run                      = Subquery(subqyery.values('run')[:1])).annotate(     
-        lo_year                     = Subquery(subqyery.values('year')[:1])).annotate(
-        lo_color                    = Subquery(subqyery.values('color')[:1])).annotate(     
-        lo_days_next_stage          = Subquery(subqyery.values('days_next_stage')[:1])).annotate(     
-        lo_task                     = Subquery(subqyery.values('task')[:1])).annotate(                 
-        lo_store                    = Subquery(subqyery.values('store__name')[:1])).annotate(
-        lo_unit                     = Subquery(subqyery.values('unit__name')[:1])).annotate(
-        lo_is_new                   = Subquery(subqyery.values('is_new')[:1])).annotate(
-        lo_plate_number             = Subquery(subqyery.values('plate_number')[:1])).annotate(
-        lo_slug                     = Subquery(subqyery.values('slug')[:1]))
-        
-    from documents.rlk_estimation import subquery_estimation_id
-    docs = docs.annotate(
-        estimation                     = subquery_estimation_id('lo__rlk', 'lo__rlk__uin'))
-    
-    name = request.GET.get('name', '')
-    if name != '':
-        docs = docs.filter(lo_vin__icontains = name) | docs.filter(lo_mark__icontains = name) | docs.filter(lo_model__icontains = name) | docs.filter(client__full_name__icontains = name) 
-        filtr_count = filtr_count + 1
-    page_number = request.GET.get('page')
-        
-    paginator   = Paginator(docs, 15)
-    page_obj    = paginator.get_page(page_number)
-    
-    filtr = {
-        'name'          : name,
-        'filtr_count'   : filtr_count
-    }
-    params = {
-        'type'              : 'doc_car_agreement',
-        'user'              : request.user,
-        'filtr'             : filtr,
-        'paginator'         : page_obj,
-    }
-    return render(request, 'website/docs_car_agreement.html', {'params': params}) 
+    from website.docs_car_list import AGREEMENT_KEY, build_list_context
+    result = build_list_context(request, AGREEMENT_KEY)
+    if isinstance(result, HttpResponse):
+        return result
+    return render(request, 'website/docs_car_agreement.html', {'params': result}) 
 
 
 def doc_car_agreement(request, id):
@@ -6926,35 +6870,116 @@ def _annotate_lo_from_cars_org(qs):
 
 
 def docs_car_shipment(request):
-    
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/login/?next=' + request.build_absolute_uri())
-    
-    filtr_count = 0
-    docs = _annotate_lo_from_cars_org(
-        DocCarShipment.objects.select_related('unit', 'client', 'cars', 'agreement').all().order_by('-dataTime')
+    from website.docs_car_list import SHIPMENT_KEY, build_list_context
+    result = build_list_context(request, SHIPMENT_KEY)
+    if isinstance(result, HttpResponse):
+        return result
+    return render(request, 'website/docs_car_shipment.html', {'params': result})
+
+
+@login_required
+@require_http_methods(['POST'])
+def docs_car_columns_save(request):
+    """Сохранение состава/порядка столбцов списков СОП / отгрузок."""
+    from website.docs_car_list import (
+        COLUMNS_COOKIE_MAX_AGE,
+        REPORTS,
+        cookie_name,
+        normalize_columns,
     )
-    
-    name = request.GET.get('name', '')
-    if name != '':
-        docs = docs.filter(lo_vin__icontains = name) | docs.filter(lo_mark__icontains = name) | docs.filter(lo_model__icontains = name) | docs.filter(client__full_name__icontains = name) 
-        filtr_count = filtr_count + 1
-    page_number = request.GET.get('page')
-        
-    paginator   = Paginator(docs, 15)
-    page_obj    = paginator.get_page(page_number)
-    
-    filtr = {
-        'name'          : name,
-        'filtr_count'   : filtr_count
-    }
-    params = {
-        'type'              : 'doc_car_shipment',
-        'user'              : request.user,
-        'filtr'             : filtr,
-        'paginator'         : page_obj,
-    }
-    return render(request, 'website/docs_car_shipment.html', {'params': params}) 
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Некорректный JSON'}, status=400)
+
+    report_key = (payload.get('report_key') or '').strip()
+    if report_key not in REPORTS:
+        return JsonResponse({'error': 'Неизвестный список'}, status=400)
+
+    columns = payload.get('columns')
+    if not isinstance(columns, list):
+        return JsonResponse({'error': 'Передайте массив columns'}, status=400)
+
+    normalized = normalize_columns(report_key, columns)
+    if not normalized:
+        return JsonResponse({'error': 'Выберите хотя бы один столбец'}, status=400)
+
+    response = JsonResponse({'ok': True, 'columns': normalized})
+    response.set_cookie(
+        cookie_name(report_key),
+        ','.join(normalized),
+        max_age=COLUMNS_COOKIE_MAX_AGE,
+        samesite='Lax',
+    )
+    return response
+
+
+@login_required
+@require_http_methods(['POST'])
+def docs_car_saved_filter_save(request):
+    from asp.models import ReportSavedFilter
+    from asp.saved_filters import snapshot_filter_data
+    from website.docs_car_list import AGREEMENT_KEY, SHIPMENT_KEY
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': 'Некорректный JSON'}, status=400)
+
+    report_key = (payload.get('report_key') or '').strip()
+    if report_key not in (AGREEMENT_KEY, SHIPMENT_KEY):
+        return JsonResponse({'ok': False, 'error': 'Неизвестный список'}, status=400)
+
+    name = (payload.get('name') or '').strip()
+    if not name:
+        return JsonResponse({'ok': False, 'error': 'Укажите название'}, status=400)
+    if len(name) > 200:
+        return JsonResponse({'ok': False, 'error': 'Слишком длинное название'}, status=400)
+
+    filter_data = payload.get('filter_data')
+    if filter_data is None:
+        filter_data = snapshot_filter_data(request.GET)
+    if not isinstance(filter_data, dict):
+        return JsonResponse({'ok': False, 'error': 'filter_data должен быть объектом'}, status=400)
+
+    is_shared = bool(payload.get('is_shared'))
+    if is_shared and not (request.user.is_staff or request.user.is_superuser):
+        is_shared = False
+
+    obj, created = ReportSavedFilter.objects.update_or_create(
+        user=request.user,
+        report_key=report_key,
+        name=name,
+        defaults={'filter_data': filter_data, 'is_shared': is_shared},
+    )
+    return JsonResponse({
+        'ok': True,
+        'id': obj.pk,
+        'created': created,
+        'message': 'Фильтр сохранён' if created else 'Фильтр обновлён',
+    })
+
+
+@login_required
+@require_http_methods(['POST'])
+def docs_car_saved_filter_delete(request, filter_id):
+    from asp.models import ReportSavedFilter
+    from website.docs_car_list import AGREEMENT_KEY, SHIPMENT_KEY
+
+    qs = ReportSavedFilter.objects.filter(
+        pk=filter_id,
+        report_key__in=(AGREEMENT_KEY, SHIPMENT_KEY),
+    )
+    if not request.user.is_superuser:
+        qs = qs.filter(user=request.user)
+    obj = qs.first()
+    if obj is None:
+        return JsonResponse({'ok': False, 'error': 'Фильтр не найден'}, status=404)
+    obj.delete()
+    return JsonResponse({'ok': True, 'message': 'Фильтр удалён'}) 
 
 
 def doc_car_shipment(request, id):

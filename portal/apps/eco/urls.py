@@ -67,6 +67,7 @@ urlpatterns = [
     path('<id>/route-sheet/print/',             views.estimation_route_sheet_print, name='estimation_route_sheet_print'),
     path('<id>/inspection-sheet/print/',        views.estimation_inspection_sheet_print, name='estimation_inspection_sheet_print'),
     path('<id>/reception-check/print/',         views.estimation_reception_check_sheet_print, name='estimation_reception_check_sheet_print'),
+    path('<id>/transfer-sales/print/',          views.estimation_transfer_sales_sheet_print, name='estimation_transfer_sales_sheet_print'),
     path('<id>/',                               views.doc, name='id'),
     
     path('online/',                             views.list_eco_online),

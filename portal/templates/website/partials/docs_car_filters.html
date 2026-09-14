@@ -1,0 +1,71 @@
+{% comment %}
+  Фильтры списков СОП / отгрузок (как ASP cumulative-margin).
+  Ожидает params с filters, units_qs, type_receptions_qs, export_url, report_key, list_path.
+{% endcomment %}
+<form class="asp-rep-filter" method="get" id="docsCarFilters" action="{{ params.list_path }}">
+  {% if params.filters.order_by %}<input type="hidden" name="order_by" value="{{ params.filters.order_by }}">{% endif %}
+  <h6 class="mb-3 padding-title"><span class="icon-mbri-setting"></span> Фильтр</h6>
+  <div class="row g-3">
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Период с</div>
+      <input type="date" class="form-control" name="date_from" value="{{ params.filters.date_from }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">по</div>
+      <input type="date" class="form-control" name="date_to" value="{{ params.filters.date_to }}">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">VIN</div>
+      <input type="text" class="form-control" name="vin" value="{{ params.filters.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Номер документа</div>
+      <input type="text" class="form-control" name="nomer" value="{{ params.filters.nomer }}" placeholder="номер" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Марка</div>
+      <input type="text" class="form-control" name="mark" value="{{ params.filters.mark }}" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Модель</div>
+      <input type="text" class="form-control" name="model" value="{{ params.filters.model }}" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Сотрудник</div>
+      <input type="text" class="form-control" name="person" value="{{ params.filters.person }}" placeholder="ФИО" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Тип продажи</div>
+      <input type="text" class="form-control" name="type_sale" value="{{ params.filters.type_sale }}" autocomplete="off">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="metric-card-label-portal">Клиент</div>
+      <input type="text" class="form-control" name="client" value="{{ params.filters.client }}" placeholder="клиент" autocomplete="off">
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix='docsUnit' field_name='unit' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units_qs selected_ids=params.filters.unit_ids hint='Пустой выбор = все подразделения' empty_text='Нет подразделений' %}
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      {% include 'includes/portal_multi_checkbox_filter.html' with prefix='docsTypeReception' field_name='type_reception' label='Тип приёма' placeholder='Поиск по типу приёма...' items=params.type_receptions_qs selected_ids=params.filters.type_reception_ids hint='Пустой выбор = все типы приёма' empty_text='Нет типов приёма' %}
+    </div>
+  </div>
+
+  <div class="row g-2 align-items-center mt-3">
+    <div class="col-auto">
+      <button type="submit" class="btn-calculate-sm"><span class="icon-mbri-play"></span> Применить</button>
+    </div>
+    <div class="col-auto">
+      <a class="btn-calculate-secondary-sm" href="{{ params.list_path }}"><span class="icon-mbri-close"></span> Сбросить фильтры</a>
+    </div>
+    <div class="col-auto ms-md-auto d-flex flex-wrap gap-2">
+      <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalAspColumns" title="Настроить столбцы таблицы">
+        <span class="icon-mbri-setting"></span> Столбцы
+      </button>
+      <a class="btn-calculate-secondary-sm" href="{{ params.export_url|default:'?export=xlsx' }}" title="Выгрузить в Excel">
+        <span class="icon-mbri-download"></span> Excel
+      </a>
+    </div>
+  </div>
+
+  {% include 'website/partials/docs_car_saved_filters.html' %}
+</form>

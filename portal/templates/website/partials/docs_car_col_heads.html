@@ -1,0 +1,16 @@
+{% load custom_template_tags %}
+{% for col in params.table_columns %}
+  {% if col.sortable %}
+    <th class="text-white" style="cursor:pointer">
+      <button type="button" class="btn btn-link btn-sm text-white text-decoration-none p-0 asp-sort-btn"
+              data-sort-key="{{ col.sort_key }}">
+        {{ col.label }}
+        {% if params.filters.order_by == col.sort_key %} ▲
+        {% elif params.filters.order_by == '-'|add:col.sort_key %} ▼
+        {% endif %}
+      </button>
+    </th>
+  {% else %}
+    <th class="text-white">{{ col.label }}</th>
+  {% endif %}
+{% endfor %}

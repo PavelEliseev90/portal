@@ -4074,6 +4074,13 @@ def estimation_reception_check_sheet_print(request, id):
 
 
 @login_required
+def estimation_transfer_sales_sheet_print(request, id):
+    """Печать передачи автомобиля из подготовки в отдел продаж."""
+    from estimations.views_transfer_sales_print import estimation_transfer_sales_sheet_print as _print
+    return _print(request, id)
+
+
+@login_required
 def chat_email_notify_participants(request, id):
     """Оповещение на почту всем участникам интерактивной оценки (как при согласовании)."""
     if request.method != 'POST':
@@ -4550,12 +4557,17 @@ def doc(request, id):
         kolesa_reception = None
         kolesa_reception_files = []
         mobile_gallery = None
+        # Оценщик для шапки — со страницы приёма (нужен на любой вкладке)
+        try:
+            from eco.reception import get_reception_or_none
+            reception = get_reception_or_none(interactiv_rlk)
+        except Exception:
+            reception = None
         if page == 24:
             from eco.reception import (
                 estimation_has_kolesa2,
                 get_kolesa_reception_or_none,
                 get_reception_file_blocks,
-                get_reception_or_none,
                 reception_allowed as reception_is_allowed,
                 reception_fields_editable as reception_is_fields_editable,
                 reception_select_options,
@@ -4565,7 +4577,6 @@ def doc(request, id):
             from register.models import RegRegInteractivOcenkaFilesKolesaReception
             from estimations.mobile_gallery_utils import build_mobile_upload_url
             reception_allowed = reception_is_allowed(interactiv_rlk)
-            reception = get_reception_or_none(interactiv_rlk)
             reception_fields_editable = reception_is_fields_editable(interactiv_rlk, request.user)
             reception_am_accepted = status_is_am_accepted(interactiv_rlk)
             kolesa2_needed = estimation_has_kolesa2(estimation)
@@ -4762,6 +4773,16 @@ def doc(request, id):
                 'kolesa_reception_files': kolesa_reception_files,
                 'from_1c': from_1c,
                 'mobile_gallery': mobile_gallery,
+                # Шапка: оценщик со страницы приёма, если страница есть и оценщик указан
+                'header_appraiser_name': (
+                    reception.staff.get_reception_display_name()
+                    if reception is not None and getattr(reception, 'staff_id', None) and reception.staff
+                    else (
+                        getattr(getattr(interactiv_rlk, 'staff_rlk', None), 'name', None)
+                        or getattr(getattr(estimation, 'staff', None), 'name', None)
+                        or ''
+                    )
+                ),
             }
 
         avito_auction = None

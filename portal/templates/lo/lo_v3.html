@@ -1742,8 +1742,12 @@
             <div class="row">
               <div class="col-auto">
                 <p class="kors-hero__subtitle">
-                  <span class="icon-mbri-user" aria-hidden="true"></span> {{params.interactiv_rlk.staff_rlk.name}} 
-                  
+                  <span class="icon-mbri-user" aria-hidden="true"></span>
+                  {% if params.header_appraiser_name %}
+                    {{ params.header_appraiser_name }}
+                  {% else %}
+                    {{ params.interactiv_rlk.staff_rlk.name }}
+                  {% endif %}
                 </p>
               </div>
               
@@ -2528,7 +2532,7 @@
                   <div class="col-sm">
                     
                     <div class="form-floating mb-3">
-                      <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{{params.rlk.staff}}">
+                      <input class="form-control form-control-sm" type="text" id="staff" name="staff" value="{% if params.header_appraiser_name %}{{ params.header_appraiser_name }}{% else %}{{ params.rlk.staff }}{% endif %}">
                       <label for="floatingInput">Оценщик</label>
                     </div>
               

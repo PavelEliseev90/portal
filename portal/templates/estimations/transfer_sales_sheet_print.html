@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>Передача а/м в отдел продаж{% if params.vin %} — {{ params.vin }}{% endif %}</title>
+	<style>
+		@page { size: A4 portrait; margin: 8mm 10mm; }
+		* { box-sizing: border-box; }
+		html, body {
+			margin: 0; padding: 0;
+			font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+			font-size: 11px; line-height: 1.25; color: #111; background: #e8e8e8;
+		}
+		.toolbar {
+			position: sticky; top: 0; z-index: 10;
+			display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+			padding: 10px 16px; background: #1e293b; color: #fff;
+		}
+		.toolbar a, .toolbar button {
+			appearance: none; border: 0; border-radius: 6px;
+			padding: 7px 12px; font-size: 13px; cursor: pointer;
+			text-decoration: none; color: #fff; background: #334155;
+		}
+		.toolbar button.primary { background: #2563eb; }
+		.toolbar .hint { margin-left: auto; font-size: 12px; opacity: .85; }
+		.sheet-wrap { padding: 16px; display: flex; justify-content: center; }
+		.sheet {
+			width: 210mm; min-height: 297mm; background: #fff;
+			padding: 7mm 8mm; box-shadow: 0 2px 12px rgba(0,0,0,.18);
+		}
+		h1 { margin: 0 0 4px; text-align: center; font-size: 15px; font-weight: 700; }
+		.sub { text-align: center; margin: 0 0 8px; color: #444; font-size: 11px; }
+		table.grid {
+			width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 6px;
+		}
+		table.grid th, table.grid td {
+			border: 1px solid #222; padding: 3px 5px; vertical-align: middle; word-wrap: break-word;
+		}
+		table.grid th { font-weight: 600; background: #f3f3f3; text-align: left; white-space: nowrap; }
+		.val { font-weight: 600; }
+		.section-title { font-weight: 700; background: #ececec !important; text-align: center; }
+		.chk-box {
+			display: inline-block; width: 12px; height: 12px;
+			border: 1.5px solid #222; margin-right: 4px; vertical-align: -1px;
+		}
+		.sign-row td { height: 36px; }
+		.works-list { margin: 0; padding-left: 16px; }
+		.works-list li { margin: 1px 0; }
+		@media print {
+			html, body { background: #fff; }
+			.toolbar { display: none !important; }
+			.sheet-wrap { padding: 0; }
+			.sheet { box-shadow: none; width: auto; min-height: auto; padding: 0; }
+		}
+	</style>
+</head>
+<body>
+	<div class="toolbar">
+		<button type="button" class="primary" onclick="window.print()">Печать</button>
+		{% if params.back_url %}<a href="{{ params.back_url }}">Назад к приёму</a>{% endif %}
+		<span class="hint">Передача из подготовки в отдел продаж</span>
+	</div>
+
+	<div class="sheet-wrap">
+		<div class="sheet">
+			<h1>ПЕРЕДАЧА АВТОМОБИЛЯ</h1>
+			<p class="sub">из отдела подготовки в отдел продаж</p>
+
+			<table class="grid">
+				<tr>
+					<th style="width:14%">Склад / ЛО</th>
+					<td class="val" style="width:18%">{{ params.lo_nomer|default:"—" }}</td>
+					<th style="width:10%">Год</th>
+					<td class="val" style="width:10%">{{ params.year|default:"—" }}</td>
+					<th style="width:12%">Подразделение</th>
+					<td class="val" colspan="3">{{ params.unit_name|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Организация</th>
+					<td class="val" colspan="3">{{ params.org_name|default:"—" }}</td>
+					<th>Стоянка</th>
+					<td class="val" colspan="3">{{ params.store_name|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>VIN</th>
+					<td class="val" colspan="3"><code style="font-size:12px">{{ params.vin|default:"—" }}</code></td>
+					<th>Марка / модель</th>
+					<td class="val" colspan="3">{{ params.car_label|default:"—" }}</td>
+				</tr>
+				<tr>
+					<th>Госномер</th>
+					<td class="val">{{ params.plate_number|default:"—" }}</td>
+					<th>Цвет</th>
+					<td class="val">{{ params.color|default:"—" }}</td>
+					<th>Пробег</th>
+					<td class="val" colspan="3">{% if params.mileage %}{{ params.mileage }} км{% else %}—{% endif %}</td>
+				</tr>
+				<tr>
+					<th>Оценщик / приём</th>
+					<td class="val" colspan="3">{{ params.appraiser|default:"—" }}</td>
+					<th>Салон / химчистка</th>
+					<td class="val" colspan="3">{{ params.salon_color }}{% if params.himchistka %} · {{ params.himchistka }}{% endif %}</td>
+				</tr>
+			</table>
+
+			<table class="grid">
+				<tr><th class="section-title" colspan="2">Что сделано по автомобилю</th></tr>
+				<tr>
+					<th style="width:28%">Комментарий подготовки</th>
+					<td>{{ params.comment_podgotovka|default:"—" }}</td>
+				</tr>
+				{% if params.amount_prep %}
+				<tr>
+					<th>План / суммы</th>
+					<td class="val">{{ params.amount_prep }}</td>
+				</tr>
+				{% endif %}
+				<tr>
+					<th>Работы (подготовка / СС / МКУ)</th>
+					<td>
+						{% if params.works %}
+							<ul class="works-list">
+								{% for w in params.works %}
+									<li>{% if w.done %}✓{% else %}○{% endif %} [{{ w.kind }}] {{ w.name }}</li>
+								{% endfor %}
+							</ul>
+						{% else %}
+							—
+						{% endif %}
+					</td>
+				</tr>
+				{% if params.complect_notes %}
+				<tr>
+					<th>Комплектность</th>
+					<td>{{ params.complect_notes|join:", " }}</td>
+				</tr>
+				{% endif %}
+			</table>
+
+			<table class="grid">
+				<tr>
+					<th class="section-title" style="width:8%">№</th>
+					<th class="section-title">Проверка при передаче</th>
+					<th class="section-title" style="width:10%">Да</th>
+					<th class="section-title" style="width:10%">Нет</th>
+				</tr>
+				{% for code, text in params.checks %}
+				<tr>
+					<td class="center" style="text-align:center">{{ forloop.counter }}</td>
+					<td>{{ text }}</td>
+					<td style="text-align:center"><span class="chk-box"></span></td>
+					<td style="text-align:center"><span class="chk-box"></span></td>
+				</tr>
+				{% endfor %}
+			</table>
+
+			<table class="grid">
+				<tr><th class="section-title" colspan="4">Замечания</th></tr>
+				<tr><td colspan="4" style="height:48px">&nbsp;</td></tr>
+			</table>
+
+			<table class="grid sign-row">
+				<tr>
+					<th style="width:25%">Передал (подготовка)</th>
+					<td style="width:25%"></td>
+					<th style="width:25%">Принял (отдел продаж)</th>
+					<td style="width:25%"></td>
+				</tr>
+				<tr>
+					<th>ФИО / подпись</th>
+					<td></td>
+					<th>ФИО / подпись</th>
+					<td></td>
+				</tr>
+				<tr>
+					<th>Дата / время</th>
+					<td></td>
+					<th>Дата / время</th>
+					<td></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

@@ -11,6 +11,8 @@ class ReportSavedFilter(models.Model):
         ('stock', 'Остатки'),
         ('accepted', 'Принятые'),
         ('disposition', 'Диспозиция'),
+        ('docs_agreement', 'Соглашения о покупке'),
+        ('docs_shipment', 'Отгрузки автомобилей'),
     )
 
     user = models.ForeignKey(
