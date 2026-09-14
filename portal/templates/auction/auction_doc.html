@@ -81,7 +81,7 @@
 					<h1 class="ad-title">
 						{% if params.new %}Новый лот аукциона{% else %}Лот аукциона{% endif %}
 					</h1>
-					{% if not params.new %}
+					{% comment %} {% if not params.new %}
 						<div class="ad-lot-badge" title="Идентификатор лота">
 							<span>{% if params.auction.number %}№ {{params.auction.number}}{% else %}#{{params.auction.uid|truncatechars:10}}{% endif %}</span>
 							{% if params.auction.number %}
@@ -94,7 +94,7 @@
 								</button>
 							{% endif %}
 						</div>
-					{% endif %}
+					{% endif %} {% endcomment %}
 
 					<!-- Status indicator -->
 					{% if params.auction.status == 'Завершен' or params.auction.status == 'Завершён' or params.auction.winner_price > 0 %}
