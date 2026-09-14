@@ -1878,10 +1878,10 @@ body:has(.auction-doc) .modal-footer {
 }
 
 .af-cal__nav-btn {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border: 1px solid #2e2e2e;
-    border-radius: 8px;
+    border-radius: 999px;
     background: #1a1a1a;
     color: #ffffff;
     font-size: 1.15rem;
@@ -1920,9 +1920,12 @@ body:has(.auction-doc) .modal-footer {
 }
 
 .af-cal__day {
-    min-height: 34px;
+    min-height: 32px;
+    height: 32px;
+    width: 32px;
+    margin: 0 auto;
     border: 0;
-    border-radius: 8px;
+    border-radius: 999px;
     background: transparent;
     color: #ffffff;
     font-family: var(--ad-font-mono);
@@ -1944,14 +1947,15 @@ body:has(.auction-doc) .modal-footer {
 }
 
 .af-cal__day.is-today {
-    box-shadow: inset 0 0 0 1px #444444;
+    box-shadow: inset 0 0 0 1px #555555;
+    border-radius: 999px;
 }
 
 .af-cal__day.is-pick {
     background: var(--ad-accent) !important;
     color: #111111 !important;
     font-weight: 700 !important;
-    border-radius: 8px;
+    border-radius: 999px !important;
 }
 
 /* Time Picker Section Inside Calendar */
@@ -1983,8 +1987,8 @@ body:has(.auction-doc) .modal-footer {
     background: #1c1c1c;
     border: 1px solid #333333;
     color: #ffffff;
-    border-radius: 8px;
-    padding: 0.25rem 0.45rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
     font-family: var(--ad-font-mono);
     font-size: 0.85rem;
     font-weight: 600;
@@ -2022,8 +2026,8 @@ body:has(.auction-doc) .modal-footer {
     color: var(--ad-muted);
     font-family: var(--ad-font-mono);
     font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
     cursor: pointer;
     transition: var(--ad-transition);
 }
@@ -2043,5 +2047,28 @@ body:has(.auction-doc) .modal-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.ad-cal-actions .af-btn {
+    border-radius: 999px !important;
+    min-height: 32px;
+    padding: 0.3rem 1rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 500;
+    transition: var(--ad-transition);
+}
+
+#ad_cal_apply_btn {
+    background: #1e1e1e !important;
+    border: 1px solid #383838 !important;
+    color: #e5e5e5 !important;
+    box-shadow: none !important;
+}
+
+#ad_cal_apply_btn:hover {
+    background: var(--ad-accent) !important;
+    border-color: var(--ad-accent) !important;
+    color: #111111 !important;
+    box-shadow: 0 0 14px rgba(245, 130, 32, 0.4) !important;
 }
 
