@@ -481,25 +481,55 @@ function subbmit_car(slug) {
                                     <div class="ad-modal-info-card__value">${car_price} ₽</div>
                                 </div>
                             </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label mb-1">
+                                        <span><span class="icon-mbri-setting2 text-warning me-1"></span> Комментарий для отдела подготовки</span>
+                                    </label>
+                                    <textarea class="form-control" name="cars_list_data_${id}_podgotovka" rows="5" placeholder="Укажите замечания по подготовке авто...">${obj.description_podgotovka || ''}</textarea>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label mb-1">
+                                        <span><span class="icon-mbri-cart-full text-warning me-1"></span> Комментарий для отдела продаж</span>
+                                    </label>
+                                    <textarea class="form-control" name="cars_list_data_${id}_op" rows="5" placeholder="Укажите информацию для менеджеров ОП...">${obj.description_op || ''}</textarea>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB 2: GALLERY -->
                         <div class="ad-tab-pane" id="tab_gallery_${id}">
-                            <div class="alert alert-warning bg-opacity-10 text-white border-warning">
-                                Управление медиафайлами и галереей станет доступно после сохранения лота.
+                            <div class="ad-modal-stub">
+                                <div class="ad-modal-stub__icon">
+                                    <span class="icon-mbri-preview"></span>
+                                </div>
+                                <div class="ad-modal-stub__title">Медиагалерея формируется</div>
+                                <div class="ad-modal-stub__desc">
+                                    Загрузка и распределение фотографий кузова, салона и повреждений станут доступны сразу после первого сохранения лота.
+                                </div>
                             </div>
                         </div>
 
                         <!-- TAB 3: DIAGNOSTICS -->
                         <div class="ad-tab-pane" id="tab_diag_${id}">
-                            <div class="alert alert-warning bg-opacity-10 text-white border-warning">
-                                Диагностические карты и акты осмотра будут синхронизированы после сохранения.
+                            <div class="ad-modal-stub">
+                                <div class="ad-modal-stub__icon">
+                                    <span class="icon-mbri-setting2"></span>
+                                </div>
+                                <div class="ad-modal-stub__title">Диагностические карты и акты осмотра</div>
+                                <div class="ad-modal-stub__desc">
+                                    Синхронизация сервисных карт, отчётов проверок и Autoteka будет выполнена автоматически после сохранения лота.
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
-                            <span class="icon-mbri-close"></span> Закрыть
+                            Закрыть
+                        </button>
+                        <button type="button" class="ad-btn ad-btn--primary ms-auto" data-bs-dismiss="modal">
+                            <span class="icon-mbri-success me-1"></span> Применить
                         </button>
                     </div>
                 </div>

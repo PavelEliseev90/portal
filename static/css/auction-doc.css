@@ -132,7 +132,12 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
 }
 
 /* Root Design Tokens */
-.auction-doc {
+:root,
+html.has-auction-doc,
+body.has-auction-doc,
+.auction-doc,
+.modal,
+.offcanvas {
     --ad-bg: #000000;
     --ad-card: #0d0d0d;
     --ad-card-alt: #121212;
@@ -158,7 +163,9 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
     --ad-font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
     --ad-font-stamp: "Oswald", "IBM Plex Sans", sans-serif;
     --ad-transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
+.auction-doc {
     font-family: var(--ad-font-ui);
     color: var(--ad-ink);
     background-color: var(--ad-bg);
@@ -786,12 +793,14 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
 }
 
 /* Form Controls Dark Styling (Including Readonly and Disabled Fixes) */
-.auction-doc .form-label {
+.auction-doc .form-label,
+.modal .form-label,
+body.has-auction-doc .form-label {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #8d8d8d;
+    color: #9c9c9c !important;
     margin-bottom: 0.45rem;
     display: flex;
     align-items: center;
@@ -799,22 +808,30 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
 }
 
 .auction-doc .form-control,
-.auction-doc .form-select {
-    background-color: #1c1c1c !important;
-    border: 1px solid #333333 !important;
+.auction-doc .form-select,
+.modal .form-control,
+.modal .form-select,
+body.has-auction-doc .form-control,
+body.has-auction-doc .form-select {
+    background-color: #161616 !important;
+    border: 1px solid #303030 !important;
     color: #f5f5f5 !important;
-    border-radius: var(--ad-radius-sm);
-    font-family: var(--ad-font-ui);
+    border-radius: var(--ad-radius-sm, 10px) !important;
+    font-family: var(--ad-font-ui, sans-serif);
     font-size: 0.92rem;
     padding: 0.65rem 0.95rem;
-    transition: var(--ad-transition);
+    transition: var(--ad-transition, all 0.2s ease);
 }
 
 .auction-doc .form-control:focus,
-.auction-doc .form-select:focus {
-    background-color: #222222 !important;
-    border-color: var(--ad-accent) !important;
-    box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.18) !important;
+.auction-doc .form-select:focus,
+.modal .form-control:focus,
+.modal .form-select:focus,
+body.has-auction-doc .form-control:focus,
+body.has-auction-doc .form-select:focus {
+    background-color: #1e1e1e !important;
+    border-color: var(--ad-accent, #f58220) !important;
+    box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.2) !important;
     outline: none !important;
     color: #ffffff !important;
 }
@@ -822,32 +839,46 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
 /* Fix Readonly & Disabled Inputs in Bootstrap 5 */
 .auction-doc .form-control[readonly],
 .auction-doc .form-control:disabled,
-.auction-doc .form-select:disabled {
-    background-color: #141414 !important;
+.auction-doc .form-select:disabled,
+.modal .form-control[readonly],
+.modal .form-control:disabled,
+.modal .form-select:disabled,
+body.has-auction-doc .form-control:disabled {
+    background-color: #121212 !important;
     border-color: #242424 !important;
-    color: #888888 !important;
+    color: #7a7a7a !important;
     opacity: 0.85;
     cursor: default;
 }
 
 /* Custom Dropdown Option styling */
-.auction-doc option {
+.auction-doc option,
+.modal option,
+body.has-auction-doc option {
     background-color: #14151b !important;
     color: #ffffff !important;
 }
 
-.auction-doc input[type="datetime-local"].form-control {
-    font-family: var(--ad-font-mono);
+.auction-doc input[type="datetime-local"].form-control,
+.modal input[type="datetime-local"].form-control {
+    font-family: var(--ad-font-mono, monospace);
     color-scheme: dark;
 }
 
-.auction-doc input[type="number"].form-control {
-    font-family: var(--ad-font-mono);
+.auction-doc input[type="number"].form-control,
+.modal input[type="number"].form-control {
+    font-family: var(--ad-font-mono, monospace);
     font-size: 1.05rem;
     font-weight: 600;
 }
 
-.auction-doc textarea.form-control {
+.auction-doc textarea.form-control,
+.modal textarea.form-control,
+body.has-auction-doc textarea.form-control {
+    background-color: #161616 !important;
+    border: 1px solid #303030 !important;
+    color: #f5f5f5 !important;
+    border-radius: var(--ad-radius-sm, 10px) !important;
     resize: vertical;
     line-height: 1.55;
 }
@@ -1339,11 +1370,13 @@ body:has(.auction-doc) .modal-header {
 }
 
 .ad-modal-kicker {
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--ad-accent);
-    font-weight: 600;
+    color: var(--ad-accent, #f58220) !important;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
 }
 
 .ad-modal-car-title {
@@ -1392,14 +1425,40 @@ body:has(.auction-doc) .modal-footer {
     background: #141414 !important;
     border-top: 1px solid #262626 !important;
     padding: 1rem 1.6rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.modal-footer .btn-secondary,
+.ad-modal-btn-close {
+    background: #1e1e1e !important;
+    border: 1px solid #383838 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    padding: 0.6rem 1.8rem !important;
+    border-radius: 999px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-footer .btn-secondary:hover,
+.ad-modal-btn-close:hover {
+    background: #282828 !important;
+    border-color: var(--ad-accent, #f58220) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 14px rgba(245, 130, 32, 0.3);
+    transform: translateY(-1px);
 }
 
 /* Tabs Navigation in Modal (High-End Segmented Bar) */
 .ad-tabs-nav-wrap {
-    background: #141414;
-    border: 1px solid #282828;
-    border-radius: 999px;
-    padding: 4px;
+    background: #121212 !important;
+    border: 1px solid #282828 !important;
+    border-radius: 999px !important;
+    padding: 4px !important;
     width: 100%;
 }
 
@@ -1422,30 +1481,107 @@ body:has(.auction-doc) .modal-footer {
 .ad-tab-btn {
     flex: 1 1 0;
     justify-content: center;
-    background: transparent;
-    border: none;
-    padding: 0.55rem 1.15rem;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--ad-muted);
-    border-radius: 999px;
-    transition: var(--ad-transition);
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0.65rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    color: #9c9c9c !important;
+    border-radius: 999px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.55rem;
     white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none !important;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .ad-tab-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.ad-tab-btn:focus,
+.ad-tab-btn:focus-visible,
+.ad-tab-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .ad-tab-btn.active {
-    background: var(--ad-accent) !important;
-    color: #111111 !important;
+    background: #202020 !important;
+    border: 1px solid #f58220 !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
-    box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
+    box-shadow: 0 0 16px rgba(245, 130, 32, 0.28) !important;
+    outline: none !important;
+}
+
+.ad-tab-btn.active * {
+    color: #ffffff !important;
+}
+
+.ad-tab-btn.active span[class*="icon-"],
+.ad-tab-btn.active i {
+    color: #f58220 !important;
+}
+
+/* Modal Empty Stubs (Tabs 2 & 3) */
+.ad-modal-stub {
+    background: #141414;
+    border: 1px dashed #303030;
+    border-radius: var(--ad-radius, 14px);
+    padding: 3.5rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    margin: 1.2rem 0;
+}
+
+.ad-modal-stub__icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(245, 130, 32, 0.1);
+    border: 1px solid rgba(245, 130, 32, 0.3);
+    color: var(--ad-accent, #f58220);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+}
+
+.ad-modal-stub__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.ad-modal-stub__desc {
+    font-size: 0.9rem;
+    color: #8c8c8c;
+    max-width: 500px;
+    line-height: 1.55;
+    margin: 0 auto;
+}
+
+/* Fallback for any alert in modal */
+.modal .alert-warning,
+.auction-doc .alert-warning,
+body.has-auction-doc .alert-warning {
+    background: rgba(245, 130, 32, 0.1) !important;
+    border: 1px solid rgba(245, 130, 32, 0.35) !important;
+    color: #ffc285 !important;
+    border-radius: var(--ad-radius-sm, 10px) !important;
+    padding: 1rem 1.25rem !important;
 }
 
 .ad-tab-pane {
@@ -1466,7 +1602,7 @@ body:has(.auction-doc) .modal-footer {
 .ad-modal-info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.85rem;
     margin-bottom: 1.35rem;
 }
 
@@ -1477,46 +1613,47 @@ body:has(.auction-doc) .modal-footer {
 }
 
 .ad-modal-info-card {
-    background: #141414;
-    border: 1px solid #282828;
-    border-left: 3px solid var(--ad-accent);
-    border-radius: var(--ad-radius-sm);
-    padding: 0.75rem 1rem;
+    background: #141414 !important;
+    border: 1px solid #282828 !important;
+    border-left: 4px solid var(--ad-accent, #f58220) !important;
+    border-radius: var(--ad-radius-sm, 10px) !important;
+    padding: 0.85rem 1.15rem !important;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    transition: var(--ad-transition);
+    gap: 0.3rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ad-modal-info-card:hover {
-    background: #181818;
-    border-color: #383838;
+    background: #181818 !important;
+    border-color: #383838 !important;
+    transform: translateY(-2px);
 }
 
 .ad-modal-info-card--sale {
-    border-left-color: var(--ad-success);
-    background: rgba(16, 185, 129, 0.06);
+    border-left-color: var(--ad-success, #10b981) !important;
+    background: rgba(16, 185, 129, 0.08) !important;
 }
 
 .ad-modal-info-card--sale .ad-modal-info-card__value {
-    color: var(--ad-success);
+    color: var(--ad-success, #10b981) !important;
 }
 
 .ad-modal-info-card__label {
     font-size: 0.72rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--ad-muted);
+    letter-spacing: 0.08em;
+    color: #8a8a8a !important;
     display: flex;
     align-items: center;
 }
 
 .ad-modal-info-card__value {
-    font-family: var(--ad-font-mono);
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #ffffff;
+    font-family: var(--ad-font-mono, "IBM Plex Mono", monospace);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff !important;
 }
 
 .ad-gallery-section__title {
