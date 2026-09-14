@@ -6,7 +6,7 @@
 {% block url %} {% endblock %}
 
 {% block title %}
-	{% if params.new %}Новый лот аукциона{% elif params.auction.pk_auction %}Лот аукциона № {{params.auction.pk_auction}}{% elif params.auction.number %}Лот аукциона № {{params.auction.number}}{% elif params.auction.uid %}Лот аукциона #{{params.auction.uid|truncatechars:10}}{% else %}Лот аукциона{% endif %}
+	{% if params.new %}Новый лот аукциона{% elif params.auction.pk_auction %}Лот аукциона № {{params.auction.pk_auction}}{% elif params.auction.number %}Лот аукциона № {{params.auction.number}}{% else %}Лот аукциона (в подготовке){% endif %}
 {% endblock %}
 
 {% block title_navbar %} - Лот аукциона {% endblock %}
@@ -151,10 +151,8 @@
 							Лот № {{params.auction.pk_auction}}
 						{% elif params.auction.number %}
 							Лот № {{params.auction.number}}
-						{% elif params.auction.uid %}
-							Лот #{{params.auction.uid|truncatechars:10}}
 						{% else %}
-							Лот аукциона
+							Лот в подготовке
 						{% endif %}
 					</span>
 				</div>
@@ -173,15 +171,28 @@
 						{% endif %}
 					</h1>
 					{% if not params.new %}
-						<div class="ad-lot-badge" id="ad_lot_badge" title="Номер лота на сайте аукциона">
-							<span id="ad_lot_badge_num">{% if params.auction.pk_auction %}№ {{params.auction.pk_auction}}{% elif params.auction.number %}№ {{params.auction.number}}{% else %}#{{params.auction.uid|truncatechars:10}}{% endif %}</span>
-							<button type="button" class="ad-copy-btn" id="ad_lot_copy_btn" data-copy="{% if params.auction.pk_auction %}{{params.auction.pk_auction}}{% elif params.auction.number %}{{params.auction.number}}{% else %}{{params.auction.uid}}{% endif %}" title="Скопировать номер лота">
-								<span class="icon-mbri-file"></span>
-							</button>
-							<a href="https://auction.kors-group.ru/lots/{{params.auction.pk_auction}}/" target="_blank" rel="noopener" class="ad-copy-btn ms-1 {% if not params.auction.pk_auction %}d-none{% endif %}" id="ad_lot_site_link" title="Открыть лот на сайте аукциона">
-								<span class="icon-mbri-link"></span>
-							</a>
-						</div>
+						{% if params.auction.pk_auction %}
+							<div class="ad-lot-badge" id="ad_lot_badge" title="Номер лота на сайте аукциона">
+								<span id="ad_lot_badge_num">№ {{params.auction.pk_auction}}</span>
+								<button type="button" class="ad-copy-btn" id="ad_lot_copy_btn" data-copy="{{params.auction.pk_auction}}" title="Скопировать номер лота">
+									<span class="icon-mbri-file"></span>
+								</button>
+								<a href="https://auction.kors-group.ru/lots/{{params.auction.pk_auction}}/" target="_blank" rel="noopener" class="ad-copy-btn ms-1" id="ad_lot_site_link" title="Открыть лот на сайте аукциона">
+									<span class="icon-mbri-link"></span>
+								</a>
+							</div>
+						{% elif params.auction.number %}
+							<div class="ad-lot-badge" id="ad_lot_badge" title="Номер лота">
+								<span id="ad_lot_badge_num">№ {{params.auction.number}}</span>
+								<button type="button" class="ad-copy-btn" id="ad_lot_copy_btn" data-copy="{{params.auction.number}}" title="Скопировать номер лота">
+									<span class="icon-mbri-file"></span>
+								</button>
+							</div>
+						{% else %}
+							<div class="ad-lot-badge ad-lot-badge--draft" id="ad_lot_badge" title="Номер лота появится после выгрузки на аукцион">
+								<span id="ad_lot_badge_num">В подготовке</span>
+							</div>
+						{% endif %}
 					{% endif %}
 
 					<!-- Status indicator -->

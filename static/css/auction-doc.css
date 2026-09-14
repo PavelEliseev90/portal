@@ -293,6 +293,19 @@ body.has-auction-doc,
     box-shadow: 0 0 12px var(--ad-accent-glow);
 }
 
+.ad-lot-badge--draft {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.22) !important;
+    color: var(--ad-muted, #8c8c8c) !important;
+    box-shadow: none !important;
+}
+
+.ad-lot-badge--draft:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    box-shadow: none !important;
+}
+
 .ad-copy-btn {
     background: none;
     border: none;

@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/auction-floor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auction-floor.css' %}?v={% now "U" %}">
 {% endblock %}
 
 {% block content %}
@@ -320,23 +320,28 @@
                 <tr class="af-row" data-href="{{ object.uid }}/" tabindex="0">
                     <td data-label="Лот">
                         <div class="af-plate-wrap">
+                            {% if object.pk_auction %}
                             <span class="af-plate">
-                                <span class="af-plate__n">{{ object.pk_auction|default:object.pk }}</span>
+                                <span class="af-plate__n">{{ object.pk_auction }}</span>
                                 {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
                             </span>
                             <div class="af-plate-actions">
-                                {% if object.pk_auction %}
                                 <a href="https://auction.kors-group.ru/lots/{{ object.pk_auction }}/" target="_blank" rel="noopener noreferrer" class="af-site-btn-inline" title="Прямая ссылка на сайт аукциона (лот №{{ object.pk_auction }})" aria-label="Открыть лот на сайте аукциона">
                                     <svg class="af-tool-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                                 </a>
-                                {% endif %}
                                 {% if params.can_edit %}
-                                <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота" aria-label="Копировать номер лота">
+                                <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction }}" data-af-copy-label="№ лота {{ object.pk_auction }}" title="Копировать номер лота" aria-label="Копировать номер лота">
                                     <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 </button>
                                 {% endif %}
                             </div>
+                            {% else %}
+                            <span class="af-plate af-plate--draft" title="Лот формируется (номер появится после выгрузки на аукцион)">
+                                <span class="af-plate__n">—</span>
+                                {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
+                            </span>
+                            {% endif %}
                         </div>
                     </td>
                     <td data-label="Статус">
@@ -552,11 +557,13 @@
                             </div>
                             {% if params.can_edit %}
                             <div class="af-row-tools">
-                                <button type="button" class="af-tool-btn" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота">
+                                {% if object.pk_auction %}
+                                <button type="button" class="af-tool-btn" data-af-copy="{{ object.pk_auction }}" data-af-copy-label="№ лота {{ object.pk_auction }}" title="Копировать номер лота">
                                     <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     <span>№ лота</span>
                                 </button>
+                                {% endif %}
                                 {% with lot_cars=object.cars %}
                                     {% if lot_cars %}
                                     <button type="button" class="af-tool-btn" data-af-copy="{% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" data-af-copy-label="VIN {% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" title="Копировать VIN{% if lot_cars.count > 1 %} (всех авто){% endif %}">
@@ -590,21 +597,70 @@
     </div>
     {% endif %}
 
-    <nav class="af-pager" aria-label="Страницы">
-        {% if params.paginator.has_previous %}
-        <a href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-        {% endif %}
-        {% for p in params.paginator.paginator.page_range %}
-            {% if params.paginator.number == p %}
-            <span class="is-current">{{ p }}</span>
-            {% elif p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
-            <a href="?{% url_replace page=p %}">{{ p }}</a>
+    {% if params.paginator.paginator.num_pages > 1 %}
+    <div class="af-pagination-container">
+        <div class="af-pagination-summary">
+            <span class="af-pagination-summary__label">Страница</span>
+            <span class="af-pagination-summary__active">{{ params.paginator.number }}</span>
+            <span class="af-pagination-summary__sep">из</span>
+            <span class="af-pagination-summary__total">{{ params.paginator.paginator.num_pages }}</span>
+            <span class="af-pagination-summary__dot">·</span>
+            <span class="af-pagination-summary__count">{{ params.paginator.paginator.count }} лотов</span>
+        </div>
+
+        <nav class="af-pager" aria-label="Страницы">
+            {% if params.paginator.has_previous %}
+            <a href="?{% url_replace page=params.paginator.previous_page_number %}" class="af-pager__nav af-pager__prev" title="Предыдущая страница" aria-label="Предыдущая страница">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span class="af-pager__nav-text">Назад</span>
+            </a>
+            {% else %}
+            <span class="af-pager__nav af-pager__prev is-disabled" aria-disabled="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span class="af-pager__nav-text">Назад</span>
+            </span>
             {% endif %}
-        {% endfor %}
-        {% if params.paginator.has_next %}
-        <a href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-        {% endif %}
-    </nav>
+
+            <div class="af-pager__pages">
+                {% if params.paginator.number > 3 %}
+                <a href="?{% url_replace page=1 %}" class="af-pager__num" title="Страница 1">1</a>
+                {% if params.paginator.number > 4 %}
+                <span class="af-pager__ellipsis">···</span>
+                {% endif %}
+                {% endif %}
+
+                {% for p in params.paginator.paginator.page_range %}
+                    {% if p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+                        {% if params.paginator.number == p %}
+                        <span class="af-pager__num is-current" aria-current="page">{{ p }}</span>
+                        {% else %}
+                        <a href="?{% url_replace page=p %}" class="af-pager__num" title="Страница {{ p }}">{{ p }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if params.paginator.number < params.paginator.paginator.num_pages|add:-2 %}
+                {% if params.paginator.number < params.paginator.paginator.num_pages|add:-3 %}
+                <span class="af-pager__ellipsis">···</span>
+                {% endif %}
+                <a href="?{% url_replace page=params.paginator.paginator.num_pages %}" class="af-pager__num" title="Страница {{ params.paginator.paginator.num_pages }}">{{ params.paginator.paginator.num_pages }}</a>
+                {% endif %}
+            </div>
+
+            {% if params.paginator.has_next %}
+            <a href="?{% url_replace page=params.paginator.next_page_number %}" class="af-pager__nav af-pager__next" title="Следующая страница" aria-label="Следующая страница">
+                <span class="af-pager__nav-text">Вперед</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </a>
+            {% else %}
+            <span class="af-pager__nav af-pager__next is-disabled" aria-disabled="true">
+                <span class="af-pager__nav-text">Вперед</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
 
     <div class="af-toast" id="afToast" role="status" aria-live="polite" hidden>
         <svg class="af-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
