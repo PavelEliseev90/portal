@@ -324,12 +324,19 @@
                                 <span class="af-plate__n">{{ object.pk_auction|default:object.pk }}</span>
                                 {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
                             </span>
-                            {% if params.can_edit %}
-                            <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота" aria-label="Копировать номер лота">
-                                <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            </button>
-                            {% endif %}
+                            <div class="af-plate-actions">
+                                {% if object.pk_auction %}
+                                <a href="https://auction.kors-group.ru/lots/{{ object.pk_auction }}/" target="_blank" rel="noopener noreferrer" class="af-site-btn-inline" title="Прямая ссылка на сайт аукциона (лот №{{ object.pk_auction }})" aria-label="Открыть лот на сайте аукциона">
+                                    <svg class="af-tool-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </a>
+                                {% endif %}
+                                {% if params.can_edit %}
+                                <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота" aria-label="Копировать номер лота">
+                                    <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                     </td>
                     <td data-label="Статус">
@@ -534,7 +541,15 @@
                     </td>
                     <td data-label="{% if params.can_edit %}Действия{% else %}Действие{% endif %}">
                         <div class="af-row-actions-group">
-                            <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
+                            <div class="af-row-main-btns">
+                                <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
+                                {% if object.pk_auction %}
+                                <a class="af-btn af-btn--site" href="https://auction.kors-group.ru/lots/{{ object.pk_auction }}/" target="_blank" rel="noopener noreferrer" title="Прямая ссылка на сайт аукциона (лот №{{ object.pk_auction }})">
+                                    <svg class="af-tool-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                    <span>На сайт</span>
+                                </a>
+                                {% endif %}
+                            </div>
                             {% if params.can_edit %}
                             <div class="af-row-tools">
                                 <button type="button" class="af-tool-btn" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота">
