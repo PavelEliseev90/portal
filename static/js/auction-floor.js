@@ -382,7 +382,7 @@
     function countFilters() {
         if (!form) return 0;
         let n = 0;
-        ["status", "store_id", "vin", "date_from", "date_to"].forEach(function (name) {
+        ["status", "store_id", "vin", "date_from", "date_to", "express"].forEach(function (name) {
             const el = form.querySelector('[name="' + name + '"]');
             if (el && String(el.value || "").trim()) n += 1;
         });
@@ -394,6 +394,82 @@
         badge.textContent = String(n);
         badge.hidden = n === 0;
     }
+
+    // ==== Копирование номера лота / VIN ====
+    const toastEl = document.getElementById("afToast");
+    const toastText = document.getElementById("afToastText");
+    let toastTimer;
+
+    function showToast(message) {
+        if (!toastEl || !toastText) return;
+        toastText.textContent = message;
+        toastEl.hidden = false;
+        void toastEl.offsetWidth;
+        toastEl.classList.add("is-show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+            toastEl.classList.remove("is-show");
+            setTimeout(function () {
+                if (!toastEl.classList.contains("is-show")) {
+                    toastEl.hidden = true;
+                }
+            }, 300);
+        }, 2200);
+    }
+
+    function copyToClipboard(text, onSuccess, onError) {
+        if (!text) return;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(onSuccess).catch(function () {
+                fallbackCopy(text, onSuccess, onError);
+            });
+        } else {
+            fallbackCopy(text, onSuccess, onError);
+        }
+    }
+
+    function fallbackCopy(text, onSuccess, onError) {
+        try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.top = "-9999px";
+            ta.style.left = "-9999px";
+            ta.setAttribute("readonly", "");
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            if (ok) {
+                if (onSuccess) onSuccess();
+            } else {
+                if (onError) onError();
+            }
+        } catch (err) {
+            if (onError) onError(err);
+        }
+    }
+
+    root.querySelectorAll("[data-af-copy]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const val = (btn.getAttribute("data-af-copy") || "").trim();
+            const label = btn.getAttribute("data-af-copy-label") || val;
+            if (!val) return;
+
+            copyToClipboard(val, function () {
+                btn.classList.add("is-copied");
+                showToast("Скопировано: " + label);
+                setTimeout(function () {
+                    btn.classList.remove("is-copied");
+                }, 1500);
+            }, function () {
+                showToast("Не удалось скопировать");
+            });
+        });
+    });
 
     const helpData = {
         createLot: {

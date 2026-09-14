@@ -690,6 +690,7 @@ body:has(.auction-floor) #content > br {
     color: #8a8a8a;
     text-align: left;
     padding: 0.85rem 0.9rem;
+    border-bottom: 1px solid var(--af-line);
 }
 
 .af-sort {
@@ -720,8 +721,6 @@ body:has(.auction-floor) #content > br {
 
 .af-sort__ind.is-active {
     opacity: 1;
-}
-    border-bottom: 1px solid var(--af-line);
 }
 
 .af-row {
@@ -834,6 +833,9 @@ body:has(.auction-floor) #content > br {
 }
 
 .af-car__ids {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     margin-top: 0.35rem;
     font-family: var(--af-mono);
     font-size: 0.7rem;
@@ -888,6 +890,142 @@ body:has(.auction-floor) #content > br {
 }
 
 .af-open {
+    white-space: nowrap;
+}
+
+.af-plate-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.af-row-actions-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 140px;
+}
+
+.af-row-tools {
+    display: flex;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.af-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    flex: 1;
+    min-height: 28px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.72rem;
+    font-family: var(--af-mono);
+    font-weight: 500;
+    color: var(--af-muted);
+    background: #141414;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.af-tool-btn:hover {
+    color: var(--af-white);
+    background: #202020;
+    border-color: var(--af-accent);
+}
+
+.af-tool-btn.is-copied {
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: #10b981 !important;
+}
+
+.af-copy-btn-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--af-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.af-copy-btn-inline:hover {
+    color: var(--af-white);
+    background: #222222;
+    border-color: #3a3a3a;
+}
+
+.af-copy-btn-inline.is-copied {
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: #10b981 !important;
+}
+
+.af-tool-icon {
+    flex-shrink: 0;
+}
+
+.af-tool-icon--check {
+    display: none;
+}
+
+.is-copied .af-tool-icon--copy {
+    display: none;
+}
+
+.is-copied .af-tool-icon--check {
+    display: inline-block;
+}
+
+.af-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    font-family: var(--af-ui);
+    color: var(--af-white);
+    background: #181818;
+    border: 1px solid var(--af-accent);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.25s var(--af-ease), transform 0.25s var(--af-ease);
+    pointer-events: none;
+}
+
+.af-toast.is-show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.af-toast__icon {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.af-toast__text {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -1058,9 +1196,15 @@ body:has(.auction-floor) #content > br {
         margin-bottom: 0.4rem;
     }
 
+    .af-row-actions-group {
+        width: 100%;
+        min-width: 0;
+        margin-top: 0.5rem;
+    }
+
     .af-open {
         width: 100%;
-        margin-top: 0.5rem;
+        margin-top: 0;
     }
 
     .af-car {

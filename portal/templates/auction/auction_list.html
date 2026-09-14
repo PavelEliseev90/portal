@@ -294,17 +294,25 @@
                             </span>
                         </button>
                     </th>
-                    <th>Действие</th>
+                    <th>{% if params.can_edit %}Действия{% else %}Действие{% endif %}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for object in params.paginator.object_list %}
                 <tr class="af-row" data-href="{{ object.uid }}/" tabindex="0">
                     <td data-label="Лот">
-                        <span class="af-plate">
-                            <span class="af-plate__n">{{ object.pk_auction|default:object.pk }}</span>
-                            {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
-                        </span>
+                        <div class="af-plate-wrap">
+                            <span class="af-plate">
+                                <span class="af-plate__n">{{ object.pk_auction|default:object.pk }}</span>
+                                {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
+                            </span>
+                            {% if params.can_edit %}
+                            <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота" aria-label="Копировать номер лота">
+                                <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                            {% endif %}
+                        </div>
                     </td>
                     <td data-label="Статус">
                         <span class="af-status">
@@ -331,7 +339,15 @@
                                     <div class="af-car__info">
                                         <div class="af-car__name">{{ car_structure.car.name }}</div>
                                         <div class="af-car__meta">{{ car_structure.car.year }} · {{ car_structure.car.run|floatformat:"0g" }} км</div>
-                                        <div class="af-car__ids">{{ car_structure.car.vin|upper }}</div>
+                                        <div class="af-car__ids">
+                                            <span>{{ car_structure.car.vin|upper }}</span>
+                                            {% if params.can_edit and car_structure.car.vin %}
+                                            <button type="button" class="af-copy-btn-inline" data-af-copy="{{ car_structure.car.vin }}" data-af-copy-label="VIN {{ car_structure.car.vin }}" title="Копировать VIN" aria-label="Копировать VIN">
+                                                <svg class="af-tool-icon af-tool-icon--copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                                <svg class="af-tool-icon af-tool-icon--check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                            {% endif %}
+                                        </div>
                                         <div class="af-car__plate">{{ car_structure.car.plate_number|upper }}</div>
                                     </div>
                                 </article>
@@ -369,8 +385,28 @@
                             {% if object.dataTime %}<span>{{ object.dataTime|date:"H:i" }}</span>{% endif %}
                         </div>
                     </td>
-                    <td data-label="Действие">
-                        <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
+                    <td data-label="{% if params.can_edit %}Действия{% else %}Действие{% endif %}">
+                        <div class="af-row-actions-group">
+                            <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
+                            {% if params.can_edit %}
+                            <div class="af-row-tools">
+                                <button type="button" class="af-tool-btn" data-af-copy="{{ object.pk_auction|default:object.pk }}" data-af-copy-label="№ лота {{ object.pk_auction|default:object.pk }}" title="Копировать номер лота">
+                                    <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>№ лота</span>
+                                </button>
+                                {% with lot_cars=object.cars %}
+                                    {% if lot_cars %}
+                                    <button type="button" class="af-tool-btn" data-af-copy="{% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" data-af-copy-label="VIN {% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" title="Копировать VIN{% if lot_cars.count > 1 %} (всех авто){% endif %}">
+                                        <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span>VIN</span>
+                                    </button>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -403,6 +439,11 @@
         <a href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
         {% endif %}
     </nav>
+
+    <div class="af-toast" id="afToast" role="status" aria-live="polite" hidden>
+        <svg class="af-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span class="af-toast__text" id="afToastText"></span>
+    </div>
 </div>
 <script src="{% static 'js/auction-floor.js' %}" defer></script>
 {% endblock %}
