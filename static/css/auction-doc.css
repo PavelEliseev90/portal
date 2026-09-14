@@ -1199,6 +1199,85 @@ body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
     gap: 0.5rem;
 }
 
+/* Fallback & compatibility styles for dynamically injected car cards */
+.ad-car-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+    .ad-car-main {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+}
+
+.ad-car-finance {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.45rem;
+    background: #141414;
+    border: 1px solid #282828;
+    border-radius: var(--ad-radius-sm);
+    padding: 0.75rem;
+    min-width: 280px;
+    align-self: flex-start;
+}
+
+.ad-car-finance-item {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.85rem;
+}
+
+.ad-car-finance-item > span:first-child {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ad-muted);
+}
+
+.ad-car-finance-item > span:last-child {
+    font-family: var(--ad-font-mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.ad-car-finance-item--sale {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.ad-car-finance-item--sale > span:first-child {
+    color: #34d399;
+}
+
+.ad-car-finance-item--sale > span:last-child {
+    color: var(--ad-success);
+    font-weight: 700;
+}
+
+.ad-car-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed #222;
+    flex-wrap: wrap;
+}
+
+
 /* Empty State */
 .ad-empty-deck {
     background: var(--ad-plate);

@@ -306,7 +306,7 @@ function subbmit_car(slug) {
         var model = obj.model_name || '';
         var mod = obj.modification_name || '';
         var id = obj.slug;
-        var photo0 = (obj.url && obj.url.length) ? obj.url[0] : '/media/nophoto.png';
+        var photo0 = (obj.url && obj.url.length && obj.url[0] !== '/media/nophoto.png') ? obj.url[0] : '';
 
         var fmt = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
         var car_run = fmt.format(obj.run || 0);
@@ -316,60 +316,91 @@ function subbmit_car(slug) {
         var car_bcp = fmt.format(obj.bcp || 0);
 
         var html_card = `
-        <div class="ad-car-card" id="cars_list_data_id_${id}">
-            <div class="ad-car-main">
-                <div class="ad-car-thumb">
-                    <img src="${photo0}" alt="${mark} ${model}">
+        <div class="ad-car-card" id="cars_list_data_id_${id}" name="cars_list_data_id_${id}">
+            <div class="ad-car-showcase">
+                <div class="ad-car-thumb" title="Нажмите для увеличения фото">
+                    ${photo0 ? `
+                        <img src="${photo0}" alt="${mark} ${model}" onerror="this.style.display='none'; if(this.nextElementSibling){this.nextElementSibling.style.display='flex';}">
+                        <div class="ad-car-thumb__placeholder" style="display: none;">
+                            <span class="icon-truck"></span>
+                            <span>Фото отсутствует</span>
+                        </div>
+                    ` : `
+                        <div class="ad-car-thumb__placeholder">
+                            <span class="icon-truck"></span>
+                            <span>Фото отсутствует</span>
+                        </div>
+                    `}
                 </div>
+
                 <div class="ad-car-details">
-                    <h3 class="ad-car-title">${mark} ${model}</h3>
-                    <div class="ad-car-modification">${mod}</div>
+                    <div>
+                        <h3 class="ad-car-title">${mark} ${model}</h3>
+                        <div class="ad-car-modification">${mod}</div>
+                    </div>
+
                     <div class="ad-car-chips">
-                        <span class="ad-car-chip">${obj.year} г.в.</span>
-                        <span class="ad-car-chip ad-car-chip--mono">${car_run} км</span>
-                        <span class="ad-car-chip ad-car-chip--mono">VIN: ${obj.vin || '-'}</span>
+                        <span class="ad-car-chip"><span class="icon-mbri-calendar me-1"></span>${obj.year} г.в.</span>
+                        <span class="ad-car-chip ad-car-chip--mono"><span class="icon-mbri-speed me-1"></span>${car_run} км</span>
+                        <span class="ad-car-chip ad-car-chip--mono">
+                            VIN: ${obj.vin || '-'}
+                            ${obj.vin ? `
+                                <button type="button" class="ad-copy-btn ms-1" data-copy="${obj.vin}" title="Скопировать VIN">
+                                    <span class="icon-mbri-file"></span>
+                                </button>
+                            ` : ''}
+                        </span>
+                    </div>
+
+                    <div class="ad-car-links">
+                        <span class="ad-status-pill is-draft">
+                            <span class="ad-status-dot"></span> Требует сохранения
+                        </span>
+                        <a class="ad-car-ext-btn" href="/cars/${id}/" target="_blank" rel="noopener">
+                            <span class="icon-mbri-preview"></span> Карточка авто
+                        </a>
+                        ${obj.rlk_id ? `
+                            <a class="ad-car-ext-btn" href="/eco/${obj.rlk_id}/" target="_blank" rel="noopener">
+                                <span class="icon-mbri-search"></span> Интерактивная оценка
+                            </a>
+                        ` : ''}
                     </div>
                 </div>
-                <div class="ad-car-finance">
-                    <div class="ad-car-finance-item">
-                        <span>Себестоимость:</span>
-                        <span>${car_cost} ₽</span>
+
+                <div class="ad-car-sidebar">
+                    <div class="ad-car-finance-card">
+                        <div class="ad-car-finance-grid">
+                            <div class="ad-car-finance-cell">
+                                <span class="ad-car-finance-cell__label">Себестоимость</span>
+                                <span class="ad-car-finance-cell__val">${car_cost} ₽</span>
+                            </div>
+                            <div class="ad-car-finance-cell">
+                                <span class="ad-car-finance-cell__label">Затраты</span>
+                                <span class="ad-car-finance-cell__val">${car_outlay} ₽</span>
+                            </div>
+                            <div class="ad-car-finance-cell">
+                                <span class="ad-car-finance-cell__label">БЦП</span>
+                                <span class="ad-car-finance-cell__val">${car_bcp} ₽</span>
+                            </div>
+                            <div class="ad-car-finance-cell ad-car-finance-cell--sale">
+                                <span class="ad-car-finance-cell__label">Продажа</span>
+                                <span class="ad-car-finance-cell__val">${car_price} ₽</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="ad-car-finance-item">
-                        <span>Затраты:</span>
-                        <span>${car_outlay} ₽</span>
-                    </div>
-                    <div class="ad-car-finance-item">
-                        <span>БЦП:</span>
-                        <span>${car_bcp} ₽</span>
-                    </div>
-                    <div class="ad-car-finance-item ad-car-finance-item--sale">
-                        <span>Продажа:</span>
-                        <span>${car_price} ₽</span>
+
+                    <div class="ad-car-actions-row">
+                        <button type="button" class="ad-btn ad-btn--primary w-100" id="edit_car_info_${id}">
+                            <span class="icon-mbri-setting2"></span> Настроить автомобиль
+                        </button>
+                        <button type="button" class="ad-btn ad-btn--danger-outline" onclick="delete_car('${id}')" title="Удалить из лота">
+                            <span class="icon-mbri-trash"></span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div class="ad-car-footer">
-                <div class="ad-car-links">
-                    <span class="ad-status-pill is-draft">
-                        <span class="ad-status-dot"></span> Требует сохранения
-                    </span>
-                    <a class="ad-car-ext-btn" href="/cars/${id}/" target="_blank" rel="noopener">
-                        <span class="icon-mbri-preview"></span> Карточка авто
-                    </a>
-                    ${obj.rlk_id ? `<a class="ad-car-ext-btn" href="/eco/${obj.rlk_id}/" target="_blank" rel="noopener"><span class="icon-mbri-search"></span> Оценка</a>` : ''}
-                </div>
-                <div class="ad-car-actions">
-                    <button type="button" class="ad-btn ad-btn--outline ad-btn--sm" id="edit_car_info_${id}">
-                        <span class="icon-mbri-edit"></span> Настроить
-                    </button>
-                    <button type="button" class="ad-btn ad-btn--danger-outline ad-btn--sm" onclick="delete_car('${id}')" title="Удалить из лота">
-                        <span class="icon-mbri-trash"></span>
-                    </button>
-                </div>
-            </div>
-
+            <!-- Hidden parameters for post and live math -->
             <input hidden id="cars_list_data_cost_price_${id}" value="${obj.cost_price}">
             <input hidden id="cars_list_data_price_${id}" value="${obj.price}">
             <input hidden id="cars_list_data_outlay_${id}" value="${obj.outlay}">
@@ -381,18 +412,89 @@ function subbmit_car(slug) {
         </div>`;
 
         var modal_html = `
-        <div class="modal fade" id="cars_list_data_slug_${id}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal fade" id="cars_list_data_slug_${id}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal_title_${id}" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">
-                            <span class="icon-truck"></span> ${mark} ${model} • ${obj.year} • ${obj.vin || ''}
-                        </h5>
+                        <div class="d-flex flex-column gap-1">
+                            <div class="ad-modal-kicker">
+                                <span class="icon-truck me-1"></span> КорсАвто • Студия подготовки автомобиля
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <h4 class="ad-modal-car-title" id="modal_title_${id}">
+                                    ${mark} ${model}
+                                </h4>
+                                <span class="ad-car-chip"><span class="icon-mbri-calendar me-1"></span>${obj.year} г.в.</span>
+                                <span class="ad-car-chip ad-car-chip--mono">
+                                    VIN: ${obj.vin || '-'}
+                                    ${obj.vin ? `
+                                        <button type="button" class="ad-copy-btn ms-1" data-copy="${obj.vin}" title="Скопировать VIN">
+                                            <span class="icon-mbri-file"></span>
+                                        </button>
+                                    ` : ''}
+                                </span>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="alert alert-warning bg-opacity-10 text-white border-warning">
-                            Полное модальное окно управления медиафайлами и параметрами будет доступно сразу после сохранения лота.
+                        <!-- TABS NAVIGATION WITH HORIZONTAL SCROLL -->
+                        <div class="ad-tabs-nav-wrap mb-4">
+                            <div class="ad-tabs-nav">
+                                <button type="button" class="ad-tab-btn active" data-target="tab_info_${id}">
+                                    <span class="icon-mbri-info"></span> Сводка и комментарии
+                                </button>
+                                <button type="button" class="ad-tab-btn" data-target="tab_gallery_${id}">
+                                    <span class="icon-mbri-preview"></span> Фотогалерея лота
+                                </button>
+                                <button type="button" class="ad-tab-btn" data-target="tab_diag_${id}">
+                                    <span class="icon-mbri-setting2"></span> Диагностика и отчёты
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- TAB 1: INFO & COMMENTS -->
+                        <div class="ad-tab-pane active" id="tab_info_${id}">
+                            <div class="ad-modal-info-grid">
+                                <div class="ad-modal-info-card">
+                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-speed me-1"></span> Пробег</div>
+                                    <div class="ad-modal-info-card__value">${car_run} км</div>
+                                </div>
+                                <div class="ad-modal-info-card">
+                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-calendar me-1"></span> Дней на складе</div>
+                                    <div class="ad-modal-info-card__value">${obj.days_in_stok || 0} д.</div>
+                                </div>
+                                <div class="ad-modal-info-card">
+                                    <div class="ad-modal-info-card__label"><span class="icon-truck me-1"></span> Статус автомобиля</div>
+                                    <div class="ad-modal-info-card__value">${obj.status_name || '-'}</div>
+                                </div>
+                                <div class="ad-modal-info-card">
+                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-cash me-1"></span> Себестоимость</div>
+                                    <div class="ad-modal-info-card__value">${car_cost} ₽</div>
+                                </div>
+                                <div class="ad-modal-info-card">
+                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-delivery me-1"></span> Расходы</div>
+                                    <div class="ad-modal-info-card__value">${car_outlay} ₽</div>
+                                </div>
+                                <div class="ad-modal-info-card ad-modal-info-card--sale">
+                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-cart-full me-1"></span> Базовая цена продажи</div>
+                                    <div class="ad-modal-info-card__value">${car_price} ₽</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: GALLERY -->
+                        <div class="ad-tab-pane" id="tab_gallery_${id}">
+                            <div class="alert alert-warning bg-opacity-10 text-white border-warning">
+                                Управление медиафайлами и галереей станет доступно после сохранения лота.
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: DIAGNOSTICS -->
+                        <div class="ad-tab-pane" id="tab_diag_${id}">
+                            <div class="alert alert-warning bg-opacity-10 text-white border-warning">
+                                Диагностические карты и акты осмотра будут синхронизированы после сохранения.
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -403,6 +505,7 @@ function subbmit_car(slug) {
                 </div>
             </div>
         </div>`;
+
 
         $('#cars').append(html_card);
         $('body').append(modal_html);
