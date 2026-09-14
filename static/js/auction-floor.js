@@ -361,6 +361,24 @@
         });
     });
 
+    // ==== Сортировка колонок ====
+    root.querySelectorAll("[data-af-sort]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const field = btn.getAttribute("data-af-sort");
+            const sortInput = form && form.querySelector('input[name="sort"]');
+            if (!sortInput) return;
+            const current = sortInput.value || "";
+            if (current === field) {
+                sortInput.value = "-" + field;
+            } else if (current === "-" + field) {
+                sortInput.value = "";
+            } else {
+                sortInput.value = field;
+            }
+            if (form) form.submit();
+        });
+    });
+
     function countFilters() {
         if (!form) return 0;
         let n = 0;

@@ -113,6 +113,7 @@
     <div class="af-sheet-backdrop"></div>
 
     <form method="get" action="" id="auctionFiltersForm" class="af-rail">
+        <input type="hidden" name="sort" value="{{ params.filtr.sort }}">
         <button type="button" class="af-btn af-btn--ghost" data-af-close-filters>Закрыть</button>
 
         <div class="af-field">
@@ -186,6 +187,36 @@
         </div>
 
         <div class="af-field">
+            <span class="af-field__label" id="express-label">Тип лота</span>
+            <div class="af-combo" data-af-combo>
+                <input type="hidden" name="express" value="{{ params.filtr.express }}">
+                <button type="button" class="af-combo__btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="express-label">
+                    <span class="af-combo__value">
+                        <span class="af-combo__label">
+                            {% if params.filtr.express == '1' %}Экспресс
+                            {% elif params.filtr.express == '0' %}Обычный
+                            {% else %}Все типы{% endif %}
+                        </span>
+                    </span>
+                    <span class="af-combo__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="af-combo__panel" hidden>
+                    <ul class="af-combo__list" role="listbox">
+                        <li class="af-combo__option" role="option" data-value="" data-label="Все типы" {% if not params.filtr.express %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Все типы</span>
+                        </li>
+                        <li class="af-combo__option" role="option" data-value="1" data-label="Экспресс" {% if params.filtr.express == '1' %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Экспресс</span>
+                        </li>
+                        <li class="af-combo__option" role="option" data-value="0" data-label="Обычный" {% if params.filtr.express == '0' %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Обычный</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="af-field">
             <span class="af-field__label">Окно торгов</span>
             <div class="af-dates" data-af-cal>
                 <input type="hidden" id="date_from" name="date_from" value="{{ params.filtr.date_from }}">
@@ -213,12 +244,12 @@
         </div>
 
         <div class="af-field af-field--vin">
-            <label class="af-field__label" for="vin">VIN</label>
-            <input class="af-input" type="text" id="vin" name="vin" value="{{ params.filtr.vin }}" placeholder="WVWZZZ…" autocomplete="off">
+            <label class="af-field__label" for="vin">Поиск</label>
+            <input class="af-input" type="text" id="vin" name="vin" value="{{ params.filtr.vin }}" placeholder="VIN, лот, гос. номер, автор" autocomplete="off">
         </div>
 
         <button type="submit" class="af-btn af-btn--primary">Найти</button>
-        {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to or params.filtr.store_id %}
+        {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to or params.filtr.store_id or params.filtr.express or params.filtr.sort %}
         <a class="af-btn af-btn--ghost" href="?">Сбросить</a>
         {% endif %}
     </form>
@@ -229,24 +260,53 @@
             <thead>
                 <tr>
                     <th>Лот</th>
-                    <th>Статус</th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="status" aria-label="Сортировать по статусу">
+                            Статус
+                            <span class="af-sort__ind{% if params.filtr.sort == 'status' or params.filtr.sort == '-status' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'status' %}↑{% elif params.filtr.sort == '-status' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
                     <th>Автомобили</th>
-                    <th>Старт</th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="start" aria-label="Сортировать по старту">
+                            Старт
+                            <span class="af-sort__ind{% if params.filtr.sort == 'start' or params.filtr.sort == '-start' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'start' %}↑{% elif params.filtr.sort == '-start' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
                     <th>Стоянка</th>
-                    <th>Цена</th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="price" aria-label="Сортировать по цене">
+                            Цена
+                            <span class="af-sort__ind{% if params.filtr.sort == 'price' or params.filtr.sort == '-price' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'price' %}↑{% elif params.filtr.sort == '-price' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="created" aria-label="Сортировать по дате создания">
+                            Создан
+                            <span class="af-sort__ind{% if params.filtr.sort == 'created' or params.filtr.sort == '-created' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'created' %}↑{% elif params.filtr.sort == '-created' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
                     <th>Действие</th>
                 </tr>
             </thead>
             <tbody>
                 {% for object in params.paginator.object_list %}
                 <tr class="af-row" data-href="{{ object.uid }}/" tabindex="0">
-                    <td>
+                    <td data-label="Лот">
                         <span class="af-plate">
                             <span class="af-plate__n">{{ object.pk_auction|default:object.pk }}</span>
                             {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Статус">
                         <span class="af-status">
                             {% if object.status == None %}
                                 <span class="af-lamp af-lamp--prep"></span> подготавливается
@@ -257,7 +317,7 @@
                             {% endif %}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Автомобили">
                         <div class="af-cars">
                             {% for car_structure in object.cars %}
                                 {% if forloop.counter <= 3 %}
@@ -283,19 +343,19 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Старт">
                         <div class="af-when">
                             <strong>{% if object.dateStart %}{{ object.dateStart|date:"d.m.Y" }}{% else %}—{% endif %}</strong>
                             {% if object.dateStart %}<span>{{ object.dateStart|date:"H:i" }}</span>{% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Стоянка">
                         <div class="af-place">
                             <strong>{{ object.store.name }}</strong>
                             <span class="af-place__sub">{{ object.user.last_name }} {{ object.user.first_name }}</span>
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Цена">
                         <div class="af-price">{{ object.start_price|floatformat:"2g" }} ₽</div>
                         {% if object.winner_name %}
                         <div class="af-winner">
@@ -303,7 +363,13 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="Создан">
+                        <div class="af-when">
+                            <strong>{% if object.dataTime %}{{ object.dataTime|date:"d.m.Y" }}{% else %}—{% endif %}</strong>
+                            {% if object.dataTime %}<span>{{ object.dataTime|date:"H:i" }}</span>{% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Действие">
                         <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
                     </td>
                 </tr>

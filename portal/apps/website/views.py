@@ -10499,9 +10499,9 @@ def auction_list(request):
     select_stores = _auction_select_stores(user)
     
     if user.is_superuser or getattr(getattr(user, 'profiles', None), 'user_sb', False):
-        objects = Auction.objects.all().order_by('-dataTime')
+        objects = Auction.objects.all()
     else:
-        objects = Auction.objects.filter(store__in=select_stores).order_by('-dataTime')
+        objects = Auction.objects.filter(store__in=select_stores)
     
     # Фильтр по статусу
     status_id = request.GET.get('status', '')
@@ -10511,11 +10511,23 @@ def auction_list(request):
         except (ValueError, TypeError):
             pass
     
-    # Поиск по VIN номеру (через AuctionStructure -> car -> vin)
+    # Фильтр: экспресс / обычный
+    express = request.GET.get('express', '')
+    if express == '1':
+        objects = objects.filter(is_express=True)
+    elif express == '0':
+        objects = objects.filter(is_express=False)
+    
+    # Поиск: VIN, номер лота, госномер, автор
     vin_search = request.GET.get('vin', '').strip()
     if vin_search:
         objects = objects.filter(
-            auctionstructure__car__vin__icontains=vin_search
+            Q(auctionstructure__car__vin__icontains=vin_search) |
+            Q(pk_auction__icontains=vin_search) |
+            Q(auctionstructure__car__plate_number__icontains=vin_search) |
+            Q(user__last_name__icontains=vin_search) |
+            Q(user__first_name__icontains=vin_search) |
+            Q(user__username__icontains=vin_search)
         ).distinct()
     
     # Фильтр по периоду (дата от)
@@ -10551,13 +10563,31 @@ def auction_list(request):
     objects    = objects.annotate(
         count_cars  = Subquery(subquery_1))
     
+    # Сортировка колонок
+    sort = request.GET.get('sort', '')
+    sortable = {
+        'created':      ('-dataTime', 'dataTime'),
+        'start':        ('dateStart', '-dateStart'),
+        'price':        ('-start_price', 'start_price'),
+        'status':       ('status__name', '-status__name'),
+    }
+    if sort:
+        key = sort.lstrip('-')
+        if key in sortable:
+            desc = sort.startswith('-')
+            order_field = sortable[key][0 if desc else 1]
+            objects = objects.order_by(order_field)
+    
+    if not sort:
+        objects = objects.order_by('-dataTime')
+    
     # Подсчитываем статистику по отфильтрованным объектам
     amount      = objects.aggregate(Sum('start_price'))['start_price__sum'] or 0
     count_cars  = objects.aggregate(Sum('count_cars'))['count_cars__sum'] or 0
         
     paginator   = Paginator(list(objects), select_count)
     paginator   = paginator.get_page(page_number)
-
+    
     # Получаем все статусы для фильтра
     all_statuses = RefCarsOrganizationAuctionStatus.objects.all().order_by('name')
 
@@ -10572,7 +10602,9 @@ def auction_list(request):
         'vin': vin_search,
         'date_from': date_from,
         'date_to': date_to,
-        'store_id': store_id
+        'store_id': store_id,
+        'express': express,
+        'sort': sort,
     }
     
     params = {

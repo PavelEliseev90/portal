@@ -690,6 +690,37 @@ body:has(.auction-floor) #content > br {
     color: #8a8a8a;
     text-align: left;
     padding: 0.85rem 0.9rem;
+}
+
+.af-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.af-sort:hover,
+.af-sort:focus-visible {
+    color: var(--af-accent);
+}
+
+.af-sort__ind {
+    font-size: 0.7rem;
+    color: var(--af-accent);
+    opacity: 0.4;
+}
+
+.af-sort__ind.is-active {
+    opacity: 1;
+}
     border-bottom: 1px solid var(--af-line);
 }
 
@@ -1002,6 +1033,21 @@ body:has(.auction-floor) #content > br {
         width: 100%;
         padding: 0.25rem 0;
         box-shadow: none;
+    }
+
+    .af-row td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--af-muted);
+        margin-bottom: 0.15rem;
+    }
+
+    .af-row td[data-label="Лот"]::before,
+    .af-row td[data-label="Действие"]::before {
+        display: none;
     }
 
     .af-row td:first-child {
