@@ -893,6 +893,15 @@ body:has(.auction-floor) #content > br {
     color: var(--af-accent);
 }
 
+.af-highlight {
+    background: rgba(245, 130, 32, 0.35);
+    color: var(--af-white);
+    padding: 0.05rem 0.25rem;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.6);
+    font-weight: inherit;
+}
+
 .af-when {
     font-size: 0.82rem;
     color: var(--af-muted);

@@ -532,6 +532,65 @@
         });
     });
 
+    // ==== Подсветка найденных совпадений поиска ====
+    function initSearchHighlight() {
+        const table = root.querySelector(".af-table");
+        if (!table) return;
+        const query = (table.getAttribute("data-af-search-term") || "").trim();
+        if (!query || query.length < 2) return;
+
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp("(" + escaped + ")", "gi");
+
+        const targets = table.querySelectorAll(
+            ".af-plate__n, .af-car__name, .af-car__vin, .af-car__plate, .af-place-user"
+        );
+
+        targets.forEach(function (el) {
+            highlightTextNodes(el, regex);
+        });
+    }
+
+    function highlightTextNodes(element, regex) {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        let node;
+        while ((node = walker.nextNode())) {
+            if (node.parentElement && !node.parentElement.closest("button, mark, svg")) {
+                textNodes.push(node);
+            }
+        }
+
+        textNodes.forEach(function (textNode) {
+            const text = textNode.nodeValue;
+            if (!regex.test(text)) return;
+            regex.lastIndex = 0;
+
+            const fragment = document.createDocumentFragment();
+            let lastIdx = 0;
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                if (match.index > lastIdx) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+                }
+                const mark = document.createElement("mark");
+                mark.className = "af-highlight";
+                mark.textContent = match[0];
+                fragment.appendChild(mark);
+                lastIdx = regex.lastIndex;
+            }
+
+            if (lastIdx < text.length) {
+                fragment.appendChild(document.createTextNode(text.substring(lastIdx)));
+            }
+
+            textNode.parentNode.replaceChild(fragment, textNode);
+        });
+    }
+
+    initSearchHighlight();
+
     const helpData = {
         createLot: {
             title: "Создание нового лота",
