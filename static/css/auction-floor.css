@@ -160,6 +160,27 @@ body:has(.auction-floor) #content > br {
     color: #111;
 }
 
+.af-btn--primary:disabled,
+.af-btn--primary.is-disabled,
+.auction-floor a.af-btn--primary.is-disabled {
+    background: #1c1c1c !important;
+    color: #6a6a6a !important;
+    border: 1px solid #333333 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    opacity: 0.7;
+}
+
+.af-btn--primary:disabled:hover,
+.af-btn--primary.is-disabled:hover {
+    background: #1c1c1c !important;
+    color: #6a6a6a !important;
+    border-color: #333333 !important;
+    transform: none !important;
+}
+
 .auction-floor a.af-btn--soft,
 .auction-floor a.af-open {
     background: #000;
@@ -251,6 +272,17 @@ body:has(.auction-floor) #content > br {
     font-size: 0.88rem;
     line-height: 1.4;
     color: var(--af-white);
+}
+
+.af-banner.is-closed {
+    background:
+        linear-gradient(135deg, rgba(255, 77, 46, 0.18), #181212 45%);
+    border-color: rgba(255, 77, 46, 0.5);
+}
+
+.af-banner.is-closed .af-banner__mark {
+    background: var(--af-danger);
+    box-shadow: 0 0 10px rgba(255, 77, 46, 0.7);
 }
 
 .af-filters-open {

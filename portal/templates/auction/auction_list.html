@@ -81,7 +81,11 @@
         </div>
         <div class="af-header__actions">
             {% if params.can_edit %}
-            <a class="af-btn af-btn--primary" href="new_lots/">Новый лот</a>
+                {% if params.sends %}
+                <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>Новый лот</a>
+                {% else %}
+                <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">Новый лот</button>
+                {% endif %}
             {% endif %}
             <button type="button" class="af-btn af-btn--ghost" data-bs-toggle="modal" data-bs-target="#auctionHelpModal">Справка</button>
         </div>
@@ -100,9 +104,15 @@
             <span class="af-stat__label">Автомобилей</span>
             <span class="af-stat__value">{{ params.count_cars }}</span>
         </div>
-        <aside class="af-banner" role="status">
+        <aside class="af-banner{% if not params.sends %} is-closed{% endif %}" data-af-send-window role="status">
             <span class="af-banner__mark" aria-hidden="true"></span>
-            <p>Отправка лотов недоступна с 10:00 до 14:00.</p>
+            <p data-af-banner-text>
+                {% if not params.sends %}
+                <strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.
+                {% else %}
+                Отправка лотов недоступна с 10:00 до 14:00.
+                {% endif %}
+            </p>
         </aside>
     </section>
 
@@ -419,7 +429,11 @@
         <p>По заданным параметрам аукционы не найдены.</p>
         <a class="af-btn af-btn--ghost" href="?">Сбросить фильтры</a>
         {% if params.can_edit %}
-        <a class="af-btn af-btn--primary" href="new_lots/">Новый лот</a>
+            {% if params.sends %}
+            <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>Новый лот</a>
+            {% else %}
+            <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">Новый лот</button>
+            {% endif %}
         {% endif %}
     </div>
     {% endif %}

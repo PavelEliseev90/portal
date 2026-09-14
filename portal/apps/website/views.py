@@ -10607,6 +10607,9 @@ def auction_list(request):
         'sort': sort,
     }
     
+    now = DT.datetime.now()
+    sends = not (10 <= now.hour < 14)
+
     params = {
         'type'          : 'auction',
         'paginator'     : paginator,
@@ -10618,6 +10621,7 @@ def auction_list(request):
         'filtr'         : filtr,
         'can_edit'      : can_edit,
         'user_sb'       : not can_edit,
+        'sends'         : sends,
     }
     
     return render(request, "auction/auction_list.html", {'params': params})
@@ -10662,6 +10666,9 @@ def _get_auction_by_uid(slug_auction):
 def auction_doc_new(request):
     if _auction_user_sb_readonly(request.user):
         return HttpResponseRedirect('/auction/')
+    now = DT.datetime.now()
+    if 10 <= now.hour < 14:
+        return HttpResponseRedirect('/auction/')
     return auction_doc(request, 'new_lots')
 
 
@@ -10689,11 +10696,11 @@ def auction_doc(request, slug_auction):
     user    = request.user
     answer  = ''
     sends   = False
-    if DT.datetime.now().hour < 13 or DT.datetime.now().hour >= 14:
+    if DT.datetime.now().hour < 10 or DT.datetime.now().hour >= 14:
         sends = True
 
     if slug_auction == 'new_lots':
-        if not can_edit:
+        if not can_edit or not sends:
             return HttpResponseRedirect('/auction/')
         auction = Auction()
         auction.user = user

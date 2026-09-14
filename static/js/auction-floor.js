@@ -471,6 +471,67 @@
         });
     });
 
+    // ==== Окно отправки 10:00–14:00 ====
+    function checkSendWindow() {
+        const now = new Date();
+        const hour = now.getHours();
+        const isClosed = hour >= 10 && hour < 14;
+
+        const banner = root.querySelector("[data-af-send-window]");
+        if (banner) {
+            banner.classList.toggle("is-closed", isClosed);
+            const textEl = banner.querySelector("[data-af-banner-text]");
+            if (textEl) {
+                if (isClosed) {
+                    textEl.innerHTML = "<strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.";
+                } else {
+                    textEl.textContent = "Отправка лотов недоступна с 10:00 до 14:00.";
+                }
+            }
+        }
+
+        root.querySelectorAll("[data-af-new-lot]").forEach(function (btn) {
+            if (isClosed) {
+                btn.classList.add("is-disabled");
+                btn.setAttribute("title", "Создание и отправка лотов недоступны с 10:00 до 14:00");
+                btn.setAttribute("aria-disabled", "true");
+                if (btn.tagName === "BUTTON") {
+                    btn.disabled = true;
+                } else if (btn.tagName === "A") {
+                    const currentHref = btn.getAttribute("href");
+                    if (currentHref) btn.setAttribute("data-href-orig", currentHref);
+                    btn.removeAttribute("href");
+                }
+            } else {
+                btn.classList.remove("is-disabled");
+                btn.removeAttribute("title");
+                btn.removeAttribute("aria-disabled");
+                if (btn.tagName === "BUTTON") {
+                    btn.disabled = false;
+                } else if (btn.tagName === "A") {
+                    if (!btn.getAttribute("href")) {
+                        btn.setAttribute("href", btn.getAttribute("data-href-orig") || "new_lots/");
+                    }
+                }
+            }
+        });
+    }
+
+    checkSendWindow();
+    setInterval(checkSendWindow, 30000);
+
+    root.querySelectorAll("[data-af-new-lot]").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+            const now = new Date();
+            const hour = now.getHours();
+            if (hour >= 10 && hour < 14) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Создание лотов недоступно с 10:00 до 14:00");
+            }
+        });
+    });
+
     const helpData = {
         createLot: {
             title: "Создание нового лота",
