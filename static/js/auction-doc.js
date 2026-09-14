@@ -23,11 +23,70 @@ $(document).ready(function() {
         refresh_board();
     });
 
-    // Min price click to fill
-    $(document).on('click', '#min_price_chip', function() {
+    // Helper: Apply price to input with flash animation & toast
+    function applyStartPrice(val, label) {
+        if (val === undefined || val === null || isNaN(val) || val <= 0) {
+            showAuctionToast('Сначала добавьте автомобиль в лот, чтобы рассчитать минимальную цену', 'Внимание', 'warning');
+            return;
+        }
+        var rounded = Math.round(val);
+        var $input = $('#price_start');
+        $input.val(rounded).trigger('input').trigger('change');
+
+        // Trigger flash animation
+        $input.removeClass('ad-price-flash');
+        if ($input.length && $input[0]) {
+            void $input[0].offsetWidth;
+        }
+        $input.addClass('ad-price-flash');
+
+        var formatted = new Intl.NumberFormat('ru-RU').format(rounded);
+        showAuctionToast(label ? (label + ': ' + formatted + ' ₽') : ('Установлена цена: ' + formatted + ' ₽'), 'Стартовая цена', 'success');
+    }
+
+    // Min price direct one-click buttons
+    $(document).on('click', '#btn_set_min_price, #btn_quick_min_inline, #min_price_chip', function(e) {
+        e.preventDefault();
         var minVal = $(this).data('min-val');
-        if (minVal !== undefined && minVal !== null) {
-            $('#price_start').val(minVal).trigger('input');
+        if (minVal === undefined || minVal === null || isNaN(minVal)) {
+            minVal = window._current_min_price || parseFloat($('#price_start').attr('min')) || 0;
+        }
+        applyStartPrice(minVal, 'Установлена минимальная цена');
+    });
+
+    // Preset +5% button
+    $(document).on('click', '#btn_add_5pct', function(e) {
+        e.preventDefault();
+        var minVal = window._current_min_price || parseFloat($('#price_start').attr('min')) || 0;
+        if (minVal > 0) {
+            var target = Math.round((minVal * 1.05) / 1000) * 1000;
+            applyStartPrice(target, 'Установлена цена (+5%)');
+        } else {
+            showAuctionToast('Сначала добавьте автомобиль в лот', 'Внимание', 'warning');
+        }
+    });
+
+    // Preset +10% button
+    $(document).on('click', '#btn_add_10pct', function(e) {
+        e.preventDefault();
+        var minVal = window._current_min_price || parseFloat($('#price_start').attr('min')) || 0;
+        if (minVal > 0) {
+            var target = Math.round((minVal * 1.10) / 1000) * 1000;
+            applyStartPrice(target, 'Установлена цена (+10%)');
+        } else {
+            showAuctionToast('Сначала добавьте автомобиль в лот', 'Внимание', 'warning');
+        }
+    });
+
+    // Preset +50 000 ₽ button
+    $(document).on('click', '#btn_round_50k', function(e) {
+        e.preventDefault();
+        var cur = parseFloat($('#price_start').val()) || window._current_min_price || parseFloat($('#price_start').attr('min')) || 0;
+        if (cur > 0) {
+            var target = cur + 50000;
+            applyStartPrice(target, 'Цена увеличена (+50 000 ₽)');
+        } else {
+            showAuctionToast('Сначала укажите стартовую цену или добавьте авто', 'Внимание', 'warning');
         }
     });
 
@@ -260,9 +319,64 @@ function refresh_board() {
     $profitAuctionEl.text(car_profit_auction_str + ' ₽');
     $profitAuctionEl.removeClass('is-positive is-negative').addClass(car_profit_auction_int >= 0 ? 'is-positive' : 'is-negative');
 
-    // Start Price minimum enforcement
+    // Start Price minimum enforcement & quick button updates
+    window._current_min_price = price_cars;
     $('#price_start').attr('min', price_cars);
-    $('#min_price_start').html('Мин. стартовая цена: <span class="ad-min-price-chip" id="min_price_chip" data-min-val="' + price_cars + '">' + price_cars_str + ' ₽</span>');
+    $('#btn_set_min_price').data('min-val', price_cars);
+    $('#btn_quick_min_inline').data('min-val', price_cars);
+
+    if (price_cars > 0) {
+        $('#btn_set_min_price_val').text(price_cars_str + ' ₽');
+        $('#btn_set_min_price, #btn_add_5pct, #btn_add_10pct, #btn_round_50k, #btn_quick_min_inline')
+            .prop('disabled', false)
+            .removeClass('is-disabled');
+
+        var p5 = Math.round((price_cars * 1.05) / 1000) * 1000;
+        var p10 = Math.round((price_cars * 1.10) / 1000) * 1000;
+        $('#btn_add_5pct').attr('title', '+5% к мин. цене: ' + formatter.format(p5) + ' ₽');
+        $('#btn_add_10pct').attr('title', '+10% к мин. цене: ' + formatter.format(p10) + ' ₽');
+
+        // Active state if currently equals min price
+        if (price_lot === price_cars) {
+            $('#btn_set_min_price, #btn_quick_min_inline').addClass('is-active');
+        } else {
+            $('#btn_set_min_price, #btn_quick_min_inline').removeClass('is-active');
+        }
+
+        // Active state for +5% or +10%
+        if (price_lot === p5) {
+            $('#btn_add_5pct').addClass('is-active');
+        } else {
+            $('#btn_add_5pct').removeClass('is-active');
+        }
+        if (price_lot === p10) {
+            $('#btn_add_10pct').addClass('is-active');
+        } else {
+            $('#btn_add_10pct').removeClass('is-active');
+        }
+
+        // Price status badge
+        var $priceBadge = $('#price_status_badge');
+        if (price_lot > 0) {
+            if (price_lot >= price_cars) {
+                $priceBadge.removeClass('is-invalid').addClass('is-valid').html('✓ Мин. цена соблюдена').show();
+            } else {
+                $priceBadge.removeClass('is-valid').addClass('is-invalid').html('⚠️ Ниже мин. цены (' + price_cars_str + ' ₽)').show();
+            }
+        } else {
+            $priceBadge.hide();
+        }
+
+        $('#min_price_start').html('Мин. стартовая цена: <span class="ad-min-price-chip" id="min_price_chip" data-min-val="' + price_cars + '" title="Нажмите для применения">' + price_cars_str + ' ₽</span> <span class="text-muted small ms-1">(сумма цен авто)</span>');
+    } else {
+        $('#btn_set_min_price_val').text('—');
+        $('#btn_set_min_price, #btn_add_5pct, #btn_add_10pct, #btn_round_50k, #btn_quick_min_inline')
+            .prop('disabled', true)
+            .addClass('is-disabled')
+            .removeClass('is-active');
+        $('#price_status_badge').hide();
+        $('#min_price_start').html('<span>Мин. цена рассчитывается автоматически на основе авто в лоте</span>');
+    }
 
     // Fleet Counter in deck header
     $('#total_cars_count').text(count_car);
@@ -406,30 +520,45 @@ function checkPreflight() {
     var dateStartVal = ($('#dateStart').val() || '').trim();
     var hasDateStart = dateStartVal.length > 0;
 
+    // Formatted date string for start
+    var dateDisplay = 'Не назначен';
+    if (hasDateStart) {
+        var dtText = $('#ad_dt_text').text().trim();
+        if (dtText && dtText.indexOf('Выберите') === -1) {
+            dateDisplay = dtText;
+        } else {
+            dateDisplay = 'Назначен';
+        }
+    }
+
+    var priceDisplay = hasPrice ? (new Intl.NumberFormat('ru-RU').format(priceStart) + ' ₽') : 'Не указана';
+    var carDisplay = hasCar ? (carCount === 1 ? '1 авто в лоте' : carCount + ' авто в лоте') : 'Не прикреплён';
+    var photosDisplay = hasPhotos ? 'Загружены' : 'Не загружены';
+
     var items = [
         {
             $el: $('#preflight_car'),
-            ok: hasCar,
-            textOk: 'Автомобиль прикреплён',
-            textWarn: 'Автомобиль не прикреплён'
+            $val: $('#preflight_car_val'),
+            valText: carDisplay,
+            ok: hasCar
         },
         {
             $el: $('#preflight_photos'),
-            ok: hasPhotos,
-            textOk: 'Фотографии загружены',
-            textWarn: 'Фотографии не загружены'
+            $val: $('#preflight_photos_val'),
+            valText: photosDisplay,
+            ok: hasPhotos
         },
         {
             $el: $('#preflight_price'),
-            ok: hasPrice,
-            textOk: hasPrice ? ('Стартовая цена: ' + new Intl.NumberFormat('ru-RU').format(priceStart) + ' ₽') : 'Стартовая цена указана',
-            textWarn: 'Стартовая цена не указана'
+            $val: $('#preflight_price_val'),
+            valText: priceDisplay,
+            ok: hasPrice
         },
         {
             $el: $('#preflight_start'),
-            ok: hasDateStart,
-            textOk: 'Дата старта назначена',
-            textWarn: 'Дата старта не назначена'
+            $val: $('#preflight_start_val'),
+            valText: dateDisplay,
+            ok: hasDateStart
         }
     ];
 
@@ -439,32 +568,38 @@ function checkPreflight() {
         if (item.ok) {
             score++;
             item.$el.removeClass('is-pending').addClass('is-ok');
-            item.$el.find('.ad-preflight__item-icon').text('✅');
-            item.$el.find('.ad-preflight__item-text').text(item.textOk);
+            item.$el.find('.ad-chk-tile__tag, .ad-pod__status-txt, .ad-pod__status').text('Готово');
         } else {
             item.$el.removeClass('is-ok').addClass('is-pending');
-            item.$el.find('.ad-preflight__item-icon').text('⚠️');
-            item.$el.find('.ad-preflight__item-text').text(item.textWarn);
+            item.$el.find('.ad-chk-tile__tag, .ad-pod__status-txt, .ad-pod__status').text('Требуется');
+        }
+        if (item.$val && item.$val.length) {
+            item.$val.text(item.valText);
         }
     });
 
     var pct = Math.round((score / 4) * 100);
-    var $fill = $('#preflight_progress');
     var $score = $('#preflight_score');
+    var $progress = $('#preflight_progress');
+    var $gaugeVal = $('#preflight_gauge_val');
 
-    $fill.css('width', pct + '%');
+    // Update progress track fill
+    if ($progress.length) {
+        $progress.css('width', pct + '%');
+    }
+
+    // Update circular SVG gauge if present
+    if ($gaugeVal.length) {
+        $gaugeVal.attr('stroke-dasharray', pct + ', 100');
+    }
+
+    if ($score.length) {
+        $score.text(score === 4 ? '4 из 4 • Готов' : score + ' из 4');
+    }
 
     if (score === 4) {
-        $score.text('4 / 4 • Готов!').removeClass('is-pending is-mid').addClass('is-ready');
-        $fill.removeClass('is-pending is-mid').addClass('is-ready');
         $preflight.removeClass('is-incomplete').addClass('is-ready');
-    } else if (score >= 2) {
-        $score.text(score + ' / 4').removeClass('is-pending is-ready').addClass('is-mid');
-        $fill.removeClass('is-pending is-ready').addClass('is-mid');
-        $preflight.removeClass('is-ready').addClass('is-incomplete');
     } else {
-        $score.text(score + ' / 4').removeClass('is-mid is-ready').addClass('is-pending');
-        $fill.removeClass('is-mid is-ready').addClass('is-pending');
         $preflight.removeClass('is-ready').addClass('is-incomplete');
     }
 

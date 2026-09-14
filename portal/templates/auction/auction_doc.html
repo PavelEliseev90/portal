@@ -247,34 +247,78 @@
 
 			<!-- Header Right: Checklist + Actions -->
 			<div class="ad-header__right">
-				<!-- PRE-FLIGHT CHECKLIST WIDGET -->
-				<div class="ad-preflight {% if params.auction.winner_price > 0 %}d-none{% endif %}" id="ad_preflight">
-					<div class="ad-preflight__header">
-						<div class="ad-preflight__title-wrap">
-							<span class="ad-preflight__radar-icon">🎯</span>
-							<span class="ad-preflight__title">Готовность к торгам</span>
+				<!-- CHECKLIST DECK (Strict Automotive Style with Rounded Edges) -->
+				<div class="ad-chk-deck {% if params.auction.winner_price > 0 %}d-none{% endif %}" id="ad_preflight">
+					<div class="ad-chk-deck__header">
+						<div class="ad-chk-deck__title-group">
+							<span class="ad-chk-deck__icon" aria-hidden="true">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+							</span>
+							<span class="ad-chk-deck__title">Готовность лота к торгам</span>
 						</div>
-						<span class="ad-preflight__score-pill" id="preflight_score">0 / 4</span>
+						<div class="ad-chk-deck__score-pill" id="preflight_score">0 из 4</div>
 					</div>
-					<div class="ad-preflight__bar">
-						<div class="ad-preflight__bar-fill" id="preflight_progress" style="width: 0%;"></div>
+
+					<div class="ad-chk-deck__track">
+						<div class="ad-chk-deck__fill" id="preflight_progress" style="width: 0%;"></div>
 					</div>
-					<div class="ad-preflight__grid">
-						<div class="ad-preflight__item is-pending" id="preflight_car" role="button" tabindex="0" title="Нажмите, чтобы добавить или просмотреть авто">
-							<span class="ad-preflight__item-icon">⚠️</span>
-							<span class="ad-preflight__item-text">Автомобиль прикреплён</span>
+
+					<!-- 4 Cards Grid with Rounded Corners -->
+					<div class="ad-chk-deck__grid">
+						<!-- 1. Car -->
+						<div class="ad-chk-tile is-pending" id="preflight_car" role="button" tabindex="0" title="Нажмите для добавления или настройки авто">
+							<div class="ad-chk-tile__body">
+								<span class="ad-chk-tile__icon">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+								</span>
+								<div class="ad-chk-tile__text">
+									<span class="ad-chk-tile__lbl">Автомобиль</span>
+									<span class="ad-chk-tile__val" id="preflight_car_val">Не прикреплён</span>
+								</div>
+							</div>
+							<span class="ad-chk-tile__tag" id="preflight_car_tag">Требуется</span>
 						</div>
-						<div class="ad-preflight__item is-pending" id="preflight_photos" role="button" tabindex="0" title="Нажмите, чтобы настроить фотографии">
-							<span class="ad-preflight__item-icon">⚠️</span>
-							<span class="ad-preflight__item-text">Фотографии загружены</span>
+
+						<!-- 2. Photos -->
+						<div class="ad-chk-tile is-pending" id="preflight_photos" role="button" tabindex="0" title="Нажмите для перехода к фотографиям">
+							<div class="ad-chk-tile__body">
+								<span class="ad-chk-tile__icon">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+								</span>
+								<div class="ad-chk-tile__text">
+									<span class="ad-chk-tile__lbl">Фотографии</span>
+									<span class="ad-chk-tile__val" id="preflight_photos_val">Не загружены</span>
+								</div>
+							</div>
+							<span class="ad-chk-tile__tag" id="preflight_photos_tag">Требуется</span>
 						</div>
-						<div class="ad-preflight__item is-pending" id="preflight_price" role="button" tabindex="0" title="Нажмите, чтобы указать стартовую цену">
-							<span class="ad-preflight__item-icon">⚠️</span>
-							<span class="ad-preflight__item-text">Стартовая цена указана</span>
+
+						<!-- 3. Price -->
+						<div class="ad-chk-tile is-pending" id="preflight_price" role="button" tabindex="0" title="Нажмите для настройки цены">
+							<div class="ad-chk-tile__body">
+								<span class="ad-chk-tile__icon">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+								</span>
+								<div class="ad-chk-tile__text">
+									<span class="ad-chk-tile__lbl">Стартовая цена</span>
+									<span class="ad-chk-tile__val" id="preflight_price_val">Не указана</span>
+								</div>
+							</div>
+							<span class="ad-chk-tile__tag" id="preflight_price_tag">Требуется</span>
 						</div>
-						<div class="ad-preflight__item is-pending" id="preflight_start" role="button" tabindex="0" title="Нажмите, чтобы назначить дату старта">
-							<span class="ad-preflight__item-icon">⚠️</span>
-							<span class="ad-preflight__item-text">Дата старта назначена</span>
+
+						<!-- 4. Start Date -->
+						<div class="ad-chk-tile is-pending" id="preflight_start" role="button" tabindex="0" title="Нажмите для настройки даты старта">
+							<div class="ad-chk-tile__body">
+								<span class="ad-chk-tile__icon">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+								</span>
+								<div class="ad-chk-tile__text">
+									<span class="ad-chk-tile__lbl">Старт торгов</span>
+									<span class="ad-chk-tile__val" id="preflight_start_val">Не назначен</span>
+								</div>
+							</div>
+							<span class="ad-chk-tile__tag" id="preflight_start_tag">Требуется</span>
 						</div>
 					</div>
 				</div>
@@ -1230,16 +1274,39 @@
 						</div>
 
 						<!-- Стартовая цена -->
-						<div>
-							<label for="price_start" class="form-label mb-1">
-								<span><span class="icon-mbri-cash text-warning me-1"></span> Стартовая цена лота</span>
-								<span class="text-muted">₽ (руб.)</span>
-							</label>
-							<div class="ad-price-input-wrap">
-								<input type="number" class="form-control" id="price_start" name="price_start" min="0" placeholder="0.00" value="{{params.auction.start_price}}" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
-								<span class="ad-price-affix">₽</span>
+						<div class="ad-price-group">
+							<div class="d-flex align-items-center justify-content-between mb-1">
+								<label for="price_start" class="form-label mb-0">
+									<span><span class="icon-mbri-cash text-warning me-1"></span> Стартовая цена лота</span>
+									<span class="text-muted small">₽ (руб.)</span>
+								</label>
+								<span id="price_status_badge" class="ad-price-status-badge"></span>
 							</div>
-							<div id="min_price_start" class="ad-price-helper">
+
+							<div class="ad-price-input-wrap">
+								<input type="number" class="form-control" id="price_start" name="price_start" min="0" step="1000" placeholder="0.00" value="{{params.auction.start_price}}" {% if params.auction.winner_price > 0 %} readonly {% endif %}>
+								<span class="ad-price-affix">₽</span>
+								{% if not params.auction.winner_price or params.auction.winner_price <= 0 %}
+								<button type="button" class="ad-price-btn-inline" id="btn_quick_min_inline" title="В один клик подставить минимальную цену">
+									Мин. цена
+								</button>
+								{% endif %}
+							</div>
+
+							<!-- Кнопки быстрого выбора цен с округлыми краями -->
+							{% if not params.auction.winner_price or params.auction.winner_price <= 0 %}
+							<div class="ad-quick-price-bar mt-2" id="ad_quick_prices">
+								<button type="button" class="ad-quick-btn ad-quick-btn--min" id="btn_set_min_price" title="Установить минимальную допустимую цену лота">
+									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+									<span>Мин. цена: <strong id="btn_set_min_price_val">—</strong></span>
+								</button>
+								<button type="button" class="ad-quick-btn" id="btn_add_5pct" data-pct="5" title="+5% к минимальной цене">+5%</button>
+								<button type="button" class="ad-quick-btn" id="btn_add_10pct" data-pct="10" title="+10% к минимальной цене">+10%</button>
+								<button type="button" class="ad-quick-btn" id="btn_round_50k" data-step="50000" title="+50 000 ₽ к текущей цене">+50 000 ₽</button>
+							</div>
+							{% endif %}
+
+							<div id="min_price_start" class="ad-price-helper mt-2">
 								<span>Мин. цена рассчитывается автоматически</span>
 							</div>
 						</div>
