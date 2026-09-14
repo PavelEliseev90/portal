@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 import datetime

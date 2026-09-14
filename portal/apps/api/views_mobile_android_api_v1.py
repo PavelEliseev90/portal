@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from asyncio.windows_events import NULL
 import random
 import os
 from itertools import groupby
