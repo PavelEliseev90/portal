@@ -16,7 +16,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="{% static 'css/auction-doc.css' %}">
+	<link rel="stylesheet" href="{% static 'css/auction-doc.css' %}?v={% now "U" %}">
 	<style>
 		html:has(.auction-doc),
 		body:has(.auction-doc),
@@ -1362,6 +1362,40 @@
 	<div class="toast-container position-fixed top-0 end-0 p-3" id="container_toast" style="z-index: 1080;"></div>
 </div>
 
-<script src="{% static 'js/auction-doc.js' %}"></script>
+<!-- MODAL: DELETE CAR CONFIRMATION (OUTSIDE CONTAINER FOR CLEAN BACKDROP) -->
+<div class="modal fade" id="ad_delete_car_modal" tabindex="-1" aria-labelledby="ad_delete_modal_label" aria-hidden="true" style="z-index: 1080;">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 470px;">
+		<div class="modal-content ad-delete-modal-content">
+			<div class="modal-header border-0 pb-0">
+				<div class="ad-modal-kicker text-danger" id="ad_delete_modal_label">
+					<span class="icon-mbri-alert me-1"></span> Подтверждение действия
+				</div>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+			</div>
+			<div class="modal-body text-center pt-2 pb-4">
+				<div class="ad-delete-icon-wrap mb-3">
+					<span class="icon-mbri-trash"></span>
+				</div>
+				<h4 class="ad-delete-modal-title mb-2">Удалить автомобиль?</h4>
+				<div class="ad-delete-car-preview mb-3" id="ad_delete_car_preview">
+					<!-- Dynamic car preview filled by JS -->
+				</div>
+				<p class="ad-delete-modal-desc text-muted mb-0">
+					Автомобиль будет исключен из состава аукционного лота. Вы сможете добавить его снова при необходимости.
+				</p>
+			</div>
+			<div class="modal-footer border-0 pt-0 justify-content-center gap-2">
+				<button type="button" class="ad-btn ad-btn--outline px-4" data-bs-dismiss="modal">
+					Отмена
+				</button>
+				<button type="button" class="ad-btn ad-btn--danger px-4" id="ad_confirm_delete_btn">
+					<span class="icon-mbri-trash me-1"></span> Да, удалить
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="{% static 'js/auction-doc.js' %}?v={% now "U" %}"></script>
 
 {% endblock %}

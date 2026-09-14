@@ -537,17 +537,34 @@ function subbmit_car(slug) {
         </div>`;
 
 
-        $('#cars').append(html_card);
+        var sourceCard = document.getElementById('cars-list_data_' + id) || document.getElementById('cars-list_data_' + slug);
+        var $newCard = $(html_card);
+
+        $('#cars').append($newCard);
         $('body').append(modal_html);
 
-        $('#no_cars').addClass('d-none');
-        showAuctionToast(`Автомобиль ${mark} ${model} добавлен в лот!`, 'Успешно', 'success');
-
-        var offcanvasEl = document.getElementById('offcanvasRight');
-        if (offcanvasEl) {
-            var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
-            if (offcanvas) offcanvas.hide();
+        // Smoothly hide empty state
+        if ($('#no_cars').length && !$('#no_cars').hasClass('d-none')) {
+            $('#no_cars').addClass('d-none');
         }
+
+        // Trigger smooth flight animation from drawer to deck
+        if (sourceCard && $newCard.length) {
+            animateCarTransfer(sourceCard, $newCard[0], function() {
+                showAuctionToast(`Автомобиль ${mark} ${model} добавлен в лот!`, 'Успешно', 'success');
+            });
+        } else {
+            showAuctionToast(`Автомобиль ${mark} ${model} добавлен в лот!`, 'Успешно', 'success');
+        }
+
+        // Smoothly close offcanvas drawer after flight is in full swing
+        setTimeout(function() {
+            var offcanvasEl = document.getElementById('offcanvasRight');
+            if (offcanvasEl) {
+                var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (offcanvas) offcanvas.hide();
+            }
+        }, 320);
 
         refresh_board();
     }).fail(function() {
@@ -555,20 +572,206 @@ function subbmit_car(slug) {
     });
 }
 
-function delete_car(slug) {
-    if (!confirm('Вы уверены, что хотите удалить этот автомобиль из лота?')) {
+/**
+ * Smooth transfer animation from offcanvas drawer into main lot grid
+ */
+function animateCarTransfer(sourceEl, targetEl, callback) {
+    if (!sourceEl || !targetEl) {
+        if (callback) callback();
         return;
     }
 
-    var cardId = '#cars_list_data_id_' + slug;
+    var startRect = sourceEl.getBoundingClientRect();
+
+    // Create flying proxy clone
+    var proxy = sourceEl.cloneNode(true);
+    proxy.removeAttribute('id');
+    proxy.classList.add('ad-flying-car-proxy');
+
+    // Remove action buttons from flying clone
+    var actions = proxy.querySelector('.ad-drawer-card__actions');
+    if (actions) actions.remove();
+
+    // Lock starting geometry with NO CSS transition yet (prevents browser starting glitch)
+    proxy.style.position = 'fixed';
+    proxy.style.top = startRect.top + 'px';
+    proxy.style.left = startRect.left + 'px';
+    proxy.style.width = startRect.width + 'px';
+    proxy.style.height = startRect.height + 'px';
+    proxy.style.margin = '0';
+    proxy.style.transform = 'translate3d(0, 0, 0) scale(1)';
+    proxy.style.opacity = '1';
+    proxy.style.transition = 'none';
+
+    document.body.appendChild(proxy);
+
+    // Force reflow so the initial frame is guaranteed to be rendered
+    void proxy.offsetHeight;
+
+    // Dim source in drawer
+    sourceEl.style.transition = 'opacity 0.3s ease';
+    sourceEl.style.opacity = '0.35';
+
+    // Target starts invisible while flight happens
+    targetEl.classList.add('ad-car-card--incoming');
+
+    // Check if target needs scrolling
+    var endRect = targetEl.getBoundingClientRect();
+    var isOffscreen = (endRect.top < 60 || endRect.bottom > window.innerHeight);
+
+    if (isOffscreen) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Wait a brief tick for layout/scroll to stabilize before flight
+    setTimeout(function() {
+        endRect = targetEl.getBoundingClientRect();
+
+        var deltaX = endRect.left - startRect.left;
+        var deltaY = endRect.top - startRect.top;
+
+        // Apply smooth GPU-accelerated transition
+        proxy.style.transition = 'transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), width 0.85s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.85s ease';
+        proxy.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) scale(1)';
+        proxy.style.width = Math.min(endRect.width, 500) + 'px';
+        proxy.style.boxShadow = '0 30px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(245, 130, 32, 0.7)';
+
+        // Landing sequence
+        setTimeout(function() {
+            targetEl.classList.remove('ad-car-card--incoming');
+            targetEl.classList.add('ad-car-card--landed');
+
+            proxy.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            proxy.style.opacity = '0';
+            proxy.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) scale(1.04)';
+
+            setTimeout(function() {
+                proxy.remove();
+                setTimeout(function() {
+                    targetEl.classList.remove('ad-car-card--landed');
+                }, 1200);
+                if (callback) callback();
+            }, 250);
+        }, 850);
+    }, 90);
+}
+
+var carPendingDeletion = null;
+
+function ensureDeleteModal() {
+    var modalEl = document.getElementById('ad_delete_car_modal');
+    if (!modalEl) {
+        var modalHtml = `
+        <div class="modal fade" id="ad_delete_car_modal" tabindex="-1" aria-labelledby="ad_delete_modal_label" aria-hidden="true" style="z-index: 1080;">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 470px;">
+                <div class="modal-content ad-delete-modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <div class="ad-modal-kicker text-danger" id="ad_delete_modal_label">
+                            <span class="icon-mbri-alert me-1"></span> Подтверждение действия
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body text-center pt-2 pb-4">
+                        <div class="ad-delete-icon-wrap mb-3">
+                            <span class="icon-mbri-trash"></span>
+                        </div>
+                        <h4 class="ad-delete-modal-title mb-2">Удалить автомобиль?</h4>
+                        <div class="ad-delete-car-preview mb-3" id="ad_delete_car_preview"></div>
+                        <p class="ad-delete-modal-desc text-muted mb-0">
+                            Автомобиль будет исключен из состава аукционного лота. Вы сможете добавить его снова при необходимости.
+                        </p>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
+                        <button type="button" class="ad-btn ad-btn--outline px-4" data-bs-dismiss="modal">
+                            Отмена
+                        </button>
+                        <button type="button" class="ad-btn ad-btn--danger px-4" id="ad_confirm_delete_btn">
+                            <span class="icon-mbri-trash me-1"></span> Да, удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modalEl = document.getElementById('ad_delete_car_modal');
+    } else if (modalEl.parentElement !== document.body) {
+        // Move directly to <body> to prevent stacking context traps
+        document.body.appendChild(modalEl);
+    }
+    return modalEl;
+}
+
+// Ensure delete modal is placed at root of body on load
+$(function() {
+    ensureDeleteModal();
+});
+
+function delete_car(slug) {
+    var $card = $('#cars_list_data_id_' + slug);
+    if (!$card.length) return;
+
+    var modalEl = ensureDeleteModal();
+
+    var carTitle = $card.find('.ad-car-title').text().trim() || 'Автомобиль';
+    var carMod = $card.find('.ad-car-modification').text().trim() || $card.find('.ad-car-mod').text().trim();
+    var carVin = $card.find('[data-copy]').data('copy') || '';
+
+    carPendingDeletion = slug;
+
+    // Populate preview inside modal
+    var previewHtml = `
+        <div class="ad-delete-car-preview-card">
+            <span class="ad-delete-car-preview-title">${carTitle}</span>
+            ${carMod ? `<span class="ad-delete-car-preview-mod">${carMod}</span>` : ''}
+            ${carVin ? `<span class="ad-car-chip ad-car-chip--mono py-0 px-2 small">VIN: ${carVin}</span>` : ''}
+        </div>
+    `;
+    $('#ad_delete_car_preview').html(previewHtml);
+
+    if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+// Handle confirmed car removal
+$(document).on('click', '#ad_confirm_delete_btn', function() {
+    if (!carPendingDeletion) return;
+    var slug = carPendingDeletion;
+    carPendingDeletion = null;
+
+    var modalEl = document.getElementById('ad_delete_car_modal');
+    if (modalEl) {
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    var $card = $('#cars_list_data_id_' + slug);
     var modalId = '#cars_list_data_slug_' + slug + '_modal';
 
-    $(cardId).remove();
-    $(modalId).remove();
+    if (!$card.length) {
+        $(modalId).remove();
+        return;
+    }
 
-    showAuctionToast('Автомобиль удален из лота', 'Информация', 'info');
-    refresh_board();
-}
+    // Trigger smooth departure animation
+    $card.addClass('ad-car-card--deleting');
+
+    setTimeout(function() {
+        $card.slideUp(350, function() {
+            $card.remove();
+            $(modalId).remove();
+
+            // If no cars remaining in lot, smoothly restore the empty deck
+            if ($('#cars .ad-car-card').length === 0) {
+                $('#no_cars').removeClass('d-none').hide().fadeIn(300);
+            }
+
+            showAuctionToast('Автомобиль успешно удален из лота', 'Информация', 'info');
+            refresh_board();
+        });
+    }, 450);
+});
 
 /* ==========================================================================
    OFFCANVAS DATA FETCHER

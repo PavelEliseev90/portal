@@ -2813,4 +2813,223 @@ body.has-auction-doc .alert-warning {
     color: var(--ad-ink);
 }
 
+/* ==========================================================================
+   CAR TRANSFER FLIGHT ANIMATION
+   ========================================================================== */
+.ad-flying-car-proxy {
+    position: fixed !important;
+    z-index: 100000 !important;
+    pointer-events: none !important;
+    will-change: transform, top, left, width, height, opacity;
+    background: #181818 !important;
+    border: 2px solid var(--ad-accent, #f58220) !important;
+    border-radius: var(--ad-radius, 14px) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(245, 130, 32, 0.6) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 0.85rem !important;
+    box-sizing: border-box !important;
+}
 
+.ad-flying-car-proxy .ad-drawer-card__thumb {
+    width: 90px !important;
+    height: 65px !important;
+    flex-shrink: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.ad-flying-car-proxy .ad-drawer-card__thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.ad-flying-car-proxy .ad-drawer-card__info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+.ad-flying-car-proxy .ad-drawer-card__title {
+    font-family: var(--ad-font-stamp, sans-serif) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.ad-flying-car-proxy .ad-drawer-card__price {
+    color: var(--ad-success, #10b981) !important;
+    font-weight: 700 !important;
+    font-family: var(--ad-font-mono, monospace) !important;
+}
+
+.ad-car-card--incoming {
+    opacity: 0 !important;
+    transform: scale(0.92) translateY(15px) !important;
+    pointer-events: none !important;
+}
+
+.ad-car-card--landed {
+    animation: adCarArrivalPulse 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes adCarArrivalPulse {
+    0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(16px);
+        box-shadow: 0 0 0 0 rgba(245, 130, 32, 0.8), 0 0 45px rgba(245, 130, 32, 0.5);
+        border-color: #f58220;
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.015) translateY(-2px);
+        box-shadow: 0 0 0 6px rgba(245, 130, 32, 0.35), 0 0 55px rgba(245, 130, 32, 0.5);
+        border-color: #f58220;
+    }
+    75% {
+        transform: scale(0.995) translateY(0);
+        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.15), 0 0 25px rgba(245, 130, 32, 0.25);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        box-shadow: var(--ad-card-shadow, 0 4px 18px rgba(0, 0, 0, 0.4));
+        border-color: var(--ad-border, #2a2a2a);
+    }
+}
+
+/* ==========================================================================
+   DELETE CONFIRMATION MODAL & EXIT ANIMATION
+   ========================================================================== */
+.ad-delete-modal-content {
+    background: #111111 !important;
+    border: 1px solid #2e2e2e !important;
+    border-radius: var(--ad-radius-lg, 22px) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95), 0 0 40px rgba(255, 77, 46, 0.15) !important;
+}
+
+.ad-delete-icon-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(255, 77, 46, 0.12);
+    border: 1px solid rgba(255, 77, 46, 0.4);
+    color: #ff4d2e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+    box-shadow: 0 0 30px rgba(255, 77, 46, 0.25);
+    margin: 0 auto;
+}
+
+.ad-delete-modal-title {
+    font-family: var(--ad-font-stamp, sans-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.ad-delete-car-preview-card {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #181818;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 0.65rem 1rem;
+    max-width: 100%;
+}
+
+.ad-delete-car-preview-title {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.95rem;
+}
+
+.ad-delete-car-preview-mod {
+    color: var(--ad-muted, #8c8c8c);
+    font-size: 0.85rem;
+}
+
+.ad-delete-modal-desc {
+    font-size: 0.88rem;
+    color: #8c8c8c;
+    line-height: 1.55;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.ad-btn--danger {
+    background: #ff4d2e !important;
+    border: 1px solid #ff4d2e !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-radius: 999px !important;
+    padding: 0.65rem 1.6rem !important;
+    box-shadow: 0 4px 18px rgba(255, 77, 46, 0.4) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.ad-btn--danger:hover {
+    background: #ff644a !important;
+    border-color: #ff644a !important;
+    box-shadow: 0 6px 24px rgba(255, 77, 46, 0.6) !important;
+    transform: translateY(-1px);
+}
+
+/* Exit / Deletion animation on the card */
+.ad-car-card--deleting {
+    animation: adCarDeleteExit 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+    pointer-events: none !important;
+    transform-origin: center right;
+}
+
+@keyframes adCarDeleteExit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateX(0);
+        border-color: #ff4d2e;
+        box-shadow: 0 0 35px rgba(255, 77, 46, 0.6);
+    }
+    35% {
+        opacity: 0.9;
+        transform: scale(0.98) translateX(-20px);
+        border-color: #ff4d2e;
+        box-shadow: 0 0 45px rgba(255, 77, 46, 0.8);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.85) translateX(90px);
+        filter: blur(5px);
+    }
+}
+
+/* Modal backdrop and delete modal z-indexes & stacking fixes */
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
+.modal {
+    z-index: 1060 !important;
+}
+
+#ad_delete_car_modal {
+    z-index: 1080 !important;
+    position: fixed !important;
+}
+
+#ad_delete_car_modal .modal-dialog {
+    z-index: 1081 !important;
+    position: relative !important;
+}
