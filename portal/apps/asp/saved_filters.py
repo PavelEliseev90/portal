@@ -11,7 +11,11 @@ from asp.models import ReportSavedFilter
 from asp.report_table import REPORTS
 
 # Ключи пресетов вне ASP-отчётов (диспозиция и др.).
-EXTRA_SAVED_FILTER_KEYS = frozenset({'disposition'})
+EXTRA_SAVED_FILTER_KEYS = frozenset({
+    'disposition',
+    'docs_agreement',
+    'docs_shipment',
+})
 
 ALLOWED_SAVED_FILTER_KEYS = frozenset(REPORTS.keys()) | EXTRA_SAVED_FILTER_KEYS
 

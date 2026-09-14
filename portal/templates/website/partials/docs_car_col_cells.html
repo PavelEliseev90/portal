@@ -1,0 +1,22 @@
+{% load custom_template_tags %}
+{% for col in params.table_columns %}
+  <td data-label="{{ col.label }}" {% if col.num %}class="text-end"{% endif %}>
+    {% if col.key == 'open' %}
+      <a href="{{ r.detail_url }}"><span class="icon-doc"></span></a>
+    {% elif col.key == 'date' %}
+      {{ r.date|date:"d.m.Y H:i" }}
+    {% elif col.key == 'check_estimated' or col.key == 'check_actual' %}
+      {% if r|get_item:col.key %}
+        <span class="icon-mbri-success text-success"></span>
+      {% else %}
+        <span class="icon-mbri-close text-danger"></span>
+      {% endif %}
+    {% elif col.num %}
+      {% with val=r|get_item:col.key %}
+        {% if val != None and val != '' %}{{ val|floatformat:"2g" }}{% endif %}
+      {% endwith %}
+    {% else %}
+      {{ r|get_item:col.key }}
+    {% endif %}
+  </td>
+{% endfor %}

@@ -1,0 +1,140 @@
+<div class="asp-saved-filters mt-3 pt-3 border-top">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <span class="metric-card-label-portal mb-0">Сохранённые фильтры</span>
+    <button type="button" class="btn-calculate-secondary-sm" data-bs-toggle="modal" data-bs-target="#modalDocsSaveFilter">
+      <span class="icon-mbri-save"></span> Сохранить текущий
+    </button>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% for f in params.saved_filters %}
+      <div class="btn-group btn-group-sm" role="group">
+        <a class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+           href="{{ params.list_path }}?saved_filter={{ f.id }}">
+          {{ f.name }}{% if f.is_shared %} · общий{% endif %}
+        </a>
+        {% if f.is_owner or request.user.is_superuser %}
+        <button type="button" class="btn {% if f.is_active %}btn-primary{% else %}btn-outline-secondary{% endif %} docs-saved-filter-del"
+                data-id="{{ f.id }}" title="Удалить" aria-label="Удалить">×</button>
+        {% endif %}
+      </div>
+    {% empty %}
+      <span class="small text-muted">Нет сохранённых наборов.</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="modalDocsSaveFilter" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Сохранить фильтр</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="docsSaveFilterName">Название</label>
+        <input type="text" class="form-control" id="docsSaveFilterName" maxlength="200"
+               placeholder="Например: Мой ДЦ · текущий месяц" autocomplete="off">
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="docsSaveFilterShared">
+          <label class="form-check-label" for="docsSaveFilterShared">Общий фильтр (виден всем)</label>
+        </div>
+        {% endif %}
+        <div class="small text-muted mt-2">Сохраняются текущие параметры из адресной строки.</div>
+        <div class="small text-danger mt-2 d-none" id="docsSaveFilterError"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn-calculate-sm" id="docsSaveFilterSubmit">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var saveUrl = "{% url 'website:docs_car_saved_filter_save' %}";
+  var deleteUrlTpl = "{% url 'website:docs_car_saved_filter_delete' 0 %}".replace('/0/', '/__ID__/');
+  var reportKey = "{{ params.report_key }}";
+  var multiKeys = { unit: 1, type_reception: 1 };
+
+  function csrfToken() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function snapshotFromUrl() {
+    var url = new URL(document.location.href);
+    var data = {};
+    url.searchParams.forEach(function (val, key) {
+      if (key === 'page' || key === 'export' || key === 'saved_filter' || key === 'ajax') return;
+      var canon = key.replace(/\[\]$/, '');
+      if (multiKeys[canon]) {
+        if (!data[canon]) data[canon] = [];
+        if (val) data[canon].push(val);
+      } else if (val) {
+        data[canon] = val;
+      }
+    });
+    Object.keys(data).forEach(function (k) {
+      if (Array.isArray(data[k])) data[k] = Array.from(new Set(data[k]));
+    });
+    return data;
+  }
+
+  var submitBtn = document.getElementById('docsSaveFilterSubmit');
+  if (submitBtn && !submitBtn.getAttribute('data-bound')) {
+    submitBtn.setAttribute('data-bound', '1');
+    submitBtn.addEventListener('click', function () {
+      var nameEl = document.getElementById('docsSaveFilterName');
+      var errEl = document.getElementById('docsSaveFilterError');
+      var sharedEl = document.getElementById('docsSaveFilterShared');
+      var name = (nameEl && nameEl.value || '').trim();
+      if (errEl) { errEl.classList.add('d-none'); errEl.textContent = ''; }
+      if (!name) {
+        if (errEl) { errEl.textContent = 'Укажите название'; errEl.classList.remove('d-none'); }
+        return;
+      }
+      fetch(saveUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken()
+        },
+        body: JSON.stringify({
+          report_key: reportKey,
+          name: name,
+          is_shared: !!(sharedEl && sharedEl.checked),
+          filter_data: snapshotFromUrl()
+        })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.j.ok) {
+            if (errEl) {
+              errEl.textContent = (res.j && res.j.error) || 'Ошибка сохранения';
+              errEl.classList.remove('d-none');
+            }
+            return;
+          }
+          document.location.href = "{{ params.list_path }}?saved_filter=" + res.j.id;
+        })
+        .catch(function () {
+          if (errEl) { errEl.textContent = 'Сеть / сервер'; errEl.classList.remove('d-none'); }
+        });
+    });
+  }
+
+  document.querySelectorAll('.docs-saved-filter-del').forEach(function (btn) {
+    if (btn.getAttribute('data-bound')) return;
+    btn.setAttribute('data-bound', '1');
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-id');
+      if (!id || !confirm('Удалить сохранённый фильтр?')) return;
+      fetch(deleteUrlTpl.replace('__ID__', id), {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken() }
+      }).then(function () { document.location.reload(); });
+    });
+  });
+})();
+</script>
