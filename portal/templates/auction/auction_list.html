@@ -281,6 +281,7 @@
                     <th>Автомобили</th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="start" aria-label="Сортировать по старту">
+                            <svg class="af-hdr-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             Старт
                             <span class="af-sort__ind{% if params.filtr.sort == 'start' or params.filtr.sort == '-start' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'start' %}↑{% elif params.filtr.sort == '-start' %}↓{% else %}↕{% endif %}
@@ -306,6 +307,7 @@
                     </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="created" aria-label="Сортировать по дате создания">
+                            <svg class="af-hdr-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             Создан
                             <span class="af-sort__ind{% if params.filtr.sort == 'created' or params.filtr.sort == '-created' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'created' %}↑{% elif params.filtr.sort == '-created' %}↓{% else %}↕{% endif %}
@@ -398,10 +400,23 @@
                         </div>
                     </td>
                     <td data-label="Старт">
-                        <div class="af-when">
-                            <strong>{% if object.dateStart %}{{ object.dateStart|date:"d.m.Y" }}{% else %}—{% endif %}</strong>
-                            {% if object.dateStart %}<span>{{ object.dateStart|date:"H:i" }}</span>{% endif %}
+                        {% if object.dateStart %}
+                        <div class="af-chrono af-chrono--start" title="Старт торгов: {{ object.dateStart|date:'d.m.Y H:i' }}">
+                            <div class="af-chrono__date-wrap">
+                                <svg class="af-chrono__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                <span class="af-chrono__date">{{ object.dateStart|date:"d.m.Y" }}</span>
+                            </div>
+                            <div class="af-chrono__time-pill">
+                                <span class="af-chrono__pulse"></span>
+                                <span class="af-chrono__time">{{ object.dateStart|date:"H:i" }}</span>
+                            </div>
                         </div>
+                        {% else %}
+                        <div class="af-chrono af-chrono--empty" title="Старт не назначен">
+                            <svg class="af-chrono__icon af-chrono__icon--muted" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="2" y1="2" x2="22" y2="22" stroke-width="1.8"></line></svg>
+                            <span class="af-chrono__empty-text">Не назначен</span>
+                        </div>
+                        {% endif %}
                     </td>
                     <td data-label="Стоянка">
                         <div class="af-place-col">
@@ -539,10 +554,21 @@
                         {% endif %}
                     </td>
                     <td data-label="Создан">
-                        <div class="af-when">
-                            <strong>{% if object.dataTime %}{{ object.dataTime|date:"d.m.Y" }}{% else %}—{% endif %}</strong>
-                            {% if object.dataTime %}<span>{{ object.dataTime|date:"H:i" }}</span>{% endif %}
+                        {% if object.dataTime %}
+                        <div class="af-chrono af-chrono--created" title="Создан в системе: {{ object.dataTime|date:'d.m.Y H:i' }}">
+                            <div class="af-chrono__date-wrap">
+                                <svg class="af-chrono__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span class="af-chrono__date">{{ object.dataTime|date:"d.m.Y" }}</span>
+                            </div>
+                            <div class="af-chrono__time-pill">
+                                <span class="af-chrono__time">{{ object.dataTime|date:"H:i" }}</span>
+                            </div>
                         </div>
+                        {% else %}
+                        <div class="af-chrono af-chrono--empty">
+                            <span class="af-chrono__dash">—</span>
+                        </div>
+                        {% endif %}
                     </td>
                     <td data-label="{% if params.can_edit %}Действия{% else %}Действие{% endif %}">
                         <div class="af-row-actions-group">
