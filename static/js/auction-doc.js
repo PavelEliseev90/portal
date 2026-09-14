@@ -15,6 +15,7 @@ $(document).ready(function() {
     initStoreCombo();
     initDateTimePicker();
     refresh_board();
+    initAuctionBids();
 
     // Price input real-time calculation
     $('#price_start').on('input change', function() {
@@ -1023,3 +1024,366 @@ function initDateTimePicker() {
         }
     });
 }
+
+/* ==========================================================================
+   AUCTION BIDS HISTORY
+   ========================================================================== */
+function initAuctionBids() {
+    var $card = $('#ad_bids_card');
+    if (!$card.length) return;
+
+    var uid = $card.data('uid');
+    if (!uid) return;
+
+    var numFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+
+    function formatBidDate(dateStr) {
+        if (!dateStr) return '—';
+        if (typeof dateStr !== 'string') return String(dateStr);
+        if (/^\d{2}\.\d{2}\.\d{4}\s\d{2}:\d{2}/.test(dateStr)) {
+            return dateStr;
+        }
+        try {
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            var day = String(d.getDate()).padStart(2, '0');
+            var month = String(d.getMonth() + 1).padStart(2, '0');
+            var year = d.getFullYear();
+            var hours = String(d.getHours()).padStart(2, '0');
+            var minutes = String(d.getMinutes()).padStart(2, '0');
+            var seconds = String(d.getSeconds()).padStart(2, '0');
+            return day + '.' + month + '.' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+        } catch (e) {
+            return dateStr;
+        }
+    }
+
+    function loadAuctionBids(isManual) {
+        var $btn = $('#refresh_bids_btn');
+        var $icon = $('#refresh_bids_icon');
+        var $loading = $('#bids_loading');
+        var $empty = $('#bids_empty');
+        var $error = $('#bids_error');
+        var $tableWrap = $('#bids_table_wrap');
+        var $tableBody = $('#bids_table_body');
+        var $badge = $('#bids_count_badge');
+        var $summary = $('#bids_summary_chip');
+
+        var $winnerCard = $('#ad_winner_bids_card');
+        var $winnerTableBody = $('#winner_bids_table_body');
+        var $winnerBidsBadge = $('#winner_bids_count_badge');
+
+        $icon.addClass('spin');
+        $btn.prop('disabled', true);
+
+        if (!isManual && !$tableBody.children().length) {
+            $loading.removeClass('d-none');
+            $empty.addClass('d-none');
+            $error.addClass('d-none');
+            $tableWrap.addClass('d-none');
+        }
+
+        $.ajax({
+            url: '/auction/js/get_bids/' + uid + '/',
+            type: 'GET',
+            dataType: 'json',
+            timeout: 15000,
+            success: function(resp) {
+                $loading.addClass('d-none');
+
+                if (resp && resp.success) {
+                    if (resp.pk_auction) {
+                        $('#ad_lot_badge_num').text('№ ' + resp.pk_auction);
+                        $('#ad_lot_copy_btn').attr('data-copy', resp.pk_auction);
+                        $('#ad_breadcrumb_lot').text('Лот № ' + resp.pk_auction);
+                        $('#ad_lot_site_link')
+                            .attr('href', 'https://auction.kors-group.ru/lots/' + resp.pk_auction + '/')
+                            .removeClass('d-none');
+                    }
+
+                    // -------------------------------------------------------------
+                    // DYNAMIC STATUS BADGE UPDATE
+                    // -------------------------------------------------------------
+                    if (resp.status) {
+                        var statusName = resp.status;
+                        var statusClass = 'is-active';
+                        if (statusName === 'Завершен' || statusName === 'Завершён') {
+                            statusClass = 'is-finished';
+                        } else if (statusName === 'Не сыграл') {
+                            statusClass = 'is-not-played';
+                        } else if (statusName === 'Отклонено' || statusName === 'Отклонен') {
+                            statusClass = 'is-rejected';
+                        } else if (statusName === 'Новый' || statusName === 'Подготавливается' || statusName === 'Ожидает' || statusName === 'Ожидание') {
+                            statusClass = 'is-draft';
+                        }
+                        $('#ad_lot_status_container').html(`
+                            <span class="ad-status-pill ${statusClass}" id="ad_lot_status_pill">
+                                <span class="ad-status-dot"></span>
+                                <span id="ad_lot_status_text">${escapeHtml(statusName)}</span>
+                            </span>
+                        `);
+                    }
+
+                    // -------------------------------------------------------------
+                    // WINNER & PERSONAL BIDS BLOCK HANDLING
+                    // -------------------------------------------------------------
+                    var profileWinner = resp.profile_winner;
+                    var winnerBids = resp.winner_bids || [];
+                    var winnerStats = resp.winner_stats || {};
+                    var winningBid = resp.winning_bid || (profileWinner ? profileWinner.winning_bid : 0);
+
+                    if (profileWinner && (winnerBids.length > 0 || winningBid > 0)) {
+                        $winnerCard.removeClass('d-none');
+
+                        var wName = profileWinner.name || 'Победитель торгов';
+                        $('#winner_det_name').text(wName);
+
+                        if (profileWinner.phone) {
+                            $('#winner_det_phone').attr('href', 'tel:' + escapeHtml(profileWinner.phone)).find('span:last').text(profileWinner.phone);
+                            $('#winner_det_phone_wrap').removeClass('d-none');
+                        } else {
+                            $('#winner_det_phone_wrap').addClass('d-none');
+                        }
+
+                        if (profileWinner.email) {
+                            $('#winner_det_email').attr('href', 'mailto:' + escapeHtml(profileWinner.email)).find('span:last').text(profileWinner.email);
+                            $('#winner_det_email_wrap').removeClass('d-none');
+                        } else {
+                            $('#winner_det_email_wrap').addClass('d-none');
+                        }
+
+                        if (profileWinner.city) {
+                            $('#winner_det_city').find('span:last').text(profileWinner.city);
+                            $('#winner_det_city_wrap').removeClass('d-none');
+                        } else {
+                            $('#winner_det_city_wrap').addClass('d-none');
+                        }
+
+                        var totalWbCount = winnerBids.length;
+                        $winnerBidsBadge.text(totalWbCount);
+                        $('#winner_det_bids_count').text(totalWbCount);
+
+                        var firstBidAmount = winnerStats.first_bid || (winnerBids.length ? winnerBids[winnerBids.length - 1].amount : winningBid);
+                        var growthAmount = winnerStats.growth !== undefined ? winnerStats.growth : (winningBid > firstBidAmount ? winningBid - firstBidAmount : 0);
+
+                        $('#winner_det_price').text(numFormatter.format(winningBid) + ' ₽');
+                        $('#winner_det_first_bid').text(numFormatter.format(firstBidAmount) + ' ₽');
+                        if (growthAmount > 0) {
+                            $('#winner_det_growth').text('+' + numFormatter.format(growthAmount) + ' ₽');
+                        } else {
+                            $('#winner_det_growth').text('0 ₽');
+                        }
+
+                        // Also update top winner banner if present
+                        var $topWinner = $('#ad_winner_top_card');
+                        if ($topWinner.length) {
+                            $topWinner.removeClass('d-none');
+                            $('#ad_winner_top_name').text(wName);
+                            $('#ad_winner_top_price').text(numFormatter.format(winningBid) + ' ₽');
+                        }
+
+                        // Render personal bids table for winner
+                        if (winnerBids.length > 0) {
+                            var sortedChronological = winnerBids.slice().sort(function(a, b) {
+                                var timeA = new Date(a.created_at || a.created_at_iso || 0).getTime();
+                                var timeB = new Date(b.created_at || b.created_at_iso || 0).getTime();
+                                if (timeA && timeB) return timeA - timeB;
+                                return (a.amount || 0) - (b.amount || 0);
+                            });
+
+                            var bidsWithDelta = sortedChronological.map(function(b, i) {
+                                var delta = 0;
+                                if (i > 0) {
+                                    delta = (b.amount || 0) - (sortedChronological[i - 1].amount || 0);
+                                }
+                                return {
+                                    bid: b,
+                                    stepNum: i + 1,
+                                    delta: delta,
+                                    isFirst: (i === 0)
+                                };
+                            });
+
+                            var displayList = bidsWithDelta.slice().reverse();
+                            var winnerRowsHtml = '';
+
+                            displayList.forEach(function(item) {
+                                var b = item.bid;
+                                var isWinning = !!b.is_winning || (b.amount === winningBid);
+                                var rowClass = isWinning ? ' class="ad-winner-bid-row--top"' : '';
+
+                                var amountFormatted = numFormatter.format(b.amount) + ' ₽';
+                                var timeFormatted = formatBidDate(b.created_at || b.created_at_iso);
+
+                                var deltaHtml = '';
+                                if (item.isFirst) {
+                                    deltaHtml = '<span class="ad-bid-delta ad-bid-delta--start">Старт</span>';
+                                } else if (item.delta > 0) {
+                                    deltaHtml = '<span class="ad-bid-delta">+' + numFormatter.format(item.delta) + ' ₽</span>';
+                                } else {
+                                    deltaHtml = '<span class="ad-bid-delta">—</span>';
+                                }
+
+                                var sourceDisplay = b.source_display || (b.source === 'auto' ? 'Автоставка' : (b.source === 'api' ? 'API' : 'Сайт'));
+                                var sourceHtml = '<span class="ad-bid-source-tag"><span class="icon-mbri-globe"></span> ' + escapeHtml(sourceDisplay) + '</span>';
+
+                                var statusHtml = '';
+                                if (isWinning) {
+                                    statusHtml = '<span class="ad-bid-status-pill is-winner"><span class="icon-mbri-star"></span> Победная ставка</span>';
+                                } else if (item.isFirst) {
+                                    statusHtml = '<span class="ad-bid-status-pill is-personal-first">Первая ставка</span>';
+                                } else {
+                                    statusHtml = '<span class="ad-bid-status-pill is-personal-step"><span class="icon-mbri-arrow-up"></span> Шаг торгов</span>';
+                                }
+
+                                winnerRowsHtml += `
+                                    <tr${rowClass}>
+                                        <td class="text-center ad-bid-num">#${item.stepNum}</td>
+                                        <td class="ad-bid-time"><span class="icon-mbri-clock me-1 text-muted"></span>${escapeHtml(timeFormatted)}</td>
+                                        <td class="ad-bid-amount">${amountFormatted}</td>
+                                        <td>${deltaHtml}</td>
+                                        <td>${sourceHtml}</td>
+                                        <td class="text-end">${statusHtml}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            $winnerTableBody.html(winnerRowsHtml);
+                        } else {
+                            $winnerTableBody.html('<tr><td colspan="6" class="text-center py-3 text-muted small">История ставок победителя формируется</td></tr>');
+                        }
+                    } else {
+                        $winnerCard.addClass('d-none');
+                    }
+
+                    // -------------------------------------------------------------
+                    // GENERAL BIDS TABLE HANDLING
+                    // -------------------------------------------------------------
+                    var bids = resp.bids || [];
+                    var totalBids = resp.total_bids !== undefined ? resp.total_bids : bids.length;
+                    $badge.text(totalBids);
+
+                    if (bids.length > 0) {
+                        var uniqueBidders = resp.unique_bidders !== undefined ? resp.unique_bidders : 0;
+                        var maxBid = resp.max_bid !== undefined ? resp.max_bid : 0;
+
+                        $('#bids_unique_bidders').text(uniqueBidders);
+                        $('#bids_max_price').text(numFormatter.format(maxBid) + ' ₽');
+                        $summary.removeClass('d-none');
+
+                        var rowsHtml = '';
+                        bids.forEach(function(bid, index) {
+                            var isWinning = !!bid.is_winning;
+                            var isLeading = (index === 0 && !isWinning);
+                            var rowClass = isWinning ? ' class="ad-bid-row--winning"' : '';
+
+                            var amountFormatted = numFormatter.format(bid.amount) + ' ₽';
+                            var timeStr = formatBidDate(bid.created_at || bid.created_at_iso);
+
+                            var userName = (bid.user && bid.user.name) ? bid.user.name : 'Участник';
+                            var userCity = (bid.user && bid.user.city) ? '<div class="ad-bid-user-city"><span class="icon-mbri-pin me-1"></span>' + escapeHtml(bid.user.city) + '</div>' : '';
+
+                            var userPhone = (bid.user && bid.user.phone) ? bid.user.phone : '';
+                            var userEmail = (bid.user && bid.user.email) ? bid.user.email : '';
+
+                            var contactsHtml = '<div class="d-flex flex-column gap-1">';
+                            if (userPhone) {
+                                contactsHtml += '<a href="tel:' + escapeHtml(userPhone) + '" class="ad-bid-contact-link"><span class="icon-mbri-phone"></span> ' + escapeHtml(userPhone) + '</a>';
+                            }
+                            if (userEmail) {
+                                contactsHtml += '<a href="mailto:' + escapeHtml(userEmail) + '" class="ad-bid-contact-link"><span class="icon-mbri-letter"></span> ' + escapeHtml(userEmail) + '</a>';
+                            }
+                            if (!userPhone && !userEmail) {
+                                contactsHtml += '<span class="text-muted small">—</span>';
+                            }
+                            contactsHtml += '</div>';
+
+                            var sourceDisplay = bid.source_display || (bid.source === 'auto' ? 'Автоставка' : (bid.source === 'api' ? 'API' : 'Сайт'));
+                            var sourceHtml = '<span class="ad-bid-source-tag"><span class="icon-mbri-globe"></span> ' + escapeHtml(sourceDisplay) + '</span>';
+
+                            var statusHtml = '';
+                            if (isWinning) {
+                                statusHtml = '<span class="ad-bid-status-pill is-winner"><span class="icon-mbri-star"></span> Победная</span>';
+                            } else if (isLeading) {
+                                statusHtml = '<span class="ad-bid-status-pill is-leading"><span class="icon-mbri-up-arrow"></span> Лидирует</span>';
+                            } else {
+                                statusHtml = '<span class="ad-bid-status-pill is-outbid">Перебита</span>';
+                            }
+
+                            rowsHtml += `
+                                <tr${rowClass}>
+                                    <td class="text-center ad-bid-num">${index + 1}</td>
+                                    <td class="ad-bid-time"><span class="icon-mbri-clock me-1 text-muted"></span>${escapeHtml(timeStr)}</td>
+                                    <td class="ad-bid-amount">${amountFormatted}</td>
+                                    <td>
+                                        <div class="ad-bid-user-name">${escapeHtml(userName)}</div>
+                                        ${userCity}
+                                    </td>
+                                    <td>${contactsHtml}</td>
+                                    <td>${sourceHtml}</td>
+                                    <td class="text-end">${statusHtml}</td>
+                                </tr>
+                            `;
+                        });
+
+                        $tableBody.html(rowsHtml);
+                        $tableWrap.removeClass('d-none');
+                        $empty.addClass('d-none');
+                        $error.addClass('d-none');
+                    } else {
+                        $badge.text(0);
+                        $summary.addClass('d-none');
+                        $tableBody.empty();
+                        $tableWrap.addClass('d-none');
+                        $empty.removeClass('d-none');
+                        $error.addClass('d-none');
+                    }
+
+                    if (isManual) {
+                        showAuctionToast('История ставок успешно обновлена', 'Обновлено', 'success');
+                    }
+                } else {
+                    var errMsg = (resp && resp.error) ? resp.error : 'Не удалось загрузить историю ставок';
+                    $('#bids_error_text').text(errMsg);
+                    $error.removeClass('d-none');
+                    if (isManual) {
+                        showAuctionToast(errMsg, 'Ошибка', 'danger');
+                    }
+                }
+            },
+            error: function(xhr, statusText) {
+                $loading.addClass('d-none');
+                var errMsg = 'Ошибка связи с сервером при получении ставок';
+                $('#bids_error_text').text(errMsg);
+                $error.removeClass('d-none');
+                if (isManual) {
+                    showAuctionToast(errMsg, 'Ошибка', 'danger');
+                }
+            },
+            complete: function() {
+                $icon.removeClass('spin');
+                $btn.prop('disabled', false);
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Auto-load on page ready
+    loadAuctionBids(false);
+
+    // Manual refresh click
+    $('#refresh_bids_btn').on('click', function(e) {
+        e.preventDefault();
+        loadAuctionBids(true);
+    });
+}
+

@@ -3414,9 +3414,24 @@ class Auction(models.Model):
 
     @property
     def winner_delta(self):
-        if self.winner_price and self.start_price and self.winner_price > self.start_price:
+        if self.winner_price is not None and self.start_price is not None and (self.is_finished or self.winner_price > 0):
             return self.winner_price - self.start_price
-        return 0
+        return None
+
+    @property
+    def winner_delta_abs(self):
+        delta = self.winner_delta
+        if delta is not None:
+            return abs(delta)
+        return None
+
+    @property
+    def winner_delta_percent(self):
+        delta = self.winner_delta
+        if delta is not None and self.start_price and self.start_price > 0:
+            return round((delta / self.start_price) * 100, 1)
+        return None
+
     
     def __str__(self):
         return "{} ({} - {}) - {}".format(self.dataTime, self.store, self.user, self.start_price)

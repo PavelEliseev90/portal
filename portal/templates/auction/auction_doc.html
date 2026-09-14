@@ -6,7 +6,7 @@
 {% block url %} {% endblock %}
 
 {% block title %}
-	{% if params.new %}Новый лот аукциона{% elif params.auction.number %}Лот аукциона № {{params.auction.number}}{% elif params.auction.uid %}Лот аукциона #{{params.auction.uid|truncatechars:10}}{% else %}Лот аукциона{% endif %}
+	{% if params.new %}Новый лот аукциона{% elif params.auction.pk_auction %}Лот аукциона № {{params.auction.pk_auction}}{% elif params.auction.number %}Лот аукциона № {{params.auction.number}}{% elif params.auction.uid %}Лот аукциона #{{params.auction.uid|truncatechars:10}}{% else %}Лот аукциона{% endif %}
 {% endblock %}
 
 {% block title_navbar %} - Лот аукциона {% endblock %}
@@ -144,9 +144,11 @@
 				<div class="ad-breadcrumbs">
 					<a href="/auction/"><span class="icon-mbri-home"></span> Аукционы</a>
 					<span class="ad-breadcrumbs__sep">/</span>
-					<span>
+					<span id="ad_breadcrumb_lot">
 						{% if params.new %}
 							Новый лот
+						{% elif params.auction.pk_auction %}
+							Лот № {{params.auction.pk_auction}}
 						{% elif params.auction.number %}
 							Лот № {{params.auction.number}}
 						{% elif params.auction.uid %}
@@ -160,45 +162,62 @@
 				<div class="ad-title-wrap">
 					<!--<p class="af-kicker mb-1">КорсАвто Аукцион</p>-->
 					<h1 class="ad-title">
-						{% if params.new %}Новый лот аукциона{% else %}Лот аукциона{% endif %}
+						{% if params.new %}
+							Новый лот аукциона
+						{% elif params.auction.pk_auction %}
+							Лот аукциона № {{params.auction.pk_auction}}
+						{% elif params.auction.number %}
+							Лот аукциона № {{params.auction.number}}
+						{% else %}
+							Лот аукциона
+						{% endif %}
 					</h1>
-					{% comment %} {% if not params.new %}
-						<div class="ad-lot-badge" title="Идентификатор лота">
-							<span>{% if params.auction.number %}№ {{params.auction.number}}{% else %}#{{params.auction.uid|truncatechars:10}}{% endif %}</span>
-							{% if params.auction.number %}
-								<button type="button" class="ad-copy-btn" data-copy="{{params.auction.number}}" title="Скопировать номер лота">
-									<span class="icon-mbri-file"></span>
-								</button>
-							{% elif params.auction.uid %}
-								<button type="button" class="ad-copy-btn" data-copy="{{params.auction.uid}}" title="Скопировать UID лота">
-									<span class="icon-mbri-file"></span>
-								</button>
-							{% endif %}
+					{% if not params.new %}
+						<div class="ad-lot-badge" id="ad_lot_badge" title="Номер лота на сайте аукциона">
+							<span id="ad_lot_badge_num">{% if params.auction.pk_auction %}№ {{params.auction.pk_auction}}{% elif params.auction.number %}№ {{params.auction.number}}{% else %}#{{params.auction.uid|truncatechars:10}}{% endif %}</span>
+							<button type="button" class="ad-copy-btn" id="ad_lot_copy_btn" data-copy="{% if params.auction.pk_auction %}{{params.auction.pk_auction}}{% elif params.auction.number %}{{params.auction.number}}{% else %}{{params.auction.uid}}{% endif %}" title="Скопировать номер лота">
+								<span class="icon-mbri-file"></span>
+							</button>
+							<a href="https://auction.kors-group.ru/lots/{{params.auction.pk_auction}}/" target="_blank" rel="noopener" class="ad-copy-btn ms-1 {% if not params.auction.pk_auction %}d-none{% endif %}" id="ad_lot_site_link" title="Открыть лот на сайте аукциона">
+								<span class="icon-mbri-link"></span>
+							</a>
 						</div>
-					{% endif %} {% endcomment %}
+					{% endif %}
 
 					<!-- Status indicator -->
-					{% if params.auction.status == 'Завершен' or params.auction.status == 'Завершён' or params.auction.winner_price > 0 %}
-						<span class="ad-status-pill is-finished">
+					<div id="ad_lot_status_container" class="d-inline-flex">
+					{% if params.auction.status.name == 'Не сыграл' or params.auction.status == 'Не сыграл' %}
+						<span class="ad-status-pill is-not-played" id="ad_lot_status_pill">
 							<span class="ad-status-dot"></span>
-							{{params.auction.status|default:'Завершен'}}
+							<span id="ad_lot_status_text">Не сыграл</span>
+						</span>
+					{% elif params.auction.status.name == 'Завершен' or params.auction.status.name == 'Завершён' or params.auction.status == 'Завершен' or params.auction.status == 'Завершён' or params.auction.winner_price > 0 %}
+						<span class="ad-status-pill is-finished" id="ad_lot_status_pill">
+							<span class="ad-status-dot"></span>
+							<span id="ad_lot_status_text">{{params.auction.status|default:'Завершен'}}</span>
 						</span>
 					{% elif params.auction.rejection_reason and params.auction.winner_price == 0 %}
-						<span class="ad-status-pill is-rejected">
+						<span class="ad-status-pill is-rejected" id="ad_lot_status_pill">
 							<span class="ad-status-dot"></span>
-							Отклонен
+							<span id="ad_lot_status_text">Отклонен</span>
+						</span>
+					{% elif params.auction.status.name == 'Новый' or params.auction.status == 'Новый' or not params.auction.status %}
+						<span class="ad-status-pill is-draft" id="ad_lot_status_pill">
+							<span class="ad-status-dot"></span>
+							<span id="ad_lot_status_text">Подготавливается</span>
 						</span>
 					{% elif params.auction.status %}
-						<span class="ad-status-pill is-active">
+						<span class="ad-status-pill is-active" id="ad_lot_status_pill">
 							<span class="ad-status-dot"></span>
-							{{params.auction.status}}
+							<span id="ad_lot_status_text">{{params.auction.status}}</span>
 						</span>
 					{% else %}
-						<span class="ad-status-pill is-draft">
+						<span class="ad-status-pill is-draft" id="ad_lot_status_pill">
 							<span class="ad-status-dot"></span>
-							Подготавливается
+							<span id="ad_lot_status_text">Подготавливается</span>
 						</span>
 					{% endif %}
+					</div>
 				</div>
 
 				<div class="ad-meta-chips">
@@ -244,32 +263,32 @@
 		</div>
 
 		<!-- WINNER LUXURY TROPHY CARD (IF FINISHED) -->
-		{% if params.auction.winner_price > 0 %}
-			<div class="ad-winner-card">
-				<div>
-					<div class="ad-winner-header">
-						<span class="icon-mbri-star"></span> Победитель аукциона
-					</div>
-					<div class="ad-winner-name">{{params.auction.winner_name}}</div>
-					<div class="ad-winner-contacts">
-						{% if params.auction.winner_phone %}
-							<a href="tel:{{params.auction.winner_phone}}" class="ad-winner-contact-link">
-								<span class="icon-mbri-phone"></span> {{params.auction.winner_phone}}
-							</a>
-						{% endif %}
-						{% if params.auction.winner_email %}
-							<a href="mailto:{{params.auction.winner_email}}" class="ad-winner-contact-link">
-								<span class="icon-mbri-letter"></span> {{params.auction.winner_email}}
-							</a>
-						{% endif %}
-					</div>
+		{% if not params.new and params.auction.uid %}
+		<div class="ad-winner-card{% if not params.auction.winner_price or params.auction.winner_price <= 0 %} d-none{% endif %}" id="ad_winner_top_card">
+			<div>
+				<div class="ad-winner-header">
+					<span class="icon-mbri-star"></span> Победитель аукциона
 				</div>
-
-				<div class="ad-winner-price-box">
-					<div class="ad-winner-price-label">Победная ставка</div>
-					<div class="ad-winner-price">{{params.auction.winner_price|floatformat:"0g"}} ₽</div>
+				<div class="ad-winner-name" id="ad_winner_top_name">{{params.auction.winner_name|default:"—"}}</div>
+				<div class="ad-winner-contacts" id="ad_winner_top_contacts">
+					{% if params.auction.winner_phone %}
+						<a href="tel:{{params.auction.winner_phone}}" class="ad-winner-contact-link" id="ad_winner_top_phone">
+							<span class="icon-mbri-phone"></span> <span>{{params.auction.winner_phone}}</span>
+						</a>
+					{% endif %}
+					{% if params.auction.winner_email %}
+						<a href="mailto:{{params.auction.winner_email}}" class="ad-winner-contact-link" id="ad_winner_top_email">
+							<span class="icon-mbri-letter"></span> <span>{{params.auction.winner_email}}</span>
+						</a>
+					{% endif %}
 				</div>
 			</div>
+
+			<div class="ad-winner-price-box">
+				<div class="ad-winner-price-label">Победная ставка</div>
+				<div class="ad-winner-price" id="ad_winner_top_price">{% if params.auction.winner_price > 0 %}{{params.auction.winner_price|floatformat:"0g"}} ₽{% else %}—{% endif %}</div>
+			</div>
+		</div>
 		{% endif %}
 
 		<!-- REJECTION WARNING CARD -->
@@ -310,6 +329,174 @@
 				<span class="ad-kpi-value" id="car_profit_auction">-</span>
 			</div>
 		</div>
+
+		<!-- WINNER & PERSONAL BIDS BLOCK (SEPARATE DEDICATED SECTION) -->
+		{% if not params.new and params.auction.uid %}
+		<div class="ad-card mb-3 ad-winner-bids-card{% if not params.auction.winner_price or params.auction.winner_price <= 0 %} d-none{% endif %}" id="ad_winner_bids_card">
+			<div class="ad-card-header">
+				<div>
+					<h2 class="ad-section-title d-flex align-items-center gap-2">
+						<span class="icon-mbri-star text-success"></span>
+						<span>Победитель и его история ставок</span>
+						<span class="ad-winner-bids-count-pill" id="winner_bids_count_badge">0</span>
+					</h2>
+					<p class="ad-section-subtitle mb-0">Информация о победителе торгов и все сделанные им предложения</p>
+				</div>
+				<div class="d-flex align-items-center flex-wrap gap-2">
+					<span class="ad-winner-status-badge">
+						<span class="icon-mbri-success me-1"></span> Победитель определен
+					</span>
+				</div>
+			</div>
+
+			<div class="ad-winner-bids-body p-3">
+				<!-- WINNER SHOWCASE PROFILE STRIP -->
+				<div class="ad-winner-profile-strip mb-3">
+					<div class="ad-winner-profile-main">
+						<div class="ad-winner-avatar">
+							<span class="icon-mbri-star"></span>
+						</div>
+						<div class="ad-winner-info">
+							<div class="ad-winner-role-tag">Победитель аукциона</div>
+							<div class="ad-winner-fullname" id="winner_det_name">{{params.auction.winner_name|default:"—"}}</div>
+							<div class="ad-winner-contacts-row">
+								<span id="winner_det_phone_wrap"{% if not params.auction.winner_phone %} class="d-none"{% endif %}>
+									<a href="tel:{{params.auction.winner_phone}}" class="ad-winner-contact-chip" id="winner_det_phone">
+										<span class="icon-mbri-phone"></span> <span>{{params.auction.winner_phone}}</span>
+									</a>
+								</span>
+								<span id="winner_det_email_wrap"{% if not params.auction.winner_email %} class="d-none"{% endif %}>
+									<a href="mailto:{{params.auction.winner_email}}" class="ad-winner-contact-chip" id="winner_det_email">
+										<span class="icon-mbri-letter"></span> <span>{{params.auction.winner_email}}</span>
+									</a>
+								</span>
+								<span id="winner_det_city_wrap" class="d-none">
+									<span class="ad-winner-contact-chip ad-winner-contact-chip--city" id="winner_det_city">
+										<span class="icon-mbri-pin"></span> <span>—</span>
+									</span>
+								</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="ad-winner-metrics-deck">
+						<div class="ad-winner-metric-item ad-winner-metric-item--hero">
+							<div class="ad-winner-metric-label">Победная ставка</div>
+							<div class="ad-winner-metric-val text-success" id="winner_det_price">{% if params.auction.winner_price > 0 %}{{params.auction.winner_price|floatformat:"0g"}} ₽{% else %}—{% endif %}</div>
+						</div>
+						<div class="ad-winner-metric-item">
+							<div class="ad-winner-metric-label">Всего ставок</div>
+							<div class="ad-winner-metric-val" id="winner_det_bids_count">—</div>
+						</div>
+						<div class="ad-winner-metric-item">
+							<div class="ad-winner-metric-label">Первая ставка</div>
+							<div class="ad-winner-metric-val" id="winner_det_first_bid">—</div>
+						</div>
+						<div class="ad-winner-metric-item">
+							<div class="ad-winner-metric-label">Прирост победителем</div>
+							<div class="ad-winner-metric-val text-warning" id="winner_det_growth">—</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- WINNER BIDS TABLE -->
+				<div class="ad-winner-table-header mb-2">
+					<span class="icon-mbri-bulleted-list text-muted me-1"></span>
+					<span class="fw-semibold text-white small text-uppercase tracking-wider">История ставок победителя</span>
+				</div>
+
+				<div class="ad-bids-table-wrap" id="winner_table_wrap">
+					<table class="ad-bids-table ad-winner-table">
+						<thead>
+							<tr>
+								<th class="text-center" style="width: 54px;">#</th>
+								<th style="width: 170px;">Время ставки</th>
+								<th style="width: 180px;">Сумма ставки</th>
+								<th style="width: 150px;">Шаг (+Δ)</th>
+								<th style="width: 140px;">Источник</th>
+								<th style="width: 160px;" class="text-end">Статус предложения</th>
+							</tr>
+						</thead>
+						<tbody id="winner_bids_table_body">
+							<tr>
+								<td colspan="6" class="text-center py-3 text-muted small">
+									<div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+									Загрузка ставок победителя...
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		{% endif %}
+
+		<!-- AUCTION BIDS HISTORY SECTION -->
+		{% if not params.new and params.auction.uid %}
+		<div class="ad-card mb-3 ad-bids-card" id="ad_bids_card" data-uid="{{params.auction.uid}}">
+			<div class="ad-card-header">
+				<div>
+					<h2 class="ad-section-title d-flex align-items-center gap-2">
+						<span class="icon-mbri-speed text-warning"></span>
+						<span>История ставок аукциона</span>
+						<span class="ad-bids-count-pill" id="bids_count_badge">0</span>
+					</h2>
+					<p class="ad-section-subtitle mb-0">Предложения участников торгов в режиме онлайн</p>
+				</div>
+				<div class="d-flex align-items-center flex-wrap gap-2">
+					<div class="ad-meta-chip d-none" id="bids_summary_chip">
+						<span>Участников: <strong id="bids_unique_bidders" class="text-white">0</strong></span>
+						<span class="mx-1">•</span>
+						<span>Макс: <strong id="bids_max_price" class="text-warning">0 ₽</strong></span>
+					</div>
+					<button type="button" class="ad-btn ad-btn--outline ad-btn--sm" id="refresh_bids_btn" title="Обновить историю ставок">
+						<span class="icon-mbri-update" id="refresh_bids_icon"></span> <span id="refresh_bids_label">Обновить ставки</span>
+					</button>
+				</div>
+			</div>
+
+			<div class="ad-bids-body p-3">
+				<!-- LOADER SPINNER -->
+				<div class="ad-bids-loading text-center py-4" id="bids_loading">
+					<div class="spinner-border text-warning spinner-border-sm me-2" role="status"></div>
+					<span class="text-muted small">Загрузка ставок по API...</span>
+				</div>
+
+				<!-- EMPTY STATE -->
+				<div class="ad-bids-empty d-none py-4 text-center" id="bids_empty">
+					<span class="icon-mbri-speed fs-2 text-muted mb-2 d-block opacity-50"></span>
+					<div class="text-white fw-semibold mb-1">Ставок по лоту пока нет</div>
+					<div class="text-muted small">Когда участники начнут делать ставки на портале аукциона, они отобразятся здесь.</div>
+				</div>
+
+				<!-- ERROR STATE -->
+				<div class="ad-bids-error d-none py-3 px-3" id="bids_error">
+					<div class="d-flex align-items-center gap-2 text-danger small">
+						<span class="icon-mbri-alert"></span>
+						<span id="bids_error_text">Не удалось получить данные о ставках</span>
+					</div>
+				</div>
+
+				<!-- TABLE CONTAINER -->
+				<div class="ad-bids-table-wrap d-none" id="bids_table_wrap">
+					<table class="ad-bids-table">
+						<thead>
+							<tr>
+								<th class="text-center" style="width: 48px;">#</th>
+								<th style="width: 160px;">Время ставки</th>
+								<th style="width: 170px;">Сумма ставки</th>
+								<th>Участник аукциона</th>
+								<th style="width: 210px;">Контакты</th>
+								<th style="width: 130px;">Источник</th>
+								<th style="width: 130px;" class="text-end">Статус</th>
+							</tr>
+						</thead>
+						<tbody id="bids_table_body"></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		{% endif %}
 
 		<!-- VEHICLE FLEET DECK (FULL-WIDTH HERO) -->
 		<div class="ad-card mb-3">

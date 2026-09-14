@@ -5,9 +5,9 @@
 
 {% block url %} {% endblock %}
 
-{% block title %} Аукционы автомобилей {% endblock %}
+{% block title %} Аукцион автомобилей {% endblock %}
 
-{% block title_navbar %} - Аукционы автомобилей {% endblock %}
+{% block title_navbar %} - Аукцион автомобилей {% endblock %}
 
 {% block head %}
     {{ block.super }}
@@ -77,7 +77,7 @@
     <header class="af-header">
         <div>
             <p class="af-kicker">КорсАвто Аукцион</p>
-            <h1 class="af-title">Аукционы автомобилей</h1>
+            <h1 class="af-title">Аукцион автомобилей</h1>
         </div>
         <div class="af-header__actions">
             {% if params.can_edit %}
@@ -135,7 +135,7 @@
                         {% if params.filtr.status %}
                             {% for status in params.select.statuses %}
                                 {% if params.filtr.status == status.id|stringformat:"s" %}
-                                    <span class="af-lamp {% if status.id == 3 %}af-lamp--live{% endif %}"></span>
+                                    <span class="af-lamp {% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}"></span>
                                     <span class="af-combo__label">{{ status.name }}</span>
                                 {% endif %}
                             {% endfor %}
@@ -154,8 +154,8 @@
                             <span class="af-combo__label">Все статусы</span>
                         </li>
                         {% for status in params.select.statuses %}
-                        <li class="af-combo__option" role="option" data-value="{{ status.id }}" data-label="{{ status.name }}" data-lamp="{% if status.id == 3 %}af-lamp--live{% endif %}" {% if params.filtr.status == status.id|stringformat:"s" %}aria-selected="true"{% endif %}>
-                            <span class="af-lamp {% if status.id == 3 %}af-lamp--live{% endif %}"></span>
+                        <li class="af-combo__option" role="option" data-value="{{ status.id }}" data-label="{{ status.name }}" data-lamp="{% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}" {% if params.filtr.status == status.id|stringformat:"s" %}aria-selected="true"{% endif %}>
+                            <span class="af-lamp {% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}"></span>
                             <span class="af-combo__label">{{ status.name }}</span>
                         </li>
                         {% endfor %}
@@ -297,6 +297,14 @@
                         </button>
                     </th>
                     <th>
+                        <button type="button" class="af-sort" data-af-sort="delta" aria-label="Сортировать по итогу торгов">
+                            Итог
+                            <span class="af-sort__ind{% if params.filtr.sort == 'delta' or params.filtr.sort == '-delta' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'delta' %}↑{% elif params.filtr.sort == '-delta' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
                         <button type="button" class="af-sort" data-af-sort="created" aria-label="Сортировать по дате создания">
                             Создан
                             <span class="af-sort__ind{% if params.filtr.sort == 'created' or params.filtr.sort == '-created' %} is-active{% endif %}">
@@ -328,8 +336,16 @@
                         <span class="af-status">
                             {% if object.status == None %}
                                 <span class="af-lamp af-lamp--prep"></span> подготавливается
-                            {% elif object.status.id == 3 %}
+                            {% elif object.status.name == 'Завершен' or object.status.name == 'Завершён' %}
+                                <span class="af-lamp af-lamp--finished"></span> {{ object.status }}
+                            {% elif object.status.name == 'Не сыграл' %}
+                                <span class="af-lamp af-lamp--not-played"></span> {{ object.status }}
+                            {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
                                 <span class="af-lamp af-lamp--live"></span> {{ object.status }}
+                            {% elif object.status.name == 'Отклонено' or object.status.name == 'Отклонен' %}
+                                <span class="af-lamp af-lamp--stop"></span> {{ object.status }}
+                            {% elif object.status.name == 'Новый' or object.status.name == 'Ожидает' or object.status.name == 'Ожидание' %}
+                                <span class="af-lamp af-lamp--prep"></span> {{ object.status }}
                             {% else %}
                                 <span class="af-lamp"></span> {{ object.status }}
                             {% endif %}
@@ -408,8 +424,14 @@
                                 <span class="af-price-lbl af-price-lbl--win">Победная ставка</span>
                                 <div class="af-price af-price--win">
                                     {{ object.winner_price|floatformat:"2g" }} ₽
-                                    {% if object.winner_delta > 0 %}
-                                    <span class="af-price-delta" title="Прирост к стартовой ставке">+{{ object.winner_delta|floatformat:"2g" }} ₽</span>
+                                    {% if object.winner_delta is not None %}
+                                        {% if object.winner_delta > 0 %}
+                                        <span class="af-price-delta is-positive" title="Прирост к стартовой ставке: +{{ object.winner_delta|floatformat:'2g' }} ₽">+{{ object.winner_delta|floatformat:"2g" }} ₽</span>
+                                        {% elif object.winner_delta < 0 %}
+                                        <span class="af-price-delta is-negative" title="Ниже стартовой ставки на {{ object.winner_delta_abs|floatformat:'2g' }} ₽">-{{ object.winner_delta_abs|floatformat:"2g" }} ₽</span>
+                                        {% else %}
+                                        <span class="af-price-delta is-zero" title="По стартовой ставке">0 ₽</span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -430,6 +452,78 @@
                                 <div class="af-price">{{ object.start_price|floatformat:"2g" }} ₽</div>
                             </div>
                         </div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Итог">
+                        {% if object.winner_delta is not None %}
+                            {% if object.winner_delta > 0 %}
+                            <div class="af-delta-pod is-positive">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">+{{ object.winner_delta|floatformat:"-2g" }} ₽</span>
+                                    {% if object.winner_delta_percent %}
+                                    <span class="af-delta-pod__pct" title="Прирост {{ object.winner_delta_percent }}%">+{{ object.winner_delta_percent }}%</span>
+                                    {% endif %}
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <svg class="af-delta-pod__icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                        В плюс
+                                    </span>
+                                </div>
+                            </div>
+                            {% elif object.winner_delta < 0 %}
+                            <div class="af-delta-pod is-negative">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">-{{ object.winner_delta_abs|floatformat:"-2g" }} ₽</span>
+                                    {% if object.winner_delta_percent %}
+                                    <span class="af-delta-pod__pct" title="Снижение {{ object.winner_delta_percent }}%">{{ object.winner_delta_percent }}%</span>
+                                    {% endif %}
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <svg class="af-delta-pod__icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        В минус
+                                    </span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="af-delta-pod is-zero">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">0 ₽</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <span class="af-delta-pod__dot"></span>
+                                        По старту
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% elif object.status.name == 'Не сыграл' %}
+                            <div class="af-delta-pod is-not-played">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">—</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">Не сыграл</span>
+                                </div>
+                            </div>
+                        {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
+                            <div class="af-delta-pod is-live">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">—</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <span class="af-delta-pod__pulse"></span>
+                                        Торги идут
+                                    </span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="af-delta-pod is-empty">
+                                <span class="af-delta-pod__dash">—</span>
+                            </div>
                         {% endif %}
                     </td>
                     <td data-label="Создан">
