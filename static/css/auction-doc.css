@@ -1,0 +1,2047 @@
+/* ==========================================================================
+   AUCTION DOCUMENT COCKPIT (auction-doc.css)
+   High-end Dark Aesthetic aligned with auction-floor.css
+   ========================================================================== */
+
+/* Page Background Overrides & Eradicate White Overlay/Strips */
+/* Page Background Overrides & Eradicate White Overlay/Strips */
+html:has(.auction-doc),
+body:has(.auction-doc),
+html.has-auction-doc,
+body.has-auction-doc {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #f5f5f5 !important;
+    min-height: 100vh !important;
+}
+
+body:has(.auction-doc)::before,
+body:has(.auction-doc)::after,
+html:has(.auction-doc)::before,
+html:has(.auction-doc)::after,
+body.has-auction-doc::before,
+body.has-auction-doc::after,
+html.has-auction-doc::before,
+html.has-auction-doc::after {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+body:has(.auction-doc) #content,
+body:has(.auction-doc) main#content,
+body.has-auction-doc #content,
+body.has-auction-doc main#content {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    min-height: 100% !important;
+}
+
+body:has(.auction-doc) #content br,
+body.has-auction-doc #content br,
+body:has(.auction-doc) main br,
+body.has-auction-doc main br,
+body:has(.auction-doc) br,
+body.has-auction-doc br {
+    display: none !important;
+}
+
+/* Root Design Tokens */
+.auction-doc {
+    --ad-bg: #000000;
+    --ad-card: #0d0d0d;
+    --ad-card-alt: #121212;
+    --ad-plate: #111111;
+    --ad-input: #1c1c1c;
+    --ad-border: #2a2a2a;
+    --ad-border-hover: #3a3a3a;
+    --ad-accent: #f58220;
+    --ad-accent-hover: #ff9a3d;
+    --ad-accent-glow: 0 0 0 1px rgba(245, 130, 32, 0.35), 0 12px 32px rgba(245, 130, 32, 0.18);
+    --ad-success: #10b981;
+    --ad-success-glow: rgba(16, 185, 129, 0.2);
+    --ad-danger: #ff4d2e;
+    --ad-warning: #f58220;
+    --ad-info: #0ea5e9;
+    --ad-ink: #f5f5f5;
+    --ad-muted: #9a9a9a;
+    --ad-subtle: #707070;
+    --ad-radius-lg: 22px;
+    --ad-radius: 14px;
+    --ad-radius-sm: 10px;
+    --ad-font-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ad-font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --ad-font-stamp: "Oswald", "IBM Plex Sans", sans-serif;
+    --ad-transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+    font-family: var(--ad-font-ui);
+    color: var(--ad-ink);
+    background-color: var(--ad-bg);
+    min-height: auto;
+    padding: 0.85rem 1.25rem 2.5rem;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    overflow-x: clip;
+}
+
+.auction-doc *,
+.auction-doc *::before,
+.auction-doc *::after {
+    box-sizing: border-box;
+}
+
+/* Base Link & Reset */
+.auction-doc a {
+    color: inherit;
+    text-decoration: none;
+    transition: var(--ad-transition);
+}
+
+.auction-doc button,
+.auction-doc [role="button"] {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   TOP COCKPIT HEADER
+   ========================================================================== */
+.af-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ad-accent);
+}
+
+.ad-header {
+    position: relative;
+    background-image: linear-gradient(135deg, #171717 0%, #0d0d0d 55%, #1a120c 100%);
+    border: 1px solid #2b2b2b;
+    border-radius: var(--ad-radius-lg);
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (min-width: 992px) {
+    .ad-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.ad-header__left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.ad-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--ad-muted);
+}
+
+.ad-breadcrumbs a {
+    color: var(--ad-muted);
+}
+
+.ad-breadcrumbs a:hover {
+    color: var(--ad-accent);
+}
+
+.ad-breadcrumbs__sep {
+    color: var(--ad-subtle);
+}
+
+.ad-title-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.ad-title {
+    font-family: var(--ad-font-stamp);
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.05;
+}
+
+/* Lot Number Badge with Copy */
+.ad-lot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(245, 130, 32, 0.12);
+    border: 1px solid rgba(245, 130, 32, 0.4);
+    color: var(--ad-accent);
+    font-family: var(--ad-font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    transition: var(--ad-transition);
+}
+
+.ad-lot-badge:hover {
+    background: rgba(245, 130, 32, 0.22);
+    border-color: var(--ad-accent);
+    box-shadow: 0 0 12px var(--ad-accent-glow);
+}
+
+.ad-copy-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9rem;
+    transition: var(--ad-transition);
+}
+
+.ad-copy-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+/* Status Pill (Synchronized with auction_list.html) */
+.ad-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.35rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--ad-border);
+    color: var(--ad-muted);
+}
+
+.ad-status-pill.is-active {
+    background: rgba(245, 130, 32, 0.15);
+    border-color: rgba(245, 130, 32, 0.45);
+    color: var(--ad-accent);
+}
+
+.ad-status-pill.is-finished {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: var(--ad-success);
+}
+
+.ad-status-pill.is-rejected {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: var(--ad-danger);
+}
+
+.ad-status-pill.is-draft {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--ad-muted);
+}
+
+.ad-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    animation: adPulse 2s infinite ease-in-out;
+}
+
+@keyframes adPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.65; }
+}
+
+/* Meta Chips */
+.ad-meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.82rem;
+    color: var(--ad-muted);
+}
+
+.ad-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--ad-plate);
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Header Actions Toolbar */
+.ad-actions-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+/* Primary Action Buttons (Pills Aligned with auction-floor.css) */
+.ad-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-family: var(--ad-font-ui);
+    font-size: 0.88rem;
+    font-weight: 600;
+    min-height: 42px;
+    padding: 0.55rem 1.35rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: var(--ad-transition);
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.ad-btn:hover {
+    transform: translateY(-1px);
+}
+
+.ad-btn:active {
+    transform: scale(0.97);
+}
+
+.ad-btn--primary,
+.auction-doc .af-btn--primary {
+    background: var(--ad-accent) !important;
+    color: #111111 !important;
+    font-weight: 700;
+    box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.35), 0 12px 32px rgba(245, 130, 32, 0.18) !important;
+}
+
+.ad-btn--primary:hover,
+.auction-doc .af-btn--primary:hover {
+    background: #ff9a3d !important;
+    color: #111111 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.5), 0 14px 36px rgba(245, 130, 32, 0.28) !important;
+}
+
+.af-btn--ghost,
+.auction-doc .af-btn--ghost {
+    background: transparent;
+    border: 1px solid #3a3a3a;
+    color: var(--ad-ink);
+}
+
+.af-btn--ghost:hover,
+.auction-doc .af-btn--ghost:hover {
+    border-color: var(--ad-accent);
+    color: var(--ad-accent);
+}
+
+.ad-btn--success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.ad-btn--success:hover {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+}
+
+.ad-btn--outline {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--ad-border);
+    color: var(--ad-ink);
+}
+
+.ad-btn--outline:hover {
+    background: var(--ad-plate);
+    border-color: var(--ad-border-hover);
+    color: #ffffff;
+}
+
+.ad-btn--accent-outline {
+    background: rgba(245, 130, 32, 0.08);
+    border-color: rgba(245, 130, 32, 0.35);
+    color: var(--ad-accent);
+}
+
+.ad-btn--accent-outline:hover {
+    background: rgba(245, 130, 32, 0.18);
+    border-color: var(--ad-accent);
+    color: #ffffff;
+    box-shadow: 0 0 14px var(--ad-accent-glow);
+}
+
+.ad-btn--danger-outline {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: var(--ad-danger);
+}
+
+.ad-btn--danger-outline:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--ad-danger);
+    color: #ffffff;
+}
+
+.ad-btn--sm {
+    min-height: 34px;
+    padding: 0.35rem 0.95rem;
+    font-size: 0.8rem;
+    border-radius: 999px;
+}
+
+/* Time restriction notice */
+.ad-time-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+}
+
+/* ==========================================================================
+   HERO METRICS KPI DASHBOARD
+   ========================================================================== */
+.ad-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .ad-kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .ad-kpi-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+.ad-kpi-card {
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-left: 4px solid var(--ad-accent) !important;
+    border-radius: var(--ad-radius-sm);
+    padding: 0.55rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.35rem;
+    position: relative;
+    overflow: hidden;
+    transition: var(--ad-transition);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.ad-kpi-card--profit {
+    border-left: 4px solid var(--ad-success) !important;
+}
+
+.ad-kpi-card:hover {
+    background: #141414;
+    border-color: #383838;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.ad-kpi-label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ad-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ad-kpi-value {
+    font-family: var(--ad-font-mono);
+    font-size: clamp(1.1rem, 1.4vw, 1.35rem);
+    font-weight: 600;
+    color: var(--ad-ink);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ad-kpi-value.is-positive {
+    color: var(--ad-success);
+}
+
+.ad-kpi-value.is-negative {
+    color: var(--ad-danger);
+}
+
+/* ==========================================================================
+   WINNER TROPHY & REJECTION CARDS
+   ========================================================================== */
+.ad-winner-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 14, 18, 0.95) 60%, rgba(245, 130, 32, 0.08) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    border-radius: var(--ad-radius-lg);
+    padding: 1.5rem 1.8rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 10px 36px rgba(16, 185, 129, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .ad-winner-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.ad-winner-card::before {
+    content: "★";
+    position: absolute;
+    right: -10px;
+    bottom: -25px;
+    font-size: 8rem;
+    color: rgba(16, 185, 129, 0.05);
+    font-family: var(--ad-font-stamp);
+    line-height: 1;
+    pointer-events: none;
+}
+
+.ad-winner-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ad-success);
+    margin-bottom: 0.35rem;
+}
+
+.ad-winner-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+}
+
+.ad-winner-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.88rem;
+    color: var(--ad-muted);
+}
+
+.ad-winner-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--ad-ink);
+    border-bottom: 1px dotted var(--ad-subtle);
+}
+
+.ad-winner-contact-link:hover {
+    color: var(--ad-success);
+    border-color: var(--ad-success);
+}
+
+.ad-winner-price-box {
+    text-align: left;
+}
+
+@media (min-width: 768px) {
+    .ad-winner-price-box {
+        text-align: right;
+    }
+}
+
+.ad-winner-price-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ad-muted);
+    margin-bottom: 0.2rem;
+}
+
+.ad-winner-price {
+    font-family: var(--ad-font-stamp);
+    font-size: 2.3rem;
+    font-weight: 600;
+    color: var(--ad-success);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Rejection Card */
+.ad-rejection-card {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: var(--ad-radius);
+    padding: 1.15rem 1.4rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+}
+
+.ad-rejection-icon {
+    font-size: 1.5rem;
+    color: var(--ad-danger);
+    line-height: 1;
+}
+
+.ad-rejection-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ad-danger);
+    margin-bottom: 0.25rem;
+}
+
+.ad-rejection-text {
+    font-size: 0.95rem;
+    color: var(--ad-ink);
+}
+
+/* ==========================================================================
+   CONFIG CARD & FORM CONTROLS
+   ========================================================================== */
+.ad-card {
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-radius: var(--ad-radius-lg);
+    padding: 1.1rem 1.35rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.ad-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #222222;
+}
+
+.ad-section-title {
+    font-family: var(--ad-font-stamp);
+    font-size: 1.35rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.ad-section-title [class^="icon-"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(245, 130, 32, 0.14);
+    color: var(--ad-accent);
+    font-size: 1rem;
+}
+
+.ad-section-subtitle {
+    font-size: 0.82rem;
+    color: var(--ad-muted);
+    margin: 0;
+}
+
+/* Form Controls Dark Styling (Including Readonly and Disabled Fixes) */
+.auction-doc .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8d8d8d;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.auction-doc .form-control,
+.auction-doc .form-select {
+    background-color: #1c1c1c !important;
+    border: 1px solid #333333 !important;
+    color: #f5f5f5 !important;
+    border-radius: var(--ad-radius-sm);
+    font-family: var(--ad-font-ui);
+    font-size: 0.92rem;
+    padding: 0.65rem 0.95rem;
+    transition: var(--ad-transition);
+}
+
+.auction-doc .form-control:focus,
+.auction-doc .form-select:focus {
+    background-color: #222222 !important;
+    border-color: var(--ad-accent) !important;
+    box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.18) !important;
+    outline: none !important;
+    color: #ffffff !important;
+}
+
+/* Fix Readonly & Disabled Inputs in Bootstrap 5 */
+.auction-doc .form-control[readonly],
+.auction-doc .form-control:disabled,
+.auction-doc .form-select:disabled {
+    background-color: #141414 !important;
+    border-color: #242424 !important;
+    color: #888888 !important;
+    opacity: 0.85;
+    cursor: default;
+}
+
+/* Custom Dropdown Option styling */
+.auction-doc option {
+    background-color: #14151b !important;
+    color: #ffffff !important;
+}
+
+.auction-doc input[type="datetime-local"].form-control {
+    font-family: var(--ad-font-mono);
+    color-scheme: dark;
+}
+
+.auction-doc input[type="number"].form-control {
+    font-family: var(--ad-font-mono);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.auction-doc textarea.form-control {
+    resize: vertical;
+    line-height: 1.55;
+}
+
+.ad-price-helper {
+    font-size: 0.78rem;
+    color: var(--ad-muted);
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ad-min-price-chip {
+    font-family: var(--ad-font-mono);
+    font-weight: 600;
+    color: var(--ad-accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ad-min-price-chip:hover {
+    color: var(--ad-accent-hover);
+}
+
+/* ==========================================================================
+   CUSTOM DARK CHECKBOXES & RADIO BUTTONS
+   ========================================================================== */
+.auction-doc .form-check-input {
+    background-color: #16171e !important;
+    border: 1px solid #373a48 !important;
+    cursor: pointer;
+    transition: var(--ad-transition);
+}
+
+.auction-doc .form-check-input:checked {
+    background-color: var(--ad-accent) !important;
+    border-color: var(--ad-accent) !important;
+    box-shadow: 0 0 8px var(--ad-accent-glow);
+}
+
+.auction-doc .form-check-input:focus {
+    box-shadow: 0 0 0 2px var(--ad-accent-glow) !important;
+}
+
+/* Radio Button Group for Autoteka & Verification */
+.ad-btn-check-group {
+    display: inline-flex;
+    background: #14151b;
+    border: 1px solid var(--ad-border);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.ad-btn-check-group .btn {
+    border: none !important;
+    border-radius: 999px !important;
+    padding: 0.35rem 0.85rem !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: var(--ad-muted) !important;
+    background: transparent !important;
+    transition: var(--ad-transition);
+}
+
+.ad-btn-check-group .btn-check:checked + .btn.btn-outline-success {
+    background: var(--ad-success) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4) !important;
+}
+
+.ad-btn-check-group .btn-check:checked + .btn.btn-outline-danger {
+    background: var(--ad-danger) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4) !important;
+}
+
+.ad-btn-check-group .btn-check:checked + .btn.btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   FLEET DECK: VEHICLE LIST & HERO SHOWCASE
+   ========================================================================== */
+.ad-cars-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ad-car-card {
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-left: 4px solid var(--ad-accent);
+    border-radius: var(--ad-radius);
+    padding: 1.25rem 1.5rem;
+    transition: var(--ad-transition);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ad-car-card:hover {
+    background: #121212;
+    border-color: #383838;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.ad-car-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+    .ad-car-showcase {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+}
+
+/* Car Media Thumbnail */
+.ad-car-thumb {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    border-radius: var(--ad-radius-sm);
+    overflow: hidden;
+    background: #161616;
+    border: 1px solid #2c2c2c;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 992px) {
+    .ad-car-thumb {
+        width: 240px;
+        height: 155px;
+    }
+}
+
+.ad-car-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.ad-car-card:hover .ad-car-thumb img {
+    transform: scale(1.05);
+}
+
+.ad-car-thumb__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--ad-muted);
+    font-size: 0.85rem;
+}
+
+.ad-car-thumb__placeholder .icon-truck {
+    font-size: 2rem;
+    color: #444;
+}
+
+/* Car Details Column */
+.ad-car-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.ad-car-title {
+    font-family: var(--ad-font-stamp);
+    font-size: 1.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #ffffff;
+    line-height: 1.15;
+    margin: 0 0 0.25rem 0;
+}
+
+.ad-car-modification {
+    font-size: 0.92rem;
+    color: var(--ad-muted);
+    font-weight: 500;
+}
+
+.ad-car-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.ad-car-chip {
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--ad-ink);
+    display: inline-flex;
+    align-items: center;
+}
+
+.ad-car-chip--mono {
+    font-family: var(--ad-font-mono);
+}
+
+/* Car Status & Verification Links */
+.ad-car-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ad-car-ext-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--ad-border);
+    color: var(--ad-muted);
+}
+
+.ad-car-ext-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--ad-border-hover);
+    color: #ffffff;
+}
+
+/* Right Sidebar: Finance & Actions */
+.ad-car-sidebar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+@media (min-width: 992px) {
+    .ad-car-sidebar {
+        width: 310px;
+        flex-shrink: 0;
+    }
+}
+
+.ad-car-finance-card {
+    background: #141414;
+    border: 1px solid #282828;
+    border-radius: var(--ad-radius-sm);
+    padding: 0.75rem;
+}
+
+.ad-car-finance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.45rem;
+}
+
+.ad-car-finance-cell {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ad-car-finance-cell__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ad-muted);
+}
+
+.ad-car-finance-cell__val {
+    font-family: var(--ad-font-mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.ad-car-finance-cell--sale {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.ad-car-finance-cell--sale .ad-car-finance-cell__label {
+    color: #34d399;
+}
+
+.ad-car-finance-cell--sale .ad-car-finance-cell__val {
+    color: var(--ad-success);
+    font-weight: 700;
+}
+
+.ad-car-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Price Input with Affix */
+.ad-price-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ad-price-input-wrap .form-control {
+    padding-right: 2.75rem !important;
+    font-family: var(--ad-font-mono) !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+}
+
+.ad-price-affix {
+    position: absolute;
+    right: 1rem;
+    pointer-events: none;
+    font-family: var(--ad-font-mono);
+    font-weight: 600;
+    color: var(--ad-muted);
+    font-size: 1.1rem;
+}
+
+.ad-car-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Empty State */
+.ad-empty-deck {
+    background: var(--ad-plate);
+    border: 2px dashed var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    padding: 4rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.ad-empty-deck__icon {
+    font-size: 3.5rem;
+    color: var(--ad-subtle);
+    line-height: 1;
+}
+
+.ad-empty-deck__title {
+    font-family: var(--ad-font-stamp);
+    font-size: 1.45rem;
+    text-transform: uppercase;
+    color: var(--ad-ink);
+    margin: 0;
+}
+
+.ad-empty-deck__subtitle {
+    font-size: 0.9rem;
+    color: var(--ad-muted);
+    max-width: 460px;
+    margin: 0;
+}
+
+/* ==========================================================================
+   MODAL DARK THEME & TABBED CAR STUDIO
+   ========================================================================== */
+.auction-doc .modal-content,
+body.has-auction-doc .modal-content,
+body:has(.auction-doc) .modal-content {
+    background-color: #111217 !important;
+    border: 1px solid var(--ad-border) !important;
+    border-radius: var(--ad-radius-lg) !important;
+    color: var(--ad-ink) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85) !important;
+    overflow: hidden;
+}
+
+.auction-doc .modal-header,
+body.has-auction-doc .modal-header,
+body:has(.auction-doc) .modal-header {
+    background: #16171e !important;
+    border-bottom: 1px solid var(--ad-border) !important;
+    padding: 1.25rem 1.6rem !important;
+}
+
+.auction-doc .modal-title,
+body.has-auction-doc .modal-title,
+body:has(.auction-doc) .modal-title {
+    font-family: var(--ad-font-stamp);
+    font-size: 1.35rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.auction-doc .btn-close,
+body.has-auction-doc .btn-close,
+body:has(.auction-doc) .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.7;
+    transition: var(--ad-transition);
+}
+
+.auction-doc .btn-close:hover,
+body.has-auction-doc .btn-close:hover,
+body:has(.auction-doc) .btn-close:hover {
+    opacity: 1;
+}
+
+.auction-doc .modal-body,
+body.has-auction-doc .modal-body,
+body:has(.auction-doc) .modal-body {
+    padding: 1.6rem;
+}
+
+.auction-doc .modal-footer,
+body.has-auction-doc .modal-footer,
+body:has(.auction-doc) .modal-footer {
+    background: #16171e !important;
+    border-top: 1px solid var(--ad-border) !important;
+    padding: 1.1rem 1.6rem !important;
+}
+
+/* Tabs Navigation in Modal with Horizontal Scroll */
+.ad-tabs-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--ad-border);
+    margin-bottom: 1.35rem;
+    padding-bottom: 0.65rem;
+}
+
+.ad-tabs-nav::-webkit-scrollbar {
+    height: 4px;
+}
+
+.ad-tabs-nav::-webkit-scrollbar-thumb {
+    background: var(--ad-border);
+    border-radius: 4px;
+}
+
+.ad-tab-btn {
+    background: none;
+    border: none;
+    padding: 0.6rem 1.15rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    border-radius: 999px;
+    transition: var(--ad-transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ad-tab-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ad-tab-btn.active {
+    color: var(--ad-accent);
+    background: rgba(245, 130, 32, 0.15);
+    box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.4);
+}
+
+.ad-tab-pane {
+    display: none;
+}
+
+.ad-tab-pane.active {
+    display: block;
+    animation: adFadeIn 0.25s ease;
+}
+
+@keyframes adFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal Info Grid */
+.ad-modal-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.35rem;
+}
+
+@media (min-width: 768px) {
+    .ad-modal-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.ad-modal-info-card {
+    background: var(--ad-plate);
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-sm);
+    padding: 0.85rem 1rem;
+}
+
+.ad-modal-info-card__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ad-muted);
+    margin-bottom: 0.25rem;
+}
+
+.ad-modal-info-card__value {
+    font-family: var(--ad-font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   PHOTO GALLERY & UPLOAD SECTIONS
+   ========================================================================== */
+.ad-gallery-section {
+    background: var(--ad-plate);
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 1.15rem;
+}
+
+.ad-gallery-section__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ad-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 0.85rem;
+}
+
+.ad-photo-tile {
+    position: relative;
+    border-radius: var(--ad-radius-sm);
+    overflow: hidden;
+    background: #000000;
+    border: 1px solid var(--ad-border);
+    display: flex;
+    flex-direction: column;
+    transition: var(--ad-transition);
+}
+
+.ad-photo-tile:hover {
+    border-color: var(--ad-border-hover);
+    transform: translateY(-2px);
+}
+
+.ad-photo-tile__img-wrap {
+    position: relative;
+    height: 105px;
+    width: 100%;
+    cursor: zoom-in;
+}
+
+.ad-photo-tile__img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.ad-photo-tile:hover .ad-photo-tile__img-wrap img {
+    transform: scale(1.06);
+}
+
+.ad-photo-tile__controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.6rem;
+    background: rgba(14, 15, 19, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 0.4rem;
+}
+
+/* Star Main Photo Button */
+.ad-star-btn {
+    background: none;
+    border: none;
+    color: var(--ad-muted);
+    font-size: 1.1rem;
+    padding: 0;
+    line-height: 1;
+    transition: var(--ad-transition);
+}
+
+.ad-star-btn.is-active,
+.ad-star-btn:hover {
+    color: #fbbf24;
+    transform: scale(1.25);
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+/* File Upload Zone */
+.ad-upload-zone {
+    border: 1px dashed var(--ad-border);
+    border-radius: var(--ad-radius-sm);
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.ad-upload-zone input[type="file"] {
+    font-size: 0.82rem;
+    color: var(--ad-muted);
+}
+
+.ad-upload-zone input[type="file"]::file-selector-button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--ad-border);
+    color: #ffffff;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    font-family: var(--ad-font-ui);
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-right: 0.65rem;
+    cursor: pointer;
+    transition: var(--ad-transition);
+}
+
+.ad-upload-zone input[type="file"]::file-selector-button:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--ad-border-hover);
+}
+
+/* Confirmation Box */
+.ad-confirm-box {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: var(--ad-radius);
+    padding: 1.25rem 1.4rem;
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+@media (min-width: 768px) {
+    .ad-confirm-box {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.ad-confirm-box__text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #d1fae5;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* ==========================================================================
+   LIGHTBOX MODAL FOR ZOOMING PHOTOS
+   ========================================================================== */
+.ad-lightbox-img {
+    max-height: 80vh;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: var(--ad-radius);
+    margin: 0 auto;
+    display: block;
+}
+
+/* ==========================================================================
+   OFFCANVAS DRAWER: CAR PICKER ONLINE
+   ========================================================================== */
+.auction-doc-offcanvas.offcanvas {
+    background-color: #0d0e12 !important;
+    border-right: 1px solid var(--ad-border) !important;
+    color: var(--ad-ink) !important;
+    width: 440px !important;
+    max-width: 100vw !important;
+    z-index: 1060 !important;
+}
+
+.auction-doc-offcanvas .offcanvas-header {
+    background: #14151b !important;
+    border-bottom: 1px solid var(--ad-border) !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+.auction-doc-offcanvas .offcanvas-title {
+    font-family: var(--ad-font-stamp);
+    font-size: 1.35rem;
+    text-transform: uppercase;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ad-drawer-search {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.ad-drawer-card {
+    background: var(--ad-plate);
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-sm);
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    transition: var(--ad-transition);
+}
+
+.ad-drawer-card:hover {
+    border-color: var(--ad-accent);
+    background: #1b1d24;
+}
+
+.ad-drawer-card__thumb {
+    width: 84px;
+    height: 64px;
+    border-radius: var(--ad-radius-sm);
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0;
+}
+
+.ad-drawer-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ad-drawer-card__info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ad-drawer-card__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.ad-drawer-card__price {
+    font-family: var(--ad-font-mono);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ad-accent);
+}
+
+.ad-drawer-card__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ad-drawer-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--ad-border);
+    color: var(--ad-ink);
+    transition: var(--ad-transition);
+}
+
+.ad-drawer-icon-btn:hover {
+    background: var(--ad-accent);
+    color: #ffffff;
+    border-color: var(--ad-accent);
+    transform: scale(1.1);
+}
+
+/* Toast Container Dark */
+.auction-doc .toast {
+    background: #111111 !important;
+    border: 1px solid var(--ad-border) !important;
+    color: #ffffff !important;
+    border-radius: var(--ad-radius) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+.auction-doc .toast-header {
+    background: #181818 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid var(--ad-border) !important;
+}
+
+/* ==========================================================================
+   CUSTOM SEARCHABLE STORE COMBOBOX (.af-combo)
+   Matching auction-floor.css styling & tokens
+   ========================================================================== */
+.af-combo {
+    position: relative;
+    z-index: 2;
+}
+
+.af-combo.is-open {
+    z-index: 99;
+}
+
+.af-combo__btn {
+    min-height: 44px;
+    width: 100%;
+    background: #1c1c1c;
+    color: var(--ad-ink);
+    border: 1px solid #333333;
+    border-radius: var(--ad-radius-sm);
+    font-family: var(--ad-font-ui);
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0 0.95rem;
+    text-align: left;
+    transition: var(--ad-transition);
+}
+
+.af-combo__btn:hover:not(:disabled) {
+    border-color: #444444;
+    background: #202020;
+}
+
+.af-combo.is-open .af-combo__btn,
+.af-combo__btn:focus-visible {
+    border-color: var(--ad-accent);
+    box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.18);
+    outline: none;
+}
+
+.af-combo__btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: #141414;
+    border-color: #242424;
+}
+
+.af-combo__value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.af-combo__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ad-ink);
+    font-weight: 500;
+}
+
+.af-combo__chevron {
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-right: 2px solid var(--ad-muted);
+    border-bottom: 2px solid var(--ad-muted);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.af-combo.is-open .af-combo__chevron {
+    transform: rotate(-135deg);
+    border-color: var(--ad-accent);
+}
+
+.af-combo__panel {
+    position: absolute;
+    z-index: 100;
+    left: 0;
+    top: calc(100% + 6px);
+    width: 100%;
+    min-width: 260px;
+    background: #111111;
+    color: var(--ad-ink);
+    border: 1px solid #333333;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    display: none;
+    overflow: hidden;
+}
+
+.af-combo.is-open .af-combo__panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.af-combo__search {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    border: 0;
+    border-bottom: 1px solid #2a2a2a;
+    border-radius: 0;
+    padding: 0 0.95rem;
+    font-family: var(--ad-font-ui);
+    font-size: 0.88rem;
+    background: #181818;
+    color: #ffffff;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.af-combo__search:focus {
+    outline: none;
+    background: #1c1c1c;
+    border-bottom-color: var(--ad-accent);
+}
+
+.af-combo__list {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 6px !important;
+    max-height: 240px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #111111;
+}
+
+.af-combo__list::-webkit-scrollbar {
+    width: 6px;
+}
+.af-combo__list::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 3px;
+}
+
+.af-combo__option {
+    display: flex !important;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-height: 38px;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.88rem;
+    color: var(--ad-ink);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.af-combo__option:hover,
+.af-combo__option.is-active,
+.af-combo__option[aria-selected="true"] {
+    background: rgba(245, 130, 32, 0.18);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.af-combo__option.d-none {
+    display: none !important;
+}
+
+/* ==========================================================================
+   CUSTOM DATE & TIME PICKER (.ad-dt-picker & .af-cal)
+   Cockpit dark calendar popup aligned with auction-floor.css
+   ========================================================================== */
+.ad-dt-picker {
+    position: relative;
+    z-index: 2;
+}
+
+.ad-dt-picker.is-open {
+    z-index: 99;
+}
+
+.ad-dt-trigger {
+    min-height: 44px;
+    width: 100%;
+    background: #1c1c1c;
+    color: var(--ad-ink);
+    border: 1px solid #333333;
+    border-radius: var(--ad-radius-sm);
+    font-family: var(--ad-font-ui);
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0 0.95rem;
+    text-align: left;
+    transition: var(--ad-transition);
+}
+
+.ad-dt-trigger:hover:not(:disabled) {
+    border-color: #444444;
+    background: #202020;
+}
+
+.ad-dt-trigger:focus-visible,
+.ad-dt-picker.is-open .ad-dt-trigger {
+    border-color: var(--ad-accent);
+    box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.18);
+    outline: none;
+}
+
+.ad-dt-trigger:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: #141414;
+    border-color: #242424;
+}
+
+.ad-dt-trigger__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ad-accent);
+    font-size: 1.05rem;
+}
+
+.ad-dt-trigger__text {
+    font-family: var(--ad-font-mono);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+}
+
+/* Calendar Popup */
+.af-cal.ad-cal-popup {
+    position: absolute;
+    z-index: 100;
+    left: 0;
+    top: calc(100% + 6px);
+    width: min(320px, calc(100vw - 2.4rem));
+    padding: 0.95rem;
+    background: #111111;
+    color: #ffffff;
+    border: 1px solid #333333;
+    border-radius: 16px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.8);
+}
+
+.af-cal[hidden],
+.af-cal.d-none {
+    display: none !important;
+}
+
+.af-cal__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.af-cal__title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    color: #ffffff;
+}
+
+.af-cal__nav-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-size: 1.15rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--ad-transition);
+}
+
+.af-cal__nav-btn:hover {
+    border-color: var(--ad-accent);
+    color: var(--ad-accent);
+    background: #222222;
+}
+
+.af-cal__week,
+.af-cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.af-cal__week {
+    margin-bottom: 0.4rem;
+}
+
+.af-cal__week span {
+    text-align: center;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #777777;
+    padding: 0.2rem 0;
+}
+
+.af-cal__day {
+    min-height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #ffffff;
+    font-family: var(--ad-font-mono);
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.af-cal__day.is-mute {
+    color: #4a4a4a;
+}
+
+.af-cal__day:hover:not(:disabled) {
+    background: #242424;
+    color: #ffffff;
+}
+
+.af-cal__day.is-today {
+    box-shadow: inset 0 0 0 1px #444444;
+}
+
+.af-cal__day.is-pick {
+    background: var(--ad-accent) !important;
+    color: #111111 !important;
+    font-weight: 700 !important;
+    border-radius: 8px;
+}
+
+/* Time Picker Section Inside Calendar */
+.ad-cal-time-sec {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #222222;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.ad-cal-time-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    display: flex;
+    align-items: center;
+}
+
+.ad-cal-time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.ad-cal-time-select {
+    background: #1c1c1c;
+    border: 1px solid #333333;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 0.25rem 0.45rem;
+    font-family: var(--ad-font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.ad-cal-time-select:focus {
+    border-color: var(--ad-accent);
+    outline: none;
+}
+
+.ad-cal-time-sep {
+    font-family: var(--ad-font-mono);
+    font-weight: 700;
+    color: var(--ad-accent);
+}
+
+/* Quick Time Presets */
+.ad-cal-presets {
+    margin-top: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.ad-cal-presets__label {
+    font-size: 0.72rem;
+    color: #777777;
+    margin-right: 0.2rem;
+}
+
+.ad-cal-preset-btn {
+    border: 1px solid #2c2c2c;
+    background: #181818;
+    color: var(--ad-muted);
+    font-family: var(--ad-font-mono);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--ad-transition);
+}
+
+.ad-cal-preset-btn:hover,
+.ad-cal-preset-btn.is-active {
+    background: rgba(245, 130, 32, 0.18);
+    border-color: var(--ad-accent);
+    color: var(--ad-accent);
+}
+
+/* Calendar Bottom Actions */
+.ad-cal-actions {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #222222;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
