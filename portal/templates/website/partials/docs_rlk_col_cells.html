@@ -1,0 +1,58 @@
+{% load custom_template_tags %}
+{% for col in params.table_columns %}
+  <td data-label="{{ col.label }}" {% if col.num %}class="text-end"{% endif %}>
+    {% if col.key == 'open' %}
+      <a class="btn btn-sm btn-outline-primary p-1 lh-1" href="{{ r.detail_url }}" title="Открыть рабочий лист №{{ r.nomer }}">
+        <span class="icon-doc"></span>
+      </a>
+    {% elif col.key == 'date' %}
+      {{ r.date|date:"d.m.Y H:i" }}
+    {% elif col.key == 'nomer' %}
+      <a href="{{ r.detail_url }}" class="fw-semibold text-decoration-none">
+        {{ r.nomer|default:"—" }}
+      </a>
+    {% elif col.key == 'car' %}
+      {% if r.car_slug %}
+        <a href="/cars/{{ r.car_slug }}/" target="_blank" rel="noopener" class="text-decoration-none fw-semibold">
+          {{ r.car }}
+        </a>
+      {% else %}
+        {{ r.car|default:"—" }}
+      {% endif %}
+    {% elif col.key == 'vin' %}
+      <span class="font-monospace small">{{ r.vin|default:"—" }}</span>
+    {% elif col.key == 'status' %}
+      {% if r.status %}
+        <span class="badge {% if r.archive %}bg-secondary{% else %}bg-primary{% endif %} bg-opacity-75">
+          {{ r.status }}
+        </span>
+      {% else %}
+        <span class="text-muted">—</span>
+      {% endif %}
+    {% elif col.key == 'archive' %}
+      {% if r.archive %}
+        <span class="badge bg-secondary bg-opacity-75">Архив</span>
+      {% else %}
+        <span class="badge bg-success bg-opacity-75">В работе</span>
+      {% endif %}
+    {% elif col.key == 'is_missed' %}
+      {% if r.is_missed %}
+        <span class="badge bg-warning text-dark bg-opacity-75">Упущен</span>
+      {% else %}
+        <span class="text-muted">—</span>
+      {% endif %}
+    {% elif col.key == 'eco' %}
+      {% if r.eco %}
+        <span class="badge bg-info text-dark bg-opacity-75">Trade-in</span>
+      {% else %}
+        <span class="text-muted">ОП</span>
+      {% endif %}
+    {% elif col.num %}
+      {% with val=r|get_item:col.key %}
+        {% if val != None and val != '' %}{{ val|floatformat:"2g" }}{% endif %}
+      {% endwith %}
+    {% else %}
+      {{ r|get_item:col.key|default:"—" }}
+    {% endif %}
+  </td>
+{% endfor %}

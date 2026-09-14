@@ -1,290 +1,130 @@
 {% extends 'base_web.html' %}
+{% load custom_template_tags %}
 
-{% block url %} {% endblock %} 
+{% block title %} — {{ params.report_title }} {% endblock %}
+{% block title_navbar %} — {{ params.report_title }} {% endblock %}
 
-{% block title %} - заказ наряды {% endblock %}
-
-{% block title_navbar %} - заказ наряды {% endblock %}
-    
 {% block content %}
- 	
-<div class="row">
+{% include 'asp/partials/asp_report_styles.html' %}
 
+<div class="asp-rep portal-page" data-report-key="{{ params.report_key }}">
+  <div class="portal-header mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <div>
+        <h2 class="mb-1">{{ params.report_title }}</h2>
+        <p class="text-muted mb-0">{{ params.report_subtitle }}</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn-calculate-secondary-sm" href="/"><span class="icon-mbri-home"></span> Меню</a>
+      </div>
+    </div>
+  </div>
 
-<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+  <!-- Метрики быстрого обзора за период -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">Всего РЛК</div>
+        <div class="v">{{ params.totals.count|default:0 }}</div>
+        <div class="s">за период</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">В работе</div>
+        <div class="v text-primary">{{ params.totals.active|default:0 }}</div>
+        <div class="s">не в архиве</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">В архиве</div>
+        <div class="v text-secondary">{{ params.totals.archive|default:0 }}</div>
+        <div class="s">закрыты / архив</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">Trade-in / оценка</div>
+        <div class="v text-info">{{ params.totals.eco|default:0 }}</div>
+        <div class="s">связано с оценкой</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="asp-rep-metric">
+        <div class="t">Упущенные</div>
+        <div class="v {% if params.totals.missed > 0 %}text-danger{% else %}text-muted{% endif %}">{{ params.totals.missed|default:0 }}</div>
+        <div class="s">клиентов упущено</div>
+      </div>
+    </div>
+  </div>
 
-<div class="col-sm-auto">
-	
-	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				
-					<div class="modal-body">
-						
-						<div class="form-floating mb-3">							
-							<select class="form-select" id="unit_id" name="unit_id" placeholder="">
-								<option></option>
-								{% for unit in params.selected.units %}
-									<option value="{{unit.id}}" {% if params.filtr.unit_id == unit.id %} selected {% endif %}> {{unit.name}} </option>
-								{% endfor %}
-							</select>
-							<label for="floatingInput">Подразделение ДЦ</label>
-						</div>
-						
+  <!-- Панель фильтров -->
+  {% include 'website/partials/docs_rlk_filters.html' %}
 
-						<div class="form-floating mb-3">
-							<input type="text" class="form-control" id="name" name="name" placeholder="" value="{{params.filtr.name}}" autocomplete="off">
-							<label for="floatingInput">Клиент, Номер ЗН или АМ, Марка или модель АМ</label>
-						</div>
+  <!-- Таблица данных -->
+  <div class="asp-rep-panel no-padding mt-3">
+    <div class="table-responsive portal-radius">
+      <table class="table table-sm table-striped table-hover mb-0">
+        <thead>
+          <tr>
+            {% include 'website/partials/docs_car_col_heads.html' %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in params.rows %}
+            <tr>
+              {% include 'website/partials/docs_rlk_col_cells.html' %}
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="{{ params.table_columns|length }}" class="text-center text-muted py-4">Нет рабочих листов</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-						<div class="form-floating mb-3">
-							<input class="form-control form-control-sm" type="month" id="date" name="date" value="{{params.filtr.date|date:"Y-m"}}">
-							<label for="floatingInput">Месяц</label>
-						</div>
-						<!--
-						<div class="form-check form-switch">
-							<input class="form-check-input" type="checkbox" role="switch" id="closed" {% if params.filtr.closed %} checked {% endif %}>
-							<label class="form-check-label" for="closed">Показывать закрытые</label>
-						</div>
-						<hr>
-						-->
-
-						<div class="form-check form-switch">
-							<input class="form-check-input" type="checkbox" role="switch" id="new" {% if params.filtr.new %} checked {% endif %}>
-							<label class="form-check-label" for="new">Только с новыми событиями</label>
-						</div>
-						<hr>
-						
-						<div class="form-check form-switch">
-							<input class="form-check-input" type="checkbox" role="switch" id="organization" {% if params.filtr.organization %} checked {% endif %}>
-							<label class="form-check-label" for="organization">Показывать юридические лица</label>
-						</div>
-						<hr>
-						
-
-						<div class="d-grid gap-2">
-							<button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>
-						</div>
-
-					</div>
-
-				</div>
-			</div>
-	</div>
-	<br>
-
-
+    <!-- Пагинация и счётчик записей -->
+    <div class="row g-1 p-3 align-items-center">
+      <div class="col-12 col-sm-4">
+        <p class="text-muted mb-0">
+          <span class="icon-mbri-info"></span>
+          Всего: {{ params.paginator.paginator.count }} / на странице: {{ params.rows|length }}
+        </p>
+      </div>
+      <div class="col-12 col-sm-8">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            {% if params.paginator.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_string %}{{ params.query_string }}&{% endif %}page={{ params.paginator.previous_page_number }}">&laquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+            {% for p in params.paginator.paginator.page_range %}
+              {% if params.paginator.number == p %}
+                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+              {% elif p >= params.paginator.number|add:-3 and p <= params.paginator.number|add:3 %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if params.query_string %}{{ params.query_string }}&{% endif %}page={{ p }}">{{ p }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            {% if params.paginator.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if params.query_string %}{{ params.query_string }}&{% endif %}page={{ params.paginator.next_page_number }}">&raquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
 </div>
-<hr>
-<!-- Второй столбец !-->
-	<div class="col-sm">
-		
-		
-			<div class="row g-1">
-				{% if params.paginator.object_list %}
-					{% for doc in params.paginator.object_list %}
-						  
-						<div class="card" onclick="window.location.href='{{doc.id}}'; return false"> 
-							<div class="card-body" style="padding: 0;">
-								
-								<div class="row" style="padding: 0.2em;">
-									<div class="col-sm">
-										{{doc.dataTime}}
-									</div>
-									<div class="col-sm">
-										{{doc.nomer}}
-									</div>
-									<div class="col-sm">
-										{{doc.typeRemont}}
-									</div>
-									<div class="col-sm">
-										{{doc.customer.name}} 
-										<span class="icon-mbri-star"></span> {{doc.rating_customer}}
-									</div>
-									<div class="col-sm">
-										{{doc.cars.mark}} {{doc.cars.model}} / {{doc.cars.vin}} 
-									</div>
-									<div class="col-sm">
-										{{doc.cars_grz_board}}
-									</div>
-								</div>
 
-								<div class="row">
-									<div class="col-auto text-center bg-opacity-75" style="border-radius: 0 0.2em 0.2em 0;">
-                                                                           
-										<label class="fs-6 text-secondary text-center" style="padding: 0.2em;">  
-											
-											<span class="icon-mbri-shopping-bag"></span> {{doc.products_count}}
-											<div class="vr"></div>
-											<span class="icon-mbri-setting3"></span> {{doc.works_count}}
-											<div class="vr"></div>
-											<span class="icon-mbri-add-submenu"></span> {{doc.recomendations_customer_count}}
-											<div class="vr"></div>
-											<span class="icon-mbri-website-theme"></span> {{doc.recomendations_mcu_count}}
-
-										</label>
-										
-									</div>
-									<div class="col text-end">
-										<label class="fs-4 
-											{% if doc.recomendations_new > 0 %}
-												bg-warning
-											{% elif doc.active %} 
-												bg-success
-											{% else %}
-												bg-danger
-											{% endif %} 
-										bg-opacity-75 text-white" style="min-width: 9rem;border-radius: 0.2em 0 0.2em 0; padding: 0.2em;">  {{doc.amount|floatformat:"2g"}} &#8381;</label>
-									</div>
-								</div>
-							</div>
-						</div>
-							
-					{% endfor %} 
-				{% endif %}
-				
-			</div>
-		</div>
-
-		<div class="row g-1">
-			<div class="col-3"><label class="bg-secondary text-secondary">-</label> Всего - {{params.count}}</div>
-			<div class="col-3"><label class="bg-danger text-danger">-</label> - в работе</div>
-			<div class="col-3"><label class="bg-success text-success">-</label> - закрыт</div>
-			<div class="col-3"><label class="bg-warning text-warning">-</label> - есть расширение</div>
-		</div>
-
-		<nav aria-label="Page navigation example">
-      
-			<ul class="pagination justify-content-center">
-			  
-			  {% if  params.paginator.has_previous %}
-				<li class="page-num">
-						<a class="page-link bg-secondary text-white"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
-				</li>
-			  {% endif %}
-	  
-			  {% for p in params.paginator.paginator.page_range %}
-				{% if  params.paginator.number == p %}
-					<li class="page-item bg-secondary text-white disabled"><a class="page-link">{{p}}</a></li>
-							{% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-					<li class="page-item">
-						<a class="page-link bg-secondary text-white" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-					</li>
-				{% endif %}
-			  {% endfor %}
-				
-			  {% if params.paginator.has_next %}
-				<li class="page-num">
-					<a class="page-link bg-secondary text-white" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
-				</li>
-			  {% endif %}
-	  
-			</ul>
-	  
-		</nav>
-	
-	</div>
-
-</div>
-	
-</form>
-
-<script>
-	document.forms.upload.onsubmit = function() {
-	  var input = this.elements.file_audio;
-	  var file = input.files[0];
-	  if (file) {
-		upload(file);
-	  }
-	  return false;
-	}
-  
-	function upload(file) {
-
-	var xhr = new XMLHttpRequest();
-
-	// обработчик для отправки
-	xhr.upload.onprogress = function(event) {
-		console.log(event.loaded + ' / ' + event.total);
-	}
-
-	// обработчики успеха и ошибки
-	// если status == 200, то это успех, иначе ошибка
-	xhr.onload = xhr.onerror = function() {
-	if (this.status == 200) {
-		console.log("success");
-	} else {
-		console.log("error " + this.status);
-	}
-	};
-
-	xhr.open("POST", "", true);
-	xhr.send(file);
-
-	}
-  </script>
-
-  
-
-<script language="JavaScript">
-	
-	function change_link(){
-		
-		var url 	= new URL(document.location.href);
-		
-		find_unit_id 	= document.getElementById('unit_id').value;
-		if (find_unit_id.length > 0){
-			url.searchParams.set('unit_id', find_unit_id);
-		}else{
-			url.searchParams.delete('unit_id')
-		}
-
-		find_name 	= document.getElementById('name').value;
-		if (find_name.length > 0){
-			url.searchParams.set('name', find_name);
-		}else{
-			url.searchParams.delete('name')
-		}
-		
-		find_date = document.getElementById('date').value;
-		if (find_date.length > 0){
-			url.searchParams.set('date', find_date);
-		}else{
-			url.searchParams.delete('date')
-		}
-		
-		if (document.getElementById('organization').checked == true){
-			url.searchParams.set('organization', 'true');
-		}else{
-			url.searchParams.delete('organization')
-		}
-		
-		
-		if (document.getElementById('new').checked == true){
-			url.searchParams.set('new', 'true');
-		}else{
-			url.searchParams.delete('new')
-		}
-
-		document.location.href  = url.href;
-
-	}
-
-</script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
-
-
+{% include 'website/partials/docs_car_columns_modal.html' %}
 {% endblock %}
