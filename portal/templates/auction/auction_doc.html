@@ -36,17 +36,98 @@
 			opacity: 0 !important;
 			visibility: hidden !important;
 		}
+
+		/* Custom Dark Scrollbar */
+		html:has(.auction-doc),
+		body:has(.auction-doc),
+		html.has-auction-doc,
+		body.has-auction-doc,
+		.auction-doc,
+		.auction-doc *,
+		body.has-auction-doc .modal,
+		body.has-auction-doc .modal *,
+		body.has-auction-doc .offcanvas,
+		body.has-auction-doc .offcanvas * {
+			scrollbar-width: thin;
+			scrollbar-color: #383838 #0d0d0d;
+		}
+
+		html:has(.auction-doc)::-webkit-scrollbar,
+		body:has(.auction-doc)::-webkit-scrollbar,
+		html.has-auction-doc::-webkit-scrollbar,
+		body.has-auction-doc::-webkit-scrollbar,
+		html.has-auction-doc *::-webkit-scrollbar,
+		body.has-auction-doc *::-webkit-scrollbar,
+		.auction-doc ::-webkit-scrollbar,
+		.auction-doc::-webkit-scrollbar,
+		body.has-auction-doc .modal::-webkit-scrollbar,
+		body.has-auction-doc .modal *::-webkit-scrollbar,
+		body.has-auction-doc .offcanvas::-webkit-scrollbar,
+		body.has-auction-doc .offcanvas *::-webkit-scrollbar {
+			width: 8px;
+			height: 8px;
+		}
+
+		html:has(.auction-doc)::-webkit-scrollbar-track,
+		body:has(.auction-doc)::-webkit-scrollbar-track,
+		html.has-auction-doc::-webkit-scrollbar-track,
+		body.has-auction-doc::-webkit-scrollbar-track,
+		html.has-auction-doc *::-webkit-scrollbar-track,
+		body.has-auction-doc *::-webkit-scrollbar-track,
+		.auction-doc ::-webkit-scrollbar-track,
+		.auction-doc::-webkit-scrollbar-track,
+		body.has-auction-doc .modal::-webkit-scrollbar-track,
+		body.has-auction-doc .modal *::-webkit-scrollbar-track,
+		body.has-auction-doc .offcanvas::-webkit-scrollbar-track,
+		body.has-auction-doc .offcanvas *::-webkit-scrollbar-track {
+			background: #0d0d0d;
+			border-radius: 999px;
+		}
+
+		html:has(.auction-doc)::-webkit-scrollbar-thumb,
+		body:has(.auction-doc)::-webkit-scrollbar-thumb,
+		html.has-auction-doc::-webkit-scrollbar-thumb,
+		body.has-auction-doc::-webkit-scrollbar-thumb,
+		html.has-auction-doc *::-webkit-scrollbar-thumb,
+		body.has-auction-doc *::-webkit-scrollbar-thumb,
+		.auction-doc ::-webkit-scrollbar-thumb,
+		.auction-doc::-webkit-scrollbar-thumb,
+		body.has-auction-doc .modal::-webkit-scrollbar-thumb,
+		body.has-auction-doc .modal *::-webkit-scrollbar-thumb,
+		body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb,
+		body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb {
+			background: #333333;
+			border: 2px solid #0d0d0d;
+			border-radius: 999px;
+			transition: background 0.2s ease, border-color 0.2s ease;
+		}
+
+		html:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
+		body:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
+		html.has-auction-doc::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc::-webkit-scrollbar-thumb:hover,
+		html.has-auction-doc *::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc *::-webkit-scrollbar-thumb:hover,
+		.auction-doc ::-webkit-scrollbar-thumb:hover,
+		.auction-doc::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc .modal::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc .modal *::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb:hover,
+		body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
+			background: #f58220;
+			border-color: #0d0d0d;
+		}
 	</style>
 	<script>
 		document.documentElement.classList.add('has-auction-doc');
-		document.documentElement.style.backgroundColor = '#090a0f';
+		document.documentElement.style.backgroundColor = '#000000';
 		if (document.body) {
 			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#090a0f';
+			document.body.style.backgroundColor = '#000000';
 		}
 		document.addEventListener('DOMContentLoaded', function() {
 			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#090a0f';
+			document.body.style.backgroundColor = '#000000';
 		});
 	</script>
 {% endblock %}
@@ -357,74 +438,95 @@
 
 						<!-- TABBED CAR STUDIO MODAL -->
 						<div class="modal fade" id="cars_list_data_slug_{{structure.car.slug}}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal_title_{{structure.car.slug}}" aria-hidden="true">
-							<div class="modal-dialog modal-xl modal-dialog-scrollable">
+							<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
 								<div class="modal-content">
 									<div class="modal-header">
-										<h5 class="modal-title" id="modal_title_{{structure.car.slug}}">
-											<span class="icon-truck"></span>
-											{{structure.car.display_mark_name}} {{structure.car.display_model_name}} • {{structure.car.year}} г. • {{structure.car.vin}}
-										</h5>
+										<div class="d-flex flex-column gap-1">
+											<div class="ad-modal-kicker">
+												<span class="icon-truck me-1"></span> КорсАвто • Студия подготовки автомобиля
+											</div>
+											<div class="d-flex flex-wrap align-items-center gap-2">
+												<h4 class="ad-modal-car-title" id="modal_title_{{structure.car.slug}}">
+													{{structure.car.display_mark_name}} {{structure.car.display_model_name}}
+												</h4>
+												<span class="ad-car-chip"><span class="icon-mbri-calendar me-1"></span>{{structure.car.year}} г.в.</span>
+												<span class="ad-car-chip ad-car-chip--mono">
+													VIN: {{structure.car.vin|default:"-"}}
+													{% if structure.car.vin %}
+														<button type="button" class="ad-copy-btn ms-1" data-copy="{{structure.car.vin}}" title="Скопировать VIN">
+															<span class="icon-mbri-file"></span>
+														</button>
+													{% endif %}
+												</span>
+											</div>
+										</div>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 									</div>
 
 									<div class="modal-body">
 										<!-- TABS NAVIGATION WITH HORIZONTAL SCROLL -->
-										<div class="ad-tabs-nav">
-											<button type="button" class="ad-tab-btn active" data-target="tab_info_{{structure.car.slug}}">
-												<span class="icon-mbri-info"></span> Информация & Комментарии
-											</button>
-											<button type="button" class="ad-tab-btn" data-target="tab_gallery_{{structure.car.slug}}">
-												<span class="icon-mbri-preview"></span> Фотогалерея лота
-											</button>
-											<button type="button" class="ad-tab-btn" data-target="tab_diag_{{structure.car.slug}}">
-												<span class="icon-mbri-setting2"></span> Диагностика & Автотека
-											</button>
+										<div class="ad-tabs-nav-wrap mb-4">
+											<div class="ad-tabs-nav">
+												<button type="button" class="ad-tab-btn active" data-target="tab_info_{{structure.car.slug}}">
+													<span class="icon-mbri-info"></span> Сводка и комментарии
+												</button>
+												<button type="button" class="ad-tab-btn" data-target="tab_gallery_{{structure.car.slug}}">
+													<span class="icon-mbri-preview"></span> Фотогалерея лота
+												</button>
+												<button type="button" class="ad-tab-btn" data-target="tab_diag_{{structure.car.slug}}">
+													<span class="icon-mbri-setting2"></span> Диагностика и отчёты
+												</button>
+											</div>
 										</div>
 
 										<!-- TAB 1: INFO & COMMENTS -->
 										<div class="ad-tab-pane active" id="tab_info_{{structure.car.slug}}">
 											<div class="ad-modal-info-grid">
 												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Пробег</div>
+													<div class="ad-modal-info-card__label"><span class="icon-mbri-speed me-1"></span> Пробег</div>
 													<div class="ad-modal-info-card__value">{{structure.car.run|floatformat:"0g"}} км</div>
 												</div>
 												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Дней на складе</div>
+													<div class="ad-modal-info-card__label"><span class="icon-mbri-calendar me-1"></span> Дней на складе</div>
 													<div class="ad-modal-info-card__value">{{structure.car.days_in_stok}} д.</div>
 												</div>
 												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Статус автомобиля</div>
+													<div class="ad-modal-info-card__label"><span class="icon-truck me-1"></span> Статус автомобиля</div>
 													<div class="ad-modal-info-card__value">{{structure.car.status}}</div>
 												</div>
 												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Себестоимость</div>
+													<div class="ad-modal-info-card__label"><span class="icon-mbri-cash me-1"></span> Себестоимость</div>
 													<div class="ad-modal-info-card__value">{{structure.car.cost_price|floatformat:"0g"}} ₽</div>
 												</div>
 												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Расходы</div>
+													<div class="ad-modal-info-card__label"><span class="icon-mbri-delivery me-1"></span> Расходы</div>
 													<div class="ad-modal-info-card__value">{{structure.car.outlay|floatformat:"0g"}} ₽</div>
 												</div>
-												<div class="ad-modal-info-card">
-													<div class="ad-modal-info-card__label">Базовая цена продажи</div>
+												<div class="ad-modal-info-card ad-modal-info-card--sale">
+													<div class="ad-modal-info-card__label"><span class="icon-mbri-cart-full me-1"></span> Базовая цена продажи</div>
 													<div class="ad-modal-info-card__value">{{structure.car.price|floatformat:"0g"}} ₽</div>
 												</div>
 											</div>
 
 											<div class="row g-3">
 												<div class="col-12 col-md-6">
-													<label class="form-label">Комментарий для отдела подготовки</label>
+													<label class="form-label mb-1">
+														<span><span class="icon-mbri-setting2 text-warning me-1"></span> Комментарий для отдела подготовки</span>
+													</label>
 													{% if structure.podgotovka != '' or structure.success %}
-														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="6">{{structure.podgotovka}}</textarea>
+														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="6" placeholder="Укажите замечания по подготовке авто...">{{structure.podgotovka}}</textarea>
 													{% else %}
-														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="6">{{structure.car.description_podgotovka}}</textarea>
+														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_podgotovka" rows="6" placeholder="Укажите замечания по подготовке авто...">{{structure.car.description_podgotovka}}</textarea>
 													{% endif %}
 												</div>
 												<div class="col-12 col-md-6">
-													<label class="form-label">Комментарий для отдела продаж</label>
+													<label class="form-label mb-1">
+														<span><span class="icon-mbri-cart-full text-warning me-1"></span> Комментарий для отдела продаж</span>
+													</label>
 													{% if structure.op != '' or structure.success %}
-														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="6">{{structure.op}}</textarea>
+														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="6" placeholder="Укажите информацию для менеджеров ОП...">{{structure.op}}</textarea>
 													{% else %}
-														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="6">{{structure.car.description_op}}</textarea>
+														<textarea class="form-control" name="cars_list_data_{{structure.car.slug}}_op" rows="6" placeholder="Укажите информацию для менеджеров ОП...">{{structure.car.description_op}}</textarea>
 													{% endif %}
 												</div>
 											</div>
@@ -751,7 +853,10 @@
 
 									<div class="modal-footer">
 										<button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
-											<span class="icon-mbri-close"></span> Закрыть
+											Закрыть
+										</button>
+										<button type="button" class="ad-btn ad-btn--primary ms-auto" data-bs-dismiss="modal">
+											<span class="icon-mbri-success me-1"></span> Применить
 										</button>
 									</div>
 								</div>

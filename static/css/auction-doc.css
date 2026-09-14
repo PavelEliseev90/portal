@@ -48,6 +48,89 @@ body.has-auction-doc br {
     display: none !important;
 }
 
+/* ==========================================================================
+   CUSTOM DARK SCROLLBAR (KORSAUTO COCKPIT STYLE)
+   ========================================================================== */
+html:has(.auction-doc),
+body:has(.auction-doc),
+html.has-auction-doc,
+body.has-auction-doc,
+.auction-doc,
+.auction-doc *,
+body.has-auction-doc .modal,
+body.has-auction-doc .modal *,
+body.has-auction-doc .offcanvas,
+body.has-auction-doc .offcanvas * {
+    scrollbar-width: thin;
+    scrollbar-color: #383838 #0d0d0d;
+}
+
+html:has(.auction-doc)::-webkit-scrollbar,
+body:has(.auction-doc)::-webkit-scrollbar,
+html.has-auction-doc::-webkit-scrollbar,
+body.has-auction-doc::-webkit-scrollbar,
+html.has-auction-doc *::-webkit-scrollbar,
+body.has-auction-doc *::-webkit-scrollbar,
+.auction-doc ::-webkit-scrollbar,
+.auction-doc::-webkit-scrollbar,
+body.has-auction-doc .modal::-webkit-scrollbar,
+body.has-auction-doc .modal *::-webkit-scrollbar,
+body.has-auction-doc .offcanvas::-webkit-scrollbar,
+body.has-auction-doc .offcanvas *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+html:has(.auction-doc)::-webkit-scrollbar-track,
+body:has(.auction-doc)::-webkit-scrollbar-track,
+html.has-auction-doc::-webkit-scrollbar-track,
+body.has-auction-doc::-webkit-scrollbar-track,
+html.has-auction-doc *::-webkit-scrollbar-track,
+body.has-auction-doc *::-webkit-scrollbar-track,
+.auction-doc ::-webkit-scrollbar-track,
+.auction-doc::-webkit-scrollbar-track,
+body.has-auction-doc .modal::-webkit-scrollbar-track,
+body.has-auction-doc .modal *::-webkit-scrollbar-track,
+body.has-auction-doc .offcanvas::-webkit-scrollbar-track,
+body.has-auction-doc .offcanvas *::-webkit-scrollbar-track {
+    background: #0d0d0d;
+    border-radius: 999px;
+}
+
+html:has(.auction-doc)::-webkit-scrollbar-thumb,
+body:has(.auction-doc)::-webkit-scrollbar-thumb,
+html.has-auction-doc::-webkit-scrollbar-thumb,
+body.has-auction-doc::-webkit-scrollbar-thumb,
+html.has-auction-doc *::-webkit-scrollbar-thumb,
+body.has-auction-doc *::-webkit-scrollbar-thumb,
+.auction-doc ::-webkit-scrollbar-thumb,
+.auction-doc::-webkit-scrollbar-thumb,
+body.has-auction-doc .modal::-webkit-scrollbar-thumb,
+body.has-auction-doc .modal *::-webkit-scrollbar-thumb,
+body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb,
+body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb {
+    background: #333333;
+    border: 2px solid #0d0d0d;
+    border-radius: 999px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+html:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
+body:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
+html.has-auction-doc::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc::-webkit-scrollbar-thumb:hover,
+html.has-auction-doc *::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc *::-webkit-scrollbar-thumb:hover,
+.auction-doc ::-webkit-scrollbar-thumb:hover,
+.auction-doc::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc .modal::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc .modal *::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb:hover,
+body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
+    background: var(--ad-accent, #f58220);
+    border-color: #0d0d0d;
+}
+
 /* Root Design Tokens */
 .auction-doc {
     --ad-bg: #000000;
@@ -1151,90 +1234,113 @@ body.has-auction-doc br {
 .auction-doc .modal-content,
 body.has-auction-doc .modal-content,
 body:has(.auction-doc) .modal-content {
-    background-color: #111217 !important;
-    border: 1px solid var(--ad-border) !important;
+    background-color: #0e0e0e !important;
+    border: 1px solid #2a2a2a !important;
     border-radius: var(--ad-radius-lg) !important;
     color: var(--ad-ink) !important;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9) !important;
     overflow: hidden;
 }
 
 .auction-doc .modal-header,
 body.has-auction-doc .modal-header,
 body:has(.auction-doc) .modal-header {
-    background: #16171e !important;
-    border-bottom: 1px solid var(--ad-border) !important;
-    padding: 1.25rem 1.6rem !important;
+    background: linear-gradient(135deg, #181818 0%, #0e0e0e 100%) !important;
+    border-bottom: 1px solid #262626 !important;
+    padding: 1.2rem 1.6rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.auction-doc .modal-title,
-body.has-auction-doc .modal-title,
-body:has(.auction-doc) .modal-title {
+.ad-modal-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ad-accent);
+    font-weight: 600;
+}
+
+.ad-modal-car-title {
     font-family: var(--ad-font-stamp);
-    font-size: 1.35rem;
+    font-size: 1.55rem;
     font-weight: 600;
     text-transform: uppercase;
     color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     margin: 0;
+    line-height: 1.15;
 }
 
 .auction-doc .btn-close,
 body.has-auction-doc .btn-close,
 body:has(.auction-doc) .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
-    opacity: 0.7;
+    background: #1c1c1c url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat !important;
+    border: 1px solid #333333 !important;
+    border-radius: 999px !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    opacity: 0.85;
     transition: var(--ad-transition);
+    filter: none !important;
+    flex-shrink: 0;
 }
 
 .auction-doc .btn-close:hover,
 body.has-auction-doc .btn-close:hover,
 body:has(.auction-doc) .btn-close:hover {
     opacity: 1;
+    border-color: var(--ad-accent) !important;
+    background-color: #262626 !important;
+    transform: rotate(90deg);
 }
 
 .auction-doc .modal-body,
 body.has-auction-doc .modal-body,
 body:has(.auction-doc) .modal-body {
-    padding: 1.6rem;
+    padding: 1.4rem 1.6rem;
 }
 
 .auction-doc .modal-footer,
 body.has-auction-doc .modal-footer,
 body:has(.auction-doc) .modal-footer {
-    background: #16171e !important;
-    border-top: 1px solid var(--ad-border) !important;
-    padding: 1.1rem 1.6rem !important;
+    background: #141414 !important;
+    border-top: 1px solid #262626 !important;
+    padding: 1rem 1.6rem !important;
 }
 
-/* Tabs Navigation in Modal with Horizontal Scroll */
+/* Tabs Navigation in Modal (High-End Segmented Bar) */
+.ad-tabs-nav-wrap {
+    background: #141414;
+    border: 1px solid #282828;
+    border-radius: 999px;
+    padding: 4px;
+    width: 100%;
+}
+
 .ad-tabs-nav {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
-    scrollbar-width: thin;
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--ad-border);
-    margin-bottom: 1.35rem;
-    padding-bottom: 0.65rem;
+    scrollbar-width: none;
+    gap: 4px;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
 }
 
 .ad-tabs-nav::-webkit-scrollbar {
-    height: 4px;
-}
-
-.ad-tabs-nav::-webkit-scrollbar-thumb {
-    background: var(--ad-border);
-    border-radius: 4px;
+    display: none;
 }
 
 .ad-tab-btn {
-    background: none;
+    flex: 1 1 0;
+    justify-content: center;
+    background: transparent;
     border: none;
-    padding: 0.6rem 1.15rem;
-    font-size: 0.86rem;
+    padding: 0.55rem 1.15rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--ad-muted);
     border-radius: 999px;
@@ -1243,18 +1349,18 @@ body:has(.auction-doc) .modal-footer {
     align-items: center;
     gap: 0.45rem;
     white-space: nowrap;
-    flex-shrink: 0;
 }
 
 .ad-tab-btn:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .ad-tab-btn.active {
-    color: var(--ad-accent);
-    background: rgba(245, 130, 32, 0.15);
-    box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.4);
+    background: var(--ad-accent) !important;
+    color: #111111 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
 }
 
 .ad-tab-pane {
@@ -1286,10 +1392,29 @@ body:has(.auction-doc) .modal-footer {
 }
 
 .ad-modal-info-card {
-    background: var(--ad-plate);
-    border: 1px solid var(--ad-border);
+    background: #141414;
+    border: 1px solid #282828;
+    border-left: 3px solid var(--ad-accent);
     border-radius: var(--ad-radius-sm);
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: var(--ad-transition);
+}
+
+.ad-modal-info-card:hover {
+    background: #181818;
+    border-color: #383838;
+}
+
+.ad-modal-info-card--sale {
+    border-left-color: var(--ad-success);
+    background: rgba(16, 185, 129, 0.06);
+}
+
+.ad-modal-info-card--sale .ad-modal-info-card__value {
+    color: var(--ad-success);
 }
 
 .ad-modal-info-card__label {
@@ -1298,25 +1423,15 @@ body:has(.auction-doc) .modal-footer {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--ad-muted);
-    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
 }
 
 .ad-modal-info-card__value {
     font-family: var(--ad-font-mono);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: #ffffff;
-}
-
-/* ==========================================================================
-   PHOTO GALLERY & UPLOAD SECTIONS
-   ========================================================================== */
-.ad-gallery-section {
-    background: var(--ad-plate);
-    border: 1px solid var(--ad-border);
-    border-radius: var(--ad-radius);
-    padding: 1.15rem 1.25rem;
-    margin-bottom: 1.15rem;
 }
 
 .ad-gallery-section__title {
