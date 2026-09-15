@@ -10560,8 +10560,7 @@ def auction_list(request):
     
     subquery_1 = AuctionStructure.objects.filter(auction__id=OuterRef('pk')).values('auction__id').annotate(count=Count('pk')).values('count')
     
-    objects    = objects.annotate(
-        count_cars  = Subquery(subquery_1))
+    objects    = objects.annotate(count_cars  = Subquery(subquery_1))
     
     # Сортировка колонок
     sort = request.GET.get('sort', '')
