@@ -1373,79 +1373,230 @@
 	<!-- MODAL: QUICK INSPECTION PREVIEW FROM DRAWER -->
 	<div class="modal fade" id="rlk" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="rlkLabel" aria-hidden="true">
 		<div class="modal-dialog modal-xl modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="rlkLabel">
-						<span class="icon-truck text-primary me-1"></span> Информация об автомобиле
-					</h5>
+			<div class="modal-content ad-modal-content">
+				<div class="modal-header ad-modal-header">
+					<div class="d-flex align-items-center gap-3">
+						<div class="ad-modal-icon-badge">
+							<span class="icon-truck"></span>
+						</div>
+						<div>
+							<h5 class="modal-title fw-bold" id="rlkLabel">Информация об автомобиле</h5>
+							<div class="ad-modal-kicker">Осмотр складского автомобиля • Быстрый просмотр</div>
+						</div>
+					</div>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 				</div>
-				<div class="modal-body">
-					<div class="fs-5 fw-bold text-dark mb-2" id="info_car_name"></div>
-
-					<div class="d-flex flex-wrap gap-2 mb-3">
-						<span class="ad-meta-chip" id="info_car_type_reception">Тип приема: -</span>
-						<span class="ad-meta-chip" id="info_car_type_sale">Тип продажи: -</span>
-					</div>
-
-					<div class="ad-modal-info-grid mb-3">
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Модификация</div>
-							<div class="ad-modal-info-card__value" id="info_car_modification_value">-</div>
+				<div class="modal-body ad-modal-body p-3 p-md-4">
+					<!-- Hero summary card (always visible above tabs) -->
+					<div class="ad-modal-car-hero mb-3">
+						<div class="ad-modal-car-hero__main">
+							<div class="ad-modal-car-hero__title text-truncate" id="info_car_name">Загрузка данных об автомобиле...</div>
+							<div class="ad-modal-car-hero__chips">
+								<span class="ad-meta-chip" id="info_car_type_reception">Прием: -</span>
+								<span class="ad-meta-chip" id="info_car_type_sale">Продажа: -</span>
+								<span class="ad-meta-chip ad-meta-chip--status" id="info_car_status_badge">Статус: -</span>
+								<span class="ad-meta-chip ad-meta-chip--in-lot" id="info_car_in_lot_chip" style="display: none;" title="Нажмите, чтобы закрыть окно"><span class="icon-mbri-success me-1"></span> В лоте</span>
+							</div>
 						</div>
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Пробег</div>
-							<div class="ad-modal-info-card__value" id="info_car_run_value">-</div>
-						</div>
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Текущая цена</div>
-							<div class="ad-modal-info-card__value" id="info_car_price_value">-</div>
-						</div>
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Дней на складе</div>
-							<div class="ad-modal-info-card__value" id="info_car_days_in_stok_value">-</div>
-						</div>
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Статус</div>
-							<div class="ad-modal-info-card__value" id="info_car_status_name_value">-</div>
-						</div>
-						<div class="ad-modal-info-card">
-							<div class="ad-modal-info-card__label">Этап цены</div>
-							<div class="ad-modal-info-card__value" id="info_car_stage_price_value">-</div>
+						<div class="ad-modal-car-hero__price-box">
+							<div class="ad-modal-car-hero__price-label">Текущая цена</div>
+							<div class="ad-modal-car-hero__price-val" id="info_car_hero_price">- ₽</div>
 						</div>
 					</div>
 
-					<!-- Photos preview sections -->
-					<div class="ad-gallery-section mb-3">
-						<div class="ad-gallery-section__title"><span class="icon-mbri-preview me-1"></span> Фотографии автомобиля</div>
+					<!-- Tabs navigation -->
+					<div class="ad-modal-tabs mb-4" role="tablist">
+						<button type="button" class="ad-tab-btn ad-modal-tab-btn active" data-target="tab_rlk_general" role="tab" aria-selected="true">
+							<span class="icon-mbri-info me-1"></span>
+							<span>Общие данные и цены</span>
+						</button>
+						<button type="button" class="ad-tab-btn ad-modal-tab-btn" data-target="tab_rlk_photos" role="tab" aria-selected="false">
+							<span class="icon-mbri-camera me-1"></span>
+							<span>Фотографии</span>
+							<span class="ad-modal-tab-badge ms-1" id="badge_rlk_photos_count">0</span>
+						</button>
+						<button type="button" class="ad-tab-btn ad-modal-tab-btn" data-target="tab_rlk_body" role="tab" aria-selected="false">
+							<span class="icon-mbri-layers me-1"></span>
+							<span>Схема ЛКП и дефекты</span>
+							<span class="ad-modal-tab-badge ms-1" id="badge_rlk_damage_count">0</span>
+						</button>
+						<button type="button" class="ad-tab-btn ad-modal-tab-btn" data-target="tab_rlk_notes" role="tab" aria-selected="false">
+							<span class="icon-mbri-file me-1"></span>
+							<span>Комментарии и работы</span>
+						</button>
+					</div>
+
+					<!-- TAB 1: General Info and Prices -->
+					<div class="ad-tab-pane active" id="tab_rlk_general" role="tabpanel">
+						<!-- Key parameters grid -->
+						<div class="ad-modal-section-title mb-2">
+							<span class="icon-mbri-bulleted-list text-primary me-1"></span> Основные параметры
+						</div>
+						<div class="ad-modal-info-grid mb-4">
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">Модификация</div>
+								<div class="ad-modal-info-card__value" id="info_car_modification_value">-</div>
+							</div>
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">Пробег</div>
+								<div class="ad-modal-info-card__value font-monospace" id="info_car_run_value">-</div>
+							</div>
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">Дней на складе</div>
+								<div class="ad-modal-info-card__value font-monospace" id="info_car_days_in_stok_value">-</div>
+							</div>
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">Статус автомобиля</div>
+								<div class="ad-modal-info-card__value" id="info_car_status_name_value">-</div>
+							</div>
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">Этап цены</div>
+								<div class="ad-modal-info-card__value" id="info_car_stage_price_value">-</div>
+							</div>
+							<div class="ad-modal-info-card">
+								<div class="ad-modal-info-card__label">VIN код</div>
+								<div class="ad-modal-info-card__value d-flex align-items-center justify-content-between gap-1">
+									<span class="font-monospace text-truncate" id="info_car_vin_value">-</span>
+									<button type="button" class="ad-copy-btn" id="info_car_vin_copy_btn" title="Скопировать VIN">
+										<span class="icon-mbri-code"></span>
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<!-- Financial parameters block -->
+						<div class="ad-modal-section-title mb-2">
+							<span class="icon-mbri-cash text-primary me-1"></span> Финансовые показатели
+						</div>
+						<div class="ad-modal-finance-grid">
+							<div class="ad-modal-finance-card ad-modal-finance-card--sale">
+								<div class="ad-modal-finance-card__label">Текущая цена продажи</div>
+								<div class="ad-modal-finance-card__value font-monospace" id="info_car_price_value">-</div>
+							</div>
+							<div class="ad-modal-finance-card">
+								<div class="ad-modal-finance-card__label">Себестоимость</div>
+								<div class="ad-modal-finance-card__value font-monospace" id="info_car_cost_price_value">-</div>
+							</div>
+							<div class="ad-modal-finance-card">
+								<div class="ad-modal-finance-card__label">Базовая цена (БЦП)</div>
+								<div class="ad-modal-finance-card__value font-monospace" id="info_car_bcp_value">-</div>
+							</div>
+							<div class="ad-modal-finance-card">
+								<div class="ad-modal-finance-card__label">Затраты на авто</div>
+								<div class="ad-modal-finance-card__value font-monospace" id="info_car_outlay_value">-</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- TAB 2: Photos Gallery -->
+					<div class="ad-tab-pane" id="tab_rlk_photos" role="tabpanel">
+						<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
+							<div class="ad-modal-section-title mb-0">
+								<span class="icon-mbri-camera text-primary me-1"></span> Фотографии автомобиля
+							</div>
+							<div class="ad-hint-text text-muted small">
+								<span class="icon-mbri-search me-1"></span> Нажмите на любое фото для увеличения
+							</div>
+						</div>
 						<div class="ad-gallery-grid" id="info_car_photos"></div>
-					</div>
-
-					<div class="ad-gallery-section mb-3">
-						<div class="ad-gallery-section__title"><span class="icon-mbri-layers me-1"></span> Схема ЛКП</div>
-						<div class="ad-gallery-grid" id="info_car_photos_int_body"></div>
-					</div>
-
-					<div class="ad-gallery-section mb-3">
-						<div class="ad-gallery-section__title"><span class="icon-mbri-alert me-1"></span> Повреждения</div>
-						<div class="ad-gallery-grid" id="info_car_photos_damage"></div>
-					</div>
-
-					<div class="row g-3">
-						<div class="col-12 col-md-6">
-							<label class="form-label">Комментарий для отдела подготовки</label>
-							<textarea class="form-control" id="info_car_description_podgotovka" rows="5" readonly></textarea>
+						<div class="ad-empty-gallery-msg text-center py-5" id="empty_car_photos" style="display: none;">
+							<div class="ad-empty-icon mb-2">
+								<span class="icon-truck text-muted"></span>
+							</div>
+							<div class="fw-semibold text-muted">Фотографии автомобиля не найдены</div>
+							<div class="small text-muted">Для этого автомобиля еще не загружены снимки</div>
 						</div>
-						<div class="col-12 col-md-6">
-							<label class="form-label">Комментарий для отдела продаж</label>
-							<textarea class="form-control" id="info_car_description_op" rows="5" readonly></textarea>
+					</div>
+
+					<!-- TAB 3: Scheme and Damages -->
+					<div class="ad-tab-pane" id="tab_rlk_body" role="tabpanel">
+						<!-- Scheme section -->
+						<div class="ad-gallery-section mb-4">
+							<div class="ad-gallery-section__title d-flex align-items-center justify-content-between mb-2">
+								<span><span class="icon-mbri-layers text-primary me-1"></span> Схема элементов кузова и ЛКП</span>
+								<span class="ad-hint-text text-muted small">6 проекций</span>
+							</div>
+							<div class="ad-gallery-grid ad-gallery-grid--scheme" id="info_car_photos_int_body"></div>
+							<div class="ad-empty-gallery-msg text-center py-3" id="empty_car_scheme" style="display: none;">
+								<span class="text-muted small">Схема кузова не загружена</span>
+							</div>
+						</div>
+
+						<!-- Damage photos section -->
+						<div class="ad-gallery-section">
+							<div class="ad-gallery-section__title d-flex align-items-center justify-content-between mb-2">
+								<span><span class="icon-mbri-alert text-warning me-1"></span> Зафиксированные дефекты и повреждения</span>
+							</div>
+							<div class="ad-gallery-grid" id="info_car_photos_damage"></div>
+							<div class="ad-empty-gallery-msg text-center py-4" id="empty_car_damage" style="display: none;">
+								<span class="icon-mbri-success text-success fs-3 mb-1 d-block"></span>
+								<span class="text-muted small">Повреждения и дефекты кузова не зафиксированы</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- TAB 4: Notes and Works -->
+					<div class="ad-tab-pane" id="tab_rlk_notes" role="tabpanel">
+						<div class="row g-3">
+							<div class="col-12 col-lg-6">
+								<div class="ad-modal-note-card h-100">
+									<div class="ad-modal-note-card__header">
+										<span class="icon-mbri-edit text-primary me-2"></span>
+										<span>Комментарий для отдела подготовки</span>
+									</div>
+									<div class="ad-modal-note-card__body">
+										<textarea class="form-control ad-modal-textarea" id="info_car_description_podgotovka" rows="4" readonly placeholder="Комментарий отсутствует"></textarea>
+									</div>
+								</div>
+							</div>
+							<div class="col-12 col-lg-6">
+								<div class="ad-modal-note-card h-100">
+									<div class="ad-modal-note-card__header">
+										<span class="icon-mbri-chat text-primary me-2"></span>
+										<span>Комментарий для отдела продаж</span>
+									</div>
+									<div class="ad-modal-note-card__body">
+										<textarea class="form-control ad-modal-textarea" id="info_car_description_op" rows="4" readonly placeholder="Комментарий отсутствует"></textarea>
+									</div>
+								</div>
+							</div>
+							<div class="col-12 col-lg-6">
+								<div class="ad-modal-note-card h-100">
+									<div class="ad-modal-note-card__header">
+										<span class="icon-mbri-hearth text-primary me-2"></span>
+										<span>Заключение диагностики</span>
+									</div>
+									<div class="ad-modal-note-card__body">
+										<textarea class="form-control ad-modal-textarea" id="info_car_comment_diagnostica" rows="4" readonly placeholder="Заключение диагностики отсутствует"></textarea>
+									</div>
+								</div>
+							</div>
+							<div class="col-12 col-lg-6">
+								<div class="ad-modal-note-card h-100">
+									<div class="ad-modal-note-card__header">
+										<span class="icon-mbri-setting text-primary me-2"></span>
+										<span>Выполненные / планируемые работы</span>
+									</div>
+									<div class="ad-modal-note-card__body">
+										<textarea class="form-control ad-modal-textarea" id="work_car" rows="4" readonly placeholder="Список работ не указан"></textarea>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
-						<span class="icon-mbri-close"></span> Закрыть
-					</button>
+				<div class="modal-footer ad-modal-footer d-flex align-items-center justify-content-between">
+					<div class="text-muted small d-none d-md-flex align-items-center gap-1">
+						<span class="icon-mbri-info text-primary"></span> Просмотр автомобиля из наличия
+					</div>
+					<div class="d-flex align-items-center gap-2 ms-auto">
+						<button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
+							<span class="icon-mbri-close"></span> Закрыть
+						</button>
+						<button type="button" class="ad-btn ad-btn--primary" id="rlk_btn_add_to_lot">
+							<span class="icon-mbri-plus"></span> Добавить автомобиль в лот
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

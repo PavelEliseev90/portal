@@ -237,12 +237,13 @@ $(document).ready(function() {
    TABS INITIALIZATION
    ========================================================================== */
 function initTabs() {
-    $(document).on('click', '.ad-tab-btn', function() {
+    $(document).on('click', '.ad-tab-btn, .ad-modal-tab-btn', function() {
         var $btn = $(this);
         var targetId = $btn.data('target');
+        if (!targetId) return;
         var $modal = $btn.closest('.modal');
 
-        $modal.find('.ad-tab-btn').removeClass('active');
+        $modal.find('.ad-tab-btn, .ad-modal-tab-btn').removeClass('active');
         $btn.addClass('active');
 
         $modal.find('.ad-tab-pane').removeClass('active');
@@ -1400,19 +1401,69 @@ function refresh_data_online() {
    CAR QUICK INSPECTION PREVIEW MODAL (OFFCANVAS ITEM PREVIEW)
    ========================================================================== */
 function info_car(slug) {
+    window.currentRlkCarSlug = slug;
+
+    // Reset tabs to first tab (General info & prices)
+    $('#rlk .ad-tab-btn, #rlk .ad-modal-tab-btn').removeClass('active');
+    $('#rlk [data-target="tab_rlk_general"]').addClass('active');
+    $('#rlk .ad-tab-pane').removeClass('active');
+    $('#tab_rlk_general').addClass('active');
+
+    // Show modal and preliminary loading state
     $('#rlk').modal('show');
+    $('#info_car_name').html('<span class="spinner-border spinner-border-sm text-primary me-2"></span> Загрузка данных об автомобиле...');
+
+    // Function to synchronize "Добавить в лот" button and in-lot status
+    function updateRlkAddBtn(carSlug) {
+        var isInLot = ($('#cars_list_data_id_' + carSlug).length > 0);
+        var $btn = $('#rlk_btn_add_to_lot');
+        if (isInLot) {
+            $btn.removeClass('ad-btn--primary')
+                .addClass('ad-btn--outline')
+                .prop('disabled', false)
+                .attr('title', 'Автомобиль уже добавлен в лот. Нажмите, чтобы закрыть окно')
+                .html('<span class="icon-mbri-success text-success me-1"></span> Автомобиль в лоте');
+            $('#info_car_in_lot_chip').show();
+        } else {
+            $btn.removeClass('ad-btn--outline')
+                .addClass('ad-btn--primary')
+                .prop('disabled', false)
+                .attr('title', 'Добавить автомобиль в лот аукциона')
+                .html('<span class="icon-mbri-plus me-1"></span> Добавить автомобиль в лот');
+            $('#info_car_in_lot_chip').hide();
+        }
+    }
+
+    updateRlkAddBtn(slug);
+
+    // Bind click on "Автомобиль в лоте" or "Добавить автомобиль в лот": closes the modal window
+    $('#rlk_btn_add_to_lot, #info_car_in_lot_chip').off('click').on('click', function() {
+        var carSlug = window.currentRlkCarSlug;
+        if (carSlug) {
+            var isInLot = ($('#cars_list_data_id_' + carSlug).length > 0);
+            if (!isInLot) {
+                subbmit_car(carSlug);
+            }
+        }
+        $('#rlk').modal('hide');
+    });
+
     var url = '/auction/js/get_cars_lot_online/' + slug + '/';
 
     $.get(url, function(data) {
         if (!Array.isArray(data)) {
             data = data ? [data] : [];
         }
-        if (!data.length) return;
+        if (!data.length) {
+            $('#info_car_name').text('Автомобиль не найден');
+            return;
+        }
 
         var obj = data[0];
         var mark = obj.mark_name || '';
         var model = obj.model_name || '';
         var mod = obj.modification_name || '';
+        var vin = obj.vin || '';
         var fmt = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
 
         var car_run = fmt.format(obj.run || 0);
@@ -1421,85 +1472,133 @@ function info_car(slug) {
         var car_bcp = fmt.format(obj.bcp || 0);
         var car_cost_price = fmt.format(obj.cost_price || 0);
 
-        $('#info_car_name').html(`${mark} ${model} ${mod} • ${obj.year} г. • VIN: ${obj.vin || '-'}`);
-        $('#info_car_type_sale').text('Тип продажи: ' + (obj.type_sale_name || '-'));
-        $('#info_car_type_reception').text('Тип приема: ' + (obj.type_reception_name || '-'));
+        // Hero card
+        $('#info_car_name').html(`${mark} ${model} ${mod} • ${obj.year} г.`);
+        $('#info_car_hero_price').text(car_price + ' ₽');
+        $('#info_car_type_sale').text('Продажа: ' + (obj.type_sale_name || '-'));
+        $('#info_car_type_reception').text('Прием: ' + (obj.type_reception_name || '-'));
+        $('#info_car_status_badge').text('Статус: ' + (obj.status_name || '-'));
 
+        // Key parameters
         $('#info_car_run_value').text(car_run + ' км');
         $('#info_car_modification_value').text(mod || '-');
         $('#info_car_days_in_stok_value').text((obj.days_in_stok || 0) + ' д.');
         $('#info_car_status_name_value').text(obj.status_name || '-');
-        $('#info_car_price_value').text(car_price + ' ₽');
         $('#info_car_stage_price_value').text(obj.stage_price_name || '-');
+        $('#info_car_vin_value').text(vin || '-');
+
+        // Copy VIN handler
+        $('#info_car_vin_copy_btn').off('click').on('click', function(e) {
+            if (vin) {
+                copyVinToClipboard(vin, e);
+            }
+        });
+
+        // Financial indicators
+        $('#info_car_price_value').text(car_price + ' ₽');
         $('#info_car_cost_price_value').text(car_cost_price + ' ₽');
         $('#info_car_bcp_value').text(car_bcp + ' ₽');
         $('#info_car_outlay_value').text(car_outlay + ' ₽');
 
+        // Notes and textareas
         $('#info_car_description_podgotovka').val(obj.description_podgotovka || '');
         $('#info_car_description_op').val(obj.description_op || '');
         $('#info_car_comment_diagnostica').val(obj.int_ocenka_diagnostika || '');
 
-        // Works text
+        // Works list
         var worksText = '';
         if (obj.work_podgotovka && obj.work_podgotovka.length) {
             for (var w = 0; w < obj.work_podgotovka.length; w++) {
-                worksText += obj.work_podgotovka[w].name + '\n';
+                worksText += (w + 1) + '. ' + obj.work_podgotovka[w].name + '\n';
             }
         }
         $('#work_car').val(worksText);
 
         // General Photos
         var photoHtml = '';
+        var photoCount = 0;
         if (obj.url && obj.url.length) {
-            for (var p = 0; p < obj.url.length; p++) {
-                photoHtml += `
-                <div class="ad-photo-tile">
-                    <div class="ad-photo-tile__img-wrap">
-                        <img src="${obj.url[p]}" alt="Фото ${p+1}">
-                    </div>
-                </div>`;
+            var photosList = Array.isArray(obj.url) ? obj.url : [obj.url];
+            for (var p = 0; p < photosList.length; p++) {
+                var pUrl = photosList[p];
+                if (pUrl && pUrl !== '/media/nophoto.png') {
+                    photoCount++;
+                    photoHtml += `
+                    <div class="ad-photo-tile" title="Нажмите для увеличения">
+                        <div class="ad-photo-tile__img-wrap">
+                            <img src="${pUrl}" alt="Фото ${photoCount}" loading="lazy">
+                        </div>
+                    </div>`;
+                }
             }
         }
         var photoContainer = document.querySelector('#info_car_photos');
         if (photoContainer) photoContainer.innerHTML = photoHtml;
+        $('#badge_rlk_photos_count').text(photoCount);
+        if (photoCount === 0) {
+            $('#empty_car_photos').show();
+        } else {
+            $('#empty_car_photos').hide();
+        }
 
-        // Scheme Body Photos
+        // Scheme Body Photos (6 projections)
         var schemeHtml = '';
         var schemeArr = [
-            obj.int_ocenka_url_pered,
-            obj.int_ocenka_url_right,
-            obj.int_ocenka_url_zad,
-            obj.int_ocenka_url_left,
-            obj.int_ocenka_url_up,
-            obj.int_ocenka_url_salon
+            { url: obj.int_ocenka_url_pered, name: 'Спереди' },
+            { url: obj.int_ocenka_url_right, name: 'Справа' },
+            { url: obj.int_ocenka_url_zad, name: 'Сзади' },
+            { url: obj.int_ocenka_url_left, name: 'Слева' },
+            { url: obj.int_ocenka_url_up, name: 'Сверху' },
+            { url: obj.int_ocenka_url_salon, name: 'Салон' }
         ];
+        var schemeCount = 0;
         for (var sc = 0; sc < schemeArr.length; sc++) {
-            if (schemeArr[sc]) {
+            if (schemeArr[sc].url) {
+                schemeCount++;
                 schemeHtml += `
-                <div class="ad-photo-tile">
+                <div class="ad-photo-tile" title="${schemeArr[sc].name} - нажмите для увеличения">
                     <div class="ad-photo-tile__img-wrap">
-                        <img src="${schemeArr[sc]}" alt="Схема ${sc+1}">
+                        <img src="${schemeArr[sc].url}" alt="${schemeArr[sc].name}" loading="lazy">
                     </div>
                 </div>`;
             }
         }
         var schemeContainer = document.querySelector('#info_car_photos_int_body');
         if (schemeContainer) schemeContainer.innerHTML = schemeHtml;
+        if (schemeCount === 0) {
+            $('#empty_car_scheme').show();
+        } else {
+            $('#empty_car_scheme').hide();
+        }
 
         // Damages Photos
         var damageHtml = '';
+        var damageCount = 0;
         if (obj.int_ocenka_url_damage && obj.int_ocenka_url_damage.length) {
-            for (var dm = 0; dm < obj.int_ocenka_url_damage.length; dm++) {
-                damageHtml += `
-                <div class="ad-photo-tile">
-                    <div class="ad-photo-tile__img-wrap">
-                        <img src="${obj.int_ocenka_url_damage[dm]}" alt="Повреждение ${dm+1}">
-                    </div>
-                </div>`;
+            var damageList = Array.isArray(obj.int_ocenka_url_damage) ? obj.int_ocenka_url_damage : [obj.int_ocenka_url_damage];
+            for (var dm = 0; dm < damageList.length; dm++) {
+                if (damageList[dm]) {
+                    damageCount++;
+                    damageHtml += `
+                    <div class="ad-photo-tile" title="Дефект ${damageCount} - нажмите для увеличения">
+                        <div class="ad-photo-tile__img-wrap">
+                            <img src="${damageList[dm]}" alt="Повреждение ${damageCount}" loading="lazy">
+                        </div>
+                    </div>`;
+                }
             }
         }
         var damageContainer = document.querySelector('#info_car_photos_damage');
         if (damageContainer) damageContainer.innerHTML = damageHtml;
+        $('#badge_rlk_damage_count').text(damageCount);
+        if (damageCount === 0) {
+            $('#empty_car_damage').show();
+        } else {
+            $('#empty_car_damage').hide();
+        }
+
+        // Final sync of Add to Lot button state
+        updateRlkAddBtn(slug);
     });
 }
 
