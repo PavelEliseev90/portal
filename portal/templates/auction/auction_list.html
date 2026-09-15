@@ -93,44 +93,79 @@
     </div>
 
     <header class="af-header">
-        <div>
-            <p class="af-kicker">КорсАвто Аукцион</p>
+        <div class="af-header__main">
+            <div class="af-kicker">
+                <span class="af-kicker__pulse"></span>
+                <span>КорсАвто • Аукционная площадка</span>
+            </div>
             <h1 class="af-title">Аукцион автомобилей</h1>
         </div>
         <div class="af-header__actions">
             {% if params.can_edit %}
                 {% if params.sends %}
-                <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>Новый лот</a>
+                <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>
+                    <svg class="af-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Новый лот</span>
+                </a>
                 {% else %}
-                <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">Новый лот</button>
+                <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">
+                    <svg class="af-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Новый лот</span>
+                </button>
                 {% endif %}
             {% endif %}
-            <button type="button" class="af-btn af-btn--ghost" data-bs-toggle="modal" data-bs-target="#auctionHelpModal">Справка</button>
+            <button type="button" class="af-btn af-btn--ghost" data-bs-toggle="modal" data-bs-target="#auctionHelpModal">
+                <svg class="af-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span>Справка</span>
+            </button>
         </div>
     </header>
 
-    <section class="af-metrics" aria-label="Сводка">
-        <div class="af-stat">
-            <span class="af-stat__label">Лотов</span>
-            <span class="af-stat__value">{{ params.count }}</span>
+    <section class="af-metrics" aria-label="Сводка показателей">
+        <div class="af-stat af-stat--lots">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Всего лотов</span>
+                <span class="af-stat__value">{{ params.count }}</span>
+                <span class="af-stat__hint">В текущей выборке</span>
+            </div>
         </div>
-        <div class="af-stat">
-            <span class="af-stat__label">Сумма лотов</span>
-            <span class="af-stat__value">{{ params.amount|floatformat:"2g" }}</span>
+        <div class="af-stat af-stat--amount">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Сумма лотов</span>
+                <span class="af-stat__value">{{ params.amount|floatformat:"2g" }} <small class="af-rub-sign">₽</small></span>
+                <span class="af-stat__hint">Каталожная стоимость</span>
+            </div>
         </div>
-        <div class="af-stat">
-            <span class="af-stat__label">Автомобилей</span>
-            <span class="af-stat__value">{{ params.count_cars }}</span>
+        <div class="af-stat af-stat--cars">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            </div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Автомобилей</span>
+                <span class="af-stat__value">{{ params.count_cars }}</span>
+                <span class="af-stat__hint">Единиц в каталоге</span>
+            </div>
         </div>
         <aside class="af-banner{% if not params.sends %} is-closed{% endif %}" data-af-send-window role="status">
-            <span class="af-banner__mark" aria-hidden="true"></span>
-            <p data-af-banner-text>
-                {% if not params.sends %}
-                <strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.
-                {% else %}
-                Отправка лотов недоступна с 10:00 до 14:00.
-                {% endif %}
-            </p>
+            <div class="af-banner__icon-wrap">
+                <svg class="af-banner__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="af-banner__content">
+                <div class="af-banner__badge">Окно отправки лотов</div>
+                <p data-af-banner-text>
+                    {% if not params.sends %}
+                    <strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.
+                    {% else %}
+                    Отправка лотов недоступна с 10:00 до 14:00.
+                    {% endif %}
+                </p>
+            </div>
         </aside>
     </section>
 
@@ -287,29 +322,46 @@
         <table class="af-table" data-af-search-term="{{ params.filtr.vin }}">
             <thead>
                 <tr>
-                    <th>Лот</th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 3v18"></path></svg>
+                            <span>Лот</span>
+                        </span>
+                    </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="status" aria-label="Сортировать по статусу">
-                            Статус
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                            <span>Статус</span>
                             <span class="af-sort__ind{% if params.filtr.sort == 'status' or params.filtr.sort == '-status' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'status' %}↑{% elif params.filtr.sort == '-status' %}↓{% else %}↕{% endif %}
                             </span>
                         </button>
                     </th>
-                    <th>Автомобили</th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                            <span>Автомобили</span>
+                        </span>
+                    </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="start" aria-label="Сортировать по старту">
-                            <svg class="af-hdr-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            Старт
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span>Старт</span>
                             <span class="af-sort__ind{% if params.filtr.sort == 'start' or params.filtr.sort == '-start' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'start' %}↑{% elif params.filtr.sort == '-start' %}↓{% else %}↕{% endif %}
                             </span>
                         </button>
                     </th>
-                    <th>Стоянка</th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span>Стоянка</span>
+                        </span>
+                    </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="price" aria-label="Сортировать по цене">
-                            Цена
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span>Цена</span>
                             <span class="af-sort__ind{% if params.filtr.sort == 'price' or params.filtr.sort == '-price' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'price' %}↑{% elif params.filtr.sort == '-price' %}↓{% else %}↕{% endif %}
                             </span>
@@ -317,7 +369,8 @@
                     </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="delta" aria-label="Сортировать по итогу торгов">
-                            Итог
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <span>Итог</span>
                             <span class="af-sort__ind{% if params.filtr.sort == 'delta' or params.filtr.sort == '-delta' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'delta' %}↑{% elif params.filtr.sort == '-delta' %}↓{% else %}↕{% endif %}
                             </span>
@@ -325,14 +378,19 @@
                     </th>
                     <th>
                         <button type="button" class="af-sort" data-af-sort="created" aria-label="Сортировать по дате создания">
-                            <svg class="af-hdr-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            Создан
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span>Создан</span>
                             <span class="af-sort__ind{% if params.filtr.sort == 'created' or params.filtr.sort == '-created' %} is-active{% endif %}">
                                 {% if params.filtr.sort == 'created' %}↑{% elif params.filtr.sort == '-created' %}↓{% else %}↕{% endif %}
                             </span>
                         </button>
                     </th>
-                    <th>{% if params.can_edit %}Действия{% else %}Действие{% endif %}</th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                            <span>{% if params.can_edit %}Действия{% else %}Действие{% endif %}</span>
+                        </span>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -365,23 +423,35 @@
                         </div>
                     </td>
                     <td data-label="Статус">
-                        <span class="af-status">
-                            {% if object.status == None %}
-                                <span class="af-lamp af-lamp--prep"></span> подготавливается
-                            {% elif object.status.name == 'Завершен' or object.status.name == 'Завершён' %}
+                        {% if object.status == None %}
+                            <span class="af-status af-status--prep">
+                                <span class="af-lamp af-lamp--prep"></span> Подготавливается
+                            </span>
+                        {% elif object.status.name == 'Завершен' or object.status.name == 'Завершён' %}
+                            <span class="af-status af-status--finished">
                                 <span class="af-lamp af-lamp--finished"></span> {{ object.status }}
-                            {% elif object.status.name == 'Не сыграл' %}
+                            </span>
+                        {% elif object.status.name == 'Не сыграл' %}
+                            <span class="af-status af-status--not-played">
                                 <span class="af-lamp af-lamp--not-played"></span> {{ object.status }}
-                            {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
+                            </span>
+                        {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
+                            <span class="af-status af-status--live">
                                 <span class="af-lamp af-lamp--live"></span> {{ object.status }}
-                            {% elif object.status.name == 'Отклонено' or object.status.name == 'Отклонен' %}
+                            </span>
+                        {% elif object.status.name == 'Отклонено' or object.status.name == 'Отклонен' %}
+                            <span class="af-status af-status--stop">
                                 <span class="af-lamp af-lamp--stop"></span> {{ object.status }}
-                            {% elif object.status.name == 'Новый' or object.status.name == 'Ожидает' or object.status.name == 'Ожидание' %}
+                            </span>
+                        {% elif object.status.name == 'Новый' or object.status.name == 'Ожидает' or object.status.name == 'Ожидание' %}
+                            <span class="af-status af-status--prep">
                                 <span class="af-lamp af-lamp--prep"></span> {{ object.status }}
-                            {% else %}
+                            </span>
+                        {% else %}
+                            <span class="af-status">
                                 <span class="af-lamp"></span> {{ object.status }}
-                            {% endif %}
-                        </span>
+                            </span>
+                        {% endif %}
                     </td>
                     <td data-label="Автомобили">
                         <div class="af-cars">
