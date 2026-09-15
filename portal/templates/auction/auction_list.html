@@ -15,6 +15,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/auction-floor.css' %}?v={% now "U" %}">
+    <style>
+        html:has(.auction-floor),
+        body:has(.auction-floor),
+        html.has-auction-floor,
+        body.has-auction-floor,
+        body:has(.auction-floor) #content,
+        body:has(.auction-floor) main#content,
+        body.has-auction-floor #content,
+        body.has-auction-floor main#content {
+            background: #f1f5f9 !important;
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+        body:has(.auction-floor)::before,
+        body:has(.auction-floor)::after {
+            display: none !important;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
