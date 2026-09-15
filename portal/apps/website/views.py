@@ -10461,9 +10461,9 @@ def auction_list(request):
     select_stores = _auction_select_stores(user)
     
     if user.is_superuser or getattr(getattr(user, 'profiles', None), 'user_sb', False):
-        objects = Auction.objects.all().order_by('-dataTime')
+        objects = Auction.objects.all()
     else:
-        objects = Auction.objects.filter(store__in=select_stores).order_by('-dataTime')
+        objects = Auction.objects.filter(store__in=select_stores)
     
     # Фильтр по статусу
     status_id = request.GET.get('status', '')
@@ -10473,11 +10473,23 @@ def auction_list(request):
         except (ValueError, TypeError):
             pass
     
-    # Поиск по VIN номеру (через AuctionStructure -> car -> vin)
+    # Фильтр: экспресс / обычный
+    express = request.GET.get('express', '')
+    if express == '1':
+        objects = objects.filter(is_express=True)
+    elif express == '0':
+        objects = objects.filter(is_express=False)
+    
+    # Поиск: VIN, номер лота, госномер, автор
     vin_search = request.GET.get('vin', '').strip()
     if vin_search:
         objects = objects.filter(
-            auctionstructure__car__vin__icontains=vin_search
+            Q(auctionstructure__car__vin__icontains=vin_search) |
+            Q(pk_auction__icontains=vin_search) |
+            Q(auctionstructure__car__plate_number__icontains=vin_search) |
+            Q(user__last_name__icontains=vin_search) |
+            Q(user__first_name__icontains=vin_search) |
+            Q(user__username__icontains=vin_search)
         ).distinct()
     
     # Фильтр по периоду (дата от)
@@ -10510,8 +10522,31 @@ def auction_list(request):
     
     subquery_1 = AuctionStructure.objects.filter(auction__id=OuterRef('pk')).values('auction__id').annotate(count=Count('pk')).values('count')
     
-    objects    = objects.annotate(
-        count_cars  = Subquery(subquery_1))
+    objects    = objects.annotate(count_cars  = Subquery(subquery_1))
+    
+    # Сортировка колонок
+    sort = request.GET.get('sort', '')
+    sortable = {
+        'created':      ('-dataTime', 'dataTime'),
+        'start':        ('dateStart', '-dateStart'),
+        'price':        ('-start_price', 'start_price'),
+        'status':       ('status__name', '-status__name'),
+    }
+    if sort:
+        key = sort.lstrip('-')
+        if key == 'delta':
+            desc = sort.startswith('-')
+            from django.db.models import F, ExpressionWrapper, DecimalField
+            objects = objects.annotate(
+                diff_price=ExpressionWrapper(F('winner_price') - F('start_price'), output_field=DecimalField())
+            ).order_by('-diff_price' if desc else 'diff_price')
+        elif key in sortable:
+            desc = sort.startswith('-')
+            order_field = sortable[key][0 if desc else 1]
+            objects = objects.order_by(order_field)
+    
+    if not sort:
+        objects = objects.order_by('-dataTime')
     
     # Подсчитываем статистику по отфильтрованным объектам
     amount      = objects.aggregate(Sum('start_price'))['start_price__sum'] or 0
@@ -10520,6 +10555,21 @@ def auction_list(request):
     paginator   = Paginator(list(objects), select_count)
     paginator   = paginator.get_page(page_number)
 
+    # Авто-освежение нефинальных статусов отображаемой страницы лотов
+    to_refresh = [
+        a for a in paginator.object_list
+        if a.uid and (not a.status or a.status.name in ('Новый', 'На аукционе', 'Играет', 'Ожидает', 'Ожидание'))
+    ]
+    if to_refresh:
+        try:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(len(to_refresh), 10)) as executor:
+                list(executor.map(refresh_auction, to_refresh))
+            for a in to_refresh:
+                a.refresh_from_db()
+        except Exception:
+            pass
+    
     # Получаем все статусы для фильтра
     all_statuses = RefCarsOrganizationAuctionStatus.objects.all().order_by('name')
 
@@ -10534,9 +10584,14 @@ def auction_list(request):
         'vin': vin_search,
         'date_from': date_from,
         'date_to': date_to,
-        'store_id': store_id
+        'store_id': store_id,
+        'express': express,
+        'sort': sort,
     }
     
+    now = DT.datetime.now()
+    sends = not (10 <= now.hour < 14)
+
     params = {
         'type'          : 'auction',
         'paginator'     : paginator,
@@ -10548,6 +10603,7 @@ def auction_list(request):
         'filtr'         : filtr,
         'can_edit'      : can_edit,
         'user_sb'       : not can_edit,
+        'sends'         : sends,
     }
     
     return render(request, "auction/auction_list.html", {'params': params})
@@ -10592,6 +10648,9 @@ def _get_auction_by_uid(slug_auction):
 def auction_doc_new(request):
     if _auction_user_sb_readonly(request.user):
         return HttpResponseRedirect('/auction/')
+    now = DT.datetime.now()
+    if 10 <= now.hour < 14:
+        return HttpResponseRedirect('/auction/')
     return auction_doc(request, 'new_lots')
 
 
@@ -10619,11 +10678,11 @@ def auction_doc(request, slug_auction):
     user    = request.user
     answer  = ''
     sends   = False
-    if DT.datetime.now().hour < 13 or DT.datetime.now().hour >= 14:
+    if DT.datetime.now().hour < 10 or DT.datetime.now().hour >= 14:
         sends = True
 
     if slug_auction == 'new_lots':
-        if not can_edit:
+        if not can_edit or not sends:
             return HttpResponseRedirect('/auction/')
         auction = Auction()
         auction.user = user
@@ -10850,6 +10909,169 @@ def dowload_files_auction(structure, list_files, type_file):
         new_estimation_files.save()
         files.append(new_estimation_files.file.url)
     return files
+
+
+@login_required
+def auction_doc_get_bids(request, slug_auction):
+    """
+    API прокси: получение истории ставок по лоту из my_auction_kors_portal.
+    Вызывается асинхронно из auction-doc.js.
+    """
+    from task_manager.views import url_auction_kors_portal
+    import requests
+
+    try:
+        auction = _get_auction_by_uid(slug_auction)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Лот аукциона не найден'}, status=404)
+
+    target_uid = str(auction.uid)
+    try:
+        r = requests.get(
+            f"{url_auction_kors_portal}/api/get_auction/{target_uid}/",
+            auth=('Admin_auction', 'Audi80b4'),
+            timeout=15,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            lot_info = data.get('lot_info') or {}
+            bids = lot_info.get('bids', [])
+            pk_auction = lot_info.get('pk_auction')
+            if pk_auction and str(auction.pk_auction or '') != str(pk_auction):
+                auction.pk_auction = str(pk_auction)
+                try:
+                    auction.save(update_fields=['pk_auction'])
+                except Exception:
+                    pass
+
+            # Синхронизация статуса лота и причины отклонения из аукциона
+            lot_status_name = lot_info.get('status')
+            if lot_status_name and (not auction.status or auction.status.name != lot_status_name):
+                from task_manager.views import get_status
+                auction.status = get_status(lot_status_name)
+                try:
+                    auction.save(update_fields=['status'])
+                except Exception:
+                    pass
+
+            rejection_reason = lot_info.get('rejection_reason', '')
+            if rejection_reason is not None and rejection_reason != auction.rejection_reason:
+                auction.rejection_reason = rejection_reason
+                try:
+                    auction.save(update_fields=['rejection_reason'])
+                except Exception:
+                    pass
+
+            profile_winner = lot_info.get('profile_winner')
+            winning_bid = lot_info.get('winning_bid', 0)
+            winner_bids = lot_info.get('winner_bids') or []
+
+            # Если победитель не был передан в profile_winner, ищем по флагу is_winning
+            if not profile_winner:
+                winning_bid_obj = next((b for b in bids if b.get('is_winning')), None)
+                if winning_bid_obj and winning_bid_obj.get('user'):
+                    u = winning_bid_obj['user']
+                    profile_winner = {
+                        'name': u.get('name', ''),
+                        'phone': u.get('phone', ''),
+                        'email': u.get('email', ''),
+                        'city': u.get('city', ''),
+                        'winning_bid': winning_bid_obj.get('amount') or winning_bid,
+                    }
+
+            # Если список ставок победителя еще не сформирован, извлекаем его
+            if profile_winner and not winner_bids:
+                w_phone = (profile_winner.get('phone') or '').strip()
+                w_email = (profile_winner.get('email') or '').strip().lower()
+                w_name = (profile_winner.get('name') or '').strip().lower()
+                w_uid = profile_winner.get('id')
+
+                for b in bids:
+                    u = b.get('user') or {}
+                    u_phone = (u.get('phone') or '').strip()
+                    u_email = (u.get('email') or '').strip().lower()
+                    u_name = (u.get('name') or '').strip().lower()
+                    u_uid = u.get('id')
+
+                    match = False
+                    if w_uid and u_uid and str(w_uid) == str(u_uid):
+                        match = True
+                    elif w_phone and u_phone and w_phone == u_phone:
+                        match = True
+                    elif w_email and u_email and w_email == u_email:
+                        match = True
+                    elif w_name and u_name and w_name == u_name:
+                        match = True
+
+                    if match:
+                        winner_bids.append(b)
+
+            if profile_winner:
+                profile_winner['winning_bid'] = profile_winner.get('winning_bid') or winning_bid
+                profile_winner['bids_count'] = len(winner_bids)
+
+            # Расчет статистики по ставкам победителя
+            winner_stats = {}
+            if winner_bids:
+                winner_bids_by_amount = sorted(winner_bids, key=lambda x: x.get('amount', 0))
+                first_bid = winner_bids_by_amount[0].get('amount', 0)
+                final_bid = winning_bid or (winner_bids_by_amount[-1].get('amount', 0))
+                growth = (final_bid - first_bid) if final_bid >= first_bid else 0
+                winner_stats = {
+                    'count': len(winner_bids),
+                    'first_bid': first_bid,
+                    'winning_bid': final_bid,
+                    'growth': growth,
+                }
+
+            # Синхронизация данных победителя в модель Auction
+            if profile_winner:
+                updated_fields = []
+                final_price = winning_bid or (profile_winner.get('winning_bid') or 0)
+                if final_price and auction.winner_price != final_price:
+                    auction.winner_price = final_price
+                    updated_fields.append('winner_price')
+                if profile_winner.get('name') and auction.winner_name != profile_winner.get('name'):
+                    auction.winner_name = profile_winner.get('name')
+                    updated_fields.append('winner_name')
+                if profile_winner.get('phone') and auction.winner_phone != profile_winner.get('phone'):
+                    auction.winner_phone = profile_winner.get('phone')
+                    updated_fields.append('winner_phone')
+                if profile_winner.get('email') and auction.winner_email != profile_winner.get('email'):
+                    auction.winner_email = profile_winner.get('email')
+                    updated_fields.append('winner_email')
+                if updated_fields:
+                    try:
+                        auction.save(update_fields=updated_fields)
+                    except Exception:
+                        pass
+
+            return JsonResponse({
+                'success': True,
+                'bids': bids,
+                'profile_winner': profile_winner,
+                'winner_bids': winner_bids,
+                'winner_stats': winner_stats,
+                'pk_auction': str(pk_auction) if pk_auction else (str(auction.pk_auction) if auction.pk_auction else ''),
+                'total_bids': lot_info.get('total_bids', len(bids)),
+                'unique_bidders': lot_info.get('unique_bidders', len(set(b.get('user', {}).get('id') for b in bids if b.get('user')))),
+                'max_bid': lot_info.get('max_bid', max([b.get('amount', 0) for b in bids]) if bids else 0),
+                'winning_bid': winning_bid,
+                'status': lot_info.get('status', ''),
+                'completed': lot_info.get('completed', False),
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': f'Сервис аукциона вернул статус {r.status_code}',
+                'bids': [],
+            }, status=200)
+    except Exception as exc:
+        return JsonResponse({
+            'success': False,
+            'error': f'Не удалось соединиться с сервисом аукциона: {exc}',
+            'bids': [],
+        }, status=200)
 
 
 def auction_doc_get_cars(request):

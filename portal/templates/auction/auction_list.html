@@ -3,2068 +3,781 @@
 {% load custom_template_tags %}
 {% load static %}
 
-{% block url %} {% endblock %} 
+{% block url %} {% endblock %}
 
-{% block title %} Аукционы автомобилей {% endblock %}
+{% block title %} Аукцион автомобилей {% endblock %}
 
-{% block title_navbar %} - Аукционы автомобилей {{params.object.name}}  {% endblock %}
+{% block title_navbar %} - Аукцион автомобилей {% endblock %}
 
 {% block head %}
     {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/auction-floor.css' %}?v={% now "U" %}">
     <style>
-
-.kors-brand-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.35rem 0.9rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 1rem;
-    }
-
-    .doc-car-photo {
-            border-radius: 0.75rem;
-            overflow: hidden;
-            background: var(--auction-light);
-            width: 180px;
-            height: 135px;
-        }
-
-        @media (max-width: 991px) {
-            .doc-car-photo {
-                width: 100%;
-                height: auto;
-                aspect-ratio: 4/3;
-            }
-        }
-
-        .doc-car-photo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        :root {
-            --auction-accent: #F58220;
-            --auction-dark: #000000;
-            --auction-light: #F4F4F4;
-        }
-
-        .auction-page {
-            background-color: var(--auction-light);
-            padding: 2rem 1.5rem 3rem;
-            color: var(--auction-dark);
-        }
-
-        @media (max-width: 767.98px) {
-            .auction-page {
-                padding: 1.25rem 1rem 2rem;
-            }
-        }
-
-        .auction-page .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--auction-dark);
-            margin-bottom: 1rem;
-        }
-
-        .auction-header {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .auction-header p {
-            color: rgba(0, 0, 0, 0.6);
-            font-size: 0.95rem;
-        }
-
-        .auction-header .section-title {
-            flex-grow: 1;
-            margin-bottom: 0.35rem;
-        }
-
-        .auction-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .auction-toolbar .toolbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .auction-toolbar .btn-auction-primary {
-            background: var(--auction-accent);
-            color: #ffffff;
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.85rem 1.6rem;
-            font-weight: 600;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-       
-
-        .auction-toolbar .toolbar-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .auction-help-button {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: none;
-            background: #ffffff;
-            color: var(--auction-accent);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            position: relative;
-            overflow: visible;
-        }
-
-        .auction-help-button:hover,
-        .auction-help-button:focus {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
-            color: var(--auction-accent);
-            background: #ffffff;
-        }
-
-        .auction-help-button:active {
-            transform: translateY(0);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-
-        .auction-help-button::after {
-            content: "";
-            position: absolute;
-            inset: -8px;
-            border-radius: 50%;
-            border: 2px solid rgba(245, 130, 32, 0.4);
-            animation: auctionHelpPulse 2.2s ease-out infinite;
-            pointer-events: none;
-        }
-
-        .auction-help-button:hover::after,
-        .auction-help-button:focus::after {
-            animation-play-state: paused;
-            opacity: 0;
-        }
-
-        @keyframes auctionHelpPulse {
-            0% {
-                transform: scale(0.85);
-                opacity: 0.6;
-            }
-            60% {
-                transform: scale(1.45);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1.45);
-                opacity: 0;
-            }
-        }
-
-        .auction-help-modal .modal-content,
-        #auctionHelpDetailModal .modal-content {
-            border-radius: 1.15rem;
-            border: 1px solid rgba(245, 130, 32, 0.35);
-            background: #ffffff;
-        }
-
-        .auction-help-modal .modal-header,
-        #auctionHelpDetailModal .modal-header {
-            background: linear-gradient(135deg, rgba(245, 130, 32, 0.9) 0%, #f89a48 100%);
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-            border-top-left-radius: 1.15rem;
-            border-top-right-radius: 1.15rem;
-            padding: 1.35rem 1.5rem;
-        }
-
-        .auction-help-modal .modal-title,
-        #auctionHelpDetailModal .modal-title {
-            font-weight: 700;
-            letter-spacing: 0.01em;
-        }
-
-        .auction-help-modal .modal-body,
-        #auctionHelpDetailModal .modal-body {
-            padding: 1.75rem;
-            background: linear-gradient(180deg, rgba(245, 130, 32, 0.05) 0%, rgba(255, 255, 255, 0) 60%);
-        }
-
-        .auction-help-modal .modal-footer,
-        #auctionHelpDetailModal .modal-footer {
-            border-top: 1px solid rgba(245, 130, 32, 0.2);
-            padding: 1.1rem 1.5rem 1.5rem;
-            background: #ffffff;
-            border-bottom-left-radius: 1.15rem;
-            border-bottom-right-radius: 1.15rem;
-        }
-
-        .auction-help-modal .modal-body {
-            padding: 0;
-            background: none;
-        }
-
-        .auction-help-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-        }
-
-        .auction-help-hero {
-            position: relative;
-            padding: 2.4rem 2.6rem;
-            color: #ffffff;
-            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.28) 0%, rgba(245, 130, 32, 0.95) 42%), radial-gradient(circle at 80% 80%, rgba(248, 154, 72, 0.95) 0%, rgba(245, 130, 32, 0.88) 55%);
-            overflow: hidden;
-            border-top-left-radius: 1.15rem;
-            border-top-right-radius: 1.15rem;
-        }
-
-        .auction-help-hero::after {
-            content: "";
-            position: absolute;
-            inset: 15% -30% -45% auto;
-            width: 460px;
-            height: 460px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
-            border-radius: 50%;
-            opacity: 0.32;
-            transform: rotate(28deg);
-        }
-
-        .auction-help-hero-content {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            max-width: 640px;
-        }
-
-        .auction-help-close {
-            position: absolute;
-            top: 1.4rem;
-            right: 1.6rem;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 197, 149, 0.95) 44%, rgba(245, 130, 32, 0.95) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.45);
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        .auction-help-close:hover {
-            transform: translateY(-2px);
-            background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 1) 0%, rgba(255, 204, 158, 0.96) 40%, rgba(245, 130, 32, 1) 100%);
-            box-shadow: 0 18px 36px rgba(245, 130, 32, 0.25);
-        }
-
-        .auction-help-close:active {
-            transform: translateY(0);
-            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-        }
-
-        .auction-help-close .btn-close {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            opacity: 1;
-            padding: 0;
-            background: none;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .auction-help-close .btn-close::before,
-        .auction-help-close .btn-close::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 14px;
-            height: 2px;
-            border-radius: 999px;
-            background: rgba(59, 30, 0, 0.75);
-            transform-origin: center;
-        }
-
-        
-
-        .auction-help-close:hover .btn-close::before,
-        .auction-help-close:hover .btn-close::after {
-            background: rgba(40, 20, 0, 0.85);
-        }
-
-        .auction-help-close:active .btn-close::before,
-        .auction-help-close:active .btn-close::after {
-            background: rgba(40, 20, 0, 0.95);
-        }
-
-        .auction-help-close .btn-close:hover {
-            border-radius: 50%;
-        }
-
-        .auction-help-close .btn-close:focus {
-            box-shadow: none;
-        }
-
-        .auction-help-hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.55rem 1.2rem;
-            border-radius: 999px;
-            background: rgba(0, 0, 0, 0.28);
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .auction-help-hero-title {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1.25;
-            margin: 0;
-        }
-
-        .auction-help-hero-subtitle {
-            margin: 0;
-            font-size: 1rem;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.82);
-        }
-
-        .auction-help-hero-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.2rem;
-        }
-
-        .auction-help-hero-meta .meta-card {
-            min-width: 150px;
-            padding: 0.85rem 1rem;
-            border-radius: 1rem;
-            backdrop-filter: blur(10px);
-            background: rgba(0, 0, 0, 0.22);
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .auction-help-hero-meta .meta-value {
-            font-size: 1.35rem;
-            font-weight: 700;
-        }
-
-        .auction-help-hero-meta .meta-label {
-            font-size: 0.82rem;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .auction-help-hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-        }
-
-        .auction-help-hero-actions .btn {
-            border-radius: 0.85rem;
-            font-weight: 600;
-            padding: 0.75rem 1.6rem;
-            box-shadow: 0 22px 42px rgba(0, 0, 0, 0.24);
-        }
-
-        .auction-help-content {
-            background: #ffffff;
-            padding: 2.4rem 2.6rem 2rem;
-            border-bottom-left-radius: 1.15rem;
-            border-bottom-right-radius: 1.15rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .auction-help-section-heading {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .auction-help-section-heading h4 {
-            margin: 0;
-            font-size: 1.45rem;
-            font-weight: 700;
-            color: var(--auction-dark);
-        }
-
-        .auction-help-section-heading span {
-            text-transform: uppercase;
-            font-size: 0.78rem;
-            letter-spacing: 0.12em;
-            color: rgba(0, 0, 0, 0.55);
-        }
-
-        .auction-help-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.6rem;
-        }
-
-        .auction-help-card {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1.6rem;
-            border-radius: 1rem;
-            background: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.05);
-            
-        }
-
-        .auction-help-card:hover {
-            box-shadow: 0 30px 48px rgba(245, 130, 32, 0.12);
-            border-color: rgba(245, 130, 32, 0.35);
-        }
-
-        .help-card-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            background: rgba(245, 130, 32, 0.12);
-            color: var(--auction-accent);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-        }
-
-        .help-card-body {
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
-
-        .help-card-title {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--auction-dark);
-        }
-
-        .help-card-description {
-            margin: 0;
-            color: rgba(0, 0, 0, 0.72);
-            line-height: 1.55;
-        }
-
-        .help-card-actions {
-            margin-top: auto;
-        }
-
-        .help-card-actions .btn {
-            border-radius: 0.85rem;
-            font-weight: 600;
-            padding: 0.7rem 1.35rem;
-            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.18);
-        }
-
-        @media (max-width: 767.98px) {
-            .auction-help-hero {
-                padding: 2rem 1.6rem;
-            }
-
-            .auction-help-content {
-                padding: 2rem 1.6rem 1.8rem;
-            }
-
-            .auction-help-hero-title {
-                font-size: 1.7rem;
-            }
-
-            .auction-help-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            }
-        }
-
-        .auction-help-detail-body p {
-            margin-bottom: 1rem;
-        }
-
-        .auction-help-detail-video-wrapper {
-            margin-top: 1rem;
-            border-radius: 1rem;
-            background: #101010;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(245, 130, 32, 0.35);
-            position: relative;
-        }
-
-        .auction-help-detail-video-frame {
-            position: relative;
-        }
-
-        .auction-help-detail-video {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover;
-            object-position: center center;
-        }
-
-        .auction-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .auction-stat {
-            background: #ffffff;
-            border-radius: 1rem;
-            padding: 1rem 1.5rem;
-            min-width: 190px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .auction-divider {
-            width: 100%;
-            height: 1px;
-            background: rgba(0, 0, 0, 0.12);
-            margin: 1.5rem 0 2rem;
-        }
-
-        .auction-stat .stat-label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            color: rgba(0, 0, 0, 0.55);
-            letter-spacing: 0.05em;
-        }
-
-        .auction-stat .stat-value {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--auction-dark);
-        }
-
-        .auction-lots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .auction-lot-card {
-            background: #ffffff;
-            border-radius: 1.25rem;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        
-        }
-
-        .auction-lot-card:hover {
-       
-            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.08);
-        }
-
-        .auction-lot-header {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .auction-lot-title {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .auction-lot-title h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0;
-            color: var(--auction-dark);
-        }
-
-        .auction-meta-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 0.65rem 1.25rem;
-        }
-
-        .auction-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-            color: rgba(0, 0, 0, 0.75);
-        }
-
-        .auction-meta-item .icon-wrapper {
-            width: 36px;
-            height: 36px;
-            border-radius: 0.75rem;
-            background: rgba(0, 0, 0, 0.05);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--auction-dark);
-        }
-
-        .auction-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.85rem;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            background: rgba(0, 0, 0, 0.08);
-            color: var(--auction-dark);
-        }
-
-        .auction-status.accent {
-            background: var(--auction-accent);
-            color: #ffffff;
-        }
-
-        .auction-lot-footer {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 0.75rem;
-            align-items: center;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            padding-top: 1rem;
-        }
-
-        .auction-owner {
-            font-size: 0.95rem;
-            color: rgba(0, 0, 0, 0.6);
-        }
-
-        .auction-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            font-weight: 600;
-            color: var(--auction-accent);
-            text-decoration: none;
-        }
-
-        .auction-link:hover {
-            color: #d66a14;
-        }
-
-        .auction-page .pagination .btn {
-            border-radius: 0.75rem;
-            border-color: rgba(0, 0, 0, 0.15);
-            color: var(--auction-dark);
-        }
-
-        .auction-page .pagination .btn:hover {
-            border-color: var(--auction-accent);
-            color: var(--auction-accent);
-        }
-
-        .auction-page .pagination .btn.btn-secondary {
-            background: var(--auction-accent);
-            border-color: var(--auction-accent);
-        }
-
-        .auction-page .modal-content {
-            border-radius: 1rem;
-            border: none;
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
-        }
-
-        .auction-page .modal-header {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            background: var(--auction-light);
-        }
-
-        .auction-page .modal-title {
-            font-weight: 600;
-            color: var(--auction-dark);
-        }
-
-        .auction-page .modal-footer {
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-        }
-
-        .auction-page .form-select,
-        .auction-page .form-control {
-            border-radius: 0.75rem;
-            border-color: rgba(0, 0, 0, 0.12);
-            box-shadow: none;
-        }
-
-        .auction-page .form-select:focus,
-        .auction-page .form-control:focus {
-            border-color: var(--auction-accent);
-            box-shadow: 0 0 0 0.2rem rgba(245, 130, 32, 0.15);
-        }
-
-        .auction-empty-state {
-            background: #ffffff;
-            border-radius: 1.25rem;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            border: 1px dashed rgba(0, 0, 0, 0.2);
-            color: rgba(0, 0, 0, 0.6);
-            font-size: 1.05rem;
-        }
-
-        .auction-filters-button-container {
-            width: 100%;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .auction-filters-button-container .btn-filters-mobile {
-            background: #ffffff;
-            color: var(--auction-dark);
-            border-radius: 0.75rem;
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            padding: 0.65rem 1rem;
-            font-weight: 600;
-        }
-
-        .auction-filters-button-container .btn-filters-mobile .filters-count {
-            background: var(--auction-accent);
-            color: #ffffff;
-            border-radius: 999px;
-            padding: 0.1rem 0.55rem;
-            font-size: 0.85rem;
-            margin-left: 0.5rem;
-        }
-
-        .auction-page .modal-body hr {
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-
-        .auction-page .table > :not(caption) > * > * {
-            padding: 0.75rem 1rem;
-            color: rgba(0, 0, 0, 0.8);
-        }
-
-        .auction-page .btn-auction-secondary {
-            background: linear-gradient(135deg, rgba(255, 214, 174, 1) 0%, rgba(245, 130, 32, 1) 60%, rgba(188, 90, 13, 1) 100%);
-            color: #ffffff;
-            border: none;
-            border-radius: 0.85rem;
-            font-weight: 600;
-            padding: 0.6rem 1.5rem;
-            box-shadow: 0 14px 28px rgba(245, 130, 32, 0.25);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        .auction-page .btn-auction-secondary:hover,
-        .auction-page .btn-auction-secondary:focus {
-            transform: translateY(-1px);
-            box-shadow: 0 16px 32px rgba(245, 130, 32, 0.32);
-            color: #ffffff;
-        }
-
-        .auction-page .btn-auction-secondary:active {
-            transform: translateY(0);
-            box-shadow: 0 10px 20px rgba(245, 130, 32, 0.22);
-        }
-        
-        /* Стили для формы фильтров */
-        .auction-toolbar .form-floating {
-            margin-bottom: 0;
-        }
-        
-        .auction-toolbar .form-floating .form-control,
-        .auction-toolbar .form-floating .form-select {
-            height: 38px;
-            padding-top: 1.625rem;
-            padding-bottom: 0.625rem;
-        }
-        
-        .auction-toolbar .form-floating > label {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        @media (max-width: 991.98px) {
-            .auction-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .auction-toolbar .toolbar-actions {
-                flex-direction: column;
-                width: 100%;
-            }
-            
-            .auction-toolbar .toolbar-actions form {
-                width: 100%;
-            }
-            
-            .auction-toolbar .form-floating {
-                width: 100%;
-                min-width: 100% !important;
-            }
-            
-            .auction-toolbar .toolbar-right {
-                width: 100%;
-                margin-top: 1rem;
-            }
-            
-            .auction-stats {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
-        
-        @media (max-width: 575.98px) {
-            .auction-stats {
-                flex-direction: column;
-            }
-            
-            .auction-stat {
-                width: 100%;
-            }
+        html:has(.auction-floor),
+        body:has(.auction-floor),
+        html.has-auction-floor,
+        body.has-auction-floor,
+        body:has(.auction-floor) #content,
+        body:has(.auction-floor) main#content,
+        body.has-auction-floor #content,
+        body.has-auction-floor main#content {
+            background: #f8fafc !important;
+            background-color: #f8fafc !important;
+            color: #111827 !important;
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+        body:has(.auction-floor)::before,
+        body:has(.auction-floor)::after {
+            display: none !important;
         }
     </style>
 {% endblock %}
-    
+
 {% block content %}
-
-<div class="portal-page">
-
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-        <div class="modal-header">
-                <h1 class="modal-title fs-5">Выбор дилерского центра</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <div class="modal-body">
-            <form method="get" action="" id="storeFilterForm">
-                    <div class="form-floating mb-3">
-                            <select class="form-select" id="store_id" name="store_id" placeholder="">
-                                    <option value="">Все стоянки</option>
-                                    {% for store in params.selected.stores %}
-                                            <option value="{{store.id}}" {% if params.filtr.store_id == store.id|stringformat:"s" %} selected {% endif %}> {{store.name}} </option>
-                                    {% endfor %}
-                            </select>
-                            <label for="store_id">Дилерский центр</label>
-                    </div>
-                    
-                    <!-- Сохраняем другие параметры фильтров -->
-                    {% if params.filtr.status %}
-                        <input type="hidden" name="status" value="{{params.filtr.status}}">
-                    {% endif %}
-                    {% if params.filtr.vin %}
-                        <input type="hidden" name="vin" value="{{params.filtr.vin}}">
-                    {% endif %}
-                    {% if params.filtr.date_from %}
-                        <input type="hidden" name="date_from" value="{{params.filtr.date_from}}">
-                    {% endif %}
-                    {% if params.filtr.date_to %}
-                        <input type="hidden" name="date_to" value="{{params.filtr.date_to}}">
-                    {% endif %}
-
-                    <div class="d-grid">
-                            <button class="btn btn-auction-primary" type="submit"><span class="icon-mbri-success"></span> Применить</button>
-                    </div>
-            </form>
-    </div>
-
-</div>
-</div>
-</div>
-
-<div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-              <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Сохранение параметров</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-              </div>
-              <div class="modal-body">
-                      <div class="form-floating mb-3">
-                              <input type="text" class="form-control " id="new_filtr" name="new_filtr" placeholder="" required>
-                              <label for="new_filtr">Наименование</label>
-                      </div>
-              </div>
-              <div class="modal-footer">
-                <button class="btn btn-auction-primary" type="button" onclick="change_link()" >Сохранить</button>
-              </div>
-        </div>
-      </div>
-</div>
-
-<div class="modal fade" id="exampleModalToggle2Filter" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-              <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Управление фильтрами</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-              </div>
-              <div class="modal-body">
-                      {% if params.filters_user|length > 0 %}
-                                      <div class="table-responsive">
-                                              <table class="table align-middle">
-                                                <tbody>
-
-                                                      {% for filter in params.filters_user %}
-                                                      <tr>
-                                                              <td class="fw-semibold">
-                                                                      {{filter.name}}
-                                                              </td>
-                                                              <td class="text-end">
-                                                                      <a href="{{filter.page}}{{filter.path}}&delite_filter={{filter.pk}}" class="btn btn-outline-danger rounded-pill"><span class="icon-mbri-close"></span></a>
-                                                              </td>
-                                                      </tr>
-                                                      {% endfor %}
-
-                                                </tbody>
-                                              </table>
-                                        </div>
-                              {% else %}
-                                      <div class="auction-empty-state">Сохранённые фильтры отсутствуют</div>
-                              {% endif %}
-              </div>
-
-        </div>
-      </div>
-</div>
-
-
-<div class="modal fade auction-help-modal" id="auctionHelpModal" tabindex="-1" aria-labelledby="auctionHelpModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div class="auction-help-layout">
-                    <div class="auction-help-hero">
-                        <div class="auction-help-close">
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+<div class="auction-floor">
+    <div class="modal fade" id="auctionHelpModal" tabindex="-1" aria-labelledby="auctionHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="auctionHelpModalLabel">Справка по управлению аукционом</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Создавайте лоты, следите за метриками, фильтруйте каталог и открывайте карточку каждого аукциона.</p>
+                    <div class="auction-help-grid">
+                        <div class="auction-help-card">
+                            <h5 class="help-card-title">Создание нового лота</h5>
+                            <p class="help-card-description">Черновик, автомобили, фото, проверка и отправка на торги.</p>
+                            <button type="button" class="af-btn af-btn--primary help-detail-trigger" data-section-id="createLot" data-video="{% static 'razdell1.mp4' %}">Подробнее</button>
                         </div>
-                        <div class="auction-help-hero-content">
-                            <div class="auction-help-hero-badge">
-                                <span class="icon-mbri-help"></span>
-                                КорсАвто Аукцион
-                            </div>
-                            <h2 class="auction-help-hero-title">Справка по управлению аукционом</h2>
-                            <p class="auction-help-hero-subtitle">Быстро разберитесь с основными сценариями: создавайте лоты, контролируйте метрики, настраивайте фильтры и изучайте карточку каждого аукциона.</p>
-                            <div class="auction-help-hero-meta">
-                                <div class="meta-card">
-                                    <span class="meta-value">{{params.count}}</span>
-                                    <span class="meta-label">Активных лотов</span>
-                                </div>
-                                <div class="meta-card">
-                                    <span class="meta-value">{{params.amount|floatformat:"2g"}} ₽</span>
-                                    <span class="meta-label">Сумма каталога</span>
-                                </div>
-                                <div class="meta-card">
-                                    <span class="meta-value">{{params.count_cars}}</span>
-                                    <span class="meta-label">Автомобилей</span>
-                                </div>
-                            </div>
-                            <div class="auction-help-hero-actions">
-                                <button type="button" class="btn btn-light help-detail-trigger" data-section-id="createLot">
-                                    <span class="icon-mbri-play me-2"></span>Быстрый старт
-                                </button>
-                                {% comment %} <button type="button" class="btn btn-outline-light help-detail-trigger" data-section-id="monitorStats">
-                                    <span class="icon-mbri-video me-2"></span>Смотреть инструкции
-                                </button> {% endcomment %}
-                            </div>
+                        <div class="auction-help-card">
+                            <h5 class="help-card-title">Мониторинг показателей</h5>
+                            <p class="help-card-description">Количество лотов, сумма каталога и объём автомобилей.</p>
+                            <button type="button" class="af-btn af-btn--primary help-detail-trigger" data-section-id="monitorStats" data-video="{% static 'razdel2.mp4' %}">Подробнее</button>
                         </div>
-                    </div>
-                    <div class="auction-help-content">
-                        <div class="auction-help-section-heading">
-                            <h4>Обучающие разделы</h4>
-                            <span>Видео и текстовые инструкции</span>
+                        <div class="auction-help-card">
+                            <h5 class="help-card-title">Фильтры</h5>
+                            <p class="help-card-description">Статус, стоянка, период и VIN — в одной ленте.</p>
+                            <button type="button" class="af-btn af-btn--primary help-detail-trigger" data-section-id="filterManagement" data-video="{% static 'razdel3.mp4' %}">Подробнее</button>
                         </div>
-                        <div class="auction-help-grid">
-                            <div class="auction-help-card">
-                                <div class="help-card-icon">
-                                    <span class="icon-mbri-plus"></span>
-                                </div>
-                                <div class="help-card-body">
-                                    <h5 class="help-card-title">Создание нового лота</h5>
-                                    <p class="help-card-description">Откройте `new_lots/`, по шагам заполните сведения об автомобиле, проверьте рассчитанную стоимость, приложите необходимые документы и подготовьте лот к публикации.</p>
-                                </div>
-                                <div class="help-card-actions">
-                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="createLot">Подробнее</button>
-                                </div>
-                            </div>
-                            <div class="auction-help-card">
-                                <div class="help-card-icon">
-                                    <span class="icon-mbri-growing-chart"></span>
-                                </div>
-                                <div class="help-card-body">
-                                    <h5 class="help-card-title">Мониторинг ключевых показателей</h5>
-                                    <p class="help-card-description">Сводные карточки показывают количество лотов, суммарную стоимость и объём авто, помогая анализировать эффективность продаж.</p>
-                                </div>
-                                <div class="help-card-actions">
-                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="monitorStats">Подробнее</button>
-                                </div>
-                            </div>
-                            <div class="auction-help-card">
-                                <div class="help-card-icon">
-                                    <span class="icon-mbri-setting"></span>
-                                </div>
-                                <div class="help-card-body">
-                                    <h5 class="help-card-title">Управление фильтрами</h5>
-                                    <p class="help-card-description">Используйте сохранённые наборы, модальные окна выбора дилера и гибкие фильтры, чтобы быстро находить нужные аукционы.</p>
-                                </div>
-                                <div class="help-card-actions">
-                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="filterManagement">Подробнее</button>
-                                </div>
-                            </div>
-                            <div class="auction-help-card">
-                                <div class="help-card-icon">
-                                    <span class="icon-mbri-preview"></span>
-                                </div>
-                                <div class="help-card-body">
-                                    <h5 class="help-card-title">Работа с карточкой лота</h5>
-                                    <p class="help-card-description">Следите за статусом, датами, стоимостью и составом лота, а также переходите на страницу аукциона для детальной работы.</p>
-                                </div>
-                                <div class="help-card-actions">
-                                    <button type="button" class="btn btn-auction-primary help-detail-trigger" data-section-id="lotCard">Подробнее</button>
-                                </div>
-                            </div>
+                        <div class="auction-help-card">
+                            <h5 class="help-card-title">Строка лота</h5>
+                            <p class="help-card-description">Номер, состав, цена и переход в карточку.</p>
+                            <button type="button" class="af-btn af-btn--primary help-detail-trigger" data-section-id="lotCard" data-video="{% static 'razdel4.mp4' %}">Подробнее</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="auctionHelpDetailModal" tabindex="-1" aria-labelledby="auctionHelpDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="auctionHelpDetailModalLabel">Подробное описание</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <div class="auction-help-detail-body"></div>
-                <div class="auction-help-detail-video-wrapper d-none">
-                    <div class="auction-help-detail-video-frame">
+    <div class="modal fade" id="auctionHelpDetailModal" tabindex="-1" aria-labelledby="auctionHelpDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="auctionHelpDetailModalLabel">Подробное описание</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="auction-help-detail-body"></div>
+                    <div class="auction-help-detail-video-wrapper d-none">
                         <div class="ratio ratio-16x9">
                             <video class="auction-help-detail-video" title="Видеоинструкция" playsinline muted controls></video>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-auction-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- Мобильная кнопка фильтров -->
-<div class="d-block d-md-none mb-3">
-    <div class="auction-filters-button-container">
-            <button type="button" class="btn btn-filters-mobile" data-bs-toggle="modal" data-bs-target="#mobileFiltersModal">
-                    <span class="icon-mbri-setting me-2"></span>
-                    <span class="filters-text">Фильтры</span>
-                    <span class="filters-count" id="activeFiltersCount">0</span>
-            </button>
-    </div>
-</div>
-
-<div class="portal-panel">
-    <h1 class="">Аукционы автомобилей</h1>
-    <button type="button" class="auction-help-button" data-bs-toggle="modal" data-bs-target="#auctionHelpModal" aria-label="Справка">
-        ?
-    </button>
-    {% comment %} <p class="text-muted mb-0">Управляйте лотами, отслеживайте статус аукционов и контролируйте ключевые показатели.</p> {% endcomment %}
-</div>
-
-	
-<div class="auction-toolbar">
-    <div class="toolbar-actions d-flex align-items-center gap-2 flex-wrap">
+    <header class="af-header">
+        <div class="af-header__main">
+            <div class="af-kicker">
+                <span class="af-kicker__pulse"></span>
+                <span>КорсАвто • Аукционная площадка</span>
+            </div>
+            <h1 class="af-title">Аукцион автомобилей</h1>
+        </div>
+        <div class="af-header__actions">
             {% if params.can_edit %}
-            <a href="new_lots/" class="btn btn-auction-primary">
-                    <span class="icon-mbri-play"></span>
-                    Новый лот аукциона
-            </a>
-            {% endif %}
-            
-            <!-- Форма фильтров -->
-            <form method="get" action="" class="d-flex align-items-center gap-2 flex-wrap" id="auctionFiltersForm">
-                <!-- Фильтр по статусу -->
-                <div class="form-floating" style="min-width: 200px;">
-                    <select class="form-select form-select-sm" id="status" name="status" onchange="this.form.submit()">
-                        <option value="">Все статусы</option>
-                        {% for status in params.select.statuses %}
-                            <option value="{{status.id}}" {% if params.filtr.status == status.id|stringformat:"s" %}selected{% endif %}>
-                                {{status.name}}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <label for="status">Статус</label>
-                </div>
-                
-                <!-- Поиск по VIN -->
-                <div class="form-floating" style="min-width: 200px;">
-                    <input type="text" class="form-control form-control-sm" id="vin" name="vin" 
-                           placeholder="VIN номер" value="{{params.filtr.vin}}"
-                           onkeypress="if(event.key === 'Enter') { event.preventDefault(); this.form.submit(); }">
-                    <label for="vin">VIN номер</label>
-                </div>
-                
-                <!-- Дата от -->
-                <div class="form-floating" style="min-width: 160px;">
-                    <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" 
-                           value="{{params.filtr.date_from}}" onchange="this.form.submit()">
-                    <label for="date_from">Дата от</label>
-                </div>
-                
-                <!-- Дата до -->
-                <div class="form-floating" style="min-width: 160px;">
-                    <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" 
-                           value="{{params.filtr.date_to}}" onchange="this.form.submit()">
-                    <label for="date_to">Дата до</label>
-                </div>
-                
-                <!-- Кнопка поиска по VIN -->
-                <button type="submit" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
-                    <span class="icon-mbri-search"></span> Найти
+                {% if params.sends %}
+                <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>
+                    <svg class="af-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Новый лот</span>
+                </a>
+                {% else %}
+                <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">
+                    <svg class="af-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Новый лот</span>
                 </button>
-                
-                <!-- Кнопка сброса фильтров -->
-                {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to %}
-                    <a href="?" class="btn btn-sm btn-outline-secondary" style="height: 38px;">
-                        <span class="icon-mbri-close"></span> Сбросить
-                    </a>
                 {% endif %}
-            </form>
-    </div>
-    <div class="toolbar-right">
-            <div class="auction-stats">
-                    <div class="auction-stat">
-                            <span class="stat-label"><span class="icon-tag me-2"></span>Лотов</span>
-                            <span class="stat-value">{{params.count}}</span>
-                    </div>
-                    <div class="auction-stat">
-                            <span class="stat-label"><span class="icon-mbri-credit-card me-2"></span>Сумма лотов</span>
-                            <span class="stat-value">{{params.amount|floatformat:"2g"}}</span>
-                    </div>
-                    <div class="auction-stat">
-                            <span class="stat-label"><span class="icon-truck me-2"></span>Автомобилей</span>
-                            <span class="stat-value">{{params.count_cars}}</span>
-                    </div>
+            {% endif %}
+            <button type="button" class="af-btn af-btn--ghost" data-bs-toggle="modal" data-bs-target="#auctionHelpModal">
+                <svg class="af-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span>Справка</span>
+            </button>
+        </div>
+    </header>
+
+    <section class="af-metrics" aria-label="Сводка показателей">
+        <div class="af-stat af-stat--lots">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             </div>
-    </div>
-</div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Всего лотов</span>
+                <span class="af-stat__value">{{ params.count }}</span>
+                <span class="af-stat__hint">В текущей выборке</span>
+            </div>
+        </div>
+        <div class="af-stat af-stat--amount">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Сумма лотов</span>
+                <span class="af-stat__value">{{ params.amount|floatformat:"2g" }} <small class="af-rub-sign">₽</small></span>
+                <span class="af-stat__hint">Каталожная стоимость</span>
+            </div>
+        </div>
+        <div class="af-stat af-stat--cars">
+            <div class="af-stat__icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            </div>
+            <div class="af-stat__content">
+                <span class="af-stat__label">Автомобилей</span>
+                <span class="af-stat__value">{{ params.count_cars }}</span>
+                <span class="af-stat__hint">Единиц в каталоге</span>
+            </div>
+        </div>
+        <aside class="af-banner{% if not params.sends %} is-closed{% endif %}" data-af-send-window role="status">
+            <div class="af-banner__icon-wrap">
+                <svg class="af-banner__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="af-banner__content">
+                <div class="af-banner__badge">Окно отправки лотов</div>
+                <p data-af-banner-text>
+                    {% if not params.sends %}
+                    <strong>Окно закрыто:</strong> отправка и создание лотов недоступны с 10:00 до 14:00.
+                    {% else %}
+                    Отправка лотов недоступна с 10:00 до 14:00.
+                    {% endif %}
+                </p>
+            </div>
+        </aside>
+    </section>
 
-<label class="fs-6 fw-bold">Внимание! Отправка лотов не доступна с 10:00 и до 14:00.</label>
+    <button type="button" class="af-btn af-btn--soft af-filters-open" data-af-open-filters aria-expanded="false">
+        Фильтры
+        <span data-af-filter-count hidden>0</span>
+    </button>
+    <div class="af-sheet-backdrop"></div>
 
-<div class="auction-divider"></div>
+    <form method="get" action="" id="auctionFiltersForm" class="af-rail">
+        <input type="hidden" name="sort" value="{{ params.filtr.sort }}">
+        <button type="button" class="af-btn af-btn--ghost" data-af-close-filters>Закрыть</button>
 
-<div class="row g-3"></div>
-   
-    {% if params.paginator.object_list %}
-        <div class="col-12">
-            {% for object in params.paginator.object_list %}
-            <div class="portal-panel" style="margin: 0.2rem;">
-                <div class="card-body">
-                    <div class="row g-1">
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-info text-nowrap">
-                                <span class="icon-doc"></span> Лот № {{object.pk_auction|default:object.pk}}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill {% if object.status.id == 3 %} bg-success text-white {% else %} bg-secondary bg-opacity-25{% endif %}  text-nowrap">
-                                <span class="icon-doc"></span> Статус <span class="icon-mbri-minus"></span> {% if object.status == None %}
-                                    подготавливается
-                                {% else %}
-                                    {{object.status}}
-                                {% endif %} 
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
-                                <span class="icon-clock"></span> Начало <span class="icon-mbri-minus"></span> {{object.dateStart}}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
-                                <span class="icon-mbri-home"></span> Стоянка <span class="icon-mbri-minus"></span> {{object.store.name}}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
-                                <span class="icon-mbri-user"></span> Автор <span class="icon-mbri-minus"></span> {{object.user.last_name}} {{object.user.first_name}}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
-                                <span class="icon-mbri-credit-card"></span> Цена <span class="icon-mbri-minus"></span> {{object.start_price|floatformat:"2g"}} ₽
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="kors-brand-pill bg-secondary bg-opacity-25 text-nowrap">
-                                <span class="icon-mbri-credit-card"></span> Автомобилей <span class="icon-mbri-minus"></span> {{object.count_cars}} шт.
-                            </div>
-                        </div>
-                        
-                    </div>
-
-                    <div class="row g-1">
-                        
-                        {% for car_structure in object.cars %}
-                            <div class="col-auto">
-                                <div class="row bg-gradient bg-info bg-opacity-25" style="margin: 0.2rem; padding: 0rem; border-radius: 0.7rem;">
-                                    <div class="col-auto" style="padding: 0rem">
-                                        <div class="doc-car-photo">
-                                            <img src="{{car_structure.car.get_photo}}" alt="{{structure.car.modification_autoru.model.mark}} {{structure.car.modification_autoru.model}}">
-                                        </div>                                                    
-                                    </div>
-                                    <div class="col fs-6 ">
-                                        {{car_structure.car.vin|upper}}<br> 
-                                    {{car_structure.car.name}}<br>
-                                    {{car_structure.car.year}} г.в.<br>
-                                    {{car_structure.car.run|floatformat:"0g"}} км.<br>
-                                    {{car_structure.car.plate_number|upper}} <br>                           
-                                    </div>
-                                </div>
-                            </div>   
-                        {% endfor %}
-
-                        {% if object.winner_name != '' %}
-                            <div class="col-auto">
-                                <div class="row bg-gradient bg-success bg-opacity-25" style="margin: 0.2rem; padding: 0rem; border-radius: 0.7rem;">
-                                    <div class="col fs-6">
-                                        Победитель аукциона<br> 
-                                        {{object.winner_name}}<br>
-                                        {{object.winner_phone}} / {{object.winner_email}}<br>
-                                        Выигрышная цена<br> 
-                                        {{object.winner_price|floatformat:"2g"}} ₽                                                               
-                                    </div>
-                                </div>
-                            </div>                            
+        <div class="af-field">
+            <span class="af-field__label" id="status-label">Статус</span>
+            <div class="af-combo" data-af-combo>
+                <input type="hidden" name="status" value="{{ params.filtr.status }}">
+                <button type="button" class="af-combo__btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="status-label">
+                    <span class="af-combo__value">
+                        {% if params.filtr.status %}
+                            {% for status in params.select.statuses %}
+                                {% if params.filtr.status == status.id|stringformat:"s" %}
+                                    <span class="af-lamp {% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}"></span>
+                                    <span class="af-combo__label">{{ status.name }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="af-lamp"></span>
+                            <span class="af-combo__label">Все статусы</span>
                         {% endif %}
-                                             
-                    </div>                    
-
-                    <br>
-
-                    <a class="text-dark" href="{{object.uid}}/">
-                        <span class="icon-mbri-preview"></span>
-                        Посмотреть
-                    </a>
-                    
+                    </span>
+                    <span class="af-combo__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="af-combo__panel" hidden>
+                    <input type="search" class="af-combo__search" placeholder="Найти статус" aria-label="Поиск статуса">
+                    <ul class="af-combo__list" role="listbox">
+                        <li class="af-combo__option" role="option" data-value="" data-label="Все статусы" data-lamp="" {% if not params.filtr.status %}aria-selected="true"{% endif %}>
+                            <span class="af-lamp"></span>
+                            <span class="af-combo__label">Все статусы</span>
+                        </li>
+                        {% for status in params.select.statuses %}
+                        <li class="af-combo__option" role="option" data-value="{{ status.id }}" data-label="{{ status.name }}" data-lamp="{% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}" {% if params.filtr.status == status.id|stringformat:"s" %}aria-selected="true"{% endif %}>
+                            <span class="af-lamp {% if status.name == 'Завершен' or status.name == 'Завершён' %}af-lamp--finished{% elif status.name == 'Не сыграл' %}af-lamp--not-played{% elif status.name == 'Играет' or status.name == 'На аукционе' %}af-lamp--live{% elif status.name == 'Отклонено' or status.name == 'Отклонен' %}af-lamp--stop{% else %}af-lamp--prep{% endif %}"></span>
+                            <span class="af-combo__label">{{ status.name }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="af-combo__empty" hidden>Ничего не найдено</div>
                 </div>
             </div>
-           
-        {% endfor %}
-        </div>           
-    {% else %}
-        <div class="auction-empty-state">
-                По заданным параметрам аукционы не найдены. Измените фильтры или создайте новый лот.
         </div>
+
+        <div class="af-field">
+            <span class="af-field__label" id="store-label">Стоянка</span>
+            <div class="af-combo" data-af-combo>
+                <input type="hidden" name="store_id" value="{{ params.filtr.store_id }}">
+                <button type="button" class="af-combo__btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="store-label">
+                    <span class="af-combo__value">
+                        <span class="af-combo__label">
+                            {% if params.filtr.store_id %}
+                                {% for store in params.select.stores %}
+                                    {% if params.filtr.store_id == store.id|stringformat:"s" %}{{ store.name }}{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Все стоянки
+                            {% endif %}
+                        </span>
+                    </span>
+                    <span class="af-combo__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="af-combo__panel" hidden>
+                    <input type="search" class="af-combo__search" placeholder="Найти стоянку" aria-label="Поиск стоянки">
+                    <ul class="af-combo__list" role="listbox">
+                        <li class="af-combo__option" role="option" data-value="" data-label="Все стоянки" {% if not params.filtr.store_id %}aria-selected="true"{% endif %}>Все стоянки</li>
+                        {% for store in params.select.stores %}
+                        <li class="af-combo__option" role="option" data-value="{{ store.id }}" data-label="{{ store.name }}" {% if params.filtr.store_id == store.id|stringformat:"s" %}aria-selected="true"{% endif %}>{{ store.name }}</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="af-combo__empty" hidden>Ничего не найдено</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="af-field">
+            <span class="af-field__label" id="express-label">Тип лота</span>
+            <div class="af-combo" data-af-combo>
+                <input type="hidden" name="express" value="{{ params.filtr.express }}">
+                <button type="button" class="af-combo__btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="express-label">
+                    <span class="af-combo__value">
+                        <span class="af-combo__label">
+                            {% if params.filtr.express == '1' %}Экспресс
+                            {% elif params.filtr.express == '0' %}Обычный
+                            {% else %}Все типы{% endif %}
+                        </span>
+                    </span>
+                    <span class="af-combo__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="af-combo__panel" hidden>
+                    <ul class="af-combo__list" role="listbox">
+                        <li class="af-combo__option" role="option" data-value="" data-label="Все типы" {% if not params.filtr.express %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Все типы</span>
+                        </li>
+                        <li class="af-combo__option" role="option" data-value="1" data-label="Экспресс" {% if params.filtr.express == '1' %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Экспресс</span>
+                        </li>
+                        <li class="af-combo__option" role="option" data-value="0" data-label="Обычный" {% if params.filtr.express == '0' %}aria-selected="true"{% endif %}>
+                            <span class="af-combo__label">Обычный</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="af-field">
+            <span class="af-field__label">Окно торгов</span>
+            <div class="af-dates" data-af-cal>
+                <input type="hidden" id="date_from" name="date_from" value="{{ params.filtr.date_from }}">
+                <input type="hidden" id="date_to" name="date_to" value="{{ params.filtr.date_to }}">
+                <button type="button" class="af-dates__btn" data-af-cal-open="from" aria-haspopup="dialog" aria-expanded="false">
+                    {% if params.filtr.date_from %}{{ params.filtr.date_from }}{% else %}от{% endif %}
+                </button>
+                <span class="af-dates__sep">—</span>
+                <button type="button" class="af-dates__btn" data-af-cal-open="to" aria-haspopup="dialog" aria-expanded="false">
+                    {% if params.filtr.date_to %}{{ params.filtr.date_to }}{% else %}до{% endif %}
+                </button>
+                <button type="button" class="af-dates__clear" data-af-clear-dates aria-label="Сбросить даты"{% if not params.filtr.date_from and not params.filtr.date_to %} hidden{% endif %}>×</button>
+                <div class="af-cal" hidden>
+                    <div class="af-cal__nav">
+                        <button type="button" class="af-cal__nav-btn" data-af-cal-prev aria-label="Предыдущий месяц">‹</button>
+                        <div class="af-cal__title"></div>
+                        <button type="button" class="af-cal__nav-btn" data-af-cal-next aria-label="Следующий месяц">›</button>
+                    </div>
+                    <div class="af-cal__week" aria-hidden="true">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                    </div>
+                    <div class="af-cal__grid" role="grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="af-field af-field--vin">
+            <label class="af-field__label" for="vin">Поиск</label>
+            <input class="af-input" type="text" id="vin" name="vin" value="{{ params.filtr.vin }}" placeholder="VIN, лот, гос. номер, автор" autocomplete="off">
+        </div>
+
+        <button type="submit" class="af-btn af-btn--primary">Найти</button>
+        {% if params.filtr.status or params.filtr.vin or params.filtr.date_from or params.filtr.date_to or params.filtr.store_id or params.filtr.express or params.filtr.sort %}
+        <a class="af-btn af-btn--ghost" href="?">Сбросить</a>
+        {% endif %}
+    </form>
+
+    {% if params.paginator.object_list %}
+    <div class="af-board">
+        <table class="af-table" data-af-search-term="{{ params.filtr.vin }}">
+            <thead>
+                <tr>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 3v18"></path></svg>
+                            <span>Лот</span>
+                        </span>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="status" aria-label="Сортировать по статусу">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                            <span>Статус</span>
+                            <span class="af-sort__ind{% if params.filtr.sort == 'status' or params.filtr.sort == '-status' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'status' %}↑{% elif params.filtr.sort == '-status' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                            <span>Автомобили</span>
+                        </span>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="start" aria-label="Сортировать по старту">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span>Старт</span>
+                            <span class="af-sort__ind{% if params.filtr.sort == 'start' or params.filtr.sort == '-start' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'start' %}↑{% elif params.filtr.sort == '-start' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span>Стоянка</span>
+                        </span>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="price" aria-label="Сортировать по цене">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span>Цена</span>
+                            <span class="af-sort__ind{% if params.filtr.sort == 'price' or params.filtr.sort == '-price' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'price' %}↑{% elif params.filtr.sort == '-price' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="delta" aria-label="Сортировать по итогу торгов">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <span>Итог</span>
+                            <span class="af-sort__ind{% if params.filtr.sort == 'delta' or params.filtr.sort == '-delta' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'delta' %}↑{% elif params.filtr.sort == '-delta' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <button type="button" class="af-sort" data-af-sort="created" aria-label="Сортировать по дате создания">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span>Создан</span>
+                            <span class="af-sort__ind{% if params.filtr.sort == 'created' or params.filtr.sort == '-created' %} is-active{% endif %}">
+                                {% if params.filtr.sort == 'created' %}↑{% elif params.filtr.sort == '-created' %}↓{% else %}↕{% endif %}
+                            </span>
+                        </button>
+                    </th>
+                    <th>
+                        <span class="af-hdr-wrap">
+                            <svg class="af-hdr-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                            <span>{% if params.can_edit %}Действия{% else %}Действие{% endif %}</span>
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for object in params.paginator.object_list %}
+                <tr class="af-row" data-href="{{ object.uid }}/" tabindex="0">
+                    <td data-label="Лот">
+                        <div class="af-plate-wrap">
+                            {% if object.pk_auction %}
+                            <span class="af-plate">
+                                <span class="af-plate__n">{{ object.pk_auction }}</span>
+                                {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
+                            </span>
+                            <div class="af-plate-actions">
+                                <a href="https://auction.kors-group.ru/lots/{{ object.pk_auction }}/" target="_blank" rel="noopener noreferrer" class="af-site-btn-inline" title="Прямая ссылка на сайт аукциона (лот №{{ object.pk_auction }})" aria-label="Открыть лот на сайте аукциона">
+                                    <svg class="af-tool-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </a>
+                                {% if params.can_edit %}
+                                <button type="button" class="af-copy-btn-inline" data-af-copy="{{ object.pk_auction }}" data-af-copy-label="№ лота {{ object.pk_auction }}" title="Копировать номер лота" aria-label="Копировать номер лота">
+                                    <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="af-plate af-plate--draft" title="Лот формируется (номер появится после выгрузки на аукцион)">
+                                <span class="af-plate__n">—</span>
+                                {% if object.is_express %}<span class="af-express">Express</span>{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Статус">
+                        {% if object.status == None %}
+                            <span class="af-status af-status--prep">
+                                <span class="af-lamp af-lamp--prep"></span> Подготавливается
+                            </span>
+                        {% elif object.status.name == 'Завершен' or object.status.name == 'Завершён' %}
+                            <span class="af-status af-status--finished">
+                                <span class="af-lamp af-lamp--finished"></span> {{ object.status }}
+                            </span>
+                        {% elif object.status.name == 'Не сыграл' %}
+                            <span class="af-status af-status--not-played">
+                                <span class="af-lamp af-lamp--not-played"></span> {{ object.status }}
+                            </span>
+                        {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
+                            <span class="af-status af-status--live">
+                                <span class="af-lamp af-lamp--live"></span> {{ object.status }}
+                            </span>
+                        {% elif object.status.name == 'Отклонено' or object.status.name == 'Отклонен' %}
+                            <span class="af-status af-status--stop">
+                                <span class="af-lamp af-lamp--stop"></span> {{ object.status }}
+                            </span>
+                        {% elif object.status.name == 'Новый' or object.status.name == 'Ожидает' or object.status.name == 'Ожидание' %}
+                            <span class="af-status af-status--prep">
+                                <span class="af-lamp af-lamp--prep"></span> {{ object.status }}
+                            </span>
+                        {% else %}
+                            <span class="af-status">
+                                <span class="af-lamp"></span> {{ object.status }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Автомобили">
+                        <div class="af-cars">
+                            {% for car_structure in object.cars %}
+                                {% if forloop.counter <= 3 %}
+                                {% with photo=car_structure.car.get_photo %}
+                                <article class="af-car">
+                                    <div class="af-car__shot">
+                                        {% if photo %}
+                                        <img src="{{ photo }}" alt="{{ car_structure.car.name }}" width="160" height="120" loading="lazy" onerror="this.closest('.af-car__shot').classList.add('is-empty'); this.remove();">
+                                        {% endif %}
+                                    </div>
+                                    <div class="af-car__info">
+                                        <div class="af-car__name">{{ car_structure.car.name }}</div>
+                                        <div class="af-car__meta">{{ car_structure.car.year }} · {{ car_structure.car.run|floatformat:"0g" }} км</div>
+                                        <div class="af-car__ids">
+                                            <span class="af-car__vin">{{ car_structure.car.vin|upper }}</span>
+                                            {% if params.can_edit and car_structure.car.vin %}
+                                            <button type="button" class="af-copy-btn-inline" data-af-copy="{{ car_structure.car.vin }}" data-af-copy-label="VIN {{ car_structure.car.vin }}" title="Копировать VIN" aria-label="Копировать VIN">
+                                                <svg class="af-tool-icon af-tool-icon--copy" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                                <svg class="af-tool-icon af-tool-icon--check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        <div class="af-car__plate">{{ car_structure.car.plate_number|upper }}</div>
+                                    </div>
+                                </article>
+                                {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if object.count_cars > 3 %}
+                            <div class="af-more">+{{ object.count_cars|add:"-3" }} авто</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Старт">
+                        {% if object.dateStart %}
+                        <div class="af-chrono af-chrono--start" title="Старт торгов: {{ object.dateStart|date:'d.m.Y H:i' }}">
+                            <div class="af-chrono__date-wrap">
+                                <svg class="af-chrono__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                <span class="af-chrono__date">{{ object.dateStart|date:"d.m.Y" }}</span>
+                            </div>
+                            <div class="af-chrono__time-pill">
+                                <span class="af-chrono__pulse"></span>
+                                <span class="af-chrono__time">{{ object.dateStart|date:"H:i" }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="af-chrono af-chrono--empty" title="Старт не назначен">
+                            <svg class="af-chrono__icon af-chrono__icon--muted" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="2" y1="2" x2="22" y2="22" stroke-width="1.8"></line></svg>
+                            <span class="af-chrono__empty-text">Не назначен</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Стоянка">
+                        <div class="af-place-col">
+                            <div class="af-place-entry af-place-entry--store">
+                                <span class="af-place-lbl">
+                                    <svg class="af-place-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                    Стоянка
+                                </span>
+                                <div class="af-place-store">
+                                    {{ object.store.name|default:"Не указана" }}
+                                </div>
+                            </div>
+                            <div class="af-place-entry af-place-entry--user">
+                                <span class="af-place-lbl">
+                                    <svg class="af-place-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    Ответственный
+                                </span>
+                                <div class="af-place-user">
+                                    {% if object.user %}
+                                        {{ object.user.last_name }} {{ object.user.first_name }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Цена">
+                        {% if object.is_finished or object.winner_price > 0 %}
+                        <div class="af-price-col af-price-col--finished">
+                            <div class="af-price-entry">
+                                <span class="af-price-lbl af-price-lbl--win">Победная ставка</span>
+                                <div class="af-price af-price--win">
+                                    {{ object.winner_price|floatformat:"2g" }} ₽
+                                    {% if object.winner_delta is not None %}
+                                        {% if object.winner_delta > 0 %}
+                                        <span class="af-price-delta is-positive" title="Прирост к стартовой ставке: +{{ object.winner_delta|floatformat:'2g' }} ₽">+{{ object.winner_delta|floatformat:"2g" }} ₽</span>
+                                        {% elif object.winner_delta < 0 %}
+                                        <span class="af-price-delta is-negative" title="Ниже стартовой ставки на {{ object.winner_delta_abs|floatformat:'2g' }} ₽">-{{ object.winner_delta_abs|floatformat:"2g" }} ₽</span>
+                                        {% else %}
+                                        <span class="af-price-delta is-zero" title="По стартовой ставке">0 ₽</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="af-price-entry af-price-entry--start">
+                                <span class="af-price-lbl">Начальная ставка</span>
+                                <div class="af-price-start">{{ object.start_price|floatformat:"2g" }} ₽</div>
+                            </div>
+                            {% if object.winner_name %}
+                            <div class="af-winner" title="Победитель: {{ object.winner_name }}">
+                                👤 {{ object.winner_name }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="af-price-col">
+                            <div class="af-price-entry">
+                                <span class="af-price-lbl">Начальная ставка</span>
+                                <div class="af-price">{{ object.start_price|floatformat:"2g" }} ₽</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Итог">
+                        {% if object.winner_delta is not None %}
+                            {% if object.winner_delta > 0 %}
+                            <div class="af-delta-pod is-positive">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">+{{ object.winner_delta|floatformat:"-2g" }} ₽</span>
+                                    {% if object.winner_delta_percent %}
+                                    <span class="af-delta-pod__pct" title="Прирост {{ object.winner_delta_percent }}%">+{{ object.winner_delta_percent }}%</span>
+                                    {% endif %}
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <svg class="af-delta-pod__icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                        В плюс
+                                    </span>
+                                </div>
+                            </div>
+                            {% elif object.winner_delta < 0 %}
+                            <div class="af-delta-pod is-negative">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">-{{ object.winner_delta_abs|floatformat:"-2g" }} ₽</span>
+                                    {% if object.winner_delta_percent %}
+                                    <span class="af-delta-pod__pct" title="Снижение {{ object.winner_delta_percent }}%">{{ object.winner_delta_percent }}%</span>
+                                    {% endif %}
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <svg class="af-delta-pod__icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        В минус
+                                    </span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="af-delta-pod is-zero">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">0 ₽</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <span class="af-delta-pod__dot"></span>
+                                        По старту
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% elif object.status.name == 'Не сыграл' %}
+                            <div class="af-delta-pod is-not-played">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">—</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">Не сыграл</span>
+                                </div>
+                            </div>
+                        {% elif object.status.name == 'Играет' or object.status.name == 'На аукционе' %}
+                            <div class="af-delta-pod is-live">
+                                <div class="af-delta-pod__row">
+                                    <span class="af-delta-pod__val">—</span>
+                                </div>
+                                <div class="af-delta-pod__meta">
+                                    <span class="af-delta-pod__tag">
+                                        <span class="af-delta-pod__pulse"></span>
+                                        Торги идут
+                                    </span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="af-delta-pod is-empty">
+                                <span class="af-delta-pod__dash">—</span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Создан">
+                        {% if object.dataTime %}
+                        <div class="af-chrono af-chrono--created" title="Создан в системе: {{ object.dataTime|date:'d.m.Y H:i' }}">
+                            <div class="af-chrono__date-wrap">
+                                <svg class="af-chrono__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span class="af-chrono__date">{{ object.dataTime|date:"d.m.Y" }}</span>
+                            </div>
+                            <div class="af-chrono__time-pill">
+                                <span class="af-chrono__time">{{ object.dataTime|date:"H:i" }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="af-chrono af-chrono--empty">
+                            <span class="af-chrono__dash">—</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td data-label="{% if params.can_edit %}Действия{% else %}Действие{% endif %}">
+                        <div class="af-row-actions-group">
+                            <div class="af-row-main-btns">
+                                <a class="af-btn af-btn--soft af-open" href="{{ object.uid }}/">Открыть</a>
+                                {% if object.pk_auction %}
+                                <a class="af-btn af-btn--site" href="https://auction.kors-group.ru/lots/{{ object.pk_auction }}/" target="_blank" rel="noopener noreferrer" title="Прямая ссылка на сайт аукциона (лот №{{ object.pk_auction }})">
+                                    <svg class="af-tool-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                    <span>На сайт</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% if params.can_edit %}
+                            <div class="af-row-tools">
+                                {% if object.pk_auction %}
+                                <button type="button" class="af-tool-btn" data-af-copy="{{ object.pk_auction }}" data-af-copy-label="№ лота {{ object.pk_auction }}" title="Копировать номер лота">
+                                    <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>№ лота</span>
+                                </button>
+                                {% endif %}
+                                {% with lot_cars=object.cars %}
+                                    {% if lot_cars %}
+                                    <button type="button" class="af-tool-btn" data-af-copy="{% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" data-af-copy-label="VIN {% for cs in lot_cars %}{{ cs.car.vin }}{% if not forloop.last %}, {% endif %}{% endfor %}" title="Копировать VIN{% if lot_cars.count > 1 %} (всех авто){% endif %}">
+                                        <svg class="af-tool-icon af-tool-icon--copy" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <svg class="af-tool-icon af-tool-icon--check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span>VIN</span>
+                                    </button>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="af-empty">
+        <h2>Ленты нет</h2>
+        <p>По заданным параметрам аукционы не найдены.</p>
+        <a class="af-btn af-btn--ghost" href="?">Сбросить фильтры</a>
+        {% if params.can_edit %}
+            {% if params.sends %}
+            <a class="af-btn af-btn--primary" href="new_lots/" data-af-new-lot>Новый лот</a>
+            {% else %}
+            <button type="button" class="af-btn af-btn--primary is-disabled" disabled data-af-new-lot title="Создание и отправка лотов недоступны с 10:00 до 14:00" aria-disabled="true">Новый лот</button>
+            {% endif %}
+        {% endif %}
+    </div>
     {% endif %}
 
-    <div class="row align-self-center align-items-center justify-content-center" style="width: 100%; margin-top: 2rem;">
-        
-        <div class="col-auto align-items-center align-self-center justify-content-center">
-            <nav aria-label="Page navigation example">
-                    <ul class="pagination justify-content-center">
+    {% if params.paginator.paginator.num_pages > 1 %}
+    <div class="af-pagination-container">
+        <div class="af-pagination-summary">
+            <span class="af-pagination-summary__label">Страница</span>
+            <span class="af-pagination-summary__active">{{ params.paginator.number }}</span>
+            <span class="af-pagination-summary__sep">из</span>
+            <span class="af-pagination-summary__total">{{ params.paginator.paginator.num_pages }}</span>
+            <span class="af-pagination-summary__dot">·</span>
+            <span class="af-pagination-summary__count">{{ params.paginator.paginator.count }} лотов</span>
+        </div>
 
-                            {% if params.paginator.has_previous %}
-                                    <li class="page-num mbr-section-btn">
-                                            <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.previous_page_number %}">&lt;</a>
-                                    </li>
-                            {% endif %}
+        <nav class="af-pager" aria-label="Страницы">
+            {% if params.paginator.has_previous %}
+            <a href="?{% url_replace page=params.paginator.previous_page_number %}" class="af-pager__nav af-pager__prev" title="Предыдущая страница" aria-label="Предыдущая страница">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span class="af-pager__nav-text">Назад</span>
+            </a>
+            {% else %}
+            <span class="af-pager__nav af-pager__prev is-disabled" aria-disabled="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <span class="af-pager__nav-text">Назад</span>
+            </span>
+            {% endif %}
 
-                            {% for p in params.paginator.paginator.page_range %}
-                                    {% if params.paginator.number == p %}
-                                            <li class="page-num mbr-section-btn disabled">
-                                                    <a class="btn btn-secondary display-7">
-                                                            <b>{{p}}</b>
-                                                    </a>
-                                            </li>
-                                    {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-                                            <li class="page-num mbr-section-btn">
-                                                    <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=p  %}">{{ p }}</a>
-                                            </li>
-                                    {% endif %}
-                            {% endfor %}
+            <div class="af-pager__pages">
+                {% if params.paginator.number > 3 %}
+                <a href="?{% url_replace page=1 %}" class="af-pager__num" title="Страница 1">1</a>
+                {% if params.paginator.number > 4 %}
+                <span class="af-pager__ellipsis">···</span>
+                {% endif %}
+                {% endif %}
 
-                            {% if params.paginator.has_next %}
-                                    <li class="page-num mbr-section-btn">
-                                            <a class="btn btn-outline-secondary display-7" href="?{% url_replace page=params.paginator.next_page_number %}">&gt;</a>
-                                    </li>
-                            {% endif %}
+                {% for p in params.paginator.paginator.page_range %}
+                    {% if p >= params.paginator.number|add:-2 and p <= params.paginator.number|add:2 %}
+                        {% if params.paginator.number == p %}
+                        <span class="af-pager__num is-current" aria-current="page">{{ p }}</span>
+                        {% else %}
+                        <a href="?{% url_replace page=p %}" class="af-pager__num" title="Страница {{ p }}">{{ p }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
 
-                    </ul>
-            </nav>
+                {% if params.paginator.number < params.paginator.paginator.num_pages|add:-2 %}
+                {% if params.paginator.number < params.paginator.paginator.num_pages|add:-3 %}
+                <span class="af-pager__ellipsis">···</span>
+                {% endif %}
+                <a href="?{% url_replace page=params.paginator.paginator.num_pages %}" class="af-pager__num" title="Страница {{ params.paginator.paginator.num_pages }}">{{ params.paginator.paginator.num_pages }}</a>
+                {% endif %}
+            </div>
+
+            {% if params.paginator.has_next %}
+            <a href="?{% url_replace page=params.paginator.next_page_number %}" class="af-pager__nav af-pager__next" title="Следующая страница" aria-label="Следующая страница">
+                <span class="af-pager__nav-text">Вперед</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </a>
+            {% else %}
+            <span class="af-pager__nav af-pager__next is-disabled" aria-disabled="true">
+                <span class="af-pager__nav-text">Вперед</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+            {% endif %}
+        </nav>
     </div>
+    {% endif %}
+
+    <div class="af-toast" id="afToast" role="status" aria-live="polite" hidden>
+        <svg class="af-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span class="af-toast__text" id="afToastText"></span>
     </div>
-
 </div>
-
-</div>
-
-<script>
-// Функция debounce для оптимизации поиска
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func.apply(context, args);
-        }, wait);
-    };
-}
-
-function addClearSearch(input, prefix) {
-    const container = input.closest('.filter-search');
-    if (!container) return;
-    
-    let clearBtn = container.querySelector('.clear-search-btn');
-    if (!clearBtn) {
-        clearBtn = document.createElement('button');
-        clearBtn.type = 'button';
-        clearBtn.className = 'clear-search-btn';
-        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
-        clearBtn.style.cssText = `
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6c757d;
-            cursor: pointer;
-            padding: 5px;
-            display: none;
-        `;
-        container.appendChild(clearBtn);
-    }
-    
-    clearBtn.addEventListener('click', function() {
-        input.value = '';
-        filterOptions(prefix, '');
-        input.focus();
-        
-        // Скрываем контейнер при очистке поиска
-        const optionsContainer = container.nextElementSibling;
-        if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
-            optionsContainer.style.display = 'none';
-        }
-    });
-    
-    input.addEventListener('input', function() {
-        clearBtn.style.display = this.value ? 'block' : 'none';
-    });
-    
-    const optionsContainer = container.nextElementSibling;
-    if (optionsContainer && optionsContainer.classList.contains('filter-options')) {
-        input.addEventListener('focus', function() {
-            optionsContainer.style.display = 'block';
-        });
-        
-        input.addEventListener('blur', function() {
-            setTimeout(() => {
-                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
-                    optionsContainer.style.display = 'none';
-                }
-            }, 200);
-        });
-    }
-}
-
-function addClearSearchPC(input, containerId) {
-    const container = input.closest('.pc-filter-search');
-    if (!container) return;
-    
-    let clearBtn = container.querySelector('.clear-search-btn');
-    if (!clearBtn) {
-        clearBtn = document.createElement('button');
-        clearBtn.type = 'button';
-        clearBtn.className = 'clear-search-btn';
-        clearBtn.innerHTML = '<span class="icon-mbri-close"></span>';
-        clearBtn.style.cssText = `
-            position: absolute;
-            right: 35px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6c757d;
-            cursor: pointer;
-            padding: 5px;
-            display: none;
-            z-index: 10;
-        `;
-        container.appendChild(clearBtn);
-    }
-    
-    clearBtn.addEventListener('click', function() {
-        input.value = '';
-        filterPCOptions(containerId, '');
-        input.focus();
-        
-        // Скрываем контейнер при очистке поиска
-        const optionsContainer = document.getElementById(containerId);
-        if (optionsContainer) {
-            optionsContainer.style.display = 'none';
-        }
-    });
-    
-    input.addEventListener('input', function() {
-        clearBtn.style.display = this.value ? 'block' : 'none';
-    });
-    
-    const optionsContainer = document.getElementById(containerId);
-    if (optionsContainer) {
-        input.addEventListener('focus', function() {
-            optionsContainer.style.display = 'block';
-        });
-        
-        input.addEventListener('blur', function() {
-            setTimeout(() => {
-                if (!optionsContainer.matches(':hover') && !input.matches(':focus')) {
-                    optionsContainer.style.display = 'none';
-                }
-            }, 200);
-        });
-    }
-}
-
-function addToggleFilterSection() {
-    const filterTitles = document.querySelectorAll('.filter-title_');
-    
-    filterTitles.forEach(title => {
-        title.style.cursor = 'pointer';
-        title.classList.add('filter-title_-toggle');
-        
-        title.addEventListener('click', function() {
-            const filterSection = this.closest('.filter-section');
-            const optionsContainer = filterSection.querySelector('.filter-options');
-            const icon = this.querySelector('.toggle-icon');
-            
-            if (optionsContainer) {
-                const isVisible = optionsContainer.style.display !== 'none';
-                
-                if (isVisible) {
-                    optionsContainer.style.display = 'none';
-                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
-                } else {
-                    // Скрываем все другие списки
-                    const allOptions = document.querySelectorAll('.filter-options');
-                    allOptions.forEach(opt => {
-                        if (opt !== optionsContainer) {
-                            opt.style.display = 'none';
-                        }
-                    });
-                    
-                    // Сбрасываем иконки других заголовков
-                    const allIcons = document.querySelectorAll('.filter-title_ .toggle-icon');
-                    allIcons.forEach(ic => {
-                        if (ic !== icon) {
-                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
-                        }
-                    });
-                    
-                    optionsContainer.style.display = 'block';
-                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
-                }
-            }
-        });
-        
-        if (!title.querySelector('.toggle-icon')) {
-            const icon = document.createElement('span');
-            icon.className = 'toggle-icon';
-            icon.innerHTML = '<span class="icon-mbri-down"></span>';
-            icon.style.cssText = `
-                float: right;
-                margin-left: 10px;
-                transition: transform 0.3s ease;
-            `;
-            title.appendChild(icon);
-        }
-    });
-}
-
-function addTogglePCFilterSection() {
-    const pcFilterLabels = document.querySelectorAll('.pc-filter-label');
-    
-    pcFilterLabels.forEach(label => {
-        label.style.cursor = 'pointer';
-        label.classList.add('pc-filter-label-toggle');
-        
-        label.addEventListener('click', function() {
-            const filterGroup = this.closest('.pc-filter-group');
-            const dropdown = filterGroup.querySelector('.pc-filter-dropdown');
-            const optionsContainer = filterGroup.querySelector('.pc-filter-options');
-            const icon = this.querySelector('.toggle-icon');
-            
-            if (optionsContainer) {
-                const isVisible = optionsContainer.style.display !== 'none';
-                
-                if (isVisible) {
-                    optionsContainer.style.display = 'none';
-                    if (icon) icon.innerHTML = '<span class="icon-mbri-down"></span>';
-                } else {
-                    // Скрываем все другие списки
-                    const allOptions = document.querySelectorAll('.pc-filter-options');
-                    allOptions.forEach(opt => {
-                        if (opt !== optionsContainer) {
-                            opt.style.display = 'none';
-                        }
-                    });
-                    
-                    // Сбрасываем иконки других заголовков
-                    const allIcons = document.querySelectorAll('.pc-filter-label .toggle-icon');
-                    allIcons.forEach(ic => {
-                        if (ic !== icon) {
-                            ic.innerHTML = '<span class="icon-mbri-down"></span>';
-                        }
-                    });
-                    
-                    optionsContainer.style.display = 'block';
-                    if (icon) icon.innerHTML = '<span class="icon-mbri-up"></span>';
-                }
-            }
-        });
-        
-        if (!label.querySelector('.toggle-icon')) {
-            const icon = document.createElement('span');
-            icon.className = 'toggle-icon';
-            icon.innerHTML = '<span class="icon-mbri-down"></span>';
-            icon.style.cssText = `
-                float: right;
-                margin-left: 10px;
-                transition: transform 0.3s ease;
-                color: #6c757d;
-            `;
-            label.appendChild(icon);
-        }
-    });
-}
-
-// Глобальная функция для переключения фильтров
-function toggleFilters() {
-    const filtersContent = document.querySelector('.pc-filters-content');
-    const toggleButton = document.querySelector('.pc-filters-header button[onclick="toggleFilters()"]');
-    
-    if (!filtersContent || !toggleButton) return;
-    
-    if (filtersContent.style.display === 'none') {
-        filtersContent.style.display = 'block';
-        toggleButton.innerHTML = '<span class="icon-mbri-up me-2"></span>Скрыть';
-        toggleButton.classList.remove('btn-outline-primary');
-        toggleButton.classList.add('btn-outline-light');
-    } else {
-        filtersContent.style.display = 'none';
-        toggleButton.innerHTML = '<span class="icon-mbri-down me-2"></span>Показать';
-        toggleButton.classList.remove('btn-outline-light');
-        toggleButton.classList.add('btn-outline-primary');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализируем мобильные фильтры
-    initializeMobileFilters();
-    
-    // Инициализируем ПК фильтры
-    initializePCFilters();
-    
-    // Обновляем счетчик активных фильтров
-    updateActiveFiltersCount();
-    
-    // Добавляем обработчики событий для обновления счетчика
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateActiveFiltersCount);
-    });
-    
-    inputs.forEach(input => {
-        input.addEventListener('input', updateActiveFiltersCount);
-    });
-    
-        // Скрываем все опции по умолчанию для мобильных фильтров
-    const mobileOptions = document.querySelectorAll('.filter-options');
-    mobileOptions.forEach(option => {
-        option.style.display = 'none';
-    });
-    
-    // Скрываем все опции по умолчанию для ПК фильтров
-    const pcOptions = document.querySelectorAll('.pc-filter-options');
-    pcOptions.forEach(option => {
-        option.style.display = 'none';
-    });
-    
-    // Добавляем обработчики для скрытия/раскрытия секций фильтров
-    addToggleFilterSection();
-    addTogglePCFilterSection();
-});
-
-function initializeMobileFilters() {
-    const mobileFilters = [
-        { id: 'mobile_search_city', prefix: 'mobile_city_' },
-        { id: 'mobile_search_marks', prefix: 'mobile_mark_' },
-        { id: 'mobile_search_gear', prefix: 'mobile_gear_' },
-        { id: 'mobile_search_body', prefix: 'mobile_body_' },
-        { id: 'mobile_search_drives', prefix: 'mobile_drive_' },
-        { id: 'mobile_search_status', prefix: 'mobile_status_' },
-        { id: 'mobile_search_stage_price', prefix: 'mobile_stage_price_' },
-        { id: 'mobile_search_type_sale', prefix: 'mobile_type_sale_' }
-    ];
-
-    mobileFilters.forEach(cfg => {
-        const input = document.getElementById(cfg.id);
-        if (input) {
-            input.addEventListener('input', debounce(function() {
-                filterOptions(cfg.prefix, this.value);
-            }, 300));
-            addClearSearch(input, cfg.prefix);
-        }
-    });
-}
-
-function filterOptions(prefix, searchValue) {
-    const options = document.querySelectorAll(`[id^="${prefix}"]`);
-    let foundCount = 0;
-    
-    options.forEach(option => {
-        const textElement = option.querySelector('.filter-text');
-        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
-        
-        if (!textElement.hasAttribute('data-original-text')) {
-            textElement.setAttribute('data-original-text', originalText);
-        }
-        
-        const text = originalText.toLowerCase();
-        const search = searchValue.toLowerCase();
-        
-        if (search === '' || text.includes(search)) {
-            option.style.display = 'block';
-            foundCount++;
-            
-            if (searchValue.trim() !== '') {
-                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
-                textElement.innerHTML = highlightedText;
-            } else {
-                textElement.innerHTML = originalText;
-            }
-        } else {
-            option.style.display = 'none';
-        }
-    });
-    
-    const container = options[0]?.closest('.filter-options');
-    if (container) {
-        let noResultsMsg = container.querySelector('.no-results-msg');
-        let resultsCountMsg = container.querySelector('.results-count-msg');
-        
-        if (searchValue.trim() !== '') {
-            if (foundCount === 0) {
-                if (!noResultsMsg) {
-                    noResultsMsg = document.createElement('div');
-                    noResultsMsg.className = 'no-results-msg';
-                    noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
-                    container.appendChild(noResultsMsg);
-                }
-                if (resultsCountMsg) resultsCountMsg.remove();
-            } else {
-                if (noResultsMsg) noResultsMsg.remove();
-                if (!resultsCountMsg) {
-                    resultsCountMsg = document.createElement('div');
-                    resultsCountMsg.className = 'results-count-msg';
-                    container.appendChild(resultsCountMsg);
-                }
-                resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
-            }
-            
-            // Автоматически показываем контейнер при поиске
-            container.style.display = 'block';
-        } else {
-            if (noResultsMsg) noResultsMsg.remove();
-            if (resultsCountMsg) resultsCountMsg.remove();
-        }
-    }
-}
-
-function initializePCFilters() {
-    const pcFilters = [
-        { id: 'search_city', container: 'city_options' },
-        { id: 'search_marks', container: 'marks_options' },
-        { id: 'search_gear', container: 'gear_options' },
-        { id: 'search_body', container: 'body_options' },
-        { id: 'search_drives', container: 'drives_options' },
-        { id: 'search_status', container: 'status_options' },
-        { id: 'search_stage_price', container: 'stage_price_options' },
-        { id: 'search_type_sale', container: 'type_sale_options' }
-    ];
-
-    pcFilters.forEach(cfg => {
-        const input = document.getElementById(cfg.id);
-        if (input) {
-            input.addEventListener('input', debounce(function() {
-                filterPCOptions(cfg.container, this.value);
-            }, 300));
-            addClearSearchPC(input, cfg.container);
-        }
-    });
-}
-
-function filterPCOptions(containerId, searchValue) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    const options = container.querySelectorAll('.pc-filter-option');
-    let foundCount = 0;
-    
-    options.forEach(option => {
-        const textElement = option.querySelector('.pc-filter-text');
-        const originalText = textElement.getAttribute('data-original-text') || textElement.textContent;
-        
-        if (!textElement.hasAttribute('data-original-text')) {
-            textElement.setAttribute('data-original-text', originalText);
-        }
-        
-        const text = originalText.toLowerCase();
-        const search = searchValue.toLowerCase();
-        
-        if (search === '' || text.includes(search)) {
-            option.style.display = 'block';
-            foundCount++;
-            
-            if (searchValue.trim() !== '') {
-                const highlightedText = originalText.replace(new RegExp(`(${searchValue})`, 'gi'), '<mark>$1</mark>');
-                textElement.innerHTML = highlightedText;
-            } else {
-                textElement.innerHTML = originalText;
-            }
-        } else {
-            option.style.display = 'none';
-        }
-    });
-    
-    let noResultsMsg = container.querySelector('.no-results-msg');
-    let resultsCountMsg = container.querySelector('.results-count-msg');
-    
-    if (searchValue.trim() !== '') {
-        if (foundCount === 0) {
-            if (!noResultsMsg) {
-                noResultsMsg = document.createElement('div');
-                noResultsMsg.className = 'no-results-msg pc-no-results-msg';
-                noResultsMsg.innerHTML = '<span class="text-muted">Ничего не найдено</span>';
-                container.appendChild(noResultsMsg);
-            }
-            if (resultsCountMsg) resultsCountMsg.remove();
-        } else {
-            if (noResultsMsg) noResultsMsg.remove();
-            if (!resultsCountMsg) {
-                resultsCountMsg = document.createElement('div');
-                resultsCountMsg.className = 'results-count-msg pc-results-count-msg';
-                container.appendChild(resultsCountMsg);
-            }
-            resultsCountMsg.innerHTML = `<span class="text-success">Найдено: ${foundCount}</span>`;
-        }
-        
-        // Автоматически показываем контейнер при поиске
-        container.style.display = 'block';
-    } else {
-        if (noResultsMsg) noResultsMsg.remove();
-        if (resultsCountMsg) resultsCountMsg.remove();
-    }
-}
-
-function updateActiveFiltersCount() {
-    const count = countActiveFilters();
-    const countElement = document.getElementById('activeFiltersCount');
-    if (countElement) {
-        countElement.textContent = count;
-        countElement.style.display = count > 0 ? 'inline-block' : 'none';
-    }
-}
-
-function countActiveFilters() {
-    let count = 0;
-    
-    // Подсчитываем активные чекбоксы
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-    count += checkboxes.length;
-    
-    // Подсчитываем заполненные поля ввода
-    const inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
-    inputs.forEach(input => {
-        if (input.value && input.value.trim() !== '') {
-            count++;
-        }
-    });
-    
-    return count;
-}
-
-function applyMobileFilters() {
-    const mobileForm = document.getElementById('mobileFiltersForm');
-    const mainForm = document.getElementById('filtersForm');
-    
-    if (mobileForm && mainForm) {
-        // Синхронизируем чекбоксы
-        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
-        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
-        
-        mobileCheckboxes.forEach((checkbox, index) => {
-            if (index < mainCheckboxes.length) {
-                mainCheckboxes[index].checked = checkbox.checked;
-            }
-        });
-        
-        // Синхронизируем поля ввода
-        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
-        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
-        
-        mobileInputs.forEach((input, index) => {
-            if (index < mainInputs.length) {
-                mainInputs[index].value = input.value;
-            }
-        });
-        
-        // Обновляем счетчик активных фильтров
-        updateActiveFiltersCount();
-        
-        // Закрываем модальное окно
-        const modal = bootstrap.Modal.getInstance(document.getElementById('mobileFiltersModal'));
-        if (modal) {
-            modal.hide();
-        }
-        
-        // Отправляем основную форму
-        mainForm.submit();
-    }
-}
-
-const auctionHelpSections = {
-    createLot: {
-        title: "Создание нового лота",
-        paragraphs: [
-            "При переходе на форму создания нового лота создаётся черновик аукциона: выберите дилерский центр, задайте стартовую цену и дату старта торгов, заполните текстовое описание лота.",
-            "Добавьте автомобили из каталога организации: для каждого заполняйте результаты диагностики, план работ, комментарии по подготовке, прикрепляйте фотографии по категориям (диагностика, колёса, повреждения, схема, салон и внешний вид).",
-            "Каждая загрузка сохраняется в карточке: можно отметить наличие отчёта «Автотека», статус «Проверено», добавить ссылки на мультимедиа и пересчитать стоимость при изменении данных.",
-            "Используйте черновое сохранение, обновление (кнопка «Обновить») и окончательную отправку: после проверки всех автомобилей отправьте лот на торги, чтобы его увидели дилеры и партнёры."
-        ],
-        video: "{% static 'razdell1.mp4' %}"
-    },
-    monitorStats: {
-        title: "Мониторинг ключевых показателей",
-        paragraphs: [
-            "Верхние карточки отображают текущее количество активных аукционов, суммарную стартовую стоимость и число автомобилей — данные подтягиваются из базы и обновляются после каждого сохранения лота.",
-            "При редактировании лота выполняется пересчёт (функция обновления), который учитывает изменения стоимости, статуса автомобильных карточек и наличие фото/отчётов, поэтому статистика на главной странице всегда актуальна.",
-            "Используйте показатели, чтобы отслеживать динамику: фильтруйте аукционы, сравнивайте суммы и оперативно реагируйте на отклонения (например, отсутствие готовых автомобилей или падение суммарной стоимости)."
-        ],
-        video: "{% static 'razdel2.mp4' %}"
-    },
-    filterManagement: {
-        title: "Управление фильтрами и сохраненными наборами",
-        paragraphs: [
-            "Модальное окно «Выбор дилерского центра» подставляет доступные площадки из личного кабинета пользователя, что позволяет моментально переключать контекст аукционов.",
-            "Сохранённые наборы фильтров доступны в отдельном модальном окне: создавайте свои пресеты, удаляйте устаревшие, переключайтесь между ними — они синхронизированы с поисковой формой и мобильной версией.",
-            "При очистке или применении фильтров система обновляет список аукционов и статистику; поддерживается подсчёт выбранных фильтров и визуальное отображение активных условий."
-        ],
-        video: "{% static 'razdel3.mp4' %}"
-    },
-    lotCard: {
-        title: "Работа с карточкой лота",
-        paragraphs: [
-            "Карточка лота показывает номер, статус, даты подготовки и запуска, ответственного менеджера и дилерский центр, а также быстрые ссылки на действия.",
-            "Внутренние блоки содержат сведения по каждому автомобилю: диагностика, план работ, подготовка, фотографии, данные по отчёту «Автотека» и отметка «Проверено».",
-            "Кнопка «Посмотреть» переносит на страницу редактирования, где можно актуализировать карточку, обновить фотографии, скорректировать цену и отправить лот на аукцион."
-        ],
-        video: "{% static 'razdel4.mp4' %}"
-    }
-};
-
-function initializeAuctionHelp() {
-    const helpModal = document.getElementById("auctionHelpModal");
-    const detailModal = document.getElementById("auctionHelpDetailModal");
-    if (!helpModal || !detailModal) {
-        return;
-    }
-    const detailTitle = detailModal.querySelector(".modal-title");
-    const detailBody = detailModal.querySelector(".auction-help-detail-body");
-    const detailVideoWrapper = detailModal.querySelector(".auction-help-detail-video-wrapper");
-    const detailVideoFrame = detailModal.querySelector(".auction-help-detail-video");
-    const triggers = helpModal.querySelectorAll(".help-detail-trigger");
-    triggers.forEach(function(trigger) {
-        trigger.addEventListener("click", function() {
-            const sectionId = this.getAttribute("data-section-id");
-            const section = auctionHelpSections[sectionId];
-            if (!section) {
-                return;
-            }
-            if (detailTitle) {
-                detailTitle.textContent = section.title;
-            }
-            if (detailBody) {
-                detailBody.innerHTML = section.paragraphs.map(function(paragraph) {
-                    return "<p>" + paragraph + "</p>";
-                }).join("");
-            }
-            if (detailVideoWrapper && detailVideoFrame) {
-                if (section.video) {
-                    detailVideoFrame.src = section.video;
-                    detailVideoFrame.muted = true;
-                    detailVideoFrame.volume = 0;
-                    detailVideoFrame.currentTime = 0;
-                    detailVideoFrame.controls = true;
-                    detailVideoWrapper.classList.remove("d-none");
-                } else {
-                    detailVideoFrame.pause();
-                    detailVideoFrame.removeAttribute("src");
-                    detailVideoWrapper.classList.add("d-none");
-                }
-            }
-            const helpInstance = bootstrap.Modal.getInstance(helpModal);
-            if (helpInstance) {
-                helpInstance.hide();
-            }
-            const detailInstance = bootstrap.Modal.getOrCreateInstance(detailModal);
-            detailInstance.show();
-        });
-    });
-    detailModal.addEventListener("hidden.bs.modal", function() {
-        if (detailVideoFrame) {
-            detailVideoFrame.pause();
-            detailVideoFrame.removeAttribute("src");
-            detailVideoFrame.currentTime = 0;
-        }
-        if (detailVideoWrapper) {
-            detailVideoWrapper.classList.add("d-none");
-        }
-        const helpInstance = bootstrap.Modal.getOrCreateInstance(helpModal);
-        helpInstance.show();
-    });
-
-    detailModal.addEventListener("hidden.bs.modal", function() {
-        if (document.fullscreenElement && (detailModal.contains(document.fullscreenElement))) {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            }
-        }
-    });
-}
-
-document.addEventListener("DOMContentLoaded", initializeAuctionHelp);
-
-// Обработчики событий для модального окна
-document.getElementById('mobileFiltersModal').addEventListener('show.bs.modal', function() {
-    // Синхронизируем значения из основной формы в мобильную при открытии
-    const mobileForm = document.getElementById('mobileFiltersForm');
-    const mainForm = document.getElementById('filtersForm');
-    
-    if (mobileForm && mainForm) {
-        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
-        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
-        
-        mobileCheckboxes.forEach((checkbox, index) => {
-            if (index < mainCheckboxes.length) {
-                checkbox.checked = mainCheckboxes[index].checked;
-            }
-        });
-        
-        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
-        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
-        
-        mobileInputs.forEach((input, index) => {
-            if (index < mainInputs.length) {
-                input.value = mainInputs[index].value;
-            }
-        });
-        
-        updateActiveFiltersCount();
-    }
-});
-
-document.getElementById('mobileFiltersModal').addEventListener('hidden.bs.modal', function() {
-    // Синхронизируем значения из мобильной формы в основную при закрытии
-    const mobileForm = document.getElementById('mobileFiltersForm');
-    const mainForm = document.getElementById('filtersForm');
-    
-    if (mobileForm && mainForm) {
-        const mobileCheckboxes = mobileForm.querySelectorAll('input[type="checkbox"]');
-        const mainCheckboxes = mainForm.querySelectorAll('input[type="checkbox"]');
-        
-        mobileCheckboxes.forEach((checkbox, index) => {
-            if (index < mainCheckboxes.length) {
-                mainCheckboxes[index].checked = checkbox.checked;
-            }
-        });
-        
-        const mobileInputs = mobileForm.querySelectorAll('input[type="text"], input[type="number"]');
-        const mainInputs = mainForm.querySelectorAll('input[type="text"], input[type="number"]');
-        
-        mobileInputs.forEach((input, index) => {
-            if (index < mainInputs.length) {
-                mainInputs[index].value = input.value;
-            }
-        });
-        
-        updateActiveFiltersCount();
-    }
-});
-</script>
-
+<script src="{% static 'js/auction-floor.js' %}" defer></script>
 {% endblock %}
