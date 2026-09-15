@@ -166,6 +166,13 @@ $(document).ready(function() {
     // Search input debounced
     var searchTimer = null;
     $('#search').on('input', function() {
+        var query = ($(this).val() || '').trim();
+        if (query.length > 0) {
+            $('#ad_search_clear').removeClass('d-none');
+        } else {
+            $('#ad_search_clear').addClass('d-none');
+        }
+
         clearTimeout(searchTimer);
         searchTimer = setTimeout(function() {
             page = 0;
@@ -173,7 +180,36 @@ $(document).ready(function() {
             if (carsList) carsList.innerHTML = '';
             visible_loader(true);
             refresh_data_online();
-        }, 350);
+        }, 320);
+    });
+
+    $('#ad_search_clear').on('click', function() {
+        $('#search').val('').trigger('input').focus();
+    });
+
+    // Enter in search triggers immediate search
+    $('#search').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimer);
+            page = 0;
+            var carsList = document.querySelector('#cars-list');
+            if (carsList) carsList.innerHTML = '';
+            visible_loader(true);
+            refresh_data_online();
+        }
+    });
+
+    // Quick client filter chips: "Все" / "Свободные"
+    $(document).on('click', '.ad-drawer-chip-btn', function() {
+        $('.ad-drawer-chip-btn').removeClass('active');
+        $(this).addClass('active');
+        var filter = $(this).data('filter');
+        if (filter === 'available') {
+            $('#cars-list .ad-drawer-card.is-in-lot').slideUp(180);
+        } else {
+            $('#cars-list .ad-drawer-card').slideDown(180);
+        }
     });
 
     // Offcanvas events
@@ -184,6 +220,10 @@ $(document).ready(function() {
         });
         offcanvasEl.addEventListener('hidden.bs.offcanvas', function() {
             $('#cars-list').empty().removeClass('fade-out');
+            $('#search').val('');
+            $('#ad_search_clear').addClass('d-none');
+            $('.ad-drawer-chip-btn').removeClass('active');
+            $('#btn_filter_all').addClass('active');
             page = 0;
         });
         offcanvasEl.addEventListener('shown.bs.offcanvas', function() {
@@ -918,19 +958,28 @@ function subbmit_car(slug) {
         if (sourceCard && $newCard.length) {
             animateCarTransfer(sourceCard, $newCard[0], function() {
                 showAuctionToast(`Автомобиль ${mark} ${model} добавлен в лот!`, 'Успешно', 'success');
+                sourceCard.style.opacity = '1';
             });
         } else {
             showAuctionToast(`Автомобиль ${mark} ${model} добавлен в лот!`, 'Успешно', 'success');
         }
 
-        // Smoothly close offcanvas drawer after flight is in full swing
-        setTimeout(function() {
-            var offcanvasEl = document.getElementById('offcanvasRight');
-            if (offcanvasEl) {
-                var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
-                if (offcanvas) offcanvas.hide();
+        // Mark drawer source card as added
+        if (sourceCard) {
+            var $sc = $(sourceCard);
+            $sc.addClass('is-in-lot');
+            $sc.find('.ad-drawer-btn-add')
+                .addClass('is-added')
+                .html('<span class="icon-mbri-success me-1"></span><span>В лоте</span>')
+                .attr('title', 'Автомобиль уже добавлен в лот');
+            if (!$sc.find('.ad-drawer-card__badge-in-lot').length) {
+                $sc.find('.ad-drawer-card__thumb').append(`
+                    <span class="ad-drawer-card__badge-in-lot">
+                        <span class="icon-mbri-success me-1"></span> В лоте
+                    </span>
+                `);
             }
-        }, 320);
+        }
 
         refresh_board();
     }).fail(function() {
@@ -1128,6 +1177,17 @@ $(document).on('click', '#ad_confirm_delete_btn', function() {
             $card.remove();
             $(modalId).remove();
 
+            // If the deleted car is in the drawer, restore its active state
+            var $sc = $('#cars-list_data_' + slug);
+            if ($sc.length) {
+                $sc.removeClass('is-in-lot');
+                $sc.find('.ad-drawer-btn-add')
+                    .removeClass('is-added')
+                    .html('<span class="icon-mbri-plus me-1"></span><span>+ В лот</span>')
+                    .attr('title', 'Добавить автомобиль в лот');
+                $sc.find('.ad-drawer-card__badge-in-lot').remove();
+            }
+
             // If no cars remaining in lot, smoothly restore the empty deck
             if ($('#cars .ad-car-card').length === 0) {
                 $('#no_cars').removeClass('d-none').hide().fadeIn(300);
@@ -1140,13 +1200,23 @@ $(document).on('click', '#ad_confirm_delete_btn', function() {
 });
 
 /* ==========================================================================
-   OFFCANVAS DATA FETCHER
+   OFFCANVAS DATA FETCHER & CAR PICKER
    ========================================================================== */
 function visible_canvas() {
     var offcanvasElement = document.getElementById('offcanvasRight');
     if (offcanvasElement) {
+        var storeName = $('#ad_store_label').text().trim() || $('select#store option:selected').text().trim();
+        if (storeName && storeName !== '-- Выберите стоянку --') {
+            $('#ad_drawer_store_name').text(storeName);
+        } else {
+            $('#ad_drawer_store_name').text('Стоянка размещения');
+        }
+
         var offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement);
         offcanvas.show();
+        setTimeout(function() {
+            $('#search').focus();
+        }, 300);
     }
 }
 
@@ -1164,11 +1234,43 @@ function visible_loader(visible) {
     }
 }
 
+function copyVinToClipboard(vin, event) {
+    if (event) event.stopPropagation();
+    if (!vin) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(vin).then(function() {
+            showAuctionToast('VIN скопирован: ' + vin, 'Буфер обмена', 'info');
+        }).catch(function() {
+            copyVinFallback(vin);
+        });
+    } else {
+        copyVinFallback(vin);
+    }
+}
+
+function copyVinFallback(vin) {
+    var temp = $('<input>');
+    $('body').append(temp);
+    temp.val(vin).select();
+    try {
+        document.execCommand('copy');
+        showAuctionToast('VIN скопирован: ' + vin, 'Буфер обмена', 'info');
+    } catch(err) {
+        showAuctionToast('VIN: ' + vin, 'VIN номер', 'info');
+    }
+    temp.remove();
+}
+
 function refresh_data_online() {
     var search = $('#search').val() || '';
     var url = '/auction/js/get_cars_lot_online/?store_id=' + store_id + '&search=' + encodeURIComponent(search) + '&page=' + page;
 
+    var $refreshIcon = $('#refresh .icon-mbri-update');
+    $refreshIcon.addClass('spin-icon');
+
     $.get(url, function(data) {
+        $refreshIcon.removeClass('spin-icon');
+
         if (!Array.isArray(data)) {
             data = [];
         }
@@ -1190,32 +1292,89 @@ function refresh_data_online() {
             var mod = obj.modification_name || '';
             var car_run = fmt.format(obj.run || 0);
             var car_price = fmt.format(obj.price || 0);
-            var photo = (obj.url && obj.url.length) ? (Array.isArray(obj.url) ? obj.url[0] : obj.url) : '/media/nophoto.png';
+            var vin = obj.vin || '';
+            var photo = (obj.url && obj.url.length) ? (Array.isArray(obj.url) ? obj.url[0] : obj.url) : '';
+            var isInLot = ($('#cars_list_data_id_' + id).length > 0);
 
             html += `
-            <div id="cars-list_data_${id}" class="ad-drawer-card">
-                <div class="ad-drawer-card__thumb">
-                    <img src="${photo}" alt="${mark} ${model}">
+            <div id="cars-list_data_${id}" class="ad-drawer-card ${isInLot ? 'is-in-lot' : ''}" data-id="${id}" data-vin="${vin}">
+                <div class="ad-drawer-card__thumb" onclick="info_car('${id}')" title="Нажмите для подробного просмотра">
+                    ${photo && photo !== '/media/nophoto.png' ? `
+                        <img src="${photo}" alt="${mark} ${model}" onerror="this.style.display='none'; if(this.nextElementSibling){this.nextElementSibling.style.display='flex';}">
+                        <div class="ad-drawer-card__thumb-placeholder" style="display:none;">
+                            <span class="icon-truck"></span>
+                        </div>
+                    ` : `
+                        <div class="ad-drawer-card__thumb-placeholder">
+                            <span class="icon-truck"></span>
+                        </div>
+                    `}
+                    ${isInLot ? `
+                        <span class="ad-drawer-card__badge-in-lot">
+                            <span class="icon-mbri-success me-1"></span> В лоте
+                        </span>
+                    ` : ''}
                 </div>
+
                 <div class="ad-drawer-card__info">
-                    <div class="ad-drawer-card__title">${mark} ${model}</div>
-                    <div class="text-muted small">${mod}</div>
-                    <div class="text-muted small">${obj.year} г. • ${car_run} км</div>
-                    <div class="ad-drawer-card__price">${car_price} ₽</div>
-                </div>
-                <div class="ad-drawer-card__actions">
-                    <button type="button" class="ad-drawer-icon-btn" onclick="subbmit_car('${id}')" title="Добавить в лот">
-                        <span class="icon-mbri-plus"></span>
-                    </button>
-                    <button type="button" class="ad-drawer-icon-btn" onclick="info_car('${id}')" title="Детальный просмотр">
-                        <span class="icon-mbri-preview"></span>
-                    </button>
+                    <div class="d-flex align-items-start justify-content-between gap-1">
+                        <div class="ad-drawer-card__title" onclick="info_car('${id}')" title="${mark} ${model}">
+                            ${mark} ${model}
+                        </div>
+                    </div>
+
+                    ${mod ? `<div class="ad-drawer-card__mod text-truncate" title="${mod}">${mod}</div>` : ''}
+
+                    <div class="ad-drawer-card__chips">
+                        <span class="ad-drawer-meta-chip"><span class="icon-mbri-calendar me-1"></span>${obj.year} г.</span>
+                        <span class="ad-drawer-meta-chip font-monospace"><span class="icon-mbri-speed me-1"></span>${car_run} км</span>
+                    </div>
+
+                    ${vin ? `
+                        <div class="ad-drawer-card__vin-wrap">
+                            <span class="ad-drawer-vin font-monospace" title="Нажмите, чтобы скопировать VIN" onclick="copyVinToClipboard('${vin}', event)">
+                                <span class="icon-mbri-code me-1"></span>${vin}
+                            </span>
+                        </div>
+                    ` : ''}
+
+                    <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
+                        <div class="ad-drawer-card__price">
+                            ${car_price} ₽
+                        </div>
+
+                        <div class="ad-drawer-card__actions">
+                            <button type="button" class="ad-drawer-btn-inspect" onclick="info_car('${id}')" title="Детальный осмотр и фото">
+                                <span class="icon-mbri-preview"></span>
+                            </button>
+                            <button type="button" class="ad-drawer-btn-add ${isInLot ? 'is-added' : ''}" onclick="subbmit_car('${id}')" title="${isInLot ? 'Автомобиль уже добавлен в лот' : 'Добавить автомобиль в лот'}">
+                                <span class="${isInLot ? 'icon-mbri-success' : 'icon-mbri-plus'} me-1"></span>
+                                <span>${isInLot ? 'В лоте' : '+ В лот'}</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>`;
         }
 
         if (page === 0 && data.length === 0) {
-            html = '<div class="text-center text-muted py-4">Автомобили не найдены</div>';
+            html = `
+            <div class="ad-drawer-empty text-center py-5">
+                <div class="ad-drawer-empty__icon mb-3">
+                    <span class="icon-truck"></span>
+                </div>
+                <h6 class="fw-bold mb-1">Автомобили не найдены</h6>
+                <p class="text-muted small mb-3">По вашему запросу на складе ничего не найдено</p>
+                <button type="button" class="ad-btn ad-btn--sm ad-btn--outline" onclick="$('#search').val('').trigger('input');">
+                    Сбросить поиск
+                </button>
+            </div>`;
+            $('#ad_drawer_count_badge').text('0');
+            $('#ad_drawer_status_text').text('Ничего не найдено');
+        } else {
+            var currentCount = (page === 0 ? data.length : ($('#cars-list .ad-drawer-card').length + data.length));
+            $('#ad_drawer_count_badge').text(currentCount + (scroll_data ? '+' : ''));
+            $('#ad_drawer_status_text').text('Показано: ' + currentCount + (scroll_data ? ' авто (есть еще)' : ' авто'));
         }
 
         var container = document.querySelector('#cars-list');
@@ -1223,8 +1382,15 @@ function refresh_data_online() {
             container.innerHTML = (page === 0 ? html : container.innerHTML + html);
         }
 
+        // Reapply active filter if needed
+        var activeFilter = $('.ad-drawer-chip-btn.active').data('filter');
+        if (activeFilter === 'available') {
+            $('#cars-list .ad-drawer-card.is-in-lot').hide();
+        }
+
         visible_loader(false);
     }).fail(function() {
+        $refreshIcon.removeClass('spin-icon');
         visible_loader(false);
         showAuctionToast('Ошибка при загрузке автомобилей со стоянки', 'Ошибка', 'danger');
     });

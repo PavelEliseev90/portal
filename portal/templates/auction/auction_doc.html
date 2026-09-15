@@ -1312,32 +1312,60 @@
 	<!-- OFFCANVAS CAR SELECTOR DRAWER -->
 	<div class="offcanvas offcanvas-start auction-doc-offcanvas" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
 		<div class="offcanvas-header">
-			<h5 class="offcanvas-title" id="offcanvasRightLabel">
-				<span class="icon-truck"></span> Автомобили на стоянке
-			</h5>
+			<div class="d-flex flex-column gap-1 flex-grow-1 min-w-0 me-2">
+				<div class="d-flex align-items-center gap-2">
+					<h5 class="offcanvas-title" id="offcanvasRightLabel">
+						<span class="icon-truck text-primary me-1"></span> Автомобили на стоянке
+					</h5>
+					<span class="badge bg-primary text-white rounded-pill px-2 py-1 fs-7" id="ad_drawer_count_badge">0</span>
+				</div>
+				<div class="ad-drawer-store-meta text-muted small" id="ad_drawer_store_meta">
+					<span class="icon-mbri-pin text-primary me-1"></span>
+					<span id="ad_drawer_store_name">Стоянка не выбрана</span>
+				</div>
+			</div>
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" id="offcanvasRightClose" aria-label="Закрыть"></button>
 		</div>
 
 		<div class="offcanvas-body">
+			<!-- SEARCH BAR & TOOLBAR -->
 			<div class="ad-drawer-search">
-				<div class="input-group">
-					<input type="text" class="form-control" id="search" name="search" placeholder="Поиск по VIN, марке, модели..." autocomplete="off">
-					<button class="btn btn-outline-secondary" type="button" id="refresh" title="Обновить список">
+				<div class="ad-drawer-search-wrap">
+					<span class="icon-mbri-search ad-drawer-search-icon"></span>
+					<input type="text" class="form-control ad-drawer-search-input" id="search" name="search" placeholder="Поиск по марке, модели или VIN..." autocomplete="off">
+					<button type="button" class="ad-drawer-search-clear d-none" id="ad_search_clear" title="Очистить поиск">
+						<span class="icon-mbri-close"></span>
+					</button>
+					<button class="ad-btn ad-btn--primary ad-btn--sm ad-drawer-refresh-btn" type="button" id="refresh" title="Обновить список автомобилей">
 						<span class="icon-mbri-update"></span>
+						<span class="d-none d-sm-inline ms-1">Обновить</span>
 					</button>
 				</div>
-			</div>
-
-			<div class="cars-list" id="cars-list"></div>
-
-			<div id="load_gif" class="text-center py-3 d-none">
-				<div class="spinner-border text-warning" role="status">
-					<span class="visually-hidden">Загрузка...</span>
+				<div class="ad-drawer-filter-bar mt-2 d-flex align-items-center justify-content-between">
+					<div class="text-muted small" id="ad_drawer_status_text">
+						Загрузка автомобилей...
+					</div>
+					<div class="d-flex align-items-center gap-1">
+						<button type="button" class="ad-drawer-chip-btn active" id="btn_filter_all" data-filter="all">Все</button>
+						<button type="button" class="ad-drawer-chip-btn" id="btn_filter_available" data-filter="available">Свободные</button>
+					</div>
 				</div>
 			</div>
 
-			<button class="ad-btn ad-btn--outline w-100 mt-2 d-none" id="more">
-				<span class="icon-mbri-down me-1"></span> Показать еще
+			<!-- LIST CONTAINER -->
+			<div class="cars-list ad-drawer-list" id="cars-list"></div>
+
+			<!-- LOADER -->
+			<div id="load_gif" class="text-center py-4 d-none">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Загрузка...</span>
+				</div>
+				<div class="text-muted small mt-2">Загружаем автомобили со стоянки...</div>
+			</div>
+
+			<!-- PAGINATION / MORE BUTTON -->
+			<button class="ad-btn ad-btn--outline w-100 mt-3 py-2 d-none" id="more">
+				<span class="icon-mbri-down me-1"></span> Загрузить еще автомобили
 			</button>
 		</div>
 	</div>
@@ -1348,12 +1376,12 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" id="rlkLabel">
-						<span class="icon-truck"></span> Информация об автомобиле
+						<span class="icon-truck text-primary me-1"></span> Информация об автомобиле
 					</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 				</div>
 				<div class="modal-body">
-					<div class="fs-5 fw-bold text-white mb-2" id="info_car_name"></div>
+					<div class="fs-5 fw-bold text-dark mb-2" id="info_car_name"></div>
 
 					<div class="d-flex flex-wrap gap-2 mb-3">
 						<span class="ad-meta-chip" id="info_car_type_reception">Тип приема: -</span>
