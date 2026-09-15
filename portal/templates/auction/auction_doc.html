@@ -1760,27 +1760,65 @@
 
 	<!-- MODAL: SERVER ERROR POPUP -->
 	{% if params.error %}
-		<div class="modal fade show" id="error_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-					<div class="modal-header bg-danger text-white">
-						<h5 class="modal-title text-white">
-							<span class="icon-mbri-close"></span> Ошибка валидации лота
-						</h5>
+		<div class="modal fade" id="error_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="ad_error_modal_label" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+				<div class="modal-content ad-error-modal-content">
+					<div class="modal-header border-0 pb-0 pt-3 px-4">
+						<div class="ad-modal-kicker text-danger" id="ad_error_modal_label">
+							<span class="icon-mbri-alert me-1"></span> Ошибка валидации
+						</div>
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
 					</div>
-					<div class="modal-body">
-						<div class="text-white">{{params.error}}</div>
+					<div class="modal-body text-center pt-2 pb-3 px-4">
+						<div class="ad-error-icon-wrap mb-3">
+							<span class="icon-mbri-alert"></span>
+						</div>
+						<h4 class="ad-error-modal-title mb-2">Ошибка валидации лота</h4>
+						<div class="ad-error-modal-box mb-3">
+							<div class="ad-error-modal-msg">{{params.error}}</div>
+						</div>
+						<p class="ad-error-modal-desc text-muted mb-0">
+							Пожалуйста, укажите требуемые данные и повторите сохранение лота.
+						</p>
 					</div>
-					<div class="modal-footer">
-						<button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">Закрыть</button>
+					<div class="modal-footer border-0 pt-0 pb-4 px-4 justify-content-center">
+						<button type="button" class="ad-btn ad-btn--primary px-4 py-2" data-bs-dismiss="modal" id="ad_error_modal_dismiss">
+							<span class="icon-mbri-success me-1"></span> Понятно, исправить
+						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script type="text/javascript">
-			$(window).on('load', function(){
-				$('#error_modal').modal('show');
+			document.addEventListener('DOMContentLoaded', function(){
+				var modalEl = document.getElementById('error_modal');
+				if (modalEl) {
+					if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+						var m = new bootstrap.Modal(modalEl);
+						m.show();
+					} else if (window.jQuery) {
+						$('#error_modal').modal('show');
+					}
+				}
+				var dismissBtn = document.getElementById('ad_error_modal_dismiss');
+				if (dismissBtn) {
+					dismissBtn.addEventListener('click', function() {
+						var errText = "{{params.error|escapejs}}";
+						if (errText.indexOf('дату начала') !== -1) {
+							var dtTrigger = document.getElementById('ad_dt_trigger');
+							if (dtTrigger) {
+								dtTrigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
+								dtTrigger.classList.add('ad-field-highlight-error');
+								setTimeout(function(){
+									dtTrigger.classList.remove('ad-field-highlight-error');
+								}, 3000);
+								setTimeout(function(){
+									dtTrigger.click();
+								}, 350);
+							}
+						}
+					});
+				}
 			});
 		</script>
 	{% endif %}

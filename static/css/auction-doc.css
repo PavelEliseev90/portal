@@ -4641,3 +4641,85 @@ body:has(.auction-doc) .modal-footer {
     z-index: 1081 !important;
     position: relative !important;
 }
+
+/* ==========================================================================
+   ERROR & VALIDATION MODAL
+   ========================================================================== */
+.ad-error-modal-content {
+    background: #ffffff !important;
+    border: 1px solid #fed7d7 !important;
+    border-radius: var(--ad-radius-lg, 16px) !important;
+    box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.ad-error-icon-wrap {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    color: #dc2626;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto;
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.08);
+}
+
+.ad-error-modal-title {
+    font-family: var(--ad-font-ui, sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ad-ink, #0f172a) !important;
+    letter-spacing: -0.01em;
+}
+
+.ad-error-modal-box {
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #ef4444;
+    border-radius: 10px;
+    padding: 0.85rem 1.15rem;
+    text-align: center;
+}
+
+.ad-error-modal-msg {
+    color: #991b1b !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ad-error-modal-desc {
+    font-size: 0.88rem;
+    color: var(--ad-muted, #64748b);
+    line-height: 1.5;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.ad-field-highlight-error {
+    outline: 2px solid #ef4444 !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25) !important;
+    animation: adFieldShake 0.4s ease-in-out;
+}
+
+@keyframes adFieldShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+
+#error_modal {
+    z-index: 1085 !important;
+    position: fixed !important;
+}
+
+#error_modal .modal-dialog {
+    z-index: 1086 !important;
+    position: relative !important;
+}
+
