@@ -26,8 +26,9 @@
 		body:has(.auction-doc) main#content,
 		body.has-auction-doc #content,
 		body.has-auction-doc main#content {
-			background: #000000 !important;
-			background-color: #000000 !important;
+			background: #f8fafc !important;
+			background-color: #f8fafc !important;
+			color: #111827 !important;
 		}
 		body:has(.auction-doc)::after,
 		body.has-auction-doc::after {
@@ -37,97 +38,27 @@
 			visibility: hidden !important;
 		}
 
-		/* Custom Dark Scrollbar */
-		html:has(.auction-doc),
-		body:has(.auction-doc),
-		html.has-auction-doc,
-		body.has-auction-doc,
-		.auction-doc,
-		.auction-doc *,
-		body.has-auction-doc .modal,
-		body.has-auction-doc .modal *,
-		body.has-auction-doc .offcanvas,
-		body.has-auction-doc .offcanvas * {
-			scrollbar-width: thin;
-			scrollbar-color: #383838 #0d0d0d;
-		}
-
-		html:has(.auction-doc)::-webkit-scrollbar,
-		body:has(.auction-doc)::-webkit-scrollbar,
-		html.has-auction-doc::-webkit-scrollbar,
-		body.has-auction-doc::-webkit-scrollbar,
-		html.has-auction-doc *::-webkit-scrollbar,
-		body.has-auction-doc *::-webkit-scrollbar,
-		.auction-doc ::-webkit-scrollbar,
-		.auction-doc::-webkit-scrollbar,
-		body.has-auction-doc .modal::-webkit-scrollbar,
-		body.has-auction-doc .modal *::-webkit-scrollbar,
-		body.has-auction-doc .offcanvas::-webkit-scrollbar,
-		body.has-auction-doc .offcanvas *::-webkit-scrollbar {
-			width: 8px;
-			height: 8px;
-		}
-
-		html:has(.auction-doc)::-webkit-scrollbar-track,
-		body:has(.auction-doc)::-webkit-scrollbar-track,
-		html.has-auction-doc::-webkit-scrollbar-track,
-		body.has-auction-doc::-webkit-scrollbar-track,
-		html.has-auction-doc *::-webkit-scrollbar-track,
-		body.has-auction-doc *::-webkit-scrollbar-track,
-		.auction-doc ::-webkit-scrollbar-track,
-		.auction-doc::-webkit-scrollbar-track,
-		body.has-auction-doc .modal::-webkit-scrollbar-track,
-		body.has-auction-doc .modal *::-webkit-scrollbar-track,
-		body.has-auction-doc .offcanvas::-webkit-scrollbar-track,
-		body.has-auction-doc .offcanvas *::-webkit-scrollbar-track {
-			background: #0d0d0d;
-			border-radius: 999px;
-		}
-
-		html:has(.auction-doc)::-webkit-scrollbar-thumb,
-		body:has(.auction-doc)::-webkit-scrollbar-thumb,
-		html.has-auction-doc::-webkit-scrollbar-thumb,
-		body.has-auction-doc::-webkit-scrollbar-thumb,
-		html.has-auction-doc *::-webkit-scrollbar-thumb,
-		body.has-auction-doc *::-webkit-scrollbar-thumb,
-		.auction-doc ::-webkit-scrollbar-thumb,
-		.auction-doc::-webkit-scrollbar-thumb,
-		body.has-auction-doc .modal::-webkit-scrollbar-thumb,
-		body.has-auction-doc .modal *::-webkit-scrollbar-thumb,
-		body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb,
-		body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb {
-			background: #333333;
-			border: 2px solid #0d0d0d;
-			border-radius: 999px;
-			transition: background 0.2s ease, border-color 0.2s ease;
-		}
-
-		html:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
-		body:has(.auction-doc)::-webkit-scrollbar-thumb:hover,
-		html.has-auction-doc::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc::-webkit-scrollbar-thumb:hover,
-		html.has-auction-doc *::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc *::-webkit-scrollbar-thumb:hover,
-		.auction-doc ::-webkit-scrollbar-thumb:hover,
-		.auction-doc::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc .modal::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc .modal *::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc .offcanvas::-webkit-scrollbar-thumb:hover,
-		body.has-auction-doc .offcanvas *::-webkit-scrollbar-thumb:hover {
-			background: #f58220;
-			border-color: #0d0d0d;
+		/* Preserve default sidebar menu scrollbar */
+		#sidebarMenu,
+		#sidebarMenu *,
+		#menu,
+		#menu *,
+		.sidebar,
+		.sidebar * {
+			scrollbar-width: auto !important;
+			scrollbar-color: auto !important;
 		}
 	</style>
 	<script>
 		document.documentElement.classList.add('has-auction-doc');
-		document.documentElement.style.backgroundColor = '#000000';
+		document.documentElement.style.backgroundColor = '#f8fafc';
 		if (document.body) {
 			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#000000';
+			document.body.style.backgroundColor = '#f8fafc';
 		}
 		document.addEventListener('DOMContentLoaded', function() {
 			document.body.classList.add('has-auction-doc');
-			document.body.style.backgroundColor = '#000000';
+			document.body.style.backgroundColor = '#f8fafc';
 		});
 	</script>
 {% endblock %}
@@ -1140,18 +1071,66 @@
 							</div>
 						</div>
 					{% endfor %}
-				{% else %}
-					<div class="ad-empty-deck" id="no_cars">
-						<span class="icon-truck ad-empty-deck__icon"></span>
-						<h3 class="ad-empty-deck__title">В данном лоте пока нет автомобилей</h3>
-						<p class="ad-empty-deck__subtitle">Выберите стоянку и добавьте один или несколько автомобилей из наличия для формирования лота.</p>
-						{% if not params.auction.status and params.auction.winner_price == 0 %}
-							<button type="button" class="ad-btn ad-btn--primary mt-2" onclick="$('#add_cars').trigger('click')">
-								<span class="icon-mbri-plus"></span> Добавить автомобиль из наличия
-							</button>
-						{% endif %}
-					</div>
 				{% endif %}
+
+				<div class="ad-empty-deck {% if params.auction.cars %}d-none{% endif %}" id="no_cars">
+					<div class="ad-empty-deck__badge">
+						<span class="ad-empty-deck__dot"></span>
+						<span>Формирование лота</span>
+					</div>
+
+					<div class="ad-empty-deck__visual">
+						<div class="ad-empty-deck__icon-wrap">
+							<span class="icon-truck ad-empty-deck__icon"></span>
+							<span class="ad-empty-deck__plus-badge"><span class="icon-mbri-plus"></span></span>
+						</div>
+					</div>
+
+					<h3 class="ad-empty-deck__title">В данном лоте пока нет автомобилей</h3>
+					<p class="ad-empty-deck__subtitle">
+						Выберите стоянку размещения и добавьте один или несколько автомобилей из наличия для формирования лота торгов.
+					</p>
+
+					<!-- Mini Onboarding Steps Guide -->
+					<div class="ad-empty-deck__steps">
+						<div class="ad-empty-step" id="step_empty_store" role="button" tabindex="0" title="Нажмите, чтобы перейти к выбору стоянки">
+							<div class="ad-empty-step__num">1</div>
+							<div class="ad-empty-step__body">
+								<div class="ad-empty-step__title"><span class="icon-mbri-pin text-primary me-1"></span> Стоянка</div>
+								<div class="ad-empty-step__desc">Дилерский центр</div>
+							</div>
+						</div>
+						<div class="ad-empty-step__arrow"><span class="icon-mbri-arrow-next"></span></div>
+						<div class="ad-empty-step" id="step_empty_select" role="button" tabindex="0" title="Нажмите, чтобы открыть склад автомобилей">
+							<div class="ad-empty-step__num">2</div>
+							<div class="ad-empty-step__body">
+								<div class="ad-empty-step__title"><span class="icon-truck text-primary me-1"></span> Выбор авто</div>
+								<div class="ad-empty-step__desc">Склад по VIN и модели</div>
+							</div>
+						</div>
+						<div class="ad-empty-step__arrow"><span class="icon-mbri-arrow-next"></span></div>
+						<div class="ad-empty-step" id="step_empty_price" role="button" tabindex="0" title="Нажмите, чтобы перейти к цене">
+							<div class="ad-empty-step__num">3</div>
+							<div class="ad-empty-step__body">
+								<div class="ad-empty-step__title"><span class="icon-mbri-cash text-primary me-1"></span> Старт торгов</div>
+								<div class="ad-empty-step__desc">Дата и цена лота</div>
+							</div>
+						</div>
+					</div>
+
+					{% if not params.auction.status and params.auction.winner_price == 0 %}
+						<div class="ad-empty-deck__actions">
+							<button type="button" class="ad-empty-deck__btn-add" id="btn_empty_add_car">
+								<span class="icon-mbri-plus ad-empty-deck__btn-icon"></span>
+								<span>Добавить автомобиль из наличия</span>
+								<span class="ad-empty-deck__btn-arrow"><span class="icon-mbri-arrow-next"></span></span>
+							</button>
+						</div>
+						<div class="ad-empty-deck__hint">
+							<span class="icon-mbri-info me-1 text-primary"></span> Автомобили загружаются из базы наличия выбранного дилерского центра
+						</div>
+					{% endif %}
+				</div>
 			</div>
 		</div>
 
@@ -1169,7 +1148,7 @@
 				<div class="col-12 col-lg-5">
 					<div class="d-flex flex-column gap-3">
 						<!-- Стоянка размещения -->
-						<div class="position-relative">
+						<div class="position-relative ad-field-wrap--combo" id="wrap_store_combo">
 							<label for="store" class="form-label mb-1">
 								<span><span class="icon-mbri-pin text-warning me-1"></span> Стоянка размещения</span>
 								<span class="text-muted small">Дилерский центр</span>
@@ -1217,7 +1196,7 @@
 						</div>
 
 						<!-- Дата и время начала -->
-						<div class="position-relative">
+						<div class="position-relative ad-field-wrap--dt" id="wrap_dt_picker">
 							<label class="form-label mb-1" for="ad_dt_trigger">
 								<span><span class="icon-mbri-calendar text-warning me-1"></span> Дата и время начала торгов</span>
 								{% if params.auction.dateStart %}<span class="text-warning small" id="ad_dt_time_badge">{{params.auction.dateStart|date:'H:i'}} МСК</span>{% endif %}

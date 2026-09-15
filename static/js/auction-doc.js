@@ -98,12 +98,21 @@ $(document).ready(function() {
     });
 
     // Add cars trigger (opens offcanvas)
-    $('#add_cars').on('click', function() {
+    $('#add_cars, #btn_empty_add_car, #step_empty_select').on('click', function() {
         store_id = $('select#store option:selected').val() || $('select#store option:selected').attr('text') || '';
 
         if (!store_id) {
             showAuctionToast('Пожалуйста, выберите стоянку перед добавлением автомобиля', 'Внимание', 'warning');
-            $('select#store').focus();
+            if ($('#wrap_store_combo').length) {
+                $('html, body').animate({ scrollTop: $('#wrap_store_combo').offset().top - 100 }, 300);
+                setTimeout(function() {
+                    if (!$('#ad_store_combo').hasClass('is-open')) {
+                        $('#ad_store_combo .af-combo__btn').trigger('click');
+                    }
+                }, 350);
+            } else {
+                $('select#store').focus();
+            }
             return;
         }
 
@@ -114,6 +123,27 @@ $(document).ready(function() {
         visible_loader(true);
         refresh_data_online();
         visible_canvas();
+    });
+
+    // Quick navigation from empty deck onboarding steps
+    $('#step_empty_store').on('click', function() {
+        if ($('#wrap_store_combo').length) {
+            $('html, body').animate({ scrollTop: $('#wrap_store_combo').offset().top - 100 }, 300);
+            setTimeout(function() {
+                if (!$('#ad_store_combo').hasClass('is-open')) {
+                    $('#ad_store_combo .af-combo__btn').trigger('click');
+                }
+            }, 350);
+        }
+    });
+
+    $('#step_empty_price').on('click', function() {
+        if ($('#price_start').length) {
+            $('html, body').animate({ scrollTop: $('#price_start').offset().top - 120 }, 300);
+            setTimeout(function() {
+                $('#price_start').focus();
+            }, 350);
+        }
     });
 
     // Search offcanvas refresh
@@ -970,7 +1000,7 @@ function animateCarTransfer(sourceEl, targetEl, callback) {
         proxy.style.transition = 'transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), width 0.85s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.85s ease';
         proxy.style.transform = 'translate3d(' + deltaX + 'px, ' + deltaY + 'px, 0) scale(1)';
         proxy.style.width = Math.min(endRect.width, 500) + 'px';
-        proxy.style.boxShadow = '0 30px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(245, 130, 32, 0.7)';
+        proxy.style.boxShadow = '0 20px 45px rgba(37, 99, 235, 0.25)';
 
         // Landing sequence
         setTimeout(function() {
@@ -1360,6 +1390,7 @@ function initStoreCombo() {
     var $combo = $('#ad_store_combo');
     if (!$combo.length) return;
 
+    var $wrap = $('#wrap_store_combo');
     var $btn = $combo.find('.af-combo__btn');
     var $panel = $combo.find('.af-combo__panel');
     var $search = $combo.find('.af-combo__search');
@@ -1367,40 +1398,65 @@ function initStoreCombo() {
     var $label = $('#ad_store_label');
     var $select = $('select#store');
 
+    function openCombo() {
+        // Close calendar if open
+        if (typeof window.closeAuctionDateTimePicker === 'function') {
+            window.closeAuctionDateTimePicker();
+        } else {
+            $('#ad_dt_picker').removeClass('is-open');
+            $('#wrap_dt_picker').removeClass('is-open').css('z-index', '');
+            $('#ad_cal_popup').attr('hidden', true).css('display', 'none');
+            $('#ad_dt_trigger').attr('aria-expanded', 'false');
+        }
+
+        $combo.addClass('is-open');
+        $wrap.addClass('is-open').css('z-index', '1050');
+        $panel.removeAttr('hidden').css('display', 'flex');
+        $btn.attr('aria-expanded', 'true');
+        $search.val('').trigger('input');
+        setTimeout(function() {
+            $search.focus();
+        }, 50);
+    }
+
+    function closeCombo() {
+        $combo.removeClass('is-open');
+        $wrap.removeClass('is-open').css('z-index', '');
+        $panel.attr('hidden', true).css('display', 'none');
+        $btn.attr('aria-expanded', 'false');
+    }
+
+    window.closeAuctionStoreCombo = closeCombo;
+
     // Toggle dropdown
     $btn.on('click', function(e) {
         e.stopPropagation();
-        var isOpen = $combo.hasClass('is-open');
-        // Close calendar if open
-        $('#ad_dt_picker').removeClass('is-open');
-        $('#ad_cal_popup').attr('hidden', true);
-
-        if (isOpen) {
-            $combo.removeClass('is-open');
-            $panel.attr('hidden', true);
-            $btn.attr('aria-expanded', 'false');
+        if ($combo.hasClass('is-open')) {
+            closeCombo();
         } else {
-            $combo.addClass('is-open');
-            $panel.removeAttr('hidden');
-            $btn.attr('aria-expanded', 'true');
-            $search.val('').trigger('input');
-            setTimeout(function() {
-                $search.focus();
-            }, 50);
+            openCombo();
         }
     });
 
     // Search filter
     $search.on('input', function(e) {
         var query = ($(this).val() || '').toLowerCase().trim();
+        var matchCount = 0;
         $list.find('.af-combo__option').each(function() {
             var text = ($(this).data('label') || $(this).text() || '').toLowerCase();
             if (!query || text.indexOf(query) !== -1) {
                 $(this).removeClass('d-none');
+                matchCount++;
             } else {
                 $(this).addClass('d-none');
             }
         });
+        var $empty = $panel.find('.af-combo__empty');
+        if (matchCount === 0) {
+            $empty.removeAttr('hidden').show();
+        } else {
+            $empty.attr('hidden', true).hide();
+        }
     });
 
     // Option selection
@@ -1415,9 +1471,7 @@ function initStoreCombo() {
         $label.text(label);
         $select.val(val).trigger('change');
 
-        $combo.removeClass('is-open');
-        $panel.attr('hidden', true);
-        $btn.attr('aria-expanded', 'false');
+        closeCombo();
     });
 
     // Prevent panel clicks from bubbling
@@ -1427,19 +1481,15 @@ function initStoreCombo() {
 
     // Close on outside click
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#ad_store_combo').length) {
-            $combo.removeClass('is-open');
-            $panel.attr('hidden', true);
-            $btn.attr('aria-expanded', 'false');
+        if (!$(e.target).closest('#ad_store_combo, #wrap_store_combo').length) {
+            closeCombo();
         }
     });
 
     // Close on Esc
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape' && $combo.hasClass('is-open')) {
-            $combo.removeClass('is-open');
-            $panel.attr('hidden', true);
-            $btn.attr('aria-expanded', 'false');
+            closeCombo();
             $btn.focus();
         }
     });
@@ -1554,25 +1604,43 @@ function initDateTimePicker() {
 
     renderGrid();
 
+    var $wrapDt = $('#wrap_dt_picker');
+
+    function openPicker() {
+        if (typeof window.closeAuctionStoreCombo === 'function') {
+            window.closeAuctionStoreCombo();
+        } else {
+            $('#ad_store_combo').removeClass('is-open');
+            $('#wrap_store_combo').removeClass('is-open').css('z-index', '');
+            $('#ad_store_combo .af-combo__panel').attr('hidden', true).css('display', 'none');
+            $('#ad_store_combo .af-combo__btn').attr('aria-expanded', 'false');
+        }
+
+        $picker.addClass('is-open');
+        $wrapDt.addClass('is-open').css('z-index', '1050');
+        $popup.removeAttr('hidden').css('display', 'block');
+        $trigger.attr('aria-expanded', 'true');
+        viewYear = selectedYear;
+        viewMonth = selectedMonth;
+        renderGrid();
+    }
+
+    function closePicker() {
+        $picker.removeClass('is-open');
+        $wrapDt.removeClass('is-open').css('z-index', '');
+        $popup.attr('hidden', true).css('display', 'none');
+        $trigger.attr('aria-expanded', 'false');
+    }
+
+    window.closeAuctionDateTimePicker = closePicker;
+
     // Toggle Calendar Popup
     $trigger.on('click', function(e) {
         e.stopPropagation();
-        var isOpen = $picker.hasClass('is-open');
-        // Close store combo if open
-        $('#ad_store_combo').removeClass('is-open');
-        $('#ad_store_combo .af-combo__panel').attr('hidden', true);
-
-        if (isOpen) {
-            $picker.removeClass('is-open');
-            $popup.attr('hidden', true);
-            $trigger.attr('aria-expanded', 'false');
+        if ($picker.hasClass('is-open')) {
+            closePicker();
         } else {
-            $picker.addClass('is-open');
-            $popup.removeAttr('hidden');
-            $trigger.attr('aria-expanded', 'true');
-            viewYear = selectedYear;
-            viewMonth = selectedMonth;
-            renderGrid();
+            openPicker();
         }
     });
 
@@ -1667,9 +1735,7 @@ function initDateTimePicker() {
             $timeBadge.text(hVal + ':' + mVal + ' МСК');
         }
 
-        $picker.removeClass('is-open');
-        $popup.attr('hidden', true);
-        $trigger.attr('aria-expanded', 'false');
+        closePicker();
     });
 
     // Prevent clicks inside popup from bubbling
@@ -1679,19 +1745,15 @@ function initDateTimePicker() {
 
     // Close on outside click
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#ad_dt_picker').length) {
-            $picker.removeClass('is-open');
-            $popup.attr('hidden', true);
-            $trigger.attr('aria-expanded', 'false');
+        if (!$(e.target).closest('#ad_dt_picker, #wrap_dt_picker').length) {
+            closePicker();
         }
     });
 
     // Close on Esc
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape' && $picker.hasClass('is-open')) {
-            $picker.removeClass('is-open');
-            $popup.attr('hidden', true);
-            $trigger.attr('aria-expanded', 'false');
+            closePicker();
             $trigger.focus();
         }
     });
