@@ -84,10 +84,12 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
     cost = money(row.get('cost_price'))
     outlay = money(row.get('outlay'))
     iznos = row.get('lo__rlk__reginteractivocenka__iznos')
+    reception_date = row.get('lo__dataTime') or row.get('lo_link_date')
     return {
         'id': row['id'],
         'slug': row.get('slug') or '',
         'vin': row.get('vin') or '',
+        'reception_date': reception_date,
         'mark': row.get('mark') or '',
         'model': row.get('model') or '',
         'year': row.get('year') or 0,
@@ -128,6 +130,7 @@ DETAIL_VALUES = (
     'stage_price__name', 'group_price__name', 'lo__staff_id', 'lo__staff__name',
     'lo__kolesa2_reception', 'lo__rlk_id', 'lo_id', 'lo__rlk__unit_dc__name',
     'lo__type_reception__name', 'lo__rlk__reginteractivocenka__iznos',
+    'lo__dataTime', 'lo_link_date',
     'price', 'cost_price', 'outlay', 'bcp', 'quantity', 'days_in_stok',
 )
 

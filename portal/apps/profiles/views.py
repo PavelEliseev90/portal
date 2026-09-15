@@ -35,10 +35,19 @@ def profiles_edit(request):
                 file_list = request.FILES.getlist('file')
                 if len(file_list) > 0:
                     profiles.image = file_list[0]
+                    messages.success(request, 'Фотография профиля успешно обновлена.')
+
             if 'update_info' in request.POST:
-                if len(request.POST.get('birth_date') or '') > 0:
-                    birth_date = DT.datetime.strptime(request.POST['birth_date'], '%Y-%m-%d')
-                    profiles.birth_date = birth_date
+                profiles.phone = (request.POST.get('phone') or '').strip()
+
+                raw_birth = (request.POST.get('birth_date') or '').strip()
+                if raw_birth:
+                    try:
+                        profiles.birth_date = DT.datetime.strptime(raw_birth, '%Y-%m-%d').date()
+                    except ValueError:
+                        pass
+                else:
+                    profiles.birth_date = None
 
                 if (
                     profiles.price_car_new_director
@@ -64,10 +73,13 @@ def profiles_edit(request):
                     profiles.telegram_notify_results = (
                         'telegram_notify_results' in request.POST
                     )
-            if 'eco_toast' in request.POST:
-                profiles.eco_toast = True
-            else:
-                profiles.eco_toast = False
+
+                if 'eco_toast' in request.POST:
+                    profiles.eco_toast = True
+                else:
+                    profiles.eco_toast = False
+
+                messages.success(request, 'Данные профиля успешно сохранены.')
 
             profiles.save()
             return HttpResponseRedirect(request.build_absolute_uri())

@@ -1,134 +1,222 @@
 {% extends 'base_web.html' %}
 
-
-{% block title %} - редактирование профиля {% endblock %}
-
-{% block title_navbar %} - редактирование профиля {% endblock %}
-
+{% block title %} — Редактирование профиля {% endblock %}
+{% block title_navbar %} — Редактирование профиля {% endblock %}
 
 {% block content %}
+<div class="portal-page">
+  <div class="portal-header d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h2 class="mb-1">Профиль пользователя</h2>
+      <p class="text-muted mb-0">Личные данные, параметры оповещений и интеграция с Telegram</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn-calculate-secondary-sm" href="/"><span class="icon-mbri-home"></span> Рабочий стол</a>
+    </div>
+  </div>
 
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="row g-3">
+    <!-- Левая колонка: карточка профиля и фото -->
+    <div class="col-12 col-lg-4 col-xl-3">
+      <div class="portal-panel text-center">
+        <div class="position-relative d-inline-block mb-3">
+          <img src="{{ params.user.profiles.image_logo }}" alt="Аватар"
+               class="rounded-circle img-thumbnail shadow-sm"
+               style="width: 140px; height: 140px; object-fit: cover;">
+          <button type="button"
+                  class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow"
+                  style="width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                  data-bs-toggle="modal" data-bs-target="#modalPhoto"
+                  title="Изменить фотографию">
+            <span class="icon-mbri-edit2"></span>
+          </button>
+        </div>
+
+        <h5 class="mb-1 fw-bold">{{ params.user.first_name }} {{ params.user.last_name }}</h5>
+        <div class="text-muted small mb-2"><span class="icon-mbri-user"></span> {{ params.user.username }}</div>
+
+        <div class="d-flex flex-wrap justify-content-center gap-1 mb-3">
+          {% if params.user.is_superuser %}
+            <span class="badge bg-danger bg-opacity-75">Суперпользователь</span>
+          {% endif %}
+          {% if params.user.is_staff %}
+            <span class="badge bg-secondary bg-opacity-75">Администратор</span>
+          {% endif %}
+          {% if params.user.profiles.eco %}
+            <span class="badge bg-primary bg-opacity-75">ЕЦО</span>
+          {% endif %}
+          {% if params.user.profiles.price_car_new_director %}
+            <span class="badge bg-success bg-opacity-75">Директор (КП)</span>
+          {% endif %}
+        </div>
+
+        <hr class="my-3">
+
+        <div class="text-start small">
+          <div class="mb-2">
+            <div class="metric-card-label-portal">Email</div>
+            <div class="fw-semibold text-break">{{ params.user.email|default:"—" }}</div>
+          </div>
+          <div class="mb-2">
+            <div class="metric-card-label-portal">Дата регистрации</div>
+            <div>{{ params.user.date_joined|date:"d.m.Y H:i" }}</div>
+          </div>
+          {% if params.user.last_login %}
+          <div class="mb-2">
+            <div class="metric-card-label-portal">Последний вход</div>
+            <div>{{ params.user.last_login|date:"d.m.Y H:i" }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <button type="button" class="btn-calculate-secondary-sm w-100 mt-2" data-bs-toggle="modal" data-bs-target="#modalPhoto">
+          <span class="icon-mbri-photo"></span> Изменить фото
+        </button>
+      </div>
+    </div>
+
+    <!-- Правая колонка: форма редактирования -->
+    <div class="col-12 col-lg-8 col-xl-9">
+      <div class="portal-panel">
+        <form id="update_info" action="" method="POST">
+          {% csrf_token %}
+
+          <h5 class="mb-3 padding-title"><span class="icon-mbri-edit"></span> Личные данные</h5>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted mb-1" for="name">ФИО</label>
+              <input type="text" class="form-control bg-light" id="name" name="name"
+                     value="{{ params.user.first_name }} {{ params.user.last_name }}" readonly>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted mb-1" for="email">Email</label>
+              <input type="text" class="form-control bg-light" id="email" name="email"
+                     value="{{ params.user.email }}" readonly>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted mb-1" for="phone">Контактный номер телефона</label>
+              <input type="tel" class="form-control" id="phone" name="phone"
+                     placeholder="+7 (___) ___-__-__" value="{{ params.user.profiles.phone|default:'' }}" autocomplete="tel">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small text-muted mb-1" for="birth_date">Дата рождения</label>
+              <input type="date" class="form-control" id="birth_date" name="birth_date"
+                     value="{{ params.user.profiles.birth_date|date:'Y-m-d' }}" autocomplete="bday">
+            </div>
+          </div>
+
+          {% if params.user.profiles.eco or params.user.profiles.eco_visible %}
+            <hr class="my-4">
+            <h5 class="mb-3 padding-title"><span class="icon-mbri-bell"></span> Оповещения ЕЦО</h5>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="eco_toast" name="eco_toast"
+                     {% if params.user.profiles.eco_toast %}checked{% endif %}>
+              <label class="form-check-label" for="eco_toast">Всплывающие уведомления в интерфейсе</label>
+            </div>
+          {% endif %}
+
+          {% if params.user.profiles.price_car_new_director or params.user.profiles.price_car_new_all %}
+            <hr class="my-4">
+            <h5 class="mb-3 padding-title"><span class="icon-mbri-paper-plane"></span> Telegram — согласование коммерческих предложений</h5>
+
+            <div class="alert alert-light border small mb-3">
+              <div class="fw-semibold mb-2"><span class="icon-mbri-info"></span> Как привязать бота:</div>
+              <ol class="mb-2 ps-3">
+                <li class="mb-1">
+                  Откройте бота
+                  {% if params.telegram_bot_url %}
+                    <a href="{{ params.telegram_bot_url }}" target="_blank" rel="noopener" class="fw-semibold">@{{ params.telegram_bot_username }}</a>
+                  {% else %}
+                    (имя бота уточните у администратора)
+                  {% endif %}
+                  и нажмите <strong>Start</strong>.
+                </li>
+                <li class="mb-1">
+                  Узнайте свой Id: отправьте любое сообщение боту <a href="https://t.me/userinfobot" target="_blank" rel="noopener" class="fw-semibold">@userinfobot</a> — в ответе скопируйте числовое поле <strong>Id</strong>.
+                </li>
+                <li>
+                  Вставьте ваш Id в поле ниже и сохраните форму.
+                </li>
+              </ol>
+              <div class="text-muted">
+                После привязки запросы на согласование КП будут приходить прямо в Telegram с интерактивными кнопками решения.
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small text-muted mb-1" for="telegram_chat_id">Telegram chat ID</label>
+                <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id"
+                       placeholder="Например: 123456789" value="{{ params.user.profiles.telegram_chat_id|default:'' }}" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="mb-2 fw-semibold small text-muted">Типы уведомлений в Telegram-бот:</div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_pending" name="telegram_notify_pending"
+                     {% if params.user.profiles.telegram_notify_pending %}checked{% endif %}>
+              <label class="form-check-label" for="telegram_notify_pending">Требуется согласование (с кнопками действия в боте)</label>
+            </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_auto_approved" name="telegram_notify_auto_approved"
+                     {% if params.user.profiles.telegram_notify_auto_approved %}checked{% endif %}>
+              <label class="form-check-label" for="telegram_notify_auto_approved">Автоматически согласованные КП</label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_results" name="telegram_notify_results"
+                     {% if params.user.profiles.telegram_notify_results %}checked{% endif %}>
+              <label class="form-check-label" for="telegram_notify_results">Результаты согласования (согласовано / отказ)</label>
+            </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <a class="btn-calculate-secondary-sm" href="/"><span class="icon-mbri-close"></span> Отмена</a>
+            <button class="btn-calculate-sm" type="submit" id="update_info" name="update_info">
+              <span class="icon-mbri-success"></span> Сохранить изменения
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно загрузки фото -->
+<div class="modal fade" id="modalPhoto" tabindex="-1" aria-labelledby="modalPhotoLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-photo"> </span> Изменение фотографии профиля </h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-    
-      <div class="modal-body">
-        <form id="update_logo" action="" method="POST" enctype="multipart/form-data"> 
-          {% csrf_token %}				
-          <div class="mb-3">
-            <input type="file" class="form-control" name="file" id="file" accept="image/*">
-          </div>
-              
-          <div class="d-grid gap-2">
-            <button class="btn btn-block btn-outline-success" id="update_logo" name="update_logo" type="submit"><span class="icon-mbri-success"></span> Сохранить </button>
-          </div>
-        
-        </form>
-
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalPhotoLabel"><span class="icon-mbri-photo"></span> Изменение фотографии профиля</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-
-    </div>
-  </div>
-</div>
-
-
-<div class="row g-1">
-
-  
-  <div class="row g-1">
-    
-    <div class="col-sm-auto">
-      <div class="fixOverlayDiv">
-        <div class="wrapper1 exmp3">
-          <img class="img-fluid " src="{{params.user.profiles.image_logo}}">
-        </div>
-        <div class="OverlayText" data-bs-toggle="modal" data-bs-target="#exampleModal"><span class="icon-mbri-edit2"> </span></div>
-      </div>
-    </div>
-
-    <div class="col-sm">
-      <form id="update_info" action="" method="POST" enctype=""> 
+      <form id="update_logo" action="" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="name" name="name" placeholder="" readonly value="{{params.user.first_name}} {{params.user.last_name}}" autocomplete="off">
-          <label for="floatingInput">ФИО</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="email" name="email" placeholder="" readonly value="{{params.user.email}}" autocomplete="off">
-          <label for="floatingInput">Email</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="text" class="form-control" id="phone" name="phone" placeholder="" value="{{params.user.profiles.phone}}" autocomplete="off">
-          <label for="floatingInput">Контактный номер</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="date" class="form-control" id="birth_date" name="birth_date" placeholder="" value="{{params.user.profiles.birth_date|date:'Y-m-d'}}" autocomplete="off">
-          <label for="floatingInput">Дата рождения</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="datetime" class="form-control" id="date_joined" name="date_joined" placeholder="" readonly value="{{params.user.date_joined|date:'d.m.Y H:i'}}" autocomplete="off">
-          <label for="floatingInput">Дата регистрации</label>
-        </div>
-        
-        {% if params.user.profiles.eco or params.user.profiles.eco_visible %}
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="eco_toast" name="eco_toast" {% if params.user.profiles.eco_toast %} checked {% endif %}>
-            <label class="form-check-label" for="eco_toast">Всплывающие сообщения</label>
-          </div>
-        {% endif %}
-
-        {% if params.user.profiles.price_car_new_director or params.user.profiles.price_car_new_all %}
-          <hr>
-          <h5 class="mb-3">Telegram — согласование КП</h5>
-          <div class="alert alert-light border small">
-            <ol class="mb-2 ps-3">
-              <li>Откройте бота{% if params.telegram_bot_url %} <a href="{{ params.telegram_bot_url }}" target="_blank" rel="noopener">{{ params.telegram_bot_username }}</a>{% else %} (username бота уточните у администратора){% endif %} и нажмите <strong>Start</strong>.</li>
-              <li>Узнайте свой chat ID: напишите боту <a href="https://t.me/userinfobot" target="_blank" rel="noopener">@userinfobot</a> — в ответе поле <strong>Id</strong>.</li>
-              <li>Вставьте Id ниже и сохраните профиль.</li>
-            </ol>
-            После привязки КП приходят в Telegram: жмёте кнопку → пишете комментарий в чат бота → согласование выполняется без открытия портала.
-          </div>
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="telegram_chat_id" name="telegram_chat_id" placeholder="123456789" value="{{ params.user.profiles.telegram_chat_id }}" autocomplete="off">
-            <label for="telegram_chat_id">Telegram chat ID</label>
-          </div>
-          <div class="mb-2 fw-semibold">Какие уведомления присылать в бот</div>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_pending" name="telegram_notify_pending" {% if params.user.profiles.telegram_notify_pending %}checked{% endif %}>
-            <label class="form-check-label" for="telegram_notify_pending">Требуется согласование (кнопки в боте)</label>
-          </div>
-          <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_auto_approved" name="telegram_notify_auto_approved" {% if params.user.profiles.telegram_notify_auto_approved %}checked{% endif %}>
-            <label class="form-check-label" for="telegram_notify_auto_approved">Автоматически согласованные КП</label>
-          </div>
-          <div class="form-check form-switch mb-3">
-            <input class="form-check-input" type="checkbox" role="switch" id="telegram_notify_results" name="telegram_notify_results" {% if params.user.profiles.telegram_notify_results %}checked{% endif %}>
-            <label class="form-check-label" for="telegram_notify_results">Результаты согласования (согласовано / отказ)</label>
-          </div>
-        {% endif %}
-
-        <div class="row">
-          <div class="col w-100 text-end">
-            <button class="btn btn-block btn-outline-success" type="submit" id="update_info" name="update_info"><span class="icon-mbri-success"></span> Сохранить </button>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="file">Выберите файл изображения</label>
+            <input type="file" class="form-control" name="file" id="file" accept="image/*" required>
+            <div class="form-text">Поддерживаются форматы JPG, PNG, WEBP.</div>
           </div>
         </div>
-        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn-calculate-sm" id="update_logo" name="update_logo">
+            <span class="icon-mbri-success"></span> Загрузить фото
+          </button>
+        </div>
       </form>
     </div>
-
   </div>
-
-  <hr>
-
-  
-
 </div>
-
-
 {% endblock %}
-
