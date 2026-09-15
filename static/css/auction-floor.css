@@ -90,9 +90,9 @@ body:has(.auction-floor) #content br {
 
     /* Animation & Fonts */
     --af-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --af-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --af-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
-    --af-stamp: "Oswald", "IBM Plex Sans", sans-serif;
+    --af-ui: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --af-mono: "Open Sans", ui-monospace, SFMono-Regular, monospace;
+    --af-stamp: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
     font-family: var(--af-ui);
     color: var(--af-ink-body);
@@ -1442,6 +1442,14 @@ body:has(.auction-floor) #content br {
     gap: 0.18rem;
 }
 
+.af-price-col--finished .af-price-entry:first-child {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 0.35rem 0.6rem;
+    box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08);
+}
+
 .af-price-entry--start {
     padding-top: 0.35rem;
     border-top: 1px dashed #e2e8f0;
@@ -1456,7 +1464,22 @@ body:has(.auction-floor) #content br {
 }
 
 .af-price-lbl--win {
-    color: var(--af-blue-primary);
+    color: #15803d;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.af-price-lbl--win::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25), 0 0 6px rgba(22, 163, 74, 0.6);
+    flex-shrink: 0;
 }
 
 .af-price {
@@ -1468,8 +1491,9 @@ body:has(.auction-floor) #content br {
 }
 
 .af-price--win {
-    color: #0f172a;
-    font-size: 1.05rem;
+    color: #15803d;
+    font-size: 1.08rem;
+    font-weight: 700;
 }
 
 .af-price-delta {
