@@ -1245,11 +1245,29 @@ body:has(.auction-floor) #content br {
     font-size: 0.7rem;
     font-family: var(--af-mono);
     padding: 0.1rem 0.35rem;
-    background: var(--af-surface-ice);
-    border: 1px solid var(--af-blue-border);
+    background: #f8fafc;
+    border: 1px solid var(--af-border);
     border-radius: 4px;
-    color: var(--af-blue-primary);
+    color: var(--af-ink-body);
     font-weight: 700;
+}
+
+.af-price-delta.is-positive {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #15803d;
+}
+
+.af-price-delta.is-negative {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.af-price-delta.is-zero {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #64748b;
 }
 
 /* Delta Pod */
@@ -1264,14 +1282,57 @@ body:has(.auction-floor) #content br {
     border: 1px solid var(--af-border);
     border-radius: 8px;
     box-shadow: var(--af-shadow-sm);
+    transition: all 0.2s ease;
 }
 
+/* Positive (Green) */
 .af-delta-pod.is-positive {
-    background: #f0f7ff;
-    border-color: var(--af-blue-border);
+    background: #f0fdf4;
+    border-color: #86efac;
 }
 
-.af-delta-pod.is-negative,
+.af-delta-pod.is-positive .af-delta-pod__val {
+    color: #15803d;
+}
+
+.af-delta-pod.is-positive .af-delta-pod__pct {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #15803d;
+}
+
+.af-delta-pod.is-positive .af-delta-pod__tag {
+    color: #16a34a;
+}
+
+.af-delta-pod.is-positive .af-delta-pod__icon {
+    stroke: #16a34a;
+}
+
+/* Negative (Red) */
+.af-delta-pod.is-negative {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+
+.af-delta-pod.is-negative .af-delta-pod__val {
+    color: #dc2626;
+}
+
+.af-delta-pod.is-negative .af-delta-pod__pct {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.af-delta-pod.is-negative .af-delta-pod__tag {
+    color: #dc2626;
+}
+
+.af-delta-pod.is-negative .af-delta-pod__icon {
+    stroke: #dc2626;
+}
+
 .af-delta-pod.is-zero,
 .af-delta-pod.is-not-played {
     background: #f9fafb;
@@ -1323,11 +1384,6 @@ body:has(.auction-floor) #content br {
     color: var(--af-ink-body);
 }
 
-.af-delta-pod.is-positive .af-delta-pod__pct {
-    border-color: var(--af-blue-border);
-    color: var(--af-blue-primary);
-}
-
 .af-delta-pod__meta {
     display: flex;
     align-items: center;
@@ -1339,10 +1395,6 @@ body:has(.auction-floor) #content br {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--af-ink-caption);
-}
-
-.af-delta-pod.is-positive .af-delta-pod__tag {
-    color: var(--af-blue-primary);
 }
 
 .af-price-start {

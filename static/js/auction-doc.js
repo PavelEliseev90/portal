@@ -9,6 +9,7 @@ var scroll_data = true;
 
 $(document).ready(function() {
     initTabs();
+    initStatusToggles();
     initCopyButtons();
     initMainPhotoSelection();
     initLightbox();
@@ -248,6 +249,50 @@ function initTabs() {
 
         $modal.find('.ad-tab-pane').removeClass('active');
         $modal.find('#' + targetId).addClass('active');
+    });
+}
+
+/* ==========================================================================
+   PUBLICATION READINESS TOGGLE (RED / GREEN STATE DYNAMICS)
+   ========================================================================== */
+function initStatusToggles() {
+    $(document).on('change', '.ad-success-radio, input[name$="_success"]', function() {
+        var val = $(this).val();
+        var targetBanner = $(this).data('target-banner');
+        var banner = targetBanner ? $('#' + targetBanner) : $(this).closest('.ad-confirm-banner');
+        if (!banner.length) banner = $(this).closest('.ad-confirm-banner');
+        if (!banner.length) return;
+
+        var iconWrap = banner.find('.ad-confirm-banner__icon');
+        var badge = banner.find('.ad-confirm-status-badge');
+        var desc = banner.find('.ad-confirm-banner__desc');
+        var carSlug = $(this).data('car-slug');
+
+        if (val === 'true' || val === true) {
+            banner.removeClass('is-draft').addClass('is-ready');
+            iconWrap.html('<span class="icon-mbri-success text-success"></span>');
+            badge.text('Готов к публикации');
+            desc.text('Данные по автомобилю проверены, информация достоверна и готова к публикации');
+
+            if (carSlug) {
+                var pill = $('#car_status_pill_' + carSlug);
+                if (pill.length) {
+                    pill.removeClass('is-rejected is-draft').addClass('is-finished').html('<span class="ad-status-dot"></span> Данные проверены');
+                }
+            }
+        } else {
+            banner.removeClass('is-ready').addClass('is-draft');
+            iconWrap.html('<span class="icon-mbri-alert text-danger"></span>');
+            badge.text('Черновик (не готово)');
+            desc.text('Автомобиль сохранён как черновик. Для участия в аукционе проверьте данные и подтвердите готовность');
+
+            if (carSlug) {
+                var pill = $('#car_status_pill_' + carSlug);
+                if (pill.length) {
+                    pill.removeClass('is-finished').addClass('is-rejected').html('<span class="ad-status-dot"></span> Проверьте данные');
+                }
+            }
+        }
     });
 }
 
@@ -760,8 +805,8 @@ function subbmit_car(slug) {
                     </div>
 
                     <div class="ad-car-links">
-                        <span class="ad-status-pill is-draft">
-                            <span class="ad-status-dot"></span> Требует сохранения
+                        <span class="ad-status-pill is-rejected" id="car_status_pill_${id}">
+                            <span class="ad-status-dot"></span> Проверьте данные
                         </span>
                         <a class="ad-car-ext-btn" href="/cars/${id}/" target="_blank" rel="noopener">
                             <span class="icon-mbri-preview"></span> Карточка авто
@@ -821,95 +866,123 @@ function subbmit_car(slug) {
         var modal_html = `
         <div class="modal fade" id="cars_list_data_slug_${id}_modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal_title_${id}" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <div class="d-flex flex-column gap-1">
-                            <div class="ad-modal-kicker">
-                                <span class="icon-truck me-1"></span> КорсАвто • Студия подготовки автомобиля
+                <div class="modal-content ad-modal-content">
+                    <div class="modal-header ad-modal-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="ad-modal-icon-badge">
+                                <span class="icon-truck"></span>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <h4 class="ad-modal-car-title" id="modal_title_${id}">
-                                    ${mark} ${model}
-                                </h4>
-                                <span class="ad-car-chip"><span class="icon-mbri-calendar me-1"></span>${obj.year} г.в.</span>
-                                <span class="ad-car-chip ad-car-chip--mono">
-                                    VIN: ${obj.vin || '-'}
-                                    ${obj.vin ? `
-                                        <button type="button" class="ad-copy-btn ms-1" data-copy="${obj.vin}" title="Скопировать VIN">
-                                            <span class="icon-mbri-file"></span>
-                                        </button>
-                                    ` : ''}
-                                </span>
+                            <div>
+                                <div class="ad-modal-kicker">
+                                    <span class="icon-mbri-setting2 me-1"></span> КорсАвто • Студия подготовки автомобиля
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                    <h4 class="ad-modal-car-title mb-0" id="modal_title_${id}">
+                                        ${mark} ${model}
+                                    </h4>
+                                    <span class="ad-car-chip"><span class="icon-mbri-calendar me-1"></span>${obj.year} г.в.</span>
+                                    <span class="ad-car-chip ad-car-chip--mono">
+                                        VIN: ${obj.vin || '-'}
+                                        ${obj.vin ? `
+                                            <button type="button" class="ad-copy-btn ms-1" data-copy="${obj.vin}" title="Скопировать VIN">
+                                                <span class="icon-mbri-code"></span>
+                                            </button>
+                                        ` : ''}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                     </div>
-                    <div class="modal-body">
-                        <!-- TABS NAVIGATION WITH HORIZONTAL SCROLL -->
-                        <div class="ad-tabs-nav-wrap mb-4">
-                            <div class="ad-tabs-nav">
-                                <button type="button" class="ad-tab-btn active" data-target="tab_info_${id}">
-                                    <span class="icon-mbri-info"></span> Сводка и комментарии
-                                </button>
-                                <button type="button" class="ad-tab-btn" data-target="tab_gallery_${id}">
-                                    <span class="icon-mbri-preview"></span> Фотогалерея лота
-                                </button>
-                                <button type="button" class="ad-tab-btn" data-target="tab_diag_${id}">
-                                    <span class="icon-mbri-setting2"></span> Диагностика и отчёты
-                                </button>
-                            </div>
+                    <div class="modal-body ad-modal-body p-3 p-md-4">
+                        <!-- TABS NAVIGATION WITH PILLS -->
+                        <div class="ad-modal-tabs mb-4" role="tablist">
+                            <button type="button" class="ad-tab-btn ad-modal-tab-btn active" data-target="tab_info_${id}" role="tab">
+                                <span class="icon-mbri-info me-1"></span>
+                                <span>Сводка и комментарии</span>
+                            </button>
+                            <button type="button" class="ad-tab-btn ad-modal-tab-btn" data-target="tab_gallery_${id}" role="tab">
+                                <span class="icon-mbri-camera me-1"></span>
+                                <span>Фотогалерея лота</span>
+                            </button>
+                            <button type="button" class="ad-tab-btn ad-modal-tab-btn" data-target="tab_diag_${id}" role="tab">
+                                <span class="icon-mbri-setting2 me-1"></span>
+                                <span>Диагностика и отчёты</span>
+                            </button>
                         </div>
 
                         <!-- TAB 1: INFO & COMMENTS -->
-                        <div class="ad-tab-pane active" id="tab_info_${id}">
-                            <div class="ad-modal-info-grid">
+                        <div class="ad-tab-pane active" id="tab_info_${id}" role="tabpanel">
+                            <div class="ad-modal-section-title mb-2">
+                                <span class="icon-mbri-bulleted-list text-primary me-1"></span> Основные параметры
+                            </div>
+                            <div class="ad-modal-info-grid mb-3">
                                 <div class="ad-modal-info-card">
-                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-speed me-1"></span> Пробег</div>
-                                    <div class="ad-modal-info-card__value">${car_run} км</div>
+                                    <div class="ad-modal-info-card__label">Пробег</div>
+                                    <div class="ad-modal-info-card__value font-monospace">${car_run} км</div>
                                 </div>
                                 <div class="ad-modal-info-card">
-                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-calendar me-1"></span> Дней на складе</div>
-                                    <div class="ad-modal-info-card__value">${obj.days_in_stok || 0} д.</div>
+                                    <div class="ad-modal-info-card__label">Дней на складе</div>
+                                    <div class="ad-modal-info-card__value font-monospace">${obj.days_in_stok || 0} д.</div>
                                 </div>
                                 <div class="ad-modal-info-card">
-                                    <div class="ad-modal-info-card__label"><span class="icon-truck me-1"></span> Статус автомобиля</div>
+                                    <div class="ad-modal-info-card__label">Статус автомобиля</div>
                                     <div class="ad-modal-info-card__value">${obj.status_name || '-'}</div>
-                                </div>
-                                <div class="ad-modal-info-card">
-                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-cash me-1"></span> Себестоимость</div>
-                                    <div class="ad-modal-info-card__value">${car_cost} ₽</div>
-                                </div>
-                                <div class="ad-modal-info-card">
-                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-delivery me-1"></span> Расходы</div>
-                                    <div class="ad-modal-info-card__value">${car_outlay} ₽</div>
-                                </div>
-                                <div class="ad-modal-info-card ad-modal-info-card--sale">
-                                    <div class="ad-modal-info-card__label"><span class="icon-mbri-cart-full me-1"></span> Базовая цена продажи</div>
-                                    <div class="ad-modal-info-card__value">${car_price} ₽</div>
                                 </div>
                             </div>
 
+                            <div class="ad-modal-section-title mb-2">
+                                <span class="icon-mbri-cash text-primary me-1"></span> Финансовые показатели
+                            </div>
+                            <div class="ad-modal-finance-grid mb-4">
+                                <div class="ad-modal-finance-card ad-modal-finance-card--sale">
+                                    <div class="ad-modal-finance-card__label">Базовая цена продажи</div>
+                                    <div class="ad-modal-finance-card__value font-monospace">${car_price} ₽</div>
+                                </div>
+                                <div class="ad-modal-finance-card">
+                                    <div class="ad-modal-finance-card__label">Себестоимость</div>
+                                    <div class="ad-modal-finance-card__value font-monospace">${car_cost} ₽</div>
+                                </div>
+                                <div class="ad-modal-finance-card">
+                                    <div class="ad-modal-finance-card__label">Расходы</div>
+                                    <div class="ad-modal-finance-card__value font-monospace">${car_outlay} ₽</div>
+                                </div>
+                            </div>
+
+                            <div class="ad-modal-section-title mb-2">
+                                <span class="icon-mbri-chat text-primary me-1"></span> Комментарии и заметки
+                            </div>
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label mb-1">
-                                        <span><span class="icon-mbri-setting2 text-warning me-1"></span> Комментарий для отдела подготовки</span>
-                                    </label>
-                                    <textarea class="form-control" name="cars_list_data_${id}_podgotovka" rows="5" placeholder="Укажите замечания по подготовке авто...">${obj.description_podgotovka || ''}</textarea>
+                                    <div class="ad-modal-note-card h-100">
+                                        <div class="ad-modal-note-card__header">
+                                            <span class="icon-mbri-setting2 text-primary me-2"></span>
+                                            <span>Комментарий для отдела подготовки</span>
+                                        </div>
+                                        <div class="ad-modal-note-card__body">
+                                            <textarea class="form-control ad-modal-textarea" name="cars_list_data_${id}_podgotovka" rows="5" placeholder="Укажите замечания по подготовке авто...">${obj.description_podgotovka || ''}</textarea>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label mb-1">
-                                        <span><span class="icon-mbri-cart-full text-warning me-1"></span> Комментарий для отдела продаж</span>
-                                    </label>
-                                    <textarea class="form-control" name="cars_list_data_${id}_op" rows="5" placeholder="Укажите информацию для менеджеров ОП...">${obj.description_op || ''}</textarea>
+                                    <div class="ad-modal-note-card h-100">
+                                        <div class="ad-modal-note-card__header">
+                                            <span class="icon-mbri-cart-full text-primary me-2"></span>
+                                            <span>Комментарий для отдела продаж</span>
+                                        </div>
+                                        <div class="ad-modal-note-card__body">
+                                            <textarea class="form-control ad-modal-textarea" name="cars_list_data_${id}_op" rows="5" placeholder="Укажите информацию для менеджеров ОП...">${obj.description_op || ''}</textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- TAB 2: GALLERY -->
-                        <div class="ad-tab-pane" id="tab_gallery_${id}">
+                        <div class="ad-tab-pane" id="tab_gallery_${id}" role="tabpanel">
                             <div class="ad-modal-stub">
                                 <div class="ad-modal-stub__icon">
-                                    <span class="icon-mbri-preview"></span>
+                                    <span class="icon-mbri-camera"></span>
                                 </div>
                                 <div class="ad-modal-stub__title">Медиагалерея формируется</div>
                                 <div class="ad-modal-stub__desc">
@@ -919,25 +992,90 @@ function subbmit_car(slug) {
                         </div>
 
                         <!-- TAB 3: DIAGNOSTICS -->
-                        <div class="ad-tab-pane" id="tab_diag_${id}">
-                            <div class="ad-modal-stub">
-                                <div class="ad-modal-stub__icon">
-                                    <span class="icon-mbri-setting2"></span>
+                        <div class="ad-tab-pane" id="tab_diag_${id}" role="tabpanel">
+                            <div class="row g-3 mb-4">
+                                <div class="col-12 col-md-6">
+                                    <div class="ad-modal-note-card h-100">
+                                        <div class="ad-modal-note-card__header">
+                                            <span class="icon-mbri-setting2 text-primary me-2"></span>
+                                            <span>Работы по автомобилю</span>
+                                        </div>
+                                        <div class="ad-modal-note-card__body">
+                                            <textarea class="form-control ad-modal-textarea" name="cars_list_data_${id}_works" rows="5" placeholder="Перечень выполненных или требуемых работ...">${obj.work || ''}</textarea>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="ad-modal-stub__title">Диагностические карты и акты осмотра</div>
-                                <div class="ad-modal-stub__desc">
-                                    Синхронизация сервисных карт, отчётов проверок и Autoteka будет выполнена автоматически после сохранения лота.
+                                <div class="col-12 col-md-6">
+                                    <div class="ad-modal-note-card h-100">
+                                        <div class="ad-modal-note-card__header">
+                                            <span class="icon-mbri-features text-primary me-2"></span>
+                                            <span>Лист диагностики</span>
+                                        </div>
+                                        <div class="ad-modal-note-card__body">
+                                            <textarea class="form-control ad-modal-textarea" name="cars_list_data_${id}_diagnostika" rows="5" placeholder="Результаты и замечания диагностики...">${obj.int_ocenka_diagnostika || ''}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AUTOTEKA TOGGLE -->
+                            <div class="ad-feature-card mb-3">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="ad-feature-card__icon">
+                                            <span class="icon-mbri-link text-primary"></span>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">Отчет «Автотека»</h6>
+                                            <div class="text-muted small">Разрешить участникам торгов просмотр отчета Автотеки по автомобилю</div>
+                                        </div>
+                                    </div>
+                                    <div class="ad-segmented-toggle" role="group">
+                                        <input type="radio" class="btn-check" name="cars_list_data_${id}_autoteka_prev" id="cars_list_data_${id}_vbtn-radio1" autocomplete="off" checked value="false">
+                                        <label class="btn btn-outline-secondary" for="cars_list_data_${id}_vbtn-radio1">Не показывать</label>
+                                        <input type="radio" class="btn-check" name="cars_list_data_${id}_autoteka_prev" id="cars_list_data_${id}_vbtn-radio2" autocomplete="off" value="true">
+                                        <label class="btn btn-outline-primary" for="cars_list_data_${id}_vbtn-radio2">Показывать</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CONFIRMATION BOX -->
+                            <div class="ad-confirm-banner is-draft" id="ad_confirm_banner_${id}">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="ad-confirm-banner__icon">
+                                            <span class="icon-mbri-alert text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <h6 class="fw-bold mb-0">Готовность к публикации в лоте</h6>
+                                                <span class="ad-confirm-status-badge">Черновик (не готово)</span>
+                                            </div>
+                                            <div class="ad-confirm-banner__desc">Автомобиль сохранён как черновик. Для участия в аукционе проверьте данные и подтвердите готовность</div>
+                                        </div>
+                                    </div>
+                                    <div class="ad-segmented-toggle ad-segmented-toggle--status" role="group">
+                                        <input type="radio" class="btn-check ad-success-radio" name="cars_list_data_${id}_success" id="cars_list_data_${id}_success_radio1" autocomplete="off" checked value="false" data-target-banner="ad_confirm_banner_${id}" data-car-slug="${id}">
+                                        <label class="btn btn-outline-danger" for="cars_list_data_${id}_success_radio1">Черновик</label>
+                                        <input type="radio" class="btn-check ad-success-radio" name="cars_list_data_${id}_success" id="cars_list_data_${id}_success_radio2" autocomplete="off" value="true" data-target-banner="ad_confirm_banner_${id}" data-car-slug="${id}">
+                                        <label class="btn btn-outline-success" for="cars_list_data_${id}_success_radio2">✓ Да, проверено</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
-                            Закрыть
-                        </button>
-                        <button type="button" class="ad-btn ad-btn--primary ms-auto" data-bs-dismiss="modal">
-                            <span class="icon-mbri-success me-1"></span> Применить
-                        </button>
+                    <div class="modal-footer ad-modal-footer d-flex align-items-center justify-content-between">
+                        <div class="text-muted small d-none d-md-flex align-items-center gap-1">
+                            <span class="icon-mbri-setting2 text-primary"></span> Студия подготовки автомобиля
+                        </div>
+                        <div class="d-flex align-items-center gap-2 ms-auto">
+                            <button type="button" class="ad-btn ad-btn--outline" data-bs-dismiss="modal">
+                                <span class="icon-mbri-close"></span> Закрыть
+                            </button>
+                            <button type="button" class="ad-btn ad-btn--primary ms-auto" data-bs-dismiss="modal">
+                                <span class="icon-mbri-success me-1"></span> Применить
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
