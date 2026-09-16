@@ -943,7 +943,31 @@ def apply_post_to_reception(
 
     if save:
         reception.save()
+        sync_reception_staff(reception)
     return reception
+
+
+def sync_reception_staff(reception: RegInteractivOcenkaReception) -> None:
+    """Синхронизирует оценщика из приёма в оценку (staff_rlk, estimation.staff) и TradeInFunnel."""
+    if not reception or not reception.staff_id or not getattr(reception, 'interactiv_rlk_id', None):
+        return
+    try:
+        interactiv_rlk = reception.interactiv_rlk
+        staff = reception.staff
+        if interactiv_rlk and staff:
+            if interactiv_rlk.staff_rlk_id != staff.pk:
+                interactiv_rlk.staff_rlk = staff
+                interactiv_rlk.save(update_fields=['staff_rlk'])
+            if interactiv_rlk.estimation_id and interactiv_rlk.estimation.staff_id != staff.pk:
+                interactiv_rlk.estimation.staff = staff
+                interactiv_rlk.estimation.save(update_fields=['staff'])
+            try:
+                from register.models import update_trade_in_funnel
+                update_trade_in_funnel(interactiv_rlk)
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 
 def enrich_reception_export(reception_data: dict, reception: RegInteractivOcenkaReception) -> dict:

@@ -68,7 +68,7 @@ urlpatterns = [
     path('online/',     include('online.urls')),
     
     #подтверждение записи на сервис
-    path('r_s/',        include('online.urls')),
+    path('r_s/',        include(('online.urls', 'online'), namespace='r_s')),
 
     #recognitions
     path('recognitions/', include('recognition.urls')),
@@ -78,7 +78,7 @@ urlpatterns = [
 
     #автосалон 
     path('cars/',            include('avtosalon.urls')),
-    path('catalog/',         include('avtosalon.urls')),
+    path('catalog/',         include(('avtosalon.urls', 'avtosalon'), namespace='catalog')),
 
     #cvc
     path('profiles_edit/',  include('profiles.urls')),
@@ -87,9 +87,9 @@ urlpatterns = [
     path('telephony/',      include('telephony.urls')),
 
     path('eco/',                include('eco.urls')),
-    path('eco_monitors/',       include('eco.urls')),
+    path('eco_monitors/',       include(('eco.urls', 'eco'), namespace='eco_monitors')),
 
-    path('ecot/',               include('eco.urls')),
+    path('ecot/',               include(('eco.urls', 'eco'), namespace='ecot')),
 
     path('estimations/',        include('estimations.urls')),
 

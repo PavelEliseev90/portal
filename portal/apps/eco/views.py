@@ -5371,6 +5371,7 @@ def doc(request, id):
                     reception_allowed as reception_is_allowed,
                     reception_fields_editable as reception_is_fields_editable,
                     save_reception_files_from_request,
+                    sync_reception_staff,
                     validate_reception_client,
                 )
                 if reception_is_allowed(interactiv_rlk):
@@ -5388,6 +5389,7 @@ def doc(request, id):
                                 request.session['reception_form_draft'] = request.POST.dict()
                             else:
                                 reception_obj.save()
+                                sync_reception_staff(reception_obj)
                                 save_reception_files_from_request(
                                     reg_interactiv_ocenka,
                                     request.FILES,

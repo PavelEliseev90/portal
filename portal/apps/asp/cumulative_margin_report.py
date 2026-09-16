@@ -86,6 +86,10 @@ DETAIL_VALUES = (
     'lo__kolesa2_reception', 'agreement__lo__kolesa2_reception',
     'lo__dataTime', 'agreement__lo__dataTime',
     'lo__staff__name', 'agreement__lo__staff__name',
+    'lo__rlk__reginteractivocenkarlk__page_reception__staff__name',
+    'agreement__lo__rlk__reginteractivocenkarlk__page_reception__staff__name',
+    'rlk__reginteractivocenkarlk__page_reception__staff__name',
+    'agreement__rlk__reginteractivocenkarlk__page_reception__staff__name',
     'lo__type_reception__name', 'agreement__lo__type_reception__name',
     'lo__type_reception__is_vtd', 'agreement__lo__type_reception__is_vtd',
     'lo__vin_new', 'agreement__lo__vin_new',
@@ -165,7 +169,13 @@ def _shipment_row_from_values(row: dict) -> dict[str, Any]:
         ),
         'reception_date': row.get('lo__dataTime') or row.get('agreement__lo__dataTime'),
         'appraiser_name': (
-            row.get('lo__staff__name') or row.get('agreement__lo__staff__name') or ''
+            row.get('lo__rlk__reginteractivocenkarlk__page_reception__staff__name')
+            or row.get('agreement__lo__rlk__reginteractivocenkarlk__page_reception__staff__name')
+            or row.get('rlk__reginteractivocenkarlk__page_reception__staff__name')
+            or row.get('agreement__rlk__reginteractivocenkarlk__page_reception__staff__name')
+            or row.get('lo__staff__name')
+            or row.get('agreement__lo__staff__name')
+            or ''
         ),
         'unit_source_name': (
             row.get('lo__rlk__unit_dc__name')

@@ -10,7 +10,7 @@
   {% elif col.key == 'reception_date' %}
   <td>
     {% if r.rlk_id and r.reception_date %}<a href="/eco/{{ r.rlk_id }}/" target="_blank" rel="noopener">{% endif %}
-    {% if r.reception_date %}{{ r.reception_date|date:"d.m.Y" }}{% else %}—{% endif %}
+    {% if r.reception_date %}{{ r.reception_date|date:"d.m.Y"|default:r.reception_date }}{% else %}—{% endif %}
     {% if r.rlk_id and r.reception_date %}</a>{% endif %}
   </td>
   {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
@@ -54,6 +54,12 @@
     </div>
   </td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
+  {% elif col.key == 'reception_date' %}
+  <td>
+    {% if r.rlk_id and r.reception_date %}<a href="/eco/{{ r.rlk_id }}/" target="_blank" rel="noopener">{% endif %}
+    {% if r.reception_date %}{{ r.reception_date|date:"d.m.Y"|default:r.reception_date }}{% else %}—{% endif %}
+    {% if r.rlk_id and r.reception_date %}</a>{% endif %}
+  </td>
   {% elif col.key == 'year' %}<td>{{ r.year }}</td>
   {% elif col.key == 'unit' %}<td>{{ r.unit_name }}</td>
   {% elif col.key == 'unit_source' %}<td>{{ r.unit_source_name|default:"—" }}</td>
