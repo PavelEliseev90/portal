@@ -96,7 +96,7 @@
 <script>
 window.aspTableColumns = {{ params.table_columns_json|safe }};
 window.aspReportKey = 'stock';
-window.aspRenderDetailRow = function(r, money, esc) {
+window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
   var cols = window.aspTableColumns || [];
   var html = '<td></td>';
   cols.forEach(function(col) {
@@ -104,8 +104,11 @@ window.aspRenderDetailRow = function(r, money, esc) {
     var val = '—';
     var title = esc((r.mark || '') + ' ' + (r.model || ''));
     var link = r.slug ? '<a href="/cars/' + esc(r.slug) + '/" target="_blank" rel="noopener">' + title + '</a>' : title;
+    var recDate = (fmtDate && r.reception_date) ? fmtDate(r.reception_date) : (r.reception_date || '—');
+    if (r.rlk_id && r.reception_date) recDate = '<a href="/eco/' + esc(r.rlk_id) + '/" target="_blank" rel="noopener">' + recDate + '</a>';
     if (col.key === 'car') val = '<div class="fw-semibold">' + link + '</div>';
     else if (col.key === 'vin') val = esc(r.vin);
+    else if (col.key === 'reception_date') val = recDate;
     else if (col.key === 'year') val = esc(r.year);
     else if (col.key === 'unit') val = esc(r.unit_name);
     else if (col.key === 'unit_source') val = esc(r.unit_source_name || '—');

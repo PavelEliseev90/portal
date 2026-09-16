@@ -10,7 +10,7 @@ COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
     'margin': 'v5',
-    'stock': 'v3',
+    'stock': 'v4',
     'accepted': 'v3',
 }
 
@@ -79,13 +79,14 @@ MARGIN_SORT_FIELDS = {
 
 # --- Склад ---
 STOCK_DEFAULT_COLUMNS = [
-    'car', 'vin', 'unit', 'unit_source', 'status', 'type_reception',
+    'car', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_reception',
     'group_price', 'stage_price', 'iznos',
     'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
 ]
 STOCK_COLUMN_DEFS = {
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
+    'reception_date': {'label': 'Дата приёма', 'sortable': True, 'sort_key': 'reception_date', 'num': False},
     'year': {'label': 'Год', 'sortable': True, 'sort_key': 'year', 'num': False},
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
@@ -107,6 +108,7 @@ STOCK_COLUMN_DEFS = {
 STOCK_SORT_FIELDS = {
     'car': 'mark',
     'vin': 'vin',
+    'reception_date': 'lo__dataTime',
     'year': 'year',
     'unit': 'unit__name',
     'unit_source': 'lo__rlk__unit_dc__name',
@@ -359,6 +361,7 @@ def cell_export_value(report_key: str, row: dict, key: str):
         mapping = {
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
             'vin': row.get('vin'),
+            'reception_date': row.get('reception_date'),
             'year': row.get('year'),
             'unit': row.get('unit_name'),
             'unit_source': row.get('unit_source_name'),
