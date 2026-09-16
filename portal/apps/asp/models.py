@@ -51,8 +51,8 @@ class ReportSavedFilter(models.Model):
         ordering = ['order', 'name', 'id']
         unique_together = [['user', 'report_key', 'name']]
         indexes = [
-            models.Index(fields=['report_key', 'user']),
-            models.Index(fields=['report_key', 'is_shared']),
+            models.Index(fields=['report_key', 'user'], name='asp_report__report__7c2a1d_idx'),
+            models.Index(fields=['report_key', 'is_shared'], name='asp_report__report__9e4b2f_idx'),
         ]
 
     def __str__(self):

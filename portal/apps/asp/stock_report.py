@@ -108,8 +108,16 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
         'group_price': row.get('group_price__name') or '',
         'iznos': bool(iznos) if iznos is not None else None,
         'has_iznos': iznos is not None,
-        'person_id': row.get('lo__staff_id') or 0,
-        'person_name': row.get('lo__staff__name') or 'Без оценщика',
+        'person_id': (
+            row.get('lo__rlk__reginteractivocenkarlk__page_reception__staff_id')
+            or row.get('lo__staff_id')
+            or 0
+        ),
+        'person_name': (
+            row.get('lo__rlk__reginteractivocenkarlk__page_reception__staff__name')
+            or row.get('lo__staff__name')
+            or 'Без оценщика'
+        ),
         'unit_source_name': row.get('lo__rlk__unit_dc__name') or '',
         'kolesa2_reception': bool(row.get('lo__kolesa2_reception')),
         'rlk_id': row.get('lo__rlk_id'),
@@ -127,7 +135,10 @@ def _car_row_from_values(row: dict) -> dict[str, Any]:
 DETAIL_VALUES = (
     'id', 'slug', 'vin', 'mark', 'model', 'year', 'run', 'unit_id', 'unit__name',
     'store__name', 'status__name', 'type_reception__name', 'type_sale__name',
-    'stage_price__name', 'group_price__name', 'lo__staff_id', 'lo__staff__name',
+    'stage_price__name', 'group_price__name',
+    'lo__staff_id', 'lo__staff__name',
+    'lo__rlk__reginteractivocenkarlk__page_reception__staff_id',
+    'lo__rlk__reginteractivocenkarlk__page_reception__staff__name',
     'lo__kolesa2_reception', 'lo__rlk_id', 'lo_id', 'lo__rlk__unit_dc__name',
     'lo__type_reception__name', 'lo__rlk__reginteractivocenka__iznos',
     'lo__dataTime', 'lo_link_date',

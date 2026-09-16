@@ -3798,9 +3798,11 @@ def update_trade_in_funnel(interactiv_rlk):
     year    = estimation_rlk.year
     vin     = estimation_rlk.vin 
     
-    if interactiv_rlk.staff_rlk != None:
-        staff_id    = interactiv_rlk.staff_rlk.id
-        staff_name  = interactiv_rlk.staff_rlk.name
+    reception_staff = getattr(getattr(interactiv_rlk, 'page_reception', None), 'staff', None)
+    effective_staff = reception_staff or interactiv_rlk.staff_rlk or getattr(estimation_rlk, 'staff', None)
+    if effective_staff is not None:
+        staff_id    = effective_staff.id
+        staff_name  = effective_staff.name
 
     if interactiv_rlk.staff_eco_1_rlk != None:
         analyst_before_id       = interactiv_rlk.staff_eco_1_rlk.profiles.id
