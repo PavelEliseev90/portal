@@ -55,16 +55,20 @@ def _fk_id(obj):
 
 
 def organization_to_ingest(org) -> dict:
-    if org is None or not org.pk:
+    if org is None or not getattr(org, 'pk', None):
+        return {}
+    name = _clean_str(getattr(org, 'name', ''), 250)
+    inn = _clean_str(getattr(org, 'inn', ''), 20)
+    if not name and not inn:
         return {}
     return {
         'id': int(org.pk),
-        'name': _clean_str(org.name, 250),
+        'name': name or f'Организация {org.pk}',
         'full_name': _clean_str(getattr(org, 'full_name', ''), 250),
         'phone': _clean_str(getattr(org, 'phone', ''), 512),
         'email': _clean_str(getattr(org, 'email', ''), 200),
-        'inn': _clean_str(getattr(org, 'inn', ''), 20),
-        'kpp': _clean_str(getattr(org, 'kpp', ''), 20),
+        'inn': inn or f'inn_{org.pk}',
+        'kpp': _clean_str(getattr(org, 'kpp', ''), 20) or '000000000',
         'actual_adress': _clean_str(getattr(org, 'actual_adress', ''), 200),
         'adress': _clean_str(getattr(org, 'adress', ''), 200),
         'active_eco': bool(getattr(org, 'active_eco', False)),
