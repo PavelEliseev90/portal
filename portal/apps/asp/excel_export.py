@@ -136,6 +136,7 @@ def export_stock_xlsx(get, request=None) -> HttpResponse:
         SUM_MAP,
         _car_row_from_values,
         _enrich_totals,
+        enrich_rows_with_autohub,
         filtered_stock_qs,
     )
 
@@ -188,6 +189,7 @@ def export_stock_xlsx(get, request=None) -> HttpResponse:
     _ui, orm_order = resolve_order_by('stock', filters.get('order_by'))
     values = list(qs.order_by(*orm_order).values(*DETAIL_VALUES)[:EXCEL_ROW_LIMIT])
     rows = [_car_row_from_values(v) for v in values]
+    enrich_rows_with_autohub(rows)
     visible = get_user_columns(request, 'stock') if request else list(STOCK_DEFAULT_COLUMNS)
     cols = build_table_columns('stock', visible)
     ws = wb.create_sheet('Детали')

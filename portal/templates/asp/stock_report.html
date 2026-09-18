@@ -120,6 +120,22 @@ window.aspRenderDetailRow = function(r, money, esc, fmtDate) {
     else if (col.key === 'days') val = esc(r.days_in_stok);
     else if (col.key === 'person') val = esc(r.person_name);
     else if (col.key === 'price') val = money(r.price);
+    else if (col.key === 'autohub_cna') val = r.autohub_cna ? money(r.autohub_cna) : '—';
+    else if (col.key === 'autohub_pcp') val = r.autohub_pcp ? money(r.autohub_pcp) : '—';
+    else if (col.key === 'autohub_imv') val = r.autohub_imv ? money(r.autohub_imv) : '—';
+    else if (col.key === 'autohub_diff') {
+      if (r.autohub_diff !== null && r.autohub_diff !== undefined) {
+        var diffCls = r.autohub_diff > 0 ? 'neg' : (r.autohub_diff < 0 ? 'pos' : '');
+        cls = ' class="num ' + diffCls + '"';
+        val = (r.autohub_diff > 0 ? '+' : '') + money(r.autohub_diff);
+      } else {
+        val = '—';
+      }
+    }
+    else if (col.key === 'autohub_rating') val = esc(r.autohub_rating || '—');
+    else if (col.key === 'autohub_views') val = (r.autohub_views !== null && r.autohub_views !== undefined) ? money(r.autohub_views) : '—';
+    else if (col.key === 'autohub_marketing') val = r.autohub_marketing ? money(r.autohub_marketing) : '—';
+    else if (col.key === 'autohub_date') val = (fmtDate && r.autohub_date) ? fmtDate(r.autohub_date) : (r.autohub_date || '—');
     else if (col.key === 'cost_price') val = money(r.cost_price);
     else if (col.key === 'outlay') val = money(r.outlay);
     else if (col.key === 'margin') { cls = ' class="num ' + ((r.margin || 0) >= 0 ? 'pos' : 'neg') + '"'; val = money(r.margin); }

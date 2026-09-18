@@ -10,7 +10,7 @@ COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
     'margin': 'v5',
-    'stock': 'v4',
+    'stock': 'v5',
     'accepted': 'v3',
 }
 
@@ -81,7 +81,10 @@ MARGIN_SORT_FIELDS = {
 STOCK_DEFAULT_COLUMNS = [
     'car', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_reception',
     'group_price', 'stage_price', 'iznos',
-    'days', 'person', 'price', 'cost_price', 'outlay', 'margin', 'store',
+    'days', 'person',
+    'price', 'autohub_cna', 'autohub_pcp', 'autohub_imv', 'autohub_diff',
+    'autohub_rating', 'autohub_views', 'autohub_marketing', 'autohub_date',
+    'cost_price', 'outlay', 'margin', 'store',
 ]
 STOCK_COLUMN_DEFS = {
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
@@ -98,6 +101,14 @@ STOCK_COLUMN_DEFS = {
     'days': {'label': 'Дней', 'sortable': True, 'sort_key': 'days', 'num': True},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
     'price': {'label': 'Цена', 'sortable': True, 'sort_key': 'price', 'num': True},
+    'autohub_cna': {'label': 'ЦНА', 'sortable': False, 'num': True},
+    'autohub_pcp': {'label': 'ПЦП', 'sortable': False, 'num': True},
+    'autohub_imv': {'label': 'Оценка Авито', 'sortable': False, 'num': True},
+    'autohub_diff': {'label': 'Откл. от рынка', 'sortable': False, 'num': True, 'signed': True},
+    'autohub_rating': {'label': 'Позиция / Конкуренты', 'sortable': False, 'num': False},
+    'autohub_views': {'label': 'Просмотры', 'sortable': False, 'num': True},
+    'autohub_marketing': {'label': 'Реклама', 'sortable': False, 'num': True},
+    'autohub_date': {'label': 'Дата Автохаб', 'sortable': False, 'num': False},
     'cost_price': {'label': 'Себест.', 'sortable': True, 'sort_key': 'cost_price', 'num': True},
     'outlay': {'label': 'Расходы', 'sortable': True, 'sort_key': 'outlay', 'num': True},
     'margin': {'label': 'Маржа', 'sortable': True, 'sort_key': 'margin', 'num': True, 'signed': True},
@@ -376,6 +387,14 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'days': row.get('days_in_stok'),
             'person': row.get('person_name'),
             'price': row.get('price'),
+            'autohub_cna': row.get('autohub_cna'),
+            'autohub_pcp': row.get('autohub_pcp'),
+            'autohub_imv': row.get('autohub_imv'),
+            'autohub_diff': row.get('autohub_diff'),
+            'autohub_rating': row.get('autohub_rating'),
+            'autohub_views': row.get('autohub_views'),
+            'autohub_marketing': row.get('autohub_marketing'),
+            'autohub_date': row.get('autohub_date'),
             'cost_price': row.get('cost_price'),
             'outlay': row.get('outlay'),
             'margin': row.get('margin'),
