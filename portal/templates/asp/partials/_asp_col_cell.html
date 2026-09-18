@@ -71,6 +71,17 @@
   {% elif col.key == 'days' %}<td class="num">{{ r.days_in_stok }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>
   {% elif col.key == 'price' %}<td class="num">{{ r.price|floatformat:"0g" }}</td>
+  {% elif col.key == 'autohub_cna' %}<td class="num">{% if r.autohub_cna %}{{ r.autohub_cna|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_pcp' %}<td class="num">{% if r.autohub_pcp %}{{ r.autohub_pcp|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_imv' %}<td class="num">{% if r.autohub_imv %}{{ r.autohub_imv|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_diff' %}
+  <td class="num {% if r.autohub_diff is not None %}{% if r.autohub_diff > 0 %}neg{% elif r.autohub_diff < 0 %}pos{% endif %}{% endif %}">
+    {% if r.autohub_diff is not None %}{% if r.autohub_diff > 0 %}+{% endif %}{{ r.autohub_diff|floatformat:"0g" }}{% else %}—{% endif %}
+  </td>
+  {% elif col.key == 'autohub_rating' %}<td>{{ r.autohub_rating|default:"—" }}</td>
+  {% elif col.key == 'autohub_views' %}<td class="num">{% if r.autohub_views is not None %}{{ r.autohub_views|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_marketing' %}<td class="num">{% if r.autohub_marketing %}{{ r.autohub_marketing|floatformat:"0g" }}{% else %}—{% endif %}</td>
+  {% elif col.key == 'autohub_date' %}<td>{% if r.autohub_date %}{{ r.autohub_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
   {% elif col.key == 'cost_price' %}<td class="num">{{ r.cost_price|floatformat:"0g" }}</td>
   {% elif col.key == 'outlay' %}<td class="num">{{ r.outlay|floatformat:"0g" }}</td>
   {% elif col.key == 'margin' %}<td class="num {% if r.margin >= 0 %}pos{% else %}neg{% endif %}">{{ r.margin|floatformat:"0g" }}</td>
