@@ -279,6 +279,18 @@ class DcMonthlyPlan(models.Model):
     )
     plan_dc_qty = models.PositiveIntegerField('План ДЦ, шт.', default=0)
     plan_importer_qty = models.PositiveIntegerField('План импортера, шт.', default=0)
+    plan_km_rub = models.BigIntegerField(
+        'План по КМ (марже), ₽',
+        default=0,
+        help_text='Целевой кумулятивный маржинальный доход ДЦ на месяц в рублях',
+    )
+    plan_revenue_rub = models.BigIntegerField(
+        'План по выручке, ₽',
+        default=0,
+        null=True,
+        blank=True,
+        help_text='Целевой оборот (выручка) ДЦ на месяц в рублях',
+    )
     tactic = models.CharField(
         'Тактика ДЦ',
         max_length=32,

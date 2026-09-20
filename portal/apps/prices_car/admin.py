@@ -37,7 +37,11 @@ class DcKeyModelInline(admin.TabularInline):
 
 @admin.register(DcMonthlyPlan)
 class DcMonthlyPlanAdmin(admin.ModelAdmin):
-    list_display = ('unit', 'month', 'plan_dc_qty', 'plan_importer_qty', 'tactic', 'is_autopilot', 'author', 'updated_at')
+    list_display = (
+        'unit', 'month', 'plan_dc_qty', 'plan_importer_qty',
+        'plan_km_rub', 'plan_revenue_rub',
+        'tactic', 'is_autopilot', 'author', 'updated_at',
+    )
     list_filter = ('month', 'tactic', 'is_autopilot', 'unit')
     search_fields = ('unit__name',)
     inlines = [DcKeyModelInline]

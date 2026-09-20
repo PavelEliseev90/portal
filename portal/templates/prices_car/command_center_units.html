@@ -1,0 +1,738 @@
+{% extends 'base_web.html' %}
+{% load static custom_template_tags %}
+
+{% block title %} — Мониторинг ДЦ: Автопилот ценообразования новых АМ {% endblock %}
+{% block title_navbar %} — Мониторинг ДЦ: Автопилот и переоценка {% endblock %}
+
+{% block head %}
+<style>
+.cc-units-page {
+    padding: 1.25rem 1.5rem 3.5rem;
+    background: #f4f7fb;
+    min-height: 100vh;
+}
+
+/* Шапка страницы */
+.cc-units-header {
+    background: linear-gradient(135deg, #091e36 0%, #0f2b48 50%, #1a3c61 100%);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 16px 36px rgba(0, 42, 90, 0.18);
+}
+.cc-units-header h2 {
+    font-size: 1.65rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: #fff;
+}
+.cc-units-header p {
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    margin-bottom: 0;
+}
+
+/* Карточки верхних KPI */
+.cc-kpi-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 10px 24px rgba(0, 23, 61, 0.05);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.cc-kpi-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.cc-kpi-val {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+}
+.cc-kpi-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+}
+
+/* Панель фильтров */
+.cc-filter-panel {
+    background: #fff;
+    border-radius: 1.15rem;
+    padding: 1.25rem 1.4rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 12px 30px rgba(0, 23, 61, 0.06);
+    margin-bottom: 1.75rem;
+}
+.cc-filter-label {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    display: block;
+}
+
+/* Секция города */
+.cc-city-section {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 16px 36px rgba(0, 23, 61, 0.06);
+    margin-bottom: 1.75rem;
+}
+.cc-city-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+}
+.cc-city-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #002a5a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.cc-city-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+/* Карточка ДЦ */
+.cc-unit-card {
+    background: #ffffff;
+    border-radius: 1.1rem;
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 20px rgba(0, 23, 61, 0.04);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+}
+.cc-unit-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px rgba(0, 42, 90, 0.12);
+    border-color: #93c5fd;
+    text-decoration: none;
+    color: inherit;
+}
+.cc-unit-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #002a5a;
+    margin-bottom: 0.25rem;
+    line-height: 1.25;
+}
+
+/* Индикаторы автопилота */
+.cc-badge-ap-on {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+    font-weight: 600;
+    font-size: 0.74rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.cc-badge-ap-off {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600;
+    font-size: 0.74rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.cc-dot-pulse {
+    width: 7px;
+    height: 7px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+}
+
+/* Индикаторы темпа */
+.cc-badge-pace-danger {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+}
+.cc-badge-pace-success {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
+}
+.cc-badge-pace-info {
+    background: #f0f9ff !important;
+    color: #0369a1 !important;
+    border: 1px solid #bae6fd !important;
+}
+.cc-badge-pace-secondary {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Индикаторы квадрантов двухфакторного баланса (Штуки vs КМ) */
+.cc-badge-quadrant-success {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-warning {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-info {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-danger {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-secondary {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    font-weight: 500;
+}
+
+/* Прогресс-бар */
+.cc-progress-bg {
+    background: #e2e8f0;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.45rem 0;
+}
+.cc-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+/* Мини-метрики внутри карточки */
+.cc-unit-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    padding: 0.65rem 0.75rem;
+    background: #f8fafc;
+    border-radius: 0.65rem;
+    border: 1px solid #edf2f7;
+}
+.cc-unit-stat-item small {
+    font-size: 0.72rem;
+    color: #64748b;
+    display: block;
+    line-height: 1.2;
+}
+.cc-unit-stat-item strong {
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+/* Карточка рекомендации внутри карточки ДЦ */
+.cc-unit-rec-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    margin-top: 0.65rem;
+    font-size: 0.78rem;
+    color: #78350f;
+    line-height: 1.35;
+}
+.cc-unit-ok-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    margin-top: 0.65rem;
+    font-size: 0.76rem;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Нижняя панель карточки */
+.cc-unit-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 0.75rem;
+}
+.cc-btn-open-dc {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.cc-unit-card:hover .cc-btn-open-dc {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Пустое состояние */
+.cc-empty-state {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 3rem;
+    text-align: center;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 20px 45px rgba(0, 23, 61, 0.06);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cc-units-page">
+
+    <!-- ШАПКА -->
+    <div class="cc-units-header">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary px-2 py-1">Мониторинг сети ДЦ</span>
+                    {% if is_uk %}
+                        <span class="badge bg-success px-2 py-1">Права УК (Все ДЦ)</span>
+                    {% endif %}
+                </div>
+                <h2>Автоматическая переоценка и автопилот новых АМ</h2>
+                <p>Единый центр контроля по городам: статус автопилота, темп выполнения планов, рекомендации дисконта и риски консигнации</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'prices_car:command_center' %}?month={{ month_str }}" class="btn btn-sm btn-outline-light">
+                    <i class="icon-arrow-left"></i> Центр управления
+                </a>
+                <a href="{% url 'prices_car:new_cars_director_desktop' %}" class="btn btn-sm btn-outline-light">
+                    <i class="icon-screen-desktop"></i> Рабочий стол КП
+                </a>
+                <a href="{% url 'prices_car:deal_simulator' %}" class="btn btn-sm btn-info text-dark fw-bold">
+                    <i class="icon-wrench"></i> Стенд сделки
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- СЕТЕВЫЕ KPI (ВЕРХНИЕ КАРТОЧКИ) -->
+    <div class="row g-2 mb-3">
+        <!-- 1. Всего ДЦ и автопилот -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="cc-kpi-card">
+                <div>
+                    <div class="cc-kpi-label">Дилерские центры</div>
+                    <div class="cc-kpi-val">{{ overview.network_stats.total_units }}</div>
+                </div>
+                <div class="cc-kpi-sub">
+                    <span class="text-success fw-bold">🤖 {{ overview.network_stats.autopilot_enabled_count }}</span> с автопилотом · 
+                    <span class="text-muted">{{ overview.network_stats.autopilot_disabled_count }} выкл.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Двухфакторный баланс (Штуки vs Деньги) -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="cc-kpi-card">
+                <div>
+                    <div class="cc-kpi-label">Баланс: Штуки vs Маржа</div>
+                    <div class="cc-kpi-val">
+                        <span class="text-success">{{ overview.network_stats.both_ok_count }}</span>
+                        <span class="text-muted fs-6">/ {{ overview.network_stats.total_units }} ДЦ</span>
+                    </div>
+                </div>
+                <div class="cc-kpi-sub" style="font-size: 0.73rem;">
+                    <span class="text-success fw-bold">🟢 {{ overview.network_stats.both_ok_count }} норма</span> · 
+                    <span class="text-warning fw-bold">🟡 {{ overview.network_stats.margin_drain_count }} слив КМ</span> · 
+                    <span class="text-info fw-bold">🔵 {{ overview.network_stats.money_ok_qty_lag_count }} запас</span> · 
+                    <span class="text-danger fw-bold">🔴 {{ overview.network_stats.both_lag_count }} риск</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Кумулятивная маржа сети (КМ в рублях) -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="cc-kpi-card">
+                <div>
+                    <div class="cc-kpi-label">Кумулятивная маржа сети (КМ)</div>
+                    <div class="cc-kpi-val text-primary" style="font-size: 1.25rem;">
+                        {{ overview.network_stats.total_fact_km_formatted }}
+                    </div>
+                </div>
+                <div class="cc-kpi-sub" style="font-size: 0.74rem;">
+                    {% if overview.network_stats.total_plan_km > 0 %}
+                        План: <strong>{{ overview.network_stats.total_plan_km_formatted }}</strong> · 
+                        Прогноз: <strong>{{ overview.network_stats.total_km_run_rate_formatted }}</strong> ({{ overview.network_stats.total_km_pace }}%)
+                    {% else %}
+                        <span class="text-muted">План по КМ сети еще не сформирован</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Склад и контракты -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="cc-kpi-card">
+                <div>
+                    <div class="cc-kpi-label">Склад / Контракты сети</div>
+                    <div class="cc-kpi-val">{{ overview.network_stats.total_contracts }} <span class="fs-5 text-muted fw-normal">контрактов</span></div>
+                </div>
+                <div class="cc-kpi-sub">
+                    склад: <strong>{{ overview.network_stats.total_stock }} шт.</strong>
+                    {% if overview.network_stats.total_yellow %} · желтых: <strong class="text-warning">{{ overview.network_stats.total_yellow }}</strong>{% endif %}
+                    {% if overview.network_stats.total_consignment_overdue %} · риск консигн: <strong class="text-danger">{{ overview.network_stats.total_consignment_overdue }}</strong>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПАНЕЛЬ ФИЛЬТРОВ -->
+    <div class="cc-filter-panel">
+        <form method="GET" id="filterForm">
+            <div class="row g-2 align-items-end">
+                <!-- Месяц -->
+                <div class="col-6 col-md-2 col-lg-1">
+                    <label class="cc-filter-label">Период</label>
+                    <input type="month" name="month" value="{{ month_str }}" class="form-control form-control-sm" onchange="this.form.submit()">
+                </div>
+
+                <!-- Город -->
+                <div class="col-6 col-md-2">
+                    <label class="cc-filter-label">Город</label>
+                    <select name="city_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all">Все города</option>
+                        {% for c in overview.all_cities %}
+                            <option value="{{ c.id }}" {% if filters.city_id == c.id|stringformat:"s" %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Баланс (Квадрант Штуки vs Деньги) -->
+                <div class="col-6 col-md-2">
+                    <label class="cc-filter-label">Баланс (Штуки / КМ)</label>
+                    <select name="quadrant" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if filters.quadrant == 'all' %}selected{% endif %}>Все балансы</option>
+                        <option value="both_ok" {% if filters.quadrant == 'both_ok' %}selected{% endif %}>🟢 В балансе (Штуки+КМ)</option>
+                        <option value="margin_drain" {% if filters.quadrant == 'margin_drain' %}selected{% endif %}>🟡 Слив маржи (КМ отстает)</option>
+                        <option value="money_ok_qty_lag" {% if filters.quadrant == 'money_ok_qty_lag' %}selected{% endif %}>🔵 Запас скидки (КМ ОК)</option>
+                        <option value="both_lag" {% if filters.quadrant == 'both_lag' %}selected{% endif %}>🔴 Зона риска (Оба отстают)</option>
+                        <option value="no_money_plan" {% if filters.quadrant == 'no_money_plan' %}selected{% endif %}>⚪ План КМ не задан</option>
+                    </select>
+                </div>
+
+                <!-- Автопилот -->
+                <div class="col-6 col-md-2 col-lg-1">
+                    <label class="cc-filter-label">Автопилот</label>
+                    <select name="autopilot" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if filters.autopilot == 'all' %}selected{% endif %}>Все</option>
+                        <option value="enabled" {% if filters.autopilot == 'enabled' %}selected{% endif %}>🤖 ВКЛ</option>
+                        <option value="disabled" {% if filters.autopilot == 'disabled' %}selected{% endif %}>ВЫКЛ</option>
+                    </select>
+                </div>
+
+                <!-- Рекомендации -->
+                <div class="col-6 col-md-2">
+                    <label class="cc-filter-label">Рекомендации</label>
+                    <select name="recommendations" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if filters.recommendations == 'all' %}selected{% endif %}>Все</option>
+                        <option value="has_recs" {% if filters.recommendations == 'has_recs' %}selected{% endif %}>Есть рекомендации</option>
+                        <option value="attention" {% if filters.recommendations == 'attention' %}selected{% endif %}>⚠️ Требуют внимания</option>
+                        <option value="no_recs" {% if filters.recommendations == 'no_recs' %}selected{% endif %}>Без рекомендаций (ОК)</option>
+                    </select>
+                </div>
+
+                <!-- Темп штук -->
+                <div class="col-6 col-md-2 col-lg-1">
+                    <label class="cc-filter-label">Темп штук</label>
+                    <select name="pace" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if filters.pace == 'all' %}selected{% endif %}>Все</option>
+                        <option value="lagging" {% if filters.pace == 'lagging' %}selected{% endif %}>🔴 Отстают</option>
+                        <option value="on_track" {% if filters.pace == 'on_track' %}selected{% endif %}>🟢 График</option>
+                        <option value="ahead" {% if filters.pace == 'ahead' %}selected{% endif %}>🔵 Впереди</option>
+                    </select>
+                </div>
+
+                <!-- Поиск и сброс -->
+                <div class="col-12 col-md-2 col-lg-3 d-flex gap-1">
+                    <div class="flex-grow-1">
+                        <label class="cc-filter-label">Поиск ДЦ</label>
+                        <input type="text" name="search" value="{{ filters.search }}" class="form-control form-control-sm" placeholder="Название...">
+                    </div>
+                    <div>
+                        <label class="cc-filter-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-sm btn-primary" title="Применить">
+                            <i class="icon-magnifier"></i>
+                        </button>
+                    </div>
+                    {% if filters.city_id != 'all' or filters.autopilot != 'all' or filters.recommendations != 'all' or filters.pace != 'all' or filters.quadrant != 'all' or filters.search %}
+                    <div>
+                        <label class="cc-filter-label">&nbsp;</label>
+                        <a href="?month={{ month_str }}" class="btn btn-sm btn-outline-secondary" title="Сбросить фильтры">
+                            <i class="icon-close"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- СПИСОК ГОРОДОВ И КАРТОЧЕК ДЦ -->
+    {% if overview.filtered_units_count == 0 %}
+        <div class="cc-empty-state">
+            <div class="fs-1 text-muted mb-2">📭</div>
+            <h5 class="fw-bold text-dark mb-1">Дилерские центры не найдены</h5>
+            <p class="text-muted small mb-3">По выбранным параметрам фильтра нет подходящих ДЦ. Попробуйте сбросить фильтры или выбрать другой период.</p>
+            <a href="?month={{ month_str }}" class="btn btn-sm btn-primary">Сбросить фильтры</a>
+        </div>
+    {% else %}
+        {% for city_data in overview.grouped_cities %}
+            <div class="cc-city-section">
+                <!-- Заголовок города со счетчиками -->
+                <div class="cc-city-header">
+                    <div class="cc-city-title">
+                        <span style="font-size: 1.4rem;">🏢</span>
+                        <span>{{ city_data.city_name }}</span>
+                        <span class="badge bg-light text-muted border ms-1" style="font-size: 0.76rem;">{{ city_data.total_units }} ДЦ</span>
+                    </div>
+                    <div class="cc-city-badges">
+                        <span class="badge cc-badge-ap-on">
+                            <span class="cc-dot-pulse"></span> {{ city_data.autopilot_count }} с автопилотом
+                        </span>
+                        <span class="badge cc-badge-pace-success">
+                            {{ city_data.on_track_count }} в плане
+                        </span>
+                        {% if city_data.lagging_count %}
+                            <span class="badge cc-badge-pace-danger">
+                                {{ city_data.lagging_count }} отстают
+                            </span>
+                        {% endif %}
+                        {% if city_data.has_recs_count %}
+                            <span class="badge bg-warning text-dark border">
+                                ⚠️ {{ city_data.has_recs_count }} с рекомендациями
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-light text-dark border ms-1">
+                            Склад: {{ city_data.total_stock }} шт. · Контракты: {{ city_data.total_contracts }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Сетка карточек ДЦ в городе -->
+                <div class="row g-3">
+                    {% for u in city_data.units %}
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="{% url 'prices_car:command_center' %}?unit_id={{ u.unit_id }}&month={{ month_str }}" 
+                               class="cc-unit-card">
+                                
+                                <div>
+                                    <!-- Верхняя плашка карточки -->
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                        <div>
+                                            <div class="cc-unit-name">{{ u.unit_name }}</div>
+                                            <div class="d-flex flex-wrap gap-1 align-items-center mt-1">
+                                                <span class="badge cc-badge-quadrant-{{ u.quadrant_badge_class }}" title="{{ u.quadrant_desc }}" style="font-size: 0.72rem;">
+                                                    {{ u.quadrant_label }}
+                                                </span>
+                                                <span class="badge bg-light text-muted border" style="font-size: 0.70rem;">
+                                                    {{ u.tactic_label }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            {% if u.is_autopilot %}
+                                                <span class="cc-badge-ap-on" title="Автопилот дисконтов активен (правил: {{ u.autopilot_rules_count }})">
+                                                    <span class="cc-dot-pulse"></span> Автопилот ВКЛ
+                                                </span>
+                                            {% else %}
+                                                <span class="cc-badge-ap-off" title="Автопилот выключен">
+                                                    Автопилот ВЫКЛ
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Двухфакторный темп: Штуки + Маржа -->
+                                    <div class="mt-2 mb-2 p-2 rounded bg-light border">
+                                        <!-- Фактор 1: Штуки (Объем контрактов) -->
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="text-dark fw-bold" style="font-size: 0.74rem;">📦 План по штукам:</span>
+                                                <span class="badge cc-badge-pace-{{ u.pace_class }}" style="font-size: 0.70rem;">
+                                                    {{ u.pace_label }} ({{ u.pace_delta_label }})
+                                                </span>
+                                            </div>
+                                            <div class="cc-progress-bg my-1">
+                                                <div class="cc-progress-fill {% if u.pace_status == 'lagging' %}bg-danger{% elif u.pace_status == 'ahead' %}bg-info{% elif u.pace_status == 'on_track' %}bg-success{% else %}bg-secondary{% endif %}" 
+                                                     style="width: {% if u.pace_pct > 100 %}100{% else %}{{ u.pace_pct|default:0 }}{% endif %}%;">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center small" style="font-size: 0.74rem;">
+                                                <span>Факт: <strong>{{ u.contracts_count }}</strong> из <strong>{{ u.target_plan }}</strong> шт.</span>
+                                                <span class="text-muted">Прогноз: <strong>{{ u.run_rate }}</strong> шт.</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Фактор 2: Деньги (Кумулятивная маржа КМ) -->
+                                        <div class="pt-2 border-top">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="text-dark fw-bold" style="font-size: 0.74rem;">💰 Кумулятивная маржа (КМ):</span>
+                                                {% if u.plan_km_rub > 0 %}
+                                                    <span class="badge {% if u.km_pace_pct >= 90 %}bg-success-subtle text-success border border-success-subtle{% else %}bg-warning-subtle text-warning border border-warning-subtle{% endif %}" style="font-size: 0.70rem;">
+                                                        темп {{ u.km_pace_pct }}%
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">
+                                                        план не задан
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            {% if u.plan_km_rub > 0 %}
+                                            <div class="cc-progress-bg my-1">
+                                                <div class="cc-progress-fill {% if u.km_pace_pct >= 100 %}bg-success{% elif u.km_pace_pct >= 90 %}bg-primary{% elif u.km_pace_pct >= 75 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                     style="width: {% if u.km_pace_pct > 100 %}100{% else %}{{ u.km_pace_pct|default:0 }}{% endif %}%;">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center small" style="font-size: 0.74rem;">
+                                                <span>Факт: <strong>{{ u.fact_km_formatted }}</strong> из <strong>{{ u.plan_km_formatted }}</strong></span>
+                                                <span class="text-muted">Прогноз: <strong>{{ u.km_run_rate_formatted }}</strong></span>
+                                            </div>
+                                            {% else %}
+                                            <div class="d-flex justify-content-between align-items-center small text-muted" style="font-size: 0.74rem;">
+                                                <span>Факт КМ: <strong class="text-dark">{{ u.fact_km_formatted }}</strong></span>
+                                                <span class="fst-italic text-muted">только штучный план</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Мини-метрики склада, финансов и рисков -->
+                                    <div class="cc-unit-stats-grid">
+                                        <div class="cc-unit-stat-item">
+                                            <small>Склад новых</small>
+                                            <strong>{{ u.stock_total }} шт.</strong>
+                                        </div>
+                                        <div class="cc-unit-stat-item">
+                                            <small>Факт КМ (маржа)</small>
+                                            <strong class="text-success">{{ u.fact_km_formatted }}</strong>
+                                        </div>
+                                        <div class="cc-unit-stat-item">
+                                            <small>Желтые (рапорт)</small>
+                                            <strong class="{% if u.yellow_count %}text-warning{% else %}text-muted{% endif %}">
+                                                {{ u.yellow_count }} шт.
+                                            </strong>
+                                        </div>
+                                        <div class="cc-unit-stat-item">
+                                            <small>Выручка ДЦ</small>
+                                            <strong>{{ u.fact_revenue_formatted }}</strong>
+                                        </div>
+                                        <div class="cc-unit-stat-item">
+                                            <small>Риск консигнации</small>
+                                            <strong class="{% if u.consignment_overdue %}text-danger{% elif u.consignment_warning %}text-warning{% else %}text-muted{% endif %}">
+                                                {% if u.consignment_overdue %}
+                                                    просроч. {{ u.consignment_overdue }}
+                                                {% elif u.consignment_warning %}
+                                                    риск {{ u.consignment_warning }}
+                                                {% else %}
+                                                    0 шт.
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                        <div class="cc-unit-stat-item">
+                                            <small>Упущенные сделки</small>
+                                            <strong class="{% if u.missed_count %}text-danger{% else %}text-muted{% endif %}">
+                                                {{ u.missed_count }} шт.
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <!-- Рекомендации Smart Advisor -->
+                                    {% if u.has_recs %}
+                                        <div class="cc-unit-rec-box">
+                                            <div class="fw-bold mb-1">
+                                                💡 {{ u.recs_count }} рекоменд.{% if u.top_rec %}: {{ u.top_rec.badge }}{% endif %}
+                                            </div>
+                                            <div>{{ u.top_rec.title|truncatechars:85 }}</div>
+                                        </div>
+                                    {% else %}
+                                        <div class="cc-unit-ok-box">
+                                            <span>✓</span>
+                                            <span>Все показатели в норме, рекомендаций нет</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Нижняя плашка -->
+                                <div class="cc-unit-card-footer">
+                                    <span class="text-muted small" style="font-size: 0.72rem;">
+                                        {% if u.is_autopilot %}
+                                            <span class="text-success">● Синхронизируется</span>
+                                        {% else %}
+                                            <span class="text-muted">○ Ручное управление</span>
+                                        {% endif %}
+                                    </span>
+                                    <span class="cc-btn-open-dc">
+                                        Открыть ДЦ <i class="icon-arrow-right"></i>
+                                    </span>
+                                </div>
+
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+</div>
+{% endblock %}

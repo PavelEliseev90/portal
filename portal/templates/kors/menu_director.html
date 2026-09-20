@@ -455,6 +455,13 @@
           Правила минимального КМ и индексы по брендам и этапам УС
         </p>
         <div class="action-buttons">
+          {% if request.user.profiles.price_car_new_all or request.user.is_superuser %}
+          <a href="{% url 'prices_car:command_center_units' %}" class="action-btn" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff;">
+            <span class="action-btn-icon">🏢</span>
+            <span class="action-btn-text">Мониторинг всех ДЦ (Автопилот)</span>
+            <span class="action-btn-arrow" style="color: #bae6fd;">→</span>
+          </a>
+          {% endif %}
           <a href="{% url 'prices_car:command_center' %}" class="action-btn" style="background: linear-gradient(135deg, #0f2b48 0%, #173d63 100%); color: #fff;">
             <span class="action-btn-icon">🎯</span>
             <span class="action-btn-text">Центр управления (Вариант 6)</span>
