@@ -108,6 +108,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'estimations.middleware.Estimation1cUserMiddleware',
     'eco.middleware.Eco1cUserMiddleware',
+    'avtosalon.middleware.SellerBrief1cUserMiddleware',
     'profiles.middleware.SingleDeviceSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',

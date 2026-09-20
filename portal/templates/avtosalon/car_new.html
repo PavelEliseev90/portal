@@ -1103,6 +1103,13 @@
 							</div>
 							{% endif %}
 							<div class="col-12 col-sm-auto text-center" >
+								<a href="seller_brief/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%; border: 1px solid rgba(0, 42, 90, 0.15);">
+										<span class="icon-mbri-user fs-4 text-primary"></span>  Сводка для<br>продавца
+									</div>
+								</a>
+							</div>
+							<div class="col-12 col-sm-auto text-center" >
 								<a href="photos_edit/" class="text-dark">
 									<div class="card mb-1 rounded-3 shadow-sm bg-info bg-opacity-10" style="padding: 0.5rem; height: 100%;">
 										<span class="icon-mbri-photo fs-4"></span>  Управление<br>фотографиями
@@ -1130,6 +1137,16 @@
 							</div>
 						</div>
 
+					{% elif request.user.is_authenticated %}
+						<div class="row g-2">
+							<div class="col-12 col-sm-auto text-center" >
+								<a href="seller_brief/" class="text-dark">
+									<div class="card mb-1 rounded-3 shadow-sm bg-primary bg-opacity-10" style="padding: 0.5rem; height: 100%; border: 1px solid rgba(0, 42, 90, 0.15);">
+										<span class="icon-mbri-user fs-4 text-primary"></span>  Сводка для<br>продавца
+									</div>
+								</a>
+							</div>
+						</div>
 					{% endif %}
 
 					</div>

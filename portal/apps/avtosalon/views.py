@@ -1565,6 +1565,11 @@ def price_edit(request, slug):
         from eco.market_model_trends import market_car_trends_page_params
         market_trends = market_car_trends_page_params(car, request, embedded=True)
 
+    seller_brief = None
+    if page == 13:
+        from avtosalon.seller_brief import build_seller_brief
+        seller_brief = build_seller_brief(car, request=request)
+
     calc_express    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 7).order_by('-date')
     calc_autohub    = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 1).order_by('-date')
     calc_1C         = RegRefCarsOrganizationsCalculationPrice.objects.filter(car = car).filter(evaluation__id = 8).order_by('-date')
@@ -1610,10 +1615,133 @@ def price_edit(request, slug):
         'photos'            : photos,
         'can_edit_photos'   : request.user.profiles.korsavto_settings,
         'market_trends'     : market_trends,
+        'seller_brief'      : seller_brief,
     }
     params.update(car_options_ctx)
     
     return render(request, "avtosalon/car_new_price_edit.html", {'params': params})
+
+
+@csrf_exempt
+def car_seller_brief(request, slug):
+    """Сводка по автомобилю для продавца (менеджера ОП).
+
+    Поддерживает:
+    - обычную авторизацию на портале;
+    - сквозную авторизацию из 1С по ?uin=<staff_uin> или из отдельной сессии 1С
+      без вызова auth.login(), чтобы не сбрасывать активную сессию браузера на ПК.
+    """
+    from avtosalon.seller_brief_1c_utils import (
+        extract_seller_brief_1c_request,
+        get_seller_brief_user,
+        is_seller_brief_1c_session,
+        try_bind_seller_brief_1c_user,
+    )
+    from django.contrib.auth.views import redirect_to_login
+
+    user = get_seller_brief_user(request)
+    if user is None:
+        user = try_bind_seller_brief_1c_user(request)
+
+    if user is None or not user.is_authenticated:
+        req_1c = extract_seller_brief_1c_request(request)
+        if req_1c.get('staff_uin'):
+            return render(request, 'avtosalon/seller_brief_uin_auth_error.html', status=403)
+        return redirect_to_login(request.get_full_path())
+
+    request.user = user
+
+    car = (
+        RefCarsOrganization.objects
+        .filter(slug=slug)
+        .select_related(
+            'modification_autoru',
+            'modification_autoru__model',
+            'modification_autoru__model__mark',
+            'status',
+            'store',
+            'store__city',
+            'unit',
+            'type_sale',
+            'type_reception',
+            'stage_price',
+            'group_price',
+            'complectation_autoru',
+            'lo',
+        )
+        .first()
+    )
+    if car is None and slug.isdigit():
+        car = (
+            RefCarsOrganization.objects
+            .filter(pk=int(slug))
+            .select_related(
+                'modification_autoru',
+                'modification_autoru__model',
+                'modification_autoru__model__mark',
+                'status',
+                'store',
+                'store__city',
+                'unit',
+                'type_sale',
+                'type_reception',
+                'stage_price',
+                'group_price',
+                'complectation_autoru',
+                'lo',
+            )
+            .first()
+        )
+    if car is None:
+        car = (
+            RefCarsOrganization.objects
+            .filter(vin__iexact=slug)
+            .select_related(
+                'modification_autoru',
+                'modification_autoru__model',
+                'modification_autoru__model__mark',
+                'status',
+                'store',
+                'store__city',
+                'unit',
+                'type_sale',
+                'type_reception',
+                'stage_price',
+                'group_price',
+                'complectation_autoru',
+                'lo',
+            )
+            .first()
+        )
+    if car is None:
+        raise Http404
+
+    from avtosalon.seller_brief import build_seller_brief
+    brief = build_seller_brief(car, request=request)
+
+    from_1c = is_seller_brief_1c_session(request) or bool(
+        request.GET.get('uin') or request.GET.get('staff_uin')
+    )
+
+    params = {
+        'car': car,
+        'brief': brief,
+        'from_1c': from_1c,
+    }
+    return render(request, "avtosalon/car_seller_brief.html", {'params': params})
+
+
+@csrf_exempt
+def car_seller_brief_1c_entry(request, staff_uin, slug):
+    """
+    Вход в сводку продавца из 1С по УИН сотрудника и slug/id/vin автомобиля.
+    Отдельная сессия без login() — обычный вход в портал не сбрасывается.
+    """
+    from avtosalon.seller_brief_1c_utils import bind_seller_brief_1c_session
+    user = bind_seller_brief_1c_session(request, staff_uin)
+    if user is None:
+        return render(request, 'avtosalon/seller_brief_uin_auth_error.html', status=403)
+    return HttpResponseRedirect(f'/cars/{slug}/seller_brief/')
 
 
 @login_required

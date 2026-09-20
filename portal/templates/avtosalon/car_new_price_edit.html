@@ -1472,6 +1472,9 @@
 					<a href="?{% url_replace page=9 %}" class="kors-anchor-button" data-tab-target="9">
 						<span>Продажи</span>                
 					</a>
+					<a href="?{% url_replace page=13 %}" class="kors-anchor-button {% if params.page == 13 %}active{% endif %}" data-tab-target="13">
+						<span class="fw-bold text-primary">Сводка продавца</span>                
+					</a>
 
 				</div>
 				</section>
@@ -1493,6 +1496,8 @@
 			{% include 'avtosalon/includes/car_market_trends_embed.html' %}
 		{% elif params.page == 11 %}
 			{% include 'avtosalon/includes/car_options_manage.html' %}
+		{% elif params.page == 13 %}
+			{% include 'avtosalon/includes/car_seller_brief_tab.html' %}
 		{% else %}
 
 		<div class="portal-panel">

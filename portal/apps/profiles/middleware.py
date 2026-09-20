@@ -5,6 +5,11 @@ from django.conf import settings
 from django.contrib.auth import logout
 from urllib.parse import quote
 
+from avtosalon.seller_brief_1c_utils import (
+    is_1c_seller_brief_entry,
+    is_seller_brief_1c_session,
+    is_seller_brief_request,
+)
 from chats.rlk_chat_utils import is_1c_rlk_chat_entry, is_rlk_chat_1c_session, is_rlk_chat_request
 from eco.eco_1c_utils import is_1c_eco_entry, is_eco_1c_session, is_eco_request
 from estimations.estimation_1c_utils import is_1c_estimation_entry, is_estimation_1c_session, is_estimation_request
@@ -28,18 +33,22 @@ class SingleDeviceSessionMiddleware:
         if path.startswith('/static/') or path.startswith('/media/'):
             return self.get_response(request)
 
-        # Чат и оценка из 1С — отдельные сессии, не влияют на вход в браузере
+        # Чат, оценка, эко и сводка продавца из 1С — отдельные сессии, не влияют на вход в браузере
         if is_rlk_chat_1c_session(request):
             return self.get_response(request)
         if is_estimation_1c_session(request):
             return self.get_response(request)
         if is_eco_1c_session(request):
             return self.get_response(request)
+        if is_seller_brief_1c_session(request):
+            return self.get_response(request)
         if is_rlk_chat_request(request) and is_1c_rlk_chat_entry(request):
             return self.get_response(request)
         if is_estimation_request(request) and is_1c_estimation_entry(request):
             return self.get_response(request)
         if is_eco_request(request) and is_1c_eco_entry(request):
+            return self.get_response(request)
+        if is_seller_brief_request(request) and is_1c_seller_brief_entry(request):
             return self.get_response(request)
         # Загрузка фото с телефона по QR — не выбивает основной сеанс на ПК
         if is_mobile_gallery_session(request) or is_mobile_gallery_path(path):

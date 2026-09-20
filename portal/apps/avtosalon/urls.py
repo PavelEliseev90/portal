@@ -56,6 +56,9 @@ urlpatterns = [
    
    path('<slug>/specifications/',            views.specifications, name='slug'),
    path('<slug>/price_edit/',                views.price_edit, name='slug'),
+   path('<slug>/seller_brief/',              views.car_seller_brief, name='car_seller_brief'),
+   path('<slug>/seller_brief/1c/<str:staff_uin>/', views.car_seller_brief_1c_entry, name='car_seller_brief_1c'),
+   path('seller_brief/1c/<str:staff_uin>/<slug>/', views.car_seller_brief_1c_entry, name='car_seller_brief_1c_alt'),
    path('<slug>/price/',                     views.price, name='slug'),
    path('<slug>/photos_edit/',               views.photos_edit, name='photos_edit'),
    path('<slug>/costs_edit/',                views.costs_edit, name='costs_edit'),
