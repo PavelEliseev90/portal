@@ -28,6 +28,7 @@ from prices_car.models import (
 from refs.models import (
     AutoruModel,
     RefCarsOrganization,
+    RefCity,
     RefTypeSaleCarsOrganization,
     RefUnit,
 )
