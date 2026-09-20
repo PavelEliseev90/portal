@@ -189,6 +189,10 @@
                         </ul>
                     </div>
 
+                    <button type="button" class="btn btn-sm {% if plan.is_autopilot %}btn-success{% else %}btn-outline-light{% endif %}" onclick="toggleAutopilot({% if plan.is_autopilot %}false{% else %}true{% endif %})" title="Автоматическое создание и включение правил дисконта при отставании темпа или рисках консигнации">
+                        🤖 Автопилот: <strong>{% if plan.is_autopilot %}ВКЛ{% else %}ВЫКЛ{% endif %}</strong>
+                    </button>
+
                     <a href="{% url 'prices_car:deal_simulator' %}?unit_id={{ current_unit.id }}" class="btn btn-sm btn-info text-dark font-weight-bold">
                         <i class="icon-wrench"></i> Тестовый стенд
                     </a>
@@ -196,6 +200,20 @@
             </div>
         </div>
     </div>
+
+    {% if autopilot_logs %}
+    <div class="alert alert-success d-flex align-items-center gap-2 mb-3 shadow-sm py-2 px-3 border-0" style="background: #ecfdf5; color: #065f46; border-left: 4px solid #10b981 !important;">
+        <span class="fs-5">🤖</span>
+        <div>
+            <strong>Автопилот активен:</strong> система автоматически актуализировала правила дисконта:
+            <ul class="mb-0 ps-3 small">
+                {% for log in autopilot_logs %}
+                <li>{{ log }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ОПЕРАТИВНЫЙ РАБОЧИЙ СТОЛ ДИРЕКТОРА: СОГЛАСОВАНИЕ КП -->
     <div class="cc-director-strip">
@@ -593,12 +611,32 @@
                                         {% endif %}
                                     </td>
                                     <td>
+                                        {% if d.discount_percent %}
                                         <strong class="text-{% if d.discount_percent < 0 %}success{% else %}danger{% endif %}">
                                             {{ d.discount_percent }}%
                                         </strong>
+                                        {% endif %}
+                                        {% if d.discount_rub %}
+                                        <span class="badge bg-primary text-white ms-1">
+                                            -{{ d.discount_rub }} ₽
+                                        </span>
+                                        {% endif %}
+                                        {% if not d.discount_percent and not d.discount_rub %}
+                                        <span class="text-muted">0%</span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ d.date_from|date:"d.m.Y" }} — {{ d.date_to|date:"d.m.Y" }}</td>
-                                    <td class="text-muted small">{{ d.comment|default:"—" }}</td>
+                                    <td>
+                                        {% if d.days_consignment_left_lte is not None %}
+                                        <span class="badge bg-warning text-dark mb-1">
+                                            Консигнация ≤ {{ d.days_consignment_left_lte }} дн.
+                                        </span><br>
+                                        {% endif %}
+                                        {% if d.is_autopilot %}
+                                        <span class="badge bg-success mb-1">🤖 Автопилот</span><br>
+                                        {% endif %}
+                                        <small class="text-muted">{{ d.comment|default:"—" }}</small>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -1062,6 +1100,33 @@ function saveBrandConsignment(brandId) {
     .then(data => {
         if (data.success) {
             alert(data.message);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+// Переключение режима автопилота
+function toggleAutopilot(enable) {
+    const msg = enable ? 'Включить автопилот дисконтов? Система будет автоматически активировать рекомендованные правила при отставании темпа или угрозе платной консигнации.' : 'Отключить автопилот?';
+    if (!confirm(msg)) return;
+
+    fetch('{% url "prices_car:api_toggle_autopilot" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            unit_id: {{ current_unit.id|default:0 }},
+            month: '{{ month_str }}',
+            enabled: enable,
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
         } else {
             alert('Ошибка: ' + data.error);
         }

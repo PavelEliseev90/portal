@@ -9,6 +9,7 @@ urlpatterns = [
     path('command_center/', views_command_center.command_center_dashboard, name='command_center'),
     path('command_center/api/save_plan/', views_command_center.api_save_dc_plan, name='api_save_dc_plan'),
     path('command_center/api/apply_recommendation/', views_command_center.api_apply_recommendation, name='api_apply_recommendation'),
+    path('command_center/api/toggle_autopilot/', views_command_center.api_toggle_autopilot, name='api_toggle_autopilot'),
     path('command_center/api/toggle_key_model/', views_command_center.api_toggle_key_model, name='api_toggle_key_model'),
     path('command_center/api/save_brand_consignment/', views_command_center.api_save_brand_consignment, name='api_save_brand_consignment'),
     path('command_center/export_plans/', views_command_center.export_plans_excel, name='export_plans_excel'),

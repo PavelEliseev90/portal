@@ -353,12 +353,13 @@ def generate_smart_recommendations(
             'title': f'{yellow_cnt} авто уже отчитаны перед импортером (сдан рапорт)',
             'text': (
                 f'Автомобили со статусом «желтый» несут прямые издержки отвлечения капитала. '
-                f'Рекомендуется включить правило повышенного дисконта -5.0% для ускорения розничной продажи этих машин.'
+                f'Рекомендуется включить специальный дисконт 50 000 ₽ (-5.0%) для ускорения розничной продажи этих машин.'
             ),
-            'action_label': f'Включить дисконт -5.0% для {yellow_cnt} желтых авто',
+            'action_label': f'Включить дисконт 50 000 ₽ (-5.0%) для {yellow_cnt} желтых авто',
             'action_type': 'create_yellow_discount',
             'action_data': {
                 'discount_percent': -5.0,
+                'discount_rub': 50000,
                 'is_yellow_car': True,
                 'comment': f'Авто-рекомендация: ускорение выбытия отчитанных авто ({yellow_cnt} шт.)',
             },
@@ -377,12 +378,14 @@ def generate_smart_recommendations(
             'text': (
                 f'Просрочено: {overdue_cnt} шт., истекает срок (<= 15 дн): {warning_cnt} шт. '
                 f'Каждый день просрочки консигнации увеличивает финансовые расходы ДЦ. '
-                f'Рекомендуется запустить срочный дисконт -3.5% на эти позиции.'
+                f'Рекомендуется запустить срочный дисконт 70 000 ₽ (порог консигнации <= 15 дн).'
             ),
-            'action_label': 'Создать дисконт для авто группы риска',
-            'action_type': 'create_discount',
+            'action_label': 'Создать дисконт 70 000 ₽ для авто группы риска',
+            'action_type': 'create_consignment_discount',
             'action_data': {
-                'discount_percent': -3.5,
+                'discount_percent': -3.0,
+                'discount_rub': 70000,
+                'days_consignment_left_lte': 15,
                 'comment': f'Авто-рекомендация: защита от процентов платной консигнации ({total_risk_cnt} авто)',
             },
         })
@@ -429,6 +432,96 @@ def generate_smart_recommendations(
     return recommendations
 
 
+def sync_autopilot_for_unit(
+    unit: RefUnit,
+    month_start: date,
+    plan: Optional[DcMonthlyPlan] = None,
+    recommendations: Optional[list] = None,
+) -> list[str]:
+    """
+    Синхронизирует правила дисконта в режиме автопилота:
+    Если plan.is_autopilot == True, система автоматически создает/обновляет правила дисконта по рекомендациям.
+    """
+    if plan is None:
+        plan = DcMonthlyPlan.objects.filter(unit=unit, month=month_start).first()
+    if not plan or not plan.is_autopilot:
+        return []
+
+    if recommendations is None:
+        days_info = get_month_days_info(month_start)
+        contracts_count = get_contracts_count_for_unit(unit, month_start)
+        missed_info = get_missed_deals_info(unit, month_start)
+        key_model_ids = set(plan.key_models.values_list('model_id', flat=True))
+        stock_data = get_dc_stock_analytics(unit, key_model_ids)
+        recommendations = generate_smart_recommendations(
+            plan=plan,
+            contracts_count=contracts_count,
+            stock_data=stock_data,
+            days_info=days_info,
+            missed_info=missed_info,
+        )
+
+    log_actions = []
+    today = timezone.now().date()
+    _, days_in_month = calendar.monthrange(month_start.year, month_start.month)
+    month_end = month_start.replace(day=days_in_month)
+
+    for rec in recommendations:
+        a_type = rec.get('action_type')
+        data = rec.get('action_data', {})
+        if a_type in ('create_yellow_discount', 'create_consignment_discount', 'create_discount'):
+            disc_pct = float(data.get('discount_percent') or 0.0)
+            disc_rub = int(data.get('discount_rub') or 0)
+            is_yellow = bool(data.get('is_yellow_car', False))
+            is_key = bool(data.get('is_key_model', False))
+            days_cons = data.get('days_consignment_left_lte')
+            model_id = data.get('model_id')
+
+            # Проверяем, есть ли уже активное правило автопилота для этого условия
+            q_filter = Q(unit=unit, is_autopilot=True, date_to__gte=today)
+            if is_yellow:
+                q_filter &= Q(is_yellow_car=True)
+            if days_cons is not None:
+                q_filter &= Q(days_consignment_left_lte=days_cons)
+            if model_id:
+                q_filter &= Q(model_id=model_id)
+
+            existing = PriceCarKmDiscount.objects.filter(q_filter).first()
+            if not existing:
+                brand = PriceCarBrand.objects.first()
+                if model_id:
+                    m_obj = AutoruModel.objects.filter(id=model_id).first()
+                    if m_obj and m_obj.mark:
+                        cand = PriceCarBrand.objects.filter(marks=m_obj.mark).first()
+                        if cand:
+                            brand = cand
+                if brand:
+                    PriceCarKmDiscount.objects.create(
+                        brand=brand,
+                        model_id=model_id,
+                        unit=unit,
+                        discount_percent=disc_pct,
+                        discount_rub=disc_rub,
+                        days_consignment_left_lte=days_cons,
+                        is_yellow_car=is_yellow,
+                        is_key_model=is_key,
+                        is_autopilot=True,
+                        comment=f"[Автопилот] {rec.get('title')}"[:512],
+                        date_from=today,
+                        date_to=month_end,
+                    )
+                    log_actions.append(f"Создано правило автопилота: {rec.get('title')}")
+
+        elif a_type == 'set_tactic' and data.get('tactic'):
+            new_tactic = data['tactic']
+            if plan.tactic != new_tactic:
+                plan.tactic = new_tactic
+                plan.save(update_fields=['tactic'])
+                log_actions.append(f"Тактика автоматически скорректирована на «{plan.get_tactic_display()}»")
+
+    return log_actions
+
+
 def get_command_center_full_context(unit: RefUnit, month_start: date) -> dict:
     """Собирает полный контекст для дашборда Центра управления."""
     # Получаем или создаем план ДЦ на месяц
@@ -439,6 +532,7 @@ def get_command_center_full_context(unit: RefUnit, month_start: date) -> dict:
             'plan_dc_qty': 0,
             'plan_importer_qty': 0,
             'tactic': DcMonthlyPlan.TACTIC_BALANCED,
+            'is_autopilot': False,
         },
     )
 
@@ -498,6 +592,11 @@ def get_command_center_full_context(unit: RefUnit, month_start: date) -> dict:
         missed_info=missed_info,
     )
 
+    # Автопилот: автоматическая синхронизация при включенном режиме
+    autopilot_logs = []
+    if plan.is_autopilot:
+        autopilot_logs = sync_autopilot_for_unit(unit, month_start, plan=plan, recommendations=recommendations)
+
     # Активные правила дисконтов для этого ДЦ
     today = timezone.now().date()
     discounts_qs = PriceCarKmDiscount.objects.filter(
@@ -530,6 +629,7 @@ def get_command_center_full_context(unit: RefUnit, month_start: date) -> dict:
         'stock_data': stock_data,
         'key_models': key_models_qs,
         'recommendations': recommendations,
+        'autopilot_logs': autopilot_logs,
         'discounts': discounts_qs,
         'sales_channels': sales_channels,
         'brands': brands,
@@ -830,25 +930,24 @@ def simulate_deal_calculation(
 
     matched_discount = None
     discount_pct = 0.0
+    discount_rub = 0
     discount_comment = ''
 
     if brand_car:
         matched_discount = car._find_applicable_km_discount(brand_car)
         if matched_discount:
             discount_pct = float(matched_discount.discount_percent or 0.0)
+            discount_rub = int(matched_discount.discount_rub or 0)
             discount_comment = matched_discount.comment or ''
 
     # Восстанавливаем исходные значения объекта
     car.unit = saved_unit
     car.type_sale = saved_type_sale
 
-    # 3. Применение дисконта к базовому КМ
-    if discount_pct != 0:
-        final_km_rule = int(round(base_km * (1 + discount_pct / 100)))
-        discount_rub_impact = final_km_rule - base_km
-    else:
-        final_km_rule = base_km
-        discount_rub_impact = 0
+    # 3. Применение дисконта к базовому КМ (процент + рубли)
+    km_after_pct = base_km * (1 + discount_pct / 100) if discount_pct != 0 else base_km
+    final_km_rule = int(round(max(km_after_pct - discount_rub, 0)))
+    discount_rub_impact = final_km_rule - base_km
 
     # 4. Проверка условий автосогласования (Вердикт)
     diff = total_deal_kvp - final_km_rule
@@ -879,6 +978,13 @@ def simulate_deal_calculation(
         ).replace(',', ' ')
 
     # 5. Пошаговый протокол расчета («Рентген»)
+    disc_val_parts = []
+    if discount_pct:
+        disc_val_parts.append(f'{discount_pct}%')
+    if discount_rub:
+        disc_val_parts.append(f'-{discount_rub:,} ₽'.replace(',', ' '))
+    disc_val_str = ' и '.join(disc_val_parts) if disc_val_parts else '0%'
+
     steps = [
         {
             'step': 1,
@@ -889,8 +995,8 @@ def simulate_deal_calculation(
         },
         {
             'step': 2,
-            'title': 'Правило дисконта ДЦ',
-            'value': f'{discount_pct}%' if discount_pct else '0%',
+            'title': 'Правило дисконта ДЦ (Вариант 6)',
+            'value': disc_val_str,
             'formula': f'Специфичность: ДЦ={unit.name if unit else "Все"}, Канал={type_sale.name if type_sale else "Любой"}, Желтый={"Да" if is_yellow else "Нет"}, Ключевая={"Да" if is_key_model else "Нет"}',
             'comment': f'Найдено правило ID {matched_discount.id}: {discount_comment}' if matched_discount else 'Индивидуальные правила дисконта не найдены (дисконт 0%)',
         },
@@ -898,7 +1004,7 @@ def simulate_deal_calculation(
             'step': 3,
             'title': 'Итоговый расчетный КМ (Правило сделки)',
             'value': f'{final_km_rule:,} ₽'.replace(',', ' '),
-            'formula': f'Базовый КМ ({base_km:,} ₽) × (1 + {discount_pct}%) = {final_km_rule:,} ₽'.replace(',', ' '),
+            'formula': f'Базовый КМ ({base_km:,} ₽) ' + (f'× (1 + {discount_pct}%) ' if discount_pct else '') + (f'- {discount_rub:,} ₽ ' if discount_rub else '') + f'= {final_km_rule:,} ₽'.replace(',', ' '),
             'comment': f'Влияние дисконта: {discount_rub_impact:,} ₽'.replace(',', ' ') if discount_rub_impact else 'Без изменения',
         },
         {

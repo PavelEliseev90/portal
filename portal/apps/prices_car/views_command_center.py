@@ -216,8 +216,12 @@ def api_apply_recommendation(request):
             return JsonResponse({'success': True, 'message': f'Тактика изменена на «{plan.get_tactic_display()}»'})
 
         # 2. Создание правила дисконта
-        elif action_type in ('create_discount', 'create_yellow_discount'):
-            discount_pct = float(data.get('discount_percent', -3.0))
+        elif action_type in ('create_discount', 'create_yellow_discount', 'create_consignment_discount'):
+            discount_pct = float(data.get('discount_percent', 0.0))
+            discount_rub = int(data.get('discount_rub', 0))
+            days_cons = data.get('days_consignment_left_lte')
+            if days_cons is not None:
+                days_cons = int(days_cons)
             is_yellow = bool(data.get('is_yellow_car', False))
             is_key_model = bool(data.get('is_key_model', False))
             model_id = data.get('model_id')
@@ -249,6 +253,8 @@ def api_apply_recommendation(request):
                 model=model,
                 unit=unit,
                 discount_percent=discount_pct,
+                discount_rub=discount_rub,
+                days_consignment_left_lte=days_cons,
                 is_yellow_car=is_yellow,
                 is_key_model=is_key_model,
                 comment=comment,
@@ -264,6 +270,42 @@ def api_apply_recommendation(request):
 
         return JsonResponse({'success': False, 'error': 'Неизвестный тип действия'}, status=400)
 
+    except Exception as ex:
+        return JsonResponse({'success': False, 'error': str(ex)}, status=400)
+
+
+@login_required
+@require_POST
+def api_toggle_autopilot(request):
+    """Включение / выключение режима автопилота дисконтов для ДЦ."""
+    try:
+        data = json.loads(request.body)
+        unit_id = int(data.get('unit_id'))
+        month_str = data.get('month')
+        month_start = datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        enabled = bool(data.get('enabled', False))
+
+        unit = get_object_or_404(RefUnit, id=unit_id)
+        plan, _ = DcMonthlyPlan.objects.get_or_create(
+            unit=unit,
+            month=month_start,
+            defaults={'tactic': DcMonthlyPlan.TACTIC_BALANCED},
+        )
+        plan.is_autopilot = enabled
+        plan.author = request.user
+        plan.save(update_fields=['is_autopilot', 'author', 'updated_at'])
+
+        logs = []
+        if enabled:
+            from prices_car.command_center_service import sync_autopilot_for_unit
+            logs = sync_autopilot_for_unit(unit, month_start, plan=plan)
+
+        return JsonResponse({
+            'success': True,
+            'is_autopilot': plan.is_autopilot,
+            'logs': logs,
+            'message': f"Автопилот {'включен' if enabled else 'выключен'}." + (f" Применено авто-правил: {len(logs)}" if logs else ""),
+        })
     except Exception as ex:
         return JsonResponse({'success': False, 'error': str(ex)}, status=400)
 

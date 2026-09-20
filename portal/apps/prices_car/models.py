@@ -160,7 +160,27 @@ class PriceCarKmDiscount(models.Model):
     )
     discount_percent = models.FloatField(
         'Процент изменения мин. Км',
+        default=0.0,
         help_text='Процент, на который изменяется минимальный Км (кумулятивная маржа)',
+    )
+    discount_rub = models.IntegerField(
+        'Скидка к Км (в рублях)',
+        default=0,
+        null=True,
+        blank=True,
+        help_text='Фиксированная сумма скидки к целевому КМ в рублях (напр. 50 000, 100 000). Можно комбинировать с процентом.',
+    )
+    days_consignment_left_lte = models.IntegerField(
+        'Дней бесплатной консигнации осталось (<=)',
+        default=None,
+        null=True,
+        blank=True,
+        help_text='Применять дисконт только если до платной консигнации осталось не более X дней (напр. 15, 10, 0).',
+    )
+    is_autopilot = models.BooleanField(
+        'Создано автопилотом',
+        default=False,
+        help_text='Создано автоматически интеллектуальным помощником Центра управления',
     )
     unit = models.ForeignKey(
         RefUnit,
@@ -215,7 +235,13 @@ class PriceCarKmDiscount(models.Model):
             parts.append(self.complectation.name)
         if self.year:
             parts.append(str(self.year))
-        return '{}: {}% ({} — {})'.format(' / '.join(parts), self.discount_percent, self.date_from, self.date_to)
+        desc = []
+        if self.discount_percent:
+            desc.append(f'{self.discount_percent}%')
+        if self.discount_rub:
+            desc.append(f'{self.discount_rub:,} ₽'.replace(',', ' '))
+        disc_text = ' + '.join(desc) if desc else '0%'
+        return '{}: {} ({} — {})'.format(' / '.join(parts), disc_text, self.date_from, self.date_to)
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -258,6 +284,11 @@ class DcMonthlyPlan(models.Model):
         max_length=32,
         choices=TACTIC_CHOICES,
         default=TACTIC_BALANCED,
+    )
+    is_autopilot = models.BooleanField(
+        'Автопилот дисконтов',
+        default=False,
+        help_text='Автоматически активировать и синхронизировать рекомендованные правила дисконта при отставании от темпа или рисках консигнации',
     )
     author = models.ForeignKey(
         User,

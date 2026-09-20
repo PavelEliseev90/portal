@@ -37,8 +37,8 @@ class DcKeyModelInline(admin.TabularInline):
 
 @admin.register(DcMonthlyPlan)
 class DcMonthlyPlanAdmin(admin.ModelAdmin):
-    list_display = ('unit', 'month', 'plan_dc_qty', 'plan_importer_qty', 'tactic', 'author', 'updated_at')
-    list_filter = ('month', 'tactic', 'unit')
+    list_display = ('unit', 'month', 'plan_dc_qty', 'plan_importer_qty', 'tactic', 'is_autopilot', 'author', 'updated_at')
+    list_filter = ('month', 'tactic', 'is_autopilot', 'unit')
     search_fields = ('unit__name',)
     inlines = [DcKeyModelInline]
     date_hierarchy = 'month'
@@ -49,9 +49,10 @@ class DcMonthlyPlanAdmin(admin.ModelAdmin):
 class PriceCarKmDiscountAdmin(admin.ModelAdmin):
     list_display = (
         'brand', 'model', 'unit', 'type_sale', 'is_yellow_car', 'is_key_model',
-        'discount_percent', 'date_from', 'date_to',
+        'discount_percent', 'discount_rub', 'days_consignment_left_lte', 'is_autopilot',
+        'date_from', 'date_to',
     )
-    list_filter = ('brand', 'unit', 'is_yellow_car', 'is_key_model', 'type_sale', 'date_from')
+    list_filter = ('brand', 'unit', 'is_yellow_car', 'is_key_model', 'is_autopilot', 'type_sale', 'date_from')
     search_fields = ('brand__name', 'model__name', 'comment')
     raw_id_fields = ('model', 'modification', 'complectation', 'unit')
     ordering = ('-date_from', 'brand')
