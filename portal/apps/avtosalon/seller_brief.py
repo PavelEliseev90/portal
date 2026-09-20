@@ -123,24 +123,47 @@ def _analyze_avtohub(car, ah) -> dict[str, Any]:
             'snapshot_days_ago': None,
         }
 
-    cna = _int(ah.avgMarketPrice)
-    imv = _int(ah.imv)
-    pcp = _int(ah.maxposterSaleCost)
+    cna = _int(getattr(ah, 'avgMarketPrice', 0))
+    imv = _int(getattr(ah, 'imv', 0))
+    pcp = _int(getattr(ah, 'maxposterSaleCost', 0))
 
     price_diff = (car_price - cna) if cna > 0 else None
     price_diff_pct = round(price_diff / cna * 100, 1) if (price_diff and cna > 0) else None
 
-    views_avito = _int(ah.avitoViews)
-    views_autoru = _int(ah.autoruViews)
-    views_drom = _int(ah.dromViews)
+    views_avito = _int(getattr(ah, 'avitoViews', 0))
+    views_autoru = _int(getattr(ah, 'autoruViews', 0))
+    views_drom = _int(getattr(ah, 'dromViews', 0))
     views_total = views_avito + views_autoru + views_drom
 
-    calls_total = _int(ah.totalCalls)
-    chats_total = _int(ah.totalChats)
+    # Звонки и чаты: в модели Avtohub поля callsCounts_uniqueTotal и chatsCounts_uniqueTotal
+    calls_total = _int(
+        getattr(ah, 'callsCounts_uniqueTotal', None)
+        or getattr(ah, 'totalCalls', 0)
+    )
+    chats_total = _int(
+        getattr(ah, 'chatsCounts_uniqueTotal', None)
+        or getattr(ah, 'totalChats', 0)
+    )
 
-    position = _int(ah.pricePosition)
-    competitors = _int(ah.numberOfCompetitors)
-    rating_pct = round(_num(ah.vRating) * 100, 1) if ah.vRating is not None else None
+    # Позиция и конкуренты: в модели vRatingPosition и numberOfCompetitors
+    position = _int(
+        getattr(ah, 'vRatingPosition', None)
+        or getattr(ah, 'pricePosition', 0)
+    )
+    competitors = _int(getattr(ah, 'numberOfCompetitors', 0))
+
+    # Привлекательность в %
+    rating_pct = None
+    if competitors > 0 and position > 0:
+        rating_pct = round(100 * position / competitors, 1)
+    elif getattr(ah, 'vRating', None) is not None:
+        rating_pct = round(_num(ah.vRating) * 100, 1)
+
+    # Затраты на маркетинг: в модели totalAdvertisingCost
+    marketing_cost = _num(
+        getattr(ah, 'totalAdvertisingCost', None)
+        or getattr(ah, 'marketingExpenses', 0.0)
+    )
 
     return {
         'has_data': True,
@@ -158,11 +181,11 @@ def _analyze_avtohub(car, ah) -> dict[str, Any]:
         'views_drom': views_drom,
         'calls_total': calls_total,
         'chats_total': chats_total,
-        'days_in_sale': _int(ah.daysInSale),
-        'avg_days_in_sale': _int(ah.averageDaysInSale),
-        'marketing_cost': _num(ah.marketingExpenses),
-        'snapshot_date': ah.date,
-        'snapshot_days_ago': _days_ago(ah.date),
+        'days_in_sale': _int(getattr(ah, 'daysInSale', 0)),
+        'avg_days_in_sale': _int(getattr(ah, 'averageDaysInSale', 0)),
+        'marketing_cost': marketing_cost,
+        'snapshot_date': getattr(ah, 'date', None),
+        'snapshot_days_ago': _days_ago(getattr(ah, 'date', None)),
     }
 
 
