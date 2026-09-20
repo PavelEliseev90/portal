@@ -60,6 +60,38 @@
 .cc-rec-success { border-left-color: #10b981; background: #fbfdfc; }
 .cc-rec-info { border-left-color: #3b82f6; background: #fbfdff; }
 
+/* Индикаторы квадрантов баланса */
+.cc-badge-quadrant-success {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-warning {
+    background: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-info {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-danger {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+    font-weight: 600;
+}
+.cc-badge-quadrant-secondary {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    font-weight: 500;
+}
+
 .tactic-btn-group .btn {
     font-size: 13px;
     padding: 6px 14px;
@@ -193,6 +225,10 @@
                         🤖 Автопилот: <strong>{% if plan.is_autopilot %}ВКЛ{% else %}ВЫКЛ{% endif %}</strong>
                     </button>
 
+                    <a href="{% url 'prices_car:command_center_units' %}?month={{ month_str }}" class="btn btn-sm btn-outline-light" title="Мониторинг всех дилерских центров с автопилотом">
+                        <i class="icon-grid"></i> Все ДЦ
+                    </a>
+
                     <a href="{% url 'prices_car:deal_simulator' %}?unit_id={{ current_unit.id }}" class="btn btn-sm btn-info text-dark font-weight-bold">
                         <i class="icon-wrench"></i> Тестовый стенд
                     </a>
@@ -321,12 +357,12 @@
     </div>
 
     <!-- БЛОК 1: KPI-ПУЛЬС ВЫПОЛНЕНИЯ ПЛАНОВ И ТАКТИКА ДЦ -->
-    <div class="row g-3 mb-4">
-        <!-- Карточка: План ДЦ -->
-        <div class="col-xl-3 col-md-6">
-            <div class="cc-kpi-card">
+    <div class="row g-2 mb-4">
+        <!-- Карточка 1: План ДЦ -->
+        <div class="col-xl col-md-6 col-sm-12">
+            <div class="cc-kpi-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small text-uppercase font-weight-bold">План ДЦ на месяц</span>
+                    <span class="text-muted small text-uppercase font-weight-bold">План ДЦ (шт.)</span>
                     <span class="badge bg-light text-dark border">ДЦ</span>
                 </div>
                 <div class="d-flex align-items-baseline gap-2 mb-1">
@@ -334,9 +370,9 @@
                     <span class="text-muted">шт.</span>
                 </div>
                 <div class="small text-muted mb-2">
-                    Факт контрактов: <strong class="text-dark">{{ contracts_count }} шт.</strong>
+                    Факт: <strong class="text-dark">{{ contracts_count }} шт.</strong>
                     {% if gap_dc > 0 %}
-                    <span class="text-danger ms-1">(осталось: {{ gap_dc }})</span>
+                    <span class="text-danger ms-1">(ост. {{ gap_dc }})</span>
                     {% else %}
                     <span class="text-success ms-1">(выполнен!)</span>
                     {% endif %}
@@ -347,11 +383,11 @@
             </div>
         </div>
 
-        <!-- Карточка: План Импортера -->
-        <div class="col-xl-3 col-md-6">
-            <div class="cc-kpi-card">
+        <!-- Карточка 2: План Импортера -->
+        <div class="col-xl col-md-6 col-sm-12">
+            <div class="cc-kpi-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small text-uppercase font-weight-bold">План Импортера по ДЦ</span>
+                    <span class="text-muted small text-uppercase font-weight-bold">План Импортера</span>
                     <span class="badge bg-danger text-white">Бонус</span>
                 </div>
                 <div class="d-flex align-items-baseline gap-2 mb-1">
@@ -359,7 +395,7 @@
                     <span class="text-muted">шт.</span>
                 </div>
                 <div class="small text-muted mb-2">
-                    Прогноз (Run-rate): <strong class="text-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">{{ run_rate_forecast }} шт.</strong>
+                    Прогноз: <strong class="text-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">{{ run_rate_forecast }} шт.</strong>
                     {% if gap_importer > 0 %}
                     <span class="text-danger ms-1">(до бонуса: {{ gap_importer }})</span>
                     {% endif %}
@@ -370,11 +406,37 @@
             </div>
         </div>
 
-        <!-- Карточка: Темп продаж и дни -->
-        <div class="col-xl-3 col-md-6">
-            <div class="cc-kpi-card">
+        <!-- Карточка 3: План по кумулятивной марже (КМ в рублях) -->
+        <div class="col-xl col-md-6 col-sm-12">
+            <div class="cc-kpi-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small text-uppercase font-weight-bold">Скорость контрактования</span>
+                    <span class="text-muted small text-uppercase font-weight-bold">План КМ (маржа ₽)</span>
+                    <span class="badge cc-badge-quadrant-{{ quadrant_badge_class }}" title="{{ quadrant_desc }}" style="font-size: 0.70rem;">
+                        {{ quadrant_label }}
+                    </span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 mb-1">
+                    <h3 class="mb-0 font-weight-bold text-dark" style="font-size: 1.35rem;">{{ plan_km_formatted }}</h3>
+                </div>
+                <div class="small text-muted mb-2">
+                    Факт: <strong class="text-dark">{{ fact_km_formatted }}</strong>
+                    {% if plan_km > 0 %}
+                        · Прогноз: <strong class="{% if km_pace_pct >= 90 %}text-success{% else %}text-warning{% endif %}">{{ km_run_rate_formatted }}</strong> ({{ km_pace_pct }}%)
+                    {% else %}
+                        · <span class="text-muted">план не задан</span>
+                    {% endif %}
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar {% if km_pace_pct >= 90 %}bg-success{% elif km_pace_pct >= 75 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {% if km_pace_pct > 100 %}100{% else %}{{ km_pace_pct|default:0 }}{% endif %}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка 4: Темп продаж и дни -->
+        <div class="col-xl col-md-6 col-sm-12">
+            <div class="cc-kpi-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-weight-bold">Скорость контрактов</span>
                     <span class="badge bg-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">{{ pace_status_label }}</span>
                 </div>
                 <div class="d-flex align-items-baseline gap-2 mb-1">
@@ -382,32 +444,32 @@
                     <span class="text-muted">авто / день</span>
                 </div>
                 <div class="small text-muted mb-1">
-                    Требуется для импортера: <strong class="text-dark">{{ required_speed_importer }}</strong> авто/день
+                    Требуется: <strong class="text-dark">{{ required_speed_importer }}</strong> авто/день
                 </div>
                 <div class="small text-muted">
-                    Дней осталось: <strong>{{ days_info.days_remaining }}</strong> из {{ days_info.days_in_month }} (прошло {{ days_info.month_progress_pct }}%)
+                    Осталось: <strong>{{ days_info.days_remaining }} дн.</strong> из {{ days_info.days_in_month }}
                 </div>
             </div>
         </div>
 
-        <!-- Карточка: Тактика ценообразования ДЦ -->
-        <div class="col-xl-3 col-md-6">
-            <div class="cc-kpi-card">
+        <!-- Карточка 5: Тактика ценообразования ДЦ -->
+        <div class="col-xl col-md-6 col-sm-12">
+            <div class="cc-kpi-card h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small text-uppercase font-weight-bold">Тактика ДЦ (АвтоК)</span>
+                    <span class="text-muted small text-uppercase font-weight-bold">Тактика (АвтоК)</span>
                     <span class="badge bg-secondary text-white" id="currentTacticBadge">{{ plan.get_tactic_display }}</span>
                 </div>
                 <div class="small text-muted mb-2">
-                    Влияет на целевую маржу и допустимые дисконты:
+                    Целевая маржинальность:
                 </div>
                 <div class="btn-group w-100 tactic-btn-group" role="group">
-                    <button type="button" class="btn {% if plan.tactic == 'max_margin' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_margin')">
+                    <button type="button" class="btn {% if plan.tactic == 'max_margin' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_margin')" title="Фокус на маржу (×1.10)">
                         Маржа
                     </button>
-                    <button type="button" class="btn {% if plan.tactic == 'balanced' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('balanced')">
+                    <button type="button" class="btn {% if plan.tactic == 'balanced' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('balanced')" title="Сбалансированная (×1.00)">
                         Баланс
                     </button>
-                    <button type="button" class="btn {% if plan.tactic == 'max_volume' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_volume')">
+                    <button type="button" class="btn {% if plan.tactic == 'max_volume' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_volume')" title="Максимальный объем (×0.85)">
                         Штуки
                     </button>
                 </div>
@@ -842,6 +904,16 @@
                     <div class="form-text">План дистрибьютора по данному ДЦ (для получения бонуса).</div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label font-weight-bold">Целевой кумулятивный маржинальный доход (₽):</label>
+                    <input type="number" id="modal_plan_km_rub" class="form-control" value="{{ plan.plan_km_rub|default:0 }}" min="0" step="10000">
+                    <div class="form-text">План по суммарной валовой прибыли (КМ) ДЦ за месяц в рублях.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Целевой оборот / выручка (₽):</label>
+                    <input type="number" id="modal_plan_revenue_rub" class="form-control" value="{{ plan.plan_revenue_rub|default:0 }}" min="0" step="100000">
+                    <div class="form-text">Ориентировочный оборот по новым автомобилям за месяц.</div>
+                </div>
+                <div class="mb-3">
                     <label class="form-label font-weight-bold">Тактика ценообразования:</label>
                     <select id="modal_tactic" class="form-select">
                         <option value="max_margin" {% if plan.tactic == 'max_margin' %}selected{% endif %}>Максимальная маржа (×1.10)</option>
@@ -954,6 +1026,8 @@ function setTactic(tactic) {
             month: '{{ month_str }}',
             plan_dc_qty: {{ plan.plan_dc_qty|default:0 }},
             plan_importer_qty: {{ plan.plan_importer_qty|default:0 }},
+            plan_km_rub: {{ plan.plan_km_rub|default:0 }},
+            plan_revenue_rub: {{ plan.plan_revenue_rub|default:0 }},
             tactic: tactic,
         })
     })
@@ -971,6 +1045,8 @@ function setTactic(tactic) {
 function savePlanFromModal() {
     const planDc = document.getElementById('modal_plan_dc').value;
     const planImp = document.getElementById('modal_plan_imp').value;
+    const planKm = document.getElementById('modal_plan_km_rub') ? document.getElementById('modal_plan_km_rub').value : 0;
+    const planRev = document.getElementById('modal_plan_revenue_rub') ? document.getElementById('modal_plan_revenue_rub').value : 0;
     const tactic = document.getElementById('modal_tactic').value;
 
     fetch('{% url "prices_car:api_save_dc_plan" %}', {
@@ -984,6 +1060,8 @@ function savePlanFromModal() {
             month: '{{ month_str }}',
             plan_dc_qty: planDc,
             plan_importer_qty: planImp,
+            plan_km_rub: planKm,
+            plan_revenue_rub: planRev,
             tactic: tactic,
         })
     })

@@ -7,6 +7,7 @@ app_name = 'prices_car'
 urlpatterns = [
     path('', views.index, name='index'),
     path('command_center/', views_command_center.command_center_dashboard, name='command_center'),
+    path('command_center/units/', views_command_center.command_center_units_overview, name='command_center_units'),
     path('command_center/api/save_plan/', views_command_center.api_save_dc_plan, name='api_save_dc_plan'),
     path('command_center/api/apply_recommendation/', views_command_center.api_apply_recommendation, name='api_apply_recommendation'),
     path('command_center/api/toggle_autopilot/', views_command_center.api_toggle_autopilot, name='api_toggle_autopilot'),

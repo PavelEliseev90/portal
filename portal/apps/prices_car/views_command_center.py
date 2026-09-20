@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from prices_car.command_center_service import (
     export_plans_template_excel,
+    get_all_units_command_center_overview,
     get_command_center_full_context,
     get_first_day_of_month,
     import_plans_from_excel,
@@ -167,6 +168,8 @@ def api_save_dc_plan(request):
 
         plan_dc = max(int(data.get('plan_dc_qty', 0)), 0)
         plan_imp = max(int(data.get('plan_importer_qty', 0)), 0)
+        plan_km_rub = max(int(data.get('plan_km_rub', 0)), 0)
+        plan_revenue_rub = max(int(data.get('plan_revenue_rub', 0)), 0)
         tactic = data.get('tactic', DcMonthlyPlan.TACTIC_BALANCED)
 
         unit = get_object_or_404(RefUnit, id=unit_id)
@@ -176,6 +179,8 @@ def api_save_dc_plan(request):
             defaults={
                 'plan_dc_qty': plan_dc,
                 'plan_importer_qty': plan_imp,
+                'plan_km_rub': plan_km_rub,
+                'plan_revenue_rub': plan_revenue_rub,
                 'tactic': tactic,
                 'author': request.user,
             },
@@ -186,6 +191,8 @@ def api_save_dc_plan(request):
             'plan_id': plan.id,
             'plan_dc_qty': plan.plan_dc_qty,
             'plan_importer_qty': plan.plan_importer_qty,
+            'plan_km_rub': plan.plan_km_rub,
+            'plan_revenue_rub': plan.plan_revenue_rub,
             'tactic': plan.tactic,
             'tactic_display': plan.get_tactic_display(),
             'message': 'Планы и тактика успешно сохранены',
@@ -545,3 +552,48 @@ def api_simulate_deal(request):
         return JsonResponse(result)
     except Exception as ex:
         return JsonResponse({'success': False, 'error': str(ex)}, status=400)
+
+
+@login_required
+def command_center_units_overview(request):
+    """
+    Экран мониторинга всех ДЦ: список дилерских центров с автопилотом,
+    темпом контрактования, рекомендациями и складскими рисками по городам.
+    """
+    profile = getattr(request.user, 'profiles', None)
+    has_access = bool(
+        request.user.is_superuser or
+        (profile and (profile.price_car_new or profile.price_car_new_director or profile.price_car_new_all))
+    )
+    if not has_access:
+        return render(request, 'errors/403.html', {'params': {'type': 'home', 'request': request}}, status=403)
+
+    month_str = request.GET.get('month')
+    if month_str:
+        try:
+            month_start = datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        except ValueError:
+            month_start = get_first_day_of_month()
+    else:
+        month_start = get_first_day_of_month()
+
+    filters = {
+        'city_id': request.GET.get('city_id', 'all'),
+        'autopilot': request.GET.get('autopilot', 'all'),
+        'recommendations': request.GET.get('recommendations', 'all'),
+        'pace': request.GET.get('pace', 'all'),
+        'quadrant': request.GET.get('quadrant', 'all'),
+        'search': request.GET.get('search', ''),
+    }
+
+    overview_data = get_all_units_command_center_overview(month_start, filters=filters)
+
+    context = {
+        'month_start': month_start,
+        'month_str': month_start.strftime('%Y-%m'),
+        'overview': overview_data,
+        'filters': filters,
+        'is_uk': bool(request.user.is_superuser or (profile and profile.price_car_new_all)),
+    }
+    return render(request, 'prices_car/command_center_units.html', context)
+

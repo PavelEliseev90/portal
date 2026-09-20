@@ -85,6 +85,11 @@
     {% endif %}
     <p>Согласование коммерческих предложений · счётчики за сегодня</p>
     <div class="ncd-actions">
+      {% if desktop.role == 'uk' or user.profiles.price_car_new_all or user.is_superuser %}
+      <a href="{% url 'prices_car:command_center_units' %}" class="ncd-btn ncd-btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff;">
+        🏢 Управление ДЦ (Автопилот)
+      </a>
+      {% endif %}
       <a href="{% url 'prices_car:command_center' %}" class="ncd-btn ncd-btn-primary" style="background: #22c55e; color: #fff;">
         🎯 Центр управления (Вариант 6)
       </a>
