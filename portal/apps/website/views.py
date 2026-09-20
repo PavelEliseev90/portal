@@ -4471,50 +4471,209 @@ def upload_avito_ru(request):
 ##
 # Ссылки на выгрузки
 def links_dc(request):
+    """
+    Реестр ссылок на выгрузки (фиды) автомобилей ДЦ для внешних площадок и классифайдов.
+    Поддерживает фильтрацию по поисковой строке, городу, ДЦ, назначению площадки, марке,
+    пагинацию и выгрузку в Excel.
+    """
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
-    else:
-        countListRecord = 25
-        
-        unit_id         = request.GET.get('unit_id', '')
-        type_id         = request.GET.get('type_id', '')
-        page_number     = request.GET.get('page')
 
-        links       = RefExchangeCars.objects.order_by('unit')
-        
-        if len(unit_id) > 0:
-            links = links.filter(unit__id = unit_id) 
+    search_query = request.GET.get('search', '').strip()
+    city_filter = request.GET.get('city', '').strip()
+    unit_id = request.GET.get('unit_id', '').strip()
+    type_id = request.GET.get('type_id', '').strip()
+    mark_filter = request.GET.get('mark', '').strip()
+    page_number = request.GET.get('page')
+    per_page_param = request.GET.get('per_page', '50')
 
-        if len(type_id) > 0:
-            links = links.filter(type_exchange__id = type_id)
-    
-        paginator   = Paginator(links, countListRecord)
-        page_obj    = paginator.get_page(page_number)
-        
-        filtr = {
-            'unit_id'           : unit_id,
-            'type_id'           : type_id,
-            'page_number'       : page_number
-        }
+    try:
+        countListRecord = int(per_page_param)
+        if countListRecord not in (25, 50, 100, 200):
+            countListRecord = 50
+    except (ValueError, TypeError):
+        countListRecord = 50
 
-        toast   = ''
-        count   = ''
+    base_qs = RefExchangeCars.objects.select_related('unit', 'unit__city', 'type_exchange')
+    total_in_db = base_qs.count()
 
-        selected = {
-            'units' : RefUnit.objects.filter(buauto = False).order_by('name'),
-            'type'  : RefTypeExchange.objects.all().order_by('name')
-        }
+    qs = base_qs
 
-        params = {
-            'type'          : 'links',
-            'page_number'   : page_number,
-            'paginator'     : page_obj,
-            'filtr'         : filtr,
-            'selected'      : selected,
-            'toast'         : toast,
-            'count'         : count
-        }
-        return render(request, 'website/link_dc_exchange.html', {'params': params}) 
+    # Текстовый поиск по всем ключевым полям
+    if search_query:
+        qs = qs.filter(
+            Q(unit__name__icontains=search_query) |
+            Q(link__icontains=search_query) |
+            Q(file_name__icontains=search_query) |
+            Q(mark_filter__icontains=search_query) |
+            Q(city_name__icontains=search_query) |
+            Q(adress__icontains=search_query) |
+            Q(type_exchange__name__icontains=search_query)
+        )
+
+    # Фильтр по городу
+    if city_filter:
+        qs = qs.filter(Q(city_name__iexact=city_filter) | Q(unit__city__name__iexact=city_filter))
+
+    # Фильтр по ДЦ
+    if unit_id:
+        try:
+            qs = qs.filter(unit_id=int(unit_id))
+        except ValueError:
+            pass
+
+    # Фильтр по назначению выгрузки
+    if type_id:
+        try:
+            qs = qs.filter(type_exchange_id=int(type_id))
+        except ValueError:
+            pass
+
+    # Фильтр по марке
+    if mark_filter:
+        qs = qs.filter(mark_filter__iexact=mark_filter)
+
+    qs = qs.order_by('city_name', 'unit__name', 'type_exchange__name', 'file_name')
+    filtered_count = qs.count()
+
+    # Экспорт в Excel при параметре ?export=excel
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from io import BytesIO
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from django.utils import timezone
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Выгрузки ДЦ"
+
+        headers = [
+            '№', 'Город', 'Подразделение ДЦ', 'Назначение площадки',
+            'Марка', 'Адрес', 'Имя файла', 'Ссылка на фид'
+        ]
+        ws.append(headers)
+
+        header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color='002A5A', end_color='002A5A', fill_type='solid')
+        align_center = Alignment(horizontal='center', vertical='center')
+        align_left = Alignment(horizontal='left', vertical='center')
+        border_thin = Border(
+            left=Side(style='thin', color='D9D9D9'),
+            right=Side(style='thin', color='D9D9D9'),
+            top=Side(style='thin', color='D9D9D9'),
+            bottom=Side(style='thin', color='D9D9D9')
+        )
+
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = align_center
+
+        for idx, item in enumerate(qs, start=1):
+            c_name = item.city_name or (item.unit.city.name if item.unit and item.unit.city else '')
+            u_name = item.unit.name if item.unit else ''
+            t_name = item.type_exchange.name if item.type_exchange else ''
+            row_vals = [
+                idx,
+                c_name,
+                u_name,
+                t_name,
+                item.mark_filter or 'Все марки',
+                item.adress or '',
+                item.file_name or '',
+                item.link or '',
+            ]
+            ws.append(row_vals)
+            current_row = idx + 1
+            for col_idx in range(1, len(row_vals) + 1):
+                c = ws.cell(row=current_row, column=col_idx)
+                c.border = border_thin
+                if col_idx in (1, 4, 5):
+                    c.alignment = align_center
+                else:
+                    c.alignment = align_left
+
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = openpyxl.utils.get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 65)
+
+        stream = BytesIO()
+        wb.save(stream)
+        stream.seek(0)
+
+        filename = f"links_dc_export_{timezone.now():%Y%m%d_%H%M}.xlsx"
+        response = HttpResponse(
+            stream.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    # Справочники для фильтрации
+    all_cities_raw = list(RefExchangeCars.objects.exclude(city_name='').values_list('city_name', flat=True).distinct())
+    unit_cities_raw = list(RefCity.objects.filter(refunit__refexchangecars__isnull=False).values_list('name', flat=True).distinct())
+    unique_cities = sorted(set(c.strip() for c in (all_cities_raw + unit_cities_raw) if c and c.strip()))
+
+    all_units = RefUnit.objects.filter(buauto=False).select_related('city').order_by('city__name', 'name')
+    all_types = RefTypeExchange.objects.all().order_by('name')
+    all_marks = sorted(set(
+        m.strip() for m in RefExchangeCars.objects.exclude(mark_filter='').values_list('mark_filter', flat=True).distinct() if m and m.strip()
+    ))
+
+    # KPI метрики
+    kpi = {
+        'total_links': total_in_db,
+        'filtered_links': filtered_count,
+        'units_count': RefExchangeCars.objects.filter(unit__isnull=False).values('unit_id').distinct().count(),
+        'types_count': RefExchangeCars.objects.filter(type_exchange__isnull=False).values('type_exchange_id').distinct().count(),
+        'cities_count': len(unique_cities),
+    }
+
+    # Пагинация
+    paginator = Paginator(qs, countListRecord)
+    page_obj = paginator.get_page(page_number)
+
+    # Число активных фильтров
+    active_filters_count = sum(1 for v in [search_query, city_filter, unit_id, type_id, mark_filter] if v)
+
+    # Query string для ссылок пагинатора без &page=
+    query_dict = request.GET.copy()
+    if 'page' in query_dict:
+        del query_dict['page']
+    query_string = query_dict.urlencode()
+
+    filtr = {
+        'search': search_query,
+        'city': city_filter,
+        'unit_id': unit_id,
+        'type_id': type_id,
+        'mark': mark_filter,
+        'per_page': countListRecord,
+        'page_number': page_number,
+        'active_count': active_filters_count,
+    }
+
+    selected = {
+        'cities': unique_cities,
+        'units': all_units,
+        'type': all_types,
+        'marks': all_marks,
+    }
+
+    params = {
+        'type': 'links',
+        'page_number': page_number,
+        'paginator': page_obj,
+        'filtr': filtr,
+        'selected': selected,
+        'kpi': kpi,
+        'query_string': query_string,
+        'toast': '',
+        'count': filtered_count,
+    }
+    return render(request, 'website/link_dc_exchange.html', {'params': params}) 
 
 
 
