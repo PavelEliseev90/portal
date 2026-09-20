@@ -1,0 +1,427 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Тестовый стенд расчета сделки (Симулятор правил) {% endblock %}
+{% block title_navbar %} — Тестовый стенд сделки {% endblock %}
+
+{% block content %}
+<style>
+.sim-container {
+    padding: 15px 20px 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1e293b;
+}
+.sim-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+.sim-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 12px;
+    padding: 18px 24px;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+.verdict-banner {
+    border-radius: 10px;
+    padding: 18px 20px;
+    color: #ffffff;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+.verdict-approved {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+.verdict-director {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+}
+.verdict-uk {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+.step-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+.step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+.kpi-mini {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+}
+</style>
+
+<div class="sim-container">
+
+    <!-- ШАПКА ТЕСТОВОГО СТЕНДА -->
+    <div class="sim-header">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-info text-dark px-2 py-1">Lab / Sandbox</span>
+                    <h3 class="mb-0 text-white font-weight-bold">Тестовый стенд расчета сделки</h3>
+                </div>
+                <div class="text-white-50 small">
+                    Симуляция правил продажи новых авто: АвтоК (Вариант 3), дисконты, каналы, желтые авто и тактики ДЦ
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'prices_car:command_center' %}{% if current_unit %}?unit_id={{ current_unit.id }}{% endif %}" class="btn btn-outline-light btn-sm">
+                    &larr; Вернуться в Центр управления
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ЛЕВАЯ КОЛОНКА: ПАРАМЕТРЫ СДЕЛКИ (ПУЛЬТ) -->
+        <div class="col-lg-5 col-md-12">
+            <div class="sim-panel">
+                <h5 class="font-weight-bold mb-3 text-dark"><i class="icon-wrench"></i> Параметры расчета сделки</h5>
+
+                <form id="simForm" onsubmit="return false;">
+                    <!-- 1. Выбор ДЦ -->
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold text-muted text-uppercase">Дилерский центр (ДЦ):</label>
+                        <select id="unit_id" class="form-select form-select-sm" onchange="onUnitChange(this.value)">
+                            {% for u in all_units %}
+                            <option value="{{ u.id }}" {% if current_unit and current_unit.id == u.id %}selected{% endif %}>
+                                {{ u.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 2. Выбор автомобиля со склада -->
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold text-muted text-uppercase">Автомобиль со склада:</label>
+                        <select id="car_id" class="form-select form-select-sm" onchange="onCarChange(this.value)">
+                            {% for c in cars %}
+                            <option value="{{ c.id }}"
+                                    data-rrc="{{ c.price|default:0 }}"
+                                    data-cost="{{ c.cost_price|default:0 }}"
+                                    data-yellow="{% if c.is_yellow %}1{% else %}0{% endif %}"
+                                    data-typesale="{{ c.type_sale_id|default:'' }}"
+                                    {% if selected_car and selected_car.id == c.id %}selected{% endif %}>
+                                {{ c.mark }} {{ c.model }} (РРЦ: {{ c.price }} ₽) | {{ c.vin }}
+                            </option>
+                            {% empty %}
+                            <option value="">Нет новых авто на складе</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 3. Канал продаж и тактика ДЦ -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold text-muted text-uppercase">Канал продажи:</label>
+                            <select id="type_sale_id" class="form-select form-select-sm" onchange="recalculate()">
+                                <option value="">Любой канал</option>
+                                {% for ts in sales_channels %}
+                                <option value="{{ ts.id }}" {% if selected_car and selected_car.type_sale_id == ts.id %}selected{% endif %}>
+                                    {{ ts.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold text-muted text-uppercase">Тактика ДЦ:</label>
+                            <select id="tactic" class="form-select form-select-sm" onchange="recalculate()">
+                                <option value="balanced" {% if current_plan and current_plan.tactic == 'balanced' %}selected{% endif %}>Баланс (×1.00)</option>
+                                <option value="max_margin" {% if current_plan and current_plan.tactic == 'max_margin' %}selected{% endif %}>Макс. маржа (×1.10)</option>
+                                <option value="max_volume" {% if current_plan and current_plan.tactic == 'max_volume' %}selected{% endif %}>Макс. штуки (×0.85)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 4. Флаги статусов: Желтый и Ключевая модель -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="form-check form-switch p-2 bg-light rounded border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" id="is_yellow" {% if selected_car and selected_car.is_yellow %}checked{% endif %} onchange="recalculate()">
+                                <label class="form-check-label small font-weight-bold" for="is_yellow">Желтый (рапорт)</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-check form-switch p-2 bg-light rounded border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" id="is_key_model" onchange="recalculate()">
+                                <label class="form-check-label small font-weight-bold" for="is_key_model">Ключевая модель</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3 text-muted">
+                    <h6 class="font-weight-bold mb-3 text-dark"><i class="icon-calculator"></i> Финансы сделки</h6>
+
+                    <!-- 5. РРЦ и Скидка на авто -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">РРЦ автомобиля (₽):</label>
+                            <input type="number" id="rrc_display" class="form-control form-control-sm bg-light" value="{{ selected_car.price|default:0 }}" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Скидка на автомобиль (₽):</label>
+                            <input type="number" id="discount_amount" class="form-control form-control-sm" value="0" step="5000" oninput="recalculate()">
+                        </div>
+                    </div>
+
+                    <!-- 6. Трейд-ин -->
+                    <div class="card p-2 mb-2 bg-light border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="with_trade_in" onchange="toggleTradeIn(this.checked)">
+                                <label class="form-check-label small font-weight-bold" for="with_trade_in">Сделка с Trade-in</label>
+                            </div>
+                            <span class="badge bg-secondary">Выкуп авто</span>
+                        </div>
+                        <div id="tradein_block" style="display: none;" class="mt-2">
+                            <label class="form-label small text-muted">Ожидаемая маржа с принятого авто (₽):</label>
+                            <input type="number" id="tradein_margin" class="form-control form-control-sm" value="50000" step="5000" oninput="recalculate()">
+                        </div>
+                    </div>
+
+                    <!-- 7. Кредит / ОПФУ -->
+                    <div class="card p-2 mb-2 bg-light border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="with_credit" onchange="toggleCredit(this.checked)">
+                                <label class="form-check-label small font-weight-bold" for="with_credit">Продажа в Кредит</label>
+                            </div>
+                            <span class="badge bg-secondary">ОПФУ / Комиссия</span>
+                        </div>
+                        <div id="credit_block" style="display: none;" class="mt-2">
+                            <label class="form-label small text-muted">Доход от банка / ОПФУ (₽):</label>
+                            <input type="number" id="opfu_amount" class="form-control form-control-sm" value="70000" step="5000" oninput="recalculate()">
+                        </div>
+                    </div>
+
+                    <!-- 8. Допы, Работы, Страховки -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Маржа с допов (₽):</label>
+                            <input type="number" id="dop_margin" class="form-control form-control-sm" value="25000" step="5000" oninput="recalculate()">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Работы / ЗЧ / КАСКО (₽):</label>
+                            <input type="number" id="work_margin" class="form-control form-control-sm" value="15000" step="5000" oninput="recalculate()">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТЫ РАСЧЕТА («РЕНТГЕН СДЕЛКИ») -->
+        <div class="col-lg-7 col-md-12">
+            <!-- БАННЕР ВЕРДИКТА -->
+            <div id="verdictBanner" class="verdict-banner {% if initial_calc.verdict.class == 'success' %}verdict-approved{% elif initial_calc.verdict.class == 'warning' %}verdict-director{% else %}verdict-uk{% endif %}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="mb-0 font-weight-bold" id="verdictBadge">
+                        {{ initial_calc.verdict.badge|default:"Согласовано автоматически" }}
+                    </h4>
+                    <span class="badge bg-white text-dark shadow-sm">Вердикт системы</span>
+                </div>
+                <p class="mb-0 small" id="verdictMsg">
+                    {{ initial_calc.verdict.message|default:"КВП сделки соответствует установленному расчетному правилу." }}
+                </p>
+            </div>
+
+            <!-- СВОДНЫЕ ЦИФРЫ КВП VS ПРАВИЛО КМ -->
+            <div class="row g-2 mb-4">
+                <div class="col-4">
+                    <div class="kpi-mini">
+                        <div class="small text-muted text-uppercase">Фактический КВП сделки</div>
+                        <h4 class="font-weight-bold text-dark mb-0" id="dispTotalKvp">
+                            {{ initial_calc.breakdown.total_deal_kvp|default:0 }} ₽
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="kpi-mini">
+                        <div class="small text-muted text-uppercase">Расчетное правило КМ</div>
+                        <h4 class="font-weight-bold text-primary mb-0" id="dispFinalKm">
+                            {{ initial_calc.breakdown.final_km_rule|default:0 }} ₽
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="kpi-mini">
+                        <div class="small text-muted text-uppercase">Разница (КВП - КМ)</div>
+                        <h4 class="font-weight-bold text-{% if initial_calc.breakdown.diff >= 0 %}success{% else %}danger{% endif %} mb-0" id="dispDiff">
+                            {{ initial_calc.breakdown.diff|default:0 }} ₽
+                        </h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПОШАГОВЫЙ ПРОТОКОЛ («РЕНТГЕН РАСЧЕТА») -->
+            <div class="sim-panel">
+                <h5 class="font-weight-bold mb-3 text-dark"><i class="icon-layers"></i> Пошаговый протокол расчета (Рентген)</h5>
+
+                <div id="stepsContainer">
+                    {% for st in initial_calc.steps %}
+                    <div class="step-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <span class="step-num">{{ st.step }}</span>
+                                <strong class="text-dark">{{ st.title }}</strong>
+                            </div>
+                            <span class="badge bg-primary fs-6">{{ st.value }}</span>
+                        </div>
+                        <div class="small text-secondary mb-1 font-monospace">{{ st.formula }}</div>
+                        <div class="small text-muted">{{ st.comment }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+function toggleTradeIn(checked) {
+    document.getElementById('tradein_block').style.display = checked ? 'block' : 'none';
+    recalculate();
+}
+
+function toggleCredit(checked) {
+    document.getElementById('credit_block').style.display = checked ? 'block' : 'none';
+    recalculate();
+}
+
+function onUnitChange(unitId) {
+    window.location.href = '{% url "prices_car:deal_simulator" %}?unit_id=' + unitId;
+}
+
+function onCarChange(carId) {
+    const select = document.getElementById('car_id');
+    const opt = select.options[select.selectedIndex];
+    if (opt) {
+        document.getElementById('rrc_display').value = opt.getAttribute('data-rrc') || 0;
+        document.getElementById('is_yellow').checked = (opt.getAttribute('data-yellow') === '1');
+        const tsId = opt.getAttribute('data-typesale');
+        if (tsId) {
+            document.getElementById('type_sale_id').value = tsId;
+        }
+    }
+    recalculate();
+}
+
+function fmtRub(val) {
+    return (val || 0).toLocaleString('ru-RU') + ' ₽';
+}
+
+function recalculate() {
+    const carId = document.getElementById('car_id').value;
+    if (!carId) return;
+
+    const payload = {
+        car_id: parseInt(carId),
+        unit_id: parseInt(document.getElementById('unit_id').value) || null,
+        type_sale_id: parseInt(document.getElementById('type_sale_id').value) || null,
+        tactic: document.getElementById('tactic').value,
+        is_yellow: document.getElementById('is_yellow').checked,
+        is_key_model: document.getElementById('is_key_model').checked,
+        discount_amount: parseInt(document.getElementById('discount_amount').value) || 0,
+        with_trade_in: document.getElementById('with_trade_in').checked,
+        tradein_margin: parseInt(document.getElementById('tradein_margin').value) || 0,
+        with_credit: document.getElementById('with_credit').checked,
+        opfu_amount: parseInt(document.getElementById('opfu_amount').value) || 0,
+        dop_margin: parseInt(document.getElementById('dop_margin').value) || 0,
+        work_margin: parseInt(document.getElementById('work_margin').value) || 0,
+    };
+
+    fetch('{% url "prices_car:api_simulate_deal" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.error);
+            return;
+        }
+
+        // Обновление вердикта
+        const banner = document.getElementById('verdictBanner');
+        banner.className = 'verdict-banner ' + (
+            data.verdict.class === 'success' ? 'verdict-approved' :
+            data.verdict.class === 'warning' ? 'verdict-director' : 'verdict-uk'
+        );
+        document.getElementById('verdictBadge').innerText = data.verdict.badge;
+        document.getElementById('verdictMsg').innerText = data.verdict.message;
+
+        // Обновление сводных KPI
+        document.getElementById('dispTotalKvp').innerText = fmtRub(data.breakdown.total_deal_kvp);
+        document.getElementById('dispFinalKm').innerText = fmtRub(data.breakdown.final_km_rule);
+
+        const diffEl = document.getElementById('dispDiff');
+        diffEl.innerText = fmtRub(data.breakdown.diff);
+        diffEl.className = 'font-weight-bold mb-0 text-' + (data.breakdown.diff >= 0 ? 'success' : 'danger');
+
+        // Обновление протокола шагов
+        const container = document.getElementById('stepsContainer');
+        container.innerHTML = '';
+        data.steps.forEach(st => {
+            const card = document.createElement('div');
+            card.className = 'step-card';
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                        <span class="step-num">${st.step}</span>
+                        <strong class="text-dark">${st.title}</strong>
+                    </div>
+                    <span class="badge bg-primary fs-6">${st.value}</span>
+                </div>
+                <div class="small text-secondary mb-1 font-monospace">${st.formula}</div>
+                <div class="small text-muted">${st.comment}</div>
+            `;
+            container.appendChild(card);
+        });
+    })
+    .catch(err => console.error('Ошибка симуляции:', err));
+}
+</script>
+{% endblock %}

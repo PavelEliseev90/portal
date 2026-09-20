@@ -27,6 +27,24 @@
 
                         <div class="col-auto">
                             
+                            <a href="{% url 'prices_car:command_center' %}" class="btn-calculate-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; border: 1px solid #334155;"> 
+                                <span class="icon-speedometer"></span>
+                                Центр управления (Планы и Дисконты)
+                            </a>    
+
+                        </div>
+
+                        <div class="col-auto">
+                            
+                            <a href="{% url 'prices_car:deal_simulator' %}" class="btn-calculate-sm" style="background: #0284c7; color: #fff; border: 1px solid #0369a1;"> 
+                                <span class="icon-wrench"></span>
+                                Тестовый стенд сделки
+                            </a>    
+
+                        </div>
+
+                        <div class="col-auto">
+                            
                             <a href="{% url 'prices_car:director' %}" class="btn-calculate-sm"> 
                                 <span class="icon-truck"></span>
                                 Склад

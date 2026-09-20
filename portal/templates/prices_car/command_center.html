@@ -1,0 +1,1071 @@
+{% extends 'base_web.html' %}
+{% load custom_template_tags %}
+
+{% block title %} — Центр управления ценообразованием и дисконтами новых АМ {% endblock %}
+{% block title_navbar %} — Центр управления: Планы, Тактики, Дисконты {% endblock %}
+
+{% block content %}
+<style>
+.cc-container {
+    padding: 15px 20px 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #2c3e50;
+}
+.cc-header-panel {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    margin-bottom: 20px;
+}
+.cc-kpi-card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 16px 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
+    height: 100%;
+}
+.cc-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.cc-radar-panel {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+.cc-radar-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #edf2f7;
+    margin-bottom: 8px;
+}
+.cc-rec-card {
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.cc-rec-danger { border-left-color: #ef4444; background: #fffdfd; }
+.cc-rec-warning { border-left-color: #f59e0b; background: #fffefb; }
+.cc-rec-success { border-left-color: #10b981; background: #fbfdfc; }
+.cc-rec-info { border-left-color: #3b82f6; background: #fbfdff; }
+
+.tactic-btn-group .btn {
+    font-size: 13px;
+    padding: 6px 14px;
+    font-weight: 500;
+}
+.badge-yellow-car {
+    background: #fef08a;
+    color: #854d0e;
+    font-weight: 600;
+    border: 1px solid #fde047;
+}
+.badge-consignment-overdue {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+}
+.badge-consignment-warning {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+}
+.nav-tabs .nav-link {
+    font-weight: 600;
+    color: #475569;
+}
+.nav-tabs .nav-link.active {
+    color: #0284c7;
+    border-bottom: 2px solid #0284c7;
+}
+
+/* Стили для блока Рабочего стола директора */
+.cc-director-strip {
+    background: linear-gradient(135deg, #0d233a 0%, #1a3a5f 100%);
+    border-radius: 12px;
+    padding: 18px 22px;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.cc-director-tile {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-decoration: none;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    min-height: 85px;
+}
+.cc-director-tile:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    color: #ffffff;
+    text-decoration: none;
+}
+.cc-director-tile.alert-active {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+.cc-director-tile.success-active {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+.cc-director-tile-num {
+    font-size: 1.85rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.cc-director-tile-lbl {
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.95;
+    margin-top: 4px;
+}
+.cc-director-tile-sub {
+    font-size: 0.72rem;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+</style>
+
+<div class="cc-container">
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ / ФИЛЬТР ДЦ И МЕСЯЦА -->
+    <div class="cc-header-panel">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-6 col-md-12">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary px-2 py-1">Command Center</span>
+                    <h3 class="mb-0 text-white font-weight-bold">Центр управления ценообразованием</h3>
+                </div>
+                <div class="text-white-50 small">
+                    Синхронизация планов ДЦ, импортера, тактик маржинальности, желтых авто и умных дисконтов (Вариант 6)
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-md-12 text-lg-end text-start">
+                <form method="GET" class="d-inline-flex flex-wrap gap-2 align-items-center justify-content-lg-end">
+                    <div class="input-group input-group-sm" style="width: auto;">
+                        <span class="input-group-text bg-dark text-white border-secondary">ДЦ:</span>
+                        <select name="unit_id" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                            {% for u in all_units %}
+                            <option value="{{ u.id }}" {% if current_unit and current_unit.id == u.id %}selected{% endif %}>
+                                {{ u.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="input-group input-group-sm" style="width: auto;">
+                        <span class="input-group-text bg-dark text-white border-secondary">Месяц:</span>
+                        <input type="month" name="month" value="{{ month_str }}" class="form-control form-control-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#editPlanModal">
+                            <i class="icon-pencil"></i> Изменить план
+                        </button>
+                        <button type="button" class="btn btn-outline-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"></button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><a class="dropdown-item" href="{% url 'prices_car:export_plans_excel' %}?month={{ month_str }}"><i class="icon-download"></i> Скачать шаблон Excel</a></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importExcelModal"><i class="icon-upload"></i> Загрузить планы из Excel</a></li>
+                        </ul>
+                    </div>
+
+                    <a href="{% url 'prices_car:deal_simulator' %}?unit_id={{ current_unit.id }}" class="btn btn-sm btn-info text-dark font-weight-bold">
+                        <i class="icon-wrench"></i> Тестовый стенд
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ОПЕРАТИВНЫЙ РАБОЧИЙ СТОЛ ДИРЕКТОРА: СОГЛАСОВАНИЕ КП -->
+    <div class="cc-director-strip">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25 gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-info text-dark font-weight-bold">Рабочий стол директора</span>
+                <h5 class="mb-0 text-white font-weight-bold">
+                    Оперативный статус согласования коммерческих предложений (Вариант 6)
+                </h5>
+                {% if director_desktop.role_label %}
+                <span class="badge bg-secondary text-white">{{ director_desktop.role_label }}</span>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ unit_approvals.calculations_list_url }}" class="btn btn-sm btn-light font-weight-bold text-dark">
+                    📋 Все коммерческие предложения
+                </a>
+                <a href="{% url 'prices_car:deal_calc_approval_report' %}{{ director_desktop.user_query_suffix }}" class="btn btn-sm btn-outline-light">
+                    📊 Отчёт по согласованию
+                </a>
+                <a href="{{ unit_approvals.director_desktop_url }}" class="btn btn-sm btn-outline-light">
+                    🖥️ Рабочий стол директора
+                </a>
+                <a href="{% url 'prices_car:km_calculator_lab' %}" class="btn btn-sm btn-outline-light">
+                    🧮 Калькулятор КМ
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-2">
+            <!-- Плитка 1: Ожидают согласования -->
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <a href="{% url 'prices_car:new_cars_director_desktop_list' section='pending' %}{{ director_desktop.user_query_suffix }}"
+                   class="cc-director-tile {% if unit_approvals.pending_count > 0 %}alert-active{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5">⏳</span>
+                        <span class="cc-director-tile-num text-{% if unit_approvals.pending_count > 0 %}warning{% else %}white{% endif %}">
+                            {{ unit_approvals.pending_count }}
+                        </span>
+                    </div>
+                    <div class="cc-director-tile-lbl">Ожидают согласования</div>
+                    <div class="cc-director-tile-sub">требуют решения директора</div>
+                </a>
+            </div>
+
+            <!-- Плитка 2: Автосогласовано по Варианту 6 -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <a href="{% url 'prices_car:new_cars_director_desktop_list' section='auto_approved' %}{{ director_desktop.user_query_suffix }}"
+                   class="cc-director-tile success-active">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5">🤖</span>
+                        <span class="cc-director-tile-num text-success">
+                            {{ unit_approvals.auto_approved_today }}
+                        </span>
+                    </div>
+                    <div class="cc-director-tile-lbl">Автосогласовано сегодня</div>
+                    <div class="cc-director-tile-sub">по правилу Варианта 6 (Smart АвтоК)</div>
+                </a>
+            </div>
+
+            <!-- Плитка 3: Согласовано директором вручную -->
+            <div class="col-xl-2 col-md-4 col-sm-6">
+                <a href="{{ unit_approvals.calculations_list_url }}"
+                   class="cc-director-tile">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5">✅</span>
+                        <span class="cc-director-tile-num text-white">
+                            {{ unit_approvals.manual_approved_today }}
+                        </span>
+                    </div>
+                    <div class="cc-director-tile-lbl">Согласовано директором</div>
+                    <div class="cc-director-tile-sub">индивидуальное одобрение</div>
+                </a>
+            </div>
+
+            <!-- Плитка 4: На согласовании УК -->
+            <div class="col-xl-2 col-md-6 col-sm-6">
+                <a href="{% if director_desktop.role == 'uk' %}{% url 'prices_car:new_cars_director_desktop_list' section='uk_reached' %}{{ director_desktop.user_query_suffix }}{% else %}{{ unit_approvals.calculations_list_url }}{% endif %}"
+                   class="cc-director-tile">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5">📜</span>
+                        <span class="cc-director-tile-num text-info">
+                            {{ unit_approvals.uk_pending_today }}
+                        </span>
+                    </div>
+                    <div class="cc-director-tile-lbl">Согласование УК</div>
+                    <div class="cc-director-tile-sub">глубокие спец. скидки</div>
+                </a>
+            </div>
+
+            <!-- Плитка 5: Маржинальность по ДЦ за месяц -->
+            <div class="col-xl-3 col-md-6 col-sm-12">
+                <div class="cc-director-tile">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5">💰</span>
+                        <span class="fs-5 font-weight-bold text-warning">
+                            {{ unit_approvals.month_avg_kvp|default:0 }} ₽
+                        </span>
+                    </div>
+                    <div class="cc-director-tile-lbl">Средний КВП за месяц</div>
+                    <div class="cc-director-tile-sub">всего КП по ДЦ: {{ unit_approvals.month_calcs_count }} шт.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- БЛОК 1: KPI-ПУЛЬС ВЫПОЛНЕНИЯ ПЛАНОВ И ТАКТИКА ДЦ -->
+    <div class="row g-3 mb-4">
+        <!-- Карточка: План ДЦ -->
+        <div class="col-xl-3 col-md-6">
+            <div class="cc-kpi-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-weight-bold">План ДЦ на месяц</span>
+                    <span class="badge bg-light text-dark border">ДЦ</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 mb-1">
+                    <h2 class="mb-0 font-weight-bold text-dark">{{ plan.plan_dc_qty }}</h2>
+                    <span class="text-muted">шт.</span>
+                </div>
+                <div class="small text-muted mb-2">
+                    Факт контрактов: <strong class="text-dark">{{ contracts_count }} шт.</strong>
+                    {% if gap_dc > 0 %}
+                    <span class="text-danger ms-1">(осталось: {{ gap_dc }})</span>
+                    {% else %}
+                    <span class="text-success ms-1">(выполнен!)</span>
+                    {% endif %}
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {% widthratio contracts_count plan.plan_dc_qty|default:1 100 %}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка: План Импортера -->
+        <div class="col-xl-3 col-md-6">
+            <div class="cc-kpi-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-weight-bold">План Импортера по ДЦ</span>
+                    <span class="badge bg-danger text-white">Бонус</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 mb-1">
+                    <h2 class="mb-0 font-weight-bold text-dark">{{ plan.plan_importer_qty }}</h2>
+                    <span class="text-muted">шт.</span>
+                </div>
+                <div class="small text-muted mb-2">
+                    Прогноз (Run-rate): <strong class="text-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">{{ run_rate_forecast }} шт.</strong>
+                    {% if gap_importer > 0 %}
+                    <span class="text-danger ms-1">(до бонуса: {{ gap_importer }})</span>
+                    {% endif %}
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}" role="progressbar" style="width: {% widthratio run_rate_forecast plan.plan_importer_qty|default:1 100 %}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка: Темп продаж и дни -->
+        <div class="col-xl-3 col-md-6">
+            <div class="cc-kpi-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-weight-bold">Скорость контрактования</span>
+                    <span class="badge bg-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">{{ pace_status_label }}</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 mb-1">
+                    <h2 class="mb-0 font-weight-bold text-dark">{{ speed_daily }}</h2>
+                    <span class="text-muted">авто / день</span>
+                </div>
+                <div class="small text-muted mb-1">
+                    Требуется для импортера: <strong class="text-dark">{{ required_speed_importer }}</strong> авто/день
+                </div>
+                <div class="small text-muted">
+                    Дней осталось: <strong>{{ days_info.days_remaining }}</strong> из {{ days_info.days_in_month }} (прошло {{ days_info.month_progress_pct }}%)
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка: Тактика ценообразования ДЦ -->
+        <div class="col-xl-3 col-md-6">
+            <div class="cc-kpi-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase font-weight-bold">Тактика ДЦ (АвтоК)</span>
+                    <span class="badge bg-secondary text-white" id="currentTacticBadge">{{ plan.get_tactic_display }}</span>
+                </div>
+                <div class="small text-muted mb-2">
+                    Влияет на целевую маржу и допустимые дисконты:
+                </div>
+                <div class="btn-group w-100 tactic-btn-group" role="group">
+                    <button type="button" class="btn {% if plan.tactic == 'max_margin' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_margin')">
+                        Маржа
+                    </button>
+                    <button type="button" class="btn {% if plan.tactic == 'balanced' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('balanced')">
+                        Баланс
+                    </button>
+                    <button type="button" class="btn {% if plan.tactic == 'max_volume' %}btn-primary{% else %}btn-outline-secondary{% endif %}" onclick="setTactic('max_volume')">
+                        Штуки
+                    </button>
+                </div>
+                <div class="text-center mt-2 small text-muted" id="tacticHint">
+                    {% if plan.tactic == 'max_margin' %}
+                    Коэфф. 1.10 — фокус на доходность
+                    {% elif plan.tactic == 'max_volume' %}
+                    Коэфф. 0.85 — агрессивный сброс для объема
+                    {% else %}
+                    Коэфф. 1.00 — сбалансированная модель
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- БЛОК 2 И 3: РАДАР СИГНАЛОВ + УМНЫЙ ПОМОЩНИК (СИТУАЦИОННЫЙ РАСЧЕТ) -->
+    <div class="row g-3 mb-4">
+        <!-- Аналитический радар тревог и сигналов -->
+        <div class="col-lg-5 col-md-12">
+            <div class="cc-radar-panel h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 font-weight-bold text-dark"><i class="icon-pulse"></i> Аналитический радар ДЦ</h5>
+                    <span class="badge bg-light text-muted border">Авто-мониторинг</span>
+                </div>
+
+                <!-- Сигнал 1: Скорость контрактования -->
+                <div class="cc-radar-item">
+                    <div class="me-3 fs-4 text-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">
+                        <i class="icon-speedometer"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small">Темп контрактования</div>
+                        <div class="text-muted small">
+                            Факт: {{ speed_daily }} шт/день. Для выполнения плана нужно: {{ required_speed_importer }} шт/день.
+                        </div>
+                    </div>
+                    <span class="badge bg-{% if pace_status == 'danger' %}danger{% elif pace_status == 'warning' %}warning{% else %}success{% endif %}">
+                        {{ pace_status_label }}
+                    </span>
+                </div>
+
+                <!-- Сигнал 2: Упущенные клиенты -->
+                <div class="cc-radar-item">
+                    <div class="me-3 fs-4 text-{% if missed_info.total_missed > 0 %}danger{% else %}secondary{% endif %}">
+                        <i class="icon-user-unfollow"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small">Упущенные сделки (отказы)</div>
+                        <div class="text-muted small">
+                            Всего упущено: <strong>{{ missed_info.total_missed }}</strong> (отказные КП: {{ missed_info.rejected_calcs }})
+                        </div>
+                    </div>
+                    {% if missed_info.total_missed > 0 %}
+                    <span class="badge bg-danger">{{ missed_info.total_missed }} клиентов</span>
+                    {% else %}
+                    <span class="badge bg-success">0</span>
+                    {% endif %}
+                </div>
+
+                <!-- Сигнал 3: Желтые автомобили (отчитанные) -->
+                <div class="cc-radar-item">
+                    <div class="me-3 fs-4 text-warning">
+                        <i class="icon-flag"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small">Желтые автомобили на складе</div>
+                        <div class="text-muted small">
+                            Сдан рапорт импортеру (`date_report`): <strong>{{ stock_data.yellow_cars_count }} шт.</strong>
+                        </div>
+                    </div>
+                    <span class="badge badge-yellow-car">{{ stock_data.yellow_cars_count }} шт.</span>
+                </div>
+
+                <!-- Сигнал 4: Консигнация / Платное хранение -->
+                <div class="cc-radar-item">
+                    <div class="me-3 fs-4 text-{% if stock_data.consignment_overdue_count > 0 %}danger{% elif stock_data.consignment_warning_count > 0 %}warning{% else %}success{% endif %}">
+                        <i class="icon-clock"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small">Консигнация импортера</div>
+                        <div class="text-muted small">
+                            Просрочено: <strong class="text-danger">{{ stock_data.consignment_overdue_count }}</strong>,
+                            истекает (&le;15 дн): <strong class="text-warning">{{ stock_data.consignment_warning_count }}</strong>
+                        </div>
+                    </div>
+                    {% if stock_data.consignment_overdue_count > 0 %}
+                    <span class="badge bg-danger">Просрочка</span>
+                    {% elif stock_data.consignment_warning_count > 0 %}
+                    <span class="badge bg-warning text-dark">Риск</span>
+                    {% else %}
+                    <span class="badge bg-success">Норма</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Умный помощник / Рекомендации к действию -->
+        <div class="col-lg-7 col-md-12">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 10px;">
+                <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 font-weight-bold text-dark"><i class="icon-bulb text-warning"></i> Умный помощник (Smart Advisor)</h5>
+                    <span class="badge bg-primary">Рекомендации</span>
+                </div>
+                <div class="card-body pt-1" style="max-height: 380px; overflow-y: auto;">
+                    {% if recommendations %}
+                        {% for rec in recommendations %}
+                        <div class="cc-rec-card cc-rec-{{ rec.badge_class }}" id="rec_card_{{ forloop.counter }}">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="badge bg-{{ rec.badge_class }} mb-1">{{ rec.badge }}</span>
+                                <button type="button" class="btn btn-sm btn-primary py-1 px-3 shadow-sm" onclick='applyRecommendation({{ rec.action_data|safe }}, "{{ rec.action_type }}", {{ forloop.counter }})'>
+                                    {{ rec.action_label }} &rarr;
+                                </button>
+                            </div>
+                            <h6 class="mb-1 font-weight-bold text-dark">{{ rec.title }}</h6>
+                            <p class="small text-muted mb-0">{{ rec.text }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="icon-check display-6 text-success mb-2"></i>
+                            <p>Все показатели ДЦ в норме! Активных критических рекомендаций нет.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- БЛОК 4: МАТРИЦА УПРАВЛЕНИЯ ПРАВИЛАМИ И ДИСКОНТАМИ (ТАБЫ) -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 10px;">
+        <div class="card-header bg-white border-bottom pt-3 pb-0">
+            <ul class="nav nav-tabs border-bottom-0" id="ccTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="discounts-tab" data-bs-toggle="tab" data-bs-target="#discountsTabPane" type="button">
+                        <i class="icon-tag"></i> Активные правила дисконта ({{ discounts.count }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="keymodels-tab" data-bs-toggle="tab" data-bs-target="#keymodelsTabPane" type="button">
+                        <i class="icon-star"></i> Ключевые модели месяца ({{ key_models.count }})
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="consignment-tab" data-bs-toggle="tab" data-bs-target="#consignmentTabPane" type="button">
+                        <i class="icon-clock"></i> Бесплатная консигнация по брендам
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-3">
+            <div class="tab-content" id="ccTabsContent">
+
+                <!-- Вкладка 1: Правила дисконтов -->
+                <div class="tab-pane fade show active" id="discountsTabPane">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Правила изменения минимального КМ для новых авто данного ДЦ:</span>
+                        <a href="/prices_car/discount_km/" target="_blank" class="btn btn-sm btn-outline-primary">
+                            + Создать вручную в справочнике
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Бренд / Модель</th>
+                                    <th>Канал продажи</th>
+                                    <th>Желтые авто</th>
+                                    <th>Ключевая модель</th>
+                                    <th>Дисконт КМ</th>
+                                    <th>Период действия</th>
+                                    <th>Комментарий</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for d in discounts %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ d.brand.name }}</strong>
+                                        {% if d.model %}/ {{ d.model.name }}{% else %}<span class="text-muted">/ Все модели</span>{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if d.type_sale %}
+                                        <span class="badge bg-secondary">{{ d.type_sale.name }}</span>
+                                        {% else %}
+                                        <span class="text-muted">Любой</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if d.is_yellow_car %}
+                                        <span class="badge badge-yellow-car">Только желтые</span>
+                                        {% else %}
+                                        <span class="text-muted">Все</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if d.is_key_model %}
+                                        <span class="badge bg-info text-white">Да</span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="text-{% if d.discount_percent < 0 %}success{% else %}danger{% endif %}">
+                                            {{ d.discount_percent }}%
+                                        </strong>
+                                    </td>
+                                    <td>{{ d.date_from|date:"d.m.Y" }} — {{ d.date_to|date:"d.m.Y" }}</td>
+                                    <td class="text-muted small">{{ d.comment|default:"—" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-3 text-muted">
+                                        Нет активных правил дисконта для выбранного ДЦ.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Вкладка 2: Ключевые модели -->
+                <div class="tab-pane fade" id="keymodelsTabPane">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Фокусные модели для приоритетных продаж в этом месяце:</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addKeyModelModal">
+                            + Назначить ключевую модель
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Марка / Модель</th>
+                                    <th>В наличии на складе</th>
+                                    <th>Целевой объем</th>
+                                    <th>Комментарий</th>
+                                    <th>Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for km in key_models %}
+                                <tr>
+                                    <td><strong>{{ km.model.mark.name }} {{ km.model.name }}</strong></td>
+                                    <td>
+                                        {% for ms in stock_data.all_models_stock %}
+                                            {% if ms.model_id == km.model_id %}
+                                            <span class="badge bg-light text-dark border">{{ ms.count }} шт.</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ km.target_qty }} шт.</td>
+                                    <td class="text-muted small">{{ km.comment|default:"—" }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeKeyModel({{ km.model.id }})">
+                                            Удалить
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">
+                                        Ключевые модели для данного ДЦ на этот месяц еще не назначены.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Вкладка 3: Консигнация брендов -->
+                <div class="tab-pane fade" id="consignmentTabPane">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Срок бесплатного хранения/консигнации от импортера (в днях):</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Бренд ценообразования</th>
+                                    <th>Бесплатный срок от импортера (дней)</th>
+                                    <th>Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in brands %}
+                                <tr>
+                                    <td><strong>{{ b.name }}</strong></td>
+                                    <td style="max-width: 150px;">
+                                        <input type="number" id="brand_days_{{ b.id }}" class="form-control form-control-sm" value="{{ b.free_consignment_days|default:90 }}" min="1">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary py-1 px-3" onclick="saveBrandConsignment({{ b.id }})">
+                                            Сохранить
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- БЛОК 5: МОНИТОР СКЛАДА ДЦ В РЕАЛЬНОМ ВРЕМЕНИ -->
+    <div class="card border-0 shadow-sm" style="border-radius: 10px;">
+        <div class="card-header bg-white border-bottom pt-3 pb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 font-weight-bold text-dark"><i class="icon-layers"></i> Склад новых автомобилей ДЦ ({{ stock_data.total_count }} шт.)</h5>
+                <div class="small text-muted">
+                    Суммарная РРЦ: <strong>{{ stock_data.total_rrc|default:0 }} ₽</strong> |
+                    Желтые авто: <strong class="text-warning">{{ stock_data.yellow_cars_count }} шт.</strong>
+                </div>
+            </div>
+            <div>
+                <a href="/prices_car/director/?unit_id={{ current_unit.id }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    Открыть в рабочем столе директора &rarr;
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle table-sm mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>VIN</th>
+                            <th>Марка / Модель</th>
+                            <th>Дней на складе</th>
+                            <th>Статус / Рапорт</th>
+                            <th>Канал продажи</th>
+                            <th>Себестоимость</th>
+                            <th>РРЦ</th>
+                            <th>Статус консигнации</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for car in current_unit.refcarsorganization_set.all %}
+                            {% if car.is_new and car.quantity > 0 %}
+                            <tr>
+                                <td>
+                                    <span class="font-monospace small">{{ car.vin }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ car.mark }} {{ car.model }}</strong>
+                                    <div class="small text-muted">{{ car.modification }}</div>
+                                </td>
+                                <td>{{ car.days_in_stok }} дн.</td>
+                                <td>
+                                    {% if car.is_yellow %}
+                                    <span class="badge badge-yellow-car">Желтый (Рапорт {{ car.date_report|date:"d.m.y" }})</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border">В наличии</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if car.type_sale %}
+                                    <span class="badge bg-secondary">{{ car.type_sale.name }}</span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ car.cost_price }} ₽</td>
+                                <td><strong>{{ car.price }} ₽</strong></td>
+                                <td>
+                                    {% if car.days_in_stok >= 90 %}
+                                    <span class="badge badge-consignment-overdue">Просрочено (>90 дн)</span>
+                                    {% elif car.days_in_stok >= 75 %}
+                                    <span class="badge badge-consignment-warning">Истекает ({{ car.days_in_stok }}/90 дн)</span>
+                                    {% else %}
+                                    <span class="badge bg-success">В норме</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                Нет активных новых автомобилей на складе данного ДЦ.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ПЛАНА ДЦ -->
+<div class="modal fade" id="editPlanModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Планы на {{ month_str }} ({{ current_unit.name }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">План ДЦ (шт.):</label>
+                    <input type="number" id="modal_plan_dc" class="form-control" value="{{ plan.plan_dc_qty|default:0 }}" min="0">
+                    <div class="form-text">Внутренний объемный план подразделения на текущий месяц.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">План импортера (шт.):</label>
+                    <input type="number" id="modal_plan_imp" class="form-control" value="{{ plan.plan_importer_qty|default:0 }}" min="0">
+                    <div class="form-text">План дистрибьютора по данному ДЦ (для получения бонуса).</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Тактика ценообразования:</label>
+                    <select id="modal_tactic" class="form-select">
+                        <option value="max_margin" {% if plan.tactic == 'max_margin' %}selected{% endif %}>Максимальная маржа (×1.10)</option>
+                        <option value="balanced" {% if plan.tactic == 'balanced' %}selected{% endif %}>Умеренный / Баланс (×1.00)</option>
+                        <option value="max_volume" {% if plan.tactic == 'max_volume' %}selected{% endif %}>Максимальные штуки (×0.85)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="savePlanFromModal()">Сохранить план</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ЗАГРУЗКА ИЗ EXCEL -->
+<div class="modal fade" id="importExcelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'prices_car:import_plans_excel' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="month" value="{{ month_str }}">
+                <input type="hidden" name="unit_id" value="{{ current_unit.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Загрузка планов из Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Загрузите заполненный шаблон с планами всех ДЦ на <strong>{{ month_str }}</strong>.
+                        Файл должен содержать колонки: ID ДЦ, Код/UIN, Наименование, Год, Месяц, План ДЦ, План импортера.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Выберите файл .xlsx:</label>
+                        <input type="file" name="plans_file" class="form-control" accept=".xlsx, .xls" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'prices_car:export_plans_excel' %}?month={{ month_str }}" class="btn btn-outline-secondary btn-sm me-auto">
+                        Скачать шаблон
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Загрузить и применить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ КЛЮЧЕВОЙ МОДЕЛИ -->
+<div class="modal fade" id="addKeyModelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold">Назначить ключевую модель</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Выберите модель из наличия ДЦ:</label>
+                    <select id="select_key_model" class="form-select">
+                        {% for ms in stock_data.all_models_stock %}
+                        <option value="{{ ms.model_id }}">
+                            {{ ms.mark_name }} {{ ms.name }} (на складе: {{ ms.count }} шт.)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Целевой объем продаж (шт.):</label>
+                    <input type="number" id="key_model_qty" class="form-control" value="10" min="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="addKeyModel()">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+// Установка тактики ценообразования
+function setTactic(tactic) {
+    fetch('{% url "prices_car:api_save_dc_plan" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            unit_id: {{ current_unit.id|default:0 }},
+            month: '{{ month_str }}',
+            plan_dc_qty: {{ plan.plan_dc_qty|default:0 }},
+            plan_importer_qty: {{ plan.plan_importer_qty|default:0 }},
+            tactic: tactic,
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+// Сохранение плана из модального окна
+function savePlanFromModal() {
+    const planDc = document.getElementById('modal_plan_dc').value;
+    const planImp = document.getElementById('modal_plan_imp').value;
+    const tactic = document.getElementById('modal_tactic').value;
+
+    fetch('{% url "prices_car:api_save_dc_plan" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            unit_id: {{ current_unit.id|default:0 }},
+            month: '{{ month_str }}',
+            plan_dc_qty: planDc,
+            plan_importer_qty: planImp,
+            tactic: tactic,
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка сохранения плана: ' + data.error);
+        }
+    });
+}
+
+// Применение рекомендации в 1 клик
+function applyRecommendation(actionData, actionType, cardIdx) {
+    const payload = Object.assign({}, actionData, {
+        unit_id: {{ current_unit.id|default:0 }},
+        month: '{{ month_str }}',
+        action_type: actionType,
+    });
+
+    fetch('{% url "prices_car:api_apply_recommendation" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById('rec_card_' + cardIdx);
+            if (card) {
+                card.innerHTML = '<div class="alert alert-success mb-0 py-2"><i class="icon-check"></i> ' + data.message + '</div>';
+            }
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+// Добавление ключевой модели
+function addKeyModel() {
+    const modelId = document.getElementById('select_key_model').value;
+    const qty = document.getElementById('key_model_qty').value;
+
+    fetch('{% url "prices_car:api_toggle_key_model" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            unit_id: {{ current_unit.id|default:0 }},
+            model_id: modelId,
+            month: '{{ month_str }}',
+            target_qty: qty,
+            action: 'add',
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+// Удаление ключевой модели
+function removeKeyModel(modelId) {
+    if (!confirm('Удалить модель из списка ключевых?')) return;
+    fetch('{% url "prices_car:api_toggle_key_model" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            unit_id: {{ current_unit.id|default:0 }},
+            model_id: modelId,
+            month: '{{ month_str }}',
+            action: 'remove',
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+// Сохранение срока консигнации по бренду
+function saveBrandConsignment(brandId) {
+    const days = document.getElementById('brand_days_' + brandId).value;
+    fetch('{% url "prices_car:api_save_brand_consignment" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            brand_id: brandId,
+            free_consignment_days: days,
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

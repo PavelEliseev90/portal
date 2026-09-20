@@ -10,6 +10,8 @@ from .models import (
     CarCalculations,
     CarCalculationsTypeDetail,
     CarCalculationUkApproval,
+    DcKeyModel,
+    DcMonthlyPlan,
     DealCalcTelegramSettings,
     KMCar,
     PriceCarBrand,
@@ -27,45 +29,37 @@ class CarCalculationsAdmin(admin.ModelAdmin):
     ordering = ('-date',)
 
 
-@admin.register(CarCalculationUkApproval)
-class CarCalculationUkApprovalAdmin(admin.ModelAdmin):
-    list_display = (
-        'approved_at', 'rlk', 'car', 'approved_kvp',
-        'approved_by', 'calculation',
-    )
-    list_filter = ('approved_at',)
-    raw_id_fields = ('rlk', 'car', 'approved_by', 'calculation')
-    search_fields = (
-        'rlk__nomer', 'car__vin', 'calculation__number',
-        'approved_by__username',
-    )
-    ordering = ('approved_kvp', '-approved_at')
-    readonly_fields = (
-        'approved_at', 'rlk', 'car', 'approved_kvp',
-        'approved_by', 'calculation', 'comment', 'created_at',
-    )
+class DcKeyModelInline(admin.TabularInline):
+    model = DcKeyModel
+    extra = 1
+    raw_id_fields = ('model',)
 
-    def has_add_permission(self, request):
-        return False
 
-    def has_change_permission(self, request, obj=None):
-        return request.method in ('GET', 'HEAD', 'OPTIONS')
-
-    def has_delete_permission(self, request, obj=None):
-        return False
+@admin.register(DcMonthlyPlan)
+class DcMonthlyPlanAdmin(admin.ModelAdmin):
+    list_display = ('unit', 'month', 'plan_dc_qty', 'plan_importer_qty', 'tactic', 'author', 'updated_at')
+    list_filter = ('month', 'tactic', 'unit')
+    search_fields = ('unit__name',)
+    inlines = [DcKeyModelInline]
+    date_hierarchy = 'month'
+    ordering = ('-month', 'unit')
 
 
 @admin.register(PriceCarKmDiscount)
 class PriceCarKmDiscountAdmin(admin.ModelAdmin):
-    list_display = ('brand', 'model', 'modification', 'complectation', 'year', 'discount_percent', 'date_from', 'date_to')
-    list_filter = ('brand', 'date_from')
-    search_fields = ('brand__name',)
+    list_display = (
+        'brand', 'model', 'unit', 'type_sale', 'is_yellow_car', 'is_key_model',
+        'discount_percent', 'date_from', 'date_to',
+    )
+    list_filter = ('brand', 'unit', 'is_yellow_car', 'is_key_model', 'type_sale', 'date_from')
+    search_fields = ('brand__name', 'model__name', 'comment')
+    raw_id_fields = ('model', 'modification', 'complectation', 'unit')
     ordering = ('-date_from', 'brand')
 
 
 @admin.register(PriceCarBrand)
 class PriceCarBrandAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'free_consignment_days')
     search_fields = ('name',)
     filter_horizontal = ('marks', 'models_included')
 

@@ -7,7 +7,7 @@ from refs.models import (
     RefOrganization, RefFilial, RefTypeReceptionCarsOrganization, AutoruModification,
     RefGroupProduct, RefStaff, RefCategoryProduct, RefPageOcenka, RefUnit, RefCarsOrganization,
     RefEventCarsOrganization, RefStore, RefManufacturer, AutoruComplectation,
-    RefStagePrice,
+    RefStagePrice, RefTypeSaleCarsOrganization,
 )
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User, Group
@@ -30,6 +30,11 @@ class PriceCarBrand(models.Model):
         related_name='price_car_brands',
         verbose_name='Модели в бренде',
         help_text='Конкретные модели (если пусто — учитываются все модели выбранных марок)',
+    )
+    free_consignment_days = models.PositiveIntegerField(
+        'Бесплатный срок консигнации (дней)',
+        default=90,
+        help_text='Срок бесплатного хранения/консигнации от импортера (в днях)',
     )
 
     class Meta:
@@ -157,6 +162,40 @@ class PriceCarKmDiscount(models.Model):
         'Процент изменения мин. Км',
         help_text='Процент, на который изменяется минимальный Км (кумулятивная маржа)',
     )
+    unit = models.ForeignKey(
+        RefUnit,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='price_car_km_discounts',
+        verbose_name='Подразделение ДЦ',
+        help_text='Если пусто — действует для всех ДЦ бренда',
+    )
+    type_sale = models.ForeignKey(
+        RefTypeSaleCarsOrganization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='price_car_km_discounts',
+        verbose_name='Канал продажи',
+        help_text='Если пусто — действует для всех каналов продаж',
+    )
+    is_yellow_car = models.BooleanField(
+        'Только для желтых авто',
+        default=False,
+        help_text='Применять только к автомобилям со сданным рапортом / признаком желтого',
+    )
+    is_key_model = models.BooleanField(
+        'Только для ключевых моделей',
+        default=False,
+        help_text='Применять только к ключевым моделям ДЦ на текущий месяц',
+    )
+    comment = models.CharField(
+        'Комментарий / Обоснование',
+        max_length=512,
+        blank=True,
+        default='',
+    )
     date_from = models.DateField('Действует с')
     date_to = models.DateField('Действует по')
 
@@ -189,6 +228,88 @@ class PriceCarKmDiscount(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class DcMonthlyPlan(models.Model):
+    """Планы по ДЦ и импортеру на месяц и выбранная тактика ценообразования."""
+    TACTIC_MAX_MARGIN = 'max_margin'
+    TACTIC_BALANCED = 'balanced'
+    TACTIC_MAX_VOLUME = 'max_volume'
+    TACTIC_CHOICES = (
+        (TACTIC_MAX_MARGIN, 'Максимальная маржа'),
+        (TACTIC_BALANCED, 'Умеренный (баланс)'),
+        (TACTIC_MAX_VOLUME, 'Максимальные штуки'),
+    )
+
+    unit = models.ForeignKey(
+        RefUnit,
+        on_delete=models.CASCADE,
+        related_name='dc_pricing_monthly_plans',
+        verbose_name='Подразделение ДЦ',
+    )
+    month = models.DateField(
+        'Месяц (период)',
+        help_text='Первое число месяца, напр. 2025-09-01',
+    )
+    plan_dc_qty = models.PositiveIntegerField('План ДЦ, шт.', default=0)
+    plan_importer_qty = models.PositiveIntegerField('План импортера, шт.', default=0)
+    tactic = models.CharField(
+        'Тактика ДЦ',
+        max_length=32,
+        choices=TACTIC_CHOICES,
+        default=TACTIC_BALANCED,
+    )
+    author = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Автор изменений',
+    )
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        db_table = 'prices_car_dc_monthly_plan'
+        verbose_name = 'План ДЦ на месяц'
+        verbose_name_plural = 'Планы ДЦ на месяц'
+        ordering = ['-month', 'unit']
+        constraints = [
+            models.UniqueConstraint(fields=['unit', 'month'], name='prices_car_dc_monthly_plan_unit_month_uniq'),
+        ]
+
+    def __str__(self):
+        return f'{self.unit} — {self.month:%Y-%m} (ДЦ: {self.plan_dc_qty}, Имп: {self.plan_importer_qty})'
+
+
+class DcKeyModel(models.Model):
+    """Ключевая / фокусная модель ДЦ на месяц."""
+    plan = models.ForeignKey(
+        DcMonthlyPlan,
+        on_delete=models.CASCADE,
+        related_name='key_models',
+        verbose_name='План ДЦ',
+    )
+    model = models.ForeignKey(
+        AutoruModel,
+        on_delete=models.CASCADE,
+        related_name='dc_key_models',
+        verbose_name='Модель',
+    )
+    target_qty = models.PositiveIntegerField('Целевой объем, шт.', default=0, blank=True)
+    comment = models.CharField('Комментарий', max_length=512, blank=True, default='')
+
+    class Meta:
+        db_table = 'prices_car_dc_key_model'
+        verbose_name = 'Ключевая модель ДЦ на месяц'
+        verbose_name_plural = 'Ключевые модели ДЦ на месяц'
+        ordering = ['plan', 'model']
+        constraints = [
+            models.UniqueConstraint(fields=['plan', 'model'], name='prices_car_dc_key_model_plan_model_uniq'),
+        ]
+
+    def __str__(self):
+        return f'{self.plan.unit} — {self.model.name} ({self.target_qty} шт.)'
 
 
 class CarCalculations(models.Model):
@@ -619,6 +740,7 @@ class KMCar(models.Model):
     km_auto_3           = models.IntegerField("КМ автомобиля спец. условие", default=0, null=True, blank=True)
     km_auto_k           = models.IntegerField("КМ АвтоК без trade-in", default=0, null=True, blank=True)
     km_auto_k_tradein   = models.IntegerField("КМ АвтоК с trade-in", default=0, null=True, blank=True)
+    km_auto_6           = models.IntegerField("КМ Вариант 6 (Smart АвтоК)", default=0, null=True, blank=True)
     km_manual           = models.IntegerField("КМ ручной (min_km)", default=0, null=True, blank=True)
     type_km             = models.SmallIntegerField("Тип итогового КМ", default=0, null=True, blank=True)
 
@@ -630,7 +752,7 @@ class KMCar(models.Model):
 
         total, type_km = resolve_km_car_total(
             self.km_manual, self.km_auto_1, self.km_auto_2, self.km_auto_3,
-            self.km_auto_k, self.km_auto_k_tradein,
+            self.km_auto_k, self.km_auto_k_tradein, km_auto_6=self.km_auto_6,
         )
         self.km = total
         self.type_km = type_km

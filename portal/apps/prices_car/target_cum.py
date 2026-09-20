@@ -248,13 +248,42 @@ def _brand_monthly_fallback(car, brand_km, irc) -> dict | None:
     }
 
 
-def calculate_target_cum(car, *, brand_km=None, irc=None, with_trade_in: bool = False) -> dict | None:
+TACTIC_MULTIPLIERS = {
+    'max_margin': (1.10, 'Тактика: Макс. маржа (×1.10)'),
+    'balanced': (1.00, 'Тактика: Баланс (×1.00)'),
+    'max_volume': (0.85, 'Тактика: Макс. штуки (×0.85)'),
+}
+
+
+def calculate_target_cum(
+    car,
+    *,
+    brand_km=None,
+    irc=None,
+    with_trade_in: bool = False,
+    dc_tactic: str | None = None,
+) -> dict | None:
     """
     Рассчитать целевую кумулятивную маржу (АвтоК) для автомобиля.
     Возвращает dict в формате automatic_* или None.
+    Поддерживает тактику ДЦ (max_margin, balanced, max_volume).
     """
     if car is None or car.modification_autoru is None:
         return None
+
+    # Определение тактики ДЦ, если не передана явно
+    if dc_tactic is None and getattr(car, 'unit_id', None):
+        try:
+            from prices_car.models import DcMonthlyPlan
+            from django.utils import timezone
+            month_start = timezone.now().date().replace(day=1)
+            plan = DcMonthlyPlan.objects.filter(unit_id=car.unit_id, month=month_start).first()
+            if plan:
+                dc_tactic = plan.tactic
+        except Exception:
+            pass
+
+    tactic_mult, tactic_label = TACTIC_MULTIPLIERS.get(dc_tactic, (1.0, ''))
 
     car_cost = int(car.cost_price or 0)
     if car_cost <= 0:
@@ -296,15 +325,16 @@ def calculate_target_cum(car, *, brand_km=None, irc=None, with_trade_in: bool = 
         liquidity_ratio = 1.0
 
     liquidity_multiplier, liquidity_label = _liquidity_multiplier(liquidity_ratio)
-    adjusted_margin_pct = median_margin_pct * liquidity_multiplier
+    adjusted_margin_pct = median_margin_pct * liquidity_multiplier * tactic_mult
     km_value = car_cost * adjusted_margin_pct / 100
 
     mark_name = car.modification_autoru.model.mark.name
     model_name = car.modification_autoru.model.name
+    tactic_desc = f', {tactic_label}' if tactic_label else ''
     description = (
         f'АвтоК: {mark_name} {model_name}, аналоги {search_label} '
         f'({len(trimmed)} сделок), медиана {median_margin_pct:.2f}%, '
-        f'ликвидность {liquidity_label} (×{liquidity_multiplier:.2f})'
+        f'ликвидность {liquidity_label} (×{liquidity_multiplier:.2f}){tactic_desc}'
     )
 
     return {
@@ -316,6 +346,8 @@ def calculate_target_cum(car, *, brand_km=None, irc=None, with_trade_in: bool = 
         'liquidity_multiplier': liquidity_multiplier,
         'liquidity_label': liquidity_label,
         'liquidity_ratio': round(liquidity_ratio, 2) if liquidity_ratio is not None else None,
+        'tactic_multiplier': tactic_mult,
+        'tactic_label': tactic_label,
         'analog_count': len(trimmed),
         'search_label': search_label,
         'days_in_stock': days_in_stock,
