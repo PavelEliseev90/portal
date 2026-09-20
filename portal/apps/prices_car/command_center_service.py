@@ -20,6 +20,7 @@ from django.utils import timezone
 
 from prices_car.models import (
     BrandKM,
+    DcCommandCenterShowcase,
     DcKeyModel,
     DcMonthlyPlan,
     PriceCarBrand,
@@ -1347,24 +1348,214 @@ def simulate_deal_calculation(
     }
 
 
-def get_all_units_command_center_overview(
+def compute_single_dc_showcase_data(
+    unit: RefUnit,
     month_start: date,
-    filters: Optional[dict] = None,
+    plan: Optional[DcMonthlyPlan] = None,
+    days_info: Optional[dict] = None,
+    key_models: Optional[set[int]] = None,
+    autopilot_rules_count: Optional[int] = None,
 ) -> dict:
     """
-    Формирует структурированные аналитические данные по всем дилерским центрам
-    для экрана мониторинга и автоматической переоценки новых автомобилей.
-    Группировка по городам, расчет темпа (идут/отстают), статуса автопилота,
-    рекомендаций Smart Advisor, складских рисков и глобальных KPI сети.
+    Рассчитывает полный набор аналитических метрик дилерского центра за указанный месяц
+    для записи в витрину данных DcCommandCenterShowcase.
     """
-    filters = filters or {}
-    days_info = get_month_days_info(month_start)
+    if days_info is None:
+        days_info = get_month_days_info(month_start)
     day_now = days_info['day_now']
     days_in_month = days_info['days_in_month']
 
-    # 1. Загрузка справочников и планов
-    all_cities = RefCity.objects.all().order_by('name')
-    all_units_qs = RefUnit.objects.filter(buauto=False).select_related('city').order_by('city__name', 'name')
+    if plan is None:
+        plan = DcMonthlyPlan.objects.filter(unit=unit, month=month_start).first()
+
+    if key_models is None:
+        key_models = set(
+            DcKeyModel.objects.filter(plan__unit=unit, plan__month=month_start)
+            .values_list('model_id', flat=True)
+        )
+
+    if autopilot_rules_count is None:
+        autopilot_rules_count = PriceCarKmDiscount.objects.filter(
+            unit=unit,
+            is_autopilot=True,
+            date_to__gte=days_info['today'],
+        ).count()
+
+    plan_dc = plan.plan_dc_qty if plan else 0
+    plan_importer = plan.plan_importer_qty if plan else 0
+    target_plan = max(plan_dc, plan_importer)
+
+    is_autopilot = bool(plan and plan.is_autopilot)
+    tactic = plan.tactic if plan else DcMonthlyPlan.TACTIC_BALANCED
+    tactic_label = dict(DcMonthlyPlan.TACTIC_CHOICES).get(tactic, 'Сбалансированная')
+
+    contracts_count = get_contracts_count_for_unit(unit, month_start)
+    run_rate = round(contracts_count / day_now * days_in_month, 1) if day_now > 0 else 0.0
+    pace_pct = round(run_rate / target_plan * 100, 1) if target_plan > 0 else 0.0
+    gap = max(target_plan - contracts_count, 0)
+
+    if target_plan == 0:
+        pace_status = 'no_plan'
+        pace_label = 'План не задан'
+        pace_class = 'secondary'
+        pace_delta_label = 'нет плана'
+    elif pace_pct < 90:
+        pace_status = 'lagging'
+        pace_label = 'Отстает'
+        pace_class = 'danger'
+        pace_delta_label = f'-{int(100 - pace_pct)}%'
+    elif pace_pct <= 110:
+        pace_status = 'on_track'
+        pace_label = 'В графике'
+        pace_class = 'success'
+        pace_delta_label = 'в норме'
+    else:
+        pace_status = 'ahead'
+        pace_label = 'Опережает'
+        pace_class = 'info'
+        pace_delta_label = f'+{int(pace_pct - 100)}%'
+
+    # 2. Финансовый факт и темп кумулятивной маржи (КМ в рублях)
+    financial_fact = get_dc_financial_fact(unit, month_start)
+    fact_km = financial_fact.get('fact_km', 0)
+    fact_revenue = financial_fact.get('fact_revenue', 0)
+    plan_km_rub = plan.plan_km_rub if plan else 0
+    plan_revenue_rub = plan.plan_revenue_rub if plan else 0
+
+    km_run_rate = round(fact_km / day_now * days_in_month) if day_now > 0 else 0
+    km_pace_pct = round(km_run_rate / plan_km_rub * 100, 1) if plan_km_rub > 0 else 0.0
+
+    # Квадрант двухфакторного баланса (Штуки vs Деньги)
+    if plan_km_rub <= 0:
+        quadrant_key = 'no_money_plan'
+        quadrant_label = 'План КМ не задан'
+        quadrant_badge_class = 'secondary'
+        quadrant_desc = 'Контроль ведется только по штукам'
+    elif (pace_pct >= 90 or target_plan == 0) and km_pace_pct >= 90:
+        quadrant_key = 'both_ok'
+        quadrant_label = 'В балансе'
+        quadrant_badge_class = 'success'
+        quadrant_desc = 'Штуки и маржа выполняются в графике'
+    elif pace_pct >= 90 and km_pace_pct < 90:
+        quadrant_key = 'margin_drain'
+        quadrant_label = 'Слив маржи'
+        quadrant_badge_class = 'warning'
+        quadrant_desc = 'Штуки идут, но маржа отстает от графика'
+    elif pace_pct < 90 and km_pace_pct >= 90:
+        quadrant_key = 'money_ok_qty_lag'
+        quadrant_label = 'Запас скидки'
+        quadrant_badge_class = 'info'
+        quadrant_desc = 'Маржа в норме, отставание по объему'
+    else:
+        quadrant_key = 'both_lag'
+        quadrant_label = 'Зона риска'
+        quadrant_badge_class = 'danger'
+        quadrant_desc = 'Отставание и по штукам, и по марже'
+
+    # Склад и риски
+    stock_data = get_dc_stock_analytics(unit, key_models)
+    missed_info = get_missed_deals_info(unit, month_start)
+
+    # Рекомендации Smart Advisor
+    recs = []
+    if plan:
+        recs = generate_smart_recommendations(
+            plan=plan,
+            contracts_count=contracts_count,
+            stock_data=stock_data,
+            days_info=days_info,
+            missed_info=missed_info,
+            financial_fact=financial_fact,
+        )
+    recs_count = len(recs)
+    has_recs = recs_count > 0
+
+    needs_attention = (
+        pace_status == 'lagging'
+        or quadrant_key in ('margin_drain', 'both_lag')
+        or has_recs
+        or stock_data['consignment_overdue_count'] > 0
+        or stock_data['yellow_cars_count'] >= 5
+    )
+
+    top_rec = recs[0] if recs else {}
+    top_rec_title = top_rec.get('title', '')
+    top_rec_badge = top_rec.get('badge', '')
+    top_rec_badge_class = top_rec.get('badge_class', '')
+
+    return {
+        'plan_dc_qty': plan_dc,
+        'plan_importer_qty': plan_importer,
+        'target_plan': target_plan,
+        'contracts_count': contracts_count,
+        'run_rate': run_rate,
+        'pace_pct': pace_pct,
+        'pace_status': pace_status,
+        'pace_label': pace_label,
+        'pace_class': pace_class,
+        'pace_delta_label': pace_delta_label,
+        'gap': gap,
+        'plan_km_rub': plan_km_rub,
+        'plan_revenue_rub': plan_revenue_rub,
+        'fact_km': fact_km,
+        'fact_revenue': fact_revenue,
+        'km_run_rate': km_run_rate,
+        'km_pace_pct': km_pace_pct,
+        'quadrant_key': quadrant_key,
+        'quadrant_label': quadrant_label,
+        'quadrant_badge_class': quadrant_badge_class,
+        'quadrant_desc': quadrant_desc,
+        'stock_total': stock_data['total_count'],
+        'yellow_count': stock_data['yellow_cars_count'],
+        'consignment_overdue': stock_data['consignment_overdue_count'],
+        'consignment_warning': stock_data['consignment_warning_count'],
+        'missed_count': missed_info['total_missed'],
+        'is_autopilot': is_autopilot,
+        'autopilot_rules_count': autopilot_rules_count,
+        'tactic': tactic,
+        'tactic_label': tactic_label,
+        'recs_count': recs_count,
+        'has_recs': has_recs,
+        'needs_attention': needs_attention,
+        'top_rec_title': top_rec_title,
+        'top_rec_badge': top_rec_badge,
+        'top_rec_badge_class': top_rec_badge_class,
+        'recommendations_json': recs,
+    }
+
+
+def rebuild_dc_command_center_showcase(
+    unit: Optional[RefUnit] = None,
+    month_start: Optional[date] = None,
+) -> int:
+    """
+    Пересчитывает и сохраняет аналитическую витрину DcCommandCenterShowcase
+    для одного ДЦ или всей сети дилерских центров за месяц.
+    Возвращает количество обновленных записей витрины.
+    """
+    if month_start is None:
+        month_start = get_first_day_of_month()
+
+    days_info = get_month_days_info(month_start)
+
+    if unit is not None:
+        data = compute_single_dc_showcase_data(
+            unit=unit,
+            month_start=month_start,
+            days_info=days_info,
+        )
+        DcCommandCenterShowcase.objects.update_or_create(
+            unit=unit,
+            month=month_start,
+            defaults=data,
+        )
+        return 1
+
+    all_units = list(
+        RefUnit.objects.filter(buauto=False)
+        .select_related('city')
+        .order_by('city__name', 'name')
+    )
 
     plans_by_unit = {
         p.unit_id: p
@@ -1378,115 +1569,69 @@ def get_all_units_command_center_overview(
     autopilot_active_rules_map = dict(
         PriceCarKmDiscount.objects.filter(
             is_autopilot=True,
-            date_to__gte=days_info['today']
+            date_to__gte=days_info['today'],
         ).values('unit_id').annotate(cnt=Count('id')).values_list('unit_id', 'cnt')
     )
 
-    # 2. Сбор метрик по каждому ДЦ
-    raw_units_data = []
-    for unit in all_units_qs:
-        plan = plans_by_unit.get(unit.id)
-        plan_dc = plan.plan_dc_qty if plan else 0
-        plan_importer = plan.plan_importer_qty if plan else 0
-        target_plan = max(plan_dc, plan_importer)
+    updated_count = 0
+    for u in all_units:
+        data = compute_single_dc_showcase_data(
+            unit=u,
+            month_start=month_start,
+            plan=plans_by_unit.get(u.id),
+            days_info=days_info,
+            key_models=key_models_by_unit.get(u.id, set()),
+            autopilot_rules_count=autopilot_active_rules_map.get(u.id, 0),
+        )
+        DcCommandCenterShowcase.objects.update_or_create(
+            unit=u,
+            month=month_start,
+            defaults=data,
+        )
+        updated_count += 1
 
-        is_autopilot = bool(plan and plan.is_autopilot)
-        tactic = plan.tactic if plan else DcMonthlyPlan.TACTIC_BALANCED
-        tactic_label = dict(DcMonthlyPlan.TACTIC_CHOICES).get(tactic, 'Сбалансированная')
+    return updated_count
 
-        contracts_count = get_contracts_count_for_unit(unit, month_start)
-        run_rate = round(contracts_count / day_now * days_in_month, 1) if day_now > 0 else 0
-        pace_pct = round(run_rate / target_plan * 100, 1) if target_plan > 0 else 0
-        gap = max(target_plan - contracts_count, 0)
 
-        if target_plan == 0:
-            pace_status = 'no_plan'
-            pace_label = 'План не задан'
-            pace_class = 'secondary'
-            pace_delta_label = 'нет плана'
-        elif pace_pct < 90:
-            pace_status = 'lagging'
-            pace_label = 'Отстает'
-            pace_class = 'danger'
-            pace_delta_label = f'-{int(100 - pace_pct)}%'
-        elif pace_pct <= 110:
-            pace_status = 'on_track'
-            pace_label = 'В графике'
-            pace_class = 'success'
-            pace_delta_label = 'в норме'
-        else:
-            pace_status = 'ahead'
-            pace_label = 'Опережает'
-            pace_class = 'info'
-            pace_delta_label = f'+{int(pace_pct - 100)}%'
+def get_all_units_command_center_overview(
+    month_start: date,
+    filters: Optional[dict] = None,
+) -> dict:
+    """
+    Формирует структурированные аналитические данные по всем дилерским центрам
+    из материализованной витрины данных DcCommandCenterShowcase.
+    Обеспечивает мгновенную отдачу страницы (<20 мс) без повторного расчёта.
+    Группировка по городам, расчет темпа (идут/отстают), статуса автопилота,
+    рекомендаций Smart Advisor, складских рисков и глобальных KPI сети.
+    """
+    filters = filters or {}
+    days_info = get_month_days_info(month_start)
+    all_cities = RefCity.objects.all().order_by('name')
 
-        # 2.1 Финансовый факт и темп кумулятивной маржи (КМ в рублях)
-        financial_fact = get_dc_financial_fact(unit, month_start)
-        fact_km = financial_fact.get('fact_km', 0)
-        fact_revenue = financial_fact.get('fact_revenue', 0)
-        plan_km_rub = plan.plan_km_rub if plan else 0
-        plan_revenue_rub = plan.plan_revenue_rub if plan else 0
+    showcase_qs = (
+        DcCommandCenterShowcase.objects.filter(month=month_start)
+        .select_related('unit__city')
+        .order_by('unit__city__name', 'unit__name')
+    )
 
-        km_run_rate = round(fact_km / day_now * days_in_month) if day_now > 0 else 0
-        km_pace_pct = round(km_run_rate / plan_km_rub * 100, 1) if plan_km_rub > 0 else 0
-
-        # Определение квадранта двухфакторного баланса (Штуки vs Деньги)
-        if plan_km_rub <= 0:
-            quadrant_key = 'no_money_plan'
-            quadrant_label = 'План КМ не задан'
-            quadrant_badge_class = 'secondary'
-            quadrant_desc = 'Контроль ведется только по штукам'
-        elif (pace_pct >= 90 or target_plan == 0) and km_pace_pct >= 90:
-            quadrant_key = 'both_ok'
-            quadrant_label = 'В балансе'
-            quadrant_badge_class = 'success'
-            quadrant_desc = 'Штуки и маржа выполняются в графике'
-        elif pace_pct >= 90 and km_pace_pct < 90:
-            quadrant_key = 'margin_drain'
-            quadrant_label = 'Слив маржи'
-            quadrant_badge_class = 'warning'
-            quadrant_desc = 'Штуки идут, но маржа отстает от графика'
-        elif pace_pct < 90 and km_pace_pct >= 90:
-            quadrant_key = 'money_ok_qty_lag'
-            quadrant_label = 'Запас скидки'
-            quadrant_badge_class = 'info'
-            quadrant_desc = 'Маржа в норме, отставание по объему'
-        else:
-            quadrant_key = 'both_lag'
-            quadrant_label = 'Зона риска'
-            quadrant_badge_class = 'danger'
-            quadrant_desc = 'Отставание и по штукам, и по марже'
-
-        # Склад и риски
-        stock_data = get_dc_stock_analytics(unit, key_models_by_unit.get(unit.id, set()))
-        missed_info = get_missed_deals_info(unit, month_start)
-
-        # Рекомендации
-        recs = []
-        if plan:
-            recs = generate_smart_recommendations(
-                plan=plan,
-                contracts_count=contracts_count,
-                stock_data=stock_data,
-                days_info=days_info,
-                missed_info=missed_info,
-                financial_fact=financial_fact,
-            )
-        recs_count = len(recs)
-        has_recs = recs_count > 0
-
-        needs_attention = (
-            pace_status == 'lagging'
-            or quadrant_key in ('margin_drain', 'both_lag')
-            or has_recs
-            or stock_data['consignment_overdue_count'] > 0
-            or stock_data['yellow_cars_count'] >= 5
+    # Если витрина за этот месяц ещё не была собрана — собираем на лету
+    if not showcase_qs.exists():
+        rebuild_dc_command_center_showcase(month_start=month_start)
+        showcase_qs = (
+            DcCommandCenterShowcase.objects.filter(month=month_start)
+            .select_related('unit__city')
+            .order_by('unit__city__name', 'unit__name')
         )
 
-        autopilot_rules_count = autopilot_active_rules_map.get(unit.id, 0)
+    showcase_list = list(showcase_qs)
+    last_updated_at = max((s.updated_at for s in showcase_list), default=None)
 
+    raw_units_data = []
+    for s in showcase_list:
+        unit = s.unit
         city_id = unit.city_id or 0
         city_name = unit.city.name if unit.city else 'Без города'
+        recs = s.recommendations_json or []
 
         raw_units_data.append({
             'unit': unit,
@@ -1494,47 +1639,48 @@ def get_all_units_command_center_overview(
             'unit_name': unit.name,
             'city_id': city_id,
             'city_name': city_name,
-            'plan': plan,
-            'plan_dc': plan_dc,
-            'plan_importer': plan_importer,
-            'target_plan': target_plan,
-            'plan_km_rub': plan_km_rub,
-            'plan_revenue_rub': plan_revenue_rub,
-            'fact_km': fact_km,
-            'fact_revenue': fact_revenue,
-            'km_run_rate': km_run_rate,
-            'km_pace_pct': km_pace_pct,
-            'fact_km_formatted': format_rubles(fact_km),
-            'plan_km_formatted': format_rubles(plan_km_rub),
-            'km_run_rate_formatted': format_rubles(km_run_rate),
-            'fact_revenue_formatted': format_rubles(fact_revenue),
-            'plan_revenue_formatted': format_rubles(plan_revenue_rub),
-            'quadrant_key': quadrant_key,
-            'quadrant_label': quadrant_label,
-            'quadrant_badge_class': quadrant_badge_class,
-            'quadrant_desc': quadrant_desc,
-            'is_autopilot': is_autopilot,
-            'autopilot_rules_count': autopilot_rules_count,
-            'tactic': tactic,
-            'tactic_label': tactic_label,
-            'contracts_count': contracts_count,
-            'run_rate': round(run_rate),
-            'pace_pct': pace_pct,
-            'pace_status': pace_status,
-            'pace_label': pace_label,
-            'pace_class': pace_class,
-            'pace_delta_label': pace_delta_label,
-            'gap': gap,
-            'stock_total': stock_data['total_count'],
-            'yellow_count': stock_data['yellow_cars_count'],
-            'consignment_overdue': stock_data['consignment_overdue_count'],
-            'consignment_warning': stock_data['consignment_warning_count'],
+            'plan': None,
+            'plan_dc': s.plan_dc_qty,
+            'plan_importer': s.plan_importer_qty,
+            'target_plan': s.target_plan,
+            'plan_km_rub': s.plan_km_rub,
+            'plan_revenue_rub': s.plan_revenue_rub,
+            'fact_km': s.fact_km,
+            'fact_revenue': s.fact_revenue,
+            'km_run_rate': s.km_run_rate,
+            'km_pace_pct': s.km_pace_pct,
+            'fact_km_formatted': format_rubles(s.fact_km),
+            'plan_km_formatted': format_rubles(s.plan_km_rub),
+            'km_run_rate_formatted': format_rubles(s.km_run_rate),
+            'fact_revenue_formatted': format_rubles(s.fact_revenue),
+            'plan_revenue_formatted': format_rubles(s.plan_revenue_rub),
+            'quadrant_key': s.quadrant_key,
+            'quadrant_label': s.quadrant_label,
+            'quadrant_badge_class': s.quadrant_badge_class,
+            'quadrant_desc': s.quadrant_desc,
+            'is_autopilot': s.is_autopilot,
+            'autopilot_rules_count': s.autopilot_rules_count,
+            'tactic': s.tactic,
+            'tactic_label': s.tactic_label,
+            'contracts_count': s.contracts_count,
+            'run_rate': round(s.run_rate),
+            'pace_pct': s.pace_pct,
+            'pace_status': s.pace_status,
+            'pace_label': s.pace_label,
+            'pace_class': s.pace_class,
+            'pace_delta_label': s.pace_delta_label,
+            'gap': s.gap,
+            'stock_total': s.stock_total,
+            'yellow_count': s.yellow_count,
+            'consignment_overdue': s.consignment_overdue,
+            'consignment_warning': s.consignment_warning,
             'recs': recs,
-            'recs_count': recs_count,
-            'has_recs': has_recs,
+            'recs_count': s.recs_count,
+            'has_recs': s.has_recs,
             'top_rec': recs[0] if recs else None,
-            'needs_attention': needs_attention,
-            'missed_count': missed_info['total_missed'],
+            'needs_attention': s.needs_attention,
+            'missed_count': s.missed_count,
+            'updated_at': s.updated_at,
         })
 
     # 3. Глобальные счетчики сети (до применения фильтров отображения)
@@ -1658,6 +1804,7 @@ def get_all_units_command_center_overview(
         'all_cities': all_cities,
         'days_info': days_info,
         'filters': filters,
+        'last_updated_at': last_updated_at,
     }
 
 

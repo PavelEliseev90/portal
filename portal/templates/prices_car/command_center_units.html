@@ -349,7 +349,19 @@
                 <h2>Автоматическая переоценка и автопилот новых АМ</h2>
                 <p>Единый центр контроля по городам: статус автопилота, темп выполнения планов, рекомендации дисконта и риски консигнации</p>
             </div>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if overview.last_updated_at %}
+                    <span class="badge bg-light text-dark px-2 py-2 d-flex align-items-center gap-1" style="font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.35);" title="Время последней материализации витрины данных сети">
+                        <i class="icon-clock text-muted"></i> Данные на {{ overview.last_updated_at|date:"d.m.Y H:i:s" }}
+                    </span>
+                {% endif %}
+                <form method="post" action="{% url 'prices_car:command_center_sync_showcase' %}" class="d-inline" id="syncShowcaseForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="month" value="{{ month_str }}">
+                    <button type="submit" class="btn btn-sm btn-warning fw-bold d-flex align-items-center gap-1" id="syncShowcaseBtn" title="Принудительно пересчитать все показатели витрины данных сети ДЦ">
+                        <i class="icon-refresh" id="syncShowcaseIcon"></i> Обновить витрину
+                    </button>
+                </form>
                 <a href="{% url 'prices_car:command_center' %}?month={{ month_str }}" class="btn btn-sm btn-outline-light">
                     <i class="icon-arrow-left"></i> Центр управления
                 </a>
@@ -735,4 +747,23 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var syncForm = document.getElementById('syncShowcaseForm');
+    var syncBtn = document.getElementById('syncShowcaseBtn');
+    var syncIcon = document.getElementById('syncShowcaseIcon');
+    if (syncForm && syncBtn) {
+        syncForm.addEventListener('submit', function() {
+            syncBtn.disabled = true;
+            if (syncIcon) {
+                syncIcon.className = 'spinner-border spinner-border-sm';
+            }
+            syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Пересчёт витрины...';
+        });
+    }
+});
+</script>
 {% endblock %}

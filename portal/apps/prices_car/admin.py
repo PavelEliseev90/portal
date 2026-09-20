@@ -10,6 +10,7 @@ from .models import (
     CarCalculations,
     CarCalculationsTypeDetail,
     CarCalculationUkApproval,
+    DcCommandCenterShowcase,
     DcKeyModel,
     DcMonthlyPlan,
     DealCalcTelegramSettings,
@@ -33,6 +34,20 @@ class DcKeyModelInline(admin.TabularInline):
     model = DcKeyModel
     extra = 1
     raw_id_fields = ('model',)
+
+
+@admin.register(DcCommandCenterShowcase)
+class DcCommandCenterShowcaseAdmin(admin.ModelAdmin):
+    list_display = (
+        'unit', 'month', 'target_plan', 'contracts_count', 'pace_status',
+        'plan_km_rub', 'fact_km', 'quadrant_label', 'stock_total',
+        'is_autopilot', 'recs_count', 'updated_at',
+    )
+    list_filter = ('month', 'pace_status', 'quadrant_key', 'is_autopilot', 'unit')
+    search_fields = ('unit__name',)
+    date_hierarchy = 'month'
+    ordering = ('-month', 'unit')
+    readonly_fields = ('updated_at',)
 
 
 @admin.register(DcMonthlyPlan)

@@ -20,6 +20,7 @@ from prices_car.command_center_service import (
     get_command_center_full_context,
     get_first_day_of_month,
     import_plans_from_excel,
+    rebuild_dc_command_center_showcase,
     simulate_deal_calculation,
 )
 from prices_car.models import (
@@ -185,6 +186,8 @@ def api_save_dc_plan(request):
                 'author': request.user,
             },
         )
+        # Мгновенно обновляем срез витрины для этого ДЦ
+        rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
 
         return JsonResponse({
             'success': True,
@@ -220,6 +223,7 @@ def api_apply_recommendation(request):
             plan.tactic = new_tactic
             plan.author = request.user
             plan.save()
+            rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
             return JsonResponse({'success': True, 'message': f'Тактика изменена на «{plan.get_tactic_display()}»'})
 
         # 2. Создание правила дисконта
@@ -268,6 +272,7 @@ def api_apply_recommendation(request):
                 date_from=date_from,
                 date_to=date_to,
             )
+            rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
 
             return JsonResponse({
                 'success': True,
@@ -307,6 +312,8 @@ def api_toggle_autopilot(request):
             from prices_car.command_center_service import sync_autopilot_for_unit
             logs = sync_autopilot_for_unit(unit, month_start, plan=plan)
 
+        rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
+
         return JsonResponse({
             'success': True,
             'is_autopilot': plan.is_autopilot,
@@ -341,6 +348,7 @@ def api_toggle_key_model(request):
                 model=model,
                 defaults={'target_qty': target_qty},
             )
+            rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
             return JsonResponse({
                 'success': True,
                 'action': 'added',
@@ -349,6 +357,7 @@ def api_toggle_key_model(request):
             })
         else:
             DcKeyModel.objects.filter(plan=plan, model=model).delete()
+            rebuild_dc_command_center_showcase(unit=unit, month_start=month_start)
             return JsonResponse({
                 'success': True,
                 'action': 'removed',
@@ -427,6 +436,7 @@ def import_plans_excel(request):
 
     try:
         updated, created, errors = import_plans_from_excel(file_obj, month_start, author=request.user)
+        rebuild_dc_command_center_showcase(month_start=month_start)
         msg = f'Импорт планов завершен: обновлено {updated}, создано {created}.'
         if errors:
             msg += f' Ошибок: {len(errors)} (проверьте корректность названий ДЦ).'
@@ -596,4 +606,36 @@ def command_center_units_overview(request):
         'is_uk': bool(request.user.is_superuser or (profile and profile.price_car_new_all)),
     }
     return render(request, 'prices_car/command_center_units.html', context)
+
+
+@login_required
+def command_center_sync_showcase_view(request):
+    """
+    Принудительная синхронизация / пересчёт витрины данных сети ДЦ за выбранный месяц.
+    """
+    month_str = request.GET.get('month') or request.POST.get('month')
+    if month_str:
+        try:
+            month_start = datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        except ValueError:
+            month_start = get_first_day_of_month()
+    else:
+        month_start = get_first_day_of_month()
+
+    updated = rebuild_dc_command_center_showcase(month_start=month_start)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'updated': updated,
+            'month': month_start.strftime('%Y-%m'),
+            'message': f'Витрина данных сети ДЦ обновлена ({updated} ДЦ).',
+        })
+
+    messages.success(
+        request,
+        f'Витрина данных сети ДЦ за {month_start.strftime("%Y-%m")} успешно обновлена ({updated} ДЦ).'
+    )
+    return redirect(f'/prices_car/command_center/units/?month={month_start.strftime("%Y-%m")}')
+
 
