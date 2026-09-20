@@ -1,0 +1,30 @@
+{% extends 'base_rlk_chat_1c.html' %}
+
+{% block title %}Ошибка входа — Сводка для продавца{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 540px;">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4 text-center">
+            <div class="mb-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning-subtle text-warning p-3" style="width: 64px; height: 64px; font-size: 28px;">
+                    ⚠️
+                </span>
+            </div>
+            <h5 class="card-title fw-bold text-dark mb-2">Не удалось войти по УИН сотрудника</h5>
+            <p class="card-text text-muted mb-4 small">
+                УИН сотрудника не найден среди пользователей портала или у сотрудника не настроен логин домена.
+            </p>
+            <div class="alert alert-light border small text-start mb-4">
+                <strong>Что делать:</strong>
+                <ul class="mb-0 ps-3 mt-1">
+                    <li>Проверьте корректность ссылки или настройки пользователя в 1С</li>
+                    <li>Войдите в портал через стандартную форму в браузере</li>
+                    <li>При повторении ошибки обратитесь к администратору портала</li>
+                </ul>
+            </div>
+            <a href="/login/" class="btn btn-primary btn-sm px-4 rounded-pill">Перейти к форме входа</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

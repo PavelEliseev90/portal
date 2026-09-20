@@ -23,6 +23,8 @@ def on_user_logged_in(sender, request, user, **kwargs):
         return
     if request.session.get('eco_1c_session'):
         return
+    if request.session.get('seller_brief_1c_session'):
+        return
     if not request.session.session_key:
         request.session.create()
     sk = request.session.session_key
