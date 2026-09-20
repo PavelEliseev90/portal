@@ -29,7 +29,23 @@
 					</div>
 					<span class="fw-bold text-primary">{{ b.stars }} из 5</span>
 				</div>
-				<div class="d-flex gap-2">
+				<div class="d-flex flex-wrap gap-2">
+					{% if b.autoteka.is_green %}
+						<span class="badge bg-success text-white"><span class="icon-mbri-shield"></span> Зелёная Автотека</span>
+					{% elif b.autoteka.crashes_badge == 'red' or b.autoteka.count_dtp > 0 %}
+						<span class="badge bg-danger text-white"><span class="icon-mbri-alert"></span> ДТП в Автотеке ({{ b.autoteka.count_dtp|default:1 }})</span>
+					{% endif %}
+					{% if b.estimation.is_factory_paint %}
+						<span class="badge bg-success text-white"><span class="icon-mbri-protect"></span> Заводской окрас</span>
+					{% elif b.estimation.painted_count %}
+						<span class="badge bg-warning text-dark"><span class="icon-mbri-edit"></span> Перекрасов: {{ b.estimation.painted_count }}</span>
+					{% endif %}
+					{% if b.estimation.has_second_wheels %}
+						<span class="badge bg-info text-dark"><span class="icon-mbri-magic-stick"></span> 2 комплекта колес</span>
+					{% endif %}
+					{% if b.estimation.test_drive_ok %}
+						<span class="badge bg-primary text-white"><span class="icon-mbri-car"></span> Тест-драйв ОК</span>
+					{% endif %}
 					<span class="badge bg-success bg-opacity-15 text-success"><span class="icon-mbri-success"></span> {{ b.strengths_count }} плюсов</span>
 					<span class="badge bg-danger bg-opacity-15 text-danger"><span class="icon-mbri-alert"></span> {{ b.weaknesses_count }} нюансов</span>
 					{% if b.actions_count %}
@@ -95,6 +111,75 @@
 						{% if b.photos.days_ago is not None %}{{ b.photos.days_ago }} дн. назад{% endif %}
 						· вложено {{ b.repairs.outlay|floatformat:"0g" }} ₽
 					</small>
+				</div>
+			</div>
+		</div>
+
+		<!-- Быстрый срез: Автотека и Диагностика -->
+		<div class="row g-2 mb-3">
+			<div class="col-12 col-md-6">
+				<div class="p-2 rounded-3 h-100" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+					<div class="d-flex justify-content-between align-items-center mb-1">
+						<span class="small fw-bold text-dark"><span class="icon-mbri-shield me-1 text-primary"></span>Автотека</span>
+						<div class="d-flex gap-1">
+							{% if b.autoteka.web_url %}
+								<a href="{{ b.autoteka.web_url }}" target="_blank" rel="noopener" class="badge bg-light text-primary border text-decoration-none">Онлайн-отчет</a>
+							{% endif %}
+							{% if b.autoteka.pdf_url %}
+								<a href="{{ b.autoteka.pdf_url }}" target="_blank" rel="noopener" class="badge bg-light text-danger border text-decoration-none">PDF</a>
+							{% endif %}
+						</div>
+					</div>
+					<div class="small text-muted" style="font-size: 0.82rem; line-height: 1.4;">
+						ДТП: <strong>{{ b.autoteka.count_dtp|default:0 }}</strong> · 
+						Расчеты ремонтов: <strong>{% if b.autoteka.audatex_sum %}{{ b.autoteka.audatex_sum|floatformat:"0g" }} ₽{% else %}нет{% endif %}</strong> · 
+						Пробег: <strong>{% if b.autoteka.mileage_warning %}<span class="text-danger">расхождения</span>{% else %}<span class="text-success">подтвержден</span>{% endif %}</strong> · 
+						Владельцев: <strong>{{ b.autoteka.owners|default:"—" }}</strong> · 
+						Юр. чистота: <strong>{% if b.autoteka.pledge %}<span class="text-danger">в залоге</span>{% else %}<span class="text-success">чист</span>{% endif %}</strong>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-md-6">
+				<div class="p-2 rounded-3 h-100" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+					<div class="d-flex justify-content-between align-items-center mb-1">
+						<span class="small fw-bold text-dark"><span class="icon-mbri-edit me-1 text-success"></span>Интерактивная оценка</span>
+						{% if b.estimation.id %}
+							<a href="/interactive_evaluation/evaluation_page/{{ b.estimation.id }}/" target="_blank" rel="noopener" class="badge bg-light text-success border text-decoration-none">Оценка #{{ b.estimation.id }}</a>
+						{% endif %}
+					</div>
+					<div class="small text-muted" style="font-size: 0.82rem; line-height: 1.45;">
+						<div>
+							Кузов: 
+							{% if b.estimation.is_factory_paint %}
+								<strong class="text-success">заводской окрас ({{ b.estimation.paint.min_um }}–{{ b.estimation.paint.max_um }} мкм)</strong>
+							{% elif b.estimation.painted_count %}
+								<strong class="text-warning-emphasis">{{ b.estimation.painted_count }} дет. окрашено (макс. {{ b.estimation.paint.max_um }} мкм{% if b.estimation.paint.strong_painted_count %}, <span class="text-danger">шпатлёвка</span>{% endif %})</strong>
+							{% else %}
+								замеров нет
+							{% endif %}
+							{% if b.estimation.body_defects.replaced %}
+								· <span class="badge bg-danger bg-opacity-15 text-danger">замена: {{ b.estimation.body_defects.replaced|join:", " }}</span>
+							{% endif %}
+						</div>
+						<div>
+							Стекло/Свет/Мотор: 
+							<strong>{% if b.estimation.vnesh.windshield_damaged %}<span class="text-danger">скол/трещина на лобовом</span>{% else %}<span class="text-success">стекло целое{% if b.estimation.vnesh.windshield_heat %} (обогрев){% endif %}</span>{% endif %}</strong> · 
+							{% if b.estimation.vnesh.oil_leak or b.estimation.vnesh.water_leak %}<span class="text-warning-emphasis">следы запотевания</span>{% else %}<span class="text-success">под капотом сухо</span>{% endif %}
+						</div>
+						<div>
+							Тест-драйв: 
+							{% if b.estimation.test_drive_ok %}
+								<strong class="text-success">все узлы исправны</strong>
+							{% elif b.estimation.test_drive.diagnostic_items %}
+								<strong class="text-danger">{{ b.estimation.test_drive.diagnostic_items|length }} замечаний по диагностике</strong>
+							{% elif b.estimation.test_drive.remarks %}
+								<strong class="text-warning-emphasis">{{ b.estimation.test_drive.remarks|join:", " }}</strong>
+							{% else %}
+								<span class="text-muted">пройден</span>
+							{% endif %}
+							· 2-й компл: <strong>{% if b.estimation.has_second_wheels %}<span class="text-success">Да ({{ b.estimation.second_wheels_count }} шт.)</span>{% else %}нет{% endif %}</strong>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

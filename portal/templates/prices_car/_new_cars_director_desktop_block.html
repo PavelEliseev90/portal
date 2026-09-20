@@ -85,6 +85,9 @@
     {% endif %}
     <p>Согласование коммерческих предложений · счётчики за сегодня</p>
     <div class="ncd-actions">
+      <a href="{% url 'prices_car:command_center' %}" class="ncd-btn ncd-btn-primary" style="background: #22c55e; color: #fff;">
+        🎯 Центр управления (Вариант 6)
+      </a>
       <a href="{{ desktop.calculations_list_url }}" class="ncd-btn ncd-btn-primary">
         📋 Все коммерческие предложения
       </a>
@@ -93,6 +96,9 @@
         📊 Отчёт по согласованию КП
       </a>
       {% endif %}
+      <a href="{% url 'prices_car:deal_simulator' %}" class="ncd-btn ncd-btn-outline">
+        🛠️ Тестовый стенд сделки
+      </a>
       <a href="{% url 'prices_car:km_calculator_lab' %}" class="ncd-btn ncd-btn-outline">
         🧮 Калькулятор КМ
       </a>

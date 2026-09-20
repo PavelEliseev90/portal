@@ -455,9 +455,19 @@
           Правила минимального КМ и индексы по брендам и этапам УС
         </p>
         <div class="action-buttons">
+          <a href="{% url 'prices_car:command_center' %}" class="action-btn" style="background: linear-gradient(135deg, #0f2b48 0%, #173d63 100%); color: #fff;">
+            <span class="action-btn-icon">🎯</span>
+            <span class="action-btn-text">Центр управления (Вариант 6)</span>
+            <span class="action-btn-arrow" style="color: #60a5fa;">→</span>
+          </a>
           <a href="/prices_car/" class="action-btn">
             <span class="action-btn-icon">⚙️</span>
             <span class="action-btn-text">Ценообразование новых АМ</span>
+            <span class="action-btn-arrow">→</span>
+          </a>
+          <a href="{% url 'prices_car:deal_simulator' %}" class="action-btn">
+            <span class="action-btn-icon">🛠️</span>
+            <span class="action-btn-text">Тестовый стенд сделки</span>
             <span class="action-btn-arrow">→</span>
           </a>
         </div>

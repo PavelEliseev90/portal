@@ -2257,9 +2257,28 @@ class RefCarsOrganization(models.Model):
     uin                     = models.CharField("UIN", max_length=64, default='', null=True, blank=True)
 
 
+    @property
+    def is_yellow(self) -> bool:
+        """Признак «желтого» автомобиля: сдан рапорт импортеру (date_report заполнено)."""
+        if self.date_report and self.date_report.year > 2000:
+            return True
+        return False
+
+    def get_consignment_status(self, free_days: int = 90) -> dict:
+        """Информация о сроке бесплатного хранения/консигнации от импортера."""
+        days_stock = int(self.days_in_stok or 0)
+        days_left = free_days - days_stock
+        return {
+            'free_days': free_days,
+            'days_stock': days_stock,
+            'days_left': days_left,
+            'is_overdue': days_left <= 0,
+            'is_warning': (0 < days_left <= 15),
+        }
+
     def _find_applicable_km_discount(self, brand_car):
-        """Подбор активного дисконта Км по бренду и детализации автомобиля."""
-        from prices_car.models import PriceCarKmDiscount
+        """Подбор активного дисконта Км по бренду, ДЦ, каналу и детализации автомобиля."""
+        from prices_car.models import PriceCarKmDiscount, DcKeyModel
         from django.utils import timezone
 
         if brand_car is None or self.modification_autoru is None:
@@ -2276,10 +2295,47 @@ class RefCarsOrganization(models.Model):
         car_modification = self.modification_autoru
         car_complectation = self.complectation_autoru
         car_year = self.year if self.year else None
+        car_is_yellow = self.is_yellow
+
+        # Проверяем, является ли модель ключевой для ДЦ в текущем месяце
+        is_key_model_for_car = False
+        if self.unit_id and car_model:
+            month_start = today.replace(day=1)
+            is_key_model_for_car = DcKeyModel.objects.filter(
+                plan__unit_id=self.unit_id,
+                plan__month=month_start,
+                model_id=car_model.id,
+            ).exists()
+
+        # Расчет остатка дней бесплатной консигнации
+        free_days = getattr(brand_car, 'free_consignment_days', 90) or 90
+        consignment_info = self.get_consignment_status(free_days=free_days)
+        days_consignment_left = consignment_info.get('days_left', 999)
 
         best = None
         best_score = -1
         for discount in discounts:
+            # Проверка соответствия ДЦ
+            if discount.unit_id is not None and discount.unit_id != self.unit_id:
+                continue
+
+            # Проверка порога дней бесплатной консигнации (<= X дней)
+            if discount.days_consignment_left_lte is not None:
+                if days_consignment_left > discount.days_consignment_left_lte:
+                    continue
+
+            # Проверка канала продаж
+            if discount.type_sale_id is not None and discount.type_sale_id != self.type_sale_id:
+                continue
+
+            # Проверка признака желтого авто
+            if discount.is_yellow_car and not car_is_yellow:
+                continue
+
+            # Проверка ключевой модели
+            if discount.is_key_model and not is_key_model_for_car:
+                continue
+
             if discount.model_id is not None and discount.model_id != car_model.id:
                 continue
             if discount.modification_id is not None and discount.modification_id != car_modification.id:
@@ -2292,10 +2348,16 @@ class RefCarsOrganization(models.Model):
                     continue
 
             score = (
-                (1 if discount.model_id else 0)
-                + (2 if discount.modification_id else 0)
-                + (4 if discount.complectation_id else 0)
+                (8 if discount.unit_id else 0)
+                + (6 if discount.days_consignment_left_lte is not None else 0)
+                + (4 if discount.type_sale_id else 0)
+                + (4 if discount.is_yellow_car else 0)
+                + (3 if discount.is_key_model else 0)
+                + (2 if discount.model_id else 0)
+                + (3 if discount.modification_id else 0)
+                + (5 if discount.complectation_id else 0)
                 + (1 if discount.year else 0)
+                + (1 if discount.discount_rub else 0)
             )
             if score > best_score:
                 best_score = score
@@ -2457,6 +2519,40 @@ class RefCarsOrganization(models.Model):
                     ).replace(',', ' '),
                 }
                 info['automatic_3'] = automatic_3
+
+            # Вариант 6: Правило Центра управления (Smart АвтоК: тактика ДЦ + дисконт канала/желтых/ключевых/консигнации/рублей)
+            target_base_6 = km_min_automatic_k_tradein if (km_min_automatic_k_tradein > 0) else km_min_automatic_k
+            if target_base_6 <= 0:
+                target_base_6 = km_base_for_discount
+
+            if target_base_6 > 0:
+                km_discount_6 = self._find_applicable_km_discount(brand_car)
+                disc_pct_6 = float(km_discount_6.discount_percent or 0) if km_discount_6 else 0.0
+                disc_rub_6 = int(km_discount_6.discount_rub or 0) if km_discount_6 else 0
+
+                # Применение процента и рублей
+                km_after_pct = target_base_6 * (1 + disc_pct_6 / 100)
+                km_min_automatic_6 = round(max(km_after_pct - disc_rub_6, 0), 2)
+
+                disc_desc_parts = []
+                if disc_pct_6:
+                    disc_desc_parts.append(f'{disc_pct_6}%')
+                if disc_rub_6:
+                    disc_desc_parts.append(f'-{disc_rub_6:,} ₽'.replace(',', ' '))
+                disc_summary = ' и '.join(disc_desc_parts) if disc_desc_parts else '0%'
+
+                info['automatic_6'] = {
+                    'km_min_automatic': km_min_automatic_6,
+                    'km_base': target_base_6,
+                    'discount_percent': disc_pct_6,
+                    'discount_rub': disc_rub_6,
+                    'discount_id': km_discount_6.pk if km_discount_6 else None,
+                    'is_yellow': self.is_yellow,
+                    'km_description': (
+                        f'Вариант 6 (Smart АвтоК): база {int(target_base_6):,} руб., '
+                        f'дисконт {disc_summary} = {int(km_min_automatic_6):,} руб.'
+                    ).replace(',', ' '),
+                }
 
             if self.min_km != 0 and self.min_km != None:
                 km_brand_automatic = self.min_km  / self.price * 100

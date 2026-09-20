@@ -264,7 +264,28 @@
 							{% endif %}
 						</div>
 					</div>
-					<p class="mb-0 small" style="color: #334155; line-height: 1.45;">{{ params.brief.verdict }}</p>
+					<p class="mb-1 small" style="color: #334155; line-height: 1.45;">{{ params.brief.verdict }}</p>
+					
+					<!-- Ключевые маркеры доверия -->
+					<div class="d-flex flex-wrap gap-1 mt-2">
+						{% if params.brief.autoteka.is_green %}
+							<span class="badge bg-success bg-opacity-15 text-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>«Зелёная» Автотека</span>
+						{% elif params.brief.autoteka.has_data and params.brief.autoteka.crashes_count == 0 %}
+							<span class="badge bg-success bg-opacity-15 text-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>Без зафиксированных ДТП</span>
+						{% endif %}
+						{% if params.brief.estimation_info.paint.is_factory_paint %}
+							<span class="badge bg-primary bg-opacity-15 text-primary fw-semibold py-1 px-2"><span class="icon-mbri-shield me-1"></span>Заводской окрас</span>
+						{% endif %}
+						{% if params.brief.estimation_info.kolesa.has_second_set %}
+							<span class="badge bg-warning bg-opacity-20 text-dark fw-semibold py-1 px-2"><span class="icon-mbri-gift me-1"></span>2 комплекта колес</span>
+						{% endif %}
+						{% if params.brief.estimation_info.test_drive.core_ok %}
+							<span class="badge bg-info bg-opacity-15 text-dark fw-semibold py-1 px-2"><span class="icon-mbri-speed me-1"></span>Ходовая проверена</span>
+						{% endif %}
+						{% if params.brief.autoteka.real_mileage_badge %}
+							<span class="badge bg-secondary bg-opacity-15 text-dark fw-semibold py-1 px-2">Пробег подтверждён</span>
+						{% endif %}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -581,7 +602,7 @@
 			</div>
 
 			<!-- 4. Фотографии -->
-			<div class="accordion-item border-0 rounded-3 overflow-hidden shadow-sm">
+			<div class="accordion-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
 				<h2 class="accordion-header" id="headingPhotos">
 					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePhotos" aria-expanded="false" aria-controls="collapsePhotos">
 						<span class="icon-mbri-photo me-2 text-info"></span>Фотосессия автомобиля
@@ -607,6 +628,325 @@
 								</a>
 							</div>
 						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 5. Автотека и юридическая чистота -->
+			<div class="accordion-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
+				<h2 class="accordion-header" id="headingAutoteka">
+					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAutoteka" aria-expanded="false" aria-controls="collapseAutoteka">
+						<span class="icon-mbri-shield me-2 text-primary"></span>Автотека и юридическая история
+						{% if params.brief.autoteka.is_green %}
+							<span class="badge bg-success bg-opacity-15 text-success ms-2">«Зелёная» Автотека</span>
+						{% elif params.brief.autoteka.has_data %}
+							{% if params.brief.autoteka.crashes_count %}
+								<span class="badge bg-warning bg-opacity-15 text-dark ms-2">{{ params.brief.autoteka.crashes_count }} ДТП</span>
+							{% endif %}
+							{% if params.brief.autoteka.insurance_calc_sum %}
+								<span class="badge bg-danger bg-opacity-15 text-danger ms-2">Расчеты: {{ params.brief.autoteka.insurance_calc_sum|floatformat:"0g" }} ₽</span>
+							{% endif %}
+						{% else %}
+							<span class="badge bg-secondary ms-2">Данные не загружены</span>
+						{% endif %}
+					</button>
+				</h2>
+				<div id="collapseAutoteka" class="accordion-collapse collapse" aria-labelledby="headingAutoteka" data-bs-parent="#sellerBriefDetailsAcc">
+					<div class="accordion-body bg-white">
+						{% if params.brief.autoteka.has_data %}
+							<div class="row g-3">
+								<div class="col-12 col-md-6">
+									<table class="table table-sm sb-table-sm mb-0">
+										<tbody>
+											<tr>
+												<td class="text-muted">История ДТП:</td>
+												<td>
+													{% if params.brief.autoteka.crashes_count == 0 %}
+														<span class="text-success fw-semibold"><span class="icon-mbri-success me-1"></span>ДТП не зафиксированы</span>
+													{% else %}
+														<span class="text-danger fw-semibold">{{ params.brief.autoteka.crashes_count }} ДТП</span>
+													{% endif %}
+												</td>
+											</tr>
+											<tr>
+												<td class="text-muted">Расчёты ремонтов Audatex:</td>
+												<td>
+													{% if params.brief.autoteka.insurance_calc_sum > 0 %}
+														<span class="text-danger fw-semibold">{{ params.brief.autoteka.insurance_calc_sum|floatformat:"0g" }} ₽</span>
+													{% else %}
+														<span class="text-success fw-semibold">0 ₽ (без расчётов)</span>
+													{% endif %}
+												</td>
+											</tr>
+											<tr>
+												<td class="text-muted">Проверка пробега:</td>
+												<td>
+													{% if params.brief.autoteka.mileage_warning > 0 %}
+														<span class="text-danger fw-semibold">Возможный скачок (~{{ params.brief.autoteka.mileage_warning|floatformat:"0g" }} км)</span>
+													{% elif params.brief.autoteka.real_mileage_badge %}
+														<span class="text-success fw-semibold"><span class="icon-mbri-success me-1"></span>Реальный подтверждён</span>
+													{% else %}
+														<span class="text-muted">Без зафиксированных скруток</span>
+													{% endif %}
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<div class="col-12 col-md-6">
+									<table class="table table-sm sb-table-sm mb-0">
+										<tbody>
+											<tr>
+												<td class="text-muted">Залог / Кредит:</td>
+												<td>
+													{% if params.brief.autoteka.in_pledge %}
+														<span class="text-danger fw-semibold">В залоге / кредите</span>
+													{% else %}
+														<span class="text-success fw-semibold"><span class="icon-mbri-success me-1"></span>Чисто (нет залогов)</span>
+													{% endif %}
+												</td>
+											</tr>
+											<tr>
+												<td class="text-muted">Такси / Каршеринг:</td>
+												<td>
+													{% if params.brief.autoteka.is_taxi or params.brief.autoteka.is_carsharing %}
+														<span class="text-danger fw-semibold">Коммерческая эксплуатация</span>
+													{% else %}
+														<span class="text-success fw-semibold"><span class="icon-mbri-success me-1"></span>Частное использование</span>
+													{% endif %}
+												</td>
+											</tr>
+											<tr>
+												<td class="text-muted">Владельцев:</td>
+												<td><strong>{{ params.brief.autoteka.owners_autoteka|default:"1" }}</strong></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+
+							{% if params.brief.autoteka.web_url or params.brief.autoteka.pdf_url %}
+								<div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top">
+									{% if params.brief.autoteka.web_url %}
+										<a href="{{ params.brief.autoteka.web_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm rounded-pill">
+											<span class="icon-mbri-globe me-1"></span>Открыть онлайн-отчёт Автотеки
+										</a>
+									{% endif %}
+									{% if params.brief.autoteka.pdf_url %}
+										<a href="{{ params.brief.autoteka.pdf_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm rounded-pill">
+											<span class="icon-mbri-file me-1"></span>Скачать PDF Автотеки
+										</a>
+									{% endif %}
+								</div>
+							{% endif %}
+						{% else %}
+							<p class="text-muted mb-0">Отчёт Автотеки по данному VIN пока не загружен в базу.</p>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			<!-- 6. Интерактивная оценка и диагностика -->
+			<div class="accordion-item border-0 rounded-3 overflow-hidden shadow-sm">
+				<h2 class="accordion-header" id="headingDiagnostic">
+					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDiagnostic" aria-expanded="false" aria-controls="collapseDiagnostic">
+						<span class="icon-mbri-speed me-2 text-warning"></span>Интерактивная оценка и диагностический лист
+						{% if params.brief.estimation_info.has_data %}
+							{% if params.brief.estimation_info.paint.is_factory_paint %}
+								<span class="badge bg-primary bg-opacity-15 text-primary ms-2">Заводской окрас</span>
+							{% elif params.brief.estimation_info.paint.painted_count %}
+								<span class="badge bg-secondary ms-2">{{ params.brief.estimation_info.paint.painted_count }} окрашенных дет.</span>
+							{% endif %}
+							{% if params.brief.estimation_info.test_drive.core_ok %}
+								<span class="badge bg-success bg-opacity-15 text-success ms-2">Агрегаты ОК</span>
+							{% endif %}
+						{% else %}
+							<span class="badge bg-secondary ms-2">Оценка не найдена</span>
+						{% endif %}
+					</button>
+				</h2>
+				<div id="collapseDiagnostic" class="accordion-collapse collapse" aria-labelledby="headingDiagnostic" data-bs-parent="#sellerBriefDetailsAcc">
+					<div class="accordion-body bg-white">
+						{% if params.brief.estimation_info.has_data %}
+							<div class="row g-4">
+								<!-- Кузов, ЛКП и дефекты -->
+								<div class="col-12 col-lg-6">
+									<div class="p-3 rounded-3 h-100" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+										<h6 class="fw-bold text-dark mb-3"><span class="icon-mbri-shield me-2 text-primary"></span>Кузов, замеры ЛКП и внешнее состояние:</h6>
+										
+										<div class="mb-3">
+											<div class="d-flex justify-content-between align-items-center mb-1">
+												<span class="small text-muted">Замеры толщиномера (ЛКП):</span>
+												<span class="badge bg-light text-dark border">{{ params.brief.estimation_info.paint.measured_count }} точек</span>
+											</div>
+											{% if params.brief.estimation_info.paint.is_factory_paint %}
+												<div class="alert alert-success py-2 px-3 mb-2 small">
+													<strong class="d-block"><span class="icon-mbri-success me-1"></span>Заводской окрас по кругу</strong>
+													Все замеры в диапазоне {{ params.brief.estimation_info.paint.min_um }}–{{ params.brief.estimation_info.paint.max_um }} мкм, вторичных окрасов нет.
+												</div>
+											{% elif params.brief.estimation_info.paint.painted_count > 0 %}
+												<div class="alert alert-warning py-2 px-3 mb-2 small">
+													<strong class="d-block text-warning-emphasis"><span class="icon-mbri-alert me-1"></span>Вторичный окрас: {{ params.brief.estimation_info.paint.painted_count }} дет. (макс. {{ params.brief.estimation_info.paint.max_um }} мкм)</strong>
+													<div class="mt-1">
+														{% for d in params.brief.estimation_info.paint.painted_details %}
+															<span class="badge bg-white text-dark border me-1 mb-1">
+																{{ d.name }}: <strong>{{ d.microns }} мкм</strong>
+																{% if d.has_putty %}<span class="text-danger fw-bold">(шпатлёвка)</span>{% endif %}
+															</span>
+														{% endfor %}
+													</div>
+												</div>
+											{% else %}
+												<div class="text-muted small mb-2">Толщиномер: замеры в пределах заводской нормы.</div>
+											{% endif %}
+										</div>
+
+										<!-- Замененные элементы и дефекты кузова -->
+										<div class="mb-3">
+											<span class="small text-muted d-block mb-1">Замененные детали и внешние дефекты:</span>
+											{% if params.brief.estimation_info.body_defects.replaced %}
+												<div class="mb-2">
+													<span class="badge bg-danger bg-opacity-15 text-danger">Замененные элементы:</span>
+													<span class="small text-dark fw-semibold ms-1">{{ params.brief.estimation_info.body_defects.replaced|join:", " }}</span>
+												</div>
+											{% endif %}
+
+											{% if params.brief.estimation_info.body_defects.total_count > 0 %}
+												<div class="small text-muted">
+													{% if params.brief.estimation_info.body_defects.chips %}
+														<div>• <strong>Сколы:</strong> {{ params.brief.estimation_info.body_defects.chips|join:", " }}</div>
+													{% endif %}
+													{% if params.brief.estimation_info.body_defects.scratches %}
+														<div>• <strong>Царапины:</strong> {{ params.brief.estimation_info.body_defects.scratches|join:", " }}</div>
+													{% endif %}
+													{% if params.brief.estimation_info.body_defects.dents %}
+														<div>• <strong>Вмятины:</strong> {{ params.brief.estimation_info.body_defects.dents|join:", " }}</div>
+													{% endif %}
+													{% if params.brief.estimation_info.body_defects.cracks %}
+														<div>• <strong>Трещины:</strong> {{ params.brief.estimation_info.body_defects.cracks|join:", " }}</div>
+													{% endif %}
+													{% if params.brief.estimation_info.body_defects.rust %}
+														<div>• <strong class="text-danger">Коррозия:</strong> {{ params.brief.estimation_info.body_defects.rust|join:", " }}</div>
+													{% endif %}
+												</div>
+											{% else %}
+												<div class="text-success small"><span class="icon-mbri-success me-1"></span>Вмятин, глубоких царапин и очагов коррозии не обнаружено.</div>
+											{% endif %}
+										</div>
+
+										<!-- Остекление, оптика, подкапотное -->
+										<div class="border-top pt-2 mt-2">
+											<span class="small text-muted d-block mb-1">Остекление, свет и подкапотное:</span>
+											<ul class="list-unstyled small mb-0">
+												<li>
+													<strong>Лобовое стекло:</strong>
+													{% if params.brief.estimation_info.vnesh.windshield_damaged %}
+														<span class="text-danger fw-semibold">Повреждено (скол/трещина)</span>
+													{% else %}
+														<span class="text-success fw-semibold">Целое, без дефектов</span>
+													{% endif %}
+													{% if params.brief.estimation_info.vnesh.windshield_heat %}
+														<span class="badge bg-info bg-opacity-20 text-dark ms-1">Электрообогрев</span>
+													{% endif %}
+													{% if params.brief.estimation_info.vnesh.windshield_projection %}
+														<span class="badge bg-light text-dark border ms-1">Проекция</span>
+													{% endif %}
+												</li>
+												<li>
+													<strong>Фары и фонари:</strong>
+													{% if params.brief.estimation_info.vnesh.light_damaged %}
+														<span class="text-warning-emphasis">Есть замечания по оптике</span>
+													{% else %}
+														<span class="text-success">Исправны, без повреждений</span>
+													{% endif %}
+												</li>
+												<li>
+													<strong>Под капотом:</strong>
+													{% if params.brief.estimation_info.vnesh.oil_leak or params.brief.estimation_info.vnesh.water_leak %}
+														<span class="text-warning-emphasis fw-semibold">Есть следы запотевания ({% if params.brief.estimation_info.vnesh.oil_leak %}масло{% endif %}{% if params.brief.estimation_info.vnesh.water_leak %} антифриз{% endif %})</span>
+													{% else %}
+														<span class="text-success fw-semibold">Сухо, следов течей масла и охлаждающей жидкости нет</span>
+													{% endif %}
+												</li>
+												{% if params.brief.estimation_info.vnesh.comment_vnesh %}
+													<li class="text-muted fst-italic mt-1">«{{ params.brief.estimation_info.vnesh.comment_vnesh }}»</li>
+												{% endif %}
+											</ul>
+										</div>
+									</div>
+								</div>
+
+								<!-- Диагностика тест-драйва, салон и колеса -->
+								<div class="col-12 col-lg-6">
+									<div class="p-3 rounded-3 h-100" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+										<h6 class="fw-bold text-dark mb-3"><span class="icon-mbri-speed me-2 text-warning"></span>Диагностика тест-драйва и агрегаты:</h6>
+										
+										<!-- Системы автомобиля (плитка) -->
+										{% if params.brief.estimation_info.test_drive.has_test_drive %}
+											<div class="row g-2 mb-3">
+												{% for sys_name, sys in params.brief.estimation_info.test_drive.systems.items %}
+													<div class="col-6 col-sm-4">
+														<div class="p-2 rounded bg-white border h-100">
+															<div class="small fw-semibold text-truncate" title="{{ sys_name }}">{{ sys_name }}</div>
+															{% if sys.status == 'ok' %}
+																<span class="badge bg-success bg-opacity-15 text-success" style="font-size: 0.72rem;">Исправно</span>
+															{% elif sys.status == 'warning' %}
+																<span class="badge bg-warning bg-opacity-20 text-dark" style="font-size: 0.72rem;">Замечания</span>
+															{% elif sys.status == 'error' %}
+																<span class="badge bg-danger text-white" style="font-size: 0.72rem;">Ремонт</span>
+															{% else %}
+																<span class="badge bg-light text-muted" style="font-size: 0.72rem;">—</span>
+															{% endif %}
+															{% if sys.comment %}
+																<div class="text-muted" style="font-size: 0.7rem; line-height: 1.2; margin-top: 2px;">{{ sys.comment }}</div>
+															{% endif %}
+														</div>
+													</div>
+												{% endfor %}
+											</div>
+										{% else %}
+											<div class="text-muted small mb-3">Тест-драйв не производился.</div>
+										{% endif %}
+
+										<!-- Замечания из справочника диагностики -->
+										{% if params.brief.estimation_info.test_drive.diagnostic_items %}
+											<div class="mb-3">
+												<span class="small fw-bold text-danger d-block mb-1">
+													<span class="icon-mbri-bulleted-list me-1"></span>Замечания диагностической карты ({{ params.brief.estimation_info.test_drive.diagnostic_items|length }} поз.):
+												</span>
+												<div class="p-2 rounded bg-white border small" style="max-height: 140px; overflow-y: auto;">
+													<ul class="mb-0 ps-3">
+														{% for itm in params.brief.estimation_info.test_drive.diagnostic_items %}
+															<li><strong>{{ itm.category }}:</strong> {{ itm.title }}</li>
+														{% endfor %}
+													</ul>
+												</div>
+											</div>
+										{% elif params.brief.estimation_info.test_drive.has_test_drive %}
+											<div class="alert alert-success py-2 px-3 mb-3 small">
+												<span class="icon-mbri-success me-1"></span>В диагностической карте замечаний по узлам и агрегатам нет.
+											</div>
+										{% endif %}
+
+										<!-- Колеса, Салон и Комплектность -->
+										<div class="border-top pt-2 mt-2">
+											<div class="row g-2 small">
+												<div class="col-6">
+													<strong>Колёса:</strong> {{ params.brief.estimation_info.kolesa.tyre_mark|default:"Шины" }} ({{ params.brief.estimation_info.kolesa.tyre_season }})<br>
+													<strong>2-й комплект:</strong> {% if params.brief.estimation_info.kolesa.has_second_set %}<span class="text-success fw-semibold">Да ({{ params.brief.estimation_info.kolesa.second_set_desc }})</span>{% else %}<span class="text-muted">нет</span>{% endif %}
+												</div>
+												<div class="col-6">
+													<strong>Салон:</strong> {% if params.brief.estimation_info.salon.cleaning_needed %}<span class="text-warning-emphasis">нужна химчистка</span>{% else %}<span class="text-success">чистый</span>{% endif %}<br>
+													<strong>Ключи / ПТС:</strong> {{ params.brief.estimation_info.complect.keys_count }} шт. · {% if params.brief.estimation_info.complect.pts_original %}<span class="text-success fw-semibold">Оригинал</span>{% else %}ЭПТС{% endif %}
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						{% else %}
+							<p class="text-muted mb-0">Интерактивная оценка для данного автомобиля не найдена в базе оценок.</p>
+						{% endif %}
 					</div>
 				</div>
 			</div>
