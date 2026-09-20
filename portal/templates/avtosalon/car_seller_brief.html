@@ -60,9 +60,76 @@
 	font-size: 0.8rem;
 	font-weight: 600;
 }
-.sb-badge-pro { background: rgba(34, 197, 94, 0.12); color: #15803d; }
-.sb-badge-con { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
-.sb-badge-action { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.sb-badge-pro { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbf7d0 !important; }
+.sb-badge-con { background: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fecaca !important; }
+.sb-badge-action { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+
+/* Гарантия четкой контрастности всех бейджей на странице сводки */
+.portal-page .badge,
+.sb-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	border-radius: 0.45rem;
+}
+.portal-page .badge.bg-primary {
+	background-color: #eff6ff !important;
+	color: #1d4ed8 !important;
+	border: 1px solid #bfdbfe !important;
+}
+.portal-page .badge.bg-success {
+	background-color: #f0fdf4 !important;
+	color: #15803d !important;
+	border: 1px solid #bbf7d0 !important;
+}
+.portal-page .badge.bg-danger {
+	background-color: #fef2f2 !important;
+	color: #b91c1c !important;
+	border: 1px solid #fecaca !important;
+}
+.portal-page .badge.bg-warning {
+	background-color: #fffbeb !important;
+	color: #b45309 !important;
+	border: 1px solid #fde68a !important;
+}
+.portal-page .badge.bg-info {
+	background-color: #f0f9ff !important;
+	color: #0369a1 !important;
+	border: 1px solid #bae6fd !important;
+}
+.portal-page .badge.bg-secondary {
+	background-color: #f1f5f9 !important;
+	color: #334155 !important;
+	border: 1px solid #cbd5e1 !important;
+}
+.portal-page .badge.bg-light,
+.portal-page .badge.bg-white {
+	background-color: #ffffff !important;
+	color: #1e293b !important;
+	border: 1px solid #cbd5e1 !important;
+}
+/* Сплошные бейджи с белым текстом */
+.portal-page .badge.text-white {
+	color: #ffffff !important;
+}
+.portal-page .badge.bg-primary.text-white {
+	background-color: #2563eb !important;
+	border-color: #1d4ed8 !important;
+}
+.portal-page .badge.bg-success.text-white {
+	background-color: #16a34a !important;
+	border-color: #15803d !important;
+}
+.portal-page .badge.bg-danger.text-white {
+	background-color: #dc2626 !important;
+	border-color: #b91c1c !important;
+}
+.portal-page .badge.bg-dark.text-white {
+	background-color: #1e293b !important;
+	border-color: #0f172a !important;
+}
 
 .sb-pro-item {
 	border-left: 4px solid #16a34a;
@@ -189,9 +256,9 @@
 		<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
 			<div>
 				<div class="d-flex align-items-center gap-2 mb-1">
-					<span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-2 py-1">Шпаргалка продавца</span>
+					<span class="badge bg-primary fw-semibold px-2 py-1">Шпаргалка продавца</span>
 					{% if params.from_1c %}
-						<span class="badge bg-success bg-opacity-10 text-success fw-semibold px-2 py-1" title="Сквозная авторизация из 1С без сброса сессии">1С Онлайн</span>
+						<span class="badge bg-success fw-semibold px-2 py-1" title="Сквозная авторизация из 1С без сброса сессии">1С Онлайн</span>
 					{% endif %}
 					<span class="text-muted small">VIN: {{ params.car.vin }}</span>
 				</div>
@@ -269,21 +336,21 @@
 					<!-- Ключевые маркеры доверия -->
 					<div class="d-flex flex-wrap gap-1 mt-2">
 						{% if params.brief.autoteka.is_green %}
-							<span class="badge bg-success bg-opacity-15 text-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>«Зелёная» Автотека</span>
+							<span class="badge bg-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>«Зелёная» Автотека</span>
 						{% elif params.brief.autoteka.has_data and params.brief.autoteka.crashes_count == 0 %}
-							<span class="badge bg-success bg-opacity-15 text-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>Без зафиксированных ДТП</span>
+							<span class="badge bg-success fw-semibold py-1 px-2"><span class="icon-mbri-success me-1"></span>Без зафиксированных ДТП</span>
 						{% endif %}
 						{% if params.brief.estimation_info.paint.is_factory_paint %}
-							<span class="badge bg-primary bg-opacity-15 text-primary fw-semibold py-1 px-2"><span class="icon-mbri-shield me-1"></span>Заводской окрас</span>
+							<span class="badge bg-primary fw-semibold py-1 px-2"><span class="icon-mbri-shield me-1"></span>Заводской окрас</span>
 						{% endif %}
 						{% if params.brief.estimation_info.kolesa.has_second_set %}
-							<span class="badge bg-warning bg-opacity-20 text-dark fw-semibold py-1 px-2"><span class="icon-mbri-gift me-1"></span>2 комплекта колес</span>
+							<span class="badge bg-warning text-dark fw-semibold py-1 px-2"><span class="icon-mbri-gift me-1"></span>2 комплекта колес</span>
 						{% endif %}
 						{% if params.brief.estimation_info.test_drive.core_ok %}
-							<span class="badge bg-info bg-opacity-15 text-dark fw-semibold py-1 px-2"><span class="icon-mbri-speed me-1"></span>Ходовая проверена</span>
+							<span class="badge bg-info fw-semibold py-1 px-2"><span class="icon-mbri-speed me-1"></span>Ходовая проверена</span>
 						{% endif %}
 						{% if params.brief.autoteka.real_mileage_badge %}
-							<span class="badge bg-secondary bg-opacity-15 text-dark fw-semibold py-1 px-2">Пробег подтверждён</span>
+							<span class="badge bg-secondary fw-semibold py-1 px-2">Пробег подтверждён</span>
 						{% endif %}
 					</div>
 				</div>
@@ -400,7 +467,7 @@
 					<h5 class="mb-0 fw-bold text-success">
 						<span class="icon-mbri-success me-2"></span>Сильные стороны (Плюсы)
 					</h5>
-					<span class="badge bg-success bg-opacity-10 text-success fw-bold">{{ params.brief.strengths_count }}</span>
+					<span class="badge bg-success fw-bold">{{ params.brief.strengths_count }}</span>
 				</div>
 				<p class="text-muted small mb-3">Используйте эти ключевые преимущества при презентации клиенту.</p>
 
@@ -408,7 +475,7 @@
 					{% for s in params.brief.strengths %}
 						<div class="sb-pro-item">
 							<div class="d-flex align-items-center gap-2 mb-1">
-								<span class="badge bg-success bg-opacity-15 text-success small">{{ s.tag }}</span>
+								<span class="badge bg-success small">{{ s.tag }}</span>
 								<strong style="color: #14532d;">{{ s.title }}</strong>
 							</div>
 							<div class="small text-muted mb-2">{{ s.detail }}</div>
@@ -433,7 +500,7 @@
 					<h5 class="mb-0 fw-bold text-danger">
 						<span class="icon-mbri-alert me-2"></span>Слабые стороны и возражения
 					</h5>
-					<span class="badge bg-danger bg-opacity-10 text-danger fw-bold">{{ params.brief.weaknesses_count }}</span>
+					<span class="badge bg-danger fw-bold">{{ params.brief.weaknesses_count }}</span>
 				</div>
 				<p class="text-muted small mb-3">Готовые скрипты ответов на частые претензии и вопросы покупателя.</p>
 
@@ -441,7 +508,7 @@
 					{% for w in params.brief.weaknesses %}
 						<div class="sb-con-item">
 							<div class="d-flex align-items-center gap-2 mb-1">
-								<span class="badge bg-danger bg-opacity-15 text-danger small">{{ w.tag }}</span>
+								<span class="badge bg-danger small">{{ w.tag }}</span>
 								<strong style="color: #7f1d1d;">{{ w.title }}</strong>
 							</div>
 							<div class="small text-muted mb-2">{{ w.detail }}</div>
@@ -481,7 +548,7 @@
 					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAh" aria-expanded="false" aria-controls="collapseAh">
 						<span class="icon-mbri-growing-chart me-2 text-primary"></span>Данные Автохаб / Классифайды
 						{% if params.brief.hub.has_data %}
-							<span class="badge bg-primary bg-opacity-10 text-primary ms-2">Снимок от {{ params.brief.hub.snapshot_date|date:"d.m.Y" }}</span>
+							<span class="badge bg-primary ms-2">Снимок от {{ params.brief.hub.snapshot_date|date:"d.m.Y" }}</span>
 						{% else %}
 							<span class="badge bg-secondary ms-2">Нет снимка</span>
 						{% endif %}
@@ -572,7 +639,7 @@
 					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRepairs" aria-expanded="false" aria-controls="collapseRepairs">
 						<span class="icon-mbri-file me-2 text-success"></span>История ремонтов и заказ-нарядов
 						{% if params.brief.repairs.has_repairs %}
-							<span class="badge bg-success bg-opacity-10 text-success ms-2">Вложено {{ params.brief.repairs.outlay|floatformat:"0g" }} ₽</span>
+							<span class="badge bg-success ms-2">Вложено {{ params.brief.repairs.outlay|floatformat:"0g" }} ₽</span>
 						{% else %}
 							<span class="badge bg-secondary ms-2">Без заказ-нарядов</span>
 						{% endif %}
@@ -606,7 +673,7 @@
 				<h2 class="accordion-header" id="headingPhotos">
 					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePhotos" aria-expanded="false" aria-controls="collapsePhotos">
 						<span class="icon-mbri-photo me-2 text-info"></span>Фотосессия автомобиля
-						<span class="badge bg-info bg-opacity-10 text-info ms-2">{{ params.brief.photos.count }} фото</span>
+						<span class="badge bg-info ms-2">{{ params.brief.photos.count }} фото</span>
 						{% if params.brief.photos.days_ago is not None %}
 							<span class="text-muted small ms-2">Загружены {{ params.brief.photos.days_ago }} дн. назад</span>
 						{% endif %}
@@ -638,13 +705,13 @@
 					<button class="accordion-button bg-light collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAutoteka" aria-expanded="false" aria-controls="collapseAutoteka">
 						<span class="icon-mbri-shield me-2 text-primary"></span>Автотека и юридическая история
 						{% if params.brief.autoteka.is_green %}
-							<span class="badge bg-success bg-opacity-15 text-success ms-2">«Зелёная» Автотека</span>
+							<span class="badge bg-success ms-2">«Зелёная» Автотека</span>
 						{% elif params.brief.autoteka.has_data %}
 							{% if params.brief.autoteka.crashes_count %}
-								<span class="badge bg-warning bg-opacity-15 text-dark ms-2">{{ params.brief.autoteka.crashes_count }} ДТП</span>
+								<span class="badge bg-warning ms-2">{{ params.brief.autoteka.crashes_count }} ДТП</span>
 							{% endif %}
 							{% if params.brief.autoteka.insurance_calc_sum %}
-								<span class="badge bg-danger bg-opacity-15 text-danger ms-2">Расчеты: {{ params.brief.autoteka.insurance_calc_sum|floatformat:"0g" }} ₽</span>
+								<span class="badge bg-danger ms-2">Расчеты: {{ params.brief.autoteka.insurance_calc_sum|floatformat:"0g" }} ₽</span>
 							{% endif %}
 						{% else %}
 							<span class="badge bg-secondary ms-2">Данные не загружены</span>
@@ -753,12 +820,12 @@
 						<span class="icon-mbri-speed me-2 text-warning"></span>Интерактивная оценка и диагностический лист
 						{% if params.brief.estimation_info.has_data %}
 							{% if params.brief.estimation_info.paint.is_factory_paint %}
-								<span class="badge bg-primary bg-opacity-15 text-primary ms-2">Заводской окрас</span>
+								<span class="badge bg-primary ms-2">Заводской окрас</span>
 							{% elif params.brief.estimation_info.paint.painted_count %}
 								<span class="badge bg-secondary ms-2">{{ params.brief.estimation_info.paint.painted_count }} окрашенных дет.</span>
 							{% endif %}
 							{% if params.brief.estimation_info.test_drive.core_ok %}
-								<span class="badge bg-success bg-opacity-15 text-success ms-2">Агрегаты ОК</span>
+								<span class="badge bg-success ms-2">Агрегаты ОК</span>
 							{% endif %}
 						{% else %}
 							<span class="badge bg-secondary ms-2">Оценка не найдена</span>
@@ -806,7 +873,7 @@
 											<span class="small text-muted d-block mb-1">Замененные детали и внешние дефекты:</span>
 											{% if params.brief.estimation_info.body_defects.replaced %}
 												<div class="mb-2">
-													<span class="badge bg-danger bg-opacity-15 text-danger">Замененные элементы:</span>
+													<span class="badge bg-danger">Замененные элементы:</span>
 													<span class="small text-dark fw-semibold ms-1">{{ params.brief.estimation_info.body_defects.replaced|join:", " }}</span>
 												</div>
 											{% endif %}
@@ -846,7 +913,7 @@
 														<span class="text-success fw-semibold">Целое, без дефектов</span>
 													{% endif %}
 													{% if params.brief.estimation_info.vnesh.windshield_heat %}
-														<span class="badge bg-info bg-opacity-20 text-dark ms-1">Электрообогрев</span>
+														<span class="badge bg-info ms-1">Электрообогрев</span>
 													{% endif %}
 													{% if params.brief.estimation_info.vnesh.windshield_projection %}
 														<span class="badge bg-light text-dark border ms-1">Проекция</span>
@@ -889,9 +956,9 @@
 														<div class="p-2 rounded bg-white border h-100">
 															<div class="small fw-semibold text-truncate" title="{{ sys_name }}">{{ sys_name }}</div>
 															{% if sys.status == 'ok' %}
-																<span class="badge bg-success bg-opacity-15 text-success" style="font-size: 0.72rem;">Исправно</span>
+																<span class="badge bg-success" style="font-size: 0.72rem;">Исправно</span>
 															{% elif sys.status == 'warning' %}
-																<span class="badge bg-warning bg-opacity-20 text-dark" style="font-size: 0.72rem;">Замечания</span>
+																<span class="badge bg-warning text-dark" style="font-size: 0.72rem;">Замечания</span>
 															{% elif sys.status == 'error' %}
 																<span class="badge bg-danger text-white" style="font-size: 0.72rem;">Ремонт</span>
 															{% else %}
