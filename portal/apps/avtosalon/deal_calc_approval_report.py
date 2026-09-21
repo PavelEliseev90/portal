@@ -7,10 +7,47 @@ from django.db.models import OuterRef, Subquery, Q
 from django.urls import reverse
 from django.utils import timezone
 
-from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
+from avtosalon.deal_calc_approval import (
+    AUTO_APPROVE_COMMENT,
+    AUTO_APPROVE_USER_ID,
+    LEGACY_AUTO_APPROVE_COMMENT,
+    LEGACY_AUTO_APPROVE_COMMENT_RULE_MIN,
+    user_has_deal_calc_uk_access,
+)
 from documents.models import DocCarShipment
 from prices_car.calculations_table import get_soglasovanie_status_display
 from prices_car.models import CarCalculations
+
+
+def _auto_approved_q():
+    """Условие ORM для автоматического согласования КП."""
+    return Q(
+        soglasovanie_status=CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
+    ) & (
+        Q(director_approve_user_id=AUTO_APPROVE_USER_ID)
+        | Q(director_approve_comment__in=[
+            AUTO_APPROVE_COMMENT,
+            LEGACY_AUTO_APPROVE_COMMENT,
+            LEGACY_AUTO_APPROVE_COMMENT_RULE_MIN,
+        ])
+        | Q(director_approve_comment__startswith='Автоматическое согласование')
+    )
+
+
+def is_auto_approved_calc(calc) -> bool:
+    """Проверка объекта КП на признак автоматического согласования."""
+    if getattr(calc, 'soglasovanie_status', None) != CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED:
+        return False
+    if getattr(calc, 'director_approve_user_id', None) == AUTO_APPROVE_USER_ID:
+        return True
+    comment = (getattr(calc, 'director_approve_comment', '') or '').strip()
+    if comment in (
+        AUTO_APPROVE_COMMENT,
+        LEGACY_AUTO_APPROVE_COMMENT,
+        LEGACY_AUTO_APPROVE_COMMENT_RULE_MIN,
+    ) or comment.startswith('Автоматическое согласование'):
+        return True
+    return False
 
 
 def _current_month_bounds():
@@ -182,7 +219,15 @@ def build_approval_report_queryset(request):
     if only_shipped:
         qs = qs.filter(shipment_pk__isnull=False)
     if soglasovanie:
-        if soglasovanie == 'approved':
+        if soglasovanie == 'auto_approved':
+            qs = qs.filter(_auto_approved_q())
+        elif soglasovanie in ('director_approved', 'manual_director_approved'):
+            qs = qs.filter(
+                soglasovanie_status=CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED
+            ).exclude(_auto_approved_q())
+        elif soglasovanie == 'uk_approved':
+            qs = qs.filter(soglasovanie_status=CarCalculations.SOGLASOVANIE_UK_APPROVED)
+        elif soglasovanie == 'approved':
             qs = qs.filter(soglasovanie_status__in=[
                 CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED,
                 CarCalculations.SOGLASOVANIE_UK_APPROVED,
@@ -197,6 +242,8 @@ def build_approval_report_queryset(request):
                 ])
                 | Q(soglasovanie_status__isnull=True)
             )
+        elif soglasovanie == 'pending_uk':
+            qs = qs.filter(soglasovanie_status=CarCalculations.SOGLASOVANIE_PENDING_UK)
         elif soglasovanie == 'rejected':
             qs = qs.filter(soglasovanie_status__in=[
                 CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
@@ -235,7 +282,134 @@ def build_approval_report_querystring(filtr, *, page=None):
     return urlencode(params)
 
 
-def serialize_approval_report_row(calc):
+class BrandKMResolver:
+    """Быстрый резолвер BrandKM в памяти без N+1 запросов к БД."""
+
+    def __init__(self):
+        self._load_data()
+
+    def _load_data(self):
+        from prices_car.models import BrandKM, PriceCarBrand
+
+        try:
+            brands = list(
+                PriceCarBrand.objects.prefetch_related('marks', 'models_included').all()
+            )
+        except Exception:
+            brands = []
+
+        self._brands_data = []
+        for b in brands:
+            self._brands_data.append({
+                'pk': b.pk,
+                'mark_ids': {m.pk for m in b.marks.all()},
+                'model_ids': {m.pk for m in b.models_included.all()},
+            })
+
+        self._km_exact = {}
+        self._brand_history = {}
+
+        try:
+            km_rows = list(
+                BrandKM.objects
+                .order_by('month')
+                .values('brand_id', 'month', 'km', 'km_min_dc')
+            )
+        except Exception:
+            km_rows = []
+
+        for r in km_rows:
+            bid = r['brand_id']
+            m = r['month']
+            self._km_exact[(bid, m)] = r
+            if bid not in self._brand_history:
+                self._brand_history[bid] = []
+            self._brand_history[bid].append((m, r))
+
+    def resolve_brand_id(self, car):
+        if not car:
+            return None
+        mod = getattr(car, 'modification_autoru', None)
+        if not mod:
+            return None
+        model = getattr(mod, 'model', None)
+        if not model:
+            return None
+        mark_id = getattr(model, 'mark_id', None)
+        model_id = getattr(model, 'pk', None)
+        if not mark_id:
+            return None
+
+        explicit_match = None
+        generic_match = None
+        for b in self._brands_data:
+            if mark_id in b['mark_ids']:
+                if b['model_ids']:
+                    if model_id in b['model_ids']:
+                        explicit_match = b['pk']
+                else:
+                    generic_match = b['pk']
+
+        return explicit_match or generic_match
+
+    def get_brand_km_for_calc(self, calc):
+        if not calc or not calc.car:
+            return None
+        brand_id = self.resolve_brand_id(calc.car)
+        if not brand_id:
+            return None
+
+        calc_date = getattr(calc, 'date', None)
+        if calc_date:
+            target_month = date(calc_date.year, calc_date.month, 1)
+        else:
+            target_month = timezone.now().date().replace(day=1)
+
+        # 1. Exact match
+        exact = self._km_exact.get((brand_id, target_month))
+        if exact:
+            return exact
+
+        # 2. Latest month <= target_month
+        history = self._brand_history.get(brand_id) or []
+        past = [r for m, r in history if m <= target_month]
+        if past:
+            return past[-1]
+
+        # 3. Any latest available
+        if history:
+            return history[-1][1]
+
+        return None
+
+
+def is_yellow_car_at_date(car, calc_date=None):
+    """
+    Признак «жёлтого» автомобиля на момент КП:
+    заполнена дата рапорта (date_report) и установлена не позже даты КП.
+    """
+    if not car:
+        return False, ''
+    dt_report = getattr(car, 'date_report', None)
+    if not dt_report or getattr(dt_report, 'year', 0) <= 2000:
+        return False, ''
+
+    date_report_str = dt_report.strftime('%d.%m.%Y') if hasattr(dt_report, 'strftime') else str(dt_report)
+
+    if calc_date:
+        try:
+            r_date = dt_report.date() if hasattr(dt_report, 'date') else dt_report
+            c_date = calc_date.date() if hasattr(calc_date, 'date') else calc_date
+            if r_date <= c_date:
+                return True, date_report_str
+            return False, date_report_str
+        except Exception:
+            return True, date_report_str
+
+    return True, date_report_str
+
+
+def serialize_approval_report_row(calc, brand_resolver=None):
     car = calc.car
     unit = calc.unit
     city = getattr(unit, 'city', None) if unit else None
@@ -247,6 +421,20 @@ def serialize_approval_report_row(calc):
         sale_profit = calc.kvp
     else:
         sale_profit = None
+
+    is_auto = is_auto_approved_calc(calc)
+    if is_auto:
+        soglasovanie_label = 'Согласовано автоматически'
+        director_approver = 'Автоматически'
+    else:
+        soglasovanie_label = get_soglasovanie_status_display(calc)
+        director_approver = _user_display_name(calc.director_approve_user) or '—'
+
+    brand_km_data = brand_resolver.get_brand_km_for_calc(calc) if brand_resolver else None
+    brand_km_month = brand_km_data.get('km') if brand_km_data else None
+    brand_km_min_dc = brand_km_data.get('km_min_dc') if brand_km_data else None
+    is_yellow, date_report_str = is_yellow_car_at_date(car, calc.date)
+
     return {
         'pk': calc.pk,
         'url': reverse('avtosalon:deal_calculation_doc', kwargs={'id': calc.pk}),
@@ -262,15 +450,20 @@ def serialize_approval_report_row(calc):
         'complectation': _car_complectation(car) or '—',
         'year': car.year if car and car.year else '—',
         'vin': car.vin if car and car.vin else '—',
+        'is_yellow': is_yellow,
+        'date_report_str': date_report_str,
+        'brand_km_month': brand_km_month,
+        'brand_km_min_dc': brand_km_min_dc,
         'rlk_nomer': calc.rlk.nomer if calc.rlk else '—',
         'number': calc.number or '—',
         'date': calc.date,
         'date_str': calc.date.strftime('%d.%m.%Y %H:%M') if calc.date else '',
         'kvp': calc.kvp,
         'km_formula': calc.km_raschet,
+        'is_auto_approved': is_auto,
         'soglasovanie_status': calc.soglasovanie_status or '',
-        'soglasovanie_label': get_soglasovanie_status_display(calc),
-        'director_approver': _user_display_name(calc.director_approve_user) or '—',
+        'soglasovanie_label': soglasovanie_label,
+        'director_approver': director_approver,
         'uk_approver': _user_display_name(calc.uk_approve_user) or '—',
         'shipped': shipped,
         'shipment_nomer': getattr(calc, 'shipment_nomer', None) or '',
@@ -291,9 +484,12 @@ def build_approval_report_excel(rows):
         'Комплектация',
         'Год',
         'VIN',
+        'Жёлтый АМ',
+        'КМ на месяц',
         'КВП',
         'Итог по формуле',
         'Статус согласования',
+        'Автосогласование',
         'Согласовал директор',
         'Согласовал УК',
         'Доходность уехала',
@@ -324,9 +520,12 @@ def build_approval_report_excel(rows):
             row['complectation'],
             row['year'],
             row['vin'],
+            'Да' if row.get('is_yellow') else 'Нет',
+            row.get('brand_km_month') if row.get('brand_km_month') is not None else '',
             row['kvp'] if row['kvp'] is not None else '',
             row['km_formula'] if row['km_formula'] is not None else '',
             row['soglasovanie_label'],
+            'Да' if row.get('is_auto_approved') else 'Нет',
             row['director_approver'] if row['director_approver'] != '—' else '',
             row['uk_approver'] if row['uk_approver'] != '—' else '',
             row['sale_profit'] if row['sale_profit'] is not None else '',
@@ -351,12 +550,46 @@ def build_approval_report_excel(rows):
     return wb
 
 
+def compute_approval_report_metrics(qs):
+    """Агрегированные KPI-показатели для карточек отчёта."""
+    auto_q = _auto_approved_q()
+    auto_count = qs.filter(auto_q).count()
+    manual_approved = qs.filter(
+        Q(soglasovanie_status=CarCalculations.SOGLASOVANIE_UK_APPROVED)
+        | (Q(soglasovanie_status=CarCalculations.SOGLASOVANIE_DIRECTOR_APPROVED) & ~auto_q)
+    ).count()
+    pending = qs.filter(
+        Q(soglasovanie_status__in=[
+            CarCalculations.SOGLASOVANIE_PENDING,
+            CarCalculations.SOGLASOVANIE_PENDING_UK,
+            CarCalculations.SOGLASOVANIE_AWAITING_1C,
+            '',
+        ]) | Q(soglasovanie_status__isnull=True)
+    ).count()
+    rejected = qs.filter(
+        soglasovanie_status__in=[
+            CarCalculations.SOGLASOVANIE_DIRECTOR_REJECTED,
+            CarCalculations.SOGLASOVANIE_UK_REJECTED,
+        ]
+    ).count()
+    shipped = qs.filter(shipment_pk__isnull=False).count()
+    return {
+        'auto_approved': auto_count,
+        'manual_approved': manual_approved,
+        'pending': pending,
+        'rejected': rejected,
+        'shipped': shipped,
+    }
+
+
 def build_approval_report_context(request):
     qs, filtr = build_approval_report_queryset(request)
     units = approval_report_units_qs()
+    metrics = compute_approval_report_metrics(qs)
     return {
         'filtr': filtr,
         'units': units,
+        'metrics': metrics,
         'queryset': qs,
         'querystring': build_approval_report_querystring(filtr),
         'desktop_url': reverse('prices_car:new_cars_director_desktop'),

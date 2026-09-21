@@ -15,6 +15,7 @@ urlpatterns = [
     path('command_center/api/save_brand_consignment/', views_command_center.api_save_brand_consignment, name='api_save_brand_consignment'),
     path('command_center/export_plans/', views_command_center.export_plans_excel, name='export_plans_excel'),
     path('command_center/import_plans/', views_command_center.import_plans_excel, name='import_plans_excel'),
+    path('command_center/sync_showcase/', views_command_center.command_center_sync_showcase_view, name='command_center_sync_showcase'),
     path('deal_simulator/', views_command_center.deal_simulator_dashboard, name='deal_simulator'),
     path('deal_simulator/api/calculate/', views_command_center.api_simulate_deal, name='api_simulate_deal'),
     path('director/', views.director_dashboard, name='director'),

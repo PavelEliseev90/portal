@@ -121,6 +121,7 @@
                                     data-rrc="{{ c.price|default:0 }}"
                                     data-cost="{{ c.cost_price|default:0 }}"
                                     data-yellow="{% if c.is_yellow %}1{% else %}0{% endif %}"
+                                    data-report-date="{{ c.date_report|date:'d.m.Y'|default:'' }}"
                                     data-typesale="{{ c.type_sale_id|default:'' }}"
                                     {% if selected_car and selected_car.id == c.id %}selected{% endif %}>
                                 {{ c.mark }} {{ c.model }} (РРЦ: {{ c.price }} ₽) | {{ c.vin }}
@@ -154,16 +155,32 @@
                         </div>
                     </div>
 
+                    <!-- 3.1. Период анализа статистики -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small font-weight-bold text-muted text-uppercase mb-0">Период анализа сделок (дней):</label>
+                            <span class="badge bg-light text-secondary border" id="analysis_days_label">{{ initial_calc.parameters.analysis_days|default:60 }} дн.</span>
+                        </div>
+                        <input type="number" id="analysis_days" class="form-control form-control-sm" placeholder="Период в днях (напр. 30, 60, 90, 180)" min="7" max="365" step="1" oninput="recalculate()">
+                    </div>
+
                     <!-- 4. Флаги статусов: Желтый и Ключевая модель -->
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <div class="form-check form-switch p-2 bg-light rounded border">
+                            <div class="form-check form-switch p-2 bg-light rounded border h-100">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" id="is_yellow" {% if selected_car and selected_car.is_yellow %}checked{% endif %} onchange="recalculate()">
                                 <label class="form-check-label small font-weight-bold" for="is_yellow">Желтый (рапорт)</label>
+                                <div id="yellow_report_badge" class="text-muted mt-1" style="font-size: 0.75rem;">
+                                    {% if selected_car and selected_car.date_report %}
+                                        Отчитан: {{ selected_car.date_report|date:'d.m.Y' }}
+                                    {% else %}
+                                        Рапорт не сдан
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="form-check form-switch p-2 bg-light rounded border">
+                            <div class="form-check form-switch p-2 bg-light rounded border h-100">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" id="is_key_model" onchange="recalculate()">
                                 <label class="form-check-label small font-weight-bold" for="is_key_model">Ключевая модель</label>
                             </div>
@@ -246,7 +263,7 @@
             </div>
 
             <!-- СВОДНЫЕ ЦИФРЫ КВП VS ПРАВИЛО КМ -->
-            <div class="row g-2 mb-4">
+            <div class="row g-2 mb-2">
                 <div class="col-4">
                     <div class="kpi-mini">
                         <div class="small text-muted text-uppercase">Фактический КВП сделки</div>
@@ -269,6 +286,34 @@
                         <h4 class="font-weight-bold text-{% if initial_calc.breakdown.diff >= 0 %}success{% else %}danger{% endif %} mb-0" id="dispDiff">
                             {{ initial_calc.breakdown.diff|default:0 }} ₽
                         </h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПОРОГИ ДЦ И БРЕНДА -->
+            <div class="row g-2 mb-4">
+                <div class="col-4">
+                    <div class="kpi-mini py-2">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.75rem;">Мин. КМ ДЦ (порог)</div>
+                        <h6 class="font-weight-bold text-secondary mb-0" id="dispMinKmDc">
+                            {% if initial_calc.breakdown.km_min_dc %}{{ initial_calc.breakdown.km_min_dc }} ₽{% else %}Не задан{% endif %}
+                        </h6>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="kpi-mini py-2">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.75rem;">КМ бренда на месяц</div>
+                        <h6 class="font-weight-bold text-secondary mb-0" id="dispBrandKm">
+                            {% if initial_calc.breakdown.brand_km %}{{ initial_calc.breakdown.brand_km }} ₽{% else %}—{% endif %}
+                        </h6>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="kpi-mini py-2">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.75rem;">Период статистики</div>
+                        <h6 class="font-weight-bold text-secondary mb-0" id="dispAnalysisDays">
+                            {{ initial_calc.parameters.analysis_days|default:60 }} дн.
+                        </h6>
                     </div>
                 </div>
             </div>
@@ -336,7 +381,13 @@ function onCarChange(carId) {
     const opt = select.options[select.selectedIndex];
     if (opt) {
         document.getElementById('rrc_display').value = opt.getAttribute('data-rrc') || 0;
-        document.getElementById('is_yellow').checked = (opt.getAttribute('data-yellow') === '1');
+        const isYellow = (opt.getAttribute('data-yellow') === '1');
+        document.getElementById('is_yellow').checked = isYellow;
+        const repDate = opt.getAttribute('data-report-date');
+        const badgeEl = document.getElementById('yellow_report_badge');
+        if (badgeEl) {
+            badgeEl.innerText = repDate ? ('Отчитан: ' + repDate) : 'Рапорт не сдан';
+        }
         const tsId = opt.getAttribute('data-typesale');
         if (tsId) {
             document.getElementById('type_sale_id').value = tsId;
@@ -353,6 +404,8 @@ function recalculate() {
     const carId = document.getElementById('car_id').value;
     if (!carId) return;
 
+    const analysisDaysVal = document.getElementById('analysis_days').value;
+
     const payload = {
         car_id: parseInt(carId),
         unit_id: parseInt(document.getElementById('unit_id').value) || null,
@@ -367,6 +420,7 @@ function recalculate() {
         opfu_amount: parseInt(document.getElementById('opfu_amount').value) || 0,
         dop_margin: parseInt(document.getElementById('dop_margin').value) || 0,
         work_margin: parseInt(document.getElementById('work_margin').value) || 0,
+        analysis_days: analysisDaysVal ? parseInt(analysisDaysVal) : null,
     };
 
     fetch('{% url "prices_car:api_simulate_deal" %}', {
@@ -400,6 +454,24 @@ function recalculate() {
         const diffEl = document.getElementById('dispDiff');
         diffEl.innerText = fmtRub(data.breakdown.diff);
         diffEl.className = 'font-weight-bold mb-0 text-' + (data.breakdown.diff >= 0 ? 'success' : 'danger');
+
+        // Обновление порогов ДЦ и бренда
+        const minDcEl = document.getElementById('dispMinKmDc');
+        if (minDcEl) {
+            minDcEl.innerText = data.breakdown.km_min_dc ? fmtRub(data.breakdown.km_min_dc) : 'Не задан';
+        }
+        const brandKmEl = document.getElementById('dispBrandKm');
+        if (brandKmEl) {
+            brandKmEl.innerText = data.breakdown.brand_km ? fmtRub(data.breakdown.brand_km) : '—';
+        }
+        const analysisDaysEl = document.getElementById('dispAnalysisDays');
+        if (analysisDaysEl) {
+            analysisDaysEl.innerText = (data.parameters.analysis_days || 60) + ' дн.';
+        }
+        const labelEl = document.getElementById('analysis_days_label');
+        if (labelEl) {
+            labelEl.innerText = (data.parameters.analysis_days || 60) + ' дн. ' + (analysisDaysVal ? '(вручную)' : '(настройка)');
+        }
 
         // Обновление протокола шагов
         const container = document.getElementById('stepsContainer');

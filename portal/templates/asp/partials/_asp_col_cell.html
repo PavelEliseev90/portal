@@ -21,6 +21,10 @@
       {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
     </div>
   </td>
+  {% elif col.key == 'mark' %}<td>{{ r.mark|default:"—" }}</td>
+  {% elif col.key == 'model' %}<td>{{ r.model|default:"—" }}</td>
+  {% elif col.key == 'modification' %}<td class="small">{{ r.modification|default:"—" }}</td>
+  {% elif col.key == 'complectation' %}<td class="small">{{ r.complectation|default:"—" }}</td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
   {% elif col.key == 'vin_new' %}<td class="small">{{ r.vin_new|default:"—" }}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
@@ -53,6 +57,10 @@
       {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
     </div>
   </td>
+  {% elif col.key == 'mark' %}<td>{{ r.mark|default:"—" }}</td>
+  {% elif col.key == 'model' %}<td>{{ r.model|default:"—" }}</td>
+  {% elif col.key == 'modification' %}<td class="small">{{ r.modification|default:"—" }}</td>
+  {% elif col.key == 'complectation' %}<td class="small">{{ r.complectation|default:"—" }}</td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}</td>
   {% elif col.key == 'reception_date' %}
   <td>
@@ -104,6 +112,10 @@
       {% if r.slug %}<a href="/cars/{{ r.slug }}/" target="_blank" rel="noopener">{{ r.mark }} {{ r.model }}</a>{% else %}{{ r.mark }} {{ r.model }}{% endif %}
     </div>
   </td>
+  {% elif col.key == 'mark' %}<td>{{ r.mark|default:"—" }}</td>
+  {% elif col.key == 'model' %}<td>{{ r.model|default:"—" }}</td>
+  {% elif col.key == 'modification' %}<td class="small">{{ r.modification|default:"—" }}</td>
+  {% elif col.key == 'complectation' %}<td class="small">{{ r.complectation|default:"—" }}</td>
   {% elif col.key == 'vin' %}<td class="small">{{ r.vin }}{% if r.year %} · {{ r.year }}{% endif %}</td>
   {% elif col.key == 'client' %}<td>{{ r.client|default:"—" }}</td>
   {% elif col.key == 'person' %}<td>{{ r.person_name }}</td>

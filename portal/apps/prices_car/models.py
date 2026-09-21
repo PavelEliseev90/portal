@@ -36,6 +36,12 @@ class PriceCarBrand(models.Model):
         default=90,
         help_text='Срок бесплатного хранения/консигнации от импортера (в днях)',
     )
+    analysis_period_days = models.PositiveIntegerField(
+        'Период анализа статистики продаж (дней)',
+        null=True,
+        blank=True,
+        help_text='Глубина выборки сделок аналогов для АвтоК в днях (если не задано — берётся общее значение)',
+    )
 
     class Meta:
         db_table = 'prices_car_brand'
@@ -353,6 +359,85 @@ class DcKeyModel(models.Model):
 
     def __str__(self):
         return f'{self.plan.unit} — {self.model.name} ({self.target_qty} шт.)'
+
+
+class DcCommandCenterShowcase(models.Model):
+    """
+    Витрина данных Центра управления ДЦ (материализованный срез на месяц).
+    Обеспечивает мгновенный отклик экрана мониторинга сети без повторного выполнения
+    десятков тяжёлых запросов к PowerBI Cumulative, складу и движку рекомендаций.
+    """
+    unit = models.ForeignKey(
+        RefUnit,
+        on_delete=models.CASCADE,
+        related_name='command_center_showcases',
+        verbose_name='Подразделение ДЦ',
+    )
+    month = models.DateField(
+        'Месяц (период)',
+        help_text='Первое число месяца, напр. 2026-09-01',
+        db_index=True,
+    )
+    updated_at = models.DateTimeField('Время обновления витрины', auto_now=True)
+
+    # Показатели планов и штук
+    plan_dc_qty = models.PositiveIntegerField('План ДЦ, шт.', default=0)
+    plan_importer_qty = models.PositiveIntegerField('План импортера, шт.', default=0)
+    target_plan = models.PositiveIntegerField('Целевой план (макс), шт.', default=0)
+    contracts_count = models.PositiveIntegerField('Фактически законтрактовано, шт.', default=0)
+    run_rate = models.FloatField('Прогноз выполнения (Run-rate), шт.', default=0.0)
+    pace_pct = models.FloatField('Темп выполнения плана, %', default=0.0)
+    pace_status = models.CharField('Статус темпа', max_length=32, default='no_plan')
+    pace_label = models.CharField('Подпись темпа', max_length=64, default='План не задан')
+    pace_class = models.CharField('CSS класс темпа', max_length=32, default='secondary')
+    pace_delta_label = models.CharField('Дельта темпа', max_length=32, default='нет плана')
+    gap = models.PositiveIntegerField('Отставание до плана, шт.', default=0)
+
+    # Показатели финансов и кумулятивной маржи (КМ в рублях)
+    plan_km_rub = models.BigIntegerField('План по КМ, ₽', default=0)
+    plan_revenue_rub = models.BigIntegerField('План по выручке, ₽', default=0)
+    fact_km = models.BigIntegerField('Факт КМ, ₽', default=0)
+    fact_revenue = models.BigIntegerField('Факт выручки, ₽', default=0)
+    km_run_rate = models.BigIntegerField('Прогноз КМ (Run-rate), ₽', default=0)
+    km_pace_pct = models.FloatField('Темп выполнения КМ, %', default=0.0)
+    quadrant_key = models.CharField('Ключ квадранта', max_length=32, default='no_money_plan')
+    quadrant_label = models.CharField('Название квадранта', max_length=64, default='План КМ не задан')
+    quadrant_badge_class = models.CharField('CSS класс квадранта', max_length=32, default='secondary')
+    quadrant_desc = models.CharField('Описание квадранта', max_length=255, blank=True, default='')
+
+    # Склад и риски
+    stock_total = models.PositiveIntegerField('Всего новых авто на складе', default=0)
+    yellow_count = models.PositiveIntegerField('Желтые авто (>45 дн)', default=0)
+    consignment_overdue = models.PositiveIntegerField('Просроченная консигнация (>90 дн)', default=0)
+    consignment_warning = models.PositiveIntegerField('Подходит срок консигнации (75-90 дн)', default=0)
+    missed_count = models.PositiveIntegerField('Упущенные сделки (РЛК/отказы)', default=0)
+
+    # Тактика ценообразования и автопилот
+    is_autopilot = models.BooleanField('Автопилот дисконтов', default=False)
+    autopilot_rules_count = models.PositiveIntegerField('Активных правил автопилота', default=0)
+    tactic = models.CharField('Тактика ДЦ', max_length=32, default='balanced')
+    tactic_label = models.CharField('Название тактики', max_length=64, default='Сбалансированная')
+
+    # Рекомендации Smart Advisor
+    recs_count = models.PositiveIntegerField('Количество рекомендаций', default=0)
+    has_recs = models.BooleanField('Есть рекомендации', default=False)
+    needs_attention = models.BooleanField('Требует внимания', default=False)
+    top_rec_title = models.CharField('Заголовок главной рекомендации', max_length=255, blank=True, default='')
+    top_rec_badge = models.CharField('Бейдж главной рекомендации', max_length=64, blank=True, default='')
+    top_rec_badge_class = models.CharField('CSS класс главной рекомендации', max_length=32, blank=True, default='')
+    recommendations_json = models.JSONField('Рекомендации (JSON)', default=list, blank=True)
+
+    class Meta:
+        db_table = 'prices_car_dc_command_center_showcase'
+        verbose_name = 'Витрина Центра управления ДЦ'
+        verbose_name_plural = 'Витрины Центра управления ДЦ'
+        ordering = ['unit__city__name', 'unit__name']
+        constraints = [
+            models.UniqueConstraint(fields=['unit', 'month'], name='prices_car_dc_showcase_unit_month_uniq'),
+        ]
+
+    def __str__(self):
+        return f'Витрина {self.unit} — {self.month:%Y-%m} (Шт: {self.contracts_count}/{self.target_plan}, КМ: {self.fact_km}/{self.plan_km_rub})'
 
 
 class CarCalculations(models.Model):
@@ -805,5 +890,39 @@ class KMCar(models.Model):
         db_table = 'km_car'
         verbose_name = "Расчетный км для автомобиля"
         verbose_name_plural = "Расчетные км для автомобилей"
+
+
+class PriceCarAlgorithmSettings(models.Model):
+    """Глобальные параметры алгоритма ценообразования и расчёта АвтоК."""
+    analysis_period_days = models.PositiveIntegerField(
+        'Период анализа статистики продаж по умолчанию (дней)',
+        default=60,
+        help_text='Глубина выборки розничных продаж аналогов (в днях) для алгоритма АвтоК',
+    )
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        db_table = 'prices_car_algorithm_settings'
+        verbose_name = 'Настройки алгоритма ценообразования'
+        verbose_name_plural = 'Настройки алгоритма ценообразования'
+
+    def __str__(self):
+        return f'Настройки алгоритма (анализ: {self.analysis_period_days} дн.)'
+
+    @classmethod
+    def get_settings(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj, _ = cls.objects.get_or_create(pk=1, defaults={'analysis_period_days': 60})
+        return obj
+
+    @classmethod
+    def get_default_analysis_days(cls) -> int:
+        try:
+            settings_obj = cls.get_settings()
+            return int(settings_obj.analysis_period_days or 60)
+        except Exception:
+            return 60
+
 
 

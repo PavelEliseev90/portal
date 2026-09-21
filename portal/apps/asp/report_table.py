@@ -9,14 +9,15 @@ COLUMNS_COOKIE_PREFIX = 'asp_cols_'
 COLUMNS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 # Смена версии сбрасывает сохранённый набор столбцов (новые колонки по умолчанию).
 COLUMNS_COOKIE_VERSION = {
-    'margin': 'v5',
-    'stock': 'v5',
-    'accepted': 'v3',
+    'margin': 'v6',
+    'stock': 'v6',
+    'accepted': 'v4',
 }
 
 # --- Кумулятивная маржа (отгрузки) ---
 MARGIN_DEFAULT_COLUMNS = [
-    'date', 'agreement', 'reception_date', 'unit', 'unit_source', 'car', 'vin', 'vin_new',
+    'date', 'agreement', 'reception_date', 'unit', 'unit_source',
+    'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'vin_new',
     'client', 'person', 'appraiser',
     'type_reception', 'vtd', 'group_price', 'stage_price', 'iznos', 'type_sale',
     'amount', 'cost_price', 'outlay', 'doc_margin', 'cm_actual',
@@ -28,6 +29,10 @@ MARGIN_COLUMN_DEFS = {
     'unit': {'label': 'Подразделение', 'sortable': True, 'sort_key': 'unit', 'num': False},
     'unit_source': {'label': 'ДЦ источник', 'sortable': True, 'sort_key': 'unit_source', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
+    'mark': {'label': 'Марка', 'sortable': True, 'sort_key': 'mark', 'num': False},
+    'model': {'label': 'Модель', 'sortable': True, 'sort_key': 'model', 'num': False},
+    'modification': {'label': 'Модификация', 'sortable': True, 'sort_key': 'modification', 'num': False},
+    'complectation': {'label': 'Комплектация', 'sortable': True, 'sort_key': 'complectation', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'vin_new': {'label': 'VIN нового', 'sortable': True, 'sort_key': 'vin_new', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
@@ -56,6 +61,10 @@ MARGIN_SORT_FIELDS = {
     'unit': 'unit__name',
     'unit_source': 'rlk__unit_dc__name',
     'car': 'cars__mark',
+    'mark': 'cars__mark',
+    'model': 'cars__model',
+    'modification': 'cars__modification',
+    'complectation': 'cars__complectation_autoru__name',
     'vin': 'cars__vin',
     'vin_new': 'lo__vin_new',
     'client': 'client__name',
@@ -79,7 +88,7 @@ MARGIN_SORT_FIELDS = {
 
 # --- Склад ---
 STOCK_DEFAULT_COLUMNS = [
-    'car', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_reception',
+    'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'reception_date', 'unit', 'unit_source', 'status', 'type_reception',
     'group_price', 'stage_price', 'iznos',
     'days', 'person',
     'price', 'autohub_cna', 'autohub_pcp', 'autohub_imv', 'autohub_diff',
@@ -88,6 +97,10 @@ STOCK_DEFAULT_COLUMNS = [
 ]
 STOCK_COLUMN_DEFS = {
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
+    'mark': {'label': 'Марка', 'sortable': True, 'sort_key': 'mark', 'num': False},
+    'model': {'label': 'Модель', 'sortable': True, 'sort_key': 'model', 'num': False},
+    'modification': {'label': 'Модификация', 'sortable': True, 'sort_key': 'modification', 'num': False},
+    'complectation': {'label': 'Комплектация', 'sortable': True, 'sort_key': 'complectation', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'reception_date': {'label': 'Дата приёма', 'sortable': True, 'sort_key': 'reception_date', 'num': False},
     'year': {'label': 'Год', 'sortable': True, 'sort_key': 'year', 'num': False},
@@ -118,6 +131,10 @@ STOCK_COLUMN_DEFS = {
 }
 STOCK_SORT_FIELDS = {
     'car': 'mark',
+    'mark': 'mark',
+    'model': 'model',
+    'modification': 'modification',
+    'complectation': 'complectation_autoru__name',
     'vin': 'vin',
     'reception_date': 'lo__dataTime',
     'year': 'year',
@@ -141,13 +158,17 @@ STOCK_SORT_FIELDS = {
 
 # --- Принятые ---
 ACCEPTED_DEFAULT_COLUMNS = [
-    'date', 'car', 'vin', 'client', 'person', 'type_reception',
+    'date', 'car', 'mark', 'model', 'modification', 'complectation', 'vin', 'client', 'person', 'type_reception',
     'group_price', 'stage_price', 'iznos', 'kolesa2_reception',
     'cost_price', 'bcp', 'run', 'unit', 'unit_source',
 ]
 ACCEPTED_COLUMN_DEFS = {
     'date': {'label': 'Дата / №', 'sortable': True, 'sort_key': 'date', 'num': False},
     'car': {'label': 'Авто', 'sortable': True, 'sort_key': 'car', 'num': False},
+    'mark': {'label': 'Марка', 'sortable': True, 'sort_key': 'mark', 'num': False},
+    'model': {'label': 'Модель', 'sortable': True, 'sort_key': 'model', 'num': False},
+    'modification': {'label': 'Модификация', 'sortable': True, 'sort_key': 'modification', 'num': False},
+    'complectation': {'label': 'Комплектация', 'sortable': True, 'sort_key': 'complectation', 'num': False},
     'vin': {'label': 'VIN', 'sortable': True, 'sort_key': 'vin', 'num': False},
     'client': {'label': 'Клиент', 'sortable': True, 'sort_key': 'client', 'num': False},
     'person': {'label': 'Оценщик', 'sortable': True, 'sort_key': 'person', 'num': False},
@@ -168,6 +189,10 @@ ACCEPTED_COLUMN_DEFS = {
 ACCEPTED_SORT_FIELDS = {
     'date': 'dataTime',
     'car': 'cars__mark',
+    'mark': 'cars__mark',
+    'model': 'cars__model',
+    'modification': 'cars__modification',
+    'complectation': 'complectation_autoru__name',
     'vin': 'vin',
     'client': 'clientName',
     'person': 'report_staff_name',
@@ -335,6 +360,10 @@ def cell_export_value(report_key: str, row: dict, key: str):
             'unit': row.get('unit_name'),
             'unit_source': row.get('unit_source_name'),
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
+            'mark': row.get('mark'),
+            'model': row.get('model'),
+            'modification': row.get('modification'),
+            'complectation': row.get('complectation'),
             'vin': row.get('vin'),
             'vin_new': row.get('vin_new'),
             'client': row.get('client'),
@@ -371,6 +400,10 @@ def cell_export_value(report_key: str, row: dict, key: str):
     if report_key == 'stock':
         mapping = {
             'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
+            'mark': row.get('mark'),
+            'model': row.get('model'),
+            'modification': row.get('modification'),
+            'complectation': row.get('complectation'),
             'vin': row.get('vin'),
             'reception_date': row.get('reception_date'),
             'year': row.get('year'),
@@ -407,6 +440,10 @@ def cell_export_value(report_key: str, row: dict, key: str):
     mapping = {
         'date': row.get('date'),
         'car': f"{row.get('mark') or ''} {row.get('model') or ''}".strip(),
+        'mark': row.get('mark'),
+        'model': row.get('model'),
+        'modification': row.get('modification'),
+        'complectation': row.get('complectation'),
         'vin': row.get('vin'),
         'client': row.get('client'),
         'person': row.get('person_name'),

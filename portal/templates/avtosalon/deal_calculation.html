@@ -943,6 +943,8 @@
               <thead>
                 <tr>
                   <th>Автомобиль</th>
+                  <th>Цвет</th>
+                  <th class="text-center">Жёлтый АМ</th>
                   <th class="text-end">РРЦ</th>
                   <th class="text-end">КМ</th>
                   <th class="text-end">Δ КМ</th>
@@ -1022,7 +1024,8 @@
         var filterPrefix = data.filter_label || data.model_name || '';
         var scopeHint = data.same_complectation ? 'той же модели и комплектации' : 'той же модели';
         var dcScope = data.scope_label || (data.allow_dc_transfers ? 'по всем ДЦ бренда' : 'только в вашем подразделении');
-        summary.textContent = (filterPrefix ? filterPrefix + ' · ' : '') + scopeHint + ' (' + dcScope + ') с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
+        var colorHint = data.target_color ? ' · Цвет текущего авто: «' + data.target_color + '» (совпадающие цвета показаны первыми)' : '';
+        summary.textContent = (filterPrefix ? filterPrefix + ' · ' : '') + scopeHint + ' (' + dcScope + ')' + colorHint + ' с расчётным КМ ниже текущего (' + fmtRub(data.reference_km) + '). КВ по КП: ' + fmtRub(data.kvp) + '.';
         if (!data.items || !data.items.length) {
           errorEl.textContent = 'Подходящих автомобилей не найдено.';
           errorEl.classList.remove('d-none');
@@ -1030,10 +1033,20 @@
         }
         data.items.forEach(function(item) {
           var tr = document.createElement('tr');
+          if (item.is_same_color) {
+            tr.classList.add('table-primary', 'table-opacity-10');
+          }
           var title = [item.mark, item.model, item.complectation].filter(Boolean).join(' ');
-          var reportedBadge = item.is_reported
-            ? '<span class="badge text-bg-warning text-dark ms-1" title="Жёлтый автомобиль"><span class="icon-mbri-alert"></span></span>'
-            : '';
+
+          var colorCell = item.color || '—';
+          if (item.is_same_color) {
+            colorCell = '<span class="fw-bold text-primary">' + (item.color || '') + '</span> <span class="badge text-bg-primary text-white ms-1" style="font-size: 0.65rem;">тот же цвет</span>';
+          }
+
+          var yellowCell = (item.is_yellow || item.is_reported)
+            ? '<span class="badge text-bg-warning text-dark text-nowrap" title="' + (item.date_report_str ? 'Отчитан: ' + item.date_report_str : 'Жёлтый автомобиль') + '"><span class="icon-mbri-alert"></span> Да' + (item.date_report_str ? ' (' + item.date_report_str + ')' : '') + '</span>'
+            : '<span class="badge text-bg-light text-muted border">Нет</span>';
+
           var approvalBadge = item.approval_passes
             ? '<span class="badge bg-success">пройдёт</span>'
             : '<span class="badge bg-secondary">нет</span>';
@@ -1045,11 +1058,12 @@
             links += '<a class="btn btn-calculate-sm" href="' + item.price_url + '" target="_blank">Ценообразование</a>';
           }
           tr.innerHTML =
-            '<td><div class="fw-semibold">' + (title || item.name || '—') + reportedBadge + '</div>' +
+            '<td><div class="fw-semibold">' + (title || item.name || '—') + '</div>' +
             '<div class="small text-muted">' + (item.vin || '') +
             (item.unit_name ? ' · ' + item.unit_name : '') +
-            (item.is_reported ? ' · <span class="text-warning-emphasis">жёлтый автомобиль</span>' : '') +
             '</div></td>' +
+            '<td class="text-nowrap">' + colorCell + '</td>' +
+            '<td class="text-center text-nowrap">' + yellowCell + '</td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.price) + '</td>' +
             '<td class="text-end text-nowrap">' + fmtRub(item.km) + '</td>' +
             '<td class="text-end text-nowrap text-success">−' + fmtRub(item.km_delta) + '</td>' +

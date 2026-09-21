@@ -134,14 +134,27 @@ DETAIL_VALUES = (
     'vin', 'vin2', 'year', 'run', 'owners', 'keys',
     'carsGRZ', 'clientName', 'cost_price', 'bcp', 'rlk_id', 'rlk__nomer',
     'auction', 'type_reception__name', 'kolesa2_reception',
-    'cars__mark', 'cars__model', 'cars__vin', 'rlk__unit_dc__name',
-    'rlk__reginteractivocenka__iznos',
+    'cars__mark', 'cars__model', 'cars__vin',
+    'cars__modification', 'cars__modification_autoru__name', 'cars__complectation_autoru__name',
+    'modification_autoru__name', 'complectation_autoru__name',
+    'rlk__unit_dc__name', 'rlk__reginteractivocenka__iznos',
 )
 
 
 def _lo_row_from_values(row: dict) -> dict[str, Any]:
     iznos = row.get('rlk__reginteractivocenka__iznos')
     person_name = (row.get('report_staff_name') or row.get('staff__name') or '').strip()
+    modification = (
+        row.get('cars__modification')
+        or row.get('modification_autoru__name')
+        or row.get('cars__modification_autoru__name')
+        or ''
+    ).strip()
+    complectation = (
+        row.get('complectation_autoru__name')
+        or row.get('cars__complectation_autoru__name')
+        or ''
+    ).strip()
     return {
         'id': row['id'],
         'nomer': row.get('nomer') or '',
@@ -155,6 +168,8 @@ def _lo_row_from_values(row: dict) -> dict[str, Any]:
         'vin': row.get('vin') or row.get('cars__vin') or '',
         'mark': row.get('cars__mark') or '',
         'model': row.get('cars__model') or '',
+        'modification': modification,
+        'complectation': complectation,
         'year': row.get('year') or 0,
         'run': row.get('run') or 0,
         'owners': row.get('owners') or 0,

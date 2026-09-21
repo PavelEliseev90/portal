@@ -1,220 +1,670 @@
 {% extends 'base_web.html' %}
 
-{% block url %} {% endblock %} 
+{% block url %}{% endblock %} 
 
-{% block title %} - выгрузки автомобилей для площадок {% endblock %}
+{% block title %} — Выгрузки автомобилей для площадок (фиды ДЦ) {% endblock %}
 
-{% block title_navbar %} - выгрузки автомобилей для площадок {% endblock %}
-    
+{% block title_navbar %} — Выгрузки автомобилей для площадок {% endblock %}
+
+{% block head %}
+<style>
+/* Кастомные стили страницы выгрузок ДЦ в каноническом стиле Корс Портала */
+.feed-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* KPI метрики */
+.feed-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.feed-kpi-card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 10px 24px rgba(0, 23, 61, 0.05);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.feed-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(0, 23, 61, 0.08);
+}
+.feed-kpi-title {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+.feed-kpi-val {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #002a5a;
+    line-height: 1.1;
+}
+.feed-kpi-sub {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 0.35rem;
+}
+
+/* Фильтры */
+.feed-filter-panel {
+    background: #fff;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 14px 30px rgba(0, 23, 61, 0.06);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.feed-filter-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #002a5a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Бейджи площадок классифайдов */
+.badge-platform {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.badge-platform-autoru {
+    background: #fff1f0;
+    border: 1px solid #ffa39e;
+    color: #cf1322;
+}
+.badge-platform-avito {
+    background: #f0f5ff;
+    border: 1px solid #adc6ff;
+    color: #1d39c4;
+}
+.badge-platform-drom {
+    background: #fff2f0;
+    border: 1px solid #ffccc7;
+    color: #d4380d;
+}
+.badge-platform-sber {
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+    color: #389e0d;
+}
+.badge-platform-site {
+    background: #e6f4ff;
+    border: 1px solid #91caff;
+    color: #002a5a;
+}
+.badge-platform-yandex {
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    color: #d46b08;
+}
+.badge-platform-default {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+/* Контейнер ссылки с быстрым копированием */
+.feed-url-container {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.55rem;
+    padding: 0.25rem 0.4rem 0.25rem 0.6rem;
+    max-width: 480px;
+    position: relative;
+}
+.feed-url-text {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.78rem;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    text-decoration: none;
+}
+.feed-url-text:hover {
+    color: #002a5a;
+    text-decoration: underline;
+}
+.feed-btn-action {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.76rem;
+    border-radius: 0.35rem;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.feed-btn-action:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+.feed-btn-action.copied {
+    background: #10b981 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+}
+
+/* Таблица фидов */
+.feed-table-panel {
+    background: #fff;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(0, 42, 90, 0.08);
+    box-shadow: 0 16px 36px rgba(0, 23, 61, 0.06);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.feed-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0.85rem 0.75rem;
+    white-space: nowrap;
+}
+.feed-table td {
+    padding: 0.85rem 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.88rem;
+}
+.feed-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Тост уведомление */
+.feed-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: #0f172a;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.88rem;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
 {% block content %}
- 	
-<div class="row">
+<div class="portal-page">
 
+    <!-- ХЛЕБНЫЕ КРОШКИ -->
+    <nav class="breadcrumb-nav mb-2" aria-label="breadcrumb">
+        <a href="/"><i class="bi bi-house-door"></i> Портал</a>
+        <span class="separator">/</span>
+        <a href="/refs/"><i class="bi bi-book"></i> Справочники</a>
+        <span class="separator">/</span>
+        <span class="text-secondary fw-semibold">Выгрузки автомобилей для площадок</span>
+    </nav>
 
-<button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"> <span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</button>
+    <!-- ЗАГОЛОВОК СТРАНИЦЫ -->
+    <div class="portal-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+            <h2><i class="bi bi-link-45deg text-primary"></i> Выгрузки автомобилей ДЦ для площадок</h2>
+            <p class="mb-0">Единый реестр ссылок и фидов (XML/YML/CSV) для внешних классифайдов: Авто.ру, Авито, Дром, СберАвто и сайтов</p>
+        </div>
+        <div class="feed-header-actions">
+            <a href="?{{ params.query_string }}&export=excel" class="btn btn-sm btn-outline-success fw-bold d-flex align-items-center gap-1" title="Выгрузить отфильтрованные ссылки в Excel">
+                <i class="bi bi-file-earmark-excel"></i> Экспорт в Excel
+            </a>
+            {% if params.filtr.active_count > 0 %}
+                <a href="/links_dc/" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" title="Очистить все параметры фильтра">
+                    <i class="bi bi-x-circle"></i> Сбросить фильтры ({{ params.filtr.active_count }})
+                </a>
+            {% endif %}
+        </div>
+    </div>
 
-<div class="col-sm-auto">
-	
-	<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="exampleModalLabel"><span class="icon-mbri-setting2"></span> Параметры {% if params.filtr.filtr_count > 0 %} - {{params.filtr.filtr_count}} {% endif %}</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				
-					<div class="modal-body">
-					
-						<div class="col-sm-auto my-auto">
-							<div class="form-floating mb-3">
-							  <select class="form-select" name = "unit_id" id = "unit_id" >
-								<option></option>
-								{% for unit in params.selected.units %}
-								  {% if params.filtr.unit_id|lower == unit.id|lower %}
-									<option id={{unit.id}} value="{{unit.id}}" selected>{{unit.name}} </option>
-								  {% else %}
-									<option id={{unit.id}} value="{{unit.id}}"> {{unit.name}} </option>
-								  {% endif %}
-								{% endfor %}
-							  </select>
-							  <label for="floatingInput">Подразделение</label>
-							</div>
-						  </div>
+    <!-- KPI-СЧЕТЧИКИ -->
+    <div class="feed-kpi-grid">
+        <div class="feed-kpi-card">
+            <div>
+                <div class="feed-kpi-title">Всего выгрузок в БД</div>
+                <div class="feed-kpi-val">{{ params.kpi.total_links }}</div>
+            </div>
+            <div class="feed-kpi-sub">
+                Найдено фильтром: <strong class="text-primary">{{ params.kpi.filtered_links }}</strong>
+            </div>
+        </div>
 
-						  <div class="col-sm-auto my-auto">
-							<div class="form-floating mb-3">
-							  <select class="form-select" name = "type_id" id = "type_id">
-								<option></option>
-								{% for type in params.selected.type %}
-								  {% if params.filtr.type|lower == type.id|lower %}
-									<option id={{type.id}} value="{{type.id}}" selected>{{type.name}} </option>
-								  {% else %}
-									<option id={{type.id}} value="{{type.id}}"> {{type.name}} </option>
-								  {% endif %}
-								{% endfor %}
-							  </select>
-							  <label for="floatingInput">Назначение выгрузки</label>
-							</div>
-						  </div>
-						
-						  <hr>
-						
-						<div class="d-grid gap-2">
-							<button class="btn btn-block btn-outline-success" type="button" onclick="change_link()"><span class="icon-mbri-success"></span> Применить</button>
-						</div>
+        <div class="feed-kpi-card">
+            <div>
+                <div class="feed-kpi-title">Дилерских центров</div>
+                <div class="feed-kpi-val">{{ params.kpi.units_count }}</div>
+            </div>
+            <div class="feed-kpi-sub">
+                С активными выгрузками
+            </div>
+        </div>
 
-					</div>
+        <div class="feed-kpi-card">
+            <div>
+                <div class="feed-kpi-title">Площадок / Классифайдов</div>
+                <div class="feed-kpi-val">{{ params.kpi.types_count }}</div>
+            </div>
+            <div class="feed-kpi-sub">
+                Авто.ру, Авито, Дром, сайт и др.
+            </div>
+        </div>
 
-				</div>
-			</div>
-	</div>
-	<br>
+        <div class="feed-kpi-card">
+            <div>
+                <div class="feed-kpi-title">Городов присутствия</div>
+                <div class="feed-kpi-val">{{ params.kpi.cities_count }}</div>
+            </div>
+            <div class="feed-kpi-sub">
+                География размещения
+            </div>
+        </div>
+    </div>
 
+    <!-- ПАНЕЛЬ ФИЛЬТРОВ -->
+    <div class="feed-filter-panel">
+        <div class="feed-filter-title">
+            <i class="bi bi-funnel text-primary"></i> Параметры отбора и поиск
+            {% if params.filtr.active_count > 0 %}
+                <span class="badge bg-primary rounded-pill px-2 py-1 fs-6">{{ params.filtr.active_count }}</span>
+            {% endif %}
+        </div>
+
+        <form method="get" action="/links_dc/" id="filterForm">
+            <div class="row g-2 align-items-end">
+                <!-- Текстовый поиск -->
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="search">Быстрый поиск</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" name="search" id="search" placeholder="ДЦ, марка, ссылка, файл..." value="{{ params.filtr.search }}">
+                    </div>
+                </div>
+
+                <!-- Город -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="city">Город</label>
+                    <select class="form-select form-select-sm" name="city" id="city">
+                        <option value="">Все города</option>
+                        {% for c in params.selected.cities %}
+                            <option value="{{ c }}" {% if params.filtr.city|lower == c|lower %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Подразделение ДЦ -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="unit_id">Подразделение ДЦ</label>
+                    <select class="form-select form-select-sm" name="unit_id" id="unit_id">
+                        <option value="">Все подразделения</option>
+                        {% for unit in params.selected.units %}
+                            <option value="{{ unit.id }}" {% if params.filtr.unit_id == unit.id|stringformat:"s" %}selected{% endif %}>
+                                {{ unit.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Назначение площадки -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="type_id">Назначение выгрузки</label>
+                    <select class="form-select form-select-sm" name="type_id" id="type_id">
+                        <option value="">Все назначения</option>
+                        {% for t in params.selected.type %}
+                            <option value="{{ t.id }}" {% if params.filtr.type_id == t.id|stringformat:"s" %}selected{% endif %}>
+                                {{ t.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Марка -->
+                <div class="col-6 col-md-3 col-lg-1">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="mark">Марка</label>
+                    <select class="form-select form-select-sm" name="mark" id="mark">
+                        <option value="">Все</option>
+                        {% for m in params.selected.marks %}
+                            <option value="{{ m }}" {% if params.filtr.mark|lower == m|lower %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Количество на страницу -->
+                <div class="col-6 col-md-3 col-lg-1">
+                    <label class="form-label small fw-semibold text-muted mb-1" for="per_page">Стр.</label>
+                    <select class="form-select form-select-sm" name="per_page" id="per_page">
+                        <option value="25" {% if params.filtr.per_page == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if params.filtr.per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if params.filtr.per_page == 100 %}selected{% endif %}>100</option>
+                        <option value="200" {% if params.filtr.per_page == 200 %}selected{% endif %}>200</option>
+                    </select>
+                </div>
+
+                <!-- Кнопки управления -->
+                <div class="col-12 col-md-6 col-lg-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold" title="Применить фильтры">
+                        Найти
+                    </button>
+                    {% if params.filtr.active_count > 0 %}
+                        <a href="/links_dc/" class="btn btn-sm btn-outline-danger" title="Сбросить"><i class="bi bi-x-lg"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- РЕЗУЛЬТАТЫ / ТАБЛИЦА ВЫГРУЗОК -->
+    <div class="feed-table-panel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div class="text-muted small">
+                Показано: <strong>{{ params.paginator.start_index }}–{{ params.paginator.end_index }}</strong> из <strong>{{ params.kpi.filtered_links }}</strong>
+                {% if params.filtr.active_count > 0 %}
+                    (отфильтровано из {{ params.kpi.total_links }})
+                {% endif %}
+            </div>
+            <div class="small text-muted d-flex align-items-center gap-2">
+                <span><i class="bi bi-info-circle text-primary"></i> Клик по ссылке или кнопке копирует адрес фида</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle feed-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;">№</th>
+                        <th style="min-width: 200px;">Подразделение ДЦ и адрес</th>
+                        <th style="min-width: 150px;">Назначение площадки</th>
+                        <th style="min-width: 110px;">Марка</th>
+                        <th style="min-width: 140px;">Файл выгрузки</th>
+                        <th style="min-width: 320px;">Ссылка на фид</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if params.paginator.object_list %}
+                        {% for doc in params.paginator.object_list %}
+                            <tr>
+                                <!-- Порядковый номер -->
+                                <td class="text-muted small fw-semibold text-center">
+                                    {{ forloop.counter0|add:params.paginator.start_index }}
+                                </td>
+
+                                <!-- Подразделение ДЦ и город -->
+                                <td>
+                                    <div class="fw-bold text-dark" style="font-size: 0.92rem;">
+                                        {{ doc.unit.name|default:"Не указано" }}
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                        {% if doc.city_name or doc.unit.city %}
+                                            <span class="badge bg-light text-secondary border" style="font-size: 0.72rem;">
+                                                <i class="bi bi-geo-alt"></i> {{ doc.city_name|default:doc.unit.city.name }}
+                                            </span>
+                                        {% endif %}
+                                        {% if doc.adress %}
+                                            <span class="text-muted small" style="font-size: 0.74rem;" title="{{ doc.adress }}">
+                                                {{ doc.adress|truncatechars:40 }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <!-- Назначение выгрузки с умным цветным бейджем -->
+                                <td>
+                                    {% with t_name=doc.type_exchange.name|lower %}
+                                        {% if 'auto.ru' in t_name or 'авто.ру' in t_name %}
+                                            <span class="badge-platform badge-platform-autoru" title="Выгрузка на Авто.ру">
+                                                <i class="bi bi-car-front-fill"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% elif 'avito' in t_name or 'авито' in t_name %}
+                                            <span class="badge-platform badge-platform-avito" title="Выгрузка на Авито">
+                                                <i class="bi bi-bag-check-fill"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% elif 'drom' in t_name or 'дром' in t_name %}
+                                            <span class="badge-platform badge-platform-drom" title="Выгрузка на Дром">
+                                                <i class="bi bi-speedometer2"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% elif 'сбер' in t_name or 'sber' in t_name %}
+                                            <span class="badge-platform badge-platform-sber" title="Выгрузка на СберАвто">
+                                                <i class="bi bi-credit-card-2-front"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% elif 'сайт' in t_name or 'site' in t_name or 'kors' in t_name %}
+                                            <span class="badge-platform badge-platform-site" title="Выгрузка на сайт КорсГрупп">
+                                                <i class="bi bi-globe"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% elif 'яндекс' in t_name or 'yandex' in t_name %}
+                                            <span class="badge-platform badge-platform-yandex" title="Выгрузка в Яндекс">
+                                                <i class="bi bi-compass"></i> {{ doc.type_exchange.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge-platform badge-platform-default">
+                                                <i class="bi bi-share"></i> {{ doc.type_exchange.name|default:"Без площадки" }}
+                                            </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+
+                                <!-- Марка автомобиля -->
+                                <td>
+                                    {% if doc.mark_filter %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-dark border px-2 py-1" style="font-size: 0.78rem;">
+                                            {{ doc.mark_filter }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 0.74rem;">
+                                            Все марки
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Имя файла -->
+                                <td>
+                                    {% if doc.file_name %}
+                                        <span class="text-secondary small font-monospace d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                                            <i class="bi bi-filetype-xml text-primary"></i> {{ doc.file_name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Ссылка с кнопкой копирования и открытия -->
+                                <td>
+                                    {% if doc.link %}
+                                        <div class="feed-url-container">
+                                            <a href="{{ doc.link }}" target="_blank" class="feed-url-text" title="{{ doc.link }}">
+                                                {{ doc.link }}
+                                            </a>
+                                            <button type="button" class="feed-btn-action btn-copy-link" data-url="{{ doc.link }}" title="Скопировать ссылку в буфер обмена">
+                                                <i class="bi bi-copy"></i> <span>Копировать</span>
+                                            </button>
+                                            <a href="{{ doc.link }}" target="_blank" class="feed-btn-action text-primary" title="Открыть в новой вкладке">
+                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small italic">Ссылка не сформирована</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted mb-2">
+                                    <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.35;"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">Выгрузки не найдены</h6>
+                                <p class="text-muted small mb-3">По указанным фильтрам нет подходящих ссылок на выгрузки</p>
+                                <a href="/links_dc/" class="btn btn-sm btn-outline-primary">Сбросить фильтры</a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ПАГИНАЦИЯ -->
+        {% if params.paginator.has_other_pages %}
+            <nav class="mt-4" aria-label="Пагинация выгрузок">
+                <ul class="pagination pagination-sm justify-content-center flex-wrap mb-0">
+                    {% if params.paginator.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ params.query_string }}&page={{ params.paginator.previous_page_number }}">
+                                <i class="bi bi-chevron-left"></i> Назад
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                    {% endif %}
+
+                    {% for p in params.paginator.paginator.page_range %}
+                        {% if params.paginator.number == p %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ p }}</span></li>
+                        {% elif p >= params.paginator.number|add:-3 and p <= params.paginator.number|add:3 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{{ params.query_string }}&page={{ p }}">{{ p }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if params.paginator.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ params.query_string }}&page={{ params.paginator.next_page_number }}">
+                                Вперёд <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
 
 </div>
-<hr>
-<!-- Второй столбец !-->
-	<div class="col-sm">
-		
-		<div class="table-responsive-sm">
-			<table class="table table-hover table-sm table-striped">
-			<thead>
-				<tr>
-					<th scope="col">Подразделение ДЦ</th>
-					<th scope="col">Назначение</th>
-					<th scope="col">Марка</th>
-					<th scope="col">Адрес</th>
-					<th scope="col">Город</th>
-					<th scope="col">Ссылка</th>								
-				</tr>
-			</thead>
-			<tbody>
-			
-				{% if params.paginator.object_list %}
-					{% for doc in params.paginator.object_list %}
-						<tr class="align-middle">	
-							<td class="align-middle">{{doc.unit.name}}</td>
-							<td class="align-middle">{{doc.type_exchange.name}}</td>
-							<td class="align-middle">{{doc.mark_filter}}</td>
-							<td class="align-middle">{{doc.adress}}</td>
-							<td class="align-middle">{{doc.city_name}}</td>
-							<td class="align-middle">{{doc.link}}</td>
-						</tr>
-					{% endfor %} 
-				{% endif %}
-				
-			</tbody>
-			</table>
-		</div>
 
-		<nav aria-label="Page navigation example bg-secondary">
-      
-			<ul class="pagination justify-content-center">
-			  
-			  {% if  params.paginator.has_previous %}
-				<li class="page-num">
-						<a class="page-link bg-secondary text-white"  OnClick="a( {{ params.paginator.previous_page_number }})"; name="page" value = " {{ params.paginator.previous_page_number }} ">&lt;</a>
-				</li>
-			  {% endif %}
-	  
-			  {% for p in params.paginator.paginator.page_range %}
-				{% if  params.paginator.number == p %}
-				<li class="page-item bg-secondary text-white disabled"><a class="page-link">{{p}}</a></li>
-						  {% elif p >=  params.paginator.number|add:-2 and p <=  params.paginator.number|add:2  %}
-				<li class="page-item">
-					<a class="page-link bg-secondary text-white" OnClick="a( {{ p }})"; name="page" value = " {{ p }}">{{ p }}</a>
-				</li>
-				{% endif %}
-			  {% endfor %}
-				
-			  {% if params.paginator.has_next %}
-				<li class="page-num">
-					<a class="page-link bg-secondary text-white" OnClick="a( {{ params.paginator.next_page_number }})"; name="page" value = " {{ params.paginator.next_page_number }} ">&gt;</a>
-				</li>
-			  {% endif %}
-	  
-			</ul>
-	  
-		</nav>
-	
-	</div>
-
+<!-- Всплывающий Toast при копировании -->
+<div id="copyToast" class="feed-toast">
+    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+    <span>Ссылка на выгрузку скопирована в буфер обмена!</span>
 </div>
-	
-</form>
+{% endblock %}
 
+{% block javascript %}
 <script>
-	document.forms.upload.onsubmit = function() {
-	  var input = this.elements.file_audio;
-	  var file = input.files[0];
-	  if (file) {
-		upload(file);
-	  }
-	  return false;
-	}
-  
-	function upload(file) {
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Копирование ссылки в буфер обмена
+    var copyButtons = document.querySelectorAll('.btn-copy-link');
+    var toast = document.getElementById('copyToast');
+    var toastTimer = null;
 
-	var xhr = new XMLHttpRequest();
+    function showToast(msg) {
+        if (!toast) return;
+        if (msg) {
+            toast.querySelector('span').textContent = msg;
+        }
+        toast.style.display = 'flex';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() {
+            toast.style.display = 'none';
+        }, 2200);
+    }
 
-	// обработчик для отправки
-	xhr.upload.onprogress = function(event) {
-		console.log(event.loaded + ' / ' + event.total);
-	}
+    copyButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var url = this.getAttribute('data-url');
+            if (!url) return;
 
-	// обработчики успеха и ошибки
-	// если status == 200, то это успех, иначе ошибка
-	xhr.onload = xhr.onerror = function() {
-	if (this.status == 200) {
-		console.log("success");
-	} else {
-		console.log("error " + this.status);
-	}
-	};
+            var button = this;
+            var originalHtml = button.innerHTML;
 
-	xhr.open("POST", "", true);
-	xhr.send(file);
+            function onSuccess() {
+                button.classList.add('copied');
+                button.innerHTML = '<i class="bi bi-check2"></i> <span>Скопировано!</span>';
+                showToast('Ссылка на выгрузку скопирована в буфер обмена!');
+                setTimeout(function() {
+                    button.classList.remove('copied');
+                    button.innerHTML = originalHtml;
+                }, 2000);
+            }
 
-	}
-  </script>
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(onSuccess).catch(function() {
+                    fallbackCopyText(url, onSuccess);
+                });
+            } else {
+                fallbackCopyText(url, onSuccess);
+            }
+        });
+    });
 
-  
+    function fallbackCopyText(text, callback) {
+        var textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (callback) callback();
+        } catch (err) {
+            console.error('Ошибка копирования:', err);
+        }
+        document.body.removeChild(textArea);
+    }
 
-<script language="JavaScript">
-	
-	function change_link(){
-		
-		var url 	= new URL(document.location.href);
-		
-		type_id 	= document.getElementById('type_id').value;
-		if (type_id.length > 0){
-			url.searchParams.set('type_id', type_id);
-		}else{
-			url.searchParams.delete('type_id')
-		}
-		
-		unit_id = document.getElementById('unit_id').value;
-		if (unit_id.length > 0){
-			url.searchParams.set('unit_id', unit_id);
-		}else{
-			url.searchParams.delete('unit_id')
-		}
-
-		document.location.href  = url.href;
-
-	}
-
+    // 2. Авто-сабмит при смене города, ДЦ, площадки или количества
+    var autoSelects = document.querySelectorAll('#city, #unit_id, #type_id, #mark, #per_page');
+    autoSelects.forEach(function(sel) {
+        sel.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
 </script>
-
-<script language="JavaScript">
-	function a(page)
-	{
-	   var url = new URL(document.location.href);
-	   url.searchParams.set('page', page)
-	   document.location.href  = url.href;
-	}
-	
-</script>
-
-
 {% endblock %}

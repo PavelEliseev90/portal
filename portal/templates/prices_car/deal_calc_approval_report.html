@@ -4,95 +4,435 @@
 {% block title %} — Отчёт по согласованию КП {% endblock %}
 {% block title_navbar %} — Отчёт по согласованию КП {% endblock %}
 
-{% block content %}
+{% block head %}
 <style>
-  .kp-report-page { padding: 1.25rem; }
-  .kp-report-header {
-    display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
-    gap: 1rem; margin-bottom: 1.25rem;
+  :root {
+    --kp-navy: #002a5a;
+    --kp-navy-hover: #001f42;
+    --kp-primary-bg: #f8fafc;
+    --kp-card-border: rgba(0, 42, 90, 0.08);
+    --kp-card-shadow: 0 10px 24px rgba(0, 23, 61, 0.05);
+    --kp-card-hover-shadow: 0 14px 28px rgba(0, 23, 61, 0.08);
   }
-  .kp-report-header h1 { font-size: 1.5rem; font-weight: 700; color: #002a5a; margin: 0 0 0.35rem; }
-  .kp-report-meta { color: #6c7a92; font-size: 0.9rem; }
-  .kp-report-filters {
-    background: #fff; border: 1px solid #e8eef5; border-radius: 1rem;
-    padding: 1rem 1.15rem; margin-bottom: 1rem;
-  }
-  .kp-report-table-wrap {
-    overflow-x: auto; background: #fff; border-radius: 1rem; border: 1px solid #e8eef5;
-  }
-  .kp-report-table { width: 100%; font-size: 0.88rem; margin-bottom: 0; }
-  .kp-report-table th {
-    color: #6c7a92; font-weight: 600; white-space: nowrap;
-    border-bottom: 2px solid #e8eef5; padding: 0.65rem 0.5rem; vertical-align: bottom;
-  }
-  .kp-report-table td { padding: 0.65rem 0.5rem; border-bottom: 1px solid #f0f4f8; vertical-align: top; }
-  .kp-report-empty { padding: 2rem; text-align: center; color: #8ea1ba; }
-  .kp-report-vin { font-family: ui-monospace, monospace; font-size: 0.82rem; }
-  .kp-filter-badge {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    background: #e8f0f8; color: #002a5a; border-radius: 999px;
-    padding: 0.15rem 0.55rem; font-size: 0.78rem; margin: 0.15rem 0.15rem 0 0;
-  }
-  .kp-filter-remove { cursor: pointer; border: 0; background: transparent; color: #6c7a92; padding: 0; line-height: 1; }
-</style>
 
+  .kp-report-page {
+    padding: 1.25rem 1.5rem 2.5rem;
+    background: #f8fafc;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* Шапка страницы */
+  .kp-report-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .kp-report-title-wrap h1 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--kp-navy);
+    margin: 0 0 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .kp-report-meta {
+    color: #64748b;
+    font-size: 0.88rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .kp-meta-badge {
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+  }
+
+  /* Карточки KPI-метрик */
+  .kp-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .kp-metric-card {
+    background: #ffffff;
+    border: 1px solid var(--kp-card-border);
+    border-radius: 1rem;
+    box-shadow: var(--kp-card-shadow);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .kp-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--kp-card-hover-shadow);
+    border-color: rgba(0, 42, 90, 0.2);
+    color: inherit;
+  }
+  .kp-metric-card.active {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    box-shadow: 0 10px 24px rgba(2, 132, 199, 0.12);
+  }
+  .kp-metric-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .kp-metric-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--kp-navy);
+    line-height: 1.1;
+  }
+  .kp-metric-sub {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    margin-top: 0.35rem;
+  }
+  .kp-metric-card.auto-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    border-left: 4px solid #0284c7;
+  }
+  .kp-metric-card.auto-card .kp-metric-value {
+    color: #0284c7;
+  }
+
+  /* Панель фильтров */
+  .kp-report-filters {
+    background: #ffffff;
+    border: 1px solid var(--kp-card-border);
+    border-radius: 1rem;
+    box-shadow: var(--kp-card-shadow);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .kp-filter-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .kp-filter-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--kp-navy);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .kp-quick-dates {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .kp-quick-btn {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .kp-quick-btn:hover {
+    background: #f1f5f9;
+    color: var(--kp-navy);
+    border-color: #94a3b8;
+  }
+
+  /* Таблица отчёта */
+  .kp-report-table-wrap {
+    overflow-x: auto;
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid var(--kp-card-border);
+    box-shadow: var(--kp-card-shadow);
+  }
+  .kp-report-table {
+    width: 100%;
+    font-size: 0.86rem;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .kp-report-table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0.75rem 0.65rem;
+    vertical-align: middle;
+  }
+  .kp-report-table tbody td {
+    padding: 0.75rem 0.65rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #1e293b;
+  }
+  .kp-report-table tbody tr:hover td {
+    background-color: #f8fafc;
+  }
+  .kp-report-vin {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    color: #0f172a;
+  }
+  .kp-report-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+  }
+
+  /* Бейджи статусов */
+  .badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.32rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .badge-auto-approved {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.1);
+  }
+  .badge-director-approved {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+  .badge-uk-approved {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+  .badge-pending {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+  }
+  .badge-rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+  .badge-auto-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #f0f9ff;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+    padding: 0.18rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+
+  /* Пагинация */
+  .kp-pagination-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding: 0 0.5rem;
+  }
+  .kp-pagination-info {
+    font-size: 0.86rem;
+    color: #64748b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="kp-report-page">
+  <!-- Хедер страницы -->
   <div class="kp-report-header">
-    <div>
-      <h1>Отчёт по согласованию коммерческих предложений</h1>
+    <div class="kp-report-title-wrap">
+      <h1>
+        <i class="bi bi-file-earmark-check-fill text-primary"></i>
+        Отчёт по согласованию коммерческих предложений
+      </h1>
       <div class="kp-report-meta">
-        Только последнее КП по рабочему листу · подразделения с автопереоценкой новых · всего: {{ params.total_count }}
+        <span class="kp-meta-badge"><i class="bi bi-building me-1"></i>Управляющая компания</span>
+        <span>Только последнее КП по рабочему листу</span>
+        <span>·</span>
+        <span>Подразделения с автопереоценкой новых</span>
       </div>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      <a href="{{ params.desktop_url }}" class="btn btn-outline-primary btn-sm">← Рабочий стол</a>
-      <a href="{{ params.export_url }}" class="btn btn-success btn-sm">⬇ Excel</a>
+      <a href="{{ params.desktop_url }}" class="btn btn-outline-primary btn-sm px-3 shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i>Рабочий стол
+      </a>
+      <a href="{{ params.export_url }}" class="btn btn-success btn-sm px-3 shadow-sm">
+        <i class="bi bi-file-earmark-excel me-1"></i>Выгрузить в Excel
+      </a>
     </div>
   </div>
 
+  <!-- Карточки KPI-метрик -->
+  <div class="kp-metrics-grid">
+    <div class="kp-metric-card">
+      <div class="kp-metric-title">
+        <i class="bi bi-collection text-primary"></i>
+        Всего КП
+      </div>
+      <div class="kp-metric-value">{{ params.total_count }}</div>
+      <div class="kp-metric-sub">за выбранный период</div>
+    </div>
+
+    <a href="?{% query_transform params.filtr soglasovanie='auto_approved' page=1 %}"
+       class="kp-metric-card auto-card {% if params.filtr.soglasovanie == 'auto_approved' %}active{% endif %}"
+       title="Кликните для фильтрации по автоматически согласованным">
+      <div class="kp-metric-title text-info">
+        <i class="bi bi-lightning-charge-fill text-warning"></i>
+        Автосогласовано
+      </div>
+      <div class="kp-metric-value">{{ params.metrics.auto_approved|default:0 }}</div>
+      <div class="kp-metric-sub">согласовано системой</div>
+    </a>
+
+    <a href="?{% query_transform params.filtr soglasovanie='manual_director_approved' page=1 %}"
+       class="kp-metric-card {% if params.filtr.soglasovanie == 'manual_director_approved' or params.filtr.soglasovanie == 'director_approved' %}active{% endif %}"
+       title="Кликните для фильтрации по согласованным вручную">
+      <div class="kp-metric-title">
+        <i class="bi bi-person-check-fill text-success"></i>
+        Вручную
+      </div>
+      <div class="kp-metric-value">{{ params.metrics.manual_approved|default:0 }}</div>
+      <div class="kp-metric-sub">директором или УК</div>
+    </a>
+
+    <a href="?{% query_transform params.filtr soglasovanie='pending' page=1 %}"
+       class="kp-metric-card {% if params.filtr.soglasovanie == 'pending' %}active{% endif %}"
+       title="Кликните для фильтрации по находящимся на согласовании">
+      <div class="kp-metric-title">
+        <i class="bi bi-clock-history text-warning"></i>
+        На согласовании
+      </div>
+      <div class="kp-metric-value">{{ params.metrics.pending|default:0 }}</div>
+      <div class="kp-metric-sub">ожидают решения</div>
+    </a>
+
+    <a href="?{% query_transform params.filtr only_shipped=1 page=1 %}"
+       class="kp-metric-card {% if params.filtr.only_shipped %}active{% endif %}"
+       title="Кликните для фильтрации только с отгрузкой">
+      <div class="kp-metric-title">
+        <i class="bi bi-car-front-fill text-info"></i>
+        Отгружено
+      </div>
+      <div class="kp-metric-value">{{ params.metrics.shipped|default:0 }}</div>
+      <div class="kp-metric-sub">есть документ отгрузки</div>
+    </a>
+  </div>
+
+  <!-- Панель фильтров -->
   <div class="kp-report-filters">
+    <div class="kp-filter-header">
+      <div class="kp-filter-title">
+        <i class="bi bi-funnel-fill text-primary"></i>
+        Параметры фильтрации
+      </div>
+      <div class="kp-quick-dates">
+        <span class="small text-muted me-1">Период:</span>
+        <button type="button" class="kp-quick-btn" onclick="setQuickDate('current_month')">Текущий месяц</button>
+        <button type="button" class="kp-quick-btn" onclick="setQuickDate('prev_month')">Прошлый месяц</button>
+        <button type="button" class="kp-quick-btn" onclick="setQuickDate('last30')">30 дней</button>
+      </div>
+    </div>
+
     <form method="get" class="row g-3 align-items-end" id="kpReportFilters">
       <div class="col-sm-6 col-md-2">
-        <label class="form-label small text-muted mb-1">Дата с</label>
-        <input type="date" class="form-control" name="date_start" value="{{ params.filtr.date_start }}">
+        <label class="form-label small fw-semibold text-muted mb-1">Дата с</label>
+        <input type="date" class="form-control form-control-sm" name="date_start" id="filterDateStart" value="{{ params.filtr.date_start }}">
       </div>
       <div class="col-sm-6 col-md-2">
-        <label class="form-label small text-muted mb-1">Дата по</label>
-        <input type="date" class="form-control" name="date_end" value="{{ params.filtr.date_end }}">
+        <label class="form-label small fw-semibold text-muted mb-1">Дата по</label>
+        <input type="date" class="form-control form-control-sm" name="date_end" id="filterDateEnd" value="{{ params.filtr.date_end }}">
       </div>
       <div class="col-sm-6 col-md-2">
-        <label class="form-label small text-muted mb-1">VIN</label>
-        <input type="text" class="form-control" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN" autocomplete="off">
+        <label class="form-label small fw-semibold text-muted mb-1">VIN автомобиля</label>
+        <input type="text" class="form-control form-control-sm" name="vin" value="{{ params.filtr.vin }}" placeholder="Фрагмент VIN..." autocomplete="off">
       </div>
-      <div class="col-sm-12 col-md-4">
+      <div class="col-sm-12 col-md-3">
         {% include 'includes/portal_multi_checkbox_filter.html' with prefix='kpUnit' field_name='unit_ids' label='Подразделения' placeholder='Поиск по подразделениям...' items=params.units selected_ids=params.filtr.filter_unit show_city=True empty_text='Нет подразделений с флагом автопереоценки новых' %}
       </div>
-      <div class="col-sm-6 col-md-2">
-        <label class="form-label small text-muted mb-1">Согласование</label>
-        <select class="form-select" name="soglasovanie">
+      <div class="col-sm-6 col-md-3">
+        <label class="form-label small fw-semibold text-muted mb-1">Статус согласования</label>
+        <select class="form-select form-select-sm" name="soglasovanie">
           <option value="">Все статусы</option>
-          <option value="approved"{% if params.filtr.soglasovanie == 'approved' %} selected{% endif %}>Согласовано</option>
-          <option value="pending"{% if params.filtr.soglasovanie == 'pending' %} selected{% endif %}>На согласовании</option>
-          <option value="rejected"{% if params.filtr.soglasovanie == 'rejected' %} selected{% endif %}>Отказ</option>
-          <option value="pending_uk"{% if params.filtr.soglasovanie == 'pending_uk' %} selected{% endif %}>На согласовании УК</option>
+          <option value="auto_approved"{% if params.filtr.soglasovanie == 'auto_approved' %} selected{% endif %}>⚡ Согласовано автоматически</option>
+          <option value="manual_director_approved"{% if params.filtr.soglasovanie == 'manual_director_approved' or params.filtr.soglasovanie == 'director_approved' %} selected{% endif %}>Согласовано директором (вручную)</option>
           <option value="uk_approved"{% if params.filtr.soglasovanie == 'uk_approved' %} selected{% endif %}>Согласовано УК</option>
-          <option value="director_approved"{% if params.filtr.soglasovanie == 'director_approved' %} selected{% endif %}>Согласовано директором</option>
+          <option value="approved"{% if params.filtr.soglasovanie == 'approved' %} selected{% endif %}>Все согласованные (авто + вручную)</option>
+          <option value="pending"{% if params.filtr.soglasovanie == 'pending' %} selected{% endif %}>На согласовании (все)</option>
+          <option value="pending_uk"{% if params.filtr.soglasovanie == 'pending_uk' %} selected{% endif %}>На согласовании УК</option>
+          <option value="rejected"{% if params.filtr.soglasovanie == 'rejected' %} selected{% endif %}>Отказ в согласовании</option>
         </select>
       </div>
-      <div class="col-sm-6 col-md-2">
-        <div class="form-check mt-4">
+
+      <div class="col-sm-6 col-md-6 d-flex align-items-center">
+        <div class="form-check form-switch mt-1">
           <input class="form-check-input" type="checkbox" name="only_shipped" value="1" id="onlyShipped"
             {% if params.filtr.only_shipped %}checked{% endif %}>
-          <label class="form-check-label" for="onlyShipped">Только с отгрузкой</label>
+          <label class="form-check-label small fw-semibold text-muted" for="onlyShipped">
+            Показывать только с отгрузкой
+          </label>
         </div>
       </div>
-      <div class="col-sm-6 col-md-auto">
-        <button type="submit" class="btn btn-primary">Применить</button>
-        <a href="{% url 'prices_car:deal_calc_approval_report' %}" class="btn btn-outline-secondary">Сбросить</a>
+
+      <div class="col-sm-6 col-md-6 text-md-end">
+        <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm">
+          <i class="bi bi-check2 me-1"></i>Применить
+        </button>
+        <a href="{% url 'prices_car:deal_calc_approval_report' %}" class="btn btn-outline-secondary btn-sm px-3 ms-2">
+          Сбросить
+        </a>
       </div>
     </form>
   </div>
 
+  <!-- Таблица отчёта -->
   <div class="kp-report-table-wrap">
     <table class="table kp-report-table">
       <thead>
@@ -103,52 +443,133 @@
           <th>Комплектация</th>
           <th>Год</th>
           <th>VIN</th>
+          <th class="text-center" title="Автомобиль отчитан перед импортёром на момент КП (дата рапорта заполнена)">Жёлтый АМ</th>
+          <th class="text-end" title="Норматив кумулятивной маржи бренда на месяц (BrandKM)">КМ на месяц</th>
           <th class="text-end">КВП</th>
-          <th class="text-end">Итог по формуле<br><span class="fw-normal text-muted" style="font-size:0.75rem">снимок на момент согласования</span></th>
+          <th class="text-end" title="Снимок формулы на момент согласования">Итог по формуле</th>
           <th>Статус согласования</th>
           <th>Согласовал директор</th>
           <th>Согласовал УК</th>
           <th class="text-end">Доходность уехала</th>
-          <th>РЛ / КП</th>
+          <th>РЛ / КП / Отгрузка</th>
         </tr>
       </thead>
       <tbody>
         {% for row in params.rows %}
         <tr>
-          <td>{{ row.unit_label }}</td>
-          <td>{{ row.mark }}</td>
+          <td>
+            <div class="fw-semibold">{{ row.unit_name }}</div>
+            {% if row.city_name and row.city_name != '—' %}
+              <div class="small text-muted">{{ row.city_name }}</div>
+            {% endif %}
+          </td>
+          <td class="fw-semibold">{{ row.mark }}</td>
           <td>{{ row.model }}</td>
-          <td>{{ row.complectation }}</td>
+          <td><span class="small text-muted">{{ row.complectation }}</span></td>
           <td>{{ row.year }}</td>
           <td class="kp-report-vin">{{ row.vin }}</td>
-          <td class="text-end text-nowrap">
-            {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }} ₽{% else %}—{% endif %}
+          <td class="text-center text-nowrap">
+            {% if row.is_yellow %}
+              <span class="badge" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; font-weight: 600; font-size: 0.78rem; padding: 0.25rem 0.55rem; border-radius: 9999px;" {% if row.date_report_str %}title="Отчитан: {{ row.date_report_str }}"{% endif %}>
+                <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem; color: #ca8a04;"></i>Да
+              </span>
+            {% else %}
+              <span class="text-muted small">Нет</span>
+            {% endif %}
           </td>
           <td class="text-end text-nowrap">
-            {% if row.km_formula is not None %}{{ row.km_formula|floatformat:"0g" }} ₽{% else %}—{% endif %}
+            {% if row.brand_km_month is not None %}
+              <span class="fw-semibold">{{ row.brand_km_month|floatformat:"0g" }}&nbsp;₽</span>
+              {% if row.brand_km_min_dc and row.brand_km_min_dc != row.brand_km_month %}
+                <div class="small text-muted" title="Минимальное значение КМ ДЦ">мин: {{ row.brand_km_min_dc|floatformat:"0g" }}&nbsp;₽</div>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
           </td>
-          <td>{{ row.soglasovanie_label }}</td>
-          <td>{{ row.director_approver }}</td>
+          <td class="text-end text-nowrap fw-semibold">
+            {% if row.kvp is not None %}{{ row.kvp|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
+          </td>
+          <td class="text-end text-nowrap">
+            {% if row.km_formula is not None %}{{ row.km_formula|floatformat:"0g" }}&nbsp;₽{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if row.is_auto_approved %}
+              <span class="badge-status badge-auto-approved" title="Согласовано автоматически алгоритмом автопереоценки">
+                <i class="bi bi-lightning-charge-fill text-warning"></i>Согласовано автоматически
+              </span>
+            {% elif row.soglasovanie_status == 'director_approved' %}
+              <span class="badge-status badge-director-approved">
+                <i class="bi bi-check-circle-fill"></i>Согласовано директором
+              </span>
+            {% elif row.soglasovanie_status == 'uk_approved' %}
+              <span class="badge-status badge-uk-approved">
+                <i class="bi bi-shield-check"></i>Согласовано УК
+              </span>
+            {% elif row.soglasovanie_status == 'pending_uk' %}
+              <span class="badge-status badge-pending">
+                <i class="bi bi-clock-history"></i>На согласовании УК
+              </span>
+            {% elif row.soglasovanie_status == 'director_rejected' or row.soglasovanie_status == 'uk_rejected' %}
+              <span class="badge-status badge-rejected">
+                <i class="bi bi-x-circle-fill"></i>Отказ
+              </span>
+            {% else %}
+              <span class="badge-status badge-pending">
+                <i class="bi bi-hourglass-split"></i>{{ row.soglasovanie_label }}
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.is_auto_approved %}
+              <span class="badge-auto-tag" title="Автоматическое согласование роботом">
+                <i class="bi bi-robot"></i>Автоматически
+              </span>
+            {% else %}
+              {{ row.director_approver }}
+            {% endif %}
+          </td>
           <td>{{ row.uk_approver }}</td>
           <td class="text-end text-nowrap">
-            {% if row.sale_profit is not None %}{{ row.sale_profit|floatformat:"0g" }} ₽{% else %}
+            {% if row.sale_profit is not None %}
+              <span class="fw-semibold {% if row.sale_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ row.sale_profit|floatformat:"0g" }}&nbsp;₽
+              </span>
+            {% else %}
               <span class="text-muted">—</span>
             {% endif %}
           </td>
           <td class="text-nowrap">
-            <div>РЛ {{ row.rlk_nomer }}</div>
-            <a href="{{ row.url }}">КП {{ row.number }}</a>
-            {% if row.shipped %}<div class="small text-muted">Отгр. {{ row.shipment_nomer }}</div>{% endif %}
+            <div>
+              <span class="small text-muted">РЛ:</span>
+              <span class="fw-semibold">{{ row.rlk_nomer }}</span>
+            </div>
+            <div>
+              <a href="{{ row.url }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none" title="Открыть коммерческое предложение">
+                КП {{ row.number }} <i class="bi bi-box-arrow-up-right" style="font-size:0.75rem"></i>
+              </a>
+            </div>
+            {% if row.shipped %}
+              <div class="small text-success mt-1">
+                <i class="bi bi-truck me-1"></i>Отгр. {{ row.shipment_nomer }}
+              </div>
+            {% endif %}
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="13" class="kp-report-empty">
-            {% if not params.units %}
-              Нет подразделений с флагом «Включена автоматическая переоценка новых». Включите его в справочнике подразделений.
-            {% else %}
-              Нет коммерческих предложений за выбранный период.
-            {% endif %}
+          <td colspan="15" class="kp-report-empty">
+            <div class="py-4">
+              <i class="bi bi-inbox text-muted" style="font-size: 2.5rem;"></i>
+              <div class="mt-2 fw-semibold">Коммерческих предложений не найдено</div>
+              <div class="small text-muted mt-1">
+                {% if not params.units %}
+                  Нет подразделений с признаком «Включена автоматическая переоценка новых».
+                {% else %}
+                  Попробуйте изменить параметры фильтрации или выбрать другой период дат.
+                {% endif %}
+              </div>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -156,24 +577,82 @@
     </table>
   </div>
 
+  <!-- Пагинация -->
   {% if params.page_obj.has_other_pages %}
-  <nav class="mt-3" aria-label="Страницы отчёта">
-    <ul class="pagination pagination-sm">
-      {% if params.page_obj.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.querystring %}&{{ params.querystring }}{% endif %}">←</a>
-      </li>
-      {% endif %}
-      <li class="page-item disabled">
-        <span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }}</span>
-      </li>
-      {% if params.page_obj.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.querystring %}&{{ params.querystring }}{% endif %}">→</a>
-      </li>
-      {% endif %}
-    </ul>
-  </nav>
+  <div class="kp-pagination-bar">
+    <div class="kp-pagination-info">
+      Показано с <strong>{{ params.page_obj.start_index }}</strong> по <strong>{{ params.page_obj.end_index }}</strong> из <strong>{{ params.total_count }}</strong> записей
+    </div>
+    <nav aria-label="Страницы отчёта">
+      <ul class="pagination pagination-sm mb-0 shadow-sm">
+        {% if params.page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1{% if params.querystring %}&{{ params.querystring }}{% endif %}" title="Первая страница">«</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.previous_page_number }}{% if params.querystring %}&{{ params.querystring }}{% endif %}" title="Предыдущая">←</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">«</span></li>
+        <li class="page-item disabled"><span class="page-link">←</span></li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">{{ params.page_obj.number }} / {{ params.paginator.num_pages }}</span>
+        </li>
+
+        {% if params.page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.page_obj.next_page_number }}{% if params.querystring %}&{{ params.querystring }}{% endif %}" title="Следующая">→</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ params.paginator.num_pages }}{% if params.querystring %}&{{ params.querystring }}{% endif %}" title="Последняя страница">»</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">→</span></li>
+        <li class="page-item disabled"><span class="page-link">»</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% else %}
+  <div class="kp-pagination-bar">
+    <div class="kp-pagination-info">
+      Всего записей: <strong>{{ params.total_count }}</strong>
+    </div>
+  </div>
   {% endif %}
 </div>
+
+<script>
+  function setQuickDate(type) {
+    var startInput = document.getElementById('filterDateStart');
+    var endInput = document.getElementById('filterDateEnd');
+    var today = new Date();
+    
+    function fmt(d) {
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    if (type === 'current_month') {
+      var first = new Date(today.getFullYear(), today.getMonth(), 1);
+      var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      startInput.value = fmt(first);
+      endInput.value = fmt(last);
+    } else if (type === 'prev_month') {
+      var firstPrev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      var lastPrev = new Date(today.getFullYear(), today.getMonth(), 0);
+      startInput.value = fmt(firstPrev);
+      endInput.value = fmt(lastPrev);
+    } else if (type === 'last30') {
+      var past30 = new Date(today);
+      past30.setDate(today.getDate() - 30);
+      startInput.value = fmt(past30);
+      endInput.value = fmt(today);
+    }
+  }
+</script>
 {% endblock %}

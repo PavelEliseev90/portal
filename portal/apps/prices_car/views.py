@@ -16,7 +16,10 @@ from django.db.models import BooleanField, Case, Count, Sum, Max, Avg, F, OuterR
 from django.db.models.functions import Coalesce
 from documents.models import DocCarAgreement, DocZN, DocCarShipment
 from refs.models import AutoruMark, AutoruModel, RefStagePrice, RefUnit, RefCarsOrganization
-from .models import PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations, KMCar
+from .models import (
+    PriceCarBrand, BrandKM, PriceCarKmDiscount, PriceCarStageKM, CarCalculations, KMCar,
+    PriceCarAlgorithmSettings,
+)
 from .calculations_table import (
     CALC_LIST_SORT_FIELDS,
     SOGLASOVANIE_LIST_FILTER_CHOICES,
@@ -173,6 +176,7 @@ def deal_calc_approval_report(request):
     """Отчёт по согласованию КП — только для УК (последнее КП по рабочему листу)."""
     from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
     from avtosalon.deal_calc_approval_report import (
+        BrandKMResolver,
         build_approval_report_context,
         serialize_approval_report_row,
     )
@@ -202,7 +206,8 @@ def deal_calc_approval_report(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    rows = [serialize_approval_report_row(item) for item in page_obj]
+    brand_resolver = BrandKMResolver()
+    rows = [serialize_approval_report_row(item, brand_resolver=brand_resolver) for item in page_obj]
     uid_suffix = desktop_user_query_suffix(view_user, request.user)
     export_qs = ctx['querystring']
     export_url = reverse('prices_car:deal_calc_approval_report_export')
@@ -214,6 +219,7 @@ def deal_calc_approval_report(request):
             'type': 'deal_calc_approval_report',
             'filtr': ctx['filtr'],
             'units': ctx['units'],
+            'metrics': ctx.get('metrics', {}),
             'rows': rows,
             'page_obj': page_obj,
             'paginator': paginator,
@@ -230,6 +236,7 @@ def deal_calc_approval_report_export(request):
     """Excel-выгрузка отчёта по согласованию КП (те же фильтры, что на странице)."""
     from avtosalon.deal_calc_approval import user_has_deal_calc_uk_access
     from avtosalon.deal_calc_approval_report import (
+        BrandKMResolver,
         build_approval_report_context,
         build_approval_report_excel,
         serialize_approval_report_row,
@@ -246,7 +253,11 @@ def deal_calc_approval_report_export(request):
         return HttpResponseForbidden('Отчёт доступен только управляющей компании.')
 
     ctx = build_approval_report_context(request)
-    rows = [serialize_approval_report_row(item) for item in ctx['queryset'].iterator(chunk_size=300)]
+    brand_resolver = BrandKMResolver()
+    rows = [
+        serialize_approval_report_row(item, brand_resolver=brand_resolver)
+        for item in ctx['queryset'].iterator(chunk_size=300)
+    ]
     wb = build_approval_report_excel(rows)
     filename = 'kp_approval_report_%s.xlsx' % datetime.now().strftime('%Y%m%d_%H%M%S')
     response = HttpResponse(
@@ -308,13 +319,26 @@ def brands_list(request):
                 return redirect('prices_car:brands')
             mark_ids = request.POST.getlist('marks')
             model_ids = request.POST.getlist('models_included')
+            analysis_days_raw = request.POST.get('analysis_period_days', '').strip()
+            analysis_period_days = None
+            if analysis_days_raw:
+                try:
+                    v = int(analysis_days_raw)
+                    if v > 0:
+                        analysis_period_days = v
+                except (TypeError, ValueError):
+                    pass
 
             if pk:
                 brand = get_object_or_404(PriceCarBrand, pk=pk)
                 brand.name = name
+                brand.analysis_period_days = analysis_period_days
                 brand.save()
             else:
-                brand = PriceCarBrand.objects.create(name=name)
+                brand = PriceCarBrand.objects.create(
+                    name=name,
+                    analysis_period_days=analysis_period_days,
+                )
 
             brand.marks.set(AutoruMark.objects.filter(pk__in=mark_ids) if mark_ids else [])
             brand.models_included.set(AutoruModel.objects.filter(pk__in=model_ids) if model_ids else [])
@@ -331,6 +355,7 @@ def brands_list(request):
             'brands': brands,
             'marks_avtosalon': marks_avtosalon,
             'brand_edit': brand_edit,
+            'default_analysis_days': PriceCarAlgorithmSettings.get_default_analysis_days(),
         },
     })
 
@@ -466,6 +491,25 @@ def settings_page(request):
             )
             return _redirect_settings(month_date.strftime('%Y-%m'))
 
+        if action == 'save_algorithm_settings':
+            days_raw = request.POST.get('analysis_period_days', '').strip()
+            try:
+                days_val = int(days_raw)
+                if days_val <= 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                messages.error(request, 'Период анализа должен быть положительным числом дней.')
+                return _redirect_settings()
+
+            algo_settings = PriceCarAlgorithmSettings.get_settings()
+            algo_settings.analysis_period_days = days_val
+            algo_settings.save(update_fields=['analysis_period_days', 'updated_at'])
+            messages.success(request, f'Период анализа статистики продаж сохранён: {days_val} дн.')
+            return_month = request.POST.get('return_month', '').strip()
+            if _month_first_from_str(return_month):
+                return _redirect_settings(return_month)
+            return _redirect_settings()
+
     month_str_get = request.GET.get('month', '').strip()
     filter_month_date = _month_first_from_str(month_str_get)
     if filter_month_date is None:
@@ -480,6 +524,7 @@ def settings_page(request):
         'params': {
             'brands': brands,
             'items': items,
+            'algorithm_settings': PriceCarAlgorithmSettings.get_settings(),
             'default_month': filter_month_str,
             'filter_month': filter_month_str,
             'filter_month_title': _month_title_ru(filter_month_date),
