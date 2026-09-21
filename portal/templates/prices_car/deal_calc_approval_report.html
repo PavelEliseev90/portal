@@ -312,18 +312,20 @@
 
   <!-- Карточки KPI-метрик -->
   <div class="kp-metrics-grid">
-    <div class="kp-metric-card">
+    <a href="?{% query_transform params.filtr soglasovanie='' only_shipped='' page=1 %}"
+       class="kp-metric-card {% if not params.filtr.soglasovanie and not params.filtr.only_shipped %}active{% endif %}"
+       title="Все расчёты за период (кликните для сброса фильтра по статусу)">
       <div class="kp-metric-title">
         <i class="bi bi-collection text-primary"></i>
         Всего КП
       </div>
       <div class="kp-metric-value">{{ params.total_count }}</div>
       <div class="kp-metric-sub">за выбранный период</div>
-    </div>
+    </a>
 
-    <a href="?{% query_transform params.filtr soglasovanie='auto_approved' page=1 %}"
+    <a href="?{% if params.filtr.soglasovanie == 'auto_approved' %}{% query_transform params.filtr soglasovanie='' page=1 %}{% else %}{% query_transform params.filtr soglasovanie='auto_approved' page=1 %}{% endif %}"
        class="kp-metric-card auto-card {% if params.filtr.soglasovanie == 'auto_approved' %}active{% endif %}"
-       title="Кликните для фильтрации по автоматически согласованным">
+       title="Кликните для фильтрации по автоматически согласованным (повторный клик снимает фильтр)">
       <div class="kp-metric-title text-info">
         <i class="bi bi-lightning-charge-fill text-warning"></i>
         Автосогласовано
@@ -332,9 +334,9 @@
       <div class="kp-metric-sub">согласовано системой</div>
     </a>
 
-    <a href="?{% query_transform params.filtr soglasovanie='manual_director_approved' page=1 %}"
+    <a href="?{% if params.filtr.soglasovanie == 'manual_director_approved' or params.filtr.soglasovanie == 'director_approved' %}{% query_transform params.filtr soglasovanie='' page=1 %}{% else %}{% query_transform params.filtr soglasovanie='manual_director_approved' page=1 %}{% endif %}"
        class="kp-metric-card {% if params.filtr.soglasovanie == 'manual_director_approved' or params.filtr.soglasovanie == 'director_approved' %}active{% endif %}"
-       title="Кликните для фильтрации по согласованным вручную">
+       title="Кликните для фильтрации по согласованным вручную (повторный клик снимает фильтр)">
       <div class="kp-metric-title">
         <i class="bi bi-person-check-fill text-success"></i>
         Вручную
@@ -343,9 +345,9 @@
       <div class="kp-metric-sub">директором или УК</div>
     </a>
 
-    <a href="?{% query_transform params.filtr soglasovanie='pending' page=1 %}"
+    <a href="?{% if params.filtr.soglasovanie == 'pending' %}{% query_transform params.filtr soglasovanie='' page=1 %}{% else %}{% query_transform params.filtr soglasovanie='pending' page=1 %}{% endif %}"
        class="kp-metric-card {% if params.filtr.soglasovanie == 'pending' %}active{% endif %}"
-       title="Кликните для фильтрации по находящимся на согласовании">
+       title="Кликните для фильтрации по находящимся на согласовании (повторный клик снимает фильтр)">
       <div class="kp-metric-title">
         <i class="bi bi-clock-history text-warning"></i>
         На согласовании
@@ -354,9 +356,9 @@
       <div class="kp-metric-sub">ожидают решения</div>
     </a>
 
-    <a href="?{% query_transform params.filtr only_shipped=1 page=1 %}"
+    <a href="?{% if params.filtr.only_shipped %}{% query_transform params.filtr only_shipped='' page=1 %}{% else %}{% query_transform params.filtr only_shipped=1 page=1 %}{% endif %}"
        class="kp-metric-card {% if params.filtr.only_shipped %}active{% endif %}"
-       title="Кликните для фильтрации только с отгрузкой">
+       title="Кликните для фильтрации только с отгрузкой (повторный клик снимает фильтр)">
       <div class="kp-metric-title">
         <i class="bi bi-car-front-fill text-info"></i>
         Отгружено
